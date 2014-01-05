@@ -81,7 +81,8 @@ static int StartUdpServer(const char* ip, int port)
 	}
 
 	s_udp = aio_socket_create(sock, 1);
-	aio_socket_recvfrom(s_udp, s_rxbuffer, sizeof(s_rxbuffer)-1, OnUdpRecv, NULL);
+	//aio_socket_recvfrom(s_udp, s_rxbuffer, sizeof(s_rxbuffer)-1, OnUdpRecv, NULL);
+	return 0;
 }
 
 static int StartTcpServer(const char* ip, int port)
@@ -121,18 +122,18 @@ int main(int argc, char* argv[])
 	g_thpool = thread_pool_create(cpu, cpu, cpu*4);
 
 	aio_socket_init(cpu * 2);
-	for(int i=0; i<cpu * 2; i++)
+	for(size_t i=0; i<cpu * 2; i++)
 		thread_pool_push(g_thpool, AioWorker, NULL); // start worker
 
 	// start server
 	StartTcpServer(NULL, port); 
 	StartUdpServer(NULL, port);
 
-	for(char c = getchar(); 'q' != c ; c = getchar())
+	for(int c = getchar(); 'q' != c ; c = getchar())
 	{
 	}
 
-	aio_socket_destroy(s_server);
+	aio_socket_destroy(s_tcp);
 	aio_socket_clean();
 	return 0;
 }

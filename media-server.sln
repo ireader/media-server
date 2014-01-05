@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sipmedia", "sipmedia\sipmedia.vcproj", "{7ACBC56D-90F9-4C1B-9449-EEA77673D810}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.vcproj", "{C34CC56F-34FE-4D93-8582-5853B05442EA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtp", "librtp\librtp.vcproj", "{B6A95553-A736-4083-8B96-C5F845FA8C6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Debug|Win32.Build.0 = Debug|Win32
+		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Release|Win32.ActiveCfg = Release|Win32
+		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Release|Win32.Build.0 = Release|Win32
+		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Debug|Win32.Build.0 = Debug|Win32
+		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Release|Win32.ActiveCfg = Release|Win32
+		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Release|Win32.Build.0 = Release|Win32
+		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Debug|Win32.Build.0 = Debug|Win32
+		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Release|Win32.ActiveCfg = Release|Win32
+		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

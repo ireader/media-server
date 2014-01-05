@@ -1,9 +1,9 @@
 #ifndef _RtspSession_h_
 #define _RtspSession_h_
 
-#include "libct/auto_obj.h"
-#include "libct/auto_ptr.h"
 #include "aio-socket.h"
+#include "libct/object.h"
+#include "libct/auto_obj.h"
 #include <string>
 
 class RtspSession : public libct::object
@@ -16,6 +16,21 @@ public:
 	void Run();
 
 private:
+	void OnApi();
+	void Options();
+	void Describe();
+	void Announce();
+	void Setup();
+	void Play();
+	void Pause();
+	void Teardown();
+	void GetParameter();
+	void SetParameter();
+	void Redirect();
+	void Record();
+	void Embedded();
+
+private:
 	static void OnRecv(void* param, int code, int bytes);
 	static void OnSend(void* param, int code, int bytes);
 
@@ -25,6 +40,7 @@ private:
 	int m_port;
 	std::string m_ip;
 	aio_socket_t m_socket;
+	void *m_rtsp;
 
 	char m_rxbuffer[5*1024];
 	char m_txbuffer[5*1024];
