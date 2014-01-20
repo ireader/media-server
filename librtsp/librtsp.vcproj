@@ -41,12 +41,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS"
+				AdditionalIncludeDirectories="include;..\..\sdk\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;OS_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -114,11 +115,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="include;..\..\sdk\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -171,11 +173,23 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\source\rfc822-datetime.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-client.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtsp-parser.c"
 				>
 			</File>
 			<File
 				RelativePath=".\source\rtsp.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\sdp.c"
 				>
 			</File>
 		</Filter>
@@ -185,11 +199,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\include\rfc822-datetime.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-client.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\rtsp-parser.h"
 				>
 			</File>
 			<File
 				RelativePath=".\include\rtsp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\sdp.h"
 				>
 			</File>
 		</Filter>

@@ -183,6 +183,10 @@
 				RelativePath=".\source\RtspSession.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\librtsp\source\sdp.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
