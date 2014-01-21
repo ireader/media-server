@@ -2,7 +2,11 @@
 #include "rtsp-parser.h"
 #include "sys/sock.h"
 #include "aio-socket.h"
+#include "url.h"
 #include "sdp.h"
+
+#define USER_AGENT "Netposa RTSP Lib"
+#define RTP_PORT_BASE 30000
 
 struct rtsp_context
 {
@@ -10,9 +14,15 @@ struct rtsp_context
 	char* session;
 	socket_t sock;
 
+	socket_t rtp[2];
+	int server_port[2];
+
 	char req[1024];
 	char *ptr;
 	int bytes;
+
+	char ip[64];
+	int port;
 
 	void* parser;
 	void *sdp; // sdp parser
@@ -31,6 +41,16 @@ static int rtsp_connect(struct rtsp_context* ctx)
 		return socket_connect_ipv4_by_time(ctx->sock, ctx->ip, ctx->port, 5000);
 	}
 
+	return 0;
+}
+
+static int rtsp_disconnect(struct rtsp_context* ctx)
+{
+	if(socket_invalid != ctx->sock)
+	{
+		socket_close(ctx->sock);
+		ctx->sock = socket_invalid;
+	}
 	return 0;
 }
 
@@ -116,6 +136,53 @@ static int rtsp_request_v(struct rtsp_context* ctx, const socket_bufvec_t *vec, 
 	return 0;
 }
 
+static socket_t rtp_udp_socket(int port)
+{
+	socket_t s;
+	s = socket_udp();
+	if(socket_invalid == s)
+		return s;
+
+	if(0 == socket_bind_any(s, port))
+		return s;
+
+	socket_close(s);
+	return socket_invalid;
+}
+
+static int rtsp_create_rtp_socket(socket_t *rtp, socket_t *rtcp, int *port)
+{
+	int i;
+	socket_t sock[2];
+	assert(0 == RTP_PORT_BASE % 2);
+	srand((unsigned int)time(NULL));
+
+	do
+	{
+		i = rand() % 30000;
+		i = i/2*2 + RTP_PORT_BASE;
+
+		sock[0] = rtp_udp_socket(i);
+		if(socket_invalid == sock[0])
+			continue;
+
+		sock[1] = rtp_udp_socket(i + 1);
+		if(socket_invalid == sock[1])
+		{
+			socket_close(sock[0]);
+			continue;
+		}
+
+		*rtp = sock[0];
+		*rtcp = sock[1];
+		*port = i;
+		return 0;
+
+	} while(socket_invalid!=sock[0] && socket_invalid!=sock[1]);
+
+	return -1;
+}
+
 /*
 C->S: 
 DESCRIBE rtsp://server.example.com/fizzle/foo RTSP/1.0
@@ -150,8 +217,9 @@ static int rtsp_describe(struct rtsp_context* ctx)
 		"DESCRIBE %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Accept: application/sdp\r\n"
+		"User-Agent: %s\r\n"
 		"\r\n", 
-		ctx->uri, ctx->cseq++);
+		ctx->uri, ctx->cseq++, USER_AGENT);
 
 	r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
 	if(0 == r)
@@ -181,14 +249,23 @@ Transport: RTP/AVP;unicast; client_port=4588-4589;server_port=6256-6257
 enum { 
 	RTSP_TRANSPORT_UNKNOWN = 0, 
 	RTSP_TRANSPORT_UNICAST, 
-	RTSP_TRANSPORT_MULTICAST 
+	RTSP_TRANSPORT_MULTICAST,
+};
+
+enum {
+	RTSP_TRANSPORT_RTP,
+	RTSP_TRANSPORT_RAW,
+};
+
+enum {
+	RTSP_TRANSPORT_UDP, 
+	RTSP_TRANSPORT_TCP
 };
 
 struct rtsp_header_transport
 {
-	char* transport; // RTP
-	char* profile; // AVP
-	char* lower_transport; // TCP/UDP, RTP/AVP default UDP
+	int transport; // RTP/RAW
+	int lower_transport; // TCP/UDP, RTP/AVP default UDP
 	int multicast; // unicast/multicast, default multicast
 	char* destination;
 	char* source;
@@ -205,24 +282,35 @@ struct rtsp_header_transport
 
 static int rtsp_header_parse_transport(const char* s, struct rtsp_header_transport* t)
 {
-}
+	t->transport = RTSP_TRANSPORT_RTP;
+	t->lower_transport = RTSP_TRANSPORT_UDP;
 
-static int rtsp_setup_reply(struct rtsp_context* rtsp, const char* reply, int bytes)
-{
-	int r;
-	const char* session;
-	const char* transport;
-
-	rtsp_parser_clear(rtsp->parser);
-	r = rtsp_parser_input(rtsp->parser, reply, bytes);
-	if(0 != r)
+	while(1)
 	{
-		return -1;
+		if(0 == strnicmp("RTP/AVP/TCP;", s))
+		{
+			t->transport = RTSP_TRANSPORT_RTP;
+			t->lower_transport = RTSP_TRANSPORT_TCP;
+		}
+		else if(0 == strnicmp("RAW/RAW/UDP;", s))
+		{
+			t->transport = RTSP_TRANSPORT_RAW;
+			t->lower_transport = RTSP_TRANSPORT_UDP;
+		}
+		else if(0 == strnicmp("destination=", s, 12))
+		{
+			t->destination = strdup(s+12);
+		}
+		else if(1 == sscanf("ttl=%u", &t->ttl))
+		{
+		}
+		else if(2 == sscanf("client_port=%hu-%hu", &t->client_port1, &t->client_port2))
+		{
+		}
+		else if(1 == sscanf("client_port=%hu", &t->client_port1))
+		{
+		}
 	}
-
-	session = rtsp_get_header_by_name(rtsp->parser, "Session");
-	transport = rtsp_get_header_by_name(rtsp->parser, "Transport");
-	return 0;
 }
 
 static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
@@ -231,6 +319,8 @@ static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 	int port;
 	void *sdp;
 	char ip[64];
+	char *session;
+	char *transport;
 	assert(0 == port % 2);
 
 	if(sdp)
@@ -253,29 +343,58 @@ static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 	switch(sdp_connection_get_addrtype(ctx->sdp))
 	{
 	case SDP_C_ADDRESS_IP4:
+		if(0 != stricmp(ip, ctx->ip))
+		{
+			rtsp_disconnect(ctx);
+			strncpy(ctx->ip, ip, sizeof(ctx->ip)-1);
+			// TODO: parse port
+		}
 		break;
 
 	case SDP_C_ADDRESS_IP6:
+		assert(0);
 		break;
 
 	default:
 		assert(0);
 	}
 
+	if(0 != rtsp_create_rtp_socket(&ctx->rtp[0], &ctx->rtp[1], &port))
+	{
+		printf("rtsp_create_rtp_socket error.\n");
+		return -1;
+	}
+
 	// 224.0.0.0 ~ 239.255.255.255
-	port = 3000
 	snprintf(ctx->req, sizeof(ctx->req), 
 		"SETUP %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Transport: RTP/AVP;unicast;client_port=%u-%u\r\n"
+		"User-Agent: %s\r\n"
 		"\r\n", 
-		uri, ctx->cseq++, port, port+1);
+		ctx->uri, ctx->cseq++, port, port+1, USER_AGENT);
 
 	r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
 	if(0 == r)
 	{
 		session = rtsp_get_header_by_name(ctx->parser, "Session");
+		if(!session)
+		{
+			return -1;
+		}
+
 		transport = rtsp_get_header_by_name(ctx->parser, "Transport");
+		if(!transport)
+		{
+			return -1;
+		}
+
+		if(0 != rtsp_header_parse_transport(transport))
+		{
+			return -1;
+		}
+
+		ctx->session = strdup(session);
 	}
 	return r;
 }
@@ -350,12 +469,28 @@ static int rtsp_teardown_reply(struct rtsp_context* rtsp)
 
 void* rtsp_open(const char* uri)
 {
+	int r;
+	void *parser;
 	struct rtsp_context *ctx;
 	ctx = (struct rtsp_context*)malloc(sizeof(struct rtsp_context*));
 	if(!ctx)
 		return NULL;
 
+	parser = url_parse(uri);
+	if(!parser)
+	{
+		free(ctx);
+		return NULL;
+	}
+
 	memset(ctx, 0, sizeof(struct rtsp_context));
+	strncpy(ctx->ip, url_gethost(parser), sizeof(ctx->ip)-1);
+	ctx->port = url_getport(parser);
+	if(0 == ctx->port)
+		ctx->port = 554; // default
+
+	r = rtsp_describe(ctx);
+	r = rtsp_setup(ctx, NULL);
 	return ctx;
 }
 
