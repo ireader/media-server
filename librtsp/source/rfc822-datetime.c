@@ -1,4 +1,6 @@
 #include "rfc822-datetime.h"
+#include "cstringext.h"
+#include <assert.h>
 #include <time.h>
 
 // Tue, 15 Nov 1994 08:12:31 GMT
@@ -53,7 +55,7 @@ static const char* s_zone[] = {
 
 int datetime_format(time_t time, char datetime[27])
 {
-	struct tm *tm = gmtime(time);
+	struct tm *tm = gmtime(&time);
 	assert(0 <= tm->tm_wday && tm->tm_wday < 7);
 	assert(0 <= tm->tm_mon && tm->tm_mon < 12);
 	snprintf(datetime, 27, "%s, %02d %s %04d %02d:%02d:%02d GMT", 

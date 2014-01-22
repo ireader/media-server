@@ -930,22 +930,9 @@ int rtsp_parser_input(void* parser, const void* data, int *bytes)
 		{
 			if(-1 == ctx->content_length)
 			{
-				if(is_server_mode(ctx))
-				{
-					ctx->content_length = 0;
-					ctx->stateM = SM_DONE;
-				}
-				else
-				{
-					// H4.4 Message Length, section 5, server closing the connection
-					// receive all until socket closed
-					assert(!is_server_mode(ctx));
-					if(0 == *bytes)
-					{
-						ctx->content_length = ctx->raw_size - ctx->offset;
-						ctx->stateM = SM_DONE;
-					}
-				}
+				// RTSP2326 4.4 4.4 Message Length
+				ctx->content_length = 0;
+				ctx->stateM = SM_DONE;
 			}
 			else
 			{

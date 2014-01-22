@@ -625,6 +625,7 @@ static int sdp_parse_bandwidth(struct sdp_context* sdp)
 		++bs->count;
 		b->bwtype[n[0]] = '\0';
 		b->bandwidth[n[1]] = '\0';
+		return 0;
 	}
 	return -1;
 }
@@ -778,6 +779,7 @@ static int sdp_parse_repeat(struct sdp_context* sdp)
 				return ret;
 		}
 		++t->r.count;
+		return 0;
 	}
 	return -1;
 }
@@ -878,6 +880,7 @@ static int sdp_parse_encryption(struct sdp_context* sdp)
 	{
 		k->method[n[0]] = '\0';
 		k->key[n[1]] = '\0';
+		return 0;
 	}
 	return -1;
 }
@@ -1439,6 +1442,122 @@ int sdp_timing_count(void* sdp)
 	return ctx->t.count;
 }
 
+int sdp_media_count(void* sdp)
+{
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	return ctx->m.count;
+}
+
+int sdp_media_port(void* sdp, int media, int *port)
+{
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	if(m && port)
+	{
+		*port = atoi(m->port);
+		return 0;
+	}
+	return -1;
+}
+
+int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes)
+{
+	const char* p;
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	struct sdp_connection *conn;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	if(m && m->c.count > 0)
+		conn = &m->c.connections[0];
+	else
+		conn = &ctx->c;
+
+	if(conn->address && bytes > 0)
+	{
+		p = conn->address;
+		while(*p && '/' != *p && bytes > 1)
+		{
+			*ip++ = *p;
+			--bytes;
+		}
+
+		if(0 == *p || '/' == *p)
+		{
+			*ip = '\0';
+			return 0;
+		}
+	}
+	return -1;
+}
+
+int sdp_media_get_connection_network(void* sdp, int media)
+{
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	struct sdp_connection *conn;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	if(m && m->c.count > 0)
+		conn = &m->c.connections[0];
+	else
+		conn = &ctx->c;
+
+	if(conn->network)
+	{
+		if(0 == stricmp("IN", conn->network))
+			return SDP_C_NETWORK_IN;
+	}
+	return SDP_C_NETWORK_UNKNOWN;
+}
+
+int sdp_media_get_connection_addrtype(void* sdp, int media)
+{
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	struct sdp_connection *conn;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	if(m && m->c.count > 0)
+		conn = &m->c.connections[0];
+	else
+		conn = &ctx->c;
+
+	if(conn->addrtype)
+	{
+		if(0 == stricmp("IP4", conn->addrtype))
+			return SDP_C_ADDRESS_IP4;
+		if(0 == stricmp("IP6", conn->addrtype))
+			return SDP_C_ADDRESS_IP6;
+	}
+	return SDP_C_ADDRESS_UNKNOWN;
+}
+
+const char* sdp_media_attribute_find(void* sdp, int media, const char* name)
+{
+	int i;
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	struct sdp_attribute *attr;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	for(i = 0; name && m && i < m->a.count; i++)
+	{
+		if(i < N_ATTRIBUTE)
+			attr = m->a.attrs + i;
+		else
+			attr = m->a.ptr + i - N_ATTRIBUTE;
+
+		if(attr->name && 0==strcmp(attr->name, name))
+			return attr->value;
+	}
+
+	return NULL;
+}
+
 int sdp_media_bandwidth_count(void* sdp, int media)
 {
 	struct sdp_media *m;
@@ -1479,4 +1598,49 @@ int sdp_media_bandwidth_get_value(void* sdp, int media, int idx)
 
 	b = idx < N_BANDWIDTH ? m->b.bandwidths[idx].bandwidth : m->b.ptr[idx - N_BANDWIDTH].bandwidth;
 	return atoi(b);
+}
+
+int sdp_attribute_count(void* sdp)
+{
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	return ctx->a.count;
+}
+
+int sdp_attribute_get(void* sdp, int idx, const char** name, const char** value)
+{
+	struct sdp_context *ctx;
+	struct sdp_attribute *attr;
+	ctx = (struct sdp_context*)sdp;
+	if(idx < 0 || idx > ctx->a.count)
+		return -1; // not found
+
+	if(idx < N_ATTRIBUTE)
+		attr = ctx->a.attrs + idx;
+	else
+		attr = ctx->a.ptr + idx - N_ATTRIBUTE;
+
+	*name = attr->name;
+	*value = attr->value;
+	return 0;
+}
+
+const char* sdp_attribute_find(void* sdp, const char* name)
+{
+	int i;
+	struct sdp_context *ctx;
+	struct sdp_attribute *attr;
+	ctx = (struct sdp_context*)sdp;
+	for(i = 0; name && i < ctx->a.count; i++)
+	{
+		if(i < N_ATTRIBUTE)
+			attr = ctx->a.attrs + i;
+		else
+			attr = ctx->a.ptr + i - N_ATTRIBUTE;
+
+		if(attr->name && 0==strcmp(attr->name, name))
+			return attr->value;
+	}
+
+	return NULL;
 }

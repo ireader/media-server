@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtp", "librtp\librtp.vcproj", "{B6A95553-A736-4083-8B96-C5F845FA8C6D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtspclient", "rtspclient\rtspclient.vcproj", "{66EC2256-F0C9-49E4-A8FA-9417A6364DA7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C34CC56F-34FE-4D93-8582-5853B05442EA} = {C34CC56F-34FE-4D93-8582-5853B05442EA}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -25,6 +30,10 @@ Global
 		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Debug|Win32.Build.0 = Debug|Win32
 		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Release|Win32.ActiveCfg = Release|Win32
 		{B6A95553-A736-4083-8B96-C5F845FA8C6D}.Release|Win32.Build.0 = Release|Win32
+		{66EC2256-F0C9-49E4-A8FA-9417A6364DA7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{66EC2256-F0C9-49E4-A8FA-9417A6364DA7}.Debug|Win32.Build.0 = Debug|Win32
+		{66EC2256-F0C9-49E4-A8FA-9417A6364DA7}.Release|Win32.ActiveCfg = Release|Win32
+		{66EC2256-F0C9-49E4-A8FA-9417A6364DA7}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
