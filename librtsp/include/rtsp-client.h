@@ -29,8 +29,10 @@ RTSP_CLIENT_API int rtsp_close(void* rtsp);
 RTSP_CLIENT_API int rtsp_play(void* rtsp);
 RTSP_CLIENT_API int rtsp_pause(void* rtsp);
 
+RTSP_CLIENT_API int rtsp_media_count(void* rtsp);
+RTSP_CLIENT_API int rtsp_media_get_rtp_socket(void* rtsp, int media, int* rtp, int* rtcp);
+
 #if defined(__cplusplus)
 }
 #endif
-
 #endif /* !_rtsp_client_h_ */

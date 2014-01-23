@@ -5,6 +5,7 @@
 #include "aio-socket.h"
 #include "url.h"
 #include "sdp.h"
+#include "rtsp-header-transport.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
@@ -49,6 +50,14 @@ struct rtsp_context
 	void* parser;
 	void *sdp; // sdp parser
 };
+
+static struct rtsp_media* rtsp_get_media(struct rtsp_context *ctx, int i)
+{
+	if(i < 0 || i >= ctx->media_count)
+		return NULL;
+
+	return i < N_MEDIA ? (ctx->media + i) : (ctx->media_ptr + i - N_MEDIA);
+}
 
 static int rtsp_connect(struct rtsp_context* ctx)
 {
@@ -260,182 +269,6 @@ static int rtsp_describe(struct rtsp_context* ctx)
 	return r;
 }
 
-/*
-C->S:
-SETUP rtsp://example.com/foo/bar/baz.rm RTSP/1.0
-CSeq: 302
-Transport: RTP/AVP;unicast;client_port=4588-4589
-
-S->C: 
-RTSP/1.0 200 OK
-CSeq: 302
-Date: 23 Jan 1997 15:35:06 GMT
-Session: 47112344
-Transport: RTP/AVP;unicast; client_port=4588-4589;server_port=6256-6257
-*/
-
-enum { 
-	RTSP_TRANSPORT_UNKNOWN = 0, 
-	RTSP_TRANSPORT_UNICAST = 1, 
-	RTSP_TRANSPORT_MULTICAST,
-};
-
-// transport
-enum {
-	RTSP_TRANSPORT_RTP = 1,
-	RTSP_TRANSPORT_RAW,
-};
-
-// transport lower transport
-enum {
-	RTSP_TRANSPORT_UDP = 1, 
-	RTSP_TRANSPORT_TCP
-};
-
-// transport mode
-enum {
-	RTSP_TRANSPORT_PLAY = 1, 
-	RTSP_TRANSPORT_RECORD
-};
-
-struct rtsp_header_transport
-{
-	int transport; // RTP/RAW
-	int lower_transport; // TCP/UDP, RTP/AVP default UDP
-	int multicast; // unicast/multicast, default multicast
-	char* destination;
-	char* source;
-	int layer; // rtsp setup response only
-	int mode; // PLAY/RECORD, default PLAY, rtsp setup response only
-	int append; // use with RECORD mode only, rtsp setup response only
-	int interleaved1, interleaved2; // rtsp setup response only
-	int ttl; // multicast only
-	unsigned short port1, port2; // RTP only
-	unsigned short client_port1, client_port2; // unicast RTP/RTCP port pair, RTP only
-	unsigned short server_port1, server_port2; // unicast RTP/RTCP port pair, RTP only
-	char* ssrc; // RTP only
-};
-
-static int rtsp_header_parse_transport(const char* fields, struct rtsp_header_transport* t)
-{
-	char* p;
-
-	p = malloc(strlen(fields));
-	if(!p)
-		return -1;
-
-	t->transport = RTSP_TRANSPORT_RTP;
-	t->lower_transport = RTSP_TRANSPORT_UDP;
-
-	while(1 == sscanf(fields, "%[^;\r\n]", p))
-	{
-		if(0 == stricmp("RTP/AVP", p))
-		{
-			t->transport = RTSP_TRANSPORT_RTP;
-			t->lower_transport = RTSP_TRANSPORT_UDP;
-		}
-		else if(0 == stricmp("RTP/AVP/UDP", p))
-		{
-			t->transport = RTSP_TRANSPORT_RTP;
-			t->lower_transport = RTSP_TRANSPORT_TCP;
-		}
-		else if(0 == stricmp("RTP/AVP/TCP", p))
-		{
-			t->transport = RTSP_TRANSPORT_RTP;
-			t->lower_transport = RTSP_TRANSPORT_TCP;
-		}
-		else if(0 == stricmp("RAW/RAW/UDP", p))
-		{
-			t->transport = RTSP_TRANSPORT_RAW;
-			t->lower_transport = RTSP_TRANSPORT_UDP;
-		}
-		else if(0 == stricmp("unicast", p))
-		{
-			t->multicast = 0;
-		}
-		else if(0 == stricmp("multicast", p))
-		{
-			t->multicast = 1;
-		}
-		else if(0 == strnicmp("destination=", p, 12))
-		{
-			t->destination = strdup(p+12);
-		}
-		else if(0 == strnicmp("source=", p, 7))
-		{
-			t->source = strdup(p+7);
-		}
-		else if(0 == strnicmp("ssrc=", p, 5))
-		{
-			// unicast only
-			assert(0 == t->multicast);
-			t->ssrc = strdup(p+5);
-		}
-		else if(0 == strnicmp("mode=", p, 5))
-		{
-			if(0 == stricmp("PLAY", p+5))
-				t->mode = RTSP_TRANSPORT_PLAY;
-			else if(0 == stricmp("RECORD", p+5))
-				t->mode = RTSP_TRANSPORT_RECORD;
-			else
-				t->mode = RTSP_TRANSPORT_UNKNOWN;
-		}
-		else if(0 == stricmp("append", p))
-		{
-			t->append = 1;
-		}
-		else if(2 == sscanf(p, "port=%hu-%hu", &t->port1, &t->port2))
-		{
-			assert(1 == t->multicast);
-		}
-		else if(1 == sscanf(p, "port=%hu", &t->port1))
-		{
-			assert(1 == t->multicast);
-		}
-		else if(2 == sscanf(p, "client_port=%hu-%hu", &t->client_port1, &t->client_port2))
-		{
-			assert(0 == t->multicast);
-		}
-		else if(1 == sscanf(p, "client_port=%hu", &t->client_port1))
-		{
-			assert(0 == t->multicast);
-		}
-		else if(2 == sscanf(p, "server_port=%hu-%hu", &t->server_port1, &t->server_port2))
-		{
-			assert(0 == t->multicast);
-		}
-		else if(1 == sscanf(p, "server_port=%hu", &t->server_port1))
-		{
-			assert(0 == t->multicast);
-		}
-		else if(2 == sscanf(p, "interleaved=%hu-%hu", &t->interleaved1, &t->interleaved2))
-		{
-		}
-		else if(1 == sscanf(p, "interleaved=%hu", &t->interleaved1))
-		{
-		}
-		else if(1 == sscanf(p, "ttl=%u", &t->ttl))
-		{
-			assert(1 == t->multicast);
-		}
-		else if(1 == sscanf(p, "layers=%d", &t->layer))
-		{
-			assert(1 == t->multicast);
-		}
-		else
-		{
-			assert(0); // unknown parameter
-		}
-
-		fields += strlen(p);
-		while (*fields == ';') ++fields; // skip over separating ';' chars
-		if (*fields == '\0' || *fields == '\r' || *fields == '\n') break;
-	}
-
-	free(p);
-	return 0;
-}
-
 static int isAbsoluteURL(char const* url) 
 {
 	// Assumption: "url" is absolute if it contains a ':', before any
@@ -448,6 +281,19 @@ static int isAbsoluteURL(char const* url)
 	return 0;
 }
 
+/*
+C->S:
+SETUP rtsp://example.com/foo/bar/baz.rm RTSP/1.0
+CSeq: 302
+Transport: RTP/AVP;unicast;client_port=4588-4589
+
+S->C: 
+RTSP/1.0 200 OK
+CSeq: 302
+Date: 23 Jan 1997 15:35:06 GMT
+Session: 47112344
+Transport: RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
+*/
 static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 {
 	int i, r;
@@ -480,10 +326,7 @@ static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 	ctx->media_count = r;
 	for(i = 0; i < ctx->media_count; i++)
 	{
-		if(i < N_MEDIA)
-			media = ctx->media + i;
-		else
-			media = ctx->media_ptr + i - N_MEDIA;
+		media = rtsp_get_media(ctx, i);
 
 		if(0 == sdp_media_get_connection_address(ctx->sdp, i, media->ip, sizeof(media->ip)-1))
 		{
@@ -519,8 +362,8 @@ static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 		}
 		else
 		{
-			s_control = sdp_attribute_find(ctx->sdp, i, "control");
-			if(!s_control || 0 == s_control[0] || 0 == strcmp('*', s_control))
+			s_control = sdp_attribute_find(ctx->sdp, "control");
+			if(!s_control || 0 == s_control[0] || 0 == strcmp("*", s_control))
 			{
 				s_control = rtsp_get_header_by_name(ctx->parser, "Content-Base");
 				if(!s_control)
@@ -579,7 +422,7 @@ static int rtsp_setup(struct rtsp_context* ctx, const char* sdp)
 			}
 
 			memset(&ht, 0, sizeof(ht));
-			if(0 != rtsp_header_parse_transport(transport, &ht))
+			if(0 != rtsp_header_transport_parse(transport, &ht))
 			{
 				return -1;
 			}
@@ -659,20 +502,22 @@ CSeq: 892
 */
 static int rtsp_teardown(struct rtsp_context* ctx)
 {
-	int r;
-	snprintf(ctx->req, sizeof(ctx->req), 
-		"TEARDOWN %s RTSP/1.0\r\n"
-		"CSeq: %u\r\n"
-		"Session: %s\r\n"
-		"\r\n", 
-		ctx->uri, ctx->cseq++, ctx->session);
+	int i, r = 0;
+	struct rtsp_media* media;
 
-	r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
-	if(0 == r)
+	for(i = 0; i < ctx->media_count; i++)
 	{
-		assert(ctx->session);
-		if(ctx->session)
-			free(ctx->session);
+		media = rtsp_get_media(ctx, i);
+		assert(media->uri && media->session);
+		snprintf(ctx->req, sizeof(ctx->req), 
+			"TEARDOWN %s RTSP/1.0\r\n"
+			"CSeq: %u\r\n"
+			"Session: %s\r\n"
+			"User-Agent: %s\r\n"
+			"\r\n", 
+			media->uri, ctx->cseq++, media->session, USER_AGENT);
+
+		r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
 	}
 	return r;
 }
@@ -700,7 +545,7 @@ void* rtsp_open(const char* uri)
 	if(0 == ctx->port)
 		ctx->port = 554; // default
 
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	ctx->cseq = rand();
 	ctx->sock = socket_invalid;
 	ctx->parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
@@ -712,14 +557,36 @@ void* rtsp_open(const char* uri)
 
 int rtsp_close(void* rtsp)
 {
-	int r;
+	int i, r;
+	struct rtsp_media* media;
 	struct rtsp_context *ctx;
 
 	ctx = (struct rtsp_context*)rtsp;
 	r = rtsp_teardown(ctx);
 
-	if(ctx->sock)
+	for(i = 0; i < ctx->media_count; i++)
+	{
+		media = rtsp_get_media(ctx, i);
+		if(media->rtp[0] && socket_invalid != media->rtp[0])
+			socket_close(media->rtp[0]);
+		if(media->rtp[1] && socket_invalid != media->rtp[1])
+			socket_close(media->rtp[1]);
+
+		if(media->uri)
+			free(media->uri);
+		if(media->session)
+			free(media->session);
+	}
+
+	if(ctx->sock && socket_invalid != ctx->sock)
 		socket_close(ctx->sock);
+
+	if(ctx->uri)
+		free(ctx->uri);
+	if(ctx->session)
+		free(ctx->session);
+	if(ctx->media_ptr)
+		free(ctx->media_ptr);
 	return 0;
 }
 
@@ -754,19 +621,26 @@ Date: 23 Jan 1997 15:35:06 GMT
 */
 int rtsp_play(void* rtsp)
 {
-	int r;
+	int i, r = 0;
+	struct rtsp_media* media;
 	struct rtsp_context *ctx;
 
 	ctx = (struct rtsp_context*)rtsp;
-	snprintf(ctx->req, sizeof(ctx->req), 
-		"PLAY %s RTSP/1.0\r\n"
-		"CSeq: %u\r\n"
-		"Session: %s\r\n"
-		"Range: npt=-\r\n"
-		"\r\n", 
-		ctx->uri, ctx->cseq++, ctx->session);
+	for(i = 0; i < ctx->media_count; i++)
+	{
+		media = rtsp_get_media(ctx, i);
+		assert(media->uri && media->session);
+		snprintf(ctx->req, sizeof(ctx->req), 
+			"PLAY %s RTSP/1.0\r\n"
+			"CSeq: %u\r\n"
+			"Session: %s\r\n"
+			"Range: npt=0.0-\r\n"
+			"User-Agent: %s\r\n"
+			"\r\n", 
+			media->uri, ctx->cseq++, media->session, USER_AGENT);
 
-	r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
+		r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
+	}
 	return r;
 }
 
@@ -786,17 +660,46 @@ Date: 23 Jan 1997 15:35:06 GMT
 // request without Range header resumes from the pause point.
 int rtsp_pause(void* rtsp)
 {
-	int r;
+	int i, r=0;
+	struct rtsp_media* media;
 	struct rtsp_context *ctx;
 
 	ctx = (struct rtsp_context*)rtsp;
-	snprintf(ctx->req, sizeof(ctx->req), 
-		"PAUSE %s RTSP/1.0\r\n"
-		"CSeq: %u\r\n"
-		"Session: %s\r\n"
-		"\r\n", 
-		ctx->uri, ctx->cseq++, ctx->session);
+	for(i = 0; i < ctx->media_count; i++)
+	{
+		media = rtsp_get_media(ctx, i);
+		assert(media->uri && media->session);
+		snprintf(ctx->req, sizeof(ctx->req), 
+			"PAUSE %s RTSP/1.0\r\n"
+			"CSeq: %u\r\n"
+			"Session: %s\r\n"
+			"User-Agent: %s\r\n"
+			"\r\n", 
+			media->uri, ctx->cseq++, media->session, USER_AGENT);
 
-	r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
+		r = rtsp_request(ctx, ctx->req, strlen(ctx->req));
+	}
+
 	return r;
+}
+
+int rtsp_media_count(void* rtsp)
+{
+	struct rtsp_context *ctx;
+	ctx = (struct rtsp_context*)rtsp;
+	return ctx->media_count;
+}
+
+int rtsp_media_get_rtp_socket(void* rtsp, int media, int* rtp, int* rtcp)
+{
+	struct rtsp_media *m;
+	struct rtsp_context *ctx;
+	ctx = (struct rtsp_context*)rtsp;
+	m = rtsp_get_media(ctx, media);
+	if(!m)
+		return -1;
+
+	*rtp = m->rtp[0];
+	*rtcp = m->rtp[1];
+	return 0;
 }
