@@ -135,5 +135,6 @@ int main(int argc, char* argv[])
 
 	aio_socket_destroy(s_tcp);
 	aio_socket_clean();
+	thread_pool_destroy(g_thpool);
 	return 0;
 }

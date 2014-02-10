@@ -41,12 +41,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTP_EXPORTS"
+				AdditionalIncludeDirectories=".;include;..\..\sdk\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -114,11 +115,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBRTP_EXPORTS"
+				AdditionalIncludeDirectories=".;include;..\..\sdk\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBRTP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -171,11 +173,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtcp.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp.c"
+				RelativePath=".\source\rtp-queue.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtp-udp.c"
 				>
 			</File>
 		</Filter>
@@ -184,6 +194,22 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\include\rtcp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-avp-udp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-queue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-transport.h"
+				>
+			</File>
 			<File
 				RelativePath=".\include\rtp.h"
 				>

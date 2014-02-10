@@ -6,6 +6,10 @@
 #include "rtspclient.h"
 #include "rtspclientDlg.h"
 #include "rtsp-client.h"
+#include "rtp-avp-udp.h"
+#include "sys/sock.h"
+#include "sys/process.h"
+#include "aio-socket.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,6 +73,12 @@ END_MESSAGE_MAP()
 
 
 // CrtspclientDlg message handlers
+int STDCALL OnThread(IN void* param)
+{
+	while(1)
+		aio_socket_process(200);
+	return 0;
+}
 
 BOOL CrtspclientDlg::OnInitDialog()
 {
@@ -100,6 +110,11 @@ BOOL CrtspclientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
+	socket_init();
+	aio_socket_init(1);
+	
+	thread_t thread;
+	thread_create(&thread, OnThread, NULL);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -158,6 +173,9 @@ void CrtspclientDlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
 	//OnOK();
-	void* rtsp = rtsp_open("rtsp://192.168.11.229/sjz.264");
+	int rtp, rtcp;
+	void* rtsp = rtsp_open("rtsp://127.0.0.1/sjz.264");
+	rtsp_media_get_rtp_socket(rtsp, 0, &rtp, &rtcp);
+	rtp_avp_udp_create(rtp, rtcp);
 	rtsp_play(rtsp);
 }

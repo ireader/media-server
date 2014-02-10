@@ -1,30 +1,17 @@
-#ifndef _librtp_h_
-#define _librtp_h_
+#ifndef _rtp_h_
+#define _rtp_h_
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
-	#define DLL_EXPORT_API __declspec(dllexport)
-	#define DLL_IMPORT_API __declspec(dllimport)
-#else
-	#if __GNUC__ >= 4
-		#define DLL_EXPORT_API __attribute__((visibility ("default")))
-		#define DLL_IMPORT_API
-	#else
-		#define DLL_EXPORT_API
-		#define DLL_IMPORT_API
-	#endif
-#endif
+typedef struct _rtp_header_t
+{
+	unsigned int v:2;		/* protocol version */
+	unsigned int p:1;		/* padding flag */
+	unsigned int x:1;		/* header extension flag */
+	unsigned int cc:4;		/* CSRC count */
+	unsigned int m:1;		/* marker bit */
+	unsigned int pt:7;		/* payload type */
+	unsigned int seq:16;	/* sequence number */
+	unsigned int timestamp; /* timestamp */
+	unsigned int ssrc;		/* synchronization source */
+} rtp_header_t;
 
-#if defined(LIBRTP_EXPORTS)
-	#define RTP_API DLL_EXPORT_API
-#else
-	#define RTP_API DLL_IMPORT_API
-#endif
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-#if defined(__cplusplus)
-}
-#endif
-#endif /* !_librtp_h_ */
+#endif /* !_rtp_h_ */
