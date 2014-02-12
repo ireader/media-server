@@ -185,6 +185,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtp-source-list.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtp-source.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtp-udp.c"
 				>
 			</File>
@@ -204,6 +212,14 @@
 			</File>
 			<File
 				RelativePath=".\include\rtp-queue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-source-list.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-source.h"
 				>
 			</File>
 			<File

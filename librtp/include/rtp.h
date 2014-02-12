@@ -14,4 +14,12 @@ typedef struct _rtp_header_t
 	unsigned int ssrc;		/* synchronization source */
 } rtp_header_t;
 
+#define RTP_V(v)	((v >> 30) & 0x03) /* protocol version */
+#define RTP_P(v)	((v >> 29) & 0x01) /* padding flag */
+#define RTP_X(v)	((v >> 28) & 0x01) /* header extension flag */
+#define RTP_CC(v)	((v >> 24) & 0x0F) /* CSRC count */
+#define RTP_M(v)	((v >> 23) & 0x01) /* marker bit */
+#define RTP_PT(v)	((v >> 16) & 0x7F) /* payload type */
+#define RTP_SEQ(v)	((v >> 00) & 0xFFFF) /* sequence number */
+
 #endif /* !_rtp_h_ */

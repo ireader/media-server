@@ -40,6 +40,12 @@ static void rtp_avp_udp_onrtp(void* param, int code, int bytes, const char* ip, 
 		ctx->rtp.bytes += bytes;
 
 		printf("rtp data: %d[%s.%d]\n", bytes, ip, port);
+		
+		// RTCP statistics
+		if(bytes > 0)
+			rtcp_input(ctx, ctx->rtp.data, bytes);
+
+		// input queue
 		r = rtp_queue_unlock(ctx->queue, ctx->rtp.data, bytes);
 		if(0 == r)
 		{

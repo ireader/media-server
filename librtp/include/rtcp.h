@@ -65,8 +65,8 @@ typedef struct _rtcp_sdes_item_t // source description RTCP packet
 	unsigned char data[1];
 } rtcp_sdes_item_t;
 
-#define RTCP_V(v)	((v >> 29) & 0x03) // rtcp version
-#define RTCP_P(v)	((v >> 28) & 0x01) // rtcp padding
+#define RTCP_V(v)	((v >> 30) & 0x03) // rtcp version
+#define RTCP_P(v)	((v >> 29) & 0x01) // rtcp padding
 #define RTCP_RC(v)	((v >> 24) & 0x1F) // rtcp reception report count
 #define RTCP_PT(v)	((v >> 16) & 0xFF) // rtcp packet type
 #define RTCP_LEN(v)	(v & 0xFFFF) // rtcp packet length

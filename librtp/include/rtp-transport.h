@@ -3,6 +3,7 @@
 
 #include "rtp.h"
 #include "rtcp.h"
+#include "rtp-source-list.h"
 #include "sys/sock.h"
 #include "aio-socket.h"
 
@@ -29,12 +30,18 @@ struct rtcp_transport
 
 struct rtp_context
 {
+	unsigned int ssrc; // self ssrc
+
 	void* queue;
 	struct rtp_transport rtp;
 	struct rtcp_transport rtcp;
+
+	void *members;
+	void *senders;
 };
 
-void rtcp_input(struct rtp_context *ctx, const void* data, int bytes);
+void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes);
+void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes);
 
 void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes);
 
