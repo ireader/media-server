@@ -1,5 +1,6 @@
 #include "cstringext.h"
 #include "rtp-transport.h"
+#include "time64.h"
 #include <stdio.h>
 
 static struct rtp_source* rtp_source_fetch(struct rtp_context *ctx, unsigned int ssrc)
@@ -50,6 +51,8 @@ static void rtcp_input_sr(struct rtp_context *ctx, rtcp_header_t *header, const 
 	sr->ssrc = ntohl(sr->ssrc);
 	if(!(sender = rtp_sender_fetch(sr->ssrc)))
 		return; // error
+
+	sender->rtcp_clock = time64_now();
 
 	// update sender information
 	sender->ntpts = (((time64_t)ntohl(sr->ntpts0))<<32) | ntohl(sr->ntpts1);
@@ -267,7 +270,11 @@ void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 	unsigned short seq, maxseq;
 	const unsigned int *ptr;
 	struct rtp_source *src;
+	time64_t clock;
+	unsigned int timestamp;
+	int D;
 
+	clock = time64_now();
 	if(bytes < 3 * sizeof(unsigned int))
 		return;
 
@@ -275,15 +282,24 @@ void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 	v = ntohl(ptr[0]);
 
 	src = rtp_sender_fetch(ctx, ntohl(ptr[2]));
-	src->rtp_timestamp = ntohl(ptr[1]);
+	timestamp = ntohl(ptr[1]);
+	
+	// RFC3550 A.8 Estimating the Interarrival Jitter
+	// the jitter estimate is updated:
+	D = (clock - src->rtp_clock) - (timestamp - src->rtp_timestamp);
+	if(D < 0) D = -D;
+	src->jitter += (1.0/16) * (D - src->jitter);
+
+	src->rtp_timestamp = timestamp;
+	src->rtp_clock = clock;
 
 	// note: sequence cycle
 	seq = RTP_SEQ(v);
-	maxseq = src->seq & 0xFFFF;
+	maxseq = src->seq_max & 0xFFFF;
 	if(seq > maxseq)
-		src->seq = (src->seq & 0xFFFF0000) | RTP_SEQ(v);
+		src->seq_max = (src->seq_max & 0xFFFF0000) | RTP_SEQ(v);
 	else if(maxseq + 32 > seq)
-		src->seq = ((src->seq & 0xFFFF0000) | RTP_SEQ(v)) + 0x010000;
+		src->seq_max = ((src->seq_max & 0xFFFF0000) | RTP_SEQ(v)) + 0x010000;
 }
 
 void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t ntp, time_t rtp, unsigned int spc, unsigned int soc)
@@ -301,7 +317,7 @@ void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t
 	header.length = (sizeof(rtcp_sr_t) + header.rc*sizeof(rtcp_rb_t))/4 - 1;
 
 	sr = (rtcp_sr_t *)data;
-	sr->ssrc = htonl(ctx->ssrc);
+	sr->ssrc = htonl(ctx->info.ssrc);
 	sr->ntpts0 = htonl((ntp>>32) & 0xFFFFFFFF);
 	sr->ntpts1 = htonl(ntp & 0xFFFFFFFF);
 	sr->rtpts = htonl(rtp);
@@ -311,14 +327,26 @@ void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t
 	rb = (rtcp_rb_t *)(sr + 1);
 	for(i = 0; i < header.rc; i++, rb++)
 	{
+		time64_t delay = time64_now()-src->rtcp_clock;
+		unsigned int expected = rb->exthsn - src->seq_base + 1;
+		unsigned int expected_interval = expected - src->expected_prior;
+		unsigned int received_interval = src->packets_recevied - src->packets_prior;
+		int lost_interval = (int)(expected_interval - received_interval);
+
+		src->expected_prior = expected;
+
 		src = rtp_source_list_get(ctx->senders, i);
 		rb->ssrc = htonl(src->ssrc);
-		rb->fraction = ;
-		rb->cumulative = ;
-		rb->exthsn = htonl();
-		rb->jitter = htonl();
-		rb->lsr = htonl();
-		rb->dlsr = htonl();
+		//rb->fraction = ;
+		rb->cumulative = expected - src->packets_recevied;
+		rb->exthsn = htonl((src->seq_cycles << 16) + src->seq_max);
+		rb->jitter = htonl((unsigned int)src->jitter);
+		rb->lsr = htonl((src->ntpts>>8)&0xFFFFFFFF);
+		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) << 16);
+		if(lost_interval < 0 || 0 == expected_interval)
+			rb->fraction = 0;
+		else
+			rb->fraction = (lost_interval << 8)/expected_interval;
 	}
 }
 
@@ -341,22 +369,85 @@ void rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
 	header.length = (sizeof(rtcp_rr_t) + header.rc*sizeof(rtcp_rb_t)) / 4 - 1;
 
 	rr = (rtcp_rr_t *)data;
-	rr->ssrc = htonl(ctx->ssrc);
+	rr->ssrc = htonl(ctx->info.ssrc);
 
 	rb = (rtcp_rb_t *)(rr + 1);
 	for(i = 0; i < header.rc; i++, rb++)
 	{
+		time64_t delay = time64_now()-src->rtcp_clock;
+		unsigned int expected = rb->exthsn - src->seq_base + 1;
+		unsigned int expected_interval = expected - src->expected_prior;
+		unsigned int received_interval = src->packets_recevied - src->packets_prior;
+		int lost_interval = (int)(expected_interval - received_interval);
+
+		src->expected_prior = expected;
+
 		src = rtp_source_list_get(ctx->senders, i);
 		rb->ssrc = htonl(src->ssrc);
-		rb->fraction = ;
-		rb->cumulative = ;
-		rb->exthsn = htonl();
-		rb->jitter = htonl();
-		rb->lsr = htonl();
-		rb->dlsr = htonl();
+		//rb->fraction = ;
+		rb->cumulative = expected - src->packets_recevied;
+		rb->exthsn = htonl((src->seq_cycles << 16) + src->seq_max);
+		rb->jitter = htonl((unsigned int)src->jitter);
+		rb->lsr = htonl((src->ntpts>>8)&0xFFFFFFFF);
+		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) << 16);
+		if(lost_interval < 0 || 0 == expected_interval)
+			rb->fraction = 0;
+		else
+			rb->fraction = (lost_interval << 8)/expected_interval;
 	}
 }
 
-void rtcp_sdes(struct rtp_context *ctx, void* data, int bytes)
+static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const char* p, int bytes)
 {
+	int n;
+	if(!p)
+		return 0;
+
+	n = strlen(p);
+	if(bytes < n)
+		return 0;
+
+	sdes->pt = pt;
+	sdes->len = n;
+	memcpy(sdes->data, p, n);
+	return 1;
+}
+
+int rtcp_sdes(struct rtp_context *ctx, void* data, int bytes)
+{
+	size_t n;
+	unsigned int *p;
+	rtcp_header_t *header;
+	struct rtp_source *src;
+	rtcp_sdes_item_t *sdes;
+
+	header.v = 2;
+	header.p = 0;
+	header.pt = RTCP_SDES;
+	header.rc = 0;
+	header.length = 4;
+
+	if(bytes < 8)
+		return ENOMEM;
+
+	src = &ctx->info;
+	p = (unsigned int*)data;
+	sdes = (rtcp_sdes_item_t*)p+2; // rtcp header + ssrc
+
+	bytes -= 8;
+	while(bytes > 0)
+	{
+		if(!rtcp_sdes_append_item(sdes, RTCP_SDES_CNAME, src->cname, bytes))
+			break;
+
+		++header.rc;
+		bytes -= sdes->len;
+		header.length += sdes->len;
+		sdes += (rtcp_sdes_item_t*)(sdes->data + sdes->len);		
+	}
+
+	header->length = (header->length+3)/4 - 1; // see 6.4.1 SR: Sender Report RTCP Packet
+	p[0] = htonl(((unsigned int*)&header)[0]);
+	p[1] = htonl(src->ssrc);
+	return 0;
 }

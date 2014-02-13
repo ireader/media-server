@@ -12,16 +12,19 @@ typedef int64_t time64_t;
 struct rtp_source
 {
 	long ref;
-	unsigned short seq;				// max sequence number
-	unsigned short extseq;			// high extension sequence number
-	unsigned int packets;			// 2nd packet count
-	unsigned int packets_expected;	// packet count
+	unsigned short seq_base;		// max sequence number
+	unsigned short seq_max;			// max sequence number
+	unsigned short seq_cycles;		// high extension sequence number
+	unsigned int expected_prior;	// packet count
+	unsigned int packets_prior;		// packet count
 	unsigned int packets_recevied;	// received packet count
-	unsigned int bytes;
-	unsigned int bytes_expected;
+	unsigned int bytes_prior;
 	unsigned int bytes_received;
 
 	unsigned int rtp_timestamp;
+	time64_t rtcp_clock; // last receive time
+	time64_t rtp_clock;
+	double jitter;
 
 	unsigned int ssrc;
 
