@@ -49,7 +49,7 @@ static void rtcp_input_sr(struct rtp_context *ctx, rtcp_header_t *header, const 
 	assert(header->length >= sizeof(rtcp_sr_t) + 4);
 	sr = (rtcp_sr_t*)data;
 	sr->ssrc = ntohl(sr->ssrc);
-	if(!(sender = rtp_sender_fetch(sr->ssrc)))
+	if(!(sender = rtp_sender_fetch(ctx, sr->ssrc)))
 		return; // error
 
 	sender->rtcp_clock = time64_now();
@@ -100,7 +100,7 @@ static void rtcp_input_sdes(struct rtp_context *ctx, rtcp_header_t *header, cons
 	p = (const unsigned char*)data;
 	for(i = 0; i < header->rc; i++)
 	{
-		ssrc = ntohl((unsigned long*)p);
+		ssrc = ntohl(*(unsigned long*)p);
 		if(!(source = rtp_source_fetch(ctx, ssrc)))
 			continue;
 
@@ -302,7 +302,7 @@ void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 		src->seq_max = ((src->seq_max & 0xFFFF0000) | RTP_SEQ(v)) + 0x010000;
 }
 
-void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t ntp, time_t rtp, unsigned int spc, unsigned int soc)
+int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t ntp, time_t rtp, unsigned int spc, unsigned int soc)
 {
 	int i;
 	rtcp_sr_t *sr;
@@ -310,13 +310,20 @@ void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t
 	rtcp_header_t header;
 	struct rtp_source *src;
 
+	if(bytes < 4 + sizeof(rtcp_sr_t))
+		return ENOMEM;
+	bytes -= 4 + sizeof(rtcp_sr_t);
+
+	src = rtp_sender_fetch(ctx, ctx->info.ssrc);
+
 	header.v = 2;
 	header.p = 0;
 	header.pt = RTCP_SR;
 	header.rc = rtp_source_list_count(ctx->senders);
-	header.length = (sizeof(rtcp_sr_t) + header.rc*sizeof(rtcp_rb_t))/4 - 1;
+	header.length = (sizeof(rtcp_sr_t) + header.rc*sizeof(rtcp_rb_t))/4 - 1; // see 6.4.1 SR: Sender Report RTCP Packet
+	((unsigned int*)data)[0] = htonl(((unsigned int*)&header)[0]);
 
-	sr = (rtcp_sr_t *)data;
+	sr = (rtcp_sr_t *)((unsigned int*)data+1);
 	sr->ssrc = htonl(ctx->info.ssrc);
 	sr->ntpts0 = htonl((ntp>>32) & 0xFFFFFFFF);
 	sr->ntpts1 = htonl(ntp & 0xFFFFFFFF);
@@ -325,7 +332,7 @@ void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t
 	sr->soc = htonl(soc);
 
 	rb = (rtcp_rb_t *)(sr + 1);
-	for(i = 0; i < header.rc; i++, rb++)
+	for(i = 0; i < header.rc && bytes>=sizeof(rtcp_rb_t); i++, rb++)
 	{
 		time64_t delay = time64_now()-src->rtcp_clock;
 		unsigned int expected = rb->exthsn - src->seq_base + 1;
@@ -342,15 +349,19 @@ void rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t
 		rb->exthsn = htonl((src->seq_cycles << 16) + src->seq_max);
 		rb->jitter = htonl((unsigned int)src->jitter);
 		rb->lsr = htonl((src->ntpts>>8)&0xFFFFFFFF);
-		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) << 16);
+		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) * 65536);
 		if(lost_interval < 0 || 0 == expected_interval)
 			rb->fraction = 0;
 		else
 			rb->fraction = (lost_interval << 8)/expected_interval;
+
+		bytes -= sizeof(rtcp_rb_t);
 	}
+
+	return 0;
 }
 
-void rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
+int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
 {
 	// RFC3550 6.1 RTCP Packet Format
 	// An individual RTP participant should send only one compound RTCP packet per report interval
@@ -362,17 +373,22 @@ void rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
 	rtcp_header_t header;
 	struct rtp_source *src;
 
+	if(bytes < 4 + sizeof(rtcp_rr_t))
+		return ENOMEM;
+	bytes -= 4 + sizeof(rtcp_rr_t);
+
 	header.v = 2;
 	header.p = 0;
 	header.pt = RTCP_RR;
 	header.rc = rtp_source_list_count(ctx->senders);
 	header.length = (sizeof(rtcp_rr_t) + header.rc*sizeof(rtcp_rb_t)) / 4 - 1;
+	((unsigned int*)data)[0] = htonl(((unsigned int*)&header)[0]);
 
-	rr = (rtcp_rr_t *)data;
+	rr = (rtcp_rr_t *)((unsigned int*)data+1);
 	rr->ssrc = htonl(ctx->info.ssrc);
 
 	rb = (rtcp_rb_t *)(rr + 1);
-	for(i = 0; i < header.rc; i++, rb++)
+	for(i = 0; i < header.rc && bytes>=sizeof(rtcp_rb_t); i++, rb++)
 	{
 		time64_t delay = time64_now()-src->rtcp_clock;
 		unsigned int expected = rb->exthsn - src->seq_base + 1;
@@ -389,12 +405,16 @@ void rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
 		rb->exthsn = htonl((src->seq_cycles << 16) + src->seq_max);
 		rb->jitter = htonl((unsigned int)src->jitter);
 		rb->lsr = htonl((src->ntpts>>8)&0xFFFFFFFF);
-		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) << 16);
+		rb->dlsr = htonl(((unsigned int)(delay/1000.0f)) * 65536);
 		if(lost_interval < 0 || 0 == expected_interval)
 			rb->fraction = 0;
 		else
 			rb->fraction = (lost_interval << 8)/expected_interval;
+
+		bytes -= sizeof(rtcp_rb_t);
 	}
+
+	return 0;
 }
 
 static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const char* p, int bytes)
@@ -408,16 +428,15 @@ static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const
 		return 0;
 
 	sdes->pt = pt;
-	sdes->len = n;
+	sdes->len = (unsigned char)n;
 	memcpy(sdes->data, p, n);
 	return 1;
 }
 
 int rtcp_sdes(struct rtp_context *ctx, void* data, int bytes)
 {
-	size_t n;
 	unsigned int *p;
-	rtcp_header_t *header;
+	rtcp_header_t header;
 	struct rtp_source *src;
 	rtcp_sdes_item_t *sdes;
 
@@ -443,10 +462,10 @@ int rtcp_sdes(struct rtp_context *ctx, void* data, int bytes)
 		++header.rc;
 		bytes -= sdes->len;
 		header.length += sdes->len;
-		sdes += (rtcp_sdes_item_t*)(sdes->data + sdes->len);		
+		sdes = (rtcp_sdes_item_t*)(sdes->data + sdes->len);		
 	}
 
-	header->length = (header->length+3)/4 - 1; // see 6.4.1 SR: Sender Report RTCP Packet
+	header.length = (header.length+3)/4 - 1; // see 6.4.1 SR: Sender Report RTCP Packet
 	p[0] = htonl(((unsigned int*)&header)[0]);
 	p[1] = htonl(src->ssrc);
 	return 0;

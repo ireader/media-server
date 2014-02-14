@@ -42,7 +42,7 @@ struct rtp_context
 void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes);
 void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes);
 
-int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes);
+int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t ntp, time_t rtp, unsigned int spc, unsigned int soc);
 
 int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes);
 

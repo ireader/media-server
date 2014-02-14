@@ -62,7 +62,7 @@ typedef struct _rtcp_sdes_item_t // source description RTCP packet
 {
 	unsigned char pt; // chunk type
 	unsigned char len;
-	unsigned char data[1];
+	char data[1];
 } rtcp_sdes_item_t;
 
 #define RTCP_V(v)	((v >> 30) & 0x03) // rtcp version
