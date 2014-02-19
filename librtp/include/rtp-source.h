@@ -12,19 +12,6 @@ typedef int64_t time64_t;
 struct rtp_source
 {
 	long ref;
-	unsigned short seq_base;		// max sequence number
-	unsigned short seq_max;			// max sequence number
-	unsigned short seq_cycles;		// high extension sequence number
-	unsigned int expected_prior;	// packet count
-	unsigned int packets_prior;		// packet count
-	unsigned int packets_recevied;	// received packet count
-	unsigned int bytes_prior;
-	unsigned int bytes_received;
-
-	unsigned int rtp_timestamp;
-	time64_t rtcp_clock; // last receive time
-	time64_t rtp_clock;
-	double jitter;
 
 	unsigned int ssrc;
 
@@ -36,11 +23,26 @@ struct rtp_source
 	char *tool;
 	char *note;
 
-	// sender only
-	time64_t ntpts;		// NTP timestamp
-	unsigned int rtpts;	// RTP timestamp
-	unsigned int spc;	// sender packet count
-	unsigned int soc;	// sender octet count
+	time64_t rtp_clock;				// last RTP packet received time
+	unsigned int rtp_timestamp;		// last RTP packet timestamp(in packet header)
+
+	time64_t rtcp_clock;			// last RTCP packet received time
+	unsigned int rtcp_ntp_msw;		// last RTCP packet NTP timestamp(in second)
+	unsigned int rtcp_ntp_lsw;		// last RTCP packet NTP timestamp(in picosecond)
+	unsigned int rtcp_rtp_timestamp;// last RTCP packet RTP timestamp(in packet header)
+	unsigned int rtcp_spc;			// last RTCP packet packet count
+	unsigned int rtcp_soc;			// last RTCP packet byte count
+
+	double jitter;
+
+	unsigned short seq_base;		// max sequence number
+	unsigned short seq_max;			// max sequence number
+	unsigned short seq_cycles;		// high extension sequence number
+
+	unsigned int expected_prior;	// packet count
+	unsigned int packets_prior;		// packet count
+	unsigned int packets_recevied;	// received packet count
+	unsigned int bytes_received;
 };
 
 struct rtp_source* rtp_source_create(unsigned int ssrc);

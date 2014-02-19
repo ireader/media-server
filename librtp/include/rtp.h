@@ -22,4 +22,6 @@ typedef struct _rtp_header_t
 #define RTP_PT(v)	((v >> 16) & 0x7F) /* payload type */
 #define RTP_SEQ(v)	((v >> 00) & 0xFFFF) /* sequence number */
 
+#define RTP_MISORDER 100
+
 #endif /* !_rtp_h_ */

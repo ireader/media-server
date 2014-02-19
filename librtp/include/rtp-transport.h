@@ -16,10 +16,6 @@ struct rtp_transport
 {
 	aio_socket_t socket;
 	void* data;
-
-	time_t st; // last send timestamp
-	time_t rt; // last receive timestamp
-	size_t bytes; // receive bytes
 };
 
 struct rtcp_transport
@@ -33,16 +29,16 @@ struct rtp_context
 	void* queue;
 	struct rtp_transport rtp;
 	struct rtcp_transport rtcp;
-	
-	void *members;
-	void *senders;
+
+	void *members; // rtp source list
+	void *senders; // rtp sender list
 	struct rtp_source info; // self info
 };
 
 void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes);
 void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes);
 
-int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes, time64_t ntp, time_t rtp, unsigned int spc, unsigned int soc);
+int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes);
 
 int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes);
 

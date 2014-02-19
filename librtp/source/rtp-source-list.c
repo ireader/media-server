@@ -23,7 +23,7 @@ void* rtp_source_list_create()
 	if(!p)
 		return NULL;
 
-	memset(p, 0, sizeof(p));
+	memset(p, 0, sizeof(struct rtp_source_list));
 	return p;
 }
 
