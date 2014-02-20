@@ -7,7 +7,7 @@ RTP_API int rtp_queue_destroy(void* queue);
 RTP_API int rtp_queue_lock(void* queue, void** ptr, int size);
 RTP_API int rtp_queue_unlock(void* queue, void* ptr, int size);
 
-RTP_API int rtp_queue_read(void* queue);
-RTP_API int rtp_queue_unread(void* queue);
+RTP_API int rtp_queue_read(void* queue, void **rtp, int *len, int *lostPacket);
+RTP_API int rtp_queue_free(void* queue, void *rtp);
 
 #endif /* !_rtp_queue_h_ */

@@ -7,9 +7,10 @@
 #include "rtspclientDlg.h"
 #include "rtsp-client.h"
 #include "rtp-avp-udp.h"
+#include "h264-source.h"
 #include "sys/sock.h"
 #include "sys/process.h"
-#include "aio-socket.h"
+//#include "aio-socket.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -75,8 +76,8 @@ END_MESSAGE_MAP()
 // CrtspclientDlg message handlers
 int STDCALL OnThread(IN void* param)
 {
-	while(1)
-		aio_socket_process(200);
+//	while(1)
+//		aio_socket_process(200);
 	return 0;
 }
 
@@ -111,10 +112,11 @@ BOOL CrtspclientDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	socket_init();
-	aio_socket_init(1);
+	rtp_avp_init();
+//	aio_socket_init(1);
 	
-	thread_t thread;
-	thread_create(&thread, OnThread, NULL);
+//	thread_t thread;
+//	thread_create(&thread, OnThread, NULL);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -168,14 +170,35 @@ HCURSOR CrtspclientDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+static void OnData(void* param, unsigned char nal, const void* data, int bytes)
+{
+	FILE *fp = (FILE*)param;
+	int startcode = 0x01000000;
+	fwrite(&startcode, 1, 4, fp);
+	fwrite(&nal, 1, 1, fp);
+	fwrite(data, 1, bytes, fp);
+	fflush(fp);
+}
 
 void CrtspclientDlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
 	//OnOK();
 	int rtp, rtcp;
-	void* rtsp = rtsp_open("rtsp://127.0.0.1/sjz.264");
+	//void* rtsp = rtsp_open("rtsp://127.0.0.1/sjz.264");
+	void* rtsp = rtsp_open("rtsp://192.168.11.229/sjz.264");
 	rtsp_media_get_rtp_socket(rtsp, 0, &rtp, &rtcp);
-	rtp_avp_udp_create(rtp, rtcp);
+	void *queue = rtp_queue_create();
+	void *avp = rtp_avp_udp_create(rtp, rtcp, queue);
+	rtp_avp_udp_start(avp);
 	rtsp_play(rtsp);
+
+	FILE *fp = fopen("e:\\r.bin", "wb");
+	void* h264 = h264_source_create(queue, OnData, fp);
+	while(1)
+	{
+		h264_source_process(h264);
+	}
+	h264_source_destroy(h264);
+	fclose(fp);
 }

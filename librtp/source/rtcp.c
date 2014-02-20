@@ -1,5 +1,6 @@
 #include "cstringext.h"
 #include "rtp-transport.h"
+#include "rtp-packet.h"
 #include "time64.h"
 #include <stdio.h>
 
@@ -282,69 +283,44 @@ void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes)
 
 void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 {
-	unsigned int v, len;
-	unsigned short seq;
-	const unsigned int *ptr;
-	struct rtp_source *src;
 	time64_t clock;
-	unsigned int rtp;
+	rtp_packet_t pkt;
+	struct rtp_source *src;
 
-	if(bytes < 3 * sizeof(unsigned int))
+	if(0 != rtp_deserialize(&pkt, data, bytes))
+		return; // packet error
+
+	assert(2 == pkt.rtp.v);
+	src = rtp_sender_fetch(ctx, pkt.rtp.ssrc);
+	if(!src)
 		return;
 
 	clock = time64_now();
-	ptr = (const unsigned int*)data;
-	v = ntohl(ptr[0]);
-
-	src = rtp_sender_fetch(ctx, ntohl(ptr[2]));
-	rtp = ntohl(ptr[1]);
-
 	// RFC3550 A.8 Estimating the Interarrival Jitter
 	// the jitter estimate is updated:
 	if(0 != src->rtp_clock)
 	{
 		int D;
-		D = (int)((unsigned int)tRTP(clock - src->rtp_clock) - (rtp - src->rtp_timestamp));
+		D = (int)((unsigned int)tRTP(clock - src->rtp_clock) - (pkt.rtp.timestamp - src->rtp_timestamp));
 		if(D < 0) D = -D;
 		src->jitter += (1.0/16) * (D - src->jitter);
 	}
 
-	//if(rtp != src->rtp_timestamp)
-	//{
-	//	char msg[256];
-	//	sprintf(msg, "rtcp_input_rtp clock: %lld, rtp: %u\n", clock - src->rtp_clock, rtp - src->rtp_timestamp);
-	//	OutputDebugString(msg);
-	//	src->rtp_clock = clock;
-	//}
-	len = bytes - sizeof(rtp_header_t) - RTP_CC(v)*4;
-	if(1 == RTP_P(v))
-	{
-		unsigned char *padding = (unsigned char*)data + bytes - 1;
-		len -= *padding;
-	}
-	if(1 == RTP_X(v))
-	{
-		unsigned char *rtpext = (unsigned char*)data + sizeof(rtp_header_t) + RTP_CC(v)*4;
-		unsigned short extlen = ((unsigned short*)rtpext)[1];
-		len -= (ntohs(extlen) + 1) * 4;
-	}
-
 	src->rtp_clock = clock;
-	src->rtp_timestamp = rtp;
-	src->bytes_received += len;
+	src->rtp_timestamp = pkt.rtp.timestamp;
+	src->bytes_received += pkt.payloadlen;
 	++src->packets_recevied;
 
 	// RFC3550 A.1 RTP Data Header Validity Checks
-	seq = RTP_SEQ(v);
 	if(0 == src->seq_max && 0 == src->seq_cycles)
 	{
-		src->seq_max = seq;
+		src->seq_max = pkt.rtp.seq;
 	}
-	else if(seq - src->seq_max < RTP_MISORDER)
+	else if(pkt.rtp.seq - src->seq_max < RTP_MISORDER)
 	{
-		if(seq < src->seq_max)
+		if(pkt.rtp.seq < src->seq_max)
 			src->seq_cycles += 1;
-		src->seq_max = seq;
+		src->seq_max = pkt.rtp.seq;
 	}
 }
 

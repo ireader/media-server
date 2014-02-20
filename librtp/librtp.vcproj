@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -93,7 +93,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -173,7 +173,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
+				RelativePath=".\source\h264-source.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\h264-source.h"
 				>
 			</File>
 			<File
@@ -211,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\rtp-packet.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\rtp-queue.h"
 				>
 			</File>
@@ -236,6 +244,18 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+		</Filter>
+		<Filter
+			Name="util"
+			>
+			<File
+				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\source\time64.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

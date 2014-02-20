@@ -24,6 +24,9 @@ void* rtp_avp_udp_create(int rtp, int rtcp, void* queue)
 		return NULL;
 	}
 
+	// set receiver socket buffer
+	socket_setrecvbuf(rtp, 50*1024);
+
 	ctx->queue = queue;
 	ctx->rtp.socket = aio_socket_create((socket_t)rtp, 1);
 	ctx->rtcp.socket = aio_socket_create((socket_t)rtcp, 1);
@@ -54,8 +57,6 @@ static void rtp_avp_udp_onrtp(void* param, int code, int bytes, const char* ip, 
 	rtphd = (rtp_header_t*)ctx->rtp.data;
 	if(0 == code)
 	{
-		printf("rtp data: %d[%s.%d]\n", bytes, ip, port);
-
 		// RTCP statistics
 		rtcp_input_rtp(ctx, ctx->rtp.data, bytes);
 
@@ -87,7 +88,6 @@ static void rtp_avp_udp_onrtp(void* param, int code, int bytes, const char* ip, 
 static void rtp_avp_udp_onrtcp(void* param, int code, int bytes, const char* ip, int port)
 {
 	struct rtp_context *ctx;
-	printf("rtcp data: %d[%s.%d]\n", bytes, ip, port);
 
 	if(0 == code)
 	{
