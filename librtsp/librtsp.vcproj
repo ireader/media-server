@@ -189,6 +189,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtsp-server.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-transport-tcp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-transport-udp.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtsp.c"
 				>
 			</File>
@@ -224,6 +236,22 @@
 			</File>
 			<File
 				RelativePath=".\include\rtsp-parser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-server.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-transport-tcp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-transport-udp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-transport.h"
 				>
 			</File>
 			<File
