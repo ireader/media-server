@@ -13,7 +13,13 @@ public:
 public:
 
 private:
+	void OnRecv(int code, int bytes, const char* ip, int port);
+	static void OnRecv(void* param, int code, int bytes, const char* ip, int port);
+
+private:
+	char m_buffer[8000];
 	aio_socket_t m_socket;
+	void *m_parser; // rtsp parser
 };
 
 #endif /* !_rtsp_transport_upd_h_ */

@@ -201,6 +201,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtsp-transport.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtsp.c"
 				>
 			</File>

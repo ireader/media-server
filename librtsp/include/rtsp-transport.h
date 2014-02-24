@@ -13,4 +13,11 @@ struct IRtspTransport
 	virtual int RecvV() = 0;
 };
 
+
+enum { RTSP_TRANSPORT_TCP, RTSP_TRANSPORT_UDP };
+
+void* rtsp_transport_create(int type, const char* ip, int port);
+
+int rtsp_transport_destroy(void* transport);
+
 #endif /* !_rtsp_transport_h_ */
