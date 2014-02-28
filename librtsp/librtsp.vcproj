@@ -177,7 +177,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtsp-client.c"
+				RelativePath=".\include\rfc822-datetime.h"
 				>
 			</File>
 			<File
@@ -189,35 +189,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtsp-server.c"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtsp-transport-tcp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtsp-transport-udp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtsp-transport.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\source\rtsp.c"
 				>
 			</File>
 			<File
 				RelativePath=".\source\sdp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\url.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\urlcodec.c"
 				>
 			</File>
 		</Filter>
@@ -227,7 +203,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\rfc822-datetime.h"
+				RelativePath=".\include\media-source.h"
 				>
 			</File>
 			<File
@@ -272,6 +248,66 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+		</Filter>
+		<Filter
+			Name="media"
+			>
+			<File
+				RelativePath=".\media\h264-file-reader.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\media\h264-file-reader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\media\h264-file-source.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\media\h264-file-source.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="util"
+			>
+			<File
+				RelativePath="..\..\sdk\source\url.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\source\urlcodec.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="client"
+			>
+			<File
+				RelativePath=".\source\rtsp-client.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="server"
+			>
+			<File
+				RelativePath=".\source\rtsp-server.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-transport-tcp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-transport-udp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-transport.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

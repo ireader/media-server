@@ -7,6 +7,7 @@
 #include "time64.h"
 #include "tcpserver.h"
 #include "error.h"
+#include "rfc822-datetime.h"
 
 #define N_TRANSPORT 2
 
@@ -60,22 +61,6 @@ int rtsp_server_report(void* server)
 {
 }
 
-static int rtsp_server_option(struct rtsp_context* ctx, void* parser)
-{
-	static const char* methods = "DESCRIBE SETUP TEARDOWN PLAY PAUSE";
-	int seq = 0;
-	rtsp_get_header_by_name2(parser, "CSeq", &seq);
-
-	snprintf(ctx->req, sizeof(ctx->req), 
-		"RTSP/1.0 200 OK\r\n"
-		"CSeq: %u\r\n"
-		"Public: %s\r\n"
-		"\r\n", 
-		seq, methods);
-
-	reply(ctx->transports, "");
-}
-
 static int rtsp_server_setup(struct rtsp_context* ctx, void* parser)
 {
 }
@@ -92,8 +77,56 @@ static int rtsp_server_pause(struct rtsp_context* ctx, void* parser)
 {
 }
 
+static int rtsp_server_option(struct rtsp_context* ctx, void* parser)
+{
+	static const char* methods = "DESCRIBE SETUP TEARDOWN PLAY PAUSE";
+	int seq = 0;
+	rtsp_get_header_by_name2(parser, "CSeq", &seq);
+
+	snprintf(ctx->req, sizeof(ctx->req), 
+		"RTSP/1.0 200 OK\r\n"
+		"CSeq: %u\r\n"
+		"Public: %s\r\n"
+		"\r\n", 
+		seq, methods);
+
+	reply(ctx->transports, "");
+}
+
 static int rtsp_server_describe(struct rtsp_context* ctx, void* parser)
 {
+	const char* uri;
+	char date[27] = {0};
+
+	srand(time(NULL));
+	unsigned int sid = (unsigned int)rand();
+	uri = rtsp_get_request_uri(parser);
+	snprintf(sdps, sizeof(sdps), 
+		"v=0\r\n"
+		"o=- %u %u IN IP4 %s\r\n"
+		"s=%s\r\n"
+		"c=IN IP4 %s\r\n"
+		"t=0 0\r\n", sid, time(NULL), "127.0.0.1");
+
+	snprintf(sdpmv, sizeof(sdpmv), 
+		"m=video\r\n"
+		"a=0 0\r\n");
+
+	snprintf(sdpma, sizeof(sdpma), 
+		"m=\r\n"
+		"a=0 0\r\n");
+	datetime_format(time(NULL), date);
+
+	snprintf(ctx->req, sizeof(ctx->req), 
+		"RTSP/1.0 200 OK\r\n"
+		"CSeq: %u\r\n"
+		"Date: %s\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: %d\r\n"
+		"\r\n", 
+		seq, date, sdplen);
+
+	reply(ctx->transports, "");
 }
 
 static int rtsp_server_get_parameter(struct rtsp_context* ctx, void* parser)

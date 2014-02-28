@@ -1,6 +1,7 @@
 #include "cstringext.h"
 #include "rtp-transport.h"
 #include "rtp-packet.h"
+#include "ntp-time.h"
 #include "time64.h"
 #include <stdio.h>
 
@@ -330,7 +331,7 @@ int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes)
 	rtcp_sr_t *sr;
 	rtcp_rb_t *rb;
 	rtcp_header_t header;
-	time64_t ntp;
+	ntp64_t ntp;
 
 	if(bytes < 4 + sizeof(rtcp_sr_t))
 		return ENOMEM;
@@ -343,14 +344,12 @@ int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes)
 	header.length = (sizeof(rtcp_sr_t) + header.rc*sizeof(rtcp_rb_t))/4 - 1; // see 6.4.1 SR: Sender Report RTCP Packet
 	((unsigned int*)data)[0] = htonl(((unsigned int*)&header)[0]);
 
-	// 1970/1/1 => 1900/1/1
-	// 0x83AA7E80 = (70LL * 365 + 17) * 24 * 60 * 60
-	ntp = time64_now();
+	ntp = ntp64_now();
 	sr = (rtcp_sr_t *)((unsigned int*)data+1);
 	sr->ssrc = htonl(ctx->info.ssrc);
-	sr->ntpmsw = htonl(ntp / 1000 + 0x83AA7E80); // 1970/1/1 => 1900/1/1
-	sr->ntplsw = htonl(((ntp % 1000) * 1000/15625.0)*0x04000000); // 2^32/10^6
-	sr->rtpts = htonl((unsigned long)tRTP(ntp));
+	sr->ntpmsw = htonl((u_long)(ntp >> 32));
+	sr->ntplsw = htonl((u_long)(ntp & 0xFFFFFFFF));
+	sr->rtpts = htonl((u_long)tRTP(ntp));
 	sr->spc = htonl(ctx->info.rtcp_spc); // send packets
 	sr->soc = htonl(ctx->info.rtcp_soc); // send bytes
 

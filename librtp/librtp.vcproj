@@ -253,6 +253,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sdk\source\ntp-time.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\include\ntp-time.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\sdk\source\time64.c"
 				>
 			</File>
