@@ -48,15 +48,17 @@ typedef struct _ts_packet_header_t
 	ts_adaptation_field_t adaptation;
 } ts_packet_header_t;
 
-typedef struct _pes_t
+typedef struct _ts_pes_t
 {
-	int pid; // PID : 13
-	int sid; // stream_type : 8
-	int cc;	// continuity_counter : 4;
-	int es_info_length; // 12-bits
-	unsigned char* es_info;
+	struct _ts_pmt_t *pmt; // program map table
 
-	int len; // PES_packet_length : 16;
+	int pid;				// PID : 13
+	int sid;				// stream_type : 8
+	int cc;					// continuity_counter : 4;
+	int info_length;		// es_info_length : 12
+	unsigned char* info;	// es_info
+
+	int len;				// PES_packet_length : 16;
 
 	unsigned int reserved10 : 2;
 	unsigned int PES_scrambling_control : 2;
@@ -99,7 +101,7 @@ typedef struct _pes_t
 	//unsigned char PES_private_data[128/8];
 
 	//unsigned int pack_field_length : 8;
-} pes_t;
+} ts_pes_t;
 
 typedef struct _ts_pmt_t
 {
@@ -112,7 +114,7 @@ typedef struct _ts_pmt_t
 	unsigned char* program_info;
 
 	int stream_count;
-	pes_t *streams;
+	ts_pes_t *streams;
 } ts_pmt_t;
 
 typedef struct _ts_pat_t

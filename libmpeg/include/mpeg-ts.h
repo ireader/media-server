@@ -5,13 +5,15 @@
 extern "C" {
 #endif
 
+typedef __int64 int64_t;
+
 typedef void (*mpeg_ts_cbwrite)(void* param, const void* packet, int bytes);
 
 void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param);
 
 int mpeg_ts_destroy(void* ts);
 
-int mpeg_ts_write(void* ts, int streamId, unsigned char* data, int bytes);
+int mpeg_ts_write(void* ts, int streamId, int64_t pcr, int64_t pts, int64_t dts, const void* data, int bytes);
 
 #ifdef __cplusplus
 }

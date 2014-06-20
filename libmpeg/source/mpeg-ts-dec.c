@@ -3,6 +3,8 @@
 //
 #include "mpeg-ts-proto.h"
 #include "crc32.h"
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <Windows.h>
 
@@ -10,7 +12,7 @@ typedef struct _mpeg_ts_dec_context_t
 {
 	ts_pat_t pat;
 	ts_pmt_t pmt[1];
-	pes_t pes[2];
+	ts_pes_t pes[2];
 } mpeg_ts_dec_context_t;
 
 static mpeg_ts_dec_context_t tsctx;
@@ -52,7 +54,8 @@ int ts_pat_dec(const unsigned char* data, int bytes, ts_pat_t *pat)
 
 	assert(i+4 == bytes);
 	//crc = (data[i] << 24) | (data[i+1] << 16) | (data[i+2] << 8) | data[i+3];
-	assert(0 == crc32(-1, data, bytes));
+	//crc = crc32(-1, data, bytes-4);
+	assert(0 == crc32(0xffffffff, data, bytes));
 	return 0;
 }
 
@@ -97,14 +100,14 @@ int ts_pmt_dec(const unsigned char* data, int bytes, ts_pmt_t *pmt)
 	{
 		pmt->streams[n].sid = data[i+j];
 		pmt->streams[n].pid = ((data[i+j+1] & 0x1F) << 8) | data[i+j+2];
-		pmt->streams[n].es_info_length = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
+		pmt->streams[n].info_length = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
 
-		for(k = 0; k < pmt->streams[n].es_info_length; k++)
+		for(k = 0; k < pmt->streams[n].info_length; k++)
 		{
 			// descriptor
 		}
 
-		j += pmt->streams[n].es_info_length;
+		j += pmt->streams[n].info_length;
 		n++;
 	}
 
@@ -122,7 +125,7 @@ static int pes_payload(const unsigned char* data, int bytes)
 	return 0;
 }
 
-int pes_dec(const unsigned char* data, int bytes, pes_t *pes)
+int pes_dec(const unsigned char* data, int bytes, ts_pes_t *pes)
 {
 	int i = 0;
 	int n = 0;
@@ -175,24 +178,24 @@ int pes_dec(const unsigned char* data, int bytes, pes_t *pes)
 		if(0x02 == pes->PTS_DTS_flags)
 		{
 			assert(0x20 == (data[i] & 0xF0));
-			pes->pts = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+			pes->pts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 
 			i += 5;
 		}
 		else if(0x03 == pes->PTS_DTS_flags)
 		{
 			assert(0x30 == (data[i] & 0xF0));
-			pes->pts = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+			pes->pts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 			i += 5;
 
 			assert(0x10 == (data[i] & 0xF0));
-			pes->dts = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+			pes->dts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 			i += 5;
 		}
 
 		if(pes->ESCR_flag)
 		{
-			pes->ESCR_base = (((data[i] >> 3) & 0x07) << 30) | ((data[i] & 0x03) << 28) | (data[i+1] << 20) | (((data[i+2] >> 3) & 0x1F) << 15) | ((data[i+2] & 0x3) << 13) | (data[i+3] << 5) | ((data[i+4] >> 3) & 0x1F);
+			pes->ESCR_base = (((int64_t)(data[i] >> 3) & 0x07) << 30) | ((data[i] & 0x03) << 28) | (data[i+1] << 20) | (((data[i+2] >> 3) & 0x1F) << 15) | ((data[i+2] & 0x3) << 13) | (data[i+3] << 5) | ((data[i+4] >> 3) & 0x1F);
 			pes->ESCR_extension = ((data[i+4] & 0x03) << 7) | ((data[i+5] >> 1) & 0x3F);
 			i += 6;
 		}
@@ -228,6 +231,8 @@ int pes_dec(const unsigned char* data, int bytes, pes_t *pes)
 		pes_payload(data + i, bytes - i);
 		pes->len -= bytes - 6;
 	}
+
+	return 0;
 }
 
 static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptation_field_t *adp)
@@ -253,8 +258,9 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 
 		if(adp->PCR_flag)
 		{
-			adp->program_clock_reference_base = (data[i] << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
-			adp->program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
+			adp->program_clock_reference_base = data[i];
+			adp->program_clock_reference_base = (adp->program_clock_reference_base << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
+			adp->program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
 
 			i += 6;
 		}
@@ -332,7 +338,7 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 int ts_packet_dec(const unsigned char* data, int bytes)
 {
 	int i, j, k;
-	unsigned char adaptation_field_length = 0;
+	int64_t t;
 	ts_packet_header_t pkhd;
 	int PID;
 	char msg[128];
@@ -355,8 +361,8 @@ int ts_packet_dec(const unsigned char* data, int bytes)
 
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
-			j = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			sprintf(msg, "pcr: %02d:%02d:%02d.%03d\n", (int)(j / 3600000), (int)(j % 3600000)/60000, (int)((j/1000) % 60), (int)(j % 1000));
+			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
+			sprintf(msg, "pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 			OutputDebugStringA(msg);
 		}
 	}
@@ -372,46 +378,48 @@ int ts_packet_dec(const unsigned char* data, int bytes)
 			tsctx.pmt->streams = tsctx.pes;
 			ts_pat_dec(data + i, bytes - i, &tsctx.pat);
 		}
-
-		for(j = 0; j < tsctx.pat.pmt_count; j++)
+		else
 		{
-			if(PID == tsctx.pat.pmt[j].pid)
+			for(j = 0; j < tsctx.pat.pmt_count; j++)
 			{
-				if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
-					i += 1; // pointer 0x00
-
-				ts_pmt_dec(data + i, bytes - i, &tsctx.pmt[j]);
-				break;
-			}
-
-			for(k = 0; k < tsctx.pat.pmt[j].stream_count; k++)
-			{
-				if(PID == tsctx.pes[k].pid)
+				if(PID == tsctx.pat.pmt[j].pid)
 				{
 					if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
-					{
-						pes_dec(data + i, bytes - i, &tsctx.pes[k]);
+						i += 1; // pointer 0x00
 
-						if(tsctx.pes[k].PTS_DTS_flags & 0x02)
+					ts_pmt_dec(data + i, bytes - i, &tsctx.pmt[j]);
+					break;
+				}
+
+				for(k = 0; k < tsctx.pat.pmt[j].stream_count; k++)
+				{
+					if(PID == tsctx.pes[k].pid)
+					{
+						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						{
-							j = tsctx.pes[k].pts / 90;
-							sprintf(msg, "pts: %02d:%02d:%02d.%03d\n", (int)(j / 3600000), (int)(j % 3600000)/60000, (int)((j/1000) % 60), (int)(j % 1000));
-							OutputDebugStringA(msg);
+							pes_dec(data + i, bytes - i, &tsctx.pes[k]);
+
+							if(tsctx.pes[k].PTS_DTS_flags & 0x02)
+							{
+								t = tsctx.pes[k].pts / 90;
+								sprintf(msg, "pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
+								OutputDebugStringA(msg);
+							}
+
+							if(tsctx.pes[k].PTS_DTS_flags & 0x01)
+							{
+								t = tsctx.pes[k].dts / 90;
+								sprintf(msg, "dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
+								OutputDebugStringA(msg);
+							}
+						}
+						else
+						{
+							tsctx.pes[k].len -= bytes - i;
 						}
 
-						if(tsctx.pes[k].PTS_DTS_flags & 0x01)
-						{
-							j = tsctx.pes[k].dts / 90;
-							sprintf(msg, "dts: %02d:%02d:%02d.%03d\n", (int)(j / 3600000), (int)(j % 3600000)/60000, (int)((j/1000) % 60), (int)(j % 1000));
-							OutputDebugStringA(msg);
-						}
+						break; // goto out?
 					}
-					else
-					{
-						tsctx.pes[k].len -= bytes - i;
-					}
-
-					break; // goto out?
 				}
 			}
 		}
