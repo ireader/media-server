@@ -25,13 +25,13 @@ typedef struct _mpeg_ts_enc_context_t
 	void* param;
 } mpeg_ts_enc_context_t;
 
-static inline void put16(unsigned char *ptr, int val)
+static inline void put16(uint8_t *ptr, uint32_t val)
 {
 	ptr[0] = (val >> 8) & 0xFF;
 	ptr[1] = val & 0xFF;
 }
 
-static inline void put32(unsigned char *ptr, int val)
+static inline void put32(uint8_t *ptr, uint32_t val)
 {
 	ptr[0] = (val >> 24) & 0xFF;
 	ptr[1] = (val >> 16) & 0xFF;
@@ -39,19 +39,67 @@ static inline void put32(unsigned char *ptr, int val)
 	ptr[3] = val & 0xFF;
 }
 
-static inline unsigned char h264_type(const unsigned char *data, int bytes)
+static inline void ts_write_pcr(uint8_t *ptr, int64_t pcr)
+{
+	int64_t pcr_base = pcr / 300;
+	int64_t pcr_ext = pcr % 300;
+
+	ptr[0] = (pcr_base >> 25) & 0xFF;
+	ptr[1] = (pcr_base >> 17) & 0xFF;
+	ptr[2] = (pcr_base >> 9) & 0xFF;
+	ptr[3] = (pcr_base >> 1) & 0xFF;
+	ptr[4] = ((pcr_base & 0x01) << 7) | 0x7E | ((pcr_ext>>8) & 0x01);
+	ptr[5] = pcr_ext & 0xFF;
+}
+
+static inline const uint8_t* h264_startcode(const uint8_t *data, int bytes)
 {
 	int i;
 	for(i = 0; i + 3 < bytes; i++)
 	{
 		if(0x00 == data[i] && 0x00 == data[i+1] && 0x01 == data[i+2])
-			return data[i+3] & 0x1f;
+			return data + i + 3;
 	}
 
-	return 0x00;
+	return NULL;
 }
 
-static int ts_write_pat(ts_pat_t *pat, unsigned char *data)
+static inline uint8_t h264_type(const uint8_t *data, int bytes)
+{
+	data = h264_startcode(data, bytes);
+	return data ? data[0] & 0x1f  : 0x00;
+}
+
+static inline uint8_t h264_idr(const uint8_t *data, int bytes)
+{
+	uint8_t naltype;
+	const uint8_t *p;
+
+	do
+	{
+		p = h264_startcode(data, bytes);
+		if(p)
+		{
+			 naltype = p[0] & 0x1f;
+			 // 1: no-IDR slice
+			 // 2: A-slice
+			 // 3: B-slice
+			 // 4: C-slice
+			 // 5: IDR frame
+			 if(naltype > 0 && naltype < 6)
+			 {
+				 return 5 == naltype ? 1 : 0;
+			 }
+
+			 bytes -= p - data;
+			 data = p;
+		}
+	} while(p);
+
+	return 0;
+}
+
+static int ts_write_pat(ts_pat_t *pat, uint8_t *data)
 {
 	// 2.4.4.3 Program association table
 	// Table 2-30
@@ -79,7 +127,7 @@ static int ts_write_pat(ts_pat_t *pat, unsigned char *data)
 	// reserved '11'
 	// version_number 'xxxxx'
 	// current_next_indicator '1'
-	data[5] = (unsigned char)(0xC1 | (pat->ver << 1));
+	data[5] = (uint8_t)(0xC1 | (pat->ver << 1));
 
 	// section_number/last_section_number
 	data[6] = 0x00;
@@ -102,15 +150,15 @@ static int ts_write_pat(ts_pat_t *pat, unsigned char *data)
 	return len + 3; // total length
 }
 
-static int ts_write_pmt(ts_pmt_t *pmt, unsigned char *data)
+static int ts_write_pmt(ts_pmt_t *pmt, uint8_t *data)
 {
 	// 2.4.4.8 Program map table
 	// Table 2-33
 
 	int i = 0;
 	int len = 0;
-	unsigned int crc = 0;
-	unsigned char *p = NULL;
+	uint32_t crc = 0;
+	uint8_t *p = NULL;
 
 	data[0] = 0x02;	// program map table
 
@@ -122,7 +170,7 @@ static int ts_write_pmt(ts_pmt_t *pmt, unsigned char *data)
 	// reserved '11'
 	// version_number 'xxxxx'
 	// current_next_indicator '1'
-	data[5] = (unsigned char)(0xC1 | (pmt->ver << 1));
+	data[5] = (uint8_t)(0xC1 | (pmt->ver << 1));
 
 	// section_number/last_section_number
 	data[6] = 0x00;
@@ -134,20 +182,20 @@ static int ts_write_pmt(ts_pmt_t *pmt, unsigned char *data)
 
 	// reserved '1111'
 	// program_info_lengt 12-bits
-	put16(data + 10, 0xF000 | pmt->program_info_length);
-	if(pmt->program_info_length > 0)
+	put16(data + 10, 0xF000 | pmt->pminfo_len);
+	if(pmt->pminfo_len > 0)
 	{
 		// fill program info
-		assert(pmt->program_info);
-		memcpy(data + 12, pmt->program_info, pmt->program_info_length);
+		assert(pmt->pminfo);
+		memcpy(data + 12, pmt->pminfo, pmt->pminfo_len);
 	}
 
 	// streams
-	p = data + 12 + pmt->program_info_length;
+	p = data + 12 + pmt->pminfo_len;
 	for(i = 0; i < pmt->stream_count; i++)
 	{
 		// stream_type
-		*p = (unsigned char)pmt->streams[i].sid;
+		*p = (uint8_t)pmt->streams[i].sid;
 
 		// reserved '111'
 		// elementary_PID 13-bits
@@ -155,16 +203,16 @@ static int ts_write_pmt(ts_pmt_t *pmt, unsigned char *data)
 
 		// reserved '1111'
 		// ES_info_lengt 12-bits
-		put16(p + 3, 0xF000 | pmt->streams[i].info_length);
+		put16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
 
 		// fill elementary stream info
-		if(pmt->streams[i].info_length > 0)
+		if(pmt->streams[i].esinfo_len > 0)
 		{
-			assert(pmt->streams[i].info);
-			memcpy(p + 5, pmt->streams[i].info, pmt->streams[i].info_length);
+			assert(pmt->streams[i].esinfo);
+			memcpy(p + 5, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
 		}
 
-		p += 5 + pmt->streams[i].info_length;
+		p += 5 + pmt->streams[i].esinfo_len;
 	}
 
 	// section_length
@@ -189,7 +237,7 @@ static int ts_write_pmt(ts_pmt_t *pmt, unsigned char *data)
 
 static void mpeg_ts_write_section_header(mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, int len)
 {
-	unsigned char data[TS_PACKET_SIZE];
+	uint8_t data[TS_PACKET_SIZE];
 
 	assert(len < TS_PACKET_SIZE - 5); // TS-header + pointer
 
@@ -228,11 +276,11 @@ static void mpeg_ts_write_section_header(mpeg_ts_enc_context_t *ts, int pid, int
 	ts->write(ts->param, data, TS_PACKET_SIZE);
 }
 
-static int ts_write_pes_header(int64_t pts, int64_t dts, int streamId, unsigned char* data)
+static int ts_write_pes_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 {
 	int len = 0;
 	int flags = 0x00;
-	unsigned char *p = NULL;
+	uint8_t *p = NULL;
 
 	// packet_start_code_prefix 0x000001
 	data[0] = 0x00;
@@ -289,10 +337,10 @@ static int ts_write_pes_header(int64_t pts, int64_t dts, int streamId, unsigned 
 		flags |= 0x40;
 		len += 5;
 	}
-	data[7] = (unsigned char)flags;
+	data[7] = (uint8_t)flags;
 
 	// PES_header_data_length : 8
-	data[8] = (unsigned char)len;
+	data[8] = (uint8_t)len;
 
 	p = data + 9;
 	if(flags & 0x80)
@@ -316,18 +364,17 @@ static int ts_write_pes_header(int64_t pts, int64_t dts, int streamId, unsigned 
 	return p - data;
 }
 
-static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, int64_t pcr, const unsigned char* payload, int bytes)
+static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, const uint8_t* payload, int bytes)
 {
 	// 2.4.3.6 PES packet
 	// Table 2-21
 
 	int len = 0;
 	int start = 1; // first packet
-	unsigned char *p = NULL;
-	unsigned char *pes = NULL;
-	unsigned char data[TS_PACKET_SIZE];
-	int64_t pcr_base = 0;
-	int64_t pcr_ext = 0;
+	uint8_t *p = NULL;
+	uint8_t *pes = NULL;
+	uint8_t data[TS_PACKET_SIZE];
+	int64_t pcr = 0x8000000000000000L;
 
 	while(bytes > 0)
 	{
@@ -337,28 +384,42 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, int64_t 
 		data[0] = 0x47;	// sync_byte
 		data[1] = 0x00 | ((stream->pid >>8) & 0x1F);
 		data[2] = stream->pid & 0xFF;
-		data[3] = 0x10 | stream->cc;
+		data[3] = 0x10 | stream->cc; // no adaptation, payload only
+		data[4] = 0; // clear adaptation length
+		data[5] = 0; // clear adaptation flags
 
-		pes = data + 4;
-		if(stream->pid == tsctx->pat.pmt[0].PCR_PID 
-			&& 0 == tsctx->pcr_period++ % 99)
+		if(start && STREAM_VIDEO_H264==stream->sid && h264_idr(payload, bytes) && PTS_NO_VALUE != stream->pts)
+		{
+			//In the PCR_PID the random_access_indicator may only be set to '1' 
+			//in a transport stream packet containing the PCR fields.
+			data[3] |= 0x20;
+			data[5] = 0x50; // random_access_indicator + PCR_flag
+		}	
+		else if(stream->pid == tsctx->pat.pmt[0].PCR_PID 
+			&& 0 == tsctx->pcr_period++ % 99
+			&& pcr != PTS_NO_VALUE)
 		{
 			// adaptation
 			data[3] |= 0x20;
-			data[4] = 1 + 6; // 1-flag + 6-PCR
 			data[5] = 0x10; // PCR flag
+		}
 
-			// PCR
-			pcr_base = pcr / 300;
-			pcr_ext = pcr % 300;
-			data[6] = (pcr_base >> 25) & 0xFF;
-			data[7] = (pcr_base >> 17) & 0xFF;
-			data[8] = (pcr_base >> 9) & 0xFF;
-			data[9] = (pcr_base >> 1) & 0xFF;
-			data[10] = ((pcr_base & 0x01) << 7) | 0x7E | ((pcr_ext>>8) & 0x01);
-			data[11] = pcr_ext & 0xFF;
+		if(data[3] & 0x20)
+		{
+			data[4] = 1; // 1-flag
 
-			pes += 8;
+			if(data[5] & 0x10) // has PCR_flag?
+			{
+				data[4] += 6; // 6-PCR
+				pcr = stream->pts * 300; // TODO: delay???
+				ts_write_pcr(data + 6, pcr);
+			}
+
+			pes = data + 4 + 1 + data[4];
+		}
+		else
+		{
+			pes = data + 4;
 		}
 
 		p = pes;
@@ -390,39 +451,31 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, int64_t 
 				put16(pes + 4, (p - pes - 6) + bytes);
 		}
 
-		len = p - data;
+		len = p - data; // TS + PES header length
 		if(len + bytes < TS_PACKET_SIZE)
 		{
 			// move pes header
-			unsigned char *pPayload = NULL;
-			if(pes != data + 4)
+			if(start)
 			{
-				pPayload = data + (TS_PACKET_SIZE - bytes - (p - pes));
-			}
-			else
-			{
-				pPayload = data + (TS_PACKET_SIZE - bytes);
-			}
-
-			if(pes != data + 4)
 				memmove(data + (TS_PACKET_SIZE - bytes - (p - pes)), pes, p - pes);
+			}
 
 			// adaptation
-			memset(pes, 0xFF, pPayload - pes);
-
-			if(data[3] & 0x20) // has adaptation?
+			if(data[3] & 0x20) // has AF?
 			{
+				memset(data + 5 + data[4], 0xFF, TS_PACKET_SIZE - (len + bytes));
 				data[4] += TS_PACKET_SIZE - (len + bytes);
 			}
 			else
 			{
+				memset(data + 4, 0xFF, TS_PACKET_SIZE - (len + bytes));
 				data[3] |= 0x20;
 				data[4] = TS_PACKET_SIZE - (len + bytes) - 1;
-				data[5] = 0; // no flag
+				data[5] = 0; // no flag				
 			}
 
 			len = bytes;
-			p = pPayload;
+			p = data + 5 + data[4] + (p - pes);
 		}
 		else
 		{
@@ -443,12 +496,12 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, int64_t 
 	return 0;
 }
 
-int mpeg_ts_write(void* ts, int streamId, int64_t pcr, int64_t pts, int64_t dts, const void* data, int bytes)
+int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* data, int bytes)
 {
 	int i, r;
 	ts_pes_t *stream = NULL;
 	mpeg_ts_enc_context_t *tsctx;
-	unsigned char payload[TS_PACKET_SIZE];
+	uint8_t payload[TS_PACKET_SIZE];
 
 	tsctx = (mpeg_ts_enc_context_t*)ts;
 
@@ -482,7 +535,7 @@ int mpeg_ts_write(void* ts, int streamId, int64_t pcr, int64_t pts, int64_t dts,
 		}
 	}
 
-	ts_write_pes(tsctx, stream, pcr, data, bytes);
+	ts_write_pes(tsctx, stream, data, bytes);
 	return 0;
 }
 
@@ -508,7 +561,8 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 	tsctx->pat.pmt[0].pn = 1;
 	tsctx->pat.pmt[0].ver = 0x0C;
 	tsctx->pat.pmt[0].cc = -1; // +1 => 0
-	tsctx->pat.pmt[0].program_info_length = 0;
+	tsctx->pat.pmt[0].pminfo_len = 0;
+	tsctx->pat.pmt[0].pminfo = NULL;
 	tsctx->pat.pmt[0].PCR_PID = 0x44; // 0x1FFF-don't set PCR
 
 	tsctx->pat.pmt[0].stream_count = 1; // H.264 + AAC
@@ -516,14 +570,14 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 	tsctx->pat.pmt[0].streams[0].pmt = &tsctx->pat.pmt[0];
 	tsctx->pat.pmt[0].streams[0].pid = 0x44;
 	tsctx->pat.pmt[0].streams[0].sid = STREAM_VIDEO_H264;
-	tsctx->pat.pmt[0].streams[0].info_length = 0x00;
-	tsctx->pat.pmt[0].streams[0].info = NULL;
+	tsctx->pat.pmt[0].streams[0].esinfo_len = 0x00;
+	tsctx->pat.pmt[0].streams[0].esinfo = NULL;
 	tsctx->pat.pmt[0].streams[0].cc = -1; // +1 => 0
 	tsctx->pat.pmt[0].streams[1].pmt = &tsctx->pat.pmt[0];
 	tsctx->pat.pmt[0].streams[1].pid = 0x45;
 	tsctx->pat.pmt[0].streams[1].sid = STREAM_AUDIO_AAC;
-	tsctx->pat.pmt[0].streams[1].info_length = 0x00;
-	tsctx->pat.pmt[0].streams[1].info = NULL;
+	tsctx->pat.pmt[0].streams[1].esinfo_len = 0x00;
+	tsctx->pat.pmt[0].streams[1].esinfo = NULL;
 	tsctx->pat.pmt[0].streams[1].cc = -1; // +1 => 0
 
 	tsctx->write = func;
@@ -541,8 +595,8 @@ int mpeg_ts_destroy(void* ts)
 	{
 		for(j = 0; j < tsctx->pat.pmt[i].stream_count; j++)
 		{
-			if(tsctx->pat.pmt[i].streams[j].info)
-				free(tsctx->pat.pmt[i].streams[j].info);
+			if(tsctx->pat.pmt[i].streams[j].esinfo)
+				free(tsctx->pat.pmt[i].streams[j].esinfo);
 		}
 	}
 

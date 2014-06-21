@@ -17,26 +17,26 @@ typedef struct _mpeg_ts_dec_context_t
 
 static mpeg_ts_dec_context_t tsctx;
 
-int ts_pat_dec(const unsigned char* data, int bytes, ts_pat_t *pat)
+int ts_pat_dec(const uint8_t* data, int bytes, ts_pat_t *pat)
 {
 	// 2.4.4.3 Program association table
 	// Table 2-30
 
 	int i = 0;
 	int j = 0;
-	int crc = 0;
+	uint32_t crc = 0;
 
-	int table_id = data[0];
-	int section_syntax_indicator = (data[1] >> 7) & 0x01;
-	int zero = (data[1] >> 6) & 0x01;
-	int reserved = (data[1] >> 4) & 0x03;
-	int section_length = ((data[1] & 0x0F) << 8) | data[2];
-	int transport_stream_id = (data[3] << 8) | data[4];
-	int reserved2 = (data[5] >> 6) & 0x03;
-	int version_number = (data[5] >> 1) & 0x1F;
-	int current_next_indicator = data[5] & 0x01;
-	int sector_number = data[6];
-	int last_sector_number = data[7];
+	uint32_t table_id = data[0];
+	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
+	uint32_t zero = (data[1] >> 6) & 0x01;
+	uint32_t reserved = (data[1] >> 4) & 0x03;
+	uint32_t section_length = ((data[1] & 0x0F) << 8) | data[2];
+	uint32_t transport_stream_id = (data[3] << 8) | data[4];
+	uint32_t reserved2 = (data[5] >> 6) & 0x03;
+	uint32_t version_number = (data[5] >> 1) & 0x1F;
+	uint32_t current_next_indicator = data[5] & 0x01;
+	uint32_t sector_number = data[6];
+	uint32_t last_sector_number = data[7];
 
 	assert(0x00 == table_id);
 	assert(1 == section_syntax_indicator);
@@ -59,28 +59,28 @@ int ts_pat_dec(const unsigned char* data, int bytes, ts_pat_t *pat)
 	return 0;
 }
 
-int ts_pmt_dec(const unsigned char* data, int bytes, ts_pmt_t *pmt)
+int ts_pmt_dec(const uint8_t* data, int bytes, ts_pmt_t *pmt)
 {
 	int i = 0;
 	int j = 0;
 	int k = 0;
 	int n = 0;
 
-	int table_id = data[0];
-	int section_syntax_indicator = (data[1] >> 7) & 0x01;
-	int zero = (data[1] >> 6) & 0x01;
-	int reserved = (data[1] >> 4) & 0x03;
-	int section_length = ((data[1] & 0x0F) << 8) | data[2];
-	int program_number = (data[3] << 8) | data[4];
-	int reserved2 = (data[5] >> 6) & 0x03;
-	int version_number = (data[5] >> 1) & 0x1F;
-	int current_next_indicator = data[5] & 0x01;
-	int sector_number = data[6];
-	int last_sector_number = data[7];
-	int reserved3 = (data[8] >> 6) & 0x03;
-	int PCR_PID = ((data[8] & 0x1F) << 8) | data[9];
-	int reserved4 = (data[10] >> 4) & 0x0F;
-	int program_info_length = ((data[10] & 0x0F) << 8) | data[11];
+	uint32_t table_id = data[0];
+	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
+	uint32_t zero = (data[1] >> 6) & 0x01;
+	uint32_t reserved = (data[1] >> 4) & 0x03;
+	uint32_t section_length = ((data[1] & 0x0F) << 8) | data[2];
+	uint32_t program_number = (data[3] << 8) | data[4];
+	uint32_t reserved2 = (data[5] >> 6) & 0x03;
+	uint32_t version_number = (data[5] >> 1) & 0x1F;
+	uint32_t current_next_indicator = data[5] & 0x01;
+	uint32_t sector_number = data[6];
+	uint32_t last_sector_number = data[7];
+	uint32_t reserved3 = (data[8] >> 6) & 0x03;
+	uint32_t PCR_PID = ((data[8] & 0x1F) << 8) | data[9];
+	uint32_t reserved4 = (data[10] >> 4) & 0x0F;
+	uint32_t program_info_length = ((data[10] & 0x0F) << 8) | data[11];
 
 	assert(0x02 == table_id);
 	assert(1 == section_syntax_indicator);
@@ -96,18 +96,18 @@ int ts_pmt_dec(const unsigned char* data, int bytes, ts_pmt_t *pmt)
 		// descriptor()
 	}
 
-	for(j = 0; j < section_length - 9 - pmt->program_info_length - 4; j += 5)
+	for(j = 0; j < section_length - 9 - pmt->pminfo_len - 4; j += 5)
 	{
 		pmt->streams[n].sid = data[i+j];
 		pmt->streams[n].pid = ((data[i+j+1] & 0x1F) << 8) | data[i+j+2];
-		pmt->streams[n].info_length = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
+		pmt->streams[n].esinfo_len = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
 
-		for(k = 0; k < pmt->streams[n].info_length; k++)
+		for(k = 0; k < pmt->streams[n].esinfo_len; k++)
 		{
 			// descriptor
 		}
 
-		j += pmt->streams[n].info_length;
+		j += pmt->streams[n].esinfo_len;
 		n++;
 	}
 
@@ -120,19 +120,19 @@ int ts_pmt_dec(const unsigned char* data, int bytes, ts_pmt_t *pmt)
 	return 0;
 }
 
-static int pes_payload(const unsigned char* data, int bytes)
+static int pes_payload(const uint8_t* data, int bytes)
 {
 	return 0;
 }
 
-int pes_dec(const unsigned char* data, int bytes, ts_pes_t *pes)
+int pes_dec(const uint8_t* data, int bytes, ts_pes_t *pes)
 {
 	int i = 0;
 	int n = 0;
 
-	int packet_start_code_prefix = (data[0] << 16) | (data[1] << 8) | data[2];
-	int stream_id = data[3];
-	int PES_packet_length = (data[4] << 8) | data[5];
+	uint32_t packet_start_code_prefix = (data[0] << 16) | (data[1] << 8) | data[2];
+	uint32_t stream_id = data[3];
+	uint32_t PES_packet_length = (data[4] << 8) | data[5];
 
 	assert(0x00000001 == packet_start_code_prefix);
 	pes->len = PES_packet_length;
@@ -235,12 +235,12 @@ int pes_dec(const unsigned char* data, int bytes, ts_pes_t *pes)
 	return 0;
 }
 
-static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptation_field_t *adp)
+static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptation_field_t *adp)
 {
 	// 2.4.3.4 Adaptation field
 	// Table 2-6
-	int i = 0;
-	int j = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
 
 	adp->adaptation_field_length = data[i++];
 
@@ -284,7 +284,7 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 			adp->transport_private_data_length = data[i++];
 			for(j = 0; j < adp->transport_private_data_length; j++)
 			{
-				unsigned char transport_private_data = data[i+j];
+				uint8_t transport_private_data = data[i+j];
 			}
 
 			i += adp->transport_private_data_length;
@@ -292,7 +292,7 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 
 		if(adp->adaptation_field_extension_flag)
 		{
-			unsigned char reserved;
+			uint8_t reserved;
 			adp->adaptation_field_extension_length = data[i++];
 			adp->ltw_flag = (data[i] >> 7) & 0x01;
 			adp->piecewise_rate_flag = (data[i] >> 6) & 0x01;
@@ -302,21 +302,21 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 			i++;
 			if(adp->ltw_flag)
 			{
-				unsigned char ltw_valid_flag = (data[i] >> 7) & 0x01;
-				unsigned short ltw_offset = ((data[i] & 0x7F) << 8) | data[i+1];
+				uint8_t ltw_valid_flag = (data[i] >> 7) & 0x01;
+				uint16_t ltw_offset = ((data[i] & 0x7F) << 8) | data[i+1];
 				i += 2;
 			}
 
 			if(adp->piecewise_rate_flag)
 			{
-				unsigned int piecewise_rate = ((data[i] & 0x3F) << 16) | (data[i+1] << 8) | data[i+2];
+				uint32_t piecewise_rate = ((data[i] & 0x3F) << 16) | (data[i+1] << 8) | data[i+2];
 				i += 3;
 			}
 
 			if(adp->seamless_splice_flag)
 			{
-				unsigned char Splice_type = (data[i] >> 4) & 0x0F;
-				unsigned int DTS_next_AU = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+				uint8_t Splice_type = (data[i] >> 4) & 0x0F;
+				uint32_t DTS_next_AU = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 
 				i += 5;
 			}
@@ -335,12 +335,12 @@ static int ts_packet_adaptation(const unsigned char* data, int bytes, ts_adaptat
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-int ts_packet_dec(const unsigned char* data, int bytes)
+int ts_packet_dec(const uint8_t* data, int bytes)
 {
 	int i, j, k;
 	int64_t t;
 	ts_packet_header_t pkhd;
-	int PID;
+	uint32_t PID;
 	char msg[128];
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
