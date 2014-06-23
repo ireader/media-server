@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libhttp"
-	ProjectGUID="{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}"
-	RootNamespace="libhttp"
+	Name="libmpeg"
+	ProjectGUID="{D4FD8942-4634-4598-B1C0-55D61815A9E8}"
+	RootNamespace="libmpeg"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".;include;..\..\sdk\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBHTTP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMPEG_EXPORTS;OS_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -116,7 +116,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories=".;include;..\..\sdk\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBHTTP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMPEG_EXPORTS;OS_WINDOWS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -173,15 +173,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\source\http-reason.c"
+				RelativePath=".\source\mpeg-ts-dec.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\http-server.c"
-				>
-			</File>
-			<File
-				RelativePath=".\source\http-session.c"
+				RelativePath=".\source\mpeg-ts-enc.c"
 				>
 			</File>
 		</Filter>
@@ -191,15 +187,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\http-reason.h"
+				RelativePath=".\include\mpeg-ts-proto.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\http-server-internal.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\http-server.h"
+				RelativePath=".\include\mpeg-ts.h"
 				>
 			</File>
 		</Filter>
@@ -213,15 +205,7 @@
 			Name="util"
 			>
 			<File
-				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\http-parser.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\thread-pool.c"
+				RelativePath="..\..\sdk\source\crc32.c"
 				>
 			</File>
 		</Filter>

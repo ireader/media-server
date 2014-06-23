@@ -24,6 +24,12 @@
 extern "C" {
 #endif
 
+struct http_server_vec
+{
+	void* data;
+	int bytes;
+};
+
 // Initialize/Finalize
 // call once only
 LIBHTTP_API int http_server_init();
@@ -42,6 +48,7 @@ LIBHTTP_API int http_server_get_content(void* session, void **content, int *leng
 
 // Response
 LIBHTTP_API int http_server_send(void* session, int code, const void* data, int bytes);
+LIBHTTP_API int http_server_send_vec(void* session, int code, const struct http_server_vec* vec, int num);
 LIBHTTP_API int http_server_set_header(void* session, const char* name, const char* value);
 LIBHTTP_API int http_server_set_header_int(void* session, const char* name, int value);
 LIBHTTP_API int http_server_set_content_type(void* session, const char* value);

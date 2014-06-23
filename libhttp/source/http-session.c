@@ -1,5 +1,6 @@
 #include "cstringext.h"
 #include "sys/sock.h"
+#include "http-reason.h"
 #include "http-parser.h"
 #include <stdlib.h>
 #include <memory.h>
@@ -87,7 +88,7 @@ static void http_session_onrecv(void* param, int code, int bytes)
 
 	if(code < 0 || 0 == bytes)
 	{
-		free(session);
+		http_session_free(session);
 		printf("http_session_onrecv => %d\n", 0==bytes ? 0 : code);
 	}
 }
@@ -167,26 +168,50 @@ int http_server_get_content(void* param, void **content, int *length)
 
 int http_server_send(void* param, int code, const void* data, int bytes)
 {
-	int r;
-	char msg[1024];
-	socket_bufvec_t vec[2];
+	struct http_server_vec vec[1];
+	vec[0].data = data;
+	vec[0].bytes = bytes;
+	return http_server_send_vec(param, code, vec, 1);
+}
+
+int http_server_send_vec(void* param, int code, const struct http_server_vec* items, int num)
+{
+	int i, r;
+	char msg[128];
+	socket_bufvec_t *vec;
+	socket_bufvec_t vec3[3];
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
-	snprintf(msg, sizeof(msg), 
-		"HTTP/1.1 %d OK\r\n"
-		"Server: WebServer 0.2\r\n"
+	vec = 2 == num ? vec3 : (socket_bufvec_t*)malloc(sizeof(vec[0]) * (num+1));
+	if(!vec)
+		return -1;
+
+	// HTTP Response Data
+	r = 0;
+	for(i = 0; i < num; i++)
+	{
+		r += items[i].bytes;
+		socket_setbufvec(vec, i+2, items[i].data, items[i].bytes);
+	}
+
+	// HTTP Response Header
+	sprintf(msg, "Server: WebServer 0.2\r\n"
 		"Connection: keep-alive\r\n"
 		"Keep-Alive: timeout=5,max=100\r\n"
-		"%s" // user-defined headers
-		"Content-Length: %d\r\n\r\n", 
-		code, session->data, bytes);
+		"Content-Length: %d\r\n\r\n", r);
+	strcat(session->data, msg);
+	sprintf(msg, "HTTP/1.1 %d %s\r\n", code, http_reason_phrase(code));
 
-	assert(strlen(msg) < 1000);
 	socket_setbufvec(vec, 0, msg, strlen(msg));
-	socket_setbufvec(vec, 1, (void*)data, bytes);
+	socket_setbufvec(vec, 1, session->data, strlen(session->data));
 
-	r = aio_socket_send_v(session->socket, vec, 2, http_session_onsend, session);
+	r = aio_socket_send_v(session->socket, vec, num+2, http_session_onsend, session);
+
+	free(msg);
+	if(vec != vec3)
+		free(vec);
+
 	if(0 != r)
 	{
 		http_session_free(session);
