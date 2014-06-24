@@ -32,12 +32,13 @@ int hls_file_close(struct hls_file_t* file)
 	if(0 != InterlockedDecrement(&file->refcnt))
 		return 0;
 
-	block = file->head.next;
+	block = &file->head;
 	while(block)
 	{
 		block2 = block->next;
 		http_bundle_free(block->bundle);
-		free(block);
+		if(block != &file->head)
+			free(block);
 		block = block2;
 	}
 
