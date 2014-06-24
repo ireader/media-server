@@ -15,6 +15,11 @@ struct http_session_t
 	void* parser;
 
 	char data[2 * 1024];
+
+	// send buffer vector
+	int vec_count;
+	socket_bufvec_t *vec;
+	socket_bufvec_t vec3[3];
 };
 
 struct http_server_t

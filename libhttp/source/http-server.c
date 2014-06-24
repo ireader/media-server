@@ -8,6 +8,7 @@
 #include "tcpserver.h"
 #include "http-server-internal.h"
 
+static int s_running;
 static thread_pool_t s_pool;
 
 static void http_server_onaccept(void* param, int code, socket_t socket, const char* ip, int port)
@@ -36,7 +37,7 @@ static void http_server_onaccept(void* param, int code, socket_t socket, const c
 
 static void http_server_process(void* param)
 {
-	while(1)
+	while(*(int*)param)
 	{
 		int r = aio_socket_process(2*60*1000);
 		if(0 != r)
@@ -52,9 +53,10 @@ int http_server_init()
 	s_pool = thread_pool_create(cpu, 1, 64);
 	aio_socket_init(cpu);
 
+	s_running = 1;
 	while(cpu-- > 0)
 	{
-		thread_pool_push(s_pool, http_server_process, NULL); // start worker
+		thread_pool_push(s_pool, http_server_process, &s_running); // start worker
 	}
 
 	return 0;
@@ -62,8 +64,9 @@ int http_server_init()
 
 int http_server_cleanup()
 {
-	aio_socket_clean();
+	s_running = 0;
 	thread_pool_destroy(s_pool);
+	aio_socket_clean();
 	return 0;
 }
 

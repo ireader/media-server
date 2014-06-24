@@ -173,6 +173,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\source\http-bundle.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\http-reason.c"
 				>
 			</File>
@@ -190,6 +194,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\include\http-bundle.h"
+				>
+			</File>
 			<File
 				RelativePath=".\include\http-reason.h"
 				>

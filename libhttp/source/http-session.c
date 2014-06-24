@@ -2,6 +2,7 @@
 #include "sys/sock.h"
 #include "http-reason.h"
 #include "http-parser.h"
+#include "http-bundle.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
@@ -23,7 +24,7 @@ static struct http_session_t* http_session_new()
 	return session;
 }
 
-static void http_session_free(struct http_session_t *session)
+static void http_session_drop(struct http_session_t *session)
 {
 	if(session->socket)
 		aio_socket_destroy(session->socket);
@@ -75,10 +76,11 @@ static void http_session_onrecv(void* param, int code, int bytes)
 			session->data[0] = '\0'; // clear for save user-defined header
 
 			// call
+			// user must reply(send/send_vec/send_file) in handle
 			http_session_handle(session);
 
-			// restart
-			http_session_start(session);
+			// do restart in send done
+			// http_session_onsend
 		}
 		else if(1 == code)
 		{
@@ -88,19 +90,37 @@ static void http_session_onrecv(void* param, int code, int bytes)
 
 	if(code < 0 || 0 == bytes)
 	{
-		http_session_free(session);
+		http_session_drop(session);
 		printf("http_session_onrecv => %d\n", 0==bytes ? 0 : code);
 	}
 }
 
 static void http_session_onsend(void* param, int code, int bytes)
 {
+	int i;
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
+	// release bundle data
+	for(i = 2; i < session->vec_count; i++)
+	{
+		//http_bundle_free(session->vec[i].buf);
+		http_bundle_free((struct http_bundle_t *)session->vec[i].buf - 1);
+	}
+
+	if(session->vec3 != session->vec)
+		free(session->vec);
+	session->vec = NULL;
+	session->vec_count = 0;
+
 	if(code < 0)
 	{
-		http_session_free(session);
+		http_session_drop(session);
+	}
+	else
+	{
+		// restart
+		http_session_start(session);
 	}
 }
 
@@ -116,7 +136,7 @@ static int http_session_start(struct http_session_t *session)
 	if(0 != r)
 	{
 		printf("http_session_run recv => %d\n", r);
-		http_session_free(session);
+		http_session_drop(session);
 		return -1;
 	}
 
@@ -166,33 +186,35 @@ int http_server_get_content(void* param, void **content, int *length)
 	return 0;
 }
 
-int http_server_send(void* param, int code, const void* data, int bytes)
+int http_server_send(void* param, int code, void* bundle)
 {
-	struct http_server_vec vec[1];
-	vec[0].data = data;
-	vec[0].bytes = bytes;
-	return http_server_send_vec(param, code, vec, 1);
+	return http_server_send_vec(param, code, &bundle, 1);
 }
 
-int http_server_send_vec(void* param, int code, const struct http_server_vec* items, int num)
+int http_server_send_vec(void* param, int code, void** bundles, int num)
 {
 	int i, r;
 	char msg[128];
-	socket_bufvec_t *vec;
-	socket_bufvec_t vec3[3];
+	struct http_bundle_t *bundle;
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
-	vec = 2 == num ? vec3 : (socket_bufvec_t*)malloc(sizeof(vec[0]) * (num+1));
-	if(!vec)
+	assert(0 == session->vec_count);
+	session->vec = (1 == num) ? session->vec3 : malloc(sizeof(session->vec[0]) * (num+2));
+	if(!session->vec)
 		return -1;
+
+	session->vec_count = num + 2;
 
 	// HTTP Response Data
 	r = 0;
 	for(i = 0; i < num; i++)
 	{
-		r += items[i].bytes;
-		socket_setbufvec(vec, i+2, items[i].data, items[i].bytes);
+		bundle = bundles[i];
+		assert(bundle->len > 0);
+		http_bundle_addref(bundle); // addref
+		socket_setbufvec(session->vec, i+2, bundle->ptr, bundle->len);
+		r += bundle->len;
 	}
 
 	// HTTP Response Header
@@ -203,18 +225,27 @@ int http_server_send_vec(void* param, int code, const struct http_server_vec* it
 	strcat(session->data, msg);
 	sprintf(msg, "HTTP/1.1 %d %s\r\n", code, http_reason_phrase(code));
 
-	socket_setbufvec(vec, 0, msg, strlen(msg));
-	socket_setbufvec(vec, 1, session->data, strlen(session->data));
+	socket_setbufvec(session->vec, 0, msg, strlen(msg));
+	socket_setbufvec(session->vec, 1, session->data, strlen(session->data));
 
-	r = aio_socket_send_v(session->socket, vec, num+2, http_session_onsend, session);
-
-	free(msg);
-	if(vec != vec3)
-		free(vec);
-
+	r = aio_socket_send_v(session->socket, session->vec, num+2, http_session_onsend, session);
 	if(0 != r)
 	{
-		http_session_free(session);
+		// release bundle data
+		for(i = 0; i < num; i++)
+		{
+			bundle = bundles[i];
+			http_bundle_release(bundle);
+		}
+
+		// free socket vector
+		if(session->vec3 != session->vec)
+			free(session->vec);
+		session->vec = NULL;
+		session->vec_count = 0;
+
+		// drop session
+		http_session_drop(session);
 	}
 
 	return r;
