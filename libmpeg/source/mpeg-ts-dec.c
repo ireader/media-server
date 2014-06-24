@@ -2,6 +2,7 @@
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
 //
 #include "mpeg-ts-proto.h"
+#include "mpeg-ts.h"
 #include "crc32.h"
 #include <stdlib.h>
 #include <string.h>
@@ -426,4 +427,25 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 	}
 
 	return 0;
+}
+
+static int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
+{
+	unsigned char *data;
+	ts_packet_header_t pkhd;
+	int payload_unit_start_indicator;
+
+	memset(&pkhd, 0, sizeof(pkhd));
+
+	data = (const unsigned char *)packet;
+	payload_unit_start_indicator = data[1] & 0x40;
+	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
+	pkhd.continuity_counter = data[3] & 0x0F;
+
+	if(0x02 == pkhd.adaptation_field_control || 0x03 == pkhd.adaptation_field_control)
+	{
+		ts_packet_adaptation(data + 4, bytes - 4, &pkhd.adaptation);
+	}
+
+	return (payload_unit_start_indicator && pkhd.adaptation.random_access_indicator) ? 1 : 0;
 }

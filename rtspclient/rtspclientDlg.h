@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 // CrtspclientDlg dialog
 class CrtspclientDlg : public CDialog
 {
@@ -18,7 +17,6 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
-
 // Implementation
 protected:
 	HICON m_hIcon;
@@ -31,4 +29,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedCancel();
 };

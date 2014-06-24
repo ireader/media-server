@@ -57,7 +57,7 @@ int H264FileReader::Init()
 	return 0;
 }
 
-static unsigned char* search_start_code(const unsigned char* stream, int bytes)
+static const unsigned char* search_start_code(const unsigned char* stream, int bytes)
 {
 	const unsigned char *p;
 	for(p = stream; p+3<stream+bytes; p++)

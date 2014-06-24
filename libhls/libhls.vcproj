@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libmpeg"
-	ProjectGUID="{D4FD8942-4634-4598-B1C0-55D61815A9E8}"
-	RootNamespace="libmpeg"
+	Name="libhls"
+	ProjectGUID="{84B0AF1D-D52E-4BDF-8FD5-A8DBF12DDA1B}"
+	RootNamespace="libhls"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;include;..\..\sdk\include;..\..\sdk\video"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMPEG_EXPORTS;OS_WINDOWS"
+				AdditionalIncludeDirectories=".;include;..\libhttp\include;..\libmpeg\include;..\..\sdk\include;..\..\sdk\video"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBHLS_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -93,7 +93,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -115,8 +115,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories=".;include;..\..\sdk\include;..\..\sdk\video"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMPEG_EXPORTS;OS_WINDOWS"
+				AdditionalIncludeDirectories=".;include;..\libhttp\include;..\libmpeg\include;..\..\sdk\include;..\..\sdk\video"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBHLS_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -173,11 +173,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\source\mpeg-ts-dec.c"
+				RelativePath=".\source\hls-file.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\mpeg-ts-enc.c"
+				RelativePath=".\source\hls-live.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\hls-server.c"
 				>
 			</File>
 		</Filter>
@@ -187,11 +191,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\mpeg-ts-proto.h"
+				RelativePath=".\include\hls-file.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\mpeg-ts.h"
+				RelativePath=".\include\hls-live.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\hls-server.h"
 				>
 			</File>
 		</Filter>
@@ -205,15 +213,11 @@
 			Name="util"
 			>
 			<File
-				RelativePath="..\..\sdk\source\crc32.c"
+				RelativePath="..\..\sdk\source\time64.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sdk\include\crc32.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\video\h264-util.h"
+				RelativePath="..\..\sdk\source\urlcodec.c"
 				>
 			</File>
 		</Filter>

@@ -3,6 +3,8 @@
 //
 #include "mpeg-ts.h"
 #include "mpeg-ts-proto.h"
+#include "cstringext.h"
+#include "h264-util.h"
 #include "crc32.h"
 #include <stdlib.h>
 #include <memory.h>
@@ -52,54 +54,7 @@ static inline void ts_write_pcr(uint8_t *ptr, int64_t pcr)
 	ptr[5] = pcr_ext & 0xFF;
 }
 
-static inline const uint8_t* h264_startcode(const uint8_t *data, int bytes)
-{
-	int i;
-	for(i = 0; i + 3 < bytes; i++)
-	{
-		if(0x00 == data[i] && 0x00 == data[i+1] && 0x01 == data[i+2])
-			return data + i + 3;
-	}
-
-	return NULL;
-}
-
-static inline uint8_t h264_type(const uint8_t *data, int bytes)
-{
-	data = h264_startcode(data, bytes);
-	return data ? data[0] & 0x1f  : 0x00;
-}
-
-static inline uint8_t h264_idr(const uint8_t *data, int bytes)
-{
-	uint8_t naltype;
-	const uint8_t *p;
-
-	do
-	{
-		p = h264_startcode(data, bytes);
-		if(p)
-		{
-			 naltype = p[0] & 0x1f;
-			 // 1: no-IDR slice
-			 // 2: A-slice
-			 // 3: B-slice
-			 // 4: C-slice
-			 // 5: IDR frame
-			 if(naltype > 0 && naltype < 6)
-			 {
-				 return 5 == naltype ? 1 : 0;
-			 }
-
-			 bytes -= p - data;
-			 data = p;
-		}
-	} while(p);
-
-	return 0;
-}
-
-static int ts_write_pat(ts_pat_t *pat, uint8_t *data)
+static int ts_write_pat(const ts_pat_t *pat, uint8_t *data)
 {
 	// 2.4.4.3 Program association table
 	// Table 2-30
@@ -150,7 +105,7 @@ static int ts_write_pat(ts_pat_t *pat, uint8_t *data)
 	return len + 3; // total length
 }
 
-static int ts_write_pmt(ts_pmt_t *pmt, uint8_t *data)
+static int ts_write_pmt(const ts_pmt_t *pmt, uint8_t *data)
 {
 	// 2.4.4.8 Program map table
 	// Table 2-33
@@ -235,7 +190,7 @@ static int ts_write_pmt(ts_pmt_t *pmt, uint8_t *data)
 	return p - data + 4; // total length
 }
 
-static void mpeg_ts_write_section_header(mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, int len)
+static void mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, int len)
 {
 	uint8_t data[TS_PACKET_SIZE];
 
@@ -551,6 +506,39 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 		return NULL;
 
 	memset(tsctx, 0, sizeof(mpeg_ts_enc_context_t));
+	mpeg_ts_reset(tsctx);
+
+	tsctx->write = func;
+	tsctx->param = param;
+	return tsctx;
+}
+
+int mpeg_ts_destroy(void* ts)
+{
+	int i, j;
+	mpeg_ts_enc_context_t *tsctx = NULL;
+	tsctx = (mpeg_ts_enc_context_t*)ts;
+
+	for(i = 0; i < tsctx->pat.pmt_count; i++)
+	{
+		for(j = 0; j < tsctx->pat.pmt[i].stream_count; j++)
+		{
+			if(tsctx->pat.pmt[i].streams[j].esinfo)
+				free(tsctx->pat.pmt[i].streams[j].esinfo);
+		}
+	}
+
+	free(tsctx);
+	return 0;
+}
+
+int mpeg_ts_reset(void* ts)
+{
+	mpeg_ts_enc_context_t *tsctx;
+	tsctx = (mpeg_ts_enc_context_t*)ts;
+	tsctx->pat_period = 0;
+	tsctx->pcr_period = 0;
+
 	tsctx->pat.tsid = 0xE2BD;
 	tsctx->pat.ver = 0x14;
 	tsctx->pat.cc = -1; // +1 => 0
@@ -579,28 +567,6 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 	tsctx->pat.pmt[0].streams[1].esinfo_len = 0x00;
 	tsctx->pat.pmt[0].streams[1].esinfo = NULL;
 	tsctx->pat.pmt[0].streams[1].cc = -1; // +1 => 0
-
-	tsctx->write = func;
-	tsctx->param = param;
-	return tsctx;
-}
-
-int mpeg_ts_destroy(void* ts)
-{
-	int i, j;
-	mpeg_ts_enc_context_t *tsctx = NULL;
-	tsctx = (mpeg_ts_enc_context_t*)ts;
-
-	for(i = 0; i < tsctx->pat.pmt_count; i++)
-	{
-		for(j = 0; j < tsctx->pat.pmt[i].stream_count; j++)
-		{
-			if(tsctx->pat.pmt[i].streams[j].esinfo)
-				free(tsctx->pat.pmt[i].streams[j].esinfo);
-		}
-	}
-
-	free(tsctx);
 	return 0;
 }
 
