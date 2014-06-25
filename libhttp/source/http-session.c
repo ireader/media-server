@@ -105,7 +105,11 @@ static void http_session_onsend(void* param, int code, int bytes)
 	for(i = 2; i < session->vec_count; i++)
 	{
 		//http_bundle_free(session->vec[i].buf);
+#if defined(OS_WINDOWS)
 		http_bundle_free((struct http_bundle_t *)session->vec[i].buf - 1);
+#else
+		http_bundle_free((struct http_bundle_t *)session->vec[i].iov_base - 1);
+#endif
 	}
 
 	if(session->vec3 != session->vec)

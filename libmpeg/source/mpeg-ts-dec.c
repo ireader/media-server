@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <Windows.h>
 
 typedef struct _mpeg_ts_dec_context_t
 {
@@ -342,7 +341,6 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 	int64_t t;
 	ts_packet_header_t pkhd;
 	uint32_t PID;
-	char msg[128];
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
 	// Transport stream packets shall be 188 bytes long.
@@ -363,8 +361,7 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
 			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			sprintf(msg, "pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
-			OutputDebugStringA(msg);
+			printf("pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
 
@@ -403,15 +400,13 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 							if(tsctx.pes[k].PTS_DTS_flags & 0x02)
 							{
 								t = tsctx.pes[k].pts / 90;
-								sprintf(msg, "pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
-								OutputDebugStringA(msg);
+								printf("pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
 							}
 
 							if(tsctx.pes[k].PTS_DTS_flags & 0x01)
 							{
 								t = tsctx.pes[k].dts / 90;
-								sprintf(msg, "dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
-								OutputDebugStringA(msg);
+								printf("dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
 							}
 						}
 						else

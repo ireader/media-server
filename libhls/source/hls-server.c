@@ -60,7 +60,7 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
 		return hls_server_reply(session, 417, "");
 
 	// parse server/key
-	live = hls_live_fetch(ctx, name, server, key);
+	live = hls_live_fetch(ctx, name);
 	if(!live)
 		return hls_server_reply(session, 500, "");
 

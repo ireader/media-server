@@ -19,7 +19,7 @@ struct hls_live_t
 	struct list_head link;
 	struct hls_server_t* server;
 
-	LONG refcnt;
+	long refcnt;
 	locker_t locker;
 	char name[MAX_NAME];
 

@@ -24,7 +24,11 @@
 extern "C" {
 #endif
 
-typedef __int64 int64_t;
+#if defined(OS_WINDOWS)
+	typedef __int64 int64_t;
+#else
+	typedef long long int64_t;
+#endif
 
 typedef void (*mpeg_ts_cbwrite)(void* param, const void* packet, int bytes);
 
