@@ -8,6 +8,11 @@
 #include <assert.h>
 #include "http-server-internal.h"
 
+#if defined(OS_WINDOWS)
+#define iov_base buf
+#define iov_len	 len
+#endif
+
 static int http_session_start(struct http_session_t *session);
 
 // create a new http session
@@ -95,37 +100,85 @@ static void http_session_onrecv(void* param, int code, int bytes)
 	}
 }
 
+static int http_session_send(struct http_session_t *session, int idx);
 static void http_session_onsend(void* param, int code, int bytes)
 {
 	int i;
+	char* ptr;
+	struct http_bundle_t *bundle;
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
-	// release bundle data
-	for(i = 2; i < session->vec_count; i++)
-	{
-		//http_bundle_free(session->vec[i].buf);
-#if defined(OS_WINDOWS)
-		http_bundle_free((struct http_bundle_t *)session->vec[i].buf - 1);
-#else
-		http_bundle_free((struct http_bundle_t *)session->vec[i].iov_base - 1);
-#endif
-	}
-
-	if(session->vec3 != session->vec)
-		free(session->vec);
-	session->vec = NULL;
-	session->vec_count = 0;
-
-	if(code < 0)
+	if(code < 0 || 0 == bytes)
 	{
 		http_session_drop(session);
 	}
 	else
 	{
-		// restart
-		http_session_start(session);
+		for(i = 0; i < session->vec_count && bytes > 0; i++)
+		{
+			if(bytes >= session->vec[i].iov_len)
+			{
+				bytes -= session->vec[i].iov_len;
+				session->vec[i].iov_len = 0;
+			}
+			else
+			{
+				ptr = session->vec[i].iov_base;
+				session->vec[i].iov_len -= bytes;
+				memmove(ptr, ptr + bytes, session->vec[i].iov_len);
+				bytes = 0;
+				break;
+			}
+		}
+
+		if(i < session->vec_count)
+		{
+			http_session_send(session, i);
+		}
+		else
+		{
+			// release bundle data
+			for(i = 2; i < session->vec_count; i++)
+			{
+				//http_bundle_free(session->vec[i].buf);
+				http_bundle_free((struct http_bundle_t *)session->vec[i].iov_base - 1);
+			}
+
+			if(session->vec3 != session->vec)
+				free(session->vec);
+			session->vec = NULL;
+			session->vec_count = 0;
+
+			// restart
+			http_session_start(session);
+		}
 	}
+}
+
+static int http_session_send(struct http_session_t *session, int idx)
+{
+	int i, r;
+	r = aio_socket_send_v(session->socket, session->vec + idx, session->vec_count-idx, http_session_onsend, session);
+	if(0 != r)
+	{
+		// release bundle data
+		for(i = 2; i < session->vec_count; i++)
+		{
+			http_bundle_free((struct http_bundle_t *)session->vec[i].iov_base - 1);
+		}
+
+		// free socket vector
+		if(session->vec3 != session->vec)
+			free(session->vec);
+		session->vec = NULL;
+		session->vec_count = 0;
+
+		// drop session
+		http_session_drop(session);
+	}
+
+	return r;
 }
 
 static int http_session_start(struct http_session_t *session)
@@ -204,7 +257,7 @@ int http_server_send_vec(void* param, int code, void** bundles, int num)
 	session = (struct http_session_t*)param;
 
 	assert(0 == session->vec_count);
-	session->vec = (1 == num) ? session->vec3 : malloc(sizeof(session->vec[0]) * (num+2));
+	session->vec = (1 == num) ? session->vec3 : malloc((sizeof(session->vec[0]) + sizeof(void*)) * (num+2));
 	if(!session->vec)
 		return -1;
 
@@ -232,27 +285,7 @@ int http_server_send_vec(void* param, int code, void** bundles, int num)
 	socket_setbufvec(session->vec, 0, msg, strlen(msg));
 	socket_setbufvec(session->vec, 1, session->data, strlen(session->data));
 
-	r = aio_socket_send_v(session->socket, session->vec, num+2, http_session_onsend, session);
-	if(0 != r)
-	{
-		// release bundle data
-		for(i = 0; i < num; i++)
-		{
-			bundle = bundles[i];
-			http_bundle_release(bundle);
-		}
-
-		// free socket vector
-		if(session->vec3 != session->vec)
-			free(session->vec);
-		session->vec = NULL;
-		session->vec_count = 0;
-
-		// drop session
-		http_session_drop(session);
-	}
-
-	return r;
+	return http_session_send(session, 0);
 }
 
 int http_server_set_header(void* param, const char* name, const char* value)

@@ -37,14 +37,15 @@ static void http_server_onaccept(void* param, int code, socket_t socket, const c
 
 static void http_server_process(void* param)
 {
-	while(*(int*)param)
+	int r;
+	do
 	{
-		int r = aio_socket_process(2*60*1000);
+		r = aio_socket_process(2*60*1000);
 		if(0 != r)
 		{
 			printf("http_server_process =>%d\n", r);
 		}
-	}
+	} while(*(int*)param && -1 != r);
 }
 
 int http_server_init()
