@@ -63,16 +63,16 @@ const char* http_reason_phrase(int code)
 		"HTTP Version Not Supported" // 505
 	};
 
-	if(code >= 100 && code < sizeof(reason1xx)/sizeof(reason1xx[0]))
-		return reason1xx[code];
-	else if(code >= 200 && code < sizeof(reason2xx)/sizeof(reason2xx[0]))
-		return reason2xx[code];
-	else if(code >= 300 && code < sizeof(reason3xx)/sizeof(reason3xx[0]))
-		return reason3xx[code];
-	else if(code >= 400 && code < sizeof(reason4xx)/sizeof(reason4xx[0]))
-		return reason4xx[code];
-	else if(code >= 500 && code < sizeof(reason5xx)/sizeof(reason5xx[0]))
-		return reason5xx[code];
+	if(code >= 100 && code < 100+sizeof(reason1xx)/sizeof(reason1xx[0]))
+		return reason1xx[code-100];
+	else if(code >= 200 && code < 200+sizeof(reason2xx)/sizeof(reason2xx[0]))
+		return reason2xx[code-200];
+	else if(code >= 300 && code < 300+sizeof(reason3xx)/sizeof(reason3xx[0]))
+		return reason3xx[code-300];
+	else if(code >= 400 && code < 400+sizeof(reason4xx)/sizeof(reason4xx[0]))
+		return reason4xx[code-400];
+	else if(code >= 500 && code < 500+sizeof(reason5xx)/sizeof(reason5xx[0]))
+		return reason5xx[code-500];
 	else
 		return "unknown";
 }
