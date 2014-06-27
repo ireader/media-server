@@ -115,6 +115,8 @@ typedef struct _ts_pes_t
 	//uint8_t PES_private_data[128/8];
 
 	//uint32_t pack_field_length : 8;
+	uint8_t *payload;
+	size_t payload_len;
 } ts_pes_t;
 
 typedef struct _ts_pmt_t

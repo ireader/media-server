@@ -1,9 +1,12 @@
 // ITU-T H.222.0(06/2012)
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
 //
+#include <stdlib.h>
 #include "mpeg-ts-proto.h"
 #include "mpeg-ts.h"
 #include "crc32.h"
+#include "dlog.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -38,6 +41,8 @@ int ts_pat_dec(const uint8_t* data, int bytes, ts_pat_t *pat)
 	uint32_t sector_number = data[6];
 	uint32_t last_sector_number = data[7];
 
+	dlog_log("PAT: %0x %0x %0x %0x %0x %0x %0x %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6], (unsigned int)data[7]);
+
 	assert(0x00 == table_id);
 	assert(1 == section_syntax_indicator);
 	pat->tsid = transport_stream_id;
@@ -47,15 +52,16 @@ int ts_pat_dec(const uint8_t* data, int bytes, ts_pat_t *pat)
 	{
 		pat->pmt[j].pn = (data[i] << 8) | data[i+1];
 		pat->pmt[j].pid = ((data[i+2] & 0x1F) << 8) | data[i+3];
+		dlog_log("PAT[%d]: pn: %0x, pid: %0x\n", j, pat->pmt[j].pn, pat->pmt[j].pid);
 		j++;
 	}
 
 	pat->pmt_count = j;
 
-	assert(i+4 == bytes);
+	//assert(i+4 == bytes);
 	//crc = (data[i] << 24) | (data[i+1] << 16) | (data[i+2] << 8) | data[i+3];
 	//crc = crc32(-1, data, bytes-4);
-	assert(0 == crc32(0xffffffff, data, bytes));
+	assert(0 == crc32(0xffffffff, data, section_length+3));
 	return 0;
 }
 
@@ -82,6 +88,8 @@ int ts_pmt_dec(const uint8_t* data, int bytes, ts_pmt_t *pmt)
 	uint32_t reserved4 = (data[10] >> 4) & 0x0F;
 	uint32_t program_info_length = ((data[10] & 0x0F) << 8) | data[11];
 
+	dlog_log("PMT: %0x %0x %0x %0x %0x %0x %0x %0x, %0x, %0x, %0x, %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6],(unsigned int)data[7],(unsigned int)data[8],(unsigned int)data[9],(unsigned int)data[10],(unsigned int)data[11]);
+
 	assert(0x02 == table_id);
 	assert(1 == section_syntax_indicator);
 	assert(0 == sector_number);
@@ -101,6 +109,7 @@ int ts_pmt_dec(const uint8_t* data, int bytes, ts_pmt_t *pmt)
 		pmt->streams[n].sid = data[i+j];
 		pmt->streams[n].pid = ((data[i+j+1] & 0x1F) << 8) | data[i+j+2];
 		pmt->streams[n].esinfo_len = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
+		dlog_log("PMT[%d]: sid: %0x, pid: %0x, eslen: %d\n", j, pmt->streams[n].sid, pmt->streams[n].pid, pmt->streams[n].esinfo_len);
 
 		for(k = 0; k < pmt->streams[n].esinfo_len; k++)
 		{
@@ -114,18 +123,23 @@ int ts_pmt_dec(const uint8_t* data, int bytes, ts_pmt_t *pmt)
 	pmt->stream_count = n;
 
 	i += j;
-	assert(i+4 == bytes);
+	//assert(i+4 == bytes);
 	//crc = (data[i] << 24) | (data[i+1] << 16) | (data[i+2] << 8) | data[i+3];
-	assert(0 == crc32(-1, data, bytes));
+	assert(0 == crc32(-1, data, section_length+3));
 	return 0;
 }
 
-static int pes_payload(const uint8_t* data, int bytes)
+static int pes_payload(void* param, const uint8_t* data, int bytes)
 {
+    ts_pes_t *pes;
+    pes = (ts_pes_t*)param;
+
+    memcpy(pes->payload + pes->payload_len, data, bytes);
+    pes->payload_len += bytes;
 	return 0;
 }
 
-int pes_dec(const uint8_t* data, int bytes, ts_pes_t *pes)
+int pes_dec(void* param, const uint8_t* data, int bytes, ts_pes_t *pes)
 {
 	int i = 0;
 	int n = 0;
@@ -133,9 +147,11 @@ int pes_dec(const uint8_t* data, int bytes, ts_pes_t *pes)
 	uint32_t packet_start_code_prefix = (data[0] << 16) | (data[1] << 8) | data[2];
 	uint32_t stream_id = data[3];
 	uint32_t PES_packet_length = (data[4] << 8) | data[5];
+	dlog_log("PES: %0x %0x %0x %0x %0x %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5]);
 
 	assert(0x00000001 == packet_start_code_prefix);
 	pes->len = PES_packet_length;
+    assert(0xe0 == stream_id || 0xc0 == stream_id);
 
 	switch(stream_id)
 	{
@@ -173,6 +189,8 @@ int pes_dec(const uint8_t* data, int bytes, ts_pes_t *pes)
 
 		i++;
 		pes->PES_header_data_length = data[i];
+
+		dlog_log("PES: flag: %0x/%0x len: %d\n", (unsigned int)data[6], (unsigned int)data[7], (unsigned int)data[8]);
 
 		i++;
 		if(0x02 == pes->PTS_DTS_flags)
@@ -228,7 +246,7 @@ int pes_dec(const uint8_t* data, int bytes, ts_pes_t *pes)
 
 		// payload
 		i = 6 + 3 + pes->PES_header_data_length;
-		pes_payload(data + i, bytes - i);
+		pes_payload(pes, data + i, bytes - i);
 		pes->len -= bytes - 6;
 	}
 
@@ -243,6 +261,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 	uint32_t j = 0;
 
 	adp->adaptation_field_length = data[i++];
+	dlog_log("adaptaion(%d)  flag: %0x\n", adp->adaptation_field_length, (unsigned int)data[i]);
 
 	if(adp->adaptation_field_length > 0)
 	{
@@ -335,6 +354,9 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
+static char s_video[1024*1024];
+static char s_audio[1024*1024];
+
 int ts_packet_dec(const uint8_t* data, int bytes)
 {
 	int i, j, k;
@@ -342,16 +364,24 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 	ts_packet_header_t pkhd;
 	uint32_t PID;
 
+	static FILE* s_decfp;
+	if(!s_decfp)
+		s_decfp = fopen("e:\\0.raw", "wb");
+
 	// 2.4.3 Specification of the transport stream syntax and semantics
 	// Transport stream packets shall be 188 bytes long.
 	assert(188 == bytes);
 
 	// 2.4.3.2 Transport stream packet layer
 	// Table 2-2
+    memset(&pkhd, 0, sizeof(pkhd));
 	PID = ((data[1] << 8) | data[2]) & 0x1FFF;
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
+
+	dlog_log("-----------------------------------------------\n");
+	dlog_log("packet: %0x %0x %0x %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3]);
 
 	i = 4;
 	if(0x02 == pkhd.adaptation_field_control || 0x03 == pkhd.adaptation_field_control)
@@ -361,7 +391,7 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
 			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			printf("pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
+			dlog_log("pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
 
@@ -395,23 +425,52 @@ int ts_packet_dec(const uint8_t* data, int bytes)
 					{
 						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						{
-							pes_dec(data + i, bytes - i, &tsctx.pes[k]);
+							static int s_n = 0;
+							if(s_n++ < 1500)
+							{
+								if(!tsctx.pes[k].payload)
+									tsctx.pes[k].payload = (STREAM_VIDEO_H264==tsctx.pes[k].sid) ? s_video : s_audio;
+
+								if(tsctx.pes[k].payload_len > 0)
+								{
+									fwrite(&tsctx.pes[k].sid, 1, 4, s_decfp);
+									fwrite(&tsctx.pes[k].payload_len, 1, 4, s_decfp);
+									fwrite(tsctx.pes[k].payload, 1, tsctx.pes[k].payload_len, s_decfp);
+									fflush(s_decfp);
+
+									tsctx.pes[k].payload_len = 0;
+								}
+							}
+							else
+							{
+								fclose(s_decfp);
+								exit(0);
+							}
+
+                            pes_dec(NULL, data + i, bytes - i, &tsctx.pes[k]);
+
+                            if(0 == k)
+                                dlog_log("pes payload: %u\n", tsctx.pes[k].len);
 
 							if(tsctx.pes[k].PTS_DTS_flags & 0x02)
 							{
 								t = tsctx.pes[k].pts / 90;
-								printf("pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
+								dlog_log("pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
 							}
 
 							if(tsctx.pes[k].PTS_DTS_flags & 0x01)
 							{
 								t = tsctx.pes[k].dts / 90;
-								printf("dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
+								dlog_log("dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
 							}
 						}
 						else
 						{
-							tsctx.pes[k].len -= bytes - i;
+                            memcpy(tsctx.pes[k].payload + tsctx.pes[k].payload_len, data + i, bytes - i);
+                            tsctx.pes[k].payload_len += bytes - i;
+
+                            if(tsctx.pes[i].len > 0)
+                                tsctx.pes[k].len -= bytes - i;
 						}
 
 						break; // goto out?

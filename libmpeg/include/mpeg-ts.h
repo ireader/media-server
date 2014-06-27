@@ -30,15 +30,17 @@ extern "C" {
 	typedef long long int64_t;
 #endif
 
-typedef void (*mpeg_ts_cbwrite)(void* param, const void* packet, int bytes);
+typedef void (*mpeg_ts_cbwrite)(void* param, const void* packet, size_t bytes);
 
 LIBMPEG_API void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param);
 
 LIBMPEG_API int mpeg_ts_destroy(void* ts);
 
-LIBMPEG_API int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* data, int bytes);
+LIBMPEG_API int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 LIBMPEG_API int mpeg_ts_reset(void* ts);
+
+LIBMPEG_API int ts_packet_dec(const unsigned char* data, int bytes);
 
 #ifdef __cplusplus
 }
