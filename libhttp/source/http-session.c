@@ -64,7 +64,7 @@ static void http_session_handle(struct http_session_t *session)
 	}
 }
 
-static void http_session_onrecv(void* param, int code, int bytes)
+static void http_session_onrecv(void* param, int code, size_t bytes)
 {
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
@@ -101,11 +101,10 @@ static void http_session_onrecv(void* param, int code, int bytes)
 }
 
 static int http_session_send(struct http_session_t *session, int idx);
-static void http_session_onsend(void* param, int code, int bytes)
+static void http_session_onsend(void* param, int code, size_t bytes)
 {
-	int i;
+	size_t i;
 	char* ptr;
-	struct http_bundle_t *bundle;
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
@@ -158,7 +157,8 @@ static void http_session_onsend(void* param, int code, int bytes)
 
 static int http_session_send(struct http_session_t *session, int idx)
 {
-	int i, r;
+	int r;
+	size_t i;
 	r = aio_socket_send_v(session->socket, session->vec + idx, session->vec_count-idx, http_session_onsend, session);
 	if(0 != r)
 	{
@@ -233,7 +233,7 @@ const char* http_server_get_header(void* param, const char *name)
 	return http_get_header_by_name(session->parser, name);
 }
 
-int http_server_get_content(void* param, void **content, int *length)
+int http_server_get_content(void* param, void **content, size_t *length)
 {
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
@@ -248,9 +248,9 @@ int http_server_send(void* param, int code, void* bundle)
 	return http_server_send_vec(param, code, &bundle, 1);
 }
 
-int http_server_send_vec(void* param, int code, void** bundles, int num)
+int http_server_send_vec(void* param, int code, void** bundles, size_t num)
 {
-	int i, r;
+	size_t i, r;
 	char msg[128];
 	struct http_bundle_t *bundle;
 	struct http_session_t *session;
@@ -278,7 +278,7 @@ int http_server_send_vec(void* param, int code, void** bundles, int num)
 	sprintf(msg, "Server: WebServer 0.2\r\n"
 		"Connection: keep-alive\r\n"
 		"Keep-Alive: timeout=5,max=100\r\n"
-		"Content-Length: %d\r\n\r\n", r);
+		"Content-Length: %u\r\n\r\n", (unsigned int)r);
 	strcat(session->data, msg);
 	sprintf(msg, "HTTP/1.1 %d %s\r\n", code, http_reason_phrase(code));
 

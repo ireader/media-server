@@ -5,9 +5,9 @@ struct http_bundle_t
 {
 	long ref;
 
-	int len;  // used size
+	size_t len;  // used size
 	void* ptr;
-	int capacity;
+    size_t capacity;
 
 #if defined(_DEBUG)
 	int magic;

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "http-server.h"
 #include "cstringext.h"
 #include "sys/sock.h"

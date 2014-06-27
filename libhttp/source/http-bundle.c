@@ -1,12 +1,12 @@
-#include "http-bundle.h"
+#include <stdlib.h>
 #include "http-server.h"
+#include "http-bundle.h"
 #include "cstringext.h"
 #include "sys/sync.h"
-#include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
 
-void* http_bundle_alloc(int sz)
+void* http_bundle_alloc(size_t sz)
 {
 	struct http_bundle_t *bundle;
 
@@ -42,7 +42,7 @@ void* http_bundle_lock(void* ptr)
 	return bundle->ptr;
 }
 
-int http_bundle_unlock(void* ptr, int sz)
+int http_bundle_unlock(void* ptr, size_t sz)
 {
 	struct http_bundle_t *bundle;
 	bundle = (struct http_bundle_t *)ptr;
@@ -53,7 +53,8 @@ int http_bundle_unlock(void* ptr, int sz)
 
 int http_bundle_addref(struct http_bundle_t *bundle)
 {
-	return InterlockedIncrement(&bundle->ref);
+    InterlockedIncrement(&bundle->ref);
+    return 0;
 }
 
 int http_bundle_release(struct http_bundle_t *bundle)

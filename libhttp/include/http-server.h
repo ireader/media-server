@@ -50,7 +50,7 @@ LIBHTTP_API const char* http_server_get_header(void* session, const char *name);
 /// @param[out] content data pointer(don't need free)
 /// @param[out] length data size
 /// @return 0-ok, other-error
-LIBHTTP_API int http_server_get_content(void* session, void **content, int *length);
+LIBHTTP_API int http_server_get_content(void* session, void **content, size_t *length);
 
 
 // Response
@@ -68,7 +68,7 @@ LIBHTTP_API int http_server_send(void* session, int code, void* bundle);
 /// @param[in] bundles bundle array
 /// @param[in] num array elementary number
 /// @return 0-ok, other-error
-LIBHTTP_API int http_server_send_vec(void* session, int code, void** bundles, int num);
+LIBHTTP_API int http_server_send_vec(void* session, int code, void** bundles, size_t num);
 
 /// Reply a server side file(must be local regular file)
 /// @param[in] session handle callback session parameter
@@ -116,10 +116,10 @@ typedef int (*http_server_handler)(void* param, void* session, const char* metho
 LIBHTTP_API int http_server_set_handler(void* http, http_server_handler handler, void* param);
 
 // Bundle
-LIBHTTP_API void* http_bundle_alloc(int size);
+LIBHTTP_API void* http_bundle_alloc(size_t size);
 LIBHTTP_API int http_bundle_free(void* bundle);
 LIBHTTP_API void* http_bundle_lock(void* bundle);
-LIBHTTP_API int http_bundle_unlock(void* bundle, int size);
+LIBHTTP_API int http_bundle_unlock(void* bundle, size_t size);
 
 #ifdef __cplusplus
 }

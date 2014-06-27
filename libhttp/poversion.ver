@@ -1,2 +1,2 @@
-const char* const poweron_version_version="0.2.0.$WCREV$";
+const char* const poweron_version_version="0.3.0.$WCREV$";
 const char* const poweron_version_build="$WCNOW$";
