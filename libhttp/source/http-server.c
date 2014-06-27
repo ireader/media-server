@@ -51,7 +51,7 @@ static void http_server_process(void* param)
 
 int http_server_init()
 {
-	int cpu = system_getcpucount();
+	int cpu = (int)system_getcpucount();
 	s_pool = thread_pool_create(cpu, 1, 64);
 	aio_socket_init(cpu);
 

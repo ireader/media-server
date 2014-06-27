@@ -185,7 +185,7 @@ struct hls_file_t* hls_live_file(struct hls_live_t* live, char* name)
 	return NULL;
 }
 
-int hls_live_input(struct hls_live_t* live, const void* data, int bytes, int stream)
+int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int stream)
 {
     int duration;
     struct hls_file_t *file;

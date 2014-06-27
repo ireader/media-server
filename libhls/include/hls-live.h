@@ -55,7 +55,7 @@ struct hls_file_t* hls_live_file(struct hls_live_t* live, char* file);
 /// @param[in] bytes packet size in bytes
 /// @param[in] stream packet stream id(H.264/AAC)
 /// @return 0-ok, other-error
-int hls_live_input(struct hls_live_t* live, const void* data, int bytes, int stream);
+int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int stream);
 
 
 #endif /* !_hls_live_h_ */

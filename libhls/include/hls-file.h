@@ -17,6 +17,6 @@ struct hls_file_t
 
 struct hls_file_t* hls_file_open();
 int hls_file_close(struct hls_file_t* file);
-int hls_file_write(struct hls_file_t* file, const void* packet, int bytes);
+int hls_file_write(struct hls_file_t* file, const void* packet, size_t bytes);
 
 #endif /* !_hls_file_h_ */

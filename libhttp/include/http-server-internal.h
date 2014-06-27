@@ -17,7 +17,7 @@ struct http_session_t
 	char data[2 * 1024];
 
 	// send buffer vector
-	size_t vec_count;
+	int vec_count;
 	socket_bufvec_t *vec;
 	socket_bufvec_t vec3[3];
 };

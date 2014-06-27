@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "hls-server.h"
 #include "http-server.h"
 #include "hls-live.h"

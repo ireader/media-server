@@ -34,7 +34,7 @@ void hls_block_free(struct hls_block_t* block)
     free(block);
 }
 
-void hls_block_write(struct hls_block_t* block, const void* packet, int bytes)
+void hls_block_write(struct hls_block_t* block, const void* packet, size_t bytes)
 {
     memcpy((char*)block->ptr + block->len, packet, bytes);
     block->len += bytes;

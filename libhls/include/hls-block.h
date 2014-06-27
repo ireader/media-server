@@ -9,12 +9,12 @@ struct hls_block_t
 
     void* bundle;
     void* ptr;
-    int len;
+    size_t len;
 };
 
 struct hls_block_t* hls_block_alloc();
 void hls_block_free(struct hls_block_t* block);
 
-void hls_block_write(struct hls_block_t* block, const void* packet, int bytes);
+void hls_block_write(struct hls_block_t* block, const void* packet, size_t bytes);
 
 #endif /* !_hls_block_h_ */

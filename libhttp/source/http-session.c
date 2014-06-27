@@ -74,7 +74,7 @@ static void http_session_onrecv(void* param, int code, size_t bytes)
 
 	if(0 == code && bytes > 0)
 	{
-		int remain = bytes;
+		size_t remain = bytes;
 		code = http_parser_input(session->parser, session->data, &remain);
 		if(0 == code)
 		{
@@ -100,7 +100,7 @@ static void http_session_onrecv(void* param, int code, size_t bytes)
 	}
 }
 
-static int http_session_send(struct http_session_t *session, int idx);
+static int http_session_send(struct http_session_t *session, size_t idx);
 static void http_session_onsend(void* param, int code, size_t bytes)
 {
 	size_t i;
@@ -155,7 +155,7 @@ static void http_session_onsend(void* param, int code, size_t bytes)
 	}
 }
 
-static int http_session_send(struct http_session_t *session, int idx)
+static int http_session_send(struct http_session_t *session, size_t idx)
 {
 	int r;
 	size_t i;

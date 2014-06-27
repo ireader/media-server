@@ -54,7 +54,7 @@ int hls_file_close(struct hls_file_t* file)
 	return 0;
 }
 
-int hls_file_write(struct hls_file_t* file, const void* packet, int bytes)
+int hls_file_write(struct hls_file_t* file, const void* packet, size_t bytes)
 {
 	struct hls_block_t *block;
 
