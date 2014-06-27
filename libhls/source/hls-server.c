@@ -29,131 +29,186 @@ static int hls_server_reply(void* session, int code, const char* msg)
 	return 0;
 }
 
+static int hls_server_m3u8_parse(const char* path, char* name, char* server, char* key)
+{
+    size_t n;
+ //   void *content;
+
+    n = strlen(path);
+    if(n - 6 - 5 >= sizeof(name)) // 6-/live/, 5-.m3u8
+        return -1;
+    
+    strncpy(name, path + 6, n - 6 - 5);
+    name[n - 6 - 5] = '\0';
+
+    //	n = 0;
+    //	http_server_get_content(session, &content, &n);
+    return 0;
+}
+
 // /live/name.m3u8
 static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const char* path)
 {
-	int i, r, n;
+    int r;
 	char name[64];
 	char server[64];
 	char key[64];
 	//char m3u8[512];
 	char *m3u8;
-	void *content;
 	time64_t ltnow;
 	void* bundle;
 	struct hls_live_t *live;
 
-	n = strlen(path);
-	if(n - 6 - 5 >= sizeof(name))
-	{
-		return hls_server_reply(session, 404, "");
-	}
-	else
-	{
-		strncpy(name, path + 6, n - 6 - 5);
-		name[n - 6 - 5] = '\0';
-	}
+    // parse server/key
+    r = hls_server_m3u8_parse(path, name, server, key);
+    if(0 != r)
+    {
+        hls_server_reply(session, 404, "");
+        return r;
+    }
 
-	n = 0;
-	http_server_get_content(session, &content, &n);
-	if(n < 0)
-		return hls_server_reply(session, 417, "");
-
-	// parse server/key
-	live = hls_live_fetch(ctx, name);
+    // fetch live object
+	live = hls_live_fetch(name);
 	if(!live)
 		return hls_server_reply(session, 500, "");
 
 	// create a new thread?
-	if(ctx->open)
+	if(0 == live->opened)
 	{
-		r = ctx->open(ctx->param, live, name, server, key);
+        r = ctx->open ? ctx->open(ctx->param, live, name, server, key) : -1;
 		if(0 != r)
-		{
-		}
+        {
+            hls_server_reply(session, 404, "");
+            hls_live_release(live);
+            return r;
+        }
+        
+        live->opened = 1; // TODO: close???
 	}
 
 	// wait for first file
 	ltnow = time64_now();
-	while(live->file_count < 1 && time64_now() - ltnow < MAX_DURATION*2000)
+	while(live->file_count < 1 && time64_now() - ltnow < HLS_MAX_DURATION*1000)
 	{
 		system_sleep(200);
 	}
 
-	bundle = http_bundle_alloc(128*MAX_FILES);
-	m3u8 = http_bundle_lock(bundle);
-	if(0 != hls_live_m3u8(live, m3u8))
-	{
-		http_bundle_free(bundle);
-		return hls_server_reply(session, 500, "");
-	}
+	bundle = http_bundle_alloc(128 * HLS_FILE_NUM);
+	m3u8 = (char*)http_bundle_lock(bundle);
+    hls_live_m3u8(live, m3u8);
+    printf("\n%s\n", m3u8);
 
 	http_bundle_unlock(bundle, strlen(m3u8));
-	http_server_set_content_type(session, "application/vnd.apple.mpegurl");
+	http_server_set_content_type(session, HLS_M3U8_TYPE);
 	http_server_send(session, 200, bundle);
-	http_bundle_free(bundle);
+    http_bundle_free(bundle);
+
+    hls_live_release(live); // release fetch reference count
 	return 0;
 }
 
-static hls_server_live(struct hls_server_t *ctx, void* session, const char* path)
+static int hls_server_live_parse(const char* path, char* name, char* file)
 {
-	int i, n;
+    // /live/name/1.ts
+    size_t n;
+    const char* p;
+
+    n = strlen(path);
+    assert(n < sizeof(name) + sizeof(file) + 6);
+
+    p = strrchr(path, '/');
+    if(n - (p - path) > sizeof(file) || p - path - 6 > sizeof(name) || p - path < 7)
+        return -1;
+    
+    strncpy(name, path + 6, p - path - 6);
+    strncpy(file, p + 1, n - (p + 1 - path) - 3);
+    name[p - path - 6] = '\0';
+    file[n - (p + 1 - path) - 3] = '\0';
+    return 0;
+}
+
+static int hls_server_live(struct hls_server_t *ctx, void* session, const char* path)
+{
+#if 0
+    int r;
+    void* bundle;
+    void* ptr;
+    FILE *fp;
+    
+    bundle = http_bundle_alloc(4*1024*1024);
+    ptr = http_bundle_lock(bundle);
+    
+    fp = fopen("/Users/a360/Downloads/1.ts", "rb");
+    r = fread(ptr, 1, 4*1024*1024, fp);
+    fclose(fp);
+    
+    http_bundle_unlock(bundle, r);
+    
+    http_server_send(session, 200, bundle);
+    http_bundle_free(bundle);
+#else
+	int i, r;
+    size_t n;
 	char name[64];
 	char file[64];
-	const char* p;
 	void** bundles;
+    struct list_head *pos;
 	struct hls_live_t *live;
 	struct hls_file_t *tsfile;
 	struct hls_block_t *block;
 
-	n = strlen(path);
-	assert(n < sizeof(name) + sizeof(file) + 6);
+    r = hls_server_live_parse(path, name, file);
+    if(0 != r)
+        return hls_server_reply(session, 404, "");
 
-	// /live/name/1.ts
-	p = strrchr(path, '/');
-	if(n - (p - path) > sizeof(file) || p - path - 6 > sizeof(name) || p - path < 7)
-	{
-		return hls_server_reply(session, 404, "");
-	}
-	else
-	{
-		strncpy(name, path + 6, p - path - 6);
-		strncpy(file, p + 1, n - (p + 1 - path) - 3);
-		name[p - path - 6] = '\0';
-		file[n - (p + 1 - path) - 3] = '\0';
+    live = hls_live_fetch(name);
+    if(!live)
+        return hls_server_reply(session, 500, "");
 
-		live = hls_live_fetch(ctx, name);
-		if(!live)
-			return hls_server_reply(session, 500, "");
+    tsfile = hls_live_file(live, file);
+    if(!tsfile)
+    {
+        hls_live_release(live);
+        return hls_server_reply(session, 404, "");
+    }
 
-		tsfile = hls_live_read(live, file);
-		if(!tsfile)
-			return hls_server_reply(session, 404, "");
+    i = 0;
+    n = 0;
+    list_for_each(pos, &tsfile->head)
+    {
+        ++n;
+    }
 
-		i = 0;
-		n = 0;
-		for(block = &tsfile->head; block; block = block->next)
-			++n;
+    bundles = (void**)malloc(sizeof(void*) * n);
+    if(!bundles)
+    {
+        hls_file_close(tsfile);
+        hls_live_release(live);
+        return hls_server_reply(session, 404, "");
+    }
 
-		bundles = malloc(sizeof(void*) * n);
-		for(block = &tsfile->head; block; block = block->next)
-			bundles[i++] = block->bundle;
+    list_for_each(pos, &tsfile->head)
+    {
+        block = list_entry(pos, struct hls_block_t, link);
+        bundles[i++] = block->bundle;
+    }
 
-		http_server_set_content_type(session, "video/mp2t");
-		http_server_send_vec(session, 200, bundles, n);
-		hls_file_close(tsfile);
-		free(bundles);
-	}
+    printf("live read: %s/%s.ts\n", name, file);
+    http_server_set_content_type(session, HLS_TS_TYPE);
+    http_server_send_vec(session, 200, bundles, n);
+
+    hls_file_close(tsfile);
+    hls_live_release(live); // release fetched live object
+    free(bundles);
+#endif
 
 	return 0;
 }
 
 int hls_server_onhttp(void* param, void* session, const char* method, const char* path)
 {
-	int r, n;
-	char id[256];
+	size_t n;
 	char uri[256];
-	char m3u8[MAX_FILES * 48 + 64];
 	struct hls_server_t *ctx;
 	ctx = (struct hls_server_t *)param;
 
@@ -178,11 +233,13 @@ int hls_server_onhttp(void* param, void* session, const char* method, const char
 
 int hls_server_init(const char* ip, int port)
 {
+    hls_live_init();
 	return http_server_init();
 }
 
 int hls_server_cleanup(void* hls)
 {
+    hls_live_cleanup();
 	return http_server_cleanup();
 }
 

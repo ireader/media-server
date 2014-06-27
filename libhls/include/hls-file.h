@@ -2,29 +2,17 @@
 #define _hls_file_h_
 
 #include "time64.h"
-
-#define BLOCK_SIZE (188*1000)
-
-struct hls_block_t
-{
-	struct hls_block_t *next;
-	void* bundle;
-	void* ptr;
-	int len;
-};
+#include "hls-block.h"
 
 struct hls_file_t
 {
-	struct hls_file_t *prev;
-	struct hls_file_t *next;
-
-	struct hls_block_t head;
-	struct hls_block_t *tail;
+	struct list_head head;
 
 	long refcnt;
 	int seq; // filename
 	int duration; // ms
-	time64_t tcreate;
+	time64_t tcreate; // file create time
+    time64_t pts; // first pts
 };
 
 struct hls_file_t* hls_file_open();

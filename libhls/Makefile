@@ -47,6 +47,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = DXT_EXPORTS
+DEFINES = LIBHLS_EXPORTS OS_MAC
 
 include $(ROOT)/gcc.mk
