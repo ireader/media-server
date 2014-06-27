@@ -27,6 +27,8 @@
 #endif
 
 
+static unsigned char s_buffer[8*1024*1024];
+
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialog
@@ -92,55 +94,83 @@ int STDCALL OnThread(IN void* param)
 	return 0;
 }
 
-static void OnTSWrite(void* param, const void* packet, int bytes)
+static void OnTSWrite(void* param, const void* packet, size_t bytes)
 {
 	FILE *fp = (FILE*)param;
 	fwrite(packet, 1, bytes, fp);
 }
 
+#include "../video/h264-util.h"
 static void OnReadH264(void* ts, const void* data, int bytes)
 {
 	static int64_t pcr = 0;
 	static int64_t pts = 0;
 
+	int i;
+	int j = 0;
+	const unsigned char* p = (const unsigned char*)data;
+	for(i = 0; i + 4 < bytes; i++)
+	{
+		if(0x00 == p[i] && 0x00 == p[i+1] && 0x01 == p[i+2])
+		{
+			int naltype = p[i+3] & 0x1f;
+			if(7 != naltype && 8 != naltype && 9 != naltype)
+			{
+				while(j > 0 && 0x00==s_buffer[j-1])
+				{
+					--j; // remove zero_bytes;
+				}
+			}
+		}
+
+		s_buffer[j++] = p[i];
+	}
+
+	while(i < bytes)
+		s_buffer[j++] = p[i++];
+	data = s_buffer;
+	bytes = j;
+
 	if(0 == pcr)
 	{
 		time_t t;
 		time(&t);
-		pts = 412536249;//t * 90000;
+		pts = 90000;//t * 90000;
+		pcr = pts * 300;
 	}
 	else
 	{
 		pts += 90 * 40; // 90kHZ * 40ms
 	}
 
-	pcr = pts * 300;
-	mpeg_ts_write(ts, 0x1b, pts, pts, data, bytes);
+	//if(pts < 90000 + 90 * 3000)
+		mpeg_ts_write(ts, 0x1b, pts, pts, data, bytes);
 }
 
 static int OnHTTP(void* param, void* session, const char* method, const char* path)
 {
+	TRACE("OnHTTP: %s\n", path);
 	if(0 == strcmp("/1.m3u8", path))
 	{
 		const char* m3u8 = 
 			"#EXTM3U\n"
 			"#EXT-X-VERSION:3\n"
-			"#EXT-X-TARGETDURATION:15\n"
-			"#EXT-X-MEDIA-SEQUENCE:1\n"
-			"#EXTINF:15,\n"
+			"#EXT-X-TARGETDURATION:16\n"
+			"#EXT-X-MEDIA-SEQUENCE:0\n"
+			"#EXTINF:16,\n"
 			"1.ts\n"
-			"#EXTINF:15,\n"
+			"#EXTINF:16,\n"
 			"2.ts\n"
-			"#EXTINF:15,\n"
-			"3.ts\n"
-			"#EXT-X-ENDLIST\n";
+			"#EXTINF:16,\n"
+			"3.ts\n";
+			//"#EXT-X-ENDLIST\n";
 
 		void* bundle = http_bundle_alloc(strlen(m3u8)+1);
 		void* ptr = http_bundle_lock(bundle);
 		strcpy((char*)ptr, m3u8);
 		http_bundle_unlock(bundle, strlen(m3u8)+1);
 
-		http_server_set_content_type(session, "application/vnd.apple.mpegurl");
+		http_server_set_content_type(session, "application/vnd.apple.mpegURL");
 		http_server_send(session, 200,bundle);
 		http_bundle_free(bundle);
 	}
@@ -154,7 +184,21 @@ static int OnHTTP(void* param, void* session, const char* method, const char* pa
 		http_bundle_unlock(bundle, sz);
 
 		//socket_send_all_by_time(sock, p, sz, 0, 5000);
-		http_server_set_content_type(session, "video/mp2t");
+		http_server_set_content_type(session, "video/MP2T");
+		http_server_send(session, 200, bundle);
+		http_bundle_free(bundle);
+	}
+	else if(0 == strcmp("/sjz.mov", path))
+	{
+		StdCFile file("e:\\sjz.mov", "rb");
+		long sz = file.GetFileSize();
+		void* bundle = http_bundle_alloc(sz);
+		void* ptr = http_bundle_lock(bundle);
+		file.Read(ptr, sz);
+		http_bundle_unlock(bundle, sz);
+
+		//socket_send_all_by_time(sock, p, sz, 0, 5000);
+		http_server_set_content_type(session, "video/MP2T");
 		http_server_send(session, 200, bundle);
 		http_bundle_free(bundle);
 	}
@@ -168,7 +212,7 @@ static int OnHTTP(void* param, void* session, const char* method, const char* pa
 		http_bundle_unlock(bundle, sz);
 
 		//socket_send_all_by_time(sock, p, sz, 0, 5000);
-		http_server_set_content_type(session, "video/mp2t");
+		http_server_set_content_type(session, "video/MP2T");
 		http_server_send(session, 200, bundle);
 		http_bundle_free(bundle);
 
@@ -176,6 +220,67 @@ static int OnHTTP(void* param, void* session, const char* method, const char* pa
 	}
 
 	return 0;
+}
+
+
+static unsigned char* search_start_code(unsigned char* stream, int bytes)
+{
+	unsigned char *p;
+	for(p = stream; p+3<stream+bytes; p++)
+	{
+		if(0x00 == p[0] && 0x00 == p[1] && 0x00 == p[2] && 0x01 == p[3])
+			return p;
+	}
+	return NULL;
+}
+
+typedef void (*OnH264Data)(void* param, const void* data, int bytes);
+static int H264File(OnH264Data callback, void* param)
+{
+	FILE *fp;
+	int length;
+	unsigned char* p;
+	
+	fp = fopen("e:\\sjz.h264", "rb");
+	length = fread(s_buffer, 1, sizeof(s_buffer), fp);
+	fclose(fp);
+
+	p = s_buffer;
+
+	while(p)
+	{
+		unsigned char* p1;
+		unsigned char* p2;
+		unsigned int nal_unit_type;
+
+		p1 = p;
+
+		while(p1)
+		{
+			p1 += 4;
+			p2 = search_start_code(p1, length-(p1-s_buffer));
+			if(!p2)
+			{
+				// file end ? 
+				callback(param, p, length - (p-s_buffer));
+				return 0;
+			}
+
+			nal_unit_type = 0x1F & p1[0];
+			if( (nal_unit_type>0 && nal_unit_type <= 5) // data slice
+				|| 10==nal_unit_type // end of sequence
+				|| 11==nal_unit_type) // end of stream
+			{
+				callback(param, p, p2-p);
+				p = p2;
+				break;
+			}
+
+			p1 = p2;
+		}
+	}
+
+	return 1;
 }
 
 static void OnReadFile(void* camera, const void* data, int bytes)
@@ -196,17 +301,20 @@ static void OnReadFile(void* camera, const void* data, int bytes)
 
 	//pcr = pts * 300;
 	hsl_server_input(camera, data, bytes, 0x1b);
+	Sleep(40);
 }
 
 static int STDCALL OnLiveThread(IN void* param)
 {
 	while(1)
 	{
-		H264Reader reader;
-		reader.Open("e:\\sjz.h264");
+//		H264Reader reader;
+//		reader.Open("e:\\sjz.h264");
 
-		while(reader.Read(OnReadFile, param) > 0)
-			Sleep(40);
+		//while(reader.Read(OnReadFile, param) > 0)
+		//	Sleep(40);
+
+		H264File(OnReadFile, param);
 	}
 
 	return 0;
@@ -214,8 +322,13 @@ static int STDCALL OnLiveThread(IN void* param)
 
 static int OnLiveOpen(void* param, void* camera, const char* id, const char* key, const char* publicId)
 {
-	thread_t thread;
-	thread_create(&thread, OnLiveThread, camera);
+	static int i = 0;
+	if(0 == i)
+	{
+		i = 1;
+		thread_t thread;
+		thread_create(&thread, OnLiveThread, camera);
+	}
 	return 0;
 }
 
@@ -261,13 +374,13 @@ BOOL CrtspclientDlg::OnInitDialog()
 //	thread_t thread;
 //	thread_create(&thread, OnThread, NULL);
 
-	hls_server_init();
-	void* hls = hls_server_create(NULL, 80);
-	hsl_server_set_handle(hls, OnLiveOpen, OnLiveClose, hls);
+	//hls_server_init();
+	//void* hls = hls_server_create(NULL, 80);
+	//hsl_server_set_handle(hls, OnLiveOpen, OnLiveClose, hls);
 
-	//http_server_init();
-	//void* server = http_server_create(NULL, 80);
-	//http_server_set_handler(server, OnHTTP, NULL);
+	http_server_init();
+	void* server = http_server_create(NULL, 80);
+	http_server_set_handler(server, OnHTTP, NULL);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -331,16 +444,14 @@ static void OnData(void* param, unsigned char nal, const void* data, int bytes)
 	fflush(fp);
 }
 
-extern "C" int ts_packet_dec(const unsigned char* data, int bytes);
-
 void CrtspclientDlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
 	//OnOK();
 
-#if 0
+#if 1
 	unsigned char buffer[188] = {0};
-	FILE *fp = fopen("e:\\2.ts", "rb");
+	FILE *fp = fopen("e:\\big_buck.ts", "rb");
 	while(fread(buffer, 188, 1, fp) > 0)
 	{
 		ts_packet_dec(buffer, 188);
@@ -373,7 +484,7 @@ void CrtspclientDlg::OnBnClickedCancel()
 	// TODO: Add your control notification handler code here
 	//OnCancel();
 
-#if 0
+#if 1
 	H264Reader reader;
 	reader.Open("e:\\sjz.h264");
 
@@ -382,5 +493,40 @@ void CrtspclientDlg::OnBnClickedCancel()
 	while(reader.Read(OnReadH264, ts) > 0);
 	mpeg_ts_destroy(ts);
 	fclose(fp);
+#else
+	int sid = 0;
+	int len = 0;
+	static char ptr[2*1024*1024] = {0};
+
+	FILE *fp2 = fopen("e:\\2.ts", "wb");
+	void* ts = mpeg_ts_create(OnTSWrite, fp2);
+	
+	FILE *fp = fopen("e:\\0.raw", "rb");
+	while(4 == fread(&sid, 1, 4, fp))
+	{
+		fread(&len, 1, 4, fp);
+		fread(ptr, 1, len, fp);
+
+		static int64_t pcr = 0;
+		static int64_t pts = 0;
+
+		if(0 == pcr)
+		{
+			time_t t;
+			time(&t);
+			pts = 90000;//t * 90000;
+			pcr = pts * 300;
+		}
+		else
+		{
+			pts += 90 * 40; // 90kHZ * 40ms
+		}
+
+		if(pts < 90000 + 90 * 4000)
+			mpeg_ts_write(ts, sid, pts, pts, ptr, len);
+	}
+	mpeg_ts_destroy(ts);
+	fclose(fp);
+	fclose(fp2);
 #endif
 }
