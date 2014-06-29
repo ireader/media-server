@@ -68,7 +68,7 @@ LIBHTTP_API int http_server_send(void* session, int code, void* bundle);
 /// @param[in] bundles bundle array
 /// @param[in] num array elementary number
 /// @return 0-ok, other-error
-LIBHTTP_API int http_server_send_vec(void* session, int code, void** bundles, size_t num);
+LIBHTTP_API int http_server_send_vec(void* session, int code, void** bundles, int num);
 
 /// Reply a server side file(must be local regular file)
 /// @param[in] session handle callback session parameter

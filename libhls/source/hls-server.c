@@ -290,7 +290,44 @@ int hsl_server_set_handle(void* hls, hls_live_open open, hls_live_close close, v
 
 int hsl_server_input(void* camera, const void* data, int bytes, int stream)
 {
+    int r;
 	struct hls_live_t *live;
-	live = (struct hls_live_t *)camera;
-	return hls_live_input(live, data, bytes, stream);
+    static unsigned char s_audio[] = {0xff, 0xf1, 0x5c, 0x40, 0x01, 0x7f, 0xfc, 0x00, 0xd0, 0x40, 0x07};
+
+#if 1
+    int i;
+    int j = 0;
+    const unsigned char* p = (const unsigned char*)data;
+
+    live = (struct hls_live_t *)camera;
+    for(i = 0; i + 4 < bytes; i++)
+    {
+        if(0x00 == p[i] && 0x00 == p[i+1] && 0x01 == p[i+2])
+        {
+            int naltype = p[i+3] & 0x1f;
+            if(7 != naltype && 8 != naltype && 9 != naltype)
+            {
+                while(j > 0 && 0x00==live->vbuffer[j-1])
+                {
+                    --j; // remove zero_bytes;
+                }
+            }
+        }
+
+        live->vbuffer[j++] = p[i];
+    }
+
+    while(i < bytes)
+        live->vbuffer[j++] = p[i++];
+    data = live->vbuffer;
+    bytes = j;
+#endif
+
+    live = (struct hls_live_t *)camera;
+    if(STREAM_VIDEO_H264 == stream)
+    {
+        r = hls_live_input(live, data, bytes, stream);
+        r = hls_live_input(live, s_audio, sizeof(s_audio), 0x0f);
+    }
+    return r;
 }

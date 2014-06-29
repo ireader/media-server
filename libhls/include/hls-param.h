@@ -6,7 +6,7 @@
 // A duration of 10 seconds of media per file seems to strike a reasonable balance for most broadcast content.
 #define HLS_MAX_DURATION 5 // 10s, from Apple recommendation
 
-#define HLS_MIN_DURATION 2 // minimum file duration(seconds)
+#define HLS_MIN_DURATION 4 // minimum file duration(seconds)
 
 // 4. How many files should be listed in the index file during a continuous, ongoing session?
 // The normal recommendation is 3, but the optimum number may be larger.

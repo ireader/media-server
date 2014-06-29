@@ -100,14 +100,15 @@ static void http_session_onrecv(void* param, int code, size_t bytes)
 	}
 }
 
-static int http_session_send(struct http_session_t *session, size_t idx);
+static int http_session_send(struct http_session_t *session, int idx);
 static void http_session_onsend(void* param, int code, size_t bytes)
 {
-	size_t i;
+	int i;
 	char* ptr;
 	struct http_session_t *session;
 	session = (struct http_session_t*)param;
 
+    printf("http_session_onsend code: %d, bytes: %u\n", code, (unsigned int)bytes);
 	if(code < 0 || 0 == bytes)
 	{
 		http_session_drop(session);
@@ -155,7 +156,7 @@ static void http_session_onsend(void* param, int code, size_t bytes)
 	}
 }
 
-static int http_session_send(struct http_session_t *session, size_t idx)
+static int http_session_send(struct http_session_t *session, int idx)
 {
 	int r;
 	size_t i;
@@ -248,9 +249,10 @@ int http_server_send(void* param, int code, void* bundle)
 	return http_server_send_vec(param, code, &bundle, 1);
 }
 
-int http_server_send_vec(void* param, int code, void** bundles, size_t num)
+int http_server_send_vec(void* param, int code, void** bundles, int num)
 {
-	size_t i, r;
+	int i;
+    size_t len;
 	char msg[128];
 	struct http_bundle_t *bundle;
 	struct http_session_t *session;
@@ -264,21 +266,21 @@ int http_server_send_vec(void* param, int code, void** bundles, size_t num)
 	session->vec_count = num + 2;
 
 	// HTTP Response Data
-	r = 0;
+	len = 0;
 	for(i = 0; i < num; i++)
 	{
 		bundle = bundles[i];
 		assert(bundle->len > 0);
 		http_bundle_addref(bundle); // addref
 		socket_setbufvec(session->vec, i+2, bundle->ptr, bundle->len);
-		r += bundle->len;
+		len += bundle->len;
 	}
 
 	// HTTP Response Header
 	sprintf(msg, "Server: WebServer 0.2\r\n"
 		"Connection: keep-alive\r\n"
 		"Keep-Alive: timeout=5,max=100\r\n"
-		"Content-Length: %u\r\n\r\n", (unsigned int)r);
+		"Content-Length: %u\r\n\r\n", (unsigned int)len);
 	strcat(session->data, msg);
 	sprintf(msg, "HTTP/1.1 %d %s\r\n", code, http_reason_phrase(code));
 

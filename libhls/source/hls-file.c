@@ -74,3 +74,20 @@ int hls_file_write(struct hls_file_t* file, const void* packet, size_t bytes)
     hls_block_write(block, packet, bytes);
 	return 0;
 }
+
+void hls_file_save(const char* name, struct hls_file_t *file)
+{
+    struct list_head *pos;
+    struct hls_block_t *block;
+    FILE* fp;
+    
+    fp = open(name, "wb");
+    
+    list_for_each(pos, &file->head)
+    {
+        block = list_entry(pos, struct hls_block_t, link);
+        fwrite(block->ptr, 1, block->len, fp);
+    }
+    
+    fclose(fp);
+}

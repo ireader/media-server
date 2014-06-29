@@ -26,7 +26,7 @@ static struct hls_live_t* hls_live_create(const char* name)
 {
 	struct hls_live_t* live;
 
-	live = (struct hls_live_t*)malloc(sizeof(live[0]));
+	live = (struct hls_live_t*)malloc(sizeof(live[0]) + 2*1024*1024);
 	if(!live)
 		return NULL;
 
@@ -39,9 +39,10 @@ static struct hls_live_t* hls_live_create(const char* name)
     }
 
     strncpy(live->name, name, MAX_NAME-1);
-    live->pts = 412536249;
+    live->pts = 900000;
     live->refcnt = 2; // one for global list
     live->m3u8seq = 0;
+    live->vbuffer = live + 1;
     locker_create(&live->locker);
 
     locker_lock(&s_locker);
@@ -138,8 +139,8 @@ int hls_live_m3u8(struct hls_live_t* live, char* m3u8)
 		"#EXTM3U\n" // MUST
 		"#EXT-X-VERSION:3\n" // Optional
 		"#EXT-X-TARGETDURATION:%d\n" // MUST
-		"#EXT-X-MEDIA-SEQUENCE:%d\n" // Live
-		"#EXT-X-ALLOW-CACHE:NO\n",
+		"#EXT-X-MEDIA-SEQUENCE:%d\n", // Live
+//		"#EXT-X-ALLOW-CACHE:NO\n",
 		HLS_MAX_DURATION,
         MAX(0, live->m3u8seq - live->file_count));
 
@@ -149,11 +150,6 @@ int hls_live_m3u8(struct hls_live_t* live, char* m3u8)
         t = file->duration / 1000;
         n += sprintf(m3u8 + n, "#EXTINF:%d,live\n%s/%d.ts\n", MAX(1, t), live->name, file->seq);
 	}
-
-#if 1
-    if(live->file_count > 1)
-        strcat(m3u8, "#EXT-X-ENDLIST\n");
-#endif
 
     live->rtime = time64_now();
 	locker_unlock(&live->locker);
@@ -196,7 +192,7 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
     duration = file ? (int)(live->wtime - file->tcreate) : 0;
     //duration = file ? (int)(live->pts - live->file->pts) : 0;
 
-	if( (!file || duration >= HLS_MIN_DURATION) && STREAM_VIDEO_H264==stream && h264_idr(data, bytes) )
+	if( (!file || duration >= HLS_MIN_DURATION*1000) && STREAM_VIDEO_H264==stream && h264_idr(data, bytes) )
 	{
 		// update m3u8 file list
 		if(file)
@@ -235,7 +231,7 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
 	else
 	{
 		assert(STREAM_AUDIO_AAC == stream);
-		live->pts += 90 * 40; // 90kHZ * 40ms
+		//live->apts += 90 * 40; // 90kHZ * 40ms
 	}
 
 	return mpeg_ts_write(live->ts, stream, live->pts, live->pts, data, bytes);
