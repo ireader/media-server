@@ -30,13 +30,13 @@ static int hls_server_reply(void* session, int code, const char* msg)
 	return 0;
 }
 
-static int hls_server_m3u8_parse(const char* path, char* name, char* server, char* key)
+static int hls_server_m3u8_parse(const char* path, char* name, int szname, char* server, char* key)
 {
     size_t n;
  //   void *content;
 
     n = strlen(path);
-    if(n - 6 - 5 >= sizeof(name)) // 6-/live/, 5-.m3u8
+    if(n - 6 - 5 >= szname) // 6-/live/, 5-.m3u8
         return -1;
     
     strncpy(name, path + 6, n - 6 - 5);
@@ -61,7 +61,7 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
 	struct hls_live_t *live;
 
     // parse server/key
-    r = hls_server_m3u8_parse(path, name, server, key);
+    r = hls_server_m3u8_parse(path, name, sizeof(name), server, key);
     if(0 != r)
     {
         hls_server_reply(session, 404, "");
@@ -83,13 +83,13 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
             hls_live_release(live);
             return r;
         }
-        
+
         live->opened = 1; // TODO: close???
 	}
 
-	// wait for first file
+	// VLC need at least 2-file
 	ltnow = time64_now();
-	while(live->file_count < 1 && time64_now() - ltnow < HLS_MAX_DURATION*1000)
+	while(live->file_count < 2 && time64_now() - ltnow < 2*HLS_MAX_DURATION*1000)
 	{
 		system_sleep(200);
 	}
@@ -108,19 +108,19 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
 	return 0;
 }
 
-static int hls_server_live_parse(const char* path, char* name, char* file)
+static int hls_server_live_parse(const char* path, char* name, int szname, char* file, int szfile)
 {
     // /live/name/1.ts
     size_t n;
     const char* p;
 
     n = strlen(path);
-    assert(n < sizeof(name) + sizeof(file) + 6);
+    assert(n < szname + szfile + 6);
 
     p = strrchr(path, '/');
-    if(n - (p - path) > sizeof(file) || p - path - 6 > sizeof(name) || p - path < 7)
+    if(n - (p - path) > szfile || p - path - 6 > szname || p - path < 7)
         return -1;
-    
+
     strncpy(name, path + 6, p - path - 6);
     strncpy(file, p + 1, n - (p + 1 - path) - 3);
     name[p - path - 6] = '\0';
@@ -158,7 +158,7 @@ static int hls_server_live(struct hls_server_t *ctx, void* session, const char* 
 	struct hls_file_t *tsfile;
 	struct hls_block_t *block;
 
-    r = hls_server_live_parse(path, name, file);
+	r = hls_server_live_parse(path, name, sizeof(name), file, sizeof(file));
     if(0 != r)
         return hls_server_reply(session, 404, "");
 
@@ -290,7 +290,7 @@ int hsl_server_set_handle(void* hls, hls_live_open open, hls_live_close close, v
 
 int hsl_server_input(void* camera, const void* data, int bytes, int stream)
 {
-    int r;
+    int r = 0;
 	struct hls_live_t *live;
     static unsigned char s_audio[] = {0xff, 0xf1, 0x5c, 0x40, 0x01, 0x7f, 0xfc, 0x00, 0xd0, 0x40, 0x07};
 
