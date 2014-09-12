@@ -24,6 +24,22 @@
 extern "C" {
 #endif
 
+#if defined(OS_WINDOWS)
+	typedef __int64 int64_t;
+#else
+	typedef long long int64_t;
+#endif
+
+typedef void (*mpeg_ps_cbwrite)(void* param, const void* packet, size_t bytes);
+
+LIBMPEG_API void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param);
+
+LIBMPEG_API int mpeg_ps_destroy(void* ps);
+
+LIBMPEG_API int mpeg_ps_write(void* ps, int streamId, int64_t pts, int64_t dts, const void* data, size_t bytes);
+
+LIBMPEG_API int mpeg_ps_reset(void* ps);
+
 LIBMPEG_API size_t ps_packet_dec(const unsigned char* data, size_t bytes);
 
 #ifdef __cplusplus

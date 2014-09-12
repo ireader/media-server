@@ -137,7 +137,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 
 			p = pes + pes_write_header(stream->pts, stream->dts, stream->sid, pes);
 
-			if(PSI_SID_H264 == stream->sid && 0x09 != h264_type(payload, bytes))
+			if(PSI_STREAM_H264 == stream->sid && 0x09 != h264_type(payload, bytes))
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -279,13 +279,13 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
     tsctx->pat.pmt[0].streams = tsctx->pat.pmt + 1;
     tsctx->pat.pmt[0].streams[0].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[0].pid = 0x101;
-    tsctx->pat.pmt[0].streams[0].sid = PSI_SID_H264;
+    tsctx->pat.pmt[0].streams[0].sid = PSI_STREAM_H264;
     tsctx->pat.pmt[0].streams[0].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[0].esinfo = NULL;
     tsctx->pat.pmt[0].streams[0].cc = -1; // +1 => 0
     tsctx->pat.pmt[0].streams[1].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[1].pid = 0x102;
-    tsctx->pat.pmt[0].streams[1].sid = PSI_SID_AAC;
+    tsctx->pat.pmt[0].streams[1].sid = PSI_STREAM_AAC;
     tsctx->pat.pmt[0].streams[1].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[1].esinfo = NULL;
     tsctx->pat.pmt[0].streams[1].cc = -1; // +1 => 0

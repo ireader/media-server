@@ -14,6 +14,7 @@ enum EPES_STREAM_ID
 	PES_SID_DTS			= 0x88, // ffmpeg/libavformat/mpeg.h
 	PES_SID_LPCM		= 0xA0, // ffmpeg/libavformat/mpeg.h
 
+	PES_SID_EXTENSION	= 0xB7, // PS system_header extension(p76)
 	PES_SID_END			= 0xB9, // MPEG_program_end_code
 	PES_SID_START		= 0xBA, // Pack start code
 	PES_SID_SYS			= 0xBB, // System header start code
@@ -37,7 +38,7 @@ enum EPES_STREAM_ID
 	PES_SID_MPEG4_SL	= 0xFA, // ISO/IEC 14496-1_SL_packetized_stream
 	PES_SID_MPEG4_Flex	= 0xFB, // ISO/IEC 14496-1_FlexMux_stream
 	PES_SID_META		= 0xFC, // metadata stream
-	PES_SID_ESID		= 0xFD,	// extended_stream_id
+	PES_SID_EXTEND		= 0xFD,	// extended_stream_id
 	PES_SID_RESERVED	= 0xFE,	// reserved data stream
 	PES_SID_PSD			= 0xFF, // program_stream_directory
 };

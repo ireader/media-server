@@ -27,7 +27,6 @@ typedef struct _ps_stream_header_t
 
 typedef struct _ps_system_header_t
 {
-	uint32_t header_length;
 	uint32_t rate_bound;
 	uint32_t audio_bound : 6;
 	uint32_t fixed_flag : 1;
@@ -74,6 +73,8 @@ typedef struct _psd_t
 } psd_t;
 
 size_t psm_read(const uint8_t* data, int bytes, psm_t *psm);
+size_t psm_write(const psm_t *psm, uint8_t *data);
+
 size_t psd_read(const uint8_t* data, int bytes, psd_t *psd);
 
 #endif /* !_mpeg_ps_proto_h_ */

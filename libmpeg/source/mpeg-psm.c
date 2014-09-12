@@ -107,7 +107,7 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 		data[j++] = psm->streams[i].stream_type;
 		data[j++] = psm->streams[i].element_stream_id;
 		put16(data+j, 0); // elementary_stream_info_length = 0
-		assert(PES_SID_ESID != psm->streams[i].element_stream_id);
+		assert(PES_SID_EXTEND != psm->streams[i].element_stream_id);
 
 		j += 2;
 	}

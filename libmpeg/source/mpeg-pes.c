@@ -159,13 +159,13 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 
 	// stream id
 	// Table 2-22 ¨C Stream_id assignments
-	if(PSI_SID_H264==streamId || PSI_SID_MPEG4==streamId || PSI_SID_VIDEO_MPEG2==streamId || PSI_SID_VIDEO_MPEG1==streamId || PSI_SID_VIDEO_VC1==streamId)
+	if(PSI_STREAM_H264==streamId || PSI_STREAM_MPEG4==streamId || PSI_STREAM_VIDEO_MPEG2==streamId || PSI_STREAM_VIDEO_MPEG1==streamId || PSI_STREAM_VIDEO_VC1==streamId)
 	{
 		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
 		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
 		data[3] = PES_SID_VIDEO;
 	}
-	else if(PSI_SID_AAC==streamId || PSI_SID_MPEG4_AAC_LATM==streamId || PSI_SID_MPEG4_AAC==streamId || PSI_SID_MP3==streamId)
+	else if(PSI_STREAM_AAC==streamId || PSI_STREAM_MPEG4_AAC_LATM==streamId || PSI_STREAM_MPEG4_AAC==streamId || PSI_STREAM_MP3==streamId)
 	{
 		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
 		// audio stream number

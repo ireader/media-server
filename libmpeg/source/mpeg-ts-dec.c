@@ -189,7 +189,7 @@ int ts_packet_dec(const uint8_t* data, size_t bytes)
 						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						{
                             if(!tsctx.pes[k].payload)
-                                tsctx.pes[k].payload = (PSI_SID_H264==tsctx.pes[k].sid) ? s_video : s_audio;
+                                tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].sid) ? s_video : s_audio;
 
                             pes_read(NULL, data + i, bytes - i, &tsctx.pes[k]);
 
