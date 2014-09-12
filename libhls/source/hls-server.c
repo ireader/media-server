@@ -30,7 +30,7 @@ static int hls_server_reply(void* session, int code, const char* msg)
 	return 0;
 }
 
-static int hls_server_m3u8_parse(const char* path, char* name, int szname, char* server, char* key)
+static int hls_server_m3u8_parse(const char* path, char* name, size_t szname, char* server, char* key)
 {
     size_t n;
  //   void *content;
@@ -108,7 +108,7 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
 	return 0;
 }
 
-static int hls_server_live_parse(const char* path, char* name, int szname, char* file, int szfile)
+static int hls_server_live_parse(const char* path, char* name, size_t szname, char* file, size_t szfile)
 {
     // /live/name/1.ts
     size_t n;

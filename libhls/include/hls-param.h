@@ -4,6 +4,7 @@
 // https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StreamingMediaGuide/FrequentlyAskedQuestions/FrequentlyAskedQuestions.html
 // 3. What duration should media files be?
 // A duration of 10 seconds of media per file seems to strike a reasonable balance for most broadcast content.
+// http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8
 #define HLS_MAX_DURATION 5 // 10s, from Apple recommendation
 
 #define HLS_MIN_DURATION 4 // minimum file duration(seconds)

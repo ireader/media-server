@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 
-struct hls_file_t* hls_file_open(int name)
+struct hls_file_t* hls_file_open()
 {
 	struct hls_file_t* file;
     struct hls_block_t *block;
@@ -80,8 +80,8 @@ void hls_file_save(const char* name, struct hls_file_t *file)
     struct list_head *pos;
     struct hls_block_t *block;
     FILE* fp;
-    
-    fp = open(name, "wb");
+
+    fp = fopen(name, "wb");
     
     list_for_each(pos, &file->head)
     {

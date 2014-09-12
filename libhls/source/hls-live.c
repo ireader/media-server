@@ -42,7 +42,7 @@ static struct hls_live_t* hls_live_create(const char* name)
     live->pts = 900000;
     live->refcnt = 2; // one for global list
     live->m3u8seq = 0;
-    live->vbuffer = live + 1;
+    live->vbuffer = (unsigned char*)(live + 1);
     locker_create(&live->locker);
 
     locker_lock(&s_locker);
