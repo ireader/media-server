@@ -1,62 +1,7 @@
 #ifndef _mpeg_element_descriptor_h_
 #define _mpeg_element_descriptor_h_
 
-/*
-2.6 Program and program element descriptors
-2.6.1 Semantic definition of fields in program and program element descriptors
-Table 2-45 ¨C Program and program element descriptors
-tag		TS	PS	Identification
-0		n/a n/a reserved
-1		n/a X	forbidden
-2		X	X	video_stream_descriptor
-3		X	X	audio_stream_descriptor
-4		X	X	hierarchy_descriptor
-5		X	X	registration_descriptor
-6		X	X	data_stream_alignment_descriptor
-7		X	X	target_background_grid_descriptor
-8		X	X	video_window_descriptor
-9		X	X	CA_descriptor
-10		X	X	ISO_639_language_descriptor
-11		X	X	system_clock_descriptor
-12		X	X	multiplex_buffer_utilization_descriptor
-13		X	X	copyright_descriptor
-14		X		maximum_bitrate_descriptor
-15		X	X	private_data_indicator_descriptor
-16		X	X	smoothing_buffer_descriptor
-17		X		STD_descriptor
-18		X	X	IBP_descriptor
-19-26	X		Defined in ISO/IEC 13818-6
-27		X	X	MPEG-4_video_descriptor
-28		X	X	MPEG-4_audio_descriptor
-29		X	X	IOD_descriptor
-30		X		SL_descriptor
-31		X	X	FMC_descriptor
-32		X	X	external_ES_ID_descriptor
-33		X	X	MuxCode_descriptor
-34		X	X	FmxBufferSize_descriptor
-35		X		multiplexbuffer_descriptor
-36		X	X	content_labeling_descriptor
-37		X	X	metadata_pointer_descriptor
-38		X	X	metadata_descriptor
-39		X	X	metadata_STD_descriptor
-40		X	X	AVC video descriptor
-41		X	X	IPMP_descriptor (defined in ISO/IEC 13818-11, MPEG-2 IPMP)
-42		X	X	AVC timing and HRD descriptor
-43		X	X	MPEG-2_AAC_audio_descriptor
-44		X	X	FlexMuxTiming_descriptor
-45		X	X	MPEG-4_text_descriptor
-46		X	X	MPEG-4_audio_extension_descriptor
-47		X	X	auxiliary_video_stream_descriptor
-48		X	X	SVC extension descriptor
-49		X	X	MVC extension descriptor
-50		X	n/a J2K video descriptor
-51		X	X	MVC operation point descriptor
-52		X	X	MPEG2_stereoscopic_video_format_descriptor
-53		X	X	Stereoscopic_program_info_descriptor
-54		X	X	Stereoscopic_video_info_descriptor
-55-63	n/a n/a Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
-64-255	n/a n/a User Private
-*/
+size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _video_stream_descriptor_t
 {
@@ -192,6 +137,23 @@ typedef struct _mpeg2_aac_descriptor_t
 } mpeg2_aac_descriptor_t;
 
 int mpeg2_aac_descriptor(const uint8_t* data, int bytes);
+
+typedef struct _svc_extension_descriptor_t
+{
+	uint16_t width;
+	uint16_t height;
+	uint16_t frame_rate;
+	uint16_t average_bitrate;
+	uint16_t maximum_bitrate;
+	uint32_t quality_id_start : 4;
+	uint32_t quality_id_end : 4;
+	uint32_t temporal_id_start : 3;
+	uint32_t temporal_id_end : 3;
+	uint32_t dependency_id : 3;
+	uint32_t no_sei_nal_unit_present : 1;
+} svc_extension_descriptor_t;
+
+int svc_extension_descriptor(const uint8_t* data, int bytes);
 
 typedef struct _mvc_extension_descriptor_t
 {

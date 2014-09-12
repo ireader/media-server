@@ -173,11 +173,47 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\source\mpeg-element-descriptor.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-pat.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-pes.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-pmt.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-ps-dec.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-ps-enc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-psd.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-psm.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\mpeg-ts-dec.c"
 				>
 			</File>
 			<File
 				RelativePath=".\source\mpeg-ts-enc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-util.c"
 				>
 			</File>
 		</Filter>
@@ -187,11 +223,35 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\include\mpeg-element-descriptor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpeg-pes-proto.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpeg-ps-proto.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpeg-ps.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpeg-ts-proto.h"
 				>
 			</File>
 			<File
 				RelativePath=".\include\mpeg-ts.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mpeg-types.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\mpeg-util.h"
 				>
 			</File>
 		</Filter>

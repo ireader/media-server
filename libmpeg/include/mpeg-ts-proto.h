@@ -1,21 +1,10 @@
 #ifndef _mpeg_ts_proto_h_
 #define _mpeg_ts_proto_h_
 
-#define PTS_NO_VALUE (int64_t)0x8000000000000000L
+#include "mpeg-types.h"
+#include "mpeg-pes-proto.h"
 
-typedef unsigned char	uint8_t;
-typedef short			int16_t;
-typedef unsigned short	uint16_t;
-typedef int				int32_t;
-typedef unsigned int	uint32_t;
-
-#if defined(OS_WINDOWS)
-	typedef __int64				int64_t;
-	typedef unsigned __int64	uint64_t;
-#else
-	typedef long long			int64_t;
-	typedef unsigned long long	uint64_t;
-#endif
+#define TS_PACKET_SIZE		188
 
 typedef struct _ts_adaptation_field_t
 {
@@ -62,64 +51,7 @@ typedef struct _ts_packet_header_t
 	ts_adaptation_field_t adaptation;
 } ts_packet_header_t;
 
-typedef struct _ts_pes_t
-{
-	struct _ts_pmt_t *pmt;	// program map table
-
-	uint32_t pid;		// PID : 13
-	uint32_t sid;		// stream_type : 8
-	uint32_t cc;		// continuity_counter : 4;
-	uint32_t esinfo_len;// es_info_length : 12
-	uint8_t* esinfo;	// es_info
-
-	uint32_t len;	// PES_packet_length : 16;
-
-	uint32_t reserved10 : 2;
-	uint32_t PES_scrambling_control : 2;
-	uint32_t PES_priority : 1;
-	uint32_t data_alignment_indicator : 1;
-	uint32_t copyright : 1;
-	uint32_t original_or_copy : 1;
-
-	uint32_t PTS_DTS_flags : 2;
-	uint32_t ESCR_flag : 1;
-	uint32_t ES_rate_flag : 1;
-	uint32_t DSM_trick_mode_flag : 1;
-	uint32_t additional_copy_info_flag : 1;
-	uint32_t PES_CRC_flag : 1;
-	uint32_t PES_extension_flag : 1;
-	uint32_t PES_header_data_length : 8;
-
-	int64_t pts;
-	int64_t dts;
-	int64_t ESCR_base;
-	uint32_t ESCR_extension;
-	uint32_t ES_rate;
-
-	//uint8_t trick_mode;
-	//uint32_t trick_mode_control : 3;
-	//uint32_t field_id : 2;
-	//uint32_t intra_slice_refresh : 1;
-	//uint32_t frequency_truncation : 2;
-
-	//uint8_t additional_copy_info;
-	//int16_t previous_PES_packet_CRC;
-
-	//uint32_t PES_private_data_flag : 1;
-	//uint32_t pack_header_field_flag : 1;
-	//uint32_t program_packet_sequence_counter_flag : 1;
-	//uint32_t P_STD_buffer_flag : 1;
-	//uint32_t reserved_ : 3;
-	//uint32_t PES_extension_flag_2 : 1;
-	//uint32_t PES_private_data_flag2 : 1;
-	//uint8_t PES_private_data[128/8];
-
-	//uint32_t pack_field_length : 8;
-	uint8_t *payload;
-	size_t payload_len;
-} ts_pes_t;
-
-typedef struct _ts_pmt_t
+typedef struct _pmt_t
 {
 	uint32_t pid;		// PID : 13
 	uint32_t pn;		// program_number: 16
@@ -130,52 +62,101 @@ typedef struct _ts_pmt_t
 	uint8_t* pminfo;	// program_info;
 
 	uint32_t stream_count;
-	ts_pes_t *streams;
-} ts_pmt_t;
+	pes_t *streams;
+} pmt_t;
 
-typedef struct _ts_pat_t
+typedef struct _pat_t
 {
-	uint32_t tsid; // transport_stream_id : 16;
-	uint32_t ver; // version_number : 5;
+	uint32_t tsid;	// transport_stream_id : 16;
+	uint32_t ver;	// version_number : 5;
 	uint32_t cc;	//continuity_counter : 4;
 
 	uint32_t pmt_count;
-	ts_pmt_t *pmt;
-} ts_pat_t;
+	pmt_t *pmt;
+} pat_t;
 
-enum EPES_STREAM_ID
+// Table 2-3 ¨C PID table(p36)
+enum ETS_PID
 {
-	PES_PROGRAM_STREAM_MAP = 0xBC,
-	PES_PRIVATE_STREAM_1 = 0xBD,
-	PES_PADDING_STREAM = 0xBE,
-	PES_PRIVATE_STREAM_2 = 0xBF,
-	PES_AUDIO_STREAM = 0xC0,
-	PES_VIDEO_STREAM = 0xE0,
-	PES_ECM = 0xF0,
-	PES_EMM = 0xF1,
-	PES_PROGRAM_STREAM_DIRECTORY = 0xFF,
-	PES_DSMCC_STREAM = 0xF2,
-	PES_H222_E_STREAM = 0xF8,
+	TS_PID_PAT	= 0x00, // program association table
+	TS_PID_CAT	= 0x01, // conditional access table
+	TS_PID_SDT	= 0x02, // transport stream description table
+	TS_PID_IPMP	= 0x03, // IPMP control information table
+	// 0x0004-0x000F Reserved
+	// 0x0010-0x1FFE May be assigned as network_PID, Program_map_PID, elementary_PID, or for other purposes
+	TS_PID_NULL	= 0x1FFF, // Null packet
 };
 
-enum ESTREAM_ID
+// 2.4.4.4 Table_id assignments
+// Table 2-31 ¨C table_id assignment values(p61)
+enum EPAT_TID
 {
-	STREAM_VIDEO_MPEG1		= 0x01,
-	STREAM_VIDEO_MPEG2		= 0x02,
-	STREAM_VIDEO_MPEG4		= 0x10,
-	STREAM_VIDEO_H264		= 0x1b,
-	STREAM_VIDEO_VC1		= 0xea,
-	STREAM_VIDEO_DIRAC		= 0xd1,
-
-	STREAM_AUDIO_MPEG1		= 0x03,
-	STREAM_AUDIO_MPEG2		= 0x04,
-	STREAM_AUDIO_AAC		= 0x0f,
-	STREAM_AUDIO_AAC_LATM	= 0x11,
-	STREAM_AUDIO_AC3		= 0x81,
-	STREAM_AUDIO_DTS		= 0x8a,
-
-	STREAM_PRIVATE_SECTION	= 0x05,
-	STREAM_PRIVATE_DATA		= 0x06,
+	PAT_TID_PAS				= 0x00, // program_association_section
+	PAT_TID_CAS				= 0x01, // conditional_access_section(CA_section)
+	PAT_TID_PMS				= 0x02, // TS_program_map_section
+	PAT_TID_SDS				= 0x03, // TS_description_section
+	PAT_TID_MPEG4_scene		= 0x04, // ISO_IEC_14496_scene_description_section
+	PAT_TID_MPEG4_object	= 0x05, // ISO_IEC_14496_object_descriptor_section
+	PAT_TID_META			= 0x06, // Metadata_section
+	PAT_TID_IPMP			= 0x07, // IPMP_Control_Information_section(defined in ISO/IEC 13818-11)
+	PAT_TID_H222			= 0x08, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 reserved
+	PAT_TID_USER			= 0x40,	// User private
+	PAT_TID_Forbidden		= 0xFF,
 };
+
+// 2.4.4.9 Semantic definition of fields in transport stream program map section
+// Table 2-34 ¨C Stream type assignments(p65)
+enum EPSI_STREAM_ID
+{
+	PSI_SID_RESERVED		= 0x00, // ITU-T | ISO/IEC Reserved
+	PSI_SID_VIDEO_MPEG1		= 0x01, // ISO/IEC 11172-2 Video
+	PSI_SID_VIDEO_MPEG2		= 0x02, // Rec. ITU-T H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream(see Note 2)
+	PSI_SID_AUDIO_MPEG1		= 0x03, // ISO/IEC 11172-3 Audio
+	PSI_SID_MP3				= 0x04, // ISO/IEC 13818-3 Audio
+	PSI_SID_PRIVATE_SECTION	= 0x05, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 private_sections
+	PSI_SID_PRIVATE_DATA	= 0x06, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 PES packets containing private data
+	PSI_SID_MHEG			= 0x07, // ISO/IEC 13522 MHEG
+	PSI_SID_DSMCC			= 0x08, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Annex A DSM-CC
+	PSI_SID_H222_ATM		= 0x09, // Rec. ITU-T H.222.1
+	PSI_SID_DSMCC_A			= 0x0a, // ISO/IEC 13818-6(Extensions for DSM-CC) type A
+	PSI_SID_DSMCC_B			= 0x0b, // ISO/IEC 13818-6(Extensions for DSM-CC) type B
+	PSI_SID_DSMCC_C			= 0x0c, // ISO/IEC 13818-6(Extensions for DSM-CC) type C
+	PSI_SID_DSMCC_D			= 0x0d, // ISO/IEC 13818-6(Extensions for DSM-CC) type D
+	PSI_SID_H222_Aux		= 0x0e, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 auxiliary
+	PSI_SID_AAC				= 0x0f, // ISO/IEC 13818-7 Audio with ADTS transport syntax
+	PSI_SID_MPEG4			= 0x10, // ISO/IEC 14496-2 Visual
+	PSI_SID_MPEG4_AAC_LATM	= 0x11, // ISO/IEC 14496-3 Audio with the LATM transport syntax as defined in ISO/IEC 14496-3
+	PSI_SID_MPEG4_PES		= 0x12, // ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in PES packets
+	PSI_SID_MPEG4_SECTIONS	= 0x13, // ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in ISO/IEC 14496_sections
+	PSI_SID_MPEG2_SDP		= 0x14, // ISO/IEC 13818-6 Synchronized Download Protocol
+	PSI_SID_PES_META		= 0x15, // Metadata carried in PES packets
+	PSI_SID_SECTION_META	= 0x16, // Metadata carried in metadata_sections
+	PSI_SID_DSMCC_DATA		= 0x17, // Metadata carried in ISO/IEC 13818-6 Data Carousel
+	PSI_SID_DSMCC_OBJECT	= 0x18, // Metadata carried in ISO/IEC 13818-6 Object Carousel
+	PSI_SID_DSMCC_SDP		= 0x19, // Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol
+	PSI_SID_MPEG2_IPMP		= 0x1a, // IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)
+	PSI_SID_H264			= 0x1b, // H.264
+	PSI_SID_MPEG4_AAC		= 0x1c, // ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS
+	PSI_SID_MPEG4_TEXT		= 0x1d, // ISO/IEC 14496-17 Text
+	PSI_SID_AUX_VIDEO		= 0x1e, // Auxiliary video stream as defined in ISO/IEC 23002-3
+	PSI_SID_H264_SVC		= 0x1f, // SVC video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex G of Rec. ITU-T H.264 | ISO/IEC 14496-10
+	PSI_SID_H264_MVC		= 0x20, // MVC video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex H of Rec. ITU-T H.264 | ISO/IEC 14496-10
+	PSI_SID_JPEG_2000		= 0x21, // Video stream conforming to one or more profiles as defined in Rec. ITU-T T.800 | ISO/IEC 15444-1
+	PSI_SID_MPEG2_3D		= 0x22, // Additional view Rec. ITU-T H.262 | ISO/IEC 13818-2 video stream for service-compatible stereoscopic 3D services
+	PSI_SID_MPEG4_3D		= 0x23, // Additional view Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream conforming to one or more profiles defined in Annex A for service-compatible stereoscopic 3D services
+	// 0x24-0x7E Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
+	PSI_SID_VIDEO_CAVS		= 0x42, // ffmpeg/libavformat/mpegts.h
+	PSI_SID_IPMP			= 0x7F, // IPMP stream
+	PSI_SID_AUDIO_AC3		= 0x81, // ffmpeg/libavformat/mpegts.h
+	PSI_SID_AUDIO_DTS		= 0x8a, // ffmpeg/libavformat/mpegts.h
+	PSI_SID_VIDEO_DIRAC		= 0xd1, // ffmpeg/libavformat/mpegts.h
+	PSI_SID_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
+	// 0x80-0xFF User Private
+};
+
+int pat_read(const uint8_t* data, int bytes, pat_t *pat);
+uint32_t pat_write(const pat_t *pat, uint8_t *data);
+int pmt_read(const uint8_t* data, int bytes, pmt_t *pmt);
+uint32_t pmt_write(const pmt_t *pmt, uint8_t *data);
 
 #endif /* !_mpeg_ts_proto_h_ */

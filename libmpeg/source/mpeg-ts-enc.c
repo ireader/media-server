@@ -1,10 +1,10 @@
 // ITU-T H.222.0(06/2012)
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
-//
+// 2.4.3.1 Transport stream(p34)
 
-#include <stdlib.h>
-#include "mpeg-ts.h"
+#include "mpeg-util.h"
 #include "mpeg-ts-proto.h"
+#include "mpeg-ts.h"
 #include "cstringext.h"
 #include "h264-util.h"
 #include "crc32.h"
@@ -13,11 +13,10 @@
 #include <assert.h>
 
 #define N_MPEG_TS_STREAM	8
-#define TS_PACKET_SIZE		188
 
 typedef struct _mpeg_ts_enc_context_t
 {
-	ts_pat_t pat;
+	pat_t pat;
 
 	unsigned int pat_period;
 	unsigned int pcr_period;
@@ -25,169 +24,6 @@ typedef struct _mpeg_ts_enc_context_t
 	mpeg_ts_cbwrite write;
 	void* param;
 } mpeg_ts_enc_context_t;
-
-inline void put16(uint8_t *ptr, uint32_t val)
-{
-	ptr[0] = (val >> 8) & 0xFF;
-	ptr[1] = val & 0xFF;
-}
-
-inline void put32(uint8_t *ptr, uint32_t val)
-{
-	ptr[0] = (val >> 24) & 0xFF;
-	ptr[1] = (val >> 16) & 0xFF;
-	ptr[2] = (val >> 8) & 0xFF;
-	ptr[3] = val & 0xFF;
-}
-
-inline void ts_write_pcr(uint8_t *ptr, int64_t pcr)
-{
-	int64_t pcr_base = pcr / 300;
-	int64_t pcr_ext = pcr % 300;
-
-	ptr[0] = (pcr_base >> 25) & 0xFF;
-	ptr[1] = (pcr_base >> 17) & 0xFF;
-	ptr[2] = (pcr_base >> 9) & 0xFF;
-	ptr[3] = (pcr_base >> 1) & 0xFF;
-	ptr[4] = ((pcr_base & 0x01) << 7) | 0x7E | ((pcr_ext>>8) & 0x01);
-	ptr[5] = pcr_ext & 0xFF;
-}
-
-static size_t ts_write_pat(const ts_pat_t *pat, uint8_t *data)
-{
-	// 2.4.4.3 Program association table
-	// Table 2-30
-
-	uint32_t i = 0;
-	uint32_t len = 0;
-	uint32_t crc = 0;
-
-	len = pat->pmt_count * 4 + 5 + 4; // 5 bytes remain header and 4 bytes crc32
-
-	// shall not exceed 1021 (0x3FD).
-	assert(len <= 1021);
-	assert(len <= TS_PACKET_SIZE - 7);
-
-	data[0] = 0x00;	// program association table
-
-	// section_syntax_indicator = '1'
-	// '0'
-	// reserved '11'
-	put16(data + 1, 0xb000 | len);
-
-	// transport_stream_id
-	put16(data + 3, pat->tsid);
-
-	// reserved '11'
-	// version_number 'xxxxx'
-	// current_next_indicator '1'
-	data[5] = (uint8_t)(0xC1 | (pat->ver << 1));
-
-	// section_number/last_section_number
-	data[6] = 0x00;
-	data[7] = 0x00;
-
-	for(i = 0; i < pat->pmt_count; i++)
-	{
-		put16(data + 8 + i * 4 + 0, pat->pmt[i].pn);
-		put16(data + 8 + i * 4 + 2, 0xE000 | pat->pmt[i].pid);
-	}
-
-	// crc32
-	crc = crc32(0xffffffff, data, len-1);
-	//put32(data + section_length - 1, crc);
-	data[len - 1 + 3] = (crc >> 24) & 0xFF;
-	data[len - 1 + 2] = (crc >> 16) & 0xFF;
-	data[len - 1 + 1] = (crc >> 8) & 0xFF;
-	data[len - 1 + 0] = crc & 0xFF;
-
-	return len + 3; // total length
-}
-
-static size_t ts_write_pmt(const ts_pmt_t *pmt, uint8_t *data)
-{
-	// 2.4.4.8 Program map table
-	// Table 2-33
-
-	uint32_t i = 0;
-	uint32_t len = 0;
-	uint32_t crc = 0;
-	uint8_t *p = NULL;
-
-	data[0] = 0x02;	// program map table
-
-	// skip section_length
-
-	// program_number
-	put16(data + 3, pmt->pn);
-
-	// reserved '11'
-	// version_number 'xxxxx'
-	// current_next_indicator '1'
-	data[5] = (uint8_t)(0xC1 | (pmt->ver << 1));
-
-	// section_number/last_section_number
-	data[6] = 0x00;
-	data[7] = 0x00;
-
-	// reserved '111'
-	// PCR_PID 15-bits 0x1FFF
-	put16(data + 8, 0xE000 | pmt->PCR_PID);
-
-	// reserved '1111'
-	// program_info_lengt 12-bits
-	put16(data + 10, 0xF000 | pmt->pminfo_len);
-	if(pmt->pminfo_len > 0)
-	{
-		// fill program info
-		assert(pmt->pminfo);
-		memcpy(data + 12, pmt->pminfo, pmt->pminfo_len);
-	}
-
-	// streams
-	p = data + 12 + pmt->pminfo_len;
-	for(i = 0; i < pmt->stream_count; i++)
-	{
-		// stream_type
-		*p = (uint8_t)pmt->streams[i].sid;
-
-		// reserved '111'
-		// elementary_PID 13-bits
-		put16(p + 1, 0xE000 | pmt->streams[i].pid);
-
-		// reserved '1111'
-		// ES_info_lengt 12-bits
-		put16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
-
-		// fill elementary stream info
-		if(pmt->streams[i].esinfo_len > 0)
-		{
-			assert(pmt->streams[i].esinfo);
-			memcpy(p + 5, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
-		}
-
-		p += 5 + pmt->streams[i].esinfo_len;
-	}
-
-	// section_length
-	len = p + 4 - (data + 3); // 4 bytes crc32
-	assert(len <= 1021); // shall not exceed 1021 (0x3FD).
-	assert(len <= TS_PACKET_SIZE - 7);
-	// section_syntax_indicator '1'
-	// '0'
-	// reserved '11'
-	put16(data + 1, 0xb000 | len); 
-
-	// crc32
-	crc = crc32(0xffffffff, data, p-data);
-	//put32(p, crc);
-	p[3] = (crc >> 24) & 0xFF;
-	p[2] = (crc >> 16) & 0xFF;
-	p[1] = (crc >> 8) & 0xFF;
-	p[0] = crc & 0xFF;
-
-	return (p - data) + 4; // total length
-}
 
 static void mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, size_t len)
 {
@@ -233,97 +69,9 @@ static void mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pi
 	ts->write(ts->param, data, TS_PACKET_SIZE);
 }
 
-static size_t ts_write_pes_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
-{
-	uint8_t len = 0;
-	uint8_t flags = 0x00;
-	uint8_t *p = NULL;
-
-	// packet_start_code_prefix 0x000001
-	data[0] = 0x00;
-	data[1] = 0x00;
-	data[2] = 0x01;
-
-	// stream id
-	// Table 2-22 ¨C Stream_id assignments
-	if(STREAM_VIDEO_H264==streamId || STREAM_VIDEO_MPEG4==streamId || STREAM_VIDEO_MPEG2==streamId || STREAM_VIDEO_MPEG1==streamId || STREAM_VIDEO_VC1==streamId)
-	{
-		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
-		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
-		data[3] = PES_VIDEO_STREAM;
-	}
-	else if(STREAM_AUDIO_AAC==streamId || STREAM_AUDIO_AAC_LATM==streamId || STREAM_AUDIO_MPEG2==streamId)
-	{
-		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
-		// audio stream number
-		data[3] = PES_AUDIO_STREAM;
-	}
-	else
-	{
-		// private_stream_1
-		data[3] = PES_PRIVATE_STREAM_1;
-	}
-
-	// skip PES_packet_length
-	//data[4] = 0x00;
-	//data[5] = 0x00;
-
-	// '10'
-	// PES_scrambling_control '00'
-	// PES_priority '0'
-	// data_alignment_indicator '0' ('1' for subtitle data)
-	// copyright '0'
-	// original_or_copy '0'
-	//data[6] = SUBTITLE ? 0x84 : 0x80;
-	data[6] = 0x80;
-
-	// PTS_DTS_flag 'xx'
-	// ESCR_flag '0'
-	// ES_rate_flag '0'
-	// DSM_trick_mode_flag '0'
-	// additional_copy_info_flag '0'
-	// PES_CRC_flag '0'
-	// PES_extension_flag '0'
-	if(pts)
-	{
-		flags |= 0x80;
-		len += 5;
-	}
-	if(PES_VIDEO_STREAM==data[3] && dts /*&& dts != pts*/)
-	{
-		flags |= 0x40;
-		len += 5;
-	}
-	data[7] = flags;
-
-	// PES_header_data_length : 8
-	data[8] = len;
-
-	p = data + 9;
-	if(flags & 0x80)
-	{
-		*p++ = ((flags & 0xFF)>>2) | ((pts >> 28) & 0x0E) | 0x01;
-		*p++ = (pts >> 22) & 0xFF;
-		*p++ = 0x01 | ((pts >> 14) & 0xFE);
-		*p++ = (pts >> 7) & 0xFF;;
-		*p++ = 0x01 | ((pts << 1) & 0xFE);
-	}
-
-	if(flags & 0x40)
-	{
-		*p++ = 0x11 | ((dts >> 28) & 0x0E);
-		*p++ = (dts >> 22) & 0xFF;
-		*p++ = 0x01 | ((dts >> 14) & 0xFE);
-		*p++ = (dts >> 7) & 0xFF;;
-		*p++ = 0x01 | ((dts << 1) & 0xFE);
-	}
-
-	return p - data;
-}
-
 #define TS_AF_FLAG_PCR(flag) ((flag) & 0x10)
 
-static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, const uint8_t* payload, size_t bytes)
+static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8_t* payload, size_t bytes)
 {
 	// 2.4.3.6 PES packet
 	// Table 2-21
@@ -370,7 +118,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, const ui
 			{
 				data[4] += 6; // 6-PCR
 				pcr = (stream->pts - 7*90) * 300; // TODO: delay???
-				ts_write_pcr(data + 6, pcr);
+				pcr_write(data + 6, pcr);
 			}
 
 			pes = data + 4 + 1 + data[4]; // 4-TS + 1-AF-Len + AF-Payload
@@ -387,9 +135,9 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, const ui
 		{
 			data[1] |= 0x40; // payload_unit_start_indicator
 
-			p = pes + ts_write_pes_header(stream->pts, stream->dts, stream->sid, pes);
+			p = pes + pes_write_header(stream->pts, stream->dts, stream->sid, pes);
 
-			if(STREAM_VIDEO_H264 == stream->sid && 0x09 != h264_type(payload, bytes))
+			if(PSI_SID_H264 == stream->sid && 0x09 != h264_type(payload, bytes))
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -457,7 +205,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, ts_pes_t *stream, const ui
 int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	size_t i, r;
-	ts_pes_t *stream = NULL;
+	pes_t *stream = NULL;
 	mpeg_ts_enc_context_t *tsctx;
 	uint8_t payload[TS_PACKET_SIZE];
 
@@ -467,14 +215,14 @@ int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* 
 	{
 		// PAT
 		tsctx->pat.cc = (tsctx->pat.cc + 1) % 16;
-		r = ts_write_pat(&tsctx->pat, payload);
+		r = pat_write(&tsctx->pat, payload);
 		mpeg_ts_write_section_header(ts, 0x00, tsctx->pat.cc, payload, r); // PID = 0x00 program association table
 
 		// PMT
 		for(i = 0; i < tsctx->pat.pmt_count; i++)
 		{
 			tsctx->pat.pmt[i].cc = (tsctx->pat.pmt[i].cc + 1) % 16;
-			r = ts_write_pmt(&tsctx->pat.pmt[i], payload);
+			r = pmt_write(&tsctx->pat.pmt[i], payload);
 			mpeg_ts_write_section_header(ts, tsctx->pat.pmt[i].pid, tsctx->pat.pmt[i].cc, payload, r);
 		}
 	}
@@ -512,11 +260,11 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 //	mpeg_ts_reset(tsctx);
     tsctx->pat_period = 0;
     tsctx->pcr_period = 0;
-    
+
     tsctx->pat.tsid = 1;
     tsctx->pat.ver = 0;
     tsctx->pat.cc = -1; // +1 => 0
-   
+
     tsctx->pat.pmt_count = 1; // only one program in ts
     tsctx->pat.pmt = tsctx + 1;
     tsctx->pat.pmt[0].pid = 0x100;
@@ -531,13 +279,13 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
     tsctx->pat.pmt[0].streams = tsctx->pat.pmt + 1;
     tsctx->pat.pmt[0].streams[0].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[0].pid = 0x101;
-    tsctx->pat.pmt[0].streams[0].sid = STREAM_VIDEO_H264;
+    tsctx->pat.pmt[0].streams[0].sid = PSI_SID_H264;
     tsctx->pat.pmt[0].streams[0].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[0].esinfo = NULL;
     tsctx->pat.pmt[0].streams[0].cc = -1; // +1 => 0
     tsctx->pat.pmt[0].streams[1].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[1].pid = 0x102;
-    tsctx->pat.pmt[0].streams[1].sid = STREAM_AUDIO_AAC;
+    tsctx->pat.pmt[0].streams[1].sid = PSI_SID_AAC;
     tsctx->pat.pmt[0].streams[1].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[1].esinfo = NULL;
     tsctx->pat.pmt[0].streams[1].cc = -1; // +1 => 0

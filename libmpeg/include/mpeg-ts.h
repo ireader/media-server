@@ -40,7 +40,7 @@ LIBMPEG_API int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, 
 
 LIBMPEG_API int mpeg_ts_reset(void* ts);
 
-LIBMPEG_API int ts_packet_dec(const unsigned char* data, int bytes);
+LIBMPEG_API int ts_packet_dec(const unsigned char* data, size_t bytes);
 
 #ifdef __cplusplus
 }
