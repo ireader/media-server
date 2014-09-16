@@ -324,7 +324,7 @@ int hsl_server_input(void* camera, const void* data, int bytes, int stream)
 #endif
 
     live = (struct hls_live_t *)camera;
-    if(STREAM_VIDEO_H264 == stream)
+    if(HLS_VIDEO_H264 == stream)
     {
         r = hls_live_input(live, data, bytes, stream);
         r = hls_live_input(live, s_audio, sizeof(s_audio), 0x0f);

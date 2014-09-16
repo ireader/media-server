@@ -192,7 +192,7 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
     duration = file ? (int)(live->wtime - file->tcreate) : 0;
     //duration = file ? (int)(live->pts - live->file->pts) : 0;
 
-	if( (!file || duration >= HLS_MIN_DURATION*1000) && STREAM_VIDEO_H264==stream && h264_idr(data, bytes) )
+	if( (!file || duration >= HLS_MIN_DURATION*1000) && HLS_VIDEO_H264==stream && h264_idr(data, bytes) )
 	{
 		// update m3u8 file list
 		if(file)
@@ -224,13 +224,13 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
         live->file->pts = live->pts;
 	}
 
-	if(STREAM_VIDEO_H264 == stream)
+	if(HLS_VIDEO_H264 == stream)
 	{
 		live->pts += 90 * 40; // 90kHZ * 40ms
 	}
 	else
 	{
-		assert(STREAM_AUDIO_AAC == stream);
+		assert(HLS_AUDIO_AAC == stream);
 		//live->apts += 90 * 40; // 90kHZ * 40ms
 	}
 

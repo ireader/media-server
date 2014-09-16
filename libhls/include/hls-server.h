@@ -37,8 +37,8 @@ LIBHLS_API int hsl_server_set_handle(void* hls, hls_live_open open, hls_live_clo
 
 enum 
 {
-	STREAM_VIDEO_H264	= 0x1b,
-	STREAM_AUDIO_AAC	= 0x0f,
+	HLS_VIDEO_H264	= 0x1b,
+	HLS_AUDIO_AAC	= 0x0f,
 };
 LIBHLS_API int hsl_server_input(void* camera, const void* data, int bytes, int stream);
 
