@@ -42,12 +42,12 @@ size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 	psm->stream_count = 0;
 	while(j < i+2+element_stream_map_length)
 	{
-		psm->streams[psm->stream_count].stream_type = data[j];
-		psm->streams[psm->stream_count].element_stream_id = data[j+1];
+		psm->streams[psm->stream_count].avtype = data[j];
+		psm->streams[psm->stream_count].pesid = data[j+1];
 		element_stream_info_length = (data[j+2] << 8) | data[j+3];
 
 		k = j + 4;
-		if(0xFD == psm->streams[psm->stream_count].element_stream_id && 0 == single_extension_stream_flag)
+		if(0xFD == psm->streams[psm->stream_count].pesid && 0 == single_extension_stream_flag)
 		{
 			uint8_t pseudo_descriptor_tag = data[k];
 			uint8_t pseudo_descriptor_length = data[k+1];
@@ -67,7 +67,7 @@ size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 		j += 4 + element_stream_info_length;
 	}
 
-	assert(j+4 == program_stream_map_length+6);
+//	assert(j+4 == program_stream_map_length+6);
 //	assert(0 == crc32(-1, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
@@ -76,49 +76,60 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 {
 	// Table 2-41 ¨C Program stream map(p79)
 
-	int i,j;
+	size_t i,j;
 	unsigned int crc;
 
-	put32(data, 0x00000100);
+	le_write_uint32(data, 0x00000100);
 	data[3] = PES_SID_PSM;
 
 	// program_stream_map_length 16-bits
-	put16(data+4, 6+4*psm->stream_count+4);
+	//le_write_uint16(data+4, 6+4*psm->stream_count+4);
 
 	// current_next_indicator '1'
-	// single_extension_stream_flag '0'
+	// single_extension_stream_flag '1'
 	// reserved '0'
 	// program_stream_map_version 'xxxxx'
-	data[6] = 0x80 | (psm->ver & 0x1F);
+	data[6] = 0xc0 | (psm->ver & 0x1F);
 
 	// reserved '0000000'
 	// marker_bit '1'
 	data[7] = 0x01;
 
 	// program_stream_info_length 16-bits
-	put16(data+8, 0); // program_stream_info_length = 0
+	le_write_uint16(data+8, 0); // program_stream_info_length = 0
 
 	// elementary_stream_map_length 16-bits
-	put16(data+10, psm->stream_count*4);
+	//le_write_uint16(data+10, psm->stream_count*4);
 
 	j = 12;
 	for(i = 0; i < psm->stream_count; i++)
 	{
-		data[j++] = psm->streams[i].stream_type;
-		data[j++] = psm->streams[i].element_stream_id;
-		put16(data+j, 0); // elementary_stream_info_length = 0
-		assert(PES_SID_EXTEND != psm->streams[i].element_stream_id);
+		assert(PES_SID_EXTEND != psm->streams[i].pesid);
 
-		j += 2;
+		// stream_type:8
+		data[j++] = psm->streams[i].avtype;
+		// elementary_stream_id:8
+		data[j++] = psm->streams[i].pesid;
+		// elementary_stream_info_length:16
+		le_write_uint16(data+j, psm->streams[i].esinfo_len);
+		// descriptor()
+		memcpy(data+j+2, psm->streams[i].esinfo, psm->streams[i].esinfo_len);
+
+		j += 2 + psm->streams[i].esinfo_len;
 	}
-	assert(j == psm->stream_count*4 + 12);
+
+	// elementary_stream_map_length 16-bits
+	le_write_uint16(data+10, j-12+4);
+	// program_stream_map_length:16
+	le_write_uint16(data+4, j-6+4); // 4-bytes crc32
 
 	// crc32
-	crc = crc32(0xffffffff, data+4, j-4);
-	data[j+3] = (crc >> 24) & 0xFF;
-	data[j+2] = (crc >> 16) & 0xFF;
-	data[j+1] = (crc >> 8) & 0xFF;
-	data[j+0] = crc & 0xFF;
+	crc = crc32(0xffffffff, data, j);
+	crc = 0;
+	data[j+3] = (uint8_t)((crc >> 24) & 0xFF);
+	data[j+2] = (uint8_t)((crc >> 16) & 0xFF);
+	data[j+1] = (uint8_t)((crc >> 8) & 0xFF);
+	data[j+0] = (uint8_t)(crc & 0xFF);
 
 	return j+4;
 }

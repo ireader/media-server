@@ -49,10 +49,10 @@ size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 
 	for(j = 0; j < section_length - 9 - pmt->pminfo_len - 4; j += 5)
 	{
-		pmt->streams[n].sid = data[i+j];
+		pmt->streams[n].avtype = data[i+j];
 		pmt->streams[n].pid = ((data[i+j+1] & 0x1F) << 8) | data[i+j+2];
 		pmt->streams[n].esinfo_len = ((data[i+j+3] & 0x0F) << 8) | data[i+j+4];
-//		printf("PMT[%d]: sid: %0x, pid: %0x, eslen: %d\n", n, pmt->streams[n].sid, pmt->streams[n].pid, pmt->streams[n].esinfo_len);
+//		printf("PMT[%d]: sid: %0x, pid: %0x, eslen: %d\n", n, pmt->streams[n].avtype, pmt->streams[n].pid, pmt->streams[n].esinfo_len);
 
 		for(k = 0; k < pmt->streams[n].esinfo_len; k++)
 		{
@@ -87,7 +87,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// skip section_length
 
 	// program_number
-	put16(data + 3, pmt->pn);
+	le_write_uint16(data + 3, pmt->pn);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -100,11 +100,11 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 
 	// reserved '111'
 	// PCR_PID 15-bits 0x1FFF
-	put16(data + 8, 0xE000 | pmt->PCR_PID);
+	le_write_uint16(data + 8, 0xE000 | pmt->PCR_PID);
 
 	// reserved '1111'
 	// program_info_lengt 12-bits
-	put16(data + 10, 0xF000 | pmt->pminfo_len);
+	le_write_uint16(data + 10, 0xF000 | pmt->pminfo_len);
 	if(pmt->pminfo_len > 0)
 	{
 		// fill program info
@@ -117,15 +117,15 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	for(i = 0; i < pmt->stream_count; i++)
 	{
 		// stream_type
-		*p = (uint8_t)pmt->streams[i].sid;
+		*p = (uint8_t)pmt->streams[i].avtype;
 
 		// reserved '111'
 		// elementary_PID 13-bits
-		put16(p + 1, 0xE000 | pmt->streams[i].pid);
+		le_write_uint16(p + 1, 0xE000 | pmt->streams[i].pid);
 
 		// reserved '1111'
 		// ES_info_lengt 12-bits
-		put16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
+		le_write_uint16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
 
 		// fill elementary stream info
 		if(pmt->streams[i].esinfo_len > 0)
@@ -144,7 +144,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// section_syntax_indicator '1'
 	// '0'
 	// reserved '11'
-	put16(data + 1, 0xb000 | len); 
+	le_write_uint16(data + 1, 0xb000 | len); 
 
 	// crc32
 	crc = crc32(0xffffffff, data, p-data);

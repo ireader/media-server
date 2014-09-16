@@ -70,10 +70,10 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 	// section_syntax_indicator = '1'
 	// '0'
 	// reserved '11'
-	put16(data + 1, 0xb000 | len);
+	le_write_uint16(data + 1, 0xb000 | len);
 
 	// transport_stream_id
-	put16(data + 3, pat->tsid);
+	le_write_uint16(data + 3, pat->tsid);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -86,8 +86,8 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 
 	for(i = 0; i < pat->pmt_count; i++)
 	{
-		put16(data + 8 + i * 4 + 0, pat->pmt[i].pn);
-		put16(data + 8 + i * 4 + 2, 0xE000 | pat->pmt[i].pid);
+		le_write_uint16(data + 8 + i * 4 + 0, pat->pmt[i].pn);
+		le_write_uint16(data + 8 + i * 4 + 2, 0xE000 | pat->pmt[i].pid);
 	}
 
 	// crc32

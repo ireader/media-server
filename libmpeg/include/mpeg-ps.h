@@ -30,17 +30,23 @@ extern "C" {
 	typedef long long int64_t;
 #endif
 
+enum
+{
+	STREAM_VIDEO_H264	= 0x1b,
+	STREAM_VIDEO_SVAC	= 0x80,
+	STREAM_AUDIO_AAC	= 0x0f,
+	STREAM_AUDIO_SVAC	= 0x90,
+};
+
 typedef void (*mpeg_ps_cbwrite)(void* param, const void* packet, size_t bytes);
 
 LIBMPEG_API void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param);
-
 LIBMPEG_API int mpeg_ps_destroy(void* ps);
-
-LIBMPEG_API int mpeg_ps_write(void* ps, int streamId, int64_t pts, int64_t dts, const void* data, size_t bytes);
-
+LIBMPEG_API int mpeg_ps_add_stream(void* ps, int streamType, const void* info, int bytes);
+LIBMPEG_API int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
 LIBMPEG_API int mpeg_ps_reset(void* ps);
 
-LIBMPEG_API size_t ps_packet_dec(const unsigned char* data, size_t bytes);
+LIBMPEG_API size_t mpeg_ps_packet_dec(const unsigned char* data, size_t bytes, mpeg_ps_cbwrite func, void* param);
 
 #ifdef __cplusplus
 }

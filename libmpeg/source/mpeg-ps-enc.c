@@ -14,7 +14,7 @@
 #include <memory.h>
 #include <assert.h>
 
-#define MAX_PACKET_SIZE		7000 // 64k pes data + pack_header + system_header
+#define MAX_PACKET_SIZE		70000 // 64k pes data + pack_header + system_header
 #define N_MPEG_TS_STREAM	8
 
 typedef struct _mpeg_ps_enc_context_t
@@ -33,12 +33,50 @@ typedef struct _mpeg_ps_enc_context_t
 
 } mpeg_ps_enc_context_t;
 
+static uint8_t ps_stream_find(mpeg_ps_enc_context_t *psctx, int avtype)
+{
+	size_t i;
+	for(i = 0; i < psctx->psm.stream_count; i++)
+	{
+		if(avtype == psctx->psm.streams[i].avtype)
+			return psctx->psm.streams[i].pesid;
+	}
+	return 0;
+}
+
+static size_t ps_packet_header_write(const ps_packet_header_t *packethd, uint8_t *data)
+{
+	// pack_start_code
+	le_write_uint32(data, 0x000001BA);
+
+	// 33-system_clock_reference_base + 9-system_clock_reference_extension
+	// '01xxx1xx xxxxxxxx xxxxx1xx xxxxxxxx xxxxx1xx xxxxxxx1'
+	data[4] = 0x44 | (((packethd->system_clock_reference_base >> 30) & 0x07) << 3) | ((packethd->system_clock_reference_base >> 28) & 0x03);
+	data[5] = ((packethd->system_clock_reference_base >> 20) & 0xFF);
+	data[6] = 0x04 | (((packethd->system_clock_reference_base >> 15) & 0x1F) << 3) | ((packethd->system_clock_reference_base >> 13) & 0x03);
+	data[7] = ((packethd->system_clock_reference_base >> 5) & 0xFF);
+	data[8] = 0x04 | ((packethd->system_clock_reference_base & 0x1F) << 3) | ((packethd->system_clock_reference_extension >> 7) & 0x03);
+	data[9] = 0x01 | ((packethd->system_clock_reference_extension & 0x7F) << 1);
+
+	// program_mux_rate
+	// 'xxxxxxxx xxxxxxxx xxxxxx11'
+	data[10] = packethd->program_mux_rate >> 14;
+	data[11] = packethd->program_mux_rate >> 6;
+	data[12] = 0x03 | ((packethd->program_mux_rate & 0x3F) << 2);
+
+	// stuffing length
+	// '00000xxx'
+	data[13] = 0;
+
+	return 14;
+}
+
 static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *data)
 {
 	size_t i, j;
 
 	// system_header_start_code
-	put32(data, 0x000001BB);
+	le_write_uint32(data, 0x000001BB);
 
 	// header length
 	//put16(data + 4, 6 + syshd->stream_count*3);
@@ -47,10 +85,10 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	// 1xxxxxxx xxxxxxxx xxxxxxx1
 	data[6] = 0x80 | ((syshd->rate_bound >> 15) & 0x7F);
 	data[7] = (syshd->rate_bound >> 7) & 0xFF;
-	data[8] = 0x01 | (syshd->rate_bound & 0x7F);
+	data[8] = 0x01 | ((syshd->rate_bound & 0x7F) << 1);
 
 	// 6-audio_bound + 1-fixed_flag + 1-CSPS_flag
-	data[9] = ((syshd->audio_bound & 0x3F) << 6) | ((syshd->fixed_flag & 0x01) << 1) | (syshd->CSPS_flag & 0x01);
+	data[9] = ((syshd->audio_bound & 0x3F) << 2) | ((syshd->fixed_flag & 0x01) << 1) | (syshd->CSPS_flag & 0x01);
 
 	// 1-system_audio_lock_flag + 1-system_video_lock_flag + 1-maker + 5-video_bound
 	data[10] = 0x20 | ((syshd->system_audio_lock_flag & 0x01) << 7) | ((syshd->video_bound & 0x01) << 6) | (syshd->video_bound & 0x1F);
@@ -76,48 +114,23 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	}
 
 	// header length
-	put16(data + 4, i-6);
+	le_write_uint16(data + 4, i-6);
 	return i;
 }
 
-static size_t ps_packet_header_write(const ps_packet_header_t *packethd, uint8_t *data)
+int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
 {
-	// pack_start_code
-	put32(data, 0x000001BA);
-
-	// 33-system_clock_reference_base + 9-system_clock_reference_extension
-	// '01xxx1xx xxxxxxxx xxxxx1xx xxxxxxxx xxxxx1xx xxxxxxx1'
-	data[4] = 0x40 | (((packethd->system_clock_reference_base >> 30) & 0x07) << 3) | ((packethd->system_clock_reference_base >> 28) & 0x03);
-	data[5] = ((packethd->system_clock_reference_base >> 20) & 0xFF);
-	data[6] = 0x04 | (((packethd->system_clock_reference_base >> 15) & 0x1F) << 3) | ((packethd->system_clock_reference_base >> 13) & 0x03);
-	data[7] = ((packethd->system_clock_reference_base >> 5) & 0xFF);
-	data[8] = 0x04 | ((packethd->system_clock_reference_base & 0x1F) << 3) | ((packethd->system_clock_reference_extension >> 7) & 0x03);
-	data[9] = 0x01 | ((packethd->system_clock_reference_extension & 0x7F) << 1);
-
-	// program_mux_rate
-	// 'xxxxxxxx xxxxxxxx xxxxxx11'
-	data[10] = packethd->program_mux_rate >> 14;
-	data[11] = packethd->program_mux_rate >> 6;
-	data[12] = 0x03 | ((packethd->program_mux_rate & 0x3F) << 2);
-
-	// stuffing length
-	// '00000xxx'
-	data[13] = 0;
-
-	return 14;
-}
-
-int mpeg_ps_write(void* ps, int streamId, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
-{
-	size_t i, n;
-	pes_t *stream = NULL;
+	size_t i, j, n;
 	mpeg_ps_enc_context_t *psctx;
 
 	i = 0;
 	psctx = (mpeg_ps_enc_context_t*)ps;
 
 	// write pack_header(p74)
-	psctx->packhd.system_clock_reference_base = 0;
+	// 2.7.1 Frequency of coding the system clock reference
+	// http://www.bretl.com/mpeghtml/SCR.HTM
+	//the maximum allowed interval between SCRs is 700ms 
+	psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
 	psctx->packhd.system_clock_reference_extension = 0;
 	psctx->packhd.program_mux_rate = 6106;
 	i += ps_packet_header_write(&psctx->packhd, psctx->packet + i);
@@ -138,13 +151,17 @@ int mpeg_ps_write(void* ps, int streamId, int64_t pts, int64_t dts, const uint8_
 	{
 		uint8_t *p;
 		uint8_t *pes = psctx->packet + i;
+		uint8_t streamId;
+
+		streamId = ps_stream_find(psctx, avtype);
+		assert(PES_SID_VIDEO==streamId || PES_SID_AUDIO==streamId);
 		p = pes + pes_write_header(pts, dts, streamId, pes);
 
-		if(PSI_STREAM_H264 == stream->sid && 0x09 != h264_type(payload, bytes))
+		if(PSI_STREAM_H264 == avtype && 0x09 != h264_type(payload, bytes))
 		{
 			// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 			// Each AVC access unit shall contain an access unit delimiter NAL Unit
-			put32(p, 0x00000001);
+			le_write_uint32(p, 0x00000001);
 			p[4] = 0x09; // AUD
 			p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 			p += 6;
@@ -156,12 +173,12 @@ int mpeg_ps_write(void* ps, int streamId, int64_t pts, int64_t dts, const uint8_
 		// video elementary stream contained in transport stream packets
 		if((p - pes - 6) + bytes > 0xFFFF)
 		{
-			put16(pes + 4, 0xFFFF);
+			le_write_uint16(pes + 4, 0xFFFF);
 			n = 0xFFFF - (p - pes - 6);
 		}
 		else
 		{
-			put16(pes + 4, (p - pes - 6) + bytes);
+			le_write_uint16(pes + 4, (p - pes - 6) + bytes);
 			n = bytes;
 		}
 
@@ -193,23 +210,21 @@ void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param)
 	psctx->write = func;
 	psctx->param = param;
 
-	psctx->psm_period = 0;
-
 	psctx->syshd.rate_bound = 26234; //10493600~10mbps(50BPS * 8 = 400bps)
-	psctx->syshd.audio_bound = 1; // [0,32] max active audio streams
-	psctx->syshd.video_bound = 1; // [0,16] max active video streams
+//	psctx->syshd.audio_bound = 1; // [0,32] max active audio streams
+//	psctx->syshd.video_bound = 1; // [0,16] max active video streams
 	psctx->syshd.fixed_flag = 0; // 1-fixed bitrate, 0-variable bitrate
 	psctx->syshd.CSPS_flag = 0; // meets the constraints defined in 2.7.9.
 	psctx->syshd.packet_rate_restriction_flag = 0; // dependence CSPS_flag
 	psctx->syshd.system_audio_lock_flag = 1; // all audio stream sampling rate is constant
 	psctx->syshd.system_video_lock_flag = 1; // all video stream frequency is constant
 
-	psctx->psm.ver = 1;
-	psctx->psm.stream_count = 2;
-	psctx->psm.streams[0].element_stream_id = PES_SID_VIDEO;
-	psctx->psm.streams[0].stream_type = PSI_STREAM_H264;
-	psctx->psm.streams[1].element_stream_id = PES_SID_AUDIO;
-	psctx->psm.streams[1].stream_type = PSI_STREAM_AAC;
+	//psctx->psm.ver = 1;
+	//psctx->psm.stream_count = 2;
+	//psctx->psm.streams[0].element_stream_id = PES_SID_VIDEO;
+	//psctx->psm.streams[0].stream_type = PSI_STREAM_H264;
+	//psctx->psm.streams[1].element_stream_id = PES_SID_AUDIO;
+	//psctx->psm.streams[1].stream_type = PSI_STREAM_AAC;
 
 	return psctx;
 }
@@ -220,5 +235,77 @@ int mpeg_ps_destroy(void* ps)
 
 	psctx = (mpeg_ps_enc_context_t*)ps;
 	free(psctx);
+	return 0;
+}
+
+int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
+{
+	mpeg_ps_enc_context_t* psctx;
+	psm_t *psm;
+
+	psctx = (mpeg_ps_enc_context_t*)ps;
+	if(!psctx || psctx->psm.stream_count + 1 >= NSTREAM)
+	{
+		assert(0);
+		return -1;
+	}
+
+	psm = &psctx->psm;
+	if(bytes > 0)
+	{
+		psm->streams[psm->stream_count].esinfo = (uint8_t*)malloc(bytes);
+		if(psm->streams[psm->stream_count].esinfo)
+		{
+			memcpy(psm->streams[psm->stream_count].esinfo, info, bytes);
+			psm->streams[psm->stream_count].esinfo_len = bytes;
+		}
+	}
+
+	switch(avtype)
+	{
+	case PSI_STREAM_MPEG1:
+	case PSI_STREAM_MPEG2:
+	case PSI_STREAM_MPEG4:
+	case PSI_STREAM_H264:
+	case PSI_STREAM_VIDEO_VC1:
+	case PSI_STREAM_VIDEO_DIRAC:
+	case PSI_STREAM_VIDEO_SVAC:
+		psm->streams[psm->stream_count].pesid = PES_SID_VIDEO + psctx->syshd.video_bound;
+
+		assert(psctx->syshd.video_bound + 1 < 16);
+		++psctx->syshd.video_bound; // [0,16] max active video streams
+		psctx->syshd.streams[psctx->syshd.stream_count].buffer_bound_scale = 1;
+		psctx->syshd.streams[psctx->syshd.stream_count].buffer_size_bound = 232;
+		break;
+
+	case PSI_STREAM_AUDIO_MPEG1:
+	case PSI_STREAM_MP3:
+	case PSI_STREAM_AAC:
+	case PSI_STREAM_MPEG4_AAC_LATM:
+	case PSI_STREAM_AUDIO_AC3:
+	case PSI_STREAM_AUDIO_DTS:
+	case PSI_STREAM_AUDIO_SVAC:
+		psm->streams[psm->stream_count].pesid = PES_SID_AUDIO + psctx->syshd.audio_bound;
+
+		assert(psctx->syshd.audio_bound + 1 < 32);
+		++psctx->syshd.audio_bound; // [0,32] max active audio streams
+		psctx->syshd.streams[psctx->syshd.stream_count].buffer_bound_scale = 0;
+		psctx->syshd.streams[psctx->syshd.stream_count].buffer_size_bound = 32;
+		break;
+
+	default:
+		assert(0);
+		return -1;
+	}
+
+	psctx->syshd.streams[psctx->syshd.stream_count].stream_id = psm->streams[psm->stream_count].pesid;
+	++psctx->syshd.stream_count;
+
+	psm->streams[psm->stream_count].avtype = avtype;
+	++psm->stream_count;
+	++psm->ver;
+
+	assert(psm->stream_count == psctx->syshd.stream_count);
+	psctx->psm_period = 0; // immediate update psm
 	return 0;
 }

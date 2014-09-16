@@ -46,8 +46,10 @@ typedef struct _psm_t
 	
 	struct stream_t
 	{
-		uint8_t stream_type;
-		uint8_t element_stream_id;
+		uint8_t avtype; // stream_type
+		uint8_t pesid; // pes stream_id
+		uint8_t *esinfo;
+		uint16_t esinfo_len;
 	} streams[NSTREAM];
 	size_t stream_count;
 } psm_t;

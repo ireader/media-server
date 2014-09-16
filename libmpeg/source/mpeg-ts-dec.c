@@ -123,7 +123,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 static char s_video[1024*1024];
 static char s_audio[1024*1024];
 
-int ts_packet_dec(const uint8_t* data, size_t bytes)
+int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 {
 	int i, j, k;
 	int64_t t;
@@ -189,7 +189,7 @@ int ts_packet_dec(const uint8_t* data, size_t bytes)
 						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						{
                             if(!tsctx.pes[k].payload)
-                                tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].sid) ? s_video : s_audio;
+                                tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].avtype) ? s_video : s_audio;
 
                             pes_read(NULL, data + i, bytes - i, &tsctx.pes[k]);
 

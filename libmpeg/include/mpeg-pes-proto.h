@@ -49,13 +49,14 @@ typedef struct _pes_t
 {
 	struct _pmt_t *pmt;	// program map table
 
-	uint32_t pid;		// PID : 13
-	uint32_t sid;		// stream_type : 8
-	uint32_t cc;		// continuity_counter : 4;
-	uint32_t esinfo_len;// es_info_length : 12
+	uint16_t pid;		// PES PID : 13
+	uint8_t sid;		// PES stream_id : 8
+	uint8_t avtype;		// PMT/PSM stream_type : 8
+	uint8_t cc;			// continuity_counter : 4;
 	uint8_t* esinfo;	// es_info
+	uint16_t esinfo_len;// es_info_length : 12
 
-	uint32_t len;	// PES_packet_length : 16;
+	uint32_t len;		// PES_packet_length : 16;
 
 	uint32_t reserved10 : 2;
 	uint32_t PES_scrambling_control : 2;

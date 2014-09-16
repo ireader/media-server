@@ -84,6 +84,7 @@ enum ETS_PID
 	TS_PID_IPMP	= 0x03, // IPMP control information table
 	// 0x0004-0x000F Reserved
 	// 0x0010-0x1FFE May be assigned as network_PID, Program_map_PID, elementary_PID, or for other purposes
+	TS_PID_USER	= 0x0042,
 	TS_PID_NULL	= 0x1FFF, // Null packet
 };
 
@@ -109,8 +110,8 @@ enum EPAT_TID
 enum EPSI_STREAM_TYPE
 {
 	PSI_STREAM_RESERVED			= 0x00, // ITU-T | ISO/IEC Reserved
-	PSI_STREAM_VIDEO_MPEG1		= 0x01, // ISO/IEC 11172-2 Video
-	PSI_STREAM_VIDEO_MPEG2		= 0x02, // Rec. ITU-T H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream(see Note 2)
+	PSI_STREAM_MPEG1			= 0x01, // ISO/IEC 11172-2 Video
+	PSI_STREAM_MPEG2			= 0x02, // Rec. ITU-T H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream(see Note 2)
 	PSI_STREAM_AUDIO_MPEG1		= 0x03, // ISO/IEC 11172-3 Audio
 	PSI_STREAM_MP3				= 0x04, // ISO/IEC 13818-3 Audio
 	PSI_STREAM_PRIVATE_SECTION	= 0x05, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 private_sections
@@ -145,13 +146,15 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_MPEG2_3D			= 0x22, // Additional view Rec. ITU-T H.262 | ISO/IEC 13818-2 video stream for service-compatible stereoscopic 3D services
 	PSI_STREAM_MPEG4_3D			= 0x23, // Additional view Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream conforming to one or more profiles defined in Annex A for service-compatible stereoscopic 3D services
 	// 0x24-0x7E Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
-	PSI_STREAM_VIDEO_CAVS		= 0x42, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_IPMP				= 0x7F, // IPMP stream
+	// 0x80-0xFF User Private
+	PSI_STREAM_VIDEO_CAVS		= 0x42, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_AUDIO_AC3		= 0x81, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_AUDIO_DTS		= 0x8a, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_DIRAC		= 0xd1, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
-	// 0x80-0xFF User Private
+	PSI_STREAM_VIDEO_SVAC		= 0x80, // GBT 25724-2010 SVAC
+	PSI_STREAM_AUDIO_SVAC		= 0x90, // GBT 25724-2010 SVAC
 };
 
 int pat_read(const uint8_t* data, int bytes, pat_t *pat);
