@@ -7,25 +7,30 @@
 #include "rtspclientDlg.h"
 #include "rtsp-client.h"
 
+#include "sys/sock.h"
+#include "sys/process.h"
+
 #include "rtp-avp-udp.h"
 #include "h264-source.h"
 
-#include "sys/sock.h"
-#include "sys/process.h"
-#include "sys/system.h"
-#include "sys/path.h"
-
-#include "mpeg-ts.h"
 #include "hls-server.h"
 #include "H264Reader.h"
 
 #include "http-server.h"
 #include "StdCFile.h"
 
+//#define MPEG_TS
+#define MPEG_PS
+
+#if defined(MPEG_TS)
+#include "mpeg-ts.h"
+#elif defined(MPEG_PS)
+#include "mpeg-ps.h"
+#endif
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
 
 static unsigned char s_buffer[8*1024*1024];
 
@@ -85,19 +90,11 @@ BEGIN_MESSAGE_MAP(CrtspclientDlg, CDialog)
 	ON_BN_CLICKED(IDCANCEL, &CrtspclientDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
-
-// CrtspclientDlg message handlers
-int STDCALL OnThread(IN void* param)
-{
-//	while(1)
-//		aio_socket_process(200);
-	return 0;
-}
-
-static void OnTSWrite(void* param, const void* packet, size_t bytes)
+static void OnH264Write(void* param, const void* packet, size_t bytes)
 {
 	FILE *fp = (FILE*)param;
 	fwrite(packet, 1, bytes, fp);
+	fflush(fp);
 }
 
 #include "../video/h264-util.h"
@@ -135,7 +132,7 @@ static void OnReadH264(void* ts, const void* data, int bytes)
 	{
 		time_t t;
 		time(&t);
-		pts = 90000;//t * 90000;
+		pts = 3600;//t * 90000;
 		pcr = pts * 300;
 	}
 	else
@@ -144,7 +141,11 @@ static void OnReadH264(void* ts, const void* data, int bytes)
 	}
 
 	//if(pts < 90000 + 90 * 3000)
+#if defined(MPEG_TS)
 		mpeg_ts_write(ts, 0x1b, pts, pts, data, bytes);
+#elif defined(MPEG_PS)
+	mpeg_ps_write(ts, STREAM_VIDEO_H264, pts, pts, data, bytes);
+#endif
 }
 
 static int OnHTTP(void* param, void* session, const char* method, const char* path)
@@ -320,23 +321,6 @@ static int STDCALL OnLiveThread(IN void* param)
 	return 0;
 }
 
-static int OnLiveOpen(void* param, void* camera, const char* id, const char* key, const char* publicId)
-{
-	static int i = 0;
-	if(0 == i)
-	{
-		i = 1;
-		thread_t thread;
-		thread_create(&thread, OnLiveThread, camera);
-	}
-	return 0;
-}
-
-static int OnLiveClose(void* param, const char* id)
-{
-	return 0;
-}
-
 BOOL CrtspclientDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
@@ -374,13 +358,9 @@ BOOL CrtspclientDlg::OnInitDialog()
 //	thread_t thread;
 //	thread_create(&thread, OnThread, NULL);
 
-	//hls_server_init();
-	//void* hls = hls_server_create(NULL, 80);
-	//hsl_server_set_handle(hls, OnLiveOpen, OnLiveClose, hls);
-
-	http_server_init();
-	void* server = http_server_create(NULL, 80);
-	http_server_set_handler(server, OnHTTP, NULL);
+	//http_server_init();
+	//void* server = http_server_create(NULL, 80);
+	//http_server_set_handler(server, OnHTTP, NULL);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -434,6 +414,14 @@ HCURSOR CrtspclientDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+static void OnPSRead(void* param, const void* packet, size_t bytes)
+{
+	FILE* fp = (FILE*)param;
+
+	fwrite(packet, 1, bytes, fp);
+	fflush(fp);
+}
+
 static void OnData(void* param, unsigned char nal, const void* data, int bytes)
 {
 	FILE *fp = (FILE*)param;
@@ -449,14 +437,33 @@ void CrtspclientDlg::OnBnClickedOk()
 	// TODO: Add your control notification handler code here
 	//OnOK();
 
-#if 1
+#if 0
 	unsigned char buffer[188] = {0};
-	FILE *fp = fopen("e:\\big_buck.ts", "rb");
+	FILE *fp = fopen("e:\\fileSequence0.ts", "rb");
 	while(fread(buffer, 188, 1, fp) > 0)
 	{
 		ts_packet_dec(buffer, 188);
 	}
 	fclose(fp);
+#else
+	int r, n;
+	const unsigned char *p;
+	FILE *wfp = fopen("e:\\1.svac", "wb");
+	//FILE *rfp = fopen("e:\\1.svac.ps", "rb");
+	FILE *rfp = fopen("e:\\svac.ps", "rb");
+	//FILE *rfp = fopen("e:\\sjz.ps", "rb");
+	while(r = fread(s_buffer, 1, sizeof(s_buffer), rfp))
+	{
+		p = s_buffer;
+		while(r > 0)
+		{
+			n = mpeg_ps_packet_dec(p, r, OnPSRead, wfp);
+			p += n;
+			r -= n;
+		}
+	}
+	fclose(rfp);
+	fclose(wfp);
 #endif
 
 
@@ -484,12 +491,13 @@ void CrtspclientDlg::OnBnClickedCancel()
 	// TODO: Add your control notification handler code here
 	//OnCancel();
 
+#if defined(MPEG_TS)
 #if 1
 	H264Reader reader;
 	reader.Open("e:\\sjz.h264");
 
 	FILE *fp = fopen("e:\\2.ts", "wb");
-	void* ts = mpeg_ts_create(OnTSWrite, fp);
+	void* ts = mpeg_ts_create(OnH264Write, fp);
 	while(reader.Read(OnReadH264, ts) > 0);
 	mpeg_ts_destroy(ts);
 	fclose(fp);
@@ -528,5 +536,20 @@ void CrtspclientDlg::OnBnClickedCancel()
 	mpeg_ts_destroy(ts);
 	fclose(fp);
 	fclose(fp2);
+#endif
+
+#elif defined(MPEG_PS)
+	H264Reader reader;
+	reader.Open("e:\\sjz.h264");
+
+	static uint8_t svac_video[] = { 0x2a, 0x0a, 0x7f, 0xff, 0x00, 0x00, 0x07, 0x08, 0x1f, 0xfe, 0x2c, 0x24 };
+	assert(sizeof(svac_video) == 0x0c);
+
+	FILE *fp = fopen("e:\\sjz.ps", "wb");
+	void* ps = mpeg_ps_create(OnH264Write, fp);
+	mpeg_ps_add_stream(ps, STREAM_VIDEO_H264, NULL, 0);
+	while(reader.Read(OnReadH264, ps) > 0);
+	mpeg_ps_destroy(ps);
+	fclose(fp);
 #endif
 }
