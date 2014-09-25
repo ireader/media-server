@@ -1,11 +1,39 @@
+// RFC 2326 Real Time Streaming Protocol (RTSP)
+// 12.39 Transport (p58)
+//
+// Transport = "Transport" ":" 1#transport-spec
+// transport-spec = transport-protocol/profile[/lower-transport] *parameter
+// transport-protocol = "RTP"
+// profile = "AVP"
+// lower-transport = "TCP" | "UDP"
+// parameter = ( "unicast" | "multicast" )
+//				| ";" "destination" [ "=" address ]
+//				| ";" "interleaved" "=" channel [ "-" channel ]
+//				| ";" "append"
+//				| ";" "ttl" "=" ttl
+//				| ";" "layers" "=" 1*DIGIT
+//				| ";" "port" "=" port [ "-" port ]
+//				| ";" "client_port" "=" port [ "-" port ]
+//				| ";" "server_port" "=" port [ "-" port ]
+//				| ";" "ssrc" "=" ssrc
+//				| ";" "mode" = <"> 1\#mode <">
+// ttl = 1*3(DIGIT)
+// port = 1*5(DIGIT)
+// ssrc = 8*8(HEX)
+// channel = 1*3(DIGIT)
+// address = host
+// mode = <"> *Method <"> | Method
+//
+// Transport: RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
+// Transport: RTP/AVP;multicast;ttl=127;mode="PLAY",RTP/AVP;unicast;client_port=3456-3457;mode="PLAY"
+
 #include "rtsp-header-transport.h"
-#include "cstringext.h"
+#include "rtsp-util.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-// RFC-2326 RTSP 12.39 Transport
-// Transport: RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
-int rtsp_header_transport_parse(const char* fields, struct rtsp_header_transport* t)
+int rtsp_header_transport(const char* fields, struct rtsp_header_transport_t* t)
 {
    char* p;
 
@@ -26,7 +54,7 @@ int rtsp_header_transport_parse(const char* fields, struct rtsp_header_transport
 	   else if(0 == stricmp("RTP/AVP/UDP", p))
 	   {
 		   t->transport = RTSP_TRANSPORT_RTP;
-		   t->lower_transport = RTSP_TRANSPORT_TCP;
+		   t->lower_transport = RTSP_TRANSPORT_UDP;
 	   }
 	   else if(0 == stricmp("RTP/AVP/TCP", p))
 	   {
@@ -62,9 +90,9 @@ int rtsp_header_transport_parse(const char* fields, struct rtsp_header_transport
 	   }
 	   else if(0 == strnicmp("mode=", p, 5))
 	   {
-		   if(0 == stricmp("PLAY", p+5))
+		   if(0 == stricmp("\"PLAY\"", p+5) || 0 == stricmp("PLAY", p+5))
 			   t->mode = RTSP_TRANSPORT_PLAY;
-		   else if(0 == stricmp("RECORD", p+5))
+		   else if(0 == stricmp("\"RECORD\"", p+5) || 0 == stricmp("RECORD", p+5))
 			   t->mode = RTSP_TRANSPORT_RECORD;
 		   else
 			   t->mode = RTSP_TRANSPORT_UNKNOWN;
@@ -124,3 +152,15 @@ int rtsp_header_transport_parse(const char* fields, struct rtsp_header_transport
    free(p);
    return 0;
 }
+
+#if defined(DEBUG) || defined(_DEBUG)
+void rtsp_header_transport_test()
+{
+	struct rtsp_header_transport_t t;
+
+	memset(&t, 0, sizeof(t));
+	assert(0 == rtsp_header_transport("RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257", &t)); // rfc2326 p61
+	assert(t.transport==RTSP_TRANSPORT_RTP && t.lower_transport==RTSP_TRANSPORT_UDP);
+	assert(t.multicast==0 && t.client_port1==4588 && t.client_port2==4589 && t.server_port1==6255 && t.server_port2==6257);
+}
+#endif

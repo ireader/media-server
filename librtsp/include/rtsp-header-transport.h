@@ -29,7 +29,7 @@ enum {
 	RTSP_TRANSPORT_RECORD
 };
 
-struct rtsp_header_transport
+struct rtsp_header_transport_t
 {
 	int transport; // RTP/RAW
 	int lower_transport; // TCP/UDP, RTP/AVP default UDP
@@ -47,7 +47,7 @@ struct rtsp_header_transport
 	char* ssrc; // RTP only
 };
 
-int rtsp_header_transport_parse(const char* fields, struct rtsp_header_transport* transport);
+int rtsp_header_transport(const char* fields, struct rtsp_header_transport_t* transport);
 
 #ifdef __cplusplus
 }
