@@ -219,6 +219,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\rtp-profile.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\rtp-queue.h"
 				>
 			</File>
