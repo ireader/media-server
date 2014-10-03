@@ -1463,6 +1463,64 @@ int sdp_media_port(void* sdp, int media, int *port)
 	return -1;
 }
 
+const char* sdp_media_proto(void* sdp, int media)
+{
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	return m ? m->proto : NULL;
+}
+
+// rfc 4566 5.14. Media Descriptions ("m=")
+// (p24) If the <proto> sub-field is "udp" the <fmt> sub-fields MUST
+// reference a media type describing the format under the "audio",
+// "video", "text", "application", or "message" top-level media types.
+inline int sdp_media_format_value(const char* format)
+{
+	switch(format[0])
+	{
+	case 'a': return ('u' == format[1]) ? SDP_M_FMT_UDP_AUDIO : SDP_M_FMT_UDP_APPLICATION;
+	case 'v': return SDP_M_FMT_UDP_VIDEO;
+	case 't': return SDP_M_FMT_UDP_TEXT;
+	case 'm': return SDP_M_FMT_UDP_MESSAGE;
+	default: return atoi(format);
+	}
+	//if(0 == stricmp("video", format))
+	//	return SDP_M_FMT_UDP_VIDEO;
+	//else if(0 == stricmp("audio", format))
+	//	return SDP_M_FMT_UDP_AUDIO;
+	//else if(0 == stricmp("text", format))
+	//	return SDP_M_FMT_UDP_TEXT;
+	//else if(0 == stricmp("application", format))
+	//	return SDP_M_FMT_UDP_APPLICATION;
+	//else if(0 == stricmp("message", format))
+	//	return SDP_M_FMT_UDP_MESSAGE;
+	//else
+	//	return atoi(format);
+}
+
+int sdp_media_formats(void* sdp, int media, int *formats, int count)
+{
+	int i;
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	if(!m)
+		return -1;
+
+	for(i = 0; i < count && i < m->fmt.count; i++)
+	{
+		if(i < N_MEDIA_FORMAT)
+			formats[i] = sdp_media_format_value(m->fmt.formats[i]);
+		else
+			formats[i] = sdp_media_format_value(m->fmt.ptr[i-N_MEDIA_FORMAT]);
+	}
+
+	return m->fmt.count;
+}
+
 int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes)
 {
 	const char* p;
@@ -1558,6 +1616,28 @@ const char* sdp_media_attribute_find(void* sdp, int media, const char* name)
 	return NULL;
 }
 
+int sdp_media_attribute_list(void* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+{
+	int i;
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	struct sdp_attribute *attr;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(sdp, media);
+	for(i = 0; m && i < m->a.count; i++)
+	{
+		if(i < N_ATTRIBUTE)
+			attr = m->a.attrs + i;
+		else
+			attr = m->a.ptr + i - N_ATTRIBUTE;
+
+		if( !name || (attr->name && 0==strcmp(attr->name, name)) )
+			onattr(param, attr->name, attr->value);
+	}
+
+	return 0;
+}
+
 int sdp_media_bandwidth_count(void* sdp, int media)
 {
 	struct sdp_media *m;
@@ -1643,4 +1723,24 @@ const char* sdp_attribute_find(void* sdp, const char* name)
 	}
 
 	return NULL;
+}
+
+int sdp_attribute_list(void* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+{
+	int i;
+	struct sdp_context *ctx;
+	struct sdp_attribute *attr;
+	ctx = (struct sdp_context*)sdp;
+	for(i = 0; i < ctx->a.count; i++)
+	{
+		if(i < N_ATTRIBUTE)
+			attr = ctx->a.attrs + i;
+		else
+			attr = ctx->a.ptr + i - N_ATTRIBUTE;
+
+		if( !name || (attr->name && 0==strcmp(attr->name, name)) )
+			onattr(param, attr->name, attr->value);
+	}
+
+	return 0;
 }

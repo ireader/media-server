@@ -9,6 +9,7 @@ enum { SDP_V_VERSION_0 = 0 };
 enum { SDP_C_NETWORK_UNKNOWN=0, SDP_C_NETWORK_IN };
 enum { SDP_C_ADDRESS_UNKNOWN=0, SDP_C_ADDRESS_IP4, SDP_C_ADDRESS_IP6 };
 enum { SDP_A_SENDONLY = 0, SDP_A_RECVONLY, SDP_A_SENDRECV };
+enum { SDP_M_FMT_UDP_AUDIO = 1001, SDP_M_FMT_UDP_VIDEO, SDP_M_FMT_UDP_TEXT, SDP_M_FMT_UDP_APPLICATION, SDP_M_FMT_UDP_MESSAGE };
 
 void* sdp_parse(const char* s);
 void sdp_destroy(void* sdp);
@@ -66,11 +67,14 @@ const char* sdp_encryption_get(void* sdp);
 
 int sdp_media_count(void* sdp);
 int sdp_media_port(void* sdp, int media, int *port);
+const char* sdp_media_proto(void* sdp, int media);
+int sdp_media_formats(void* sdp, int media, int *formats, int count); // return format count
 
 int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes);
 int sdp_media_get_connection_network(void* sdp, int media);
 int sdp_media_get_connection_addrtype(void* sdp, int media);
 const char* sdp_media_attribute_find(void* sdp, int media, const char* name);
+int sdp_media_attribute_list(void* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param);
 
 const char* sdp_media_get_information(void* sdp, int media);
 
@@ -79,21 +83,9 @@ const char* sdp_media_bandwidth_get_type(void* sdp, int media, int idx); // CT/A
 int sdp_media_bandwidth_get_value(void* sdp, int media, int idx); // kbps-kilobits per second
 
 int sdp_attribute_count(void* sdp);
+int sdp_attribute_list(void* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param);
 int sdp_attribute_get(void* sdp, int idx, const char** name, const char** value);
 const char* sdp_attribute_find(void* sdp, const char* name);
-
-//void sdp_version_set(void* sdp, int version);
-//void sdp_session_set_name(void* sdp, const char* name);
-//void sdp_session_set_information(void* sdp, const char* info);
-//void sdp_uri_set(void* sdp, const char* uri);
-//void sdp_email_set(void* sdp, const char* email);
-//void sdp_phone_set(void* sdp, const char* phone);
-//void sdp_connection_set(void* sdp, const char* connection);
-//void sdp_bandwidth_set(void* sdp, const char* bandwidth);
-//void sdp_timing_set(void* sdp, const char* timing);
-//void sdp_repeat_set(void* sdp, const char* repeat);
-//void sdp_timezone_set(void* sdp, const char* timezone);
-//void sdp_encryption_set(void* sdp, const char* encryption);
 
 #ifdef __cplusplus
 }
