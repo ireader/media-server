@@ -11,43 +11,41 @@
 // e.g. RTP-Info: url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
 
 #include "rtsp-header-rtp-info.h"
-#include "rtsp-util.h"
+#include "cstringext.h"
+#include "string-util.h"
 #include <assert.h>
 
 #define RTP_INFO_SPECIAL ",;\r\n"
 
-int rtsp_header_rtp_info(const char* fields, struct rtsp_header_rtp_info_t* info)
+int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpinfo)
 {
-	const char* p = fields;
+	const char* p1;
+	const char* p = field;
 
 	while(p && *p)
 	{
+		p1 = string_token(p, RTP_INFO_SPECIAL);
 		if(0 == strnicmp("url=", p, 4))
 		{
-			const char* p1 = NULL;
-			p1 = string_token_word(p+4, RTP_INFO_SPECIAL);
-			assert(p1 - p < sizeof(info->url)-1);
-			strncpy(info->url, p+4, p1-p-4);
-			info->url[p1-p-4] = '\0';
+			assert(p1 - p < sizeof(rtpinfo->url)-1);
+			strncpy(rtpinfo->url, p+4, p1-p-4);
+			rtpinfo->url[p1-p-4] = '\0';
 			p = p1;
 		}
-		else if(0 == strnicmp("seq=", p, 4))
+		else if(1 == sscanf(p, "seq = %lld", &rtpinfo->seq))
 		{
-			p = string_token_int64(p+4, &info->seq);
-			assert('\0' == p[0] || strchr(RTP_INFO_SPECIAL, p[0]));
 		}
-		else if(0 == strnicmp("rtptime=", p, 8))
+		else if(1 == sscanf(p, "rtptime = %lld", &rtpinfo->rtptime))
 		{
-			p = string_token_int64(p+8, &info->rtptime);
-			assert('\0' == p[0] || strchr(RTP_INFO_SPECIAL, p[0]));
 		}
 		else
 		{
-			p = string_token_word(p+1, RTP_INFO_SPECIAL);
+			assert(0); // unknown parameter
 		}
 
-		if(!strchr(",\r\n", *p))
-			++p;
+		if('\r' == *p1 || '\n' == *p1 || '\0' == *p1)
+			break;
+		p = p1 + 1;
 	}
 
 	return 0;

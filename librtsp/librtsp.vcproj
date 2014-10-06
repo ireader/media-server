@@ -181,6 +181,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtsp-header-range.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-header-rtp-info.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtsp-header-session.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtsp-header-transport.c"
 				>
 			</File>
@@ -190,6 +202,14 @@
 			</File>
 			<File
 				RelativePath=".\source\rtsp.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\sdp-a-fmtp.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\sdp-a-rtpmap.c"
 				>
 			</File>
 			<File
@@ -207,7 +227,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\rtsp-client.h"
+				RelativePath=".\include\rtsp-header-range.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-header-rtp-info.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-header-session.h"
 				>
 			</File>
 			<File
@@ -219,15 +247,11 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\rtsp-server-internal.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\rtsp-server.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtsp-transport-tcp.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtsp-transport-udp.h"
 				>
 			</File>
 			<File
@@ -239,7 +263,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\sdp-a-fmtp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\sdp-a-rtpmap.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\sdp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\include\udpsocket.h"
 				>
 			</File>
 		</Filter>
@@ -273,6 +309,26 @@
 			Name="util"
 			>
 			<File
+				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\source\aio-tcp-transport.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\source\aio-udp-transport.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\include\ctypedef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sdk\include\string-util.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\sdk\source\url.c"
 				>
 			</File>
@@ -285,7 +341,55 @@
 			Name="client"
 			>
 			<File
+				RelativePath=".\client\rtsp-client-announce.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-describe.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-internal.h"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-pause.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-play.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-sdp.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-setup.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-teardown.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-transport-tcp.c"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-client-transport-tcp.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtsp-client.c"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-client.h"
+				>
+			</File>
+			<File
+				RelativePath=".\client\rtsp-url-parser.h"
 				>
 			</File>
 		</Filter>
@@ -297,15 +401,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtsp-transport-tcp.cpp"
+				RelativePath=".\source\rtsp-transport-tcp.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtsp-transport-udp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtsp-transport.cpp"
+				RelativePath=".\source\rtsp-transport-udp.c"
 				>
 			</File>
 		</Filter>

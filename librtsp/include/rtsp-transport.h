@@ -1,23 +1,23 @@
 #ifndef _rtsp_transport_h_
 #define _rtsp_transport_h_
 
-typedef unsigned int rtspid_t;
+#include "sys/sock.h"
 
-struct IRtspTransport
+struct rtsp_transport_handler_t
 {
-	virtual ~IRtspTransport(){}
-
-	virtual int Send() = 0;
-	virtual int Recv() = 0;
-	virtual int SendV() = 0;
-	virtual int RecvV() = 0;
+	void* (*onrecv)(void *ptr, void *session, const char *ip, int port, void *parser);
+	void (*onsend)(void *ptr, void *session, int code, size_t bytes);
 };
 
+struct rtsp_transport_t
+{
+	void* (*create)(socket_t socket, const struct rtsp_transport_handler_t *handler, void *ptr);
+	int (*destroy)(void* transport);
+	int (*send)(void *session, const void *msg, size_t bytes);
+	int (*sendv)(void *session, socket_bufvec_t *vec, int n);
+};
 
-enum { RTSP_TRANSPORT_TCP, RTSP_TRANSPORT_UDP };
-
-void* rtsp_transport_create(int type, const char* ip, int port);
-
-int rtsp_transport_destroy(void* transport);
+struct rtsp_transport_t* rtsp_transport_tcp();
+struct rtsp_transport_t* rtsp_transport_udp();
 
 #endif /* !_rtsp_transport_h_ */

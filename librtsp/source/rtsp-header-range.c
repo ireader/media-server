@@ -15,11 +15,35 @@
 // Range: smpte-25=10:07:00-10:07:33:05.01,smpte-25=11:07:00-11:07:33:05.01
 
 #include "rtsp-header-range.h"
-#include "rtsp-util.h"
+#include "cstringext.h"
+#include "string-util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
+
+struct time_smpte_t
+{
+	int second;		// [0,24*60*60)
+	int frame;		// [0,99]
+	int subframe;	// [0,99]
+};
+
+struct time_npt_t
+{
+	int64_t second;	// [0,---)
+	int fraction;	// [0,999]
+};
+
+struct time_clock_t
+{
+	int second;		// [0,24*60*60)
+	int fraction;	// [0,999]
+	int day;		// [0,30]
+	int month;		// [0,11]
+	int year;		// [xxxx]
+};
 
 #define RANGE_SPECIAL ",;\r\n"
 
@@ -30,26 +54,26 @@ static const char* rtsp_header_range_smpte_time(const char* str, int *hours, int
 	const char* p;
 
 	assert(str);
-	p = string_token_number(str, hours);
+	p = string_token_int(str, hours);
 	if(*p != ':')
 		return NULL;
 
-	p = string_token_number(p+1, minutes);
+	p = string_token_int(p+1, minutes);
 	if(*p != ':')
 		return NULL;
 
-	p = string_token_number(p+1, seconds);
+	p = string_token_int(p+1, seconds);
 
 	*frames = 0;
 	*subframes = 0;
 	if(*p == ':')
 	{
-		p = string_token_number(p+1, frames);
+		p = string_token_int(p+1, frames);
 	}
 
 	if(*p == '.')
 	{
-		p = string_token_number(p+1, subframes);
+		p = string_token_int(p+1, subframes);
 	}
 
 	return p;
@@ -74,15 +98,14 @@ static int rtsp_header_range_smpte(const char* fields, struct rtsp_header_range_
 		return -1;
 
 	range->from_value = RTSP_RANGE_TIME_NORMAL;
-	range->smpte.from.second = (hours%24)*3600 + (minutes%60)*60 + seconds;
-	range->smpte.from.frame = frames;
-	range->smpte.from.subframe = subframes;
+	range->from = (hours%24)*3600 + (minutes%60)*60 + seconds;
+	range->from = range->from * 1000 + frames % 1000;
 
 	assert('-' == *p);
 	if('\0' == p[1] || strchr(RANGE_SPECIAL, p[1]))
 	{
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		memset(&range->smpte.to, 0, sizeof(range->smpte.to));
+		range->to = -1L;
 	}
 	else
 	{
@@ -91,9 +114,8 @@ static int rtsp_header_range_smpte(const char* fields, struct rtsp_header_range_
 		assert('\0' == p[0] || strchr(RANGE_SPECIAL, p[0]));
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
-		range->smpte.from.second = (hours%24)*3600 + (minutes%60)*60 + seconds;
-		range->smpte.to.frame = frames;
-		range->smpte.to.subframe = subframes;
+		range->to = (hours%24)*3600 + (minutes%60)*60 + seconds;
+		range->to = range->to * 1000 + frames % 1000;
 	}
 
 	return 0;
@@ -111,7 +133,7 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 	int v1, v2;
 
 	assert(str);
-	p = string_token_word(str, "-\r\n");
+	p = string_token(str, "-\r\n");
 	if(p-str==3 && 0==strnicmp(str, "now", 3))
 	{
 		*seconds = -1; // now
@@ -124,11 +146,11 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 		if(*p == ':')
 		{
 			// npt-hhmmss
-			p = string_token_number(p+1, &v1);
+			p = string_token_int(p+1, &v1);
 			if(*p != ':')
 				return NULL;
 
-			p = string_token_number(p+1, &v2);
+			p = string_token_int(p+1, &v2);
 
 			assert(0 <= v1 && v1 < 60);
 			assert(0 <= v2 && v2 < 60);
@@ -141,7 +163,7 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 		}
 
 		if(*p == '.')
-			p = string_token_number(p+1, fraction);
+			p = string_token_int(p+1, fraction);
 	}
 
 	return p;
@@ -169,19 +191,19 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 		if(-1 == seconds && 0 == fraction)
 		{
 			range->from_value = RTSP_RANGE_TIME_NOW;
-			memset(&range->npt.from, 0, sizeof(range->npt.from));
+			range->from = 0L;
 		}
 		else
 		{
 			range->from_value = RTSP_RANGE_TIME_NORMAL;
-			range->npt.from.second = seconds;
-			range->npt.from.fraction = fraction;
+			range->from = seconds;
+			range->from = range->from * 1000 + fraction % 1000;
 		}
 	}
 	else
 	{
 		range->from_value = RTSP_RANGE_TIME_NOVALUE;
-		memset(&range->npt.from, 0, sizeof(range->npt.from));
+		range->from = -1L;
 	}
 
 	assert('-' == *p);
@@ -189,7 +211,7 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 	{
 		assert('-' != *fields);
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		memset(&range->npt.to, 0, sizeof(range->npt.to));
+		range->to = -1L;
 	}
 	else
 	{
@@ -198,8 +220,8 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 		assert('\0' == p[0] || strchr(RANGE_SPECIAL, p[0]));
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
-		range->npt.to.second = seconds;
-		range->npt.to.fraction = fraction;
+		range->to = seconds;
+		range->to = range->to * 1000 + fraction % 1000;
 	}
 
 	return 0;
@@ -208,22 +230,29 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 // utc-time = utc-date "T" utc-time "Z"
 // utc-date = 8DIGIT ; < YYYYMMDD >
 // utc-time = 6DIGIT [ "." fraction ] ; < HHMMSS.fraction >
-static const char* rtsp_header_range_clock_time(const char* str, int *year, int *month, int *day, int *second, int *fraction)
+static const char* rtsp_header_range_clock_time(const char* str, int64_t *second, int *fraction)
 {
+	struct tm t;
 	const char* p;
+	int year, month, day;
 	int hour, minute;
 
 	assert(str);
-	if(5 != sscanf(str, "%4d%2d%2dT%2d%2d", year, month, day, &hour, &minute))
+	if(5 != sscanf(str, "%4d%2d%2dT%2d%2d", &year, &month, &day, &hour, &minute))
 		return NULL;
 
-	p = string_token_number(str + 13, second);
+	p = string_token_int64(str + 13, second);
 	if(p && *p == '.')
 	{
-		p = string_token_number(str, fraction);
+		p = string_token_int(str, fraction);
 	}
 
-	*second += hour*3600 * minute*60;
+	t.tm_year = year - 1900;
+	t.tm_mon = month - 1;
+	t.tm_mday = day;
+	t.tm_hour = hour;
+	t.tm_min = minute;
+	*second += mktime(&t);
 
 	assert('Z' == *p);
 	assert('\0' == p[1] || strchr(RANGE_SPECIAL, p[1]));
@@ -237,77 +266,112 @@ static const char* rtsp_header_range_clock_time(const char* str, int *year, int 
 static int rtsp_header_range_clock(const char* fields, struct rtsp_header_range_t* range)
 {
 	const char* p;
-	int year, month, day, second, fraction;
+	int64_t second;
+	int fraction;
 
-	p = rtsp_header_range_clock_time(fields, &year, &month, &day, &second, &fraction);
+	p = rtsp_header_range_clock_time(fields, &second, &fraction);
 	if(!p || '-' != *p)
 		return -1;
 
 	range->from_value = RTSP_RANGE_TIME_NORMAL;
-	range->clock.from.year = year;
-	range->clock.from.month = month;
-	range->clock.from.day = day;
-	range->clock.from.second = second;
-	range->clock.from.fraction = fraction;
+	range->from = second * 1000;
+	range->from += fraction % 1000;
 
 	assert('-' == *p);
 	if('\0'==p[1] || strchr(RANGE_SPECIAL, p[1]))
 	{
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		memset(&range->clock.to, 0, sizeof(range->clock.to));
+		range->to = -1L;
 	}
 	else
 	{
-		if(! (p = rtsp_header_range_clock_time(p+1, &year, &month, &day, &second, &fraction)) )
+		if(! (p = rtsp_header_range_clock_time(p+1, &second, &fraction)) )
 			return -1;
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
-		range->clock.to.year = year;
-		range->clock.to.month = month;
-		range->clock.to.day = day;
-		range->clock.to.second = second;
-		range->clock.to.fraction = fraction;
+		range->to = second * 1000;
+		range->to += fraction % 1000;
 	}
 
 	return 0;
 }
 
-int rtsp_header_range(const char* fields, struct rtsp_header_range_t* range)
+int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 {
 	int r = 0;
-	while(fields && 0 == r)
+
+	range->time = 0L;
+	while(field && 0 == r)
 	{
-		if(0 == strnicmp("clock=", fields, 6))
+		if(0 == strnicmp("clock=", field, 6))
 		{
 			range->type = RTSP_RANGE_CLOCK;
+			r = rtsp_header_range_clock(field+6, range);
 		}
-		else if(0 == strnicmp("npt=", fields, 4))
+		else if(0 == strnicmp("npt=", field, 4))
 		{
 			range->type = RTSP_RANGE_NPT;
+			r = rtsp_header_range_npt(field+4, range);
 		}
-		else if(0 == strnicmp("smpte=", fields, 6))
+		else if(0 == strnicmp("smpte=", field, 6))
 		{
 			range->type = RTSP_RANGE_SMPTE;
-			r = rtsp_header_range_smpte(fields+6, range);
+			r = rtsp_header_range_smpte(field+6, range);
+			if(RTSP_RANGE_TIME_NORMAL == range->from_value)
+				range->from = (range->from/1000 * 1000) + (1000/30 * (range->from%1000)); // frame to ms
+			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
+				range->to = (range->to/1000 * 1000) + (1000/30 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("smpte-30-drop=", fields, 15))
+		else if(0 == strnicmp("smpte-30-drop=", field, 15))
 		{
 			range->type = RTSP_RANGE_SMPTE_30;
-			r = rtsp_header_range_smpte(fields+15, range);
+			r = rtsp_header_range_smpte(field+15, range);
+			if(RTSP_RANGE_TIME_NORMAL == range->from_value)
+				range->from = (range->from/1000 * 1000) + (1000/30 * (range->from%1000)); // frame to ms
+			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
+				range->to = (range->to/1000 * 1000) + (1000/30 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("smpte-25=", fields, 9))
+		else if(0 == strnicmp("smpte-25=", field, 9))
 		{
 			range->type = RTSP_RANGE_SMPTE_25;
-			r = rtsp_header_range_smpte(fields+9, range);
+			r = rtsp_header_range_smpte(field+9, range);
+			if(RTSP_RANGE_TIME_NORMAL == range->from_value)
+				range->from = (range->from/1000 * 1000) + (1000/25 * (range->from%1000)); // frame to ms
+			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
+				range->to = (range->to/1000 * 1000) + (1000/25 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("time=", fields, 5))
+		else if(0 == strnicmp("time=", field, 5))
 		{
+			int h, m, s, frame, subframe;
+			switch(range->type)
+			{
+//			case RTSP_RANGE_SMPTE:
+			case RTSP_RANGE_SMPTE_30:
+				if(0 == rtsp_header_range_smpte_time(field+5, &h, &m, &s, &frame, &subframe))
+					range->time = h*3600 + m*60 + s + 1000/30 * (frame % 30);
+				break;
+
+			case RTSP_RANGE_SMPTE_25:			
+				if(0 == rtsp_header_range_smpte_time(field+5, &h, &m, &s, &frame, &subframe))
+					range->time = h*3600 + m*60 + s + 1000/25 * (frame % 25);
+				break;
+
+			case RTSP_RANGE_NPT:
+				if(0 == rtsp_header_range_npt_time(field+5, &range->time, &frame))
+					range->time = range->time * 1000 + frame % 1000;
+				break;
+
+			case RTSP_RANGE_CLOCK:
+				if(0 == rtsp_header_range_clock_time(field+5, &range->time, &frame))
+					range->time = range->time * 1000 + frame % 1000;
+				break;
+			}
 		}
 		else
 		{
-			fields = strchr(fields, ';');
-			if(fields)
-				++fields;
+			field = strchr(field, ';');
+			if(field)
+				++field;
 		}
 	}
 
@@ -317,26 +381,27 @@ int rtsp_header_range(const char* fields, struct rtsp_header_range_t* range)
 #if defined(DEBUG) || defined(_DEBUG)
 void rtsp_header_range_test()
 {
+	struct tm t;
 	struct rtsp_header_range_t range;
 
 	// smpte
 	assert(0==rtsp_header_range("smpte=10:12:33:20-", &range));
 	assert(range.type == RTSP_RANGE_SMPTE && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
-	assert(range.smpte.from.second==10*3600+12*60+33 && range.smpte.from.frame==20 && range.smpte.from.subframe==0);
+	assert(range.from == (10*3600+12*60+33)*1000 + 20*33);
 
 	assert(0==rtsp_header_range("smpte=10:07:33-", &range));
 	assert(range.type == RTSP_RANGE_SMPTE && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
-	assert(range.smpte.from.second==10*3600+7*60+33 && range.smpte.from.frame==0 && range.smpte.from.subframe==0);
+	assert(range.from == (10*3600+7*60+33)*1000);
 
 	assert(0==rtsp_header_range("smpte=10:07:00-10:07:33:05.01", &range));
 	assert(range.type == RTSP_RANGE_SMPTE && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
-	assert(range.smpte.from.second==10*3600+7*60 && range.smpte.from.frame==0 && range.smpte.from.subframe==0);
-	assert(range.smpte.to.second==10*3600+7*60+33 && range.smpte.to.frame==5 && range.smpte.to.subframe==1);
+	assert(range.from == (10*3600+7*60)*1000);
+	assert(range.to == (10*3600+7*60+33)*1000 + 5*33);
 
 	assert(0==rtsp_header_range("smpte-25=10:07:00-10:07:33:05.01", &range));
 	assert(range.type == RTSP_RANGE_SMPTE_25 && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
-	assert(range.smpte.from.second==10*3600+7*60 && range.smpte.from.frame==0 && range.smpte.from.subframe==0);
-	assert(range.smpte.to.second==10*3600+7*60+33 && range.smpte.to.frame==5 && range.smpte.to.subframe==1);
+	assert(range.from == (10*3600+7*60)*1000);
+	assert(range.to == (10*3600+7*60+33)*1000 + 5*40);
 
 	// npt
 	assert(0==rtsp_header_range("npt=now-", &range));
@@ -344,23 +409,26 @@ void rtsp_header_range_test()
 
 	assert(0==rtsp_header_range("npt=12:05:35.3-", &range));
 	assert(range.type == RTSP_RANGE_NPT && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
-	assert(range.npt.from.second==12*3600+5*60+35 && range.npt.from.fraction==3);
+	assert(range.from == (12*3600+5*60+35)*1000 + 3);
 
 	assert(0==rtsp_header_range("npt=123.45-125", &range));
 	assert(range.type == RTSP_RANGE_NPT && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
-	assert(range.npt.from.second==123 && range.npt.from.fraction==45);
-	assert(range.npt.from.second==125 && range.npt.from.fraction==0);
+	assert(range.from == 123*1000+45);
+	assert(range.from == 125*1000);
 
 	// clock
 	assert(-1==rtsp_header_range("clock=-19961108T143720.25Z", &range));
 
 	assert(0==rtsp_header_range("clock=19961108T143720.25Z-", &range));
 	assert(range.type == RTSP_RANGE_CLOCK && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
-	assert(range.clock.from.year==1996 && range.clock.from.month==11 && range.clock.from.day==8 && range.clock.from.second==14*3600+37*60+20 && range.clock.from.fraction==25);
+	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 9; t.tm_hour = 14; t.tm_min = 37; t.tm_sec = 30;
+	assert(range.from == mktime(&t)*1000 + 25);
 
 	assert(0==rtsp_header_range("clock=19961110T1925-19961110T2015", &range)); // rfc2326 (p72)
 	assert(range.type == RTSP_RANGE_CLOCK && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
-	assert(range.clock.from.year==1996 && range.clock.from.month==11 && range.clock.from.day==10 && range.clock.from.second==19*3600+25*60 && range.clock.from.fraction==0);
-	assert(range.clock.to.year==1996 && range.clock.to.month==11 && range.clock.to.day==10 && range.clock.from.second==20*3600+15*60 && range.clock.from.fraction==0);
+	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 10; t.tm_hour = 19; t.tm_min = 25; t.tm_sec = 00;
+	assert(range.from == mktime(&t)*1000);
+	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 10; t.tm_hour = 20; t.tm_min = 15; t.tm_sec = 00;
+	assert(range.to == mktime(&t)*1000);
 }
 #endif
