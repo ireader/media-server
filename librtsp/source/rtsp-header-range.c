@@ -138,7 +138,6 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 	{
 		*seconds = -1; // now
 		*fraction = 0;
-		p += 3;
 	}
 	else
 	{
@@ -164,6 +163,8 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 
 		if(*p == '.')
 			p = string_token_int(p+1, fraction);
+		else
+			*fraction = 0;
 	}
 
 	return p;
@@ -241,12 +242,15 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 	if(5 != sscanf(str, "%4d%2d%2dT%2d%2d", &year, &month, &day, &hour, &minute))
 		return NULL;
 
+	*second = 0;
+	*fraction = 0;
 	p = string_token_int64(str + 13, second);
 	if(p && *p == '.')
 	{
-		p = string_token_int(str, fraction);
+		p = string_token_int(p+1, fraction);
 	}
 
+	memset(&t, 0, sizeof(t));
 	t.tm_year = year - 1900;
 	t.tm_mon = month - 1;
 	t.tm_mday = day;
@@ -255,7 +259,7 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 	*second += mktime(&t);
 
 	assert('Z' == *p);
-	assert('\0' == p[1] || strchr(RANGE_SPECIAL, p[1]));
+	assert('\0' == p[1] || strchr(RANGE_SPECIAL"-", p[1]));
 	return 'Z'==*p ? p+1 : p;
 }
 
@@ -367,12 +371,10 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 				break;
 			}
 		}
-		else
-		{
-			field = strchr(field, ';');
-			if(field)
-				++field;
-		}
+		
+		field = strchr(field, ';');
+		if(field)
+			++field;
 	}
 
 	return r;
@@ -414,14 +416,14 @@ void rtsp_header_range_test()
 	assert(0==rtsp_header_range("npt=123.45-125", &range));
 	assert(range.type == RTSP_RANGE_NPT && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
 	assert(range.from == 123*1000+45);
-	assert(range.from == 125*1000);
+	assert(range.to == 125*1000);
 
 	// clock
 	assert(-1==rtsp_header_range("clock=-19961108T143720.25Z", &range));
 
 	assert(0==rtsp_header_range("clock=19961108T143720.25Z-", &range));
 	assert(range.type == RTSP_RANGE_CLOCK && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
-	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 9; t.tm_hour = 14; t.tm_min = 37; t.tm_sec = 30;
+	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 8; t.tm_hour = 14; t.tm_min = 37; t.tm_sec = 20;
 	assert(range.from == mktime(&t)*1000 + 25);
 
 	assert(0==rtsp_header_range("clock=19961110T1925-19961110T2015", &range)); // rfc2326 (p72)

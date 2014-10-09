@@ -197,6 +197,6 @@ void rtsp_header_transport_test()
 	memset(&t, 0, sizeof(t));
 	assert(0 == rtsp_header_transport("RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257", &t)); // rfc2326 p61
 	assert(t.transport==RTSP_TRANSPORT_RTP && t.lower_transport==RTSP_TRANSPORT_UDP);
-	assert(t.multicast==0 && t.client_port1==4588 && t.client_port2==4589 && t.server_port1==6255 && t.server_port2==6257);
+	assert(t.multicast==0 && t.client_port1==4588 && t.client_port2==4589 && t.server_port1==6256 && t.server_port2==6257);
 }
 #endif
