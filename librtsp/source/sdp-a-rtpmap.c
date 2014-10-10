@@ -52,7 +52,7 @@ int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, ch
 
 	// encoding parameters
 	p1 = strchr(p, '/');
-	if('/' == *p1 && parameters)
+	if(p1 && '/' == *p1 && parameters)
 	{
 		strcpy(parameters, p1+1);
 	}

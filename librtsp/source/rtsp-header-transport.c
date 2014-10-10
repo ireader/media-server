@@ -112,7 +112,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 	   else if(n >= 7 && 0 == strnicmp("source=", p, 7))
 	   {
 		   assert(p1 - p < sizeof(t->source)-1);
-		   strncpy(t->source, p+7, p1-p-12);
+		   strncpy(t->source, p+7, p1-p-7);
 		   t->source[p1-p-7] = '\0';
 	   }
 	   else if(13 == n && 0 == strnicmp("ssrc=", p, 5))
