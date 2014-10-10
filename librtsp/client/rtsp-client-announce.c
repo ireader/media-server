@@ -21,20 +21,56 @@ m=video 2232 RTP/AVP 31
 #include "rtsp-client.h"
 #include "rtsp-client-internal.h"
 
+static void rtsp_client_onannounce(void* rtsp, int r, void* parser)
+{
+	int code;
+	struct rtsp_client_context_t* ctx;
+
+	ctx = (struct rtsp_client_context_t*)rtsp;
+	//assert(0 == ctx->aggregate);
+	//assert(RTSP_PAUSE == ctx->status);
+	//assert(ctx->progress < ctx->media_count);
+
+	if(0 != r)
+	{
+//		ctx->client.onopen(ctx->param, r);
+		return;
+	}
+
+	code = rtsp_get_status_code(parser);
+	if(200 == code)
+	{
+		//if(ctx->media_count == ++ctx->progress)
+		//{
+		//	ctx->client.onaction(ctx->param, 0);
+		//}
+		//else
+		//{
+		//	r = rtsp_client_media_pause(ctx);
+		//	if(0 != r)
+		//	{
+		//		ctx->client.onaction(ctx->param, r);
+		//	}
+		//}
+	}
+	else
+	{
+//		ctx->client.onaction(ctx->param, -1);
+	}
+}
+
 int rtsp_client_announce(struct rtsp_client_context_t* ctx, const char* sdp)
 {
-	socket_bufvec_t vec[2];
-
+	assert(ctx->media_count > 0);
 	snprintf(ctx->req, sizeof(ctx->req), 
 		"ANNOUNCE %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
 		"Content-Type: application/sdp\r\n"
 		"Content-Length: %d\r\n"
-		"\r\n", 
-		ctx->uri, ctx->cseq++, ctx->session, strlen(sdp));
+		"\r\n"
+		"%s", 
+		ctx->uri, ctx->cseq++, ctx->media[0].session, strlen(sdp), sdp);
 
-	socket_setbufvec(vec, 0, ctx->req, strlen(ctx->req));
-	socket_setbufvec(vec, 1, (void*)sdp, strlen(sdp));
-	return rtsp_request_v(ctx, vec, 2);
+	return ctx->client.request(ctx->transport, ctx->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_onannounce);
 }

@@ -1,62 +1,21 @@
 #include "rtsp-client.h"
 #include "rtsp-client-internal.h"
 #include "rtsp-parser.h"
-#include "cstringext.h"
-#include "sys/sock.h"
-#include "aio-socket.h"
-#include "url.h"
 #include "sdp.h"
-#include "rtsp-header-range.h"
-#include "rtsp-header-rtp-info.h"
-#include "rtsp-header-transport.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
 
-static int rtsp_create_rtp_socket(socket_t *rtp, socket_t *rtcp, int *port)
+void* rtsp_client_create(const rtsp_client_t *client, void* transport, void* ptr)
 {
-	unsigned short i;
-	socket_t sock[2];
-	assert(0 == RTP_PORT_BASE % 2);
-	srand((unsigned int)time(NULL));
-
-	do
-	{
-		i = rand() % 30000;
-		i = i/2*2 + RTP_PORT_BASE;
-
-		sock[0] = rtp_udp_socket(i);
-		if(socket_invalid == sock[0])
-			continue;
-
-		sock[1] = rtp_udp_socket(i + 1);
-		if(socket_invalid == sock[1])
-		{
-			socket_close(sock[0]);
-			continue;
-		}
-
-		*rtp = sock[0];
-		*rtcp = sock[1];
-		*port = i;
-		return 0;
-
-	} while(socket_invalid!=sock[0] && socket_invalid!=sock[1]);
-
-	return -1;
-}
-
-void* rtsp_client_create(const rtsp_client_transport_t *transport, void* ptr)
-{
-	int r;
 	struct rtsp_client_context_t *ctx;
-	ctx = (struct rtsp_client_context_t*)malloc(sizeof(ctx[0]) + 512);
+	ctx = (struct rtsp_client_context_t*)malloc(sizeof(*ctx) + 512);
 	if(!ctx)
 		return NULL;
 
-	memset(ctx, 0, sizeof(struct rtsp_client_context_t));
-
-	memcpy(&ctx->transport, transport, sizeof(ctx->transport));
+	memset(ctx, 0, sizeof(*ctx));
+	memcpy(&ctx->client, client, sizeof(ctx->client));
+	ctx->transport = transport;
 	ctx->param = ptr;
 
 	srand((unsigned int)time(NULL));
@@ -67,22 +26,19 @@ void* rtsp_client_create(const rtsp_client_transport_t *transport, void* ptr)
 	return ctx;
 }
 
-void rtsp_client_destroy(void* rtsp)
+int rtsp_client_destroy(void* rtsp)
 {
-	int i, r;
-	struct rtsp_media_t* media;
 	struct rtsp_client_context_t *ctx;
-
 	ctx = (struct rtsp_client_context_t*)rtsp;
-	ctx->status = RTSP_DESTROY;
-	r = rtsp_client_media_teardown(ctx);
+
+	rtsp_client_close(rtsp);
 
 	if(ctx->media_ptr)
 		free(ctx->media_ptr);
 	return 0;
 }
 
-int rtsp_client_open(void* rtsp, const char* uri, const rtsp_client_transport_t *transport, void* ptr)
+int rtsp_client_open(void* rtsp, const char* uri)
 {
 	int r;
 	struct rtsp_client_context_t *ctx;
@@ -124,8 +80,8 @@ int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp)
 		if(0 == media->transport.client_port1)
 		{
 			media->transport.lower_transport = RTSP_TRANSPORT_TCP;
-			media->transport.client_port1 = 2*i;
-			media->transport.client_port2 = 2*i + 1;
+			media->transport.client_port1 = 2*(unsigned short)i;
+			media->transport.client_port2 = 2*(unsigned short)i + 1;
 		}
 		else
 		{
@@ -134,12 +90,22 @@ int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp)
 		}
 	}
 
+	ctx->status = RTSP_SETUP;
+	ctx->progress = 0;
 	return rtsp_client_media_setup(ctx);
 }
 
-int rtsp_close(void* rtsp)
+int rtsp_client_close(void* rtsp)
 {
-		
+	struct rtsp_client_context_t *ctx;
+	ctx = (struct rtsp_client_context_t*)rtsp;
+
+	if(RTSP_TEARDWON == ctx->status)
+		return 0;
+
+	ctx->status = RTSP_TEARDWON;
+	ctx->progress = 0;
+	return rtsp_client_media_teardown(ctx);
 }
 
 int rtsp_media_count(void* rtsp)

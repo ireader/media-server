@@ -25,6 +25,31 @@ static int isAbsoluteURL(char const* url)
 	return 0;
 }
 
+static const char* uri_join(char* uri, size_t bytes, const char* base, const char* path)
+{
+	size_t n, n2;
+
+	assert(uri && base && path);
+	n = strlen(base);
+	n2 = strlen(path);
+	if(n + n2 + 1 > bytes)
+		return NULL;
+
+	strcpy(uri, base);
+
+	if( ('/' == path[0] || '\\' == path[0])
+		&& n > 0 && ('/' == uri[n-1] || '\\' == uri[n-1]) )
+	{
+		strcat(uri, path+1);
+	}
+	else
+	{
+		strcat(uri, path);
+	}
+
+	return uri;
+}
+
 // rfc 2326 C.1.1 Control URL (p81)
 // look for a base URL in the following order:
 // 1. The RTSP Content-Base field
@@ -32,7 +57,7 @@ static int isAbsoluteURL(char const* url)
 // 3. The RTSP request URL
 static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* requri, const char* baseuri, const char* location)
 {
-	char path[256];
+	char path[256] = {0};
 	const char* control;
 
 	// C.1.1 Control URL (p81)
@@ -47,7 +72,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 	{
 		if(*uri)
 		{
-			snprintf(path, sizeof(path), "%s/%s", baseuri, uri);
+			uri_join(path, sizeof(path), baseuri, uri);
 			baseuri = path;
 		}
 		strncpy(uri, baseuri, bytes-1);	
@@ -57,7 +82,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 	{
 		if(*uri)
 		{
-			snprintf(path, sizeof(path), "%s/%s", location, uri);
+			uri_join(path, sizeof(path), location, uri);
 			location = path;
 		}
 		strncpy(uri, location, bytes-1);
@@ -67,7 +92,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 	{
 		if(*uri)
 		{
-			snprintf(path, sizeof(path), "%s/%s", requri, uri);
+			uri_join(path, sizeof(path), requri, uri);
 			requri = path;
 		}
 		strncpy(uri, requri, bytes-1);
@@ -78,7 +103,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 
 static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, const char* sessionuri)
 {
-	char path[256];
+	char path[256] = {0};
 	const char* control;
 
 	// C.1.1 Control URL (p81)
@@ -93,7 +118,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 	{
 		if(*uri)
 		{
-			snprintf(path, sizeof(path), "%s/%s", sessionuri, uri);
+			uri_join(path, sizeof(path), sessionuri, uri);
 			sessionuri = path;
 		}
 		strncpy(uri, sessionuri, bytes-1);
@@ -208,6 +233,7 @@ int rtsp_client_sdp(struct rtsp_client_context_t* ctx, void* sdp)
 	{
 		int j, n;
 		media = rtsp_get_media(ctx, i);
+		media->cseq = rand();
 
 		// RTSP2326 C.1.1 Control URL
 		rtsp_get_media_uri(sdp, i, media->uri, sizeof(media->uri), ctx->aggregate_uri);

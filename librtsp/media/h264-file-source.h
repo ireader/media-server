@@ -2,6 +2,7 @@
 #define _h264_file_source_h_
 
 #include "media-source.h"
+#include <string>
 
 class H264FileSource : public IMediaSource
 {

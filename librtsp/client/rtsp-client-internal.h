@@ -7,7 +7,6 @@
 #include "cstringext.h"
 
 #define USER_AGENT "Netposa RTSP Lib"
-#define RTP_PORT_BASE 30000
 #define N_MEDIA 2
 #define N_MEDIA_FORMAT 3
 
@@ -36,12 +35,12 @@ enum {
 	RTSP_PLAY,
 	RTSP_PAUSE,
 	RTSP_TEARDWON,
-	RTSP_DESTROY,
 };
 
 struct rtsp_client_context_t
 {
 	rtsp_client_t client;
+	void* transport;
 	void* param;
 
 	int status;
@@ -54,7 +53,6 @@ struct rtsp_client_context_t
 
 	int aggregate; // 1-aggregate control available
 	char aggregate_uri[256]; // aggregate control uri, valid if 1==aggregate
-	char session[128]; // rtsp setup session, valid if Aggregate Control Available
 
 	char range[64]; // rtsp header Range
 	char speed[16]; // rtsp header speed

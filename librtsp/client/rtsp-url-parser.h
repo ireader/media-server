@@ -35,7 +35,7 @@ inline int rtsp_url_parse(const char* uri, int *scheme, char *ip, int bytes, int
 	strncpy(ip, host, bytes-1);
 
 	*port = url_getport(parser);
-	if(-EPERM == *port)
+	if(0 == *port)
 		*port = 554; // default
 
 	url_free(parser);

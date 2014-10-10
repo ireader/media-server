@@ -54,19 +54,20 @@ static void rtsp_client_media_setup_onreply(void* rtsp, int r, void* parser)
 
 	assert(strlen(session) < sizeof(ctx->media[0].session));
 	strncpy(ctx->media[ctx->progress].session, session, sizeof(ctx->media[0].session)-1);
+	assert(!ctx->aggregate || 0 == strcmp(ctx->media[0].session, session));
 
 	if(ctx->media_count == ++ctx->progress)
 	{
 		int i;
 		// TODO: media
-		rtsp_client_transport_t transports[N_MEDIA];
+		struct rtsp_transport_t transports[N_MEDIA];
 		for(i = 0; i < ctx->media_count && i < N_MEDIA; i++)
 		{
 			// Transport: RTP/AVP/TCP;interleaved=0-1
 			// Transport: RTP/AVP;multicast;destination=224.2.0.1;port=3456-3457;ttl=16
 			// 224.0.0.0 ~ 239.255.255.255
 			transports[i].transport = (RTSP_TRANSPORT_RTP==ctx->media[i].transport.transport) ? (RTSP_TRANSPORT_UDP==ctx->media[i].transport.lower_transport?1:2) : 3;
-			transports[i].multicasat = ctx->media[i].transport.multicast;
+			transports[i].multicast = ctx->media[i].transport.multicast;
 			transports[i].destination = ctx->media[i].transport.destination;
 			transports[i].ttl = ctx->media[i].transport.ttl;
 			transports[i].client_port[0] = ctx->media[i].transport.client_port1;
@@ -96,9 +97,10 @@ int rtsp_client_media_setup(struct rtsp_client_context_t* ctx)
 	assert(ctx->progress < ctx->media_count);
 	media = rtsp_get_media(ctx, ctx->progress);
 
-	if(ctx->aggregate && ctx->session[0])
+	if(ctx->aggregate)
 	{
-		snprintf(session, sizeof(session), "Session: %s\r\n", ctx->session);
+		assert(ctx->media_count > 0);
+		snprintf(session, sizeof(session), "Session: %s\r\n", ctx->media[0].session);
 		snprintf(ctx->req, sizeof(ctx->req), 
 			RTSP_TRANSPORT_TCP==media->transport.lower_transport?sc_rtsp_tcp:sc_rtsp_udp,
 			media->uri, ctx->cseq++, session, media->transport.client_port1, media->transport.client_port2, USER_AGENT);
@@ -110,5 +112,5 @@ int rtsp_client_media_setup(struct rtsp_client_context_t* ctx)
 			media->uri, media->cseq++, "", media->transport.client_port1, media->transport.client_port2, USER_AGENT);
 	}
 
-	return ctx->client.request(ctx->param, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_setup_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_setup_onreply);
 }

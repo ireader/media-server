@@ -71,7 +71,7 @@ static const unsigned char* search_start_code(const unsigned char* stream, int b
 // don't include startcode(0x00000001)
 int H264FileReader::GetNextNALU(unsigned char*& data, int& bytes)
 {
-	assert(m_ptr.capacity >= BUFFER_SIZE);
+	assert(m_ptr.capacity() >= BUFFER_SIZE);
 	if(m_ptr.size() < 4)
 	{
 		int n = fread((char*)m_ptr.get() + m_ptr.size(), 1, m_ptr.capacity() - m_ptr.size(), m_fp);
@@ -79,27 +79,27 @@ int H264FileReader::GetNextNALU(unsigned char*& data, int& bytes)
 			return -1;
 	}
 
-	const unsigned char* p = NULL;
-	p = (const unsigned char*)m_ptr.get();
-	p = search_start_code(p, m_ptr.size());
-	if(p)
-	{
-		offset = p - (const unsigned char*)m_ptr.get();
-		break;
-	}
+	//const unsigned char* p = NULL;
+	//p = (const unsigned char*)m_ptr.get();
+	//p = search_start_code(p, m_ptr.size());
+	//if(p)
+	//{
+	//	offset = p - (const unsigned char*)m_ptr.get();
+	//	break;
+	//}
 
-	const unsigned char* pn = search_start_code(p, m_ptr.capacity()-4);
-	while(!pn)
-	{
-		int capacity = m_ptr.capacity();
-		m_ptr.reserve(m_ptr.capacity() + BUFFER_SIZE);
-		p = (const unsigned char*)m_ptr.get() + capacity;
+	//const unsigned char* pn = search_start_code(p, m_ptr.capacity()-4);
+	//while(!pn)
+	//{
+	//	int capacity = m_ptr.capacity();
+	//	m_ptr.reserve(m_ptr.capacity() + BUFFER_SIZE);
+	//	p = (const unsigned char*)m_ptr.get() + capacity;
 
-		if(0 == fread(p, 1, m_ptr.capacity() - capacity, m_fp))
-			return -1;
+	//	if(0 == fread(p, 1, m_ptr.capacity() - capacity, m_fp))
+	//		return -1;
 
-		pn = search_start_code(p-4, m_ptr.capacity() - capacity  + 4);
-	}
+	//	pn = search_start_code(p-4, m_ptr.capacity() - capacity  + 4);
+	//}
 	//while(p)
 	//{
 	//	int prefix = 0x01000000 == *(int*)startcode ? 4 : 3;
@@ -117,6 +117,7 @@ int H264FileReader::GetNextNALU(unsigned char*& data, int& bytes)
 	//}
 }
 
-int H264FileReader::GetSPSandPPS(mmptr& ptr)
+const mmptr& H264FileReader::GetSPSandPPS() const
 {
+	return m_ptr;
 }

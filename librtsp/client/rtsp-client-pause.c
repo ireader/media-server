@@ -32,7 +32,7 @@ static void rtsp_client_media_pause_onreply(void* rtsp, int r, void* parser)
 
 	if(0 != r)
 	{
-		ctx->client.onaction(ctx->param, r);
+		ctx->client.onpause(ctx->param, r);
 		return;
 	}
 
@@ -43,26 +43,25 @@ static void rtsp_client_media_pause_onreply(void* rtsp, int r, void* parser)
 	{
 		if(ctx->media_count == ++ctx->progress)
 		{
-			ctx->client.onaction(ctx->param, 0);
+			ctx->client.onpause(ctx->param, 0);
 		}
 		else
 		{
 			r = rtsp_client_media_pause(ctx);
 			if(0 != r)
 			{
-				ctx->client.onaction(ctx->param, r);
+				ctx->client.onpause(ctx->param, r);
 			}
 		}
 	}
 	else
 	{
-		ctx->client.onaction(ctx->param, -1);
+		ctx->client.onpause(ctx->param, -1);
 	}
 }
 
 int rtsp_client_media_pause(struct rtsp_client_context_t *ctx)
 {
-	int i, r=0;
 	struct rtsp_media_t* media;
 
 	assert(0 == ctx->aggregate);
@@ -79,7 +78,7 @@ int rtsp_client_media_pause(struct rtsp_client_context_t *ctx)
 		"\r\n", 
 		media->uri, media->cseq++, media->session, USER_AGENT);
 
-	return ctx->client.request(ctx->param, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_pause_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_pause_onreply);
 }
 
 // aggregate control reply
@@ -94,7 +93,7 @@ static void rtsp_client_aggregate_pause_onreply(void* rtsp, int r, void* parser)
 	assert(ctx->aggregate);
 	if(0 != r)
 	{
-		ctx->client.onaction(ctx->param, r);
+		ctx->client.onpause(ctx->param, r);
 		return;
 	}
 
@@ -103,11 +102,11 @@ static void rtsp_client_aggregate_pause_onreply(void* rtsp, int r, void* parser)
 	{
 		r = rtsp_client_media_pause(ctx);
 		if(0 != r)
-			ctx->client.onaction(ctx->param, -1);
+			ctx->client.onpause(ctx->param, -1);
 	}
 	else
 	{
-		ctx->client.onaction(ctx->param, 200==code ? 0 : -1);
+		ctx->client.onpause(ctx->param, 200==code ? 0 : -1);
 	}
 }
 
@@ -115,24 +114,26 @@ int rtsp_client_pause(void* rtsp)
 {
 	struct rtsp_client_context_t *ctx;
 	ctx = (struct rtsp_client_context_t*)rtsp;
-	if(RTSP_SETUP != ctx->status)
-		return -1;
+	if(RTSP_PAUSE == ctx->status)
+		return 0;
 
+	assert(RTSP_SETUP==ctx->status || RTSP_PLAY==ctx->status);
 	ctx->status = RTSP_PAUSE;
 	ctx->progress = 0;
 
 	if(ctx->aggregate)
 	{
-		assert(ctx->session[0] && ctx->aggregate_uri[0]);
+		assert(ctx->media_count > 0);
+		assert(ctx->aggregate_uri[0]);
 		snprintf(ctx->req, sizeof(ctx->req), 
 			"PAUSE %s RTSP/1.0\r\n"
 			"CSeq: %u\r\n"
 			"Session: %s\r\n"
 			"User-Agent: %s\r\n"
 			"\r\n", 
-			ctx->aggregate_uri, ctx->cseq++, ctx->session, USER_AGENT);
+			ctx->aggregate_uri, ctx->cseq++, ctx->media[0].session, USER_AGENT);
 
-		return ctx->client.request(ctx->param, ctx->aggregate_uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_aggregate_pause_onreply);
+		return ctx->client.request(ctx->transport, ctx->aggregate_uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_aggregate_pause_onreply);
 	}
 	else
 	{

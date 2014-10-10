@@ -64,5 +64,5 @@ int rtsp_client_media_teardown(struct rtsp_client_context_t* ctx)
 		"\r\n", 
 		media->uri, media->cseq++, media->session, USER_AGENT);
 
-	return ctx->client.request(ctx->param, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_teardown_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_teardown_onreply);
 }

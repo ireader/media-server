@@ -11,11 +11,10 @@ struct rtsp_udp_transport_t
 	void* transport;
 };
 
-static void* rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg, size_t bytes, const char* ip, int port)
+static void rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg, size_t bytes, const char* ip, int port, void** user)
 {
 	int remain;
 	void* parser;
-	void* user = NULL;
 	struct rtsp_udp_transport_t *transport;
 	transport = (struct rtsp_udp_transport_t*)ptr;
 
@@ -24,7 +23,8 @@ static void* rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg
 	if(0 == rtsp_parser_input(parser, msg, &remain))
 	{
 		// callback
-		user = transport->handler.onrecv(transport->ptr, session, ip, port, parser);
+		aio_udp_transport_addref(session);
+		transport->handler.onrecv(transport->ptr, session, ip, port, parser, user);
 	}
 	else
 	{
@@ -32,14 +32,14 @@ static void* rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg
 	}
 
 	rtsp_parser_destroy(parser);
-	return user;
 }
 
-static void rtsp_transport_udp_onsend(void* ptr, void* session, int code, size_t bytes)
+static void rtsp_transport_udp_onsend(void* ptr, void* session, void* user, int code, size_t bytes)
 {
 	struct rtsp_udp_transport_t *transport;
 	transport = (struct rtsp_udp_transport_t*)ptr;
-	transport->handler.onsend(transport->ptr, session, code, bytes);
+	transport->handler.onsend(transport->ptr, user, code, bytes);
+	aio_udp_transport_release(session);
 }
 
 static void* rtsp_transport_udp_create(socket_t socket, const struct rtsp_transport_handler_t *handler, void* ptr)
@@ -71,12 +71,20 @@ static int rtsp_transport_udp_destroy(void* t)
 
 static int rtsp_transport_udp_send(void* session, const void* msg, size_t bytes)
 {
-	return aio_udp_transport_send(session, msg, bytes);
+	int r;
+	r = aio_udp_transport_send(session, msg, bytes);
+	if(0 != r)
+		aio_udp_transport_release(session);
+	return r;
 }
 
 static int rtsp_transport_udp_sendv(void* session, socket_bufvec_t *vec, int n)
 {
-	return aio_udp_transport_sendv(session, vec, n);
+	int r;
+	r = aio_udp_transport_sendv(session, vec, n);
+	if(0 != r)
+		aio_udp_transport_release(session);
+	return r;
 }
 
 struct rtsp_transport_t* rtsp_transport_udp()

@@ -11,6 +11,7 @@ struct rtsp_tcp_session_t
 	void* parser; // rtsp parser
 	char ip[32];
 	int port;
+	void* data;
 };
 
 struct rtsp_tcp_transport_t
@@ -42,13 +43,15 @@ static void rtsp_transport_tcp_ondisconnected(void* param)
 	session = (struct rtsp_tcp_session_t *)param;
 	transport = session->transport;
 	rtsp_parser_destroy(session->parser);
+#if defined(_DEBUG) || defined(DEBUG)
+	memset(session, 0xCC, sizeof(*session));
+#endif
 	free(session);
 }
 
-static void* rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes)
+static void rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes)
 {
 	int remain;
-	void* user = NULL;
 	struct rtsp_tcp_session_t *session;
 	struct rtsp_tcp_transport_t *transport;
 	session = (struct rtsp_tcp_session_t *)param;
@@ -60,7 +63,8 @@ static void* rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t byte
 	{
 		// call
 		// user must reply(send/send_vec/send_file) in handle
-		user = transport->handler.onrecv(transport->ptr, session, session->ip, session->port, session->parser);
+		aio_tcp_transport_addref(session->session);
+		transport->handler.onrecv(transport->ptr, session->session, session->ip, session->port, session->parser, &session->data);
 
 		rtsp_parser_clear(session->parser);
 	}
@@ -68,8 +72,6 @@ static void* rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t byte
 	{
 		// wait more data
 	}
-
-	return user;
 }
 
 static void rtsp_transport_tcp_onsend(void* param, int code, size_t bytes)
@@ -79,7 +81,8 @@ static void rtsp_transport_tcp_onsend(void* param, int code, size_t bytes)
 	session = (struct rtsp_tcp_session_t *)param;
 	transport = session->transport;
 
-	transport->handler.onsend(transport->ptr, session, code, bytes);
+	transport->handler.onsend(transport->ptr, session->data, code, bytes);
+	aio_tcp_transport_release(session->session);
 }
 
 static void* rtsp_transport_tcp_create(socket_t socket, const struct rtsp_transport_handler_t *handler, void* ptr)
@@ -110,18 +113,22 @@ static int rtsp_transport_tcp_destroy(void* t)
 	return 0;
 }
 
-static int rtsp_transport_tcp_send(void* s, const void* msg, size_t bytes)
+static int rtsp_transport_tcp_send(void* session, const void* msg, size_t bytes)
 {
-	struct rtsp_tcp_session_t *session;
-	session = (struct rtsp_tcp_session_t *)s;
-	return aio_tcp_transport_send(session->session, msg, bytes);
+	int r;
+	r = aio_tcp_transport_send(session, msg, bytes);
+	if(0 != r)
+		aio_tcp_transport_release(session);
+	return r;
 }
 
-static int rtsp_transport_tcp_sendv(void* s, socket_bufvec_t *vec, int n)
+static int rtsp_transport_tcp_sendv(void* session, socket_bufvec_t *vec, int n)
 {
-	struct rtsp_tcp_session_t *session;
-	session = (struct rtsp_tcp_session_t *)s;
-	return aio_tcp_transport_sendv(session->session, vec, n);
+	int r;
+	r = aio_tcp_transport_sendv(session, vec, n);
+	if(0 != r)
+		aio_tcp_transport_release(session);
+	return r;
 }
 
 struct rtsp_transport_t* rtsp_transport_tcp()

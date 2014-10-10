@@ -64,7 +64,6 @@ static void rtsp_client_describe_onreply(void* rtsp, int r, void* parser)
 		if(contentLocation)
 			strncpy(ctx->location, contentLocation, sizeof(ctx->location)-1);
 
-		ctx->status = RTSP_DESCRIBE;
 		if(!contentType || 0 == stricmp("application/sdp", contentType))
 			r = rtsp_client_open_with_sdp(rtsp, ctx->uri, content);
 		else
@@ -77,6 +76,9 @@ static void rtsp_client_describe_onreply(void* rtsp, int r, void* parser)
 
 int rtsp_client_describe(struct rtsp_client_context_t* ctx, const char* uri)
 {
+	ctx->status = RTSP_DESCRIBE;
+	ctx->progress = 0;
+
 	snprintf(ctx->req, sizeof(ctx->req), 
 		"DESCRIBE %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
@@ -85,5 +87,5 @@ int rtsp_client_describe(struct rtsp_client_context_t* ctx, const char* uri)
 		"\r\n", 
 		uri, ctx->cseq++, USER_AGENT);
 
-	return ctx->client.request(ctx->param, ctx->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_describe_onreply);
+	return ctx->client.request(ctx->transport, ctx->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_describe_onreply);
 }

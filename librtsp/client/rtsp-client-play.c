@@ -37,7 +37,57 @@ Date: 23 Jan 1997 15:35:06 GMT
 
 #include "rtsp-client.h"
 #include "rtsp-client-internal.h"
+#include "rtsp-header-range.h"
+#include "rtsp-header-rtp-info.h"
 #include <assert.h>
+
+static void rtsp_client_media_play_onreply_ok(struct rtsp_client_context_t* ctx, void* parser)
+{
+	int i;
+	int64_t npt0 = -1L;
+	int64_t npt1 = -1L;
+	double scale = 0.0f;
+	const char *prange, *pscale, *prtpinfo;
+	struct rtsp_header_range_t range;
+	struct rtsp_header_rtp_info_t rtpinfo[N_MEDIA];
+	struct rtsp_rtp_info_t rtpInfo[N_MEDIA];
+
+	prange = rtsp_get_header_by_name(parser, "Range");
+	pscale = rtsp_get_header_by_name(parser, "Scale");
+	prtpinfo = rtsp_get_header_by_name(parser, "RTP-Info");
+
+	if(pscale)
+	{
+		scale = atof(pscale);
+	}
+
+	if(prange && 0 == rtsp_header_range(prange, &range))
+	{
+		assert(range.from_value == RTSP_RANGE_TIME_NORMAL);
+		assert(range.to_value != RTSP_RANGE_TIME_NOW);
+		npt0 = range.from;
+		npt1 = range.to_value==RTSP_RANGE_TIME_NOVALUE ? -1 : range.to;
+	}
+
+	memset(rtpInfo, 0, sizeof(rtpInfo));
+	for(i = 0; prtpinfo && i < sizeof(rtpInfo)/sizeof(rtpInfo[0]); i++)
+	{
+		const char* p1 = strchr(prtpinfo, ',');
+		if(0 == rtsp_header_rtp_info(prtpinfo, &rtpinfo[i]))
+		{
+			rtpInfo[i].uri = rtpinfo[i].url;
+			rtpInfo[i].seq = (unsigned int)rtpinfo[i].seq;
+			rtpInfo[i].time = (unsigned int)rtpinfo[i].rtptime;
+		}
+		prtpinfo = p1 ? p1 + 1 : p1;
+	}
+
+	ctx->client.onplay(ctx->param, 0, 
+		-1L==npt0 ? NULL : &npt0, 
+		-1L==npt1 ? NULL : &npt1, 
+		pscale ? &scale : NULL,
+		rtpInfo, i);
+}
 
 static void rtsp_client_media_play_onreply(void* rtsp, int r, void* parser)
 {
@@ -50,7 +100,7 @@ static void rtsp_client_media_play_onreply(void* rtsp, int r, void* parser)
 
 	if(0 != r)
 	{
-		ctx->client.onaction(ctx->param, r);
+		ctx->client.onplay(ctx->param, r, NULL, NULL, NULL, NULL, 0);
 		return;
 	}
 
@@ -59,26 +109,25 @@ static void rtsp_client_media_play_onreply(void* rtsp, int r, void* parser)
 	{
 		if(ctx->media_count == ++ctx->progress)
 		{
-			ctx->client.onaction(ctx->param, 0);
+			rtsp_client_media_play_onreply_ok(ctx, parser);
 		}
 		else
 		{
 			r = rtsp_client_media_play(ctx);
 			if(0 != r)
 			{
-				ctx->client.onaction(ctx->param, r);
+				ctx->client.onplay(ctx->param, r, NULL, NULL, NULL, NULL, 0);
 			}
 		}
 	}
 	else
 	{
-		ctx->client.onaction(ctx->param, -1);
+		ctx->client.onplay(ctx->param, code, NULL, NULL, NULL, NULL, 0);
 	}
 }
 
 int rtsp_client_media_play(struct rtsp_client_context_t *ctx)
 {
-	int i, r=0;
 	struct rtsp_media_t* media;
 
 	assert(0 == ctx->aggregate);
@@ -97,7 +146,7 @@ int rtsp_client_media_play(struct rtsp_client_context_t *ctx)
 		"\r\n", 
 		media->uri, media->cseq++, media->session, ctx->range, ctx->speed, USER_AGENT);
 
-	return ctx->client.request(ctx->param, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_play_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_play_onreply);
 }
 
 // aggregate control reply
@@ -113,7 +162,7 @@ static void rtsp_client_aggregate_play_onreply(void* rtsp, int r, void* parser)
 
 	if(0 != r)
 	{
-		ctx->client.onaction(ctx->param, r);
+		ctx->client.onplay(ctx->param, r, NULL, NULL, NULL, NULL, 0);
 		return;
 	}
 
@@ -122,11 +171,15 @@ static void rtsp_client_aggregate_play_onreply(void* rtsp, int r, void* parser)
 	{
 		r = rtsp_client_media_play(ctx);
 		if(0 != r)
-			ctx->client.onaction(ctx->param, -1);
+			ctx->client.onplay(ctx->param, -1, NULL, NULL, NULL, NULL, 0);
+	}
+	else if(200 == code)
+	{
+		rtsp_client_media_play_onreply_ok(ctx, parser);
 	}
 	else
 	{
-		ctx->client.onaction(ctx->param, 200==code ? 0 : -1);
+		ctx->client.onplay(ctx->param, r, NULL, NULL, NULL, NULL, 0);
 	}
 }
 
@@ -134,9 +187,10 @@ int rtsp_client_play(void* rtsp, const int64_t *npt, const float *speed)
 {
 	struct rtsp_client_context_t *ctx;
 	ctx = (struct rtsp_client_context_t*)rtsp;
-	if(RTSP_SETUP != ctx->status)
-		return -1;
+	if(RTSP_PLAY == ctx->status)
+		return 0;
 
+	assert(RTSP_SETUP==ctx->status || RTSP_PAUSE==ctx->status);
 	ctx->status = RTSP_PLAY;
 	ctx->progress = 0;
 
@@ -152,7 +206,8 @@ int rtsp_client_play(void* rtsp, const int64_t *npt, const float *speed)
 
 	if(ctx->aggregate)
 	{
-		assert(ctx->session[0] && ctx->aggregate_uri[0]);
+		assert(ctx->media_count > 0);
+		assert(ctx->aggregate_uri[0]);
 		snprintf(ctx->req, sizeof(ctx->req), 
 			"PLAY %s RTSP/1.0\r\n"
 			"CSeq: %u\r\n"
@@ -161,9 +216,9 @@ int rtsp_client_play(void* rtsp, const int64_t *npt, const float *speed)
 			"%s" // Speed
 			"User-Agent: %s\r\n"
 			"\r\n",
-			ctx->aggregate_uri, ctx->cseq++, ctx->session, ctx->range, ctx->speed, USER_AGENT);
+			ctx->aggregate_uri, ctx->cseq++, ctx->media[0].session, ctx->range, ctx->speed, USER_AGENT);
 
-		return ctx->client.request(ctx->param, ctx->aggregate_uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_aggregate_play_onreply);
+		return ctx->client.request(ctx->transport, ctx->aggregate_uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_aggregate_play_onreply);
 	}
 	else
 	{

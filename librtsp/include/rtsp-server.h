@@ -1,15 +1,53 @@
 #ifndef _rtsp_server_h_
 #define _rtsp_server_h_
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "rtsp-header-transport.h"
 
 struct rtsp_handler_t
 {
-	int (*describe)(void* ptr, void* transport, const char* uri);
-	int (*setup)(void* ptr, void* transport, const char* uri, const struct rtsp_header_transport_t* t);
-	int (*play)(void* ptr, void* transport, const char* session, const int64_t *npt, const float *speed); // npt: 0 -> now
-	int (*pause)(void* ptr, void* transport, const char* session, const int64_t *npt);
-	int (*teardown)(void* ptr, void* transport, const char* session, const char* uri);
+	/// RTSP DESCRIBE request
+	/// @param[in] ptr user-defined parameter
+	/// @param[in] rtsp request handle
+	/// @param[in] uri request uri
+	/// Required: MUST call rtsp_server_reply_describe once
+	void (*describe)(void* ptr, void* rtsp, const char* uri);
+
+	/// RTSP SETUP request
+	/// @param[in] ptr user-defined parameter
+	/// @param[in] rtsp request handle
+	/// @param[in] uri request uri
+	/// @param[in] transport RTSP Transport header
+	/// Required: MUST call rtsp_server_reply_setup once
+	void (*setup)(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transport);
+
+	/// RTSP PLAY request
+	/// @param[in] ptr user-defined parameter
+	/// @param[in] rtsp request handle
+	/// @param[in] session RTSP Session
+	/// @param[in] npt request begin time, NULL if don't have Range parameter, 0 represent now
+	/// @param[in] scale request scale, NULL if don't have Scale parameter
+	/// Required: MUST call rtsp_server_reply_play once
+	void (*play)(void* ptr, void* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale);
+
+	/// RTSP PAUSE request
+	/// @param[in] ptr user-defined parameter
+	/// @param[in] rtsp request handle
+	/// @param[in] session RTSP Session
+	/// @param[in] npt request pause time, NULL if don't have Range parameter
+	/// Required: MUST call rtsp_server_reply_pause once
+	void (*pause)(void* ptr, void* rtsp, const char* uri, const char* session, const int64_t *npt);
+
+	/// RTSP TEARDOWN request
+	/// @param[in] ptr user-defined parameter
+	/// @param[in] rtsp request handle
+	/// @param[in] session RTSP Session
+	/// @param[in] uri request uri
+	/// Required: MUST call rtsp_server_reply_teardown once
+	void (*teardown)(void* ptr, void* rtsp, const char* uri, const char* session);
 };
 
 // Initialize/Finalize
@@ -26,23 +64,49 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 /// stop rtsp server
 /// @param[in] server rtsp server instance
 /// @return 0-ok, other-error code
-int rtsp_server_destroy(void* rtsp);
+int rtsp_server_destroy(void* server);
 
-int rtsp_server_report(void* rtsp);
+int rtsp_server_report(void* server);
 
-int rtsp_server_reply_describe(void* transport, int code, const char* sdp);
+/// RTSP DESCRIBE reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+/// @param[in] sdp RTSP SDP
+void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp);
 
-int rtsp_server_reply_setup(void* transport, int code, const char* session);
+/// RTSP SETUP reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+/// @param[in] session RTSP Session parameter
+/// @param[in] transport RTSP Transport parameter
+void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const char* transport);
 
-/// Reply
-/// @param[in] session handle callback session parameter
-/// @param[in] code HTTP status-code(200-OK, 301-Move Permanently, ...)
-/// @param[in] bundle create by http_bundle_alloc
-/// @return 0-ok, other-error
-int rtsp_server_reply_play(void* transport, int code, const char* session);
+/// RTSP PLAY reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+/// @param[in] nptstart Range start time(ms) [optional]
+/// @param[in] nptend Range end time(ms) [optional]
+/// @param[in] rtpinfo RTP-info [optional] e.g. url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
+void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtpinfo);
 
-int rtsp_server_reply_pause(void* transport, int code, const char* session);
+/// RTSP PAUSE reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+void rtsp_server_reply_pause(void* rtsp, int code);
 
-int rtsp_server_reply_teardown(void* transport, int code, const char* session);
+/// RTSP PAUSE reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+void rtsp_server_reply_teardown(void* rtsp, int code);
 
+/// find RTSP header
+/// @param[in] rtsp request handle
+/// @param[in] name header name
+/// @return header value, NULL if not found.
+/// Required: call in rtsp_handler_t callback only
+const char* rtsp_server_find_header(void* rtsp, const char* name);
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_rtsp_server_h_ */
