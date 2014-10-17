@@ -41,7 +41,9 @@ int h264_source_destroy(void* h264)
 	struct h264_source *o;
 	o = (struct h264_source *)h264;
 
-	free(0);
+	if(o->ptr)
+		free(o->ptr);
+	free(o);
 	return 0;
 }
 

@@ -20,7 +20,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			CharacterSet="2"
 			>
 			<Tool
@@ -60,17 +60,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -80,9 +73,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -173,11 +163,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\source\h264-source.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\include\h264-source.h"
+				RelativePath=".\source\h264-source.c"
 				>
 			</File>
 			<File
@@ -206,6 +192,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\include\h264-source.h"
+				>
+			</File>
 			<File
 				RelativePath=".\include\rtcp.h"
 				>
@@ -248,26 +238,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-		</Filter>
-		<Filter
-			Name="util"
-			>
-			<File
-				RelativePath="..\..\sdk\source\aio-socket-iocp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\ntp-time.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\include\ntp-time.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sdk\source\time64.c"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

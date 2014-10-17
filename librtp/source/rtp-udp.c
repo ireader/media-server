@@ -1,9 +1,9 @@
 #include "cstringext.h"
-#include "sys/sock.h"
-#include "sys/system.h"
-#include "sys/process.h"
+//#include "sys/sock.h"
+//#include "sys/system.h"
+//#include "sys/process.h"
 #include "aio-socket.h"
-#include "thread-pool.h"
+//#include "thread-pool.h"
 #include "rtp-avp-udp.h"
 #include "rtp-transport.h"
 #include <stdio.h>
@@ -25,7 +25,7 @@ void* rtp_avp_udp_create(int rtp, int rtcp, void* queue)
 	}
 
 	// set receiver socket buffer
-	socket_setrecvbuf(rtp, 50*1024);
+	//socket_setrecvbuf(rtp, 50*1024);
 
 	ctx->queue = queue;
 	ctx->rtp.socket = aio_socket_create((socket_t)rtp, 1);
@@ -133,25 +133,25 @@ int rtp_avp_udp_stop(void* udp)
 	return 0;
 }
 
-static thread_t s_threads[64];
-static thread_pool_t g_thpool;
-static int STDCALL rtp_avp_thread(void *param)
-{
-	while(1)
-	{
-		aio_socket_process(2*60*1000);
-	}
-	return 0;
-}
+//static thread_t s_threads[64];
+//static thread_pool_t g_thpool;
+//static int STDCALL rtp_avp_thread(void *param)
+//{
+//	while(1)
+//	{
+//		aio_socket_process(2*60*1000);
+//	}
+//	return 0;
+//}
 
 int rtp_avp_init(void)
 {
-	size_t i;
-	socket_init();
+	//size_t i;
+	//socket_init();
 	//r = system_getcpucount();
-	aio_socket_init(2);
-	for(i=0; i<2 && i<sizeof(s_threads)/sizeof(s_threads[0]); i++)
-		thread_create(&s_threads[i], rtp_avp_thread, NULL);
+	//aio_socket_init(2);
+	//for(i=0; i<2 && i<sizeof(s_threads)/sizeof(s_threads[0]); i++)
+	//	thread_create(&s_threads[i], rtp_avp_thread, NULL);
 	return 0;
 }
 
