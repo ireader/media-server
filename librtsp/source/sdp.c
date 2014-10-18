@@ -7,6 +7,10 @@
 
 #define inline static
 
+#if defined(OS_WINDOWS)
+#define strcasecmp stricmp
+#endif
+
 enum { SDP_M_MEDIA_UNKOWN=0, SDP_M_MEDIA_AUDIO, SDP_M_MEDIA_VIDEO, SDP_M_MEDIA_TEXT, SDP_M_MEDIA_APPLICATION, SDP_M_MEDIA_MESSAGE };
 enum { SDP_M_PROTO_UKNOWN=0, SDP_M_PROTO_UDP, SDP_M_PROTO_RTP_AVP, SDP_M_PROTO_RTP_SAVP };
 
@@ -94,7 +98,7 @@ struct sdp_timing
 		int capacity;
 	} r;
 
-	struct timezone
+	struct timezone_t
 	{
 		int count;
 		struct sdp_timezone timezones[N_TIMEZONE];
@@ -1278,7 +1282,7 @@ int sdp_origin_get_network(void* sdp)
 {
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(0 == stricmp("IN", ctx->o.c.network))
+	if(0 == strcasecmp("IN", ctx->o.c.network))
 		return SDP_C_NETWORK_IN;
 	return SDP_C_NETWORK_UNKNOWN;
 }
@@ -1287,9 +1291,9 @@ int sdp_origin_get_addrtype(void* sdp)
 {
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(0 == stricmp("IP4", ctx->o.c.addrtype))
+	if(0 == strcasecmp("IP4", ctx->o.c.addrtype))
 		return SDP_C_ADDRESS_IP4;
-	if(0 == stricmp("IP6", ctx->o.c.addrtype))
+	if(0 == strcasecmp("IP6", ctx->o.c.addrtype))
 		return SDP_C_ADDRESS_IP6;
 	return SDP_C_ADDRESS_UNKNOWN;
 }
@@ -1391,7 +1395,7 @@ int sdp_connection_get_network(void* sdp)
 {
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(0 == stricmp("IN", ctx->c.network))
+	if(0 == strcasecmp("IN", ctx->c.network))
 		return SDP_C_NETWORK_IN;
 	return SDP_C_NETWORK_UNKNOWN;
 }
@@ -1400,9 +1404,9 @@ int sdp_connection_get_addrtype(void* sdp)
 {
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(0 == stricmp("IP4", ctx->c.addrtype))
+	if(0 == strcasecmp("IP4", ctx->c.addrtype))
 		return SDP_C_ADDRESS_IP4;
-	if(0 == stricmp("IP6", ctx->c.addrtype))
+	if(0 == strcasecmp("IP6", ctx->c.addrtype))
 		return SDP_C_ADDRESS_IP6;
 	return SDP_C_ADDRESS_UNKNOWN;
 }
@@ -1486,15 +1490,15 @@ inline int sdp_media_format_value(const char* format)
 	case 'm': return SDP_M_FMT_UDP_MESSAGE;
 	default: return atoi(format);
 	}
-	//if(0 == stricmp("video", format))
+	//if(0 == strcasecmp("video", format))
 	//	return SDP_M_FMT_UDP_VIDEO;
-	//else if(0 == stricmp("audio", format))
+	//else if(0 == strcasecmp("audio", format))
 	//	return SDP_M_FMT_UDP_AUDIO;
-	//else if(0 == stricmp("text", format))
+	//else if(0 == strcasecmp("text", format))
 	//	return SDP_M_FMT_UDP_TEXT;
-	//else if(0 == stricmp("application", format))
+	//else if(0 == strcasecmp("application", format))
 	//	return SDP_M_FMT_UDP_APPLICATION;
-	//else if(0 == stricmp("message", format))
+	//else if(0 == strcasecmp("message", format))
 	//	return SDP_M_FMT_UDP_MESSAGE;
 	//else
 	//	return atoi(format);
@@ -1566,7 +1570,7 @@ int sdp_media_get_connection_network(void* sdp, int media)
 
 	if(conn->network)
 	{
-		if(0 == stricmp("IN", conn->network))
+		if(0 == strcasecmp("IN", conn->network))
 			return SDP_C_NETWORK_IN;
 	}
 	return SDP_C_NETWORK_UNKNOWN;
@@ -1586,9 +1590,9 @@ int sdp_media_get_connection_addrtype(void* sdp, int media)
 
 	if(conn->addrtype)
 	{
-		if(0 == stricmp("IP4", conn->addrtype))
+		if(0 == strcasecmp("IP4", conn->addrtype))
 			return SDP_C_ADDRESS_IP4;
-		if(0 == stricmp("IP6", conn->addrtype))
+		if(0 == strcasecmp("IP6", conn->addrtype))
 			return SDP_C_ADDRESS_IP6;
 	}
 	return SDP_C_ADDRESS_UNKNOWN;
