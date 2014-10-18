@@ -15,7 +15,7 @@
 //			 sprop-parameter-sets=<parameter sets data>
 int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h264)
 {
-	int n;
+	size_t n;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
@@ -125,7 +125,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 				strncpy(h264->sprop_parameter_sets, p1+1, n);
 				h264->sprop_parameter_sets[n] = '\0';
 			}
-			else if(0 == strncmp("sprop-level-parameter-sets", p, p1-p && n < sizeof(h264->sprop_level_parameter_sets)-1))
+			else if(0 == strncmp("sprop-level-parameter-sets", p, p1-p) && n < sizeof(h264->sprop_level_parameter_sets)-1)
 			{
 				assert(n < sizeof(h264->sprop_level_parameter_sets)-1);
 				h264->flags |= 1<<SDP_A_FMTP_H264_SPROP_LEVEL_PARAMETER_SETS;
@@ -230,7 +230,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 //			 CTSDeltaLength=16; randomAccessIndication=1; streamStateIndication=4
 int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *mpeg4)
 {
-	int n;
+	size_t n;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
