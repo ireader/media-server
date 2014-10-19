@@ -45,7 +45,7 @@ struct sdp_a_fmtp_h264_t
 	int use_level_src_parameter_sets; // (p50) value: 0/1 only
 	int in_band_parameter_sets; // (p50) value: 0/1 only
 	int level_asymmetry_allowed; // (p51) 
-	int packetization_mode; // (p51)
+	int packetization_mode; // (p51) 0-single NAL mode, 1-non-interleaved mode, 2-interleaved mode
 	int sprop_interleaving_depth; // (p51)
 	unsigned int sprop_deint_buf_req; // (p52) value: [0,4294967295]
 	unsigned int deint_buf_cap; // (p52) value: [0,4294967295]

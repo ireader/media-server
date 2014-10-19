@@ -1,6 +1,6 @@
-#include "rtp-source.h"
 #include "cstringext.h"
-#include "sys/sync.h"
+#include "sys/atomic.h"
+#include "rtp-source.h"
 #include <stdio.h>
 
 struct rtp_source* rtp_source_create(unsigned int ssrc)
@@ -17,7 +17,7 @@ struct rtp_source* rtp_source_create(unsigned int ssrc)
 
 void rtp_source_release(struct rtp_source *source)
 {
-	if(0 == InterlockedDecrement(&source->ref))
+	if(0 == atomic_decrement32(&source->ref))
 	{
 		if(source->cname)
 			free(source->cname);
@@ -42,7 +42,7 @@ static void rtp_source_setvalue(char **p, const char* data, int bytes)
 {
 	if(*p)
 	{
-		int n = strlen(*p);
+		size_t n = strlen(*p);
 		if(n == bytes && 0 == strncmp(*p, data, bytes))
 			return;
 

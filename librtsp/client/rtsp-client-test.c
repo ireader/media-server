@@ -84,7 +84,6 @@ int onpause(void* ptr, int code)
 void rtsp_client_test()
 {
 	int i;
-	void* rtsp;
 	void* transport;
 	rtsp_client_t client;
 	struct rtsp_client_test_t *ctx;

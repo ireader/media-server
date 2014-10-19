@@ -48,7 +48,7 @@ int rtp_avp_udp_destroy(void* udp)
 	return 0;
 }
 
-static void rtp_avp_udp_onrtp(void* param, int code, int bytes, const char* ip, int port)
+static void rtp_avp_udp_onrtp(void* param, int code, size_t bytes, const char* ip, int port)
 {
 	int r;
 	rtp_header_t *rtphd;
@@ -85,7 +85,7 @@ static void rtp_avp_udp_onrtp(void* param, int code, int bytes, const char* ip, 
 	}
 }
 
-static void rtp_avp_udp_onrtcp(void* param, int code, int bytes, const char* ip, int port)
+static void rtp_avp_udp_onrtcp(void* param, int code, size_t bytes, const char* ip, int port)
 {
 	struct rtp_context *ctx;
 

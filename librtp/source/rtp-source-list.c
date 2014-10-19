@@ -1,6 +1,6 @@
-#include "rtp-source-list.h"
 #include "cstringext.h"
-#include "sys/sync.h"
+#include "sys/atomic.h"
+#include "rtp-source-list.h"
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
@@ -100,7 +100,7 @@ int rtp_source_list_add(void* members, struct rtp_source* s)
 		p->sources[p->count++] = s;
 	}
 
-	InterlockedIncrement(&s->ref);
+	atomic_increment32(&s->ref);
 	return 0;
 }
 
@@ -125,6 +125,9 @@ int rtp_source_list_delete(void* members, unsigned int ssrc)
 			memmove(p->ptr + i - N_SOURCE, p->ptr + i - N_SOURCE, p->count-N_SOURCE-i);
 
 		--p->count;
+        
+        // TODO:
+        //atomic_decrement32(&s->ref);
 		return 0;
 	}
 

@@ -161,10 +161,10 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 		   assert(0 == t->multicast);
 		   t->server_port2 = t->server_port1 + 1;
 	   }
-	   else if(2 == sscanf(p, "interleaved=%hu-%hu", &t->interleaved1, &t->interleaved2))
+	   else if(2 == sscanf(p, "interleaved=%d-%d", &t->interleaved1, &t->interleaved2))
 	   {
 	   }
-	   else if(1 == sscanf(p, "interleaved=%hu", &t->interleaved1))
+	   else if(1 == sscanf(p, "interleaved=%d", &t->interleaved1))
 	   {
 		   t->interleaved2 = t->interleaved1 + 1;
 	   }

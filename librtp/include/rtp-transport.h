@@ -35,13 +35,13 @@ struct rtp_context
 	struct rtp_source info; // self info
 };
 
-void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes);
-void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes);
+void rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes);
+void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes);
 
-int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes);
+int rtcp_sender_report(struct rtp_context *ctx, void* data, size_t bytes);
 
-int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes);
+int rtcp_receiver_report(struct rtp_context *ctx, void* data, size_t bytes);
 
-int rtcp_sdes(struct rtp_context *ctx, void* data, int bytes);
+int rtcp_sdes(struct rtp_context *ctx, void* data, size_t bytes);
 
 #endif /* !_rtp_transport_h_ */

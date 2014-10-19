@@ -2,7 +2,9 @@
 #define _h264_file_reader_h_
 
 #include <stdio.h>
-#include "mmptr.h"
+#include <stdlib.h>
+#include <vector>
+#include <list>
 
 class H264FileReader
 {
@@ -13,19 +15,26 @@ public:
 	bool IsOpened() const;
 
 public:
-	const mmptr& GetSPSandPPS() const;
-	int GetDuration(unsigned int& duration);
+    typedef std::vector<unsigned char> sps_t;
+    const std::list<sps_t> GetParameterSets() const { return m_sps; }
+	int GetDuration(size_t& duration) const { duration = m_duration; return 0; }
 	int GetNextFrame();
 	int Seek(unsigned int pos);
 
 private:
 	int Init();
-	int GetNextNALU(unsigned char*& data, int& bytes);
+	const unsigned char* ReadNextFrame();
 
 private:
 	FILE* m_fp;
-	mmptr m_ptr;
-	mmptr m_spspps;
+    typedef std::list<std::pair<size_t, long> > frames_t;
+    frames_t m_videos;
+
+    std::list<sps_t> m_sps;
+
+    size_t m_duration;
+    unsigned char *m_ptr;
+    size_t m_capacity, m_bytes, m_offset;
 };
 
 #endif /* !_h264_file_reader_h_ */

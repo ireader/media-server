@@ -11,7 +11,7 @@ typedef int64_t time64_t;
 
 struct rtp_source
 {
-	long ref;
+	int32_t ref;
 
 	unsigned int ssrc;
 

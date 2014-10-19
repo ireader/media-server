@@ -11,7 +11,7 @@ typedef void (*rtsp_ondata)(void* ptr, int channel, const void* data, unsigned i
 
 void* rtsp_client_tcp_transport_create(rtsp_ondata ondata, void* ptr);
 int rtsp_client_tcp_transport_destroy(void* transport);
-int rtsp_client_tcp_transport_request(void* transport, const char* uri, const void* req, int bytes, void* rtsp, rtsp_onreply onreply);
+int rtsp_client_tcp_transport_request(void* transport, const char* uri, const void* req, size_t bytes, void* rtsp, rtsp_onreply onreply);
 
 #if defined(__cplusplus)
 }

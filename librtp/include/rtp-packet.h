@@ -13,7 +13,7 @@ typedef struct _rtp_packet_t
 	int payloadlen; // payload length in bytes
 } rtp_packet_t;
 
-inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, int bytes)
+inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
 {
 	unsigned int i, v, hdrlen;
 	const unsigned int *ptr;

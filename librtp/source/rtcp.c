@@ -207,7 +207,7 @@ static void rtcp_input_app(struct rtp_context *ctx, rtcp_header_t *header, const
 		return; // error
 }
 
-static int rtcp_parse(struct rtp_context *ctx, const void* data, int bytes)
+static int rtcp_parse(struct rtp_context *ctx, const void* data, size_t bytes)
 {
 	unsigned long rtcphd;
 	rtcp_header_t header;
@@ -260,7 +260,7 @@ static int rtcp_parse(struct rtp_context *ctx, const void* data, int bytes)
 	return -1;
 }
 
-void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes)
+void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes)
 {
 	int r;
 	const unsigned char* p;
@@ -282,7 +282,7 @@ void rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes)
 	}
 }
 
-void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
+void rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes)
 {
 	time64_t clock;
 	rtp_packet_t pkt;
@@ -325,7 +325,7 @@ void rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 	}
 }
 
-int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes)
+int rtcp_sender_report(struct rtp_context *ctx, void* data, size_t bytes)
 {
 	unsigned int i;
 	rtcp_sr_t *sr;
@@ -399,7 +399,7 @@ int rtcp_sender_report(struct rtp_context *ctx, void* data, int bytes)
 	return 0;
 }
 
-int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
+int rtcp_receiver_report(struct rtp_context *ctx, void* data, size_t bytes)
 {
 	// RFC3550 6.1 RTCP Packet Format
 	// An individual RTP participant should send only one compound RTCP packet per report interval
@@ -470,9 +470,9 @@ int rtcp_receiver_report(struct rtp_context *ctx, void* data, int bytes)
 	return 0;
 }
 
-static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const char* p, int bytes)
+static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const char* p, size_t bytes)
 {
-	int n;
+	size_t n;
 	if(!p)
 		return 0;
 
@@ -486,7 +486,7 @@ static int rtcp_sdes_append_item(rtcp_sdes_item_t *sdes, unsigned char pt, const
 	return 1;
 }
 
-int rtcp_sdes(struct rtp_context *ctx, void* data, int bytes)
+int rtcp_sdes(struct rtp_context *ctx, void* data, size_t bytes)
 {
 	unsigned int *p;
 	rtcp_header_t header;

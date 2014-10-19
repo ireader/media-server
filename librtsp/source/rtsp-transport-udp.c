@@ -18,7 +18,7 @@ static void rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg,
 	struct rtsp_udp_transport_t *transport;
 	transport = (struct rtsp_udp_transport_t*)ptr;
 
-	remain = bytes;
+	remain = (int)bytes;
 	parser = rtsp_parser_create(RTSP_PARSER_SERVER);
 	if(0 == rtsp_parser_input(parser, msg, &remain))
 	{

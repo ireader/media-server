@@ -1,7 +1,7 @@
 #include "rtp-avp-udp.h"
 #include "cstringext.h"
 #include "sys/sock.h" // ntohl
-#include "sys/sync.h"
+#include "sys/locker.h"
 //#include "rtp-queue.h"
 #include "time64.h"
 #include "rtp.h"
@@ -178,7 +178,7 @@ int rtp_queue_lock(void* queue, void** ptr, int size)
 	if(!frame)
 		return -1; // alloc memory error
 
-	memset(frame, 0, sizeof(frame));
+	memset(frame, 0, sizeof(*frame));
 	frame->capacity = size;
 	frame->ptr = (unsigned char*)(frame+1);
 	frame->clock = time64_now();
@@ -249,7 +249,7 @@ int rtp_queue_read(void* queue, void **rtp, int *len, int *lostPacket)
 	{
 		char msg[64];
 		sprintf(msg, "lost: %u-%u\n", q->expected, frame->seq);
-		OutputDebugString(msg);
+//		OutputDebugString(msg);
 	}
 #endif
 

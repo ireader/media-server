@@ -67,7 +67,7 @@ int rtsp_client_announce(struct rtsp_client_context_t* ctx, const char* sdp)
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
 		"Content-Type: application/sdp\r\n"
-		"Content-Length: %d\r\n"
+		"Content-Length: %lu\r\n"
 		"\r\n"
 		"%s", 
 		ctx->uri, ctx->cseq++, ctx->media[0].session, strlen(sdp), sdp);

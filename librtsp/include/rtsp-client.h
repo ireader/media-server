@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
+
 #if defined(OS_WINDOWS)
 	typedef __int64				int64_t;
 #else
@@ -37,7 +39,7 @@ typedef void (*rtsp_onreply)(void* rtsp, int code, void* parser);
 
 typedef struct _rtsp_client_t
 {
-	int (*request)(void* transport, const char* uri, const void* req, int bytes, void* rtsp, rtsp_onreply onreply);
+	int (*request)(void* transport, const char* uri, const void* req, size_t bytes, void* rtsp, rtsp_onreply onreply);
 	int (*rtpport)(void* transport, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
 
 	int (*onopen)(void* ptr, int code, const struct rtsp_transport_t* transport, int count);

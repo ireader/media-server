@@ -26,16 +26,19 @@ Unsupported: funky-feature
 */
 int rtsp_options(void* rtsp)
 {
+    return 0;
 }
 
 int rtsp_describe(void* rtsp)
 {
 	const char* path;
 	path = rtsp_get_request_uri(rtsp);
+    return 0;
 }
 
 int rtsp_setup(void* rtsp)
 {
+    return 0;
 }
 
 /*

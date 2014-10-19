@@ -73,7 +73,8 @@ int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp)
 	for(i = 0; i < ctx->media_count; i++)
 	{
 		media = rtsp_get_media(ctx, i);
-		if(r = ctx->client.rtpport(ctx->param, &media->transport.client_port1))
+		r = ctx->client.rtpport(ctx->param, &media->transport.client_port1);
+        if(0 != r)
 			return r;
 
 		media->transport.transport = RTSP_TRANSPORT_RTP;

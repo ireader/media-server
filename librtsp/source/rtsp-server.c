@@ -4,7 +4,6 @@
 #include "rtsp-server.h"
 #include "cstringext.h"
 #include "sys/sock.h"
-#include "sys/sync.h"
 #include "sys/system.h"
 #include "sys/process.h"
 #include "thread-pool.h"
@@ -345,7 +344,7 @@ static struct rtsp_server_request_t* rtsp_server_session_create(struct rtsp_serv
 	struct rtsp_server_request_t* req;
 
 	req = (struct rtsp_server_request_t*)malloc(sizeof(*req));
-	memset(req, 0, sizeof(req));
+	memset(req, 0, sizeof(*req));
 	req->server = ctx;
 	return req;
 }
@@ -416,10 +415,10 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 			"CSeq: %u\r\n"
 			"Date: %s\r\n"
 			"Content-Type: application/sdp\r\n"
-			"Content-Length: %u\r\n"
+			"Content-Length: %lu\r\n"
 			"\r\n"
 			"%s", 
-			req->cseq, datetime, strlen(sdp), sdp);	
+			req->cseq, datetime, strlen(sdp), sdp);
 
 	req->transport->send(req->session, req->reply, strlen(req->reply));
 }
@@ -511,6 +510,16 @@ const char* rtsp_server_find_header(void* rtsp, const char* name)
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
 	return rtsp_get_header_by_name(req->parser, name);
+}
+
+int rtsp_server_init()
+{
+    return 0;
+}
+
+int rtsp_server_cleanup()
+{
+    return 0;
 }
 
 void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* ptr)

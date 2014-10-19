@@ -95,7 +95,7 @@ static int rtsp_client_disconnect(socket_t* socket)
 	return 0;
 }
 
-static int rtsp_client_send(socket_t socket, const void* p, int n)
+static int rtsp_client_send(socket_t socket, const void* p, size_t n)
 {
 	int r;
 	r = socket_send(socket, p, n, 0);
@@ -123,7 +123,7 @@ static int rtsp_client_recv(struct rtsp_tcp_transport_t* transport, void* rtsp, 
 
 		if(r < 3)
 		{
-			s = socket_recv_all_by_time(socket, p+r, 3-r, 0, 5000);
+			s = socket_recv_all_by_time(transport->sock, p+r, 3-r, 0, 5000);
 			if(s != 3-r)
 				return -1; // recv error
 			
@@ -136,7 +136,7 @@ static int rtsp_client_recv(struct rtsp_tcp_transport_t* transport, void* rtsp, 
 		assert(len+3 < sizeof(p));
 		if(r < len + 3 && len+3 < sizeof(p))
 		{
-			s = socket_recv_all_by_time(socket, p+r, len+3-r, 0, 10000);
+			s = socket_recv_all_by_time(transport->sock, p+r, len+3-r, 0, 10000);
 			if(s != len+3-r)
 				return -1; // recv error
 
@@ -180,7 +180,7 @@ static struct rtsp_tcp_transport_t* rtsp_client_transport_find(struct rtsp_trans
 	return NULL;
 }
 
-int rtsp_client_tcp_transport_request(void* t, const char* uri, const void* req, int bytes, void* rtsp, rtsp_onreply onreply)
+int rtsp_client_tcp_transport_request(void* t, const char* uri, const void* req, size_t bytes, void* rtsp, rtsp_onreply onreply)
 {
 	int scheme;
 	int port;
