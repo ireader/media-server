@@ -3,6 +3,8 @@
 
 #include <time.h>
 
-int datetime_format(time_t time, char datetime[27]);
+typedef char rfc822_datetime_t[30];
+
+int datetime_format(time_t time, rfc822_datetime_t datetime);
 
 #endif /* !_rfc822_datetime_h_ */

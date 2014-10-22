@@ -53,12 +53,12 @@ static const char* s_zone[] = {
 	"MST", "MDT", "PST", "PDT"
 };
 
-int datetime_format(time_t time, char datetime[27])
+int datetime_format(time_t time, rfc822_datetime_t datetime)
 {
 	struct tm *tm = gmtime(&time);
 	assert(0 <= tm->tm_wday && tm->tm_wday < 7);
 	assert(0 <= tm->tm_mon && tm->tm_mon < 12);
-	snprintf(datetime, 27, "%s, %02d %s %04d %02d:%02d:%02d GMT", 
+	snprintf(datetime, sizeof(rfc822_datetime_t), "%s, %02d %s %04d %02d:%02d:%02d GMT", 
 		s_week[tm->tm_wday],
 		tm->tm_mday,
 		s_month[tm->tm_mon],
