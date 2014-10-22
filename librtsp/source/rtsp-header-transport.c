@@ -168,7 +168,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 	   {
 		   t->interleaved2 = t->interleaved1 + 1;
 	   }
-	   else if(1 == sscanf(p, "ttl=%u", &t->ttl))
+	   else if(1 == sscanf(p, "ttl=%d", &t->ttl))
 	   {
 		   assert(1 == t->multicast);
 	   }

@@ -4,11 +4,11 @@
 #include "ctypedef.h"
 
 enum ERTSP_RANGE_TIME { 
-	RTSP_RANGE_SMPTE = 1, 
+	RTSP_RANGE_SMPTE = 1, // relative to the start of the clip 
 	RTSP_RANGE_SMPTE_30=RTSP_RANGE_SMPTE, 
 	RTSP_RANGE_SMPTE_25, 
-	RTSP_RANGE_NPT, 
-	RTSP_RANGE_CLOCK,
+	RTSP_RANGE_NPT,  // relative to the beginning of the presentation
+	RTSP_RANGE_CLOCK, // absolute time, ISO 8601 timestamps, UTC(GMT)
 };
 
 enum ERTSP_RANGE_TIME_VALUE { 
