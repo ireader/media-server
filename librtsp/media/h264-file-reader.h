@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <list>
+#include "ctypedef.h"
 
 class H264FileReader
 {
@@ -17,7 +18,7 @@ public:
 public:
     typedef std::vector<unsigned char> sps_t;
     const std::list<sps_t> GetParameterSets() const { return m_sps; }
-	int GetDuration(size_t& duration) const { duration = m_duration; return 0; }
+	int GetDuration(int64_t& duration) const { duration = m_duration; return 0; }
 	int GetNextFrame();
 	int Seek(unsigned int pos);
 
@@ -32,7 +33,7 @@ private:
 
     std::list<sps_t> m_sps;
 
-    size_t m_duration;
+    int64_t m_duration;
     unsigned char *m_ptr;
     size_t m_capacity, m_bytes, m_offset;
 };

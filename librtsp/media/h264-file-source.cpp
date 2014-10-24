@@ -1,4 +1,5 @@
 #include "h264-file-source.h"
+#include "cstringext.h"
 #include "base64.h"
 #include <assert.h>
 
@@ -34,7 +35,7 @@ int H264FileSource::Seek(int64_t pos)
 
 int H264FileSource::GetDuration(int64_t& duration)
 {
-	return 0;
+	return m_reader.GetDuration(duration);
 }
 
 int H264FileSource::GetSDPMedia(std::string& sdp)
@@ -42,7 +43,7 @@ int H264FileSource::GetSDPMedia(std::string& sdp)
     static const char* pattern =
         "m=video 0 RTP/AVP 98\n"
         "a=rtpmap:98 H264/90000\n"
-        "a=fmtp:98 profile-level-id=%X%X%X;"
+        "a=fmtp:98 profile-level-id=%02X%02X%02X;"
     			 "packetization-mode=1;"
     			 "sprop-parameter-sets=";
 
@@ -55,7 +56,7 @@ int H264FileSource::GetSDPMedia(std::string& sdp)
     {
         if(parameters.empty())
         {
-            snprintf(base64, sizeof(base64), pattern, (unsigned int)(*it)[0], (unsigned int)(*it)[1], (unsigned int)(*it)[2]);
+            snprintf(base64, sizeof(base64), pattern, (unsigned int)(*it)[1], (unsigned int)(*it)[2], (unsigned int)(*it)[3]);
             sdp = base64;
         }
         else
@@ -65,7 +66,8 @@ int H264FileSource::GetSDPMedia(std::string& sdp)
 
         size_t bytes = it->size();
         assert((bytes+2)/3*4 + bytes/57 + 1 < sizeof(base64));
-        base64_encode(base64, &(*it)[0], bytes);
+        bytes = base64_encode(base64, &(*it)[0], bytes);
+		base64[bytes] = '\0';
         assert(strlen(base64) > 0);
         parameters += base64;
     }

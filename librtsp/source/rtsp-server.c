@@ -17,7 +17,7 @@
 #include "rtsp-header-session.h"
 #include "rtsp-parser.h"
 #include "udpsocket.h"
-#include "http-reason.h"
+#include "rtsp-reason.h"
 
 #define MAX_UDP_PACKAGE 1024
 
@@ -42,46 +42,26 @@ struct rtsp_server_request_t
 	char reply[MAX_UDP_PACKAGE];
 };
 
-static const char* rtsp_reason_phrase(int code)
+static int rtsp_header_transport_ex(const char* value, struct rtsp_header_transport_t* transport[], size_t *num)
 {
-	switch(code)
+	size_t i;
+	const char* p = value;
+
+	for(i = 0; i < num && p; i++)
 	{
-	case 451:
-		return "Parameter Not Understood";
-	case 452:
-		return "Conference Not Found";
-	case 453:
-		return "Not Enough Bandwidth";
-	case 454:
-		return "Session Not Found";
-	case 455:
-		return "Method Not Valid in This State";
-	case 456:
-		return "Header Field Not Valid for Resource";
-	case 457:
-		return "Invalid Range";
-	case 458:
-		return "Parameter Is Read-Only";
-	case 459:
-		return "Aggregate Operation Not Allowed";
-	case 460:
-		return "Only Aggregate Operation Allowed";
-	case 461:
-		return "Unsupported Transport";
-	case 462:
-		return "Destination Unreachable";
-	case 505:
-		return "RTSP Version Not Supported";
-	case 551:
-		return "Option not supported";
-	default:
-		return http_reason_phrase(code);
+		if(0 != rtsp_header_transport(p, &transport[i]))
+			return -1;
+
+		p = strchr(p+1, ',');
 	}
+
+	*num = i;
+	return 0;
 }
 
 static int rtsp_server_reply(struct rtsp_server_request_t *req, int code)
 {
-	char datetime[27];
+	rfc822_datetime_t datetime;
 	datetime_format(time(NULL), datetime);
 
 	snprintf(req->reply, sizeof(req->reply), 
@@ -99,7 +79,7 @@ static void rtsp_server_options(struct rtsp_server_request_t* req, void *parser,
 {
 	static const char* methods = "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE";
 
-	assert(0 == strcmp("*", uri));
+//	assert(0 == strcmp("*", uri));
 	snprintf(req->reply, sizeof(req->reply), 
 		"RTSP/1.0 200 OK\r\n"
 		"CSeq: %u\r\n"
@@ -114,7 +94,7 @@ static void rtsp_server_describe(struct rtsp_server_request_t *req, void *parser
 {
 	struct rtsp_server_context_t* ctx = req->server;
 	ctx->handler.describe(ctx->ptr, req, uri);
-	//char date[27] = {0};
+	//rfc822_datetime_t date = {0};
 	//srand(time(NULL));
 	//unsigned int sid = (unsigned int)rand();
 	//uri = rtsp_get_request_uri(parser);
@@ -146,28 +126,32 @@ static void rtsp_server_describe(struct rtsp_server_request_t *req, void *parser
 
 static void rtsp_server_setup(struct rtsp_server_request_t *req, void *parser, const char* uri)
 {
+	int n;
 	const char *psession, *ptransport;
 	struct rtsp_header_session_t session;
-	struct rtsp_header_transport_t transport;
+	struct rtsp_header_transport_t transport[16];
 	struct rtsp_server_context_t* ctx = req->server;
 
 	psession = rtsp_get_header_by_name(parser, "Session");
 	ptransport = rtsp_get_header_by_name(parser, "Transport");
 
-	if(!ptransport || 0 != rtsp_header_transport(ptransport, &transport))
+	memset(transport, 0, sizeof(transport));
+	n = sizeof(transport)/sizeof(transport[0]);
+	if(!ptransport || 0 != rtsp_header_transport_ex(ptransport, transport, &n) || 0 == n)
 	{
 		// 461 Unsupported Transport
 		rtsp_server_reply(req, 461);
 		return;
 	}
 
+	assert(n > 0);
 	if(psession && 0 == rtsp_header_session(psession, &session))
 	{
-		ctx->handler.setup(ctx->ptr, req, uri, session.session, &transport);
+		ctx->handler.setup(ctx->ptr, req, uri, session.session, &transport, n);
 	}
 	else
 	{
-		ctx->handler.setup(ctx->ptr, req, uri, NULL, &transport);
+		ctx->handler.setup(ctx->ptr, req, uri, NULL, &transport, n);
 	}
 }
 
@@ -399,7 +383,7 @@ static void rtsp_server_onudpsend(void *ptr, void* user, int code, size_t bytes)
 
 void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 {
-	char datetime[27];
+	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
 
@@ -425,7 +409,7 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 
 void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const char* transport)
 {
-	char datetime[27];
+	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
 
@@ -454,7 +438,7 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 {
 	char range[64];
 	char rtpinfo[256];
-	char datetime[27];
+	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
 

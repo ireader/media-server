@@ -73,21 +73,21 @@ int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp)
 	for(i = 0; i < ctx->media_count; i++)
 	{
 		media = rtsp_get_media(ctx, i);
-		r = ctx->client.rtpport(ctx->param, &media->transport.client_port1);
+		r = ctx->client.rtpport(ctx->param, &media->transport.rtp.u.client_port1);
         if(0 != r)
 			return r;
 
-		media->transport.transport = RTSP_TRANSPORT_RTP;
-		if(0 == media->transport.client_port1)
+		if(0 == media->transport.rtp.u.client_port1)
 		{
-			media->transport.lower_transport = RTSP_TRANSPORT_TCP;
-			media->transport.client_port1 = 2*(unsigned short)i;
-			media->transport.client_port2 = 2*(unsigned short)i + 1;
+			media->transport.transport = RTSP_TRANSPORT_RTP_TCP;
+			media->transport.rtp.u.client_port1 = 2*(unsigned short)i;
+			media->transport.rtp.u.client_port2 = 2*(unsigned short)i + 1;
 		}
 		else
 		{
-			media->transport.lower_transport = RTSP_TRANSPORT_UDP;
-			media->transport.client_port2 = media->transport.client_port1 + 1;
+			assert(0 == media->transport.rtp.u.client_port1 % 2);
+			media->transport.transport = RTSP_TRANSPORT_RTP_UDP;
+			media->transport.rtp.u.client_port2 = media->transport.rtp.u.client_port1 + 1;
 		}
 	}
 

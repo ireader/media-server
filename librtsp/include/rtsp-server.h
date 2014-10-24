@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "rtsp-header-transport.h"
+#include "ctypedef.h"
 
 struct rtsp_handler_t
 {
@@ -22,7 +23,7 @@ struct rtsp_handler_t
 	/// @param[in] uri request uri
 	/// @param[in] transport RTSP Transport header
 	/// Required: MUST call rtsp_server_reply_setup once
-	void (*setup)(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transport);
+	void (*setup)(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transports[], size_t num);
 
 	/// RTSP PLAY request
 	/// @param[in] ptr user-defined parameter

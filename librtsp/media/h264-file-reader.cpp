@@ -6,6 +6,7 @@
 enum { NAL_IDR = 5, NAL_SEI = 6, NAL_SPS = 7, NAL_PPS = 8 };
 
 H264FileReader::H264FileReader(const char* file)
+:m_ptr(NULL), m_capacity(0), m_bytes(0)
 {
 	m_fp = fopen(file, "rb");
     if(m_fp)
@@ -104,9 +105,9 @@ const unsigned char* H264FileReader::ReadNextFrame()
 
 int H264FileReader::Init()
 {
-	assert(IsOpened());
-	assert(0 == ftell(m_fp));
-    assert(0 == search_start_code(m_ptr, m_bytes));
+	//assert(IsOpened());
+	//assert(0 == ftell(m_fp));
+    assert(m_ptr == search_start_code(m_ptr, m_bytes));
 
     size_t count = 0;
     bool spspps = true;
@@ -116,6 +117,7 @@ int H264FileReader::Init()
 	{
         const unsigned char* nalu2 = ReadNextFrame();
 
+		nalu = m_ptr + m_offset;
         int nal_unit_type = h264_nal_type(nalu);
         assert(0 != nal_unit_type);
         if(nal_unit_type <= 5)
@@ -139,7 +141,12 @@ int H264FileReader::Init()
             {
                 size_t n = 0x01 == nalu[2] ? 3 : 4;
                 sps_t sps(nalu2 - nalu - n);
-                memcpy(&sps[0], nalu, nalu2-nalu-n);
+                memcpy(&sps[0], nalu+n, nalu2-nalu-n);
+
+				// filter last 0x00 bytes
+				while(sps.size() > 0 && !*sps.rbegin())
+					sps.resize(sps.size()-1);
+				m_sps.push_back(sps);
             }
         }
 

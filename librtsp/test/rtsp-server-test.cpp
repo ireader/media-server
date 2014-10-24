@@ -4,17 +4,33 @@
 #include "sys/system.h"
 #include "sys/process.h"
 #include "sys/path.h"
+#include "sys/sync.hpp"
+#include "ctypedef.h"
 #include "aio-socket.h"
 #include "thread-pool.h"
 #include "rtsp-server.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
 #include "h264-file-source.h"
+#include "url.h"
+#include "path.h"
 #include <map>
 
 static int s_running;
 static thread_pool_t s_pool;
-static std::map<void*, IMediaSource*> s_sources;
+static const char* s_workdir = "e:";
+
+static ThreadLocker s_locker;
+
+typedef std::map<std::string, IMediaSource*> TSessions;
+static TSessions s_sessions;
+
+struct TFileDescription
+{
+	int64_t duration;
+	std::string sdpmedia;
+};
+static std::map<std::string, TFileDescription> s_describes;
 
 static void worker(void* param)
 {
@@ -52,6 +68,18 @@ static int cleanup()
     return 0;
 }
 
+static int rtsp_uri_parse(const char* uri, std::string& path)
+{
+	void* parser = NULL;
+	parser = url_parse(uri);
+	if(!parser)
+		return -1;
+
+	path.assign(url_getpath(parser));
+	url_free(parser);
+	return 0;
+}
+
 static void rtsp_ondescribe(void* ptr, void* rtsp, const char* uri)
 {
     static const char* pattern =
@@ -63,46 +91,213 @@ static void rtsp_ondescribe(void* ptr, void* rtsp, const char* uri)
         "a=recvonly\n";
 
     char sdp[512];
-    int64_t duration = 0;
-    std::string mediasdp;
+	std::string filename;
+	std::map<std::string, TFileDescription>::const_iterator it;
 
-    IMediaSource *source = NULL;
-    source = H264FileSource::Create(uri);
-    source->GetDuration(duration);
-    source->GetSDPMedia(mediasdp);
+	rtsp_uri_parse(uri, filename);
+	assert(strstartswith(filename.c_str(), "/live/"));
+	filename = path::join(s_workdir, filename.c_str()+6);
 
-    snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, duration);
-    strcat(sdp, mediasdp.c_str());
+	{
+		AutoThreadLocker locker(s_locker);
+		it = s_describes.find(filename);
+		if(it == s_describes.end())
+		{
+			// unlock
+			TFileDescription describe;
+			IMediaSource *source = NULL;
+			source = H264FileSource::Create(filename.c_str());
+			source->GetDuration(describe.duration);
+			source->GetSDPMedia(describe.sdpmedia);
+			delete source;
+
+			// re-lock
+			it = s_describes.insert(std::make_pair(filename, describe)).first;
+		}
+	}
+    snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration);
+    strcat(sdp, it->second.sdpmedia.c_str());
 
     rtsp_server_reply_describe(rtsp, 200, sdp);
 }
 
-static void rtsp_onsetup(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transport)
+static void rtsp_onsetup(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transports[], size_t num)
 {
-    const char* rtsp_transport = "";
-    rtsp_server_reply_setup(rtsp, 200, session, rtsp_transport);
+	std::string filename;
+	char rtsp_transport[128];
+	const struct rtsp_header_transport_t *transport = NULL;
+
+	TSessions::const_iterator it;
+	if(session)
+	{
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.find(session);
+		if(it == s_sessions.end())
+		{
+			// 454 Session Not Found
+			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+		}
+		else
+		{
+			// TODO:
+			assert(0);
+
+			// 459 Aggregate Operation Not Allowed
+			rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
+		}
+		return;
+	}
+	else
+	{
+		rtsp_uri_parse(uri, filename);
+		assert(strstartswith(filename.c_str(), "/live/"));
+		filename = path::join(s_workdir, filename.c_str()+6);
+
+		IMediaSource *source = NULL;
+		source = H264FileSource::Create(filename.c_str());
+
+		char session[32];
+		snprintf(session, sizeof(session), "%p", source);
+
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.insert(std::make_pair(session, source)).first;
+	}
+
+	assert(NULL == transport);
+	for(size_t i = 0; i < num; i++)
+	{
+		if(RTSP_TRANSPORT_RTP_UDP == transports[i]->transport)
+		{
+			// RTP/AVP/UDP
+			transport = transports[i];
+			break;
+		}
+		else if(RTSP_TRANSPORT_RTP_TCP == transports[i]->transport)
+		{
+			// RTP/AVP/TCP
+			// 10.12 Embedded (Interleaved) Binary Data (p40)
+			transport = transports[i];
+			break;
+		}
+	}
+	if(!transport)
+	{
+		// 461 Unsupported Transport
+		rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
+		return;
+	}
+
+	if(transport->multicast)
+	{
+		// RFC 2326 1.6 Overall Operation p12
+		// Multicast, client chooses address
+		// Multicast, server chooses address
+		assert(0);
+	}
+	else
+	{
+		// unicast
+		assert(transport->rtp.u.client_port1 && transport->rtp.u.client_port2);
+
+		socket_t rtp[2];
+		unsigned short port = 0;
+		rtp_socket_create(NULL, &rtp[0], &rtp[1], port);
+
+		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
+		snprintf(rtsp_transport, sizeof(rtsp_transport), 
+			"RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu", 
+			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
+			port, port+1);
+
+		if(transport->destination[0])
+		{
+			strcat(rtsp_transport, ";destination=");
+			strcat(rtsp_transport, transport->destination);
+		}
+	}
+
+    rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
 }
 
 static void rtsp_onplay(void* ptr, void* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
 {
-    rtsp_server_reply_play(rtsp, 200, 0, 0, NULL);
+	TSessions::const_iterator it;
+	AutoThreadLocker locker(s_locker);
+	it = s_sessions.find(session ? "" : session);
+	if(it == s_sessions.end())
+	{
+		// 454 Session Not Found
+		rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+		return;
+	}
+
+	if(npt)
+	{
+		// seek ? 
+	}
+
+	if(scale)
+	{
+		// set speed
+		assert(scale > 0);
+	}
+
+	// RFC 2326 12.33 RTP-Info (p55)
+	// 1. Indicates the RTP timestamp corresponding to the time value in the Range response header.
+	// 2. A mapping from RTP timestamps to NTP timestamps (wall clock) is available via RTCP.
+	int64_t npt = 0;
+	unsigned short seq = 0;
+	unsigned int rtptime = 0;
+
+	char rtpinfo[128] = {0};
+	// url=rtsp://video.example.com/twister/video;seq=12312232;rtptime=78712811
+	snprintf(rtpinfo, sizeof(rtpinfo), "url=%s;seq=%hu;rtptime=%u", uri, seq, rtptime);
+
+    rtsp_server_reply_play(rtsp, 200, &npt, NULL, rtpinfo);
 }
 
 static void rtsp_onpause(void* ptr, void* rtsp, const char* uri, const char* session, const int64_t *npt)
 {
+	TSessions::const_iterator it;
+	AutoThreadLocker locker(s_locker);
+	it = s_sessions.find(session ? "" : session);
+	if(it == s_sessions.end())
+	{
+		// 454 Session Not Found
+		rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+		return;
+	}
+
     rtsp_server_reply_pause(rtsp, 200);
 }
 
 static void rtsp_onteardown(void* ptr, void* rtsp, const char* uri, const char* session)
 {
+	IMediaSource *source = NULL;
+	TSessions::const_iterator it;
+	{
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.find(session ? "" : session);
+		if(it == s_sessions.end())
+		{
+			// 454 Session Not Found
+			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return;
+		}
+
+		source = it->second;
+		s_sessions.erase(it);
+	}
+
+	delete source;
     rtsp_server_reply_teardown(rtsp, 200);
 }
 
-void rtsp_benchmark()
+extern "C" void rtsp_benchmark()
 {
     void *rtsp;
     struct rtsp_handler_t handler;
-    
+
     rtsp_server_init();
     init();
 
@@ -112,7 +307,7 @@ void rtsp_benchmark()
     handler.pause = rtsp_onpause;
     handler.teardown = rtsp_onteardown;
     rtsp = rtsp_server_create(NULL, 554, &handler, NULL);
-    
+
     while(1)
     {
         system_sleep(10000);
@@ -121,4 +316,8 @@ void rtsp_benchmark()
     rtsp_server_cleanup();
 }
 
+void main(void)
+{
+	rtsp_benchmark();
+}
 #endif

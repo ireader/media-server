@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;include;client;..\..\sdk\include;..\..\sdk\libhttp\include"
+				AdditionalIncludeDirectories=".;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -183,7 +183,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtsp.c"
+				RelativePath=".\source\rtsp-reason.c"
+				>
+			</File>
+			<File
+				RelativePath=".\test\rtsp-server-test.cpp"
 				>
 			</File>
 			<File
@@ -226,6 +230,10 @@
 			</File>
 			<File
 				RelativePath=".\include\rtsp-parser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtsp-reason.h"
 				>
 			</File>
 			<File

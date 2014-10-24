@@ -1,7 +1,7 @@
 #include "cstringext.h"
+#include "rtsp-transport.h"
 #include "sys/atomic.h"
 #include "sys/locker.h"
-#include "rtsp-transport.h"
 #include "tcpserver.h"
 #include "rtsp-parser.h"
 #include "aio-tcp-transport.h"
@@ -68,7 +68,7 @@ static void rtsp_transport_tcp_ondisconnected(void* param)
     rtsp_transport_tcp_session_release(session);
 }
 
-static void rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes)
+static int rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes)
 {
 	int remain;
 	struct rtsp_tcp_session_t *session;
@@ -82,22 +82,25 @@ static void rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes
 
 		// call
 		// user must reply(send/send_vec/send_file) in handle
-		session->handler.onrecv(session->ptr, session->session, session->ip, session->port, session->parser, &session->data);
-
-		rtsp_parser_clear(session->parser);
+		session->handler.onrecv(session->ptr, session, session->ip, session->port, session->parser, &session->data);
+		return 0;
 	}
 	else
 	{
 		// wait more data
+		return 1;
 	}
 }
 
-static void rtsp_transport_tcp_onsend(void* param, int code, size_t bytes)
+static int rtsp_transport_tcp_onsend(void* param, int code, size_t bytes)
 {
 	struct rtsp_tcp_session_t *session;
 	session = (struct rtsp_tcp_session_t *)param;
 	session->handler.onsend(session->ptr, session->data, code, bytes);
-    rtsp_transport_tcp_session_release(session);
+
+	rtsp_parser_clear(session->parser);
+	rtsp_transport_tcp_session_release(session);
+	return 1;
 }
 
 static void* rtsp_transport_tcp_create(socket_t socket, const struct rtsp_transport_handler_t *handler, void* ptr)

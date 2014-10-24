@@ -5,10 +5,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "cstringext.h"
-#include "udpsocket.h"
+#include "rtp-socket.h"
 #include "sys/system.h"
-
-#define RTP_PORT_BASE 30000
 
 struct rtsp_client_test_t
 {
@@ -19,43 +17,10 @@ struct rtsp_client_test_t
 	unsigned short port;
 };
 
-static int rtsp_create_rtp_socket(socket_t *rtp, socket_t *rtcp, unsigned short *port)
-{
-	unsigned short i;
-	socket_t sock[2];
-	assert(0 == RTP_PORT_BASE % 2);
-	srand((unsigned int)time(NULL));
-
-	do
-	{
-		i = rand() % 30000;
-		i = i/2*2 + RTP_PORT_BASE;
-
-		sock[0] = udpsocket_create(NULL, i);
-		if(socket_invalid == sock[0])
-			continue;
-
-		sock[1] = udpsocket_create(NULL, i + 1);
-		if(socket_invalid == sock[1])
-		{
-			socket_close(sock[0]);
-			continue;
-		}
-
-		*rtp = sock[0];
-		*rtcp = sock[1];
-		*port = i;
-		return 0;
-
-	} while(socket_invalid!=sock[0] && socket_invalid!=sock[1]);
-
-	return -1;
-}
-
 static int rtpport(void* transport, unsigned short *rtp)
 {
 	socket_t sock[2];
-	return rtsp_create_rtp_socket(&sock[0], &sock[1], rtp);
+	return rtp_socket_create(NULL, &sock[0], &sock[1], rtp);
 }
 
 int onopen(void* ptr, int code, const struct rtsp_transport_t* transport, int count)
