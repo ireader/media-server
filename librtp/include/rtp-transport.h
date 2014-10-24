@@ -26,6 +26,9 @@ struct rtcp_transport
 
 struct rtp_context
 {
+	char ip[32];
+	int port;
+
 	void* queue;
 	struct rtp_transport rtp;
 	struct rtcp_transport rtcp;

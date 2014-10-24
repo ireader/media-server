@@ -171,7 +171,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtp-avp-udp-receiver.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtp-avp-unicast-sender.c"
+				>
+			</File>
+			<File
 				RelativePath=".\source\rtp-queue.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtp-socket.c"
 				>
 			</File>
 			<File
@@ -201,7 +213,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\rtp-avp-udp-receiver.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\rtp-avp-udp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-avp-unicast-sender.h"
 				>
 			</File>
 			<File
@@ -214,6 +234,10 @@
 			</File>
 			<File
 				RelativePath=".\include\rtp-queue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-socket.h"
 				>
 			</File>
 			<File
