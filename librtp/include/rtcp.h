@@ -25,37 +25,37 @@ enum
 
 typedef struct _rtcp_header_t
 {
-	unsigned int v:2;		// version
-	unsigned int p:1;		// padding
-	unsigned int rc:5;		// reception report count
-	unsigned int pt:8;		// packet type
-	unsigned int length:16; /* pkt len in words, w/o this word */
+	uint32_t v:2;		// version
+	uint32_t p:1;		// padding
+	uint32_t rc:5;		// reception report count
+	uint32_t pt:8;		// packet type
+	uint32_t length:16; /* pkt len in words, w/o this word */
 } rtcp_header_t;
 
 typedef struct _rtcp_sr_t // sender report
 {
-	unsigned int ssrc;
-	unsigned int ntpmsw; // ntp timestamp MSW
-	unsigned int ntplsw; // ntp timestamp LSW
-	unsigned int rtpts; // rtp timestamp
-	unsigned int spc; // sender packet count
-	unsigned int soc; // sender octet count
+	uint32_t ssrc;
+	uint32_t ntpmsw; // ntp timestamp MSW
+	uint32_t ntplsw; // ntp timestamp LSW
+	uint32_t rtpts;	 // rtp timestamp
+	uint32_t spc;	 // sender packet count
+	uint32_t soc;	 // sender octet count
 } rtcp_sr_t;
 
 typedef struct _rtcp_rr_t // receiver report
 {
-	unsigned int ssrc;
+	uint32_t ssrc;
 } rtcp_rr_t;
 
 typedef struct _rtcp_rb_t // report block
 {
-	unsigned int ssrc;
-	unsigned int fraction:8; // fraction lost
-	unsigned int cumulative:24; // cumulative number of packets lost
-	unsigned int exthsn; // extended highest sequence number received
-	unsigned int jitter; // interarrival jitter
-	unsigned int lsr; // last SR
-	unsigned int dlsr; // delay since last SR
+	uint32_t ssrc;
+	uint32_t fraction:8; // fraction lost
+	uint32_t cumulative:24; // cumulative number of packets lost
+	uint32_t exthsn; // extended highest sequence number received
+	uint32_t jitter; // interarrival jitter
+	uint32_t lsr; // last SR
+	uint32_t dlsr; // delay since last SR
 } rtcp_rb_t;
 
 typedef struct _rtcp_sdes_item_t // source description RTCP packet
@@ -67,7 +67,7 @@ typedef struct _rtcp_sdes_item_t // source description RTCP packet
 
 typedef struct _rtcp_app_t // application-defined
 {
-	unsigned int ssrc;
+	uint32_t ssrc;
 	char name[4];
 	char value[1];
 } rtcp_app_t;

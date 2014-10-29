@@ -3,15 +3,15 @@
 
 typedef struct _rtp_header_t
 {
-	unsigned int v:2;		/* protocol version */
-	unsigned int p:1;		/* padding flag */
-	unsigned int x:1;		/* header extension flag */
-	unsigned int cc:4;		/* CSRC count */
-	unsigned int m:1;		/* marker bit */
-	unsigned int pt:7;		/* payload type */
-	unsigned int seq:16;	/* sequence number */
-	unsigned int timestamp; /* timestamp */
-	unsigned int ssrc;		/* synchronization source */
+	uint32_t v:2;		/* protocol version */
+	uint32_t p:1;		/* padding flag */
+	uint32_t x:1;		/* header extension flag */
+	uint32_t cc:4;		/* CSRC count */
+	uint32_t m:1;		/* marker bit */
+	uint32_t pt:7;		/* payload type */
+	uint32_t seq:16;	/* sequence number */
+	uint32_t timestamp; /* timestamp */
+	uint32_t ssrc;		/* synchronization source */
 } rtp_header_t;
 
 #define RTP_V(v)	((v >> 30) & 0x03) /* protocol version */
