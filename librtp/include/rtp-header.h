@@ -1,5 +1,5 @@
-#ifndef _rtp_h_
-#define _rtp_h_
+#ifndef _rtp_header_h_
+#define _rtp_header_h_
 
 typedef struct _rtp_header_t
 {
@@ -24,4 +24,4 @@ typedef struct _rtp_header_t
 
 #define RTP_MISORDER 1000
 
-#endif /* !_rtp_h_ */
+#endif /* !_rtp_header_h_ */
