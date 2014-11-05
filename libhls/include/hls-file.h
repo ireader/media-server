@@ -1,6 +1,8 @@
 #ifndef _hls_file_h_
 #define _hls_file_h_
 
+#include "cstringext.h"
+#include "sys/atomic.h"
 #include "time64.h"
 #include "hls-block.h"
 
@@ -8,7 +10,7 @@ struct hls_file_t
 {
 	struct list_head head;
 
-	long refcnt;
+	int32_t refcnt;
 	int seq; // filename
 	int duration; // ms
 	time64_t tcreate; // file create time

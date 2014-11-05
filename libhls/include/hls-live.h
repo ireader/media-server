@@ -2,23 +2,21 @@
 #define _hls_live_h_
 
 #include "cstringext.h"
-#include "sys/sync.h"
+#include "sys/atomic.h"
+#include "sys/locker.h"
+#include "ctypedef.h"
 #include "hls-file.h"
 #include "hls-param.h"
 
 #define MAX_NAME 64
 
-#if defined(OS_WINDOWS)
-typedef __int64 int64_t;
-#endif
-
 struct hls_live_t
 {
 	struct list_head link;
-    
+
     int opened; // 1-opened, 0-don't open
 
-	long refcnt;
+	int32_t refcnt;
 	locker_t locker;
 	char name[MAX_NAME];
 
@@ -32,12 +30,12 @@ struct hls_live_t
     int64_t pts;
 	time64_t rtime; // last read time
 	time64_t wtime; // last write time
-    
+
     unsigned char *vbuffer;
 };
 
 int hls_live_init();
-void hls_live_cleanup();
+int hls_live_cleanup();
 
 /// create/destroy live object
 struct hls_live_t* hls_live_fetch(const char* name);

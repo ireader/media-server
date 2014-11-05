@@ -1,7 +1,5 @@
-#include "cstringext.h"
 #include "hls-file.h"
 #include "hls-param.h"
-#include "sys/sync.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
@@ -40,7 +38,7 @@ int hls_file_close(struct hls_file_t* file)
     struct hls_block_t *block;
 	struct list_head *pos, *next;
 
-	if(0L == InterlockedDecrement(&file->refcnt))
+	if(0L == atomic_decrement32(&file->refcnt))
     {
         list_for_each_safe(pos, next, &file->head)
         {
@@ -82,12 +80,12 @@ void hls_file_save(const char* name, struct hls_file_t *file)
     FILE* fp;
 
     fp = fopen(name, "wb");
-    
+
     list_for_each(pos, &file->head)
     {
         block = list_entry(pos, struct hls_block_t, link);
         fwrite(block->ptr, 1, block->len, fp);
     }
-    
+
     fclose(fp);
 }

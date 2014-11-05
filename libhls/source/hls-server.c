@@ -44,6 +44,8 @@ static int hls_server_m3u8_parse(const char* path, char* name, size_t szname, ch
 
     //	n = 0;
     //	http_server_get_content(session, &content, &n);
+	server[0] = '\0';
+	key[0] = '\0';
     return 0;
 }
 
@@ -118,7 +120,7 @@ static int hls_server_live_parse(const char* path, char* name, size_t szname, ch
     assert(n < szname + szfile + 6);
 
     p = strrchr(path, '/');
-    if(n - (p - path) > szfile || p - path - 6 > szname || p - path < 7)
+    if(n - (p - path) > szfile || (size_t)(p - path) > szname || p - path < 7)
         return -1;
 
     strncpy(name, path + 6, p - path - 6);
@@ -158,6 +160,7 @@ static int hls_server_live(struct hls_server_t *ctx, void* session, const char* 
 	struct hls_file_t *tsfile;
 	struct hls_block_t *block;
 
+	ctx;
 	r = hls_server_live_parse(path, name, sizeof(name), file, sizeof(file));
     if(0 != r)
         return hls_server_reply(session, 404, "");
@@ -206,13 +209,14 @@ static int hls_server_live(struct hls_server_t *ctx, void* session, const char* 
 	return 0;
 }
 
-int hls_server_onhttp(void* param, void* session, const char* method, const char* path)
+static int hls_server_onhttp(void* param, void* session, const char* method, const char* path)
 {
 	size_t n;
 	char uri[256];
 	struct hls_server_t *ctx;
 	ctx = (struct hls_server_t *)param;
 
+	method;
 	// decode request uri
 	url_decode(path, -1, uri, sizeof(uri));
 
@@ -232,13 +236,13 @@ int hls_server_onhttp(void* param, void* session, const char* method, const char
 	return hls_server_reply(session, 404, "");
 }
 
-int hls_server_init(const char* ip, int port)
+int hls_server_init()
 {
     hls_live_init();
 	return http_server_init();
 }
 
-int hls_server_cleanup(void* hls)
+int hls_server_cleanup()
 {
     hls_live_cleanup();
 	return http_server_cleanup();

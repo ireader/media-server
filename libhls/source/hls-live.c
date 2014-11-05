@@ -88,7 +88,7 @@ int hls_live_init()
     return 0;
 }
 
-void hls_live_cleanup()
+int hls_live_cleanup()
 {
     struct hls_live_t *live;
     struct list_head *pos, *next;
@@ -100,6 +100,7 @@ void hls_live_cleanup()
     }
     
     locker_destroy(&s_locker);
+	return 0;
 }
 
 struct hls_live_t* hls_live_fetch(const char* name)
@@ -111,7 +112,7 @@ struct hls_live_t* hls_live_fetch(const char* name)
     locker_unlock(&s_locker);
     if(live)
     {
-        InterlockedIncrement(&live->refcnt);
+        atomic_increment32(&live->refcnt);
         return live;
     }
 
@@ -120,7 +121,7 @@ struct hls_live_t* hls_live_fetch(const char* name)
 
 int hls_live_release(struct hls_live_t* live)
 {
-	if(0 == InterlockedDecrement(&live->refcnt))
+	if(0 == atomic_decrement32(&live->refcnt))
 	{
 		hls_live_destroy(live);
 	}
@@ -172,7 +173,7 @@ struct hls_file_t* hls_live_file(struct hls_live_t* live, char* name)
 		if(file->seq == seq)
 		{
             locker_unlock(&live->locker);
-			InterlockedIncrement(&file->refcnt);
+			atomic_increment32(&file->refcnt);
 			return file;
 		}
 	}
