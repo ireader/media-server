@@ -72,7 +72,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 {
 	const char* p1;
 	const char* p = field;
-	size_t n;
+	size_t n, len;
 
 	memset(t, 0, sizeof(t));
 	t->multicast = 0; // default unicast
@@ -132,9 +132,10 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 		case 'D':
 			if(n >= 12 && 0 == strnicmp("destination=", p, 12))
 			{
-				assert(p1 - p < sizeof(t->destination)-1);
-				strncpy(t->destination, p+12, p1-p-12);
-				t->destination[p1-p-12] = '\0';
+				assert(p1 - p - 12 < sizeof(t->destination)-1);
+				len = MIN(p1-p-12, sizeof(t->destination)-1);
+				strncpy(t->destination, p+12, len);
+				t->destination[len] = '\0';
 			}
 			break;
 
@@ -142,9 +143,10 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 		case 'S':
 			if(n >= 7 && 0 == strnicmp("source=", p, 7))
 			{
-				assert(p1 - p < sizeof(t->source)-1);
-				strncpy(t->source, p+7, p1-p-7);
-				t->source[p1-p-7] = '\0';
+				assert(p1 - p - 7 < sizeof(t->source)-1);
+				len = MIN(p1-p-7, sizeof(t->source)-1);
+				strncpy(t->source, p+7, len);
+				t->source[len] = '\0';
 			}
 			else if(13 == n && 0 == strnicmp("ssrc=", p, 5))
 			{
@@ -243,5 +245,10 @@ void rtsp_header_transport_test()
 	assert(0 == rtsp_header_transport("RTP/AVP;multicast;ttl=127;mode=\"PLAY\"", &t)); // rfc2326 p61
 	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
 	assert(t.multicast==1 && 127==t.rtp.m.ttl && RTSP_TRANSPORT_PLAY==t.mode);
+
+	memset(&t, 0, sizeof(t));
+	assert(0 == rtsp_header_transport("RTP/AVP;unicast;source=192.168.111.333.444.555.666.777.888.999.000", &t)); // rfc2326 p61
+	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
+	assert(t.multicast==0 && 0==strncmp("192.168.111.333.444.555.666.777.888.999.000", t.source, sizeof(t.source)-1) && strlen(t.source)<sizeof(t.source));
 }
 #endif
