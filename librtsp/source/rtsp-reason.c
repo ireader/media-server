@@ -2,32 +2,27 @@
 
 const char* rtsp_reason_phrase(int code)
 {
+	static const char *reason45x[] = 
+	{
+		"Parameter Not Understood", // 451
+		"Conference Not Found", // 452
+		"Not Enough Bandwidth", // 453
+		"Session Not Found", // 454
+		"Method Not Valid in This State", // 455
+		"Header Field Not Valid for Resource", // 456
+		"Invalid Range", // 457
+		"Parameter Is Read-Only", // 458
+		"Aggregate Operation Not Allowed", // 459
+		"Only Aggregate Operation Allowed", // 460
+		"Unsupported Transport", // 461
+		"Destination Unreachable", // 462
+	};
+
+	if(451 <= code && code < 451+sizeof(reason45x)/sizeof(reason45x[0]))
+		return reason45x[code-451];
+
 	switch(code)
 	{
-	case 451:
-		return "Parameter Not Understood";
-	case 452:
-		return "Conference Not Found";
-	case 453:
-		return "Not Enough Bandwidth";
-	case 454:
-		return "Session Not Found";
-	case 455:
-		return "Method Not Valid in This State";
-	case 456:
-		return "Header Field Not Valid for Resource";
-	case 457:
-		return "Invalid Range";
-	case 458:
-		return "Parameter Is Read-Only";
-	case 459:
-		return "Aggregate Operation Not Allowed";
-	case 460:
-		return "Only Aggregate Operation Allowed";
-	case 461:
-		return "Unsupported Transport";
-	case 462:
-		return "Destination Unreachable";
 	case 505:
 		return "RTSP Version Not Supported";
 	case 551:
