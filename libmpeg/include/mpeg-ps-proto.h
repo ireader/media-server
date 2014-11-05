@@ -74,9 +74,9 @@ typedef struct _psd_t
 	} units[N_ACCESS_UNIT];
 } psd_t;
 
-size_t psm_read(const uint8_t* data, int bytes, psm_t *psm);
+size_t psm_read(const uint8_t* data, size_t bytes, psm_t *psm);
 size_t psm_write(const psm_t *psm, uint8_t *data);
 
-size_t psd_read(const uint8_t* data, int bytes, psd_t *psd);
+size_t psd_read(const uint8_t* data, size_t bytes, psd_t *psd);
 
 #endif /* !_mpeg_ps_proto_h_ */

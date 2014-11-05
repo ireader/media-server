@@ -65,11 +65,10 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 		if(adp->transport_private_data_flag)
 		{
-			uint32_t j = 0;
 			adp->transport_private_data_length = data[i++];
 			for(j = 0; j < adp->transport_private_data_length; j++)
 			{
-				uint8_t transport_private_data = data[i+j];
+//				uint8_t transport_private_data = data[i+j];
 			}
 
 			i += adp->transport_private_data_length;
@@ -87,21 +86,21 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 			i++;
 			if(adp->ltw_flag)
 			{
-				uint8_t ltw_valid_flag = (data[i] >> 7) & 0x01;
-				uint16_t ltw_offset = ((data[i] & 0x7F) << 8) | data[i+1];
+//				uint8_t ltw_valid_flag = (data[i] >> 7) & 0x01;
+//				uint16_t ltw_offset = ((data[i] & 0x7F) << 8) | data[i+1];
 				i += 2;
 			}
 
 			if(adp->piecewise_rate_flag)
 			{
-				uint32_t piecewise_rate = ((data[i] & 0x3F) << 16) | (data[i+1] << 8) | data[i+2];
+//				uint32_t piecewise_rate = ((data[i] & 0x3F) << 16) | (data[i+1] << 8) | data[i+2];
 				i += 3;
 			}
 
 			if(adp->seamless_splice_flag)
 			{
-				uint8_t Splice_type = (data[i] >> 4) & 0x0F;
-				uint32_t DTS_next_AU = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+//				uint8_t Splice_type = (data[i] >> 4) & 0x0F;
+//				uint32_t DTS_next_AU = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 
 				i += 5;
 			}
@@ -125,7 +124,7 @@ static char s_audio[1024*1024];
 
 int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 {
-	int i, j, k;
+	uint32_t i, j, k;
 	int64_t t;
 	ts_packet_header_t pkhd;
 	uint32_t PID;
@@ -191,7 +190,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
                             if(!tsctx.pes[k].payload)
                                 tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].avtype) ? s_video : s_audio;
 
-                            pes_read(NULL, data + i, bytes - i, &tsctx.pes[k]);
+                            pes_read(data + i, bytes - i, &tsctx.pes[k]);
 
                             if(0 == k)
                                 printf("pes payload: %u\n", tsctx.pes[k].len);
@@ -229,7 +228,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 
 static int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
 {
-	unsigned char *data;
+	const unsigned char *data;
 	ts_packet_header_t pkhd;
 	int payload_unit_start_indicator;
 

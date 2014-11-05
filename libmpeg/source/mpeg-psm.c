@@ -4,14 +4,15 @@
 
 #include "mpeg-ps-proto.h"
 #include "mpeg-pes-proto.h"
+#include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include "crc32.h"
 #include <assert.h>
+#include <memory.h>
 
 size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 {
-	int i, j, k, len;
-	uint32_t crc;
+	int i, j, k;
 	uint8_t current_next_indicator;
 	uint8_t single_extension_stream_flag;
 	uint16_t program_stream_map_length;
@@ -49,9 +50,9 @@ size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 		k = j + 4;
 		if(0xFD == psm->streams[psm->stream_count].pesid && 0 == single_extension_stream_flag)
 		{
-			uint8_t pseudo_descriptor_tag = data[k];
-			uint8_t pseudo_descriptor_length = data[k+1];
-			uint8_t element_stream_id_extension = data[k+2] & 0x7F;
+//			uint8_t pseudo_descriptor_tag = data[k];
+//			uint8_t pseudo_descriptor_length = data[k+1];
+//			uint8_t element_stream_id_extension = data[k+2] & 0x7F;
 			assert((0x80 & data[k+2]) == 0x80); // '1xxxxxxx'
 			k += 3;
 		}
@@ -119,9 +120,9 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 	}
 
 	// elementary_stream_map_length 16-bits
-	le_write_uint16(data+10, j-12+4);
+	le_write_uint16(data+10, (uint16_t)(j-12+4));
 	// program_stream_map_length:16
-	le_write_uint16(data+4, j-6+4); // 4-bytes crc32
+	le_write_uint16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
 	// crc32
 	crc = crc32(0xffffffff, data, j);

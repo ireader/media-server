@@ -60,9 +60,9 @@ static size_t ps_packet_header_write(const ps_packet_header_t *packethd, uint8_t
 
 	// program_mux_rate
 	// 'xxxxxxxx xxxxxxxx xxxxxx11'
-	data[10] = packethd->program_mux_rate >> 14;
-	data[11] = packethd->program_mux_rate >> 6;
-	data[12] = 0x03 | ((packethd->program_mux_rate & 0x3F) << 2);
+	data[10] = (uint8_t)(packethd->program_mux_rate >> 14);
+	data[11] = (uint8_t)(packethd->program_mux_rate >> 6);
+	data[12] = (uint8_t)(0x03 | ((packethd->program_mux_rate & 0x3F) << 2));
 
 	// stuffing length
 	// '00000xxx'
@@ -99,7 +99,7 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	i = 12;
 	for(j = 0; j < syshd->stream_count; j++)
 	{
-		data[i++] = syshd->streams[j].stream_id;
+		data[i++] = (uint8_t)syshd->streams[j].stream_id;
 		if(PES_SID_EXTENSION == syshd->streams[j].stream_id) // '10110111'
 		{
 			data[i++] = 0xD0; // '11000000'
@@ -114,13 +114,13 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	}
 
 	// header length
-	le_write_uint16(data + 4, i-6);
+	le_write_uint16(data + 4, (uint16_t)(i-6));
 	return i;
 }
 
 int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
 {
-	size_t i, j, n;
+	size_t i, n;
 	mpeg_ps_enc_context_t *psctx;
 
 	i = 0;
@@ -178,7 +178,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		}
 		else
 		{
-			le_write_uint16(pes + 4, (p - pes - 6) + bytes);
+			le_write_uint16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
 			n = bytes;
 		}
 
@@ -257,7 +257,7 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
 		if(psm->streams[psm->stream_count].esinfo)
 		{
 			memcpy(psm->streams[psm->stream_count].esinfo, info, bytes);
-			psm->streams[psm->stream_count].esinfo_len = bytes;
+			psm->streams[psm->stream_count].esinfo_len = (uint16_t)bytes;
 		}
 	}
 
@@ -270,7 +270,7 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
 	case PSI_STREAM_VIDEO_VC1:
 	case PSI_STREAM_VIDEO_DIRAC:
 	case PSI_STREAM_VIDEO_SVAC:
-		psm->streams[psm->stream_count].pesid = PES_SID_VIDEO + psctx->syshd.video_bound;
+		psm->streams[psm->stream_count].pesid = (uint8_t)(PES_SID_VIDEO + psctx->syshd.video_bound);
 
 		assert(psctx->syshd.video_bound + 1 < 16);
 		++psctx->syshd.video_bound; // [0,16] max active video streams
@@ -285,7 +285,7 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
 	case PSI_STREAM_AUDIO_AC3:
 	case PSI_STREAM_AUDIO_DTS:
 	case PSI_STREAM_AUDIO_SVAC:
-		psm->streams[psm->stream_count].pesid = PES_SID_AUDIO + psctx->syshd.audio_bound;
+		psm->streams[psm->stream_count].pesid = (uint8_t)(PES_SID_AUDIO + psctx->syshd.audio_bound);
 
 		assert(psctx->syshd.audio_bound + 1 < 32);
 		++psctx->syshd.audio_bound; // [0,32] max active audio streams
@@ -301,7 +301,7 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
 	psctx->syshd.streams[psctx->syshd.stream_count].stream_id = psm->streams[psm->stream_count].pesid;
 	++psctx->syshd.stream_count;
 
-	psm->streams[psm->stream_count].avtype = avtype;
+	psm->streams[psm->stream_count].avtype = (uint8_t)avtype;
 	++psm->stream_count;
 	++psm->ver;
 

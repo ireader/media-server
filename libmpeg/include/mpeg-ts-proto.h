@@ -157,9 +157,9 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_AUDIO_SVAC		= 0x90, // GBT 25724-2010 SVAC
 };
 
-int pat_read(const uint8_t* data, int bytes, pat_t *pat);
+size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat);
 uint32_t pat_write(const pat_t *pat, uint8_t *data);
-int pmt_read(const uint8_t* data, int bytes, pmt_t *pmt);
+size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt);
 uint32_t pmt_write(const pmt_t *pmt, uint8_t *data);
 
 #endif /* !_mpeg_ts_proto_h_ */

@@ -11,21 +11,21 @@ size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)
 {
 	// Table 2-30 ¨C Program association section(p61)
 
-	int i = 0;
-	int j = 0;
-	uint32_t crc = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
+//	uint32_t crc = 0;
 
 	uint32_t table_id = data[0];
 	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
-	uint32_t zero = (data[1] >> 6) & 0x01;
-	uint32_t reserved = (data[1] >> 4) & 0x03;
+//	uint32_t zero = (data[1] >> 6) & 0x01;
+//	uint32_t reserved = (data[1] >> 4) & 0x03;
 	uint32_t section_length = ((data[1] & 0x0F) << 8) | data[2];
 	uint32_t transport_stream_id = (data[3] << 8) | data[4];
-	uint32_t reserved2 = (data[5] >> 6) & 0x03;
+//	uint32_t reserved2 = (data[5] >> 6) & 0x03;
 	uint32_t version_number = (data[5] >> 1) & 0x1F;
-	uint32_t current_next_indicator = data[5] & 0x01;
-	uint32_t sector_number = data[6];
-	uint32_t last_sector_number = data[7];
+//	uint32_t current_next_indicator = data[5] & 0x01;
+//	uint32_t sector_number = data[6];
+//	uint32_t last_sector_number = data[7];
 
 //	printf("PAT: %0x %0x %0x %0x %0x %0x %0x %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6], (unsigned int)data[7]);
 
@@ -70,10 +70,10 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 	// section_syntax_indicator = '1'
 	// '0'
 	// reserved '11'
-	le_write_uint16(data + 1, 0xb000 | len);
+	le_write_uint16(data + 1, (uint16_t)(0xb000 | len));
 
 	// transport_stream_id
-	le_write_uint16(data + 3, pat->tsid);
+	le_write_uint16(data + 3, (uint16_t)pat->tsid);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -86,8 +86,8 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 
 	for(i = 0; i < pat->pmt_count; i++)
 	{
-		le_write_uint16(data + 8 + i * 4 + 0, pat->pmt[i].pn);
-		le_write_uint16(data + 8 + i * 4 + 2, 0xE000 | pat->pmt[i].pid);
+		le_write_uint16(data + 8 + i * 4 + 0, (uint16_t)pat->pmt[i].pn);
+		le_write_uint16(data + 8 + i * 4 + 2, (uint16_t)(0xE000 | pat->pmt[i].pid));
 	}
 
 	// crc32

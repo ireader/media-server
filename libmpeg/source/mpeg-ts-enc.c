@@ -78,7 +78,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 
 	size_t len = 0;
 	int start = 1; // first packet
-    int keyframe = 0; // video IDR-frame
+//    int keyframe = 0; // video IDR-frame
 	uint8_t *p = NULL;
 	uint8_t *pes = NULL;
 	uint8_t data[TS_PACKET_SIZE];
@@ -157,7 +157,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 			if((p - pes - 6) + bytes > 0xFFFF)
 				le_write_uint16(pes + 4, 0); // 2.4.3.7 PES packet => PES_packet_length
 			else
-				le_write_uint16(pes + 4, (p - pes - 6) + bytes);
+				le_write_uint16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
 		}
 
 		len = p - data; // TS + PES header length
@@ -266,34 +266,34 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
 
     tsctx->pat.tsid = 1;
     tsctx->pat.ver = 0;
-    tsctx->pat.cc = -1; // +1 => 0
+    tsctx->pat.cc = (uint32_t)-1; // +1 => 0
 
     tsctx->pat.pmt_count = 1; // only one program in ts
-    tsctx->pat.pmt = tsctx + 1;
+    tsctx->pat.pmt = (pmt_t*)(tsctx + 1);
     tsctx->pat.pmt[0].pid = 0x100;
     tsctx->pat.pmt[0].pn = 1;
     tsctx->pat.pmt[0].ver = 0x00;
-    tsctx->pat.pmt[0].cc = -1; // +1 => 0
+    tsctx->pat.pmt[0].cc = (uint32_t)-1; // +1 => 0
     tsctx->pat.pmt[0].pminfo_len = 0;
     tsctx->pat.pmt[0].pminfo = NULL;
     tsctx->pat.pmt[0].PCR_PID = 0x101; // 0x1FFF-don't set PCR
 
     tsctx->pat.pmt[0].stream_count = 2; // H.264 + AAC
-    tsctx->pat.pmt[0].streams = tsctx->pat.pmt + 1;
+    tsctx->pat.pmt[0].streams = (pes_t*)(tsctx->pat.pmt + 1);
     tsctx->pat.pmt[0].streams[0].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[0].pid = 0x101;
     tsctx->pat.pmt[0].streams[0].sid = PES_SID_VIDEO;
 	tsctx->pat.pmt[0].streams[0].avtype = PSI_STREAM_H264;
     tsctx->pat.pmt[0].streams[0].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[0].esinfo = NULL;
-    tsctx->pat.pmt[0].streams[0].cc = -1; // +1 => 0
+    tsctx->pat.pmt[0].streams[0].cc = (uint8_t)(-1); // +1 => 0
     tsctx->pat.pmt[0].streams[1].pmt = &tsctx->pat.pmt[0];
     tsctx->pat.pmt[0].streams[1].pid = 0x102;
     tsctx->pat.pmt[0].streams[1].sid = PES_SID_AUDIO;
 	tsctx->pat.pmt[0].streams[1].avtype = PSI_STREAM_AAC;
     tsctx->pat.pmt[0].streams[1].esinfo_len = 0x00;
     tsctx->pat.pmt[0].streams[1].esinfo = NULL;
-    tsctx->pat.pmt[0].streams[1].cc = -1; // +1 => 0
+    tsctx->pat.pmt[0].streams[1].cc = (uint8_t)(-1); // +1 => 0
 
 	tsctx->write = func;
 	tsctx->param = param;
@@ -341,8 +341,8 @@ int mpeg_ts_add_stream(void* ts, int avtype)
 	}
 
 	pmt = &tsctx->pat.pmt[0];
-	pmt->streams[pmt->stream_count].avtype = avtype;
-	pmt->streams[pmt->stream_count].pid = TS_PID_USER + pmt->stream_count;
+	pmt->streams[pmt->stream_count].avtype = (uint8_t)avtype;
+	pmt->streams[pmt->stream_count].pid = (uint16_t)(TS_PID_USER + pmt->stream_count);
 	pmt->streams[pmt->stream_count].esinfo_len = 0;
 	pmt->streams[pmt->stream_count].esinfo = NULL;
 

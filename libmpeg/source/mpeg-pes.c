@@ -156,7 +156,7 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	data[0] = 0x00;
 	data[1] = 0x00;
 	data[2] = 0x01;
-	data[3] = streamId;
+	data[3] = (uint8_t)streamId;
 
 	// skip PES_packet_length
 	//data[4] = 0x00;

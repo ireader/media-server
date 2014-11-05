@@ -11,24 +11,24 @@
 size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 {
 	int i = 0;
-	int j = 0;
-	int k = 0;
-	int n = 0;
+	uint32_t j = 0;
+	uint32_t k = 0;
+	uint32_t n = 0;
 
 	uint32_t table_id = data[0];
 	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
-	uint32_t zero = (data[1] >> 6) & 0x01;
-	uint32_t reserved = (data[1] >> 4) & 0x03;
+//	uint32_t zero = (data[1] >> 6) & 0x01;
+//	uint32_t reserved = (data[1] >> 4) & 0x03;
 	uint32_t section_length = ((data[1] & 0x0F) << 8) | data[2];
 	uint32_t program_number = (data[3] << 8) | data[4];
-	uint32_t reserved2 = (data[5] >> 6) & 0x03;
+//	uint32_t reserved2 = (data[5] >> 6) & 0x03;
 	uint32_t version_number = (data[5] >> 1) & 0x1F;
-	uint32_t current_next_indicator = data[5] & 0x01;
+//	uint32_t current_next_indicator = data[5] & 0x01;
 	uint32_t sector_number = data[6];
 	uint32_t last_sector_number = data[7];
-	uint32_t reserved3 = (data[8] >> 6) & 0x03;
+//	uint32_t reserved3 = (data[8] >> 6) & 0x03;
 	uint32_t PCR_PID = ((data[8] & 0x1F) << 8) | data[9];
-	uint32_t reserved4 = (data[10] >> 4) & 0x0F;
+//	uint32_t reserved4 = (data[10] >> 4) & 0x0F;
 	uint32_t program_info_length = ((data[10] & 0x0F) << 8) | data[11];
 
 //	printf("PMT: %0x %0x %0x %0x %0x %0x %0x %0x, %0x, %0x, %0x, %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6],(unsigned int)data[7],(unsigned int)data[8],(unsigned int)data[9],(unsigned int)data[10],(unsigned int)data[11]);
@@ -68,7 +68,7 @@ size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 	i += j;
 	//assert(i+4 == bytes);
 	//crc = (data[i] << 24) | (data[i+1] << 16) | (data[i+2] << 8) | data[i+3];
-	assert(0 == crc32(-1, data, section_length+3));
+	assert(0 == crc32((unsigned int)(-1), data, section_length+3));
 	return 0;
 }
 
@@ -87,7 +87,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// skip section_length
 
 	// program_number
-	le_write_uint16(data + 3, pmt->pn);
+	le_write_uint16(data + 3, (uint16_t)pmt->pn);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -100,11 +100,11 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 
 	// reserved '111'
 	// PCR_PID 15-bits 0x1FFF
-	le_write_uint16(data + 8, 0xE000 | pmt->PCR_PID);
+	le_write_uint16(data + 8, (uint16_t)(0xE000 | pmt->PCR_PID));
 
 	// reserved '1111'
 	// program_info_lengt 12-bits
-	le_write_uint16(data + 10, 0xF000 | pmt->pminfo_len);
+	le_write_uint16(data + 10, (uint16_t)(0xF000 | pmt->pminfo_len));
 	if(pmt->pminfo_len > 0)
 	{
 		// fill program info
@@ -144,7 +144,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// section_syntax_indicator '1'
 	// '0'
 	// reserved '11'
-	le_write_uint16(data + 1, 0xb000 | len); 
+	le_write_uint16(data + 1, (uint16_t)(0xb000 | len)); 
 
 	// crc32
 	crc = crc32(0xffffffff, data, p-data);
