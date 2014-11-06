@@ -35,8 +35,8 @@ typedef struct _rtcp_header_t
 typedef struct _rtcp_sr_t // sender report
 {
 	uint32_t ssrc;
-	uint32_t ntpmsw; // ntp timestamp MSW
-	uint32_t ntplsw; // ntp timestamp LSW
+	uint32_t ntpmsw; // ntp timestamp MSW(in second)
+	uint32_t ntplsw; // ntp timestamp LSW(in picosecond)
 	uint32_t rtpts;	 // rtp timestamp
 	uint32_t spc;	 // sender packet count
 	uint32_t soc;	 // sender octet count
@@ -62,15 +62,8 @@ typedef struct _rtcp_sdes_item_t // source description RTCP packet
 {
 	unsigned char pt; // chunk type
 	unsigned char len;
-	char data[1];
+	unsigned char *data;
 } rtcp_sdes_item_t;
-
-typedef struct _rtcp_app_t // application-defined
-{
-	uint32_t ssrc;
-	char name[4];
-	char value[1];
-} rtcp_app_t;
 
 #define RTCP_V(v)	((v >> 30) & 0x03) // rtcp version
 #define RTCP_P(v)	((v >> 29) & 0x01) // rtcp padding

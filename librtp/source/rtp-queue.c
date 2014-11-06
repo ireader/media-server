@@ -1,10 +1,9 @@
 #include "rtp-avp-udp.h"
 #include "cstringext.h"
-#include "sys/sock.h" // ntohl
 #include "sys/locker.h"
-//#include "rtp-queue.h"
-#include "time64.h"
-#include "rtp.h"
+#include "rtp-internal.h"
+#include "rtp-util.h"
+#include "rtp-queue.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
@@ -216,7 +215,7 @@ int rtp_queue_unlock(void* queue, void* ptr, int size)
 	frame = (struct rtp_frame *)ptr - 1;
 	assert(frame->ptr == (unsigned char *)ptr);
 
-	v = ntohl(((const unsigned int *)ptr)[0]);
+	v = be_read_uint32((unsigned char *)ptr);
 	frame->seq = RTP_SEQ(v);
 //	frame->timestamp = ntohl(((const unsigned int *)ptr)[1]);
 //	frame->ssrc = ntohl(((const unsigned int *)ptr)[2]);

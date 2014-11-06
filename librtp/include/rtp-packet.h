@@ -1,7 +1,9 @@
 #ifndef _rtp_packet_h_
 #define _rtp_packet_h_
 
-#include "rtp.h"
+#include "rtp-header.h"
+#include "rtcp-header.h"
+#include "rtp-util.h"
 
 typedef struct _rtp_packet_t
 {
@@ -13,20 +15,21 @@ typedef struct _rtp_packet_t
 	size_t payloadlen; // payload length in bytes
 } rtp_packet_t;
 
-inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
+inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
 {
 	uint32_t i, v;
 	size_t hdrlen;
-	const unsigned int *ptr;
+	const unsigned char *ptr;
 
-	ptr = (const unsigned int *)data;
+	assert(12 == sizeof(rtp_header_t));
+	ptr = (const unsigned char *)data;
 	if(bytes < sizeof(rtp_header_t))
 		return -1;
 
 	memset(pkt, 0, sizeof(rtp_packet_t));
 
 	// pkt header
-	v = ntohl(ptr[0]);
+	v = be_read_uint32(ptr);
 	pkt->rtp.v = RTP_V(v);
 	pkt->rtp.p = RTP_P(v);
 	pkt->rtp.x = RTP_X(v);
@@ -34,9 +37,10 @@ inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
 	pkt->rtp.m = RTP_M(v);
 	pkt->rtp.pt = RTP_PT(v);
 	pkt->rtp.seq = RTP_SEQ(v);
-	pkt->rtp.timestamp = ntohl(ptr[1]);
-	pkt->rtp.ssrc = ntohl(ptr[2]);
+	pkt->rtp.timestamp = be_read_uint32(ptr+4);
+	pkt->rtp.ssrc = be_read_uint32(ptr+8);
 
+	assert(2 == pkt->rtp.v); // RTP version field must equal 2 (p66)
 	hdrlen = sizeof(rtp_header_t) + pkt->rtp.cc * 4;
 	if(bytes < hdrlen + (pkt->rtp.x?4:0) + (pkt->rtp.p?1:0))
 		return -1;
@@ -44,7 +48,7 @@ inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
 	// pkt contributing source
 	for(i = 0; i < pkt->rtp.cc; i++)
 	{
-		pkt->csrc[i] = ntohl(ptr[3+i]);
+		pkt->csrc[i] = be_read_uint32(ptr + 12 + i*4);
 	}
 
 	assert(bytes > hdrlen);
@@ -54,10 +58,9 @@ inline int rtp_deserialize(rtp_packet_t *pkt, const void* data, size_t bytes)
 	// pkt header extension
 	if(1 == pkt->rtp.x)
 	{
-		unsigned char *rtpext = (unsigned char*)data + hdrlen + 4;
-		unsigned short extlen = ((unsigned short*)rtpext)[1];
-		pkt->extension = rtpext;
-		pkt->extlen = ntohs(extlen) * 4;
+		unsigned char *rtpext = (unsigned char*)data + hdrlen;
+		pkt->extension = rtpext + 4;
+		pkt->extlen = be_read_uint16(rtpext+2) * 4;
 		assert(pkt->payloadlen >= pkt->extlen + 4);
 		pkt->payload = (unsigned char*)pkt->payload + pkt->extlen + 4;
 		pkt->payloadlen -= pkt->extlen + 4;

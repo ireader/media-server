@@ -1,6 +1,7 @@
 #include "cstringext.h"
 #include "rtp-socket.h"
 #include "udpsocket.h"
+#include "ctypedef.h"
 #include "sys/atomic.h"
 #include <assert.h>
 #include <time.h>
@@ -38,7 +39,7 @@ static void system_list_port()
 }
 #endif
 
-int rtp_socket_create(const char* ip, socket_t *rtp, socket_t *rtcp, unsigned short *port)
+int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
 {
 	unsigned short i;
 	socket_t sock[2];
@@ -61,9 +62,10 @@ int rtp_socket_create(const char* ip, socket_t *rtp, socket_t *rtcp, unsigned sh
 			continue;
 		}
 
-		*rtp = sock[0];
-		*rtcp = sock[1];
-		*port = i;
+		rtp[0] = sock[0];
+		rtp[1] = sock[1];
+		port[0] = i;
+		port[1] = i+1;
 		return 0;
 
 	} while(socket_invalid!=sock[0] && socket_invalid!=sock[1]);

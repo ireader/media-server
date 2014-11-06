@@ -163,7 +163,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\source\h264-source.c"
+				RelativePath=".\source\rtcp-app.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtcp-bye.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtcp-interval.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtcp-rr.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtcp-sdec.c"
+				>
+			</File>
+			<File
+				RelativePath=".\source\rtcp-sr.c"
 				>
 			</File>
 			<File
@@ -171,11 +191,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp-avp-udp-receiver.c"
+				RelativePath=".\source\rtp-member-list.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp-avp-unicast-sender.c"
+				RelativePath=".\source\rtp-member.c"
 				>
 			</File>
 			<File
@@ -183,19 +203,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp-socket.c"
+				RelativePath=".\source\rtp-ssrc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp-source-list.c"
+				RelativePath=".\source\rtp-time.c"
 				>
 			</File>
 			<File
-				RelativePath=".\source\rtp-source.c"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtp-udp.c"
+				RelativePath=".\source\rtp.c"
 				>
 			</File>
 		</Filter>
@@ -205,13 +221,59 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\h264-source.h"
+				RelativePath=".\include\rtcp-header.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\rtcp.h"
+				RelativePath=".\include\rtp-header.h"
 				>
 			</File>
+			<File
+				RelativePath=".\include\rtp-internal.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-member-list.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-member.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-packet.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-param.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-profile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-queue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-util.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
+		</Filter>
+		<Filter
+			Name="transport"
+			>
 			<File
 				RelativePath=".\include\rtp-avp-udp-receiver.h"
 				>
@@ -225,15 +287,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\rtp-packet.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-profile.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-queue.h"
+				RelativePath=".\source\rtp-socket.c"
 				>
 			</File>
 			<File
@@ -241,27 +295,29 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\rtp-source-list.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-source.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\rtp-transport.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp.h"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			Name="payload"
 			>
+			<File
+				RelativePath=".\payload\rtp-h264-pack.c"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-h264-pack.h"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-h264-unpack.c"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-h264-unpack.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
