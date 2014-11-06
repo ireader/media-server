@@ -3,12 +3,8 @@
 #include "ctypedef.h"
 #include "rtsp-server.h"
 #include "cstringext.h"
-#include "sys/sock.h"
-#include "sys/system.h"
-#include "sys/process.h"
-#include "thread-pool.h"
 #include "tcpserver.h"
-#include "time64.h"
+#include "udpsocket.h"
 #include "error.h"
 #include "rfc822-datetime.h"
 #include "rtsp-server-internal.h"
@@ -16,7 +12,6 @@
 #include "rtsp-header-range.h"
 #include "rtsp-header-session.h"
 #include "rtsp-parser.h"
-#include "udpsocket.h"
 #include "rtsp-reason.h"
 
 #define MAX_UDP_PACKAGE 1024
@@ -38,16 +33,18 @@ struct rtsp_server_request_t
 	struct rtsp_transport_t *transport;
 	void* session;
 	void* parser;
+	char ip[40]; // IPv4/IPv6
+	unsigned short port;
 	unsigned int cseq;
 	char reply[MAX_UDP_PACKAGE];
 };
 
-static int rtsp_header_transport_ex(const char* value, struct rtsp_header_transport_t* transport[], size_t *num)
+static int rtsp_header_transport_ex(const char* value, struct rtsp_header_transport_t *transport, size_t *num)
 {
 	size_t i;
 	const char* p = value;
 
-	for(i = 0; i < num && p; i++)
+	for(i = 0; i < *num && p; i++)
 	{
 		if(0 != rtsp_header_transport(p, &transport[i]))
 			return -1;
@@ -79,6 +76,8 @@ static void rtsp_server_options(struct rtsp_server_request_t* req, void *parser,
 {
 	static const char* methods = "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE";
 
+	UNUSED(uri);
+	UNUSED(parser);
 //	assert(0 == strcmp("*", uri));
 	snprintf(req->reply, sizeof(req->reply), 
 		"RTSP/1.0 200 OK\r\n"
@@ -122,11 +121,12 @@ static void rtsp_server_describe(struct rtsp_server_request_t *req, void *parser
 	//	"Content-Length: %d\r\n"
 	//	"\r\n", 
 	//	seq, date, sdplen);
+	UNUSED(parser);
 }
 
 static void rtsp_server_setup(struct rtsp_server_request_t *req, void *parser, const char* uri)
 {
-	int n;
+	size_t n;
 	const char *psession, *ptransport;
 	struct rtsp_header_session_t session;
 	struct rtsp_header_transport_t transport[16];
@@ -147,11 +147,11 @@ static void rtsp_server_setup(struct rtsp_server_request_t *req, void *parser, c
 	assert(n > 0);
 	if(psession && 0 == rtsp_header_session(psession, &session))
 	{
-		ctx->handler.setup(ctx->ptr, req, uri, session.session, &transport, n);
+		ctx->handler.setup(ctx->ptr, req, uri, session.session, transport, n);
 	}
 	else
 	{
-		ctx->handler.setup(ctx->ptr, req, uri, NULL, &transport, n);
+		ctx->handler.setup(ctx->ptr, req, uri, NULL, transport, n);
 	}
 }
 
@@ -230,18 +230,19 @@ static void rtsp_server_pause(struct rtsp_server_request_t *req, void* parser, c
 	if(prange && 0 == rtsp_header_range(prange, &range))
 	{
 		npt = range.from;
+		// 10.6 The normal play time for the stream is set to the pause point. (p36)
 		assert(range.type == RTSP_RANGE_NPT); // 3.6 Normal Play Time (p17)
 		assert(range.to_value == RTSP_RANGE_TIME_NOVALUE);
 
 		// 457 Invalid Range
-		rtsp_server_reply(req, 457);
-		return;
+		//rtsp_server_reply(req, 457);
+		//return;
 	}
 
 	ctx->handler.pause(ctx->ptr, req, uri, session.session, -1L==npt?NULL:&npt);
 }
 
-static void rtsp_server_onrecv(struct rtsp_server_request_t *req, const char* ip, int port, void* parser)
+static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 {
 	int major, minor;
 	const char* uri;
@@ -333,7 +334,7 @@ static struct rtsp_server_request_t* rtsp_server_session_create(struct rtsp_serv
 	return req;
 }
 
-static void rtsp_server_ontcprecv(void* ptr, void* session, const char* ip, int port, void* parser, void** user)
+static void rtsp_server_onrecv(void* ptr, void* session, const char* ip, int port, void* parser, void** user)
 {
 	struct rtsp_server_context_t *ctx;
 	struct rtsp_server_request_t *req;
@@ -343,42 +344,18 @@ static void rtsp_server_ontcprecv(void* ptr, void* session, const char* ip, int 
 	req->session = session;
 	req->transport = ctx->tcptransport;
 	req->cseq = (unsigned int)-1;
+	strncpy(req->ip, ip, sizeof(req->ip)-1);
+	req->port = (unsigned short)port;
 
 	*user = req;
-	rtsp_server_onrecv(req, ip, port, parser);
+	rtsp_server_handle(req, parser);
 }
 
-static void rtsp_server_onudprecv(void* ptr, void* session, const char* ip, int port, void* parser, void** user)
-{
-	struct rtsp_server_context_t *ctx;
-	struct rtsp_server_request_t *req;
-	ctx = (struct rtsp_server_context_t*)ptr;
-
-	req = rtsp_server_session_create(ctx);
-	req->session = session;
-	req->transport = ctx->udptransport;
-
-	*user = req;
-	rtsp_server_onrecv(req, ip, port, parser);
-}
-
-static void rtsp_server_onsend(struct rtsp_server_request_t *req, int code, size_t bytes)
-{
-	struct rtsp_server_context_t *ctx = req->server;
-}
-
-static void rtsp_server_ontcpsend(void *ptr, void* user, int code, size_t bytes)
+static void rtsp_server_onsend(void *ptr, void* user, int code, size_t bytes)
 {
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)user;
-	rtsp_server_onsend(req, code, bytes);
-}
-
-static void rtsp_server_onudpsend(void *ptr, void* user, int code, size_t bytes)
-{
-	struct rtsp_server_request_t *req;
-	req = (struct rtsp_server_request_t *)user;
-	rtsp_server_onsend(req, code, bytes);
+	ptr,code,bytes;
 }
 
 void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
@@ -436,8 +413,8 @@ void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const ch
 
 void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
 {
-	char range[64];
-	char rtpinfo[256];
+	char range[64] = {0};
+	char rtpinfo[256] = {0};
 	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
@@ -448,7 +425,7 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 		return;
 	}
 
-	if(rtpinfo)
+	if(rtp)
 	{
 		snprintf(rtpinfo, sizeof(rtpinfo), "RTP-Info: %s\r\n", rtp);
 	}
@@ -456,9 +433,9 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 	if(nptstart)
 	{
 		if(nptend)
-			snprintf(range, sizeof(range), "Range: %f-%f\r\n", (float)(*nptstart/1000.0f), (float)(*nptend/1000.0f));
+			snprintf(range, sizeof(range), "Range: %.3f-%.3f\r\n", (float)(*nptstart/1000.0f), (float)(*nptend/1000.0f));
 		else
-			snprintf(range, sizeof(range), "Range: %f-\r\n", (float)(*nptstart/1000.0f));
+			snprintf(range, sizeof(range), "Range: %.3f-\r\n", (float)(*nptstart/1000.0f));
 	}
 
 	datetime_format(time(NULL), datetime);
@@ -496,6 +473,15 @@ const char* rtsp_server_find_header(void* rtsp, const char* name)
 	return rtsp_get_header_by_name(req->parser, name);
 }
 
+int rtsp_server_get_client(void* rtsp, char ip[40], unsigned short *port)
+{
+	struct rtsp_server_request_t *req;
+	req = (struct rtsp_server_request_t *)rtsp;
+	strcpy(ip, req->ip);
+	*port = req->port;
+	return 0;
+}
+
 int rtsp_server_init()
 {
     return 0;
@@ -513,10 +499,10 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	struct rtsp_transport_handler_t tcphandler;
 	struct rtsp_transport_handler_t udphandler;
 
-	tcphandler.onrecv = rtsp_server_ontcprecv;
-	tcphandler.onsend = rtsp_server_ontcpsend;
-	udphandler.onrecv = rtsp_server_onudprecv;
-	udphandler.onsend = rtsp_server_onudpsend;
+	tcphandler.onrecv = rtsp_server_onrecv;
+	tcphandler.onsend = rtsp_server_onsend;
+	udphandler.onrecv = rtsp_server_onrecv;
+	udphandler.onsend = rtsp_server_onsend;
 
 	ctx = (struct rtsp_server_context_t *)malloc(sizeof(struct rtsp_server_context_t));
 	memset(ctx, 0, sizeof(struct rtsp_server_context_t));
@@ -574,5 +560,6 @@ int rtsp_server_destroy(void* server)
 
 int rtsp_server_report(void* server)
 {
+	UNUSED(server);
 	return 0;
 }

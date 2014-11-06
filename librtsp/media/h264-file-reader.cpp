@@ -1,5 +1,6 @@
 #include "h264-file-reader.h"
 #include <assert.h>
+#include <algorithm>
 
 #define H264_NAL(v)	(v & 0x1F)
 
@@ -18,6 +19,9 @@ H264FileReader::H264FileReader(const char* file)
         if(m_bytes > 0)
             Init();
     }
+
+	fseek(m_fp, 0, SEEK_SET);
+	m_vit = m_videos.begin();
 }
 
 H264FileReader::~H264FileReader()
@@ -38,6 +42,45 @@ H264FileReader::~H264FileReader()
 bool H264FileReader::IsOpened() const
 {
 	return !!m_fp;
+}
+
+int H264FileReader::GetNextFrame(void* &ptr, size_t &bytes)
+{
+	if(m_vit == m_videos.end())
+		return -1; // file end
+
+	size_t n = fread(m_ptr, 1, m_vit->bytes, m_fp);
+	assert(n == m_vit->bytes);
+
+	ptr = m_ptr;
+	bytes = m_vit->bytes;
+
+	++m_vit;
+	return 0;
+}
+
+int H264FileReader::Seek(int64_t &pos)
+{
+	vframe_t frame;
+	frame.time = pos;
+
+	vframes_t::iterator it;
+	it = std::lower_bound(m_videos.begin(), m_videos.end(), frame);
+	if(it == m_videos.end())
+		return -1;
+
+	while(it != m_videos.begin())
+	{
+		if(it->idr)
+		{
+			fseek(m_fp, it->offset, SEEK_SET);
+			pos = it->time;
+			m_vit = it;
+			return 0;
+		}
+		--it;
+	}
+	return 0;
 }
 
 inline const unsigned char* search_start_code(const unsigned char* ptr, size_t bytes)
@@ -103,12 +146,15 @@ const unsigned char* H264FileReader::ReadNextFrame()
     return p;
 }
 
+#define toOffset(ptr) (n - (m_bytes - (ptr - m_ptr)))
+
 int H264FileReader::Init()
 {
 	//assert(IsOpened());
 	//assert(0 == ftell(m_fp));
     assert(m_ptr == search_start_code(m_ptr, m_bytes));
 
+	long offset = 0;
     size_t count = 0;
     bool spspps = true;
     const unsigned char* nalu = m_ptr;
@@ -124,15 +170,15 @@ int H264FileReader::Init()
         {
             if(m_sps.size() > 0) spspps = false; // don't need more sps/pps
 
-            // IDR-frame
-            if(5 == nal_unit_type)
-            {
-                long n = ftell(m_fp);
-                long pos = n - (m_bytes - (nalu - m_ptr));
-                m_videos.push_back(std::make_pair(40*count, pos));
-            }
-            
-            ++count;
+			long n = ftell(m_fp);
+
+			vframe_t frame;
+			frame.offset = offset;
+			frame.bytes = (nalu2 ? toOffset(nalu2) : n) - offset;
+			frame.time = 40 * count++;
+			frame.idr = 5 == nal_unit_type; // IDR-frame
+			m_videos.push_back(frame);
+			offset += frame.bytes;
         }
         else if(NAL_SPS == nal_unit_type || NAL_PPS == nal_unit_type)
         {
@@ -153,7 +199,7 @@ int H264FileReader::Init()
         nalu = nalu2;
         m_offset = nalu - m_ptr;
     } while(nalu);
-    
+
     m_duration = 40 * count;
     return 0;
 }

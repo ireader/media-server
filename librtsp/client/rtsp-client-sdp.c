@@ -173,7 +173,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 						struct sdp_a_fmtp_h264_t h264;
 						memset(&h264, 0, sizeof(h264));
 						sdp_a_fmtp_h264(value, &payload, &h264);
-						if(h264.flags & (1<<SDP_A_FMTP_H264_SPROP_PARAMETER_SETS))
+						if(h264.flags & SDP_A_FMTP_H264_SPROP_PARAMETER_SETS)
 						{
 							strncpy(media->avformats[i].spspps, h264.sprop_parameter_sets, sizeof(media->avformats[i].spspps));
 						}

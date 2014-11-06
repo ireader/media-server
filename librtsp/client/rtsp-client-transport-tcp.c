@@ -71,7 +71,7 @@ static int rtsp_client_connect(const char* ip, int port, socket_t* socket)
 	if(socket_invalid == *socket)
 	{
 		*socket = socket_tcp();
-		r = socket_connect_ipv4_by_time(*socket, ip, port, 5000);
+		r = socket_connect_ipv4_by_time(*socket, ip, (u_short)port, 5000);
 		if(0 != r)
 		{
 			socket_close(*socket);

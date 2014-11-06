@@ -23,7 +23,7 @@ struct rtsp_handler_t
 	/// @param[in] uri request uri
 	/// @param[in] transport RTSP Transport header
 	/// Required: MUST call rtsp_server_reply_setup once
-	void (*setup)(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t* transports[], size_t num);
+	void (*setup)(void* ptr, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num);
 
 	/// RTSP PLAY request
 	/// @param[in] ptr user-defined parameter
@@ -106,6 +106,8 @@ void rtsp_server_reply_teardown(void* rtsp, int code);
 /// @return header value, NULL if not found.
 /// Required: call in rtsp_handler_t callback only
 const char* rtsp_server_find_header(void* rtsp, const char* name);
+
+int rtsp_server_get_client(void* rtsp, char ip[40], unsigned short *port);
 
 #if defined(__cplusplus)
 }

@@ -17,13 +17,16 @@ struct rtsp_client_test_t
 	unsigned short port;
 };
 
-static int rtpport(void* transport, unsigned short *rtp)
+static int rtpport(void* UNUSED(transport), unsigned short *rtp)
 {
 	socket_t sock[2];
-	return rtp_socket_create(NULL, &sock[0], &sock[1], rtp);
+	unsigned short port[2];
+	rtp_socket_create(NULL, sock, port);
+	*rtp = port[2];
+	return 0;
 }
 
-int onopen(void* ptr, int code, const struct rtsp_transport_t* transport, int count)
+int onopen(void* ptr, int UNUSED(code), const struct rtsp_transport_t* UNUSED(transport), int UNUSED(count))
 {
 	int64_t npt = 0;
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)ptr;
@@ -31,17 +34,17 @@ int onopen(void* ptr, int code, const struct rtsp_transport_t* transport, int co
 	return 0;
 }
 
-int onclose(void* ptr, int code)
+int onclose(void* UNUSED(ptr), int UNUSED(code))
 {
 	return 0;
 }
 
-int onplay(void* ptr, int code, const int64_t *nptbegin, const int64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count)
+int onplay(void* UNUSED(ptr), int UNUSED(code), const int64_t* UNUSED(nptbegin), const int64_t* UNUSED(nptend), const double* UNUSED(scale), const struct rtsp_rtp_info_t* UNUSED(rtpinfo), int UNUSED(count))
 {
 	return 0;
 }
 
-int onpause(void* ptr, int code)
+int onpause(void* UNUSED(ptr), int UNUSED(code))
 {
 	return 0;
 }
