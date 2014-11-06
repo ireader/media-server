@@ -47,7 +47,7 @@ static uint8_t ps_stream_find(mpeg_ps_enc_context_t *psctx, int avtype)
 static size_t ps_packet_header_write(const ps_packet_header_t *packethd, uint8_t *data)
 {
 	// pack_start_code
-	le_write_uint32(data, 0x000001BA);
+	nbo_w32(data, 0x000001BA);
 
 	// 33-system_clock_reference_base + 9-system_clock_reference_extension
 	// '01xxx1xx xxxxxxxx xxxxx1xx xxxxxxxx xxxxx1xx xxxxxxx1'
@@ -76,7 +76,7 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	size_t i, j;
 
 	// system_header_start_code
-	le_write_uint32(data, 0x000001BB);
+	nbo_w32(data, 0x000001BB);
 
 	// header length
 	//put16(data + 4, 6 + syshd->stream_count*3);
@@ -114,7 +114,7 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	}
 
 	// header length
-	le_write_uint16(data + 4, (uint16_t)(i-6));
+	nbo_w16(data + 4, (uint16_t)(i-6));
 	return i;
 }
 
@@ -161,7 +161,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		{
 			// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 			// Each AVC access unit shall contain an access unit delimiter NAL Unit
-			le_write_uint32(p, 0x00000001);
+			nbo_w32(p, 0x00000001);
 			p[4] = 0x09; // AUD
 			p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 			p += 6;
@@ -173,12 +173,12 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		// video elementary stream contained in transport stream packets
 		if((p - pes - 6) + bytes > 0xFFFF)
 		{
-			le_write_uint16(pes + 4, 0xFFFF);
+			nbo_w16(pes + 4, 0xFFFF);
 			n = 0xFFFF - (p - pes - 6);
 		}
 		else
 		{
-			le_write_uint16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
+			nbo_w16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
 			n = bytes;
 		}
 

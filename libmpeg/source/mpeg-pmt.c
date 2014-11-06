@@ -87,7 +87,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// skip section_length
 
 	// program_number
-	le_write_uint16(data + 3, (uint16_t)pmt->pn);
+	nbo_w16(data + 3, (uint16_t)pmt->pn);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -100,11 +100,11 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 
 	// reserved '111'
 	// PCR_PID 15-bits 0x1FFF
-	le_write_uint16(data + 8, (uint16_t)(0xE000 | pmt->PCR_PID));
+	nbo_w16(data + 8, (uint16_t)(0xE000 | pmt->PCR_PID));
 
 	// reserved '1111'
 	// program_info_lengt 12-bits
-	le_write_uint16(data + 10, (uint16_t)(0xF000 | pmt->pminfo_len));
+	nbo_w16(data + 10, (uint16_t)(0xF000 | pmt->pminfo_len));
 	if(pmt->pminfo_len > 0)
 	{
 		// fill program info
@@ -121,11 +121,11 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 
 		// reserved '111'
 		// elementary_PID 13-bits
-		le_write_uint16(p + 1, 0xE000 | pmt->streams[i].pid);
+		nbo_w16(p + 1, 0xE000 | pmt->streams[i].pid);
 
 		// reserved '1111'
 		// ES_info_lengt 12-bits
-		le_write_uint16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
+		nbo_w16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
 
 		// fill elementary stream info
 		if(pmt->streams[i].esinfo_len > 0)
@@ -144,7 +144,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// section_syntax_indicator '1'
 	// '0'
 	// reserved '11'
-	le_write_uint16(data + 1, (uint16_t)(0xb000 | len)); 
+	nbo_w16(data + 1, (uint16_t)(0xb000 | len)); 
 
 	// crc32
 	crc = crc32(0xffffffff, data, p-data);

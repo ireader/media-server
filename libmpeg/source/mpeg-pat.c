@@ -70,10 +70,10 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 	// section_syntax_indicator = '1'
 	// '0'
 	// reserved '11'
-	le_write_uint16(data + 1, (uint16_t)(0xb000 | len));
+	nbo_w16(data + 1, (uint16_t)(0xb000 | len));
 
 	// transport_stream_id
-	le_write_uint16(data + 3, (uint16_t)pat->tsid);
+	nbo_w16(data + 3, (uint16_t)pat->tsid);
 
 	// reserved '11'
 	// version_number 'xxxxx'
@@ -86,8 +86,8 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 
 	for(i = 0; i < pat->pmt_count; i++)
 	{
-		le_write_uint16(data + 8 + i * 4 + 0, (uint16_t)pat->pmt[i].pn);
-		le_write_uint16(data + 8 + i * 4 + 2, (uint16_t)(0xE000 | pat->pmt[i].pid));
+		nbo_w16(data + 8 + i * 4 + 0, (uint16_t)pat->pmt[i].pn);
+		nbo_w16(data + 8 + i * 4 + 2, (uint16_t)(0xE000 | pat->pmt[i].pid));
 	}
 
 	// crc32

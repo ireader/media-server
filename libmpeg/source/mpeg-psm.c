@@ -80,11 +80,11 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 	size_t i,j;
 	unsigned int crc;
 
-	le_write_uint32(data, 0x00000100);
+	nbo_w32(data, 0x00000100);
 	data[3] = PES_SID_PSM;
 
 	// program_stream_map_length 16-bits
-	//le_write_uint16(data+4, 6+4*psm->stream_count+4);
+	//nbo_w16(data+4, 6+4*psm->stream_count+4);
 
 	// current_next_indicator '1'
 	// single_extension_stream_flag '1'
@@ -97,10 +97,10 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 	data[7] = 0x01;
 
 	// program_stream_info_length 16-bits
-	le_write_uint16(data+8, 0); // program_stream_info_length = 0
+	nbo_w16(data+8, 0); // program_stream_info_length = 0
 
 	// elementary_stream_map_length 16-bits
-	//le_write_uint16(data+10, psm->stream_count*4);
+	//nbo_w16(data+10, psm->stream_count*4);
 
 	j = 12;
 	for(i = 0; i < psm->stream_count; i++)
@@ -112,7 +112,7 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 		// elementary_stream_id:8
 		data[j++] = psm->streams[i].pesid;
 		// elementary_stream_info_length:16
-		le_write_uint16(data+j, psm->streams[i].esinfo_len);
+		nbo_w16(data+j, psm->streams[i].esinfo_len);
 		// descriptor()
 		memcpy(data+j+2, psm->streams[i].esinfo, psm->streams[i].esinfo_len);
 
@@ -120,9 +120,9 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 	}
 
 	// elementary_stream_map_length 16-bits
-	le_write_uint16(data+10, (uint16_t)(j-12+4));
+	nbo_w16(data+10, (uint16_t)(j-12+4));
 	// program_stream_map_length:16
-	le_write_uint16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
+	nbo_w16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
 	// crc32
 	crc = crc32(0xffffffff, data, j);

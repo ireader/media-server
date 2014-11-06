@@ -144,7 +144,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
-				le_write_uint32(p, 0x00000001);
+				nbo_w32(p, 0x00000001);
 				p[4] = 0x09; // AUD
 				p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 				p += 6;
@@ -155,9 +155,9 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 			// and is allowed only in PES packets whose payload consists of bytes from a 
 			// video elementary stream contained in transport stream packets
 			if((p - pes - 6) + bytes > 0xFFFF)
-				le_write_uint16(pes + 4, 0); // 2.4.3.7 PES packet => PES_packet_length
+				nbo_w16(pes + 4, 0); // 2.4.3.7 PES packet => PES_packet_length
 			else
-				le_write_uint16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
+				nbo_w16(pes + 4, (uint16_t)((p - pes - 6) + bytes));
 		}
 
 		len = p - data; // TS + PES header length
