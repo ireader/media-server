@@ -25,7 +25,6 @@ extern "C" {
 #endif
 
 #include "rtp-queue.h"
-#include "h264-source.h"
 
 /// initialization/cleanup
 RTP_API int rtp_avp_init(void);

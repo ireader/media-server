@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "sys/socket.h"
+#include "sys/sock.h"
 
 void* rtp_avp_unicast_sender_create(const char* ip, u_short port[2], socket_t socket[2]);
 void rtp_avp_unicast_sender_destroy(void* sender);

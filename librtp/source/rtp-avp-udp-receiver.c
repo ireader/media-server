@@ -1,5 +1,6 @@
+#include "cstringext.h"
 #include "rtp-avp-udp-receiver.h"
-#include "rtp-transport.h"
+#include "rtp-internal.h"
 #include <assert.h>
 
 static void rtp_avp_udp_receiver_onrtcp(void* param, int code, size_t bytes, const char* ip, int port)
@@ -18,7 +19,7 @@ static void rtp_avp_udp_receiver_onrtcp(void* param, int code, size_t bytes, con
 		printf("rtp_avp_udp_onrtcp error: %d\n", code);
 }
 
-void* rtp_avp_udp_receiver_create(void* param, socket_t rtp, socket_t rtcp, rtp_avp_udp_onrecv callback, void* param)
+void* rtp_avp_udp_receiver_create(socket_t rtp, socket_t rtcp, rtp_avp_udp_onrecv callback, void* param)
 {
 	struct rtp_context *ctx;
 	ctx = (struct rtp_context*)malloc(sizeof(struct rtp_context));
@@ -26,8 +27,8 @@ void* rtp_avp_udp_receiver_create(void* param, socket_t rtp, socket_t rtcp, rtp_
 		return NULL;
 
 	memset(ctx, 0, sizeof(struct rtp_context));
-	ctx->members = rtp_source_list_create();
-	ctx->senders = rtp_source_list_create();
+	ctx->members = rtp_member_list_create();
+	ctx->senders = rtp_member_list_create();
 	if(!ctx->members || !ctx->senders)
 	{
 		free(ctx);
@@ -52,8 +53,8 @@ void rtp_avp_udp_receiver_destroy(void* receiver)
 	if(ctx->rtcp.socket)
 		aio_socket_destroy(ctx->rtcp.socket);
 	if(ctx->members)
-		rtp_source_list_destroy(ctx->members);
+		rtp_member_list_destroy(ctx->members);
 	if(ctx->senders)
-		rtp_source_list_destroy(ctx->senders);
+		rtp_member_list_destroy(ctx->senders);
 	return 0;
 }
