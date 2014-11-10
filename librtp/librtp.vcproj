@@ -272,34 +272,6 @@
 			>
 		</Filter>
 		<Filter
-			Name="transport"
-			>
-			<File
-				RelativePath=".\include\rtp-avp-udp-receiver.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-avp-udp.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-avp-unicast-sender.h"
-				>
-			</File>
-			<File
-				RelativePath=".\source\rtp-socket.c"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-socket.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\rtp-transport.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="payload"
 			>
 			<File

@@ -159,6 +159,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\rtp-socket.c"
+				>
+			</File>
+			<File
 				RelativePath=".\client\rtsp-client-test.c"
 				>
 			</File>
@@ -210,6 +214,10 @@
 			>
 			<File
 				RelativePath=".\include\media-source.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\rtp-socket.h"
 				>
 			</File>
 			<File
