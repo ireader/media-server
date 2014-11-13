@@ -219,7 +219,7 @@ int H264FileSource::Pack(const void* h264, size_t bytes)
 			unsigned char fu_header = *p1 & 0x1F;
 
 			// FU-A start
-			fu_header = 0x9F & fu_header;
+			fu_header = 0x80 | fu_header;
 			while(nalu_size > MAX_UDP_PACKET)
 			{
 				packet[1] &= ~0x80; // clean marker
@@ -243,7 +243,7 @@ int H264FileSource::Pack(const void* h264, size_t bytes)
 			}
 
 			// FU-A end
-			fu_header = (0x5F & fu_header);
+			fu_header = (0x40 | (fu_header & 0x1F));
 			//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, nalu_size);
 			packet[1] |= 0x80; // marker
 			packet[2] = (unsigned char)(m_seq >> 8);

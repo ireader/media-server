@@ -83,7 +83,7 @@ int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes)
 			unsigned char fu_header = *p1 & 0x1F;
 
 			// FU-A start
-			fu_header = 0x9F & fu_header;
+			fu_header = 0x80 | fu_header;
 			while(nalu_size > s_max_packet_size)
 			{
 				//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, s_max_packet_size);
@@ -94,7 +94,7 @@ int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes)
 			}
 
 			// FU-A end
-			fu_header = (0x5F & fu_header);
+			fu_header = (0x40 | (fu_header & 0x1F));
 			//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, nalu_size);
 		}
 
