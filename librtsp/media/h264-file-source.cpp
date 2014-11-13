@@ -188,7 +188,7 @@ int H264FileSource::Pack(const void* h264, size_t bytes)
 		bytes -= nalu_size;
 
 		// filter suffix '00' bytes
-		while(0 == p2[nalu_size-1]) --nalu_size;
+		while(0 == p1[nalu_size-1]) --nalu_size;
 
 		// filter H.264 start code(0x00000001)
 		nalu_size -= (0x01 == p1[2]) ? 3 : 4;
@@ -218,9 +218,12 @@ int H264FileSource::Pack(const void* h264, size_t bytes)
 			unsigned char fu_indicator = (*p1 & 0xE0) | 28; // FU-A
 			unsigned char fu_header = *p1 & 0x1F;
 
+			p1 += 1; // skip NAL Unit Type byte
+			nalu_size -= 1;
+
 			// FU-A start
 			fu_header = 0x80 | fu_header;
-			while(nalu_size > MAX_UDP_PACKET)
+			while(nalu_size > MAX_UDP_PACKET-1)
 			{
 				packet[1] &= ~0x80; // clean marker
 				packet[2] = (unsigned char)(m_seq >> 8);
@@ -229,21 +232,21 @@ int H264FileSource::Pack(const void* h264, size_t bytes)
 				packet[13] = fu_header;
 				++m_seq;
 
-				memcpy(packet+14, p1, MAX_UDP_PACKET);
+				memcpy(packet+14, p1, MAX_UDP_PACKET-1);
 				struct sockaddr_in addrin;
 				socket_addr_ipv4(&addrin, m_ip.c_str(), m_port[0]);
-				r = socket_sendto(m_socket[0], packet, MAX_UDP_PACKET+14, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-				assert(r == MAX_UDP_PACKET+14 && 60 != r);
-				rtp_onsend(m_rtp, packet, MAX_UDP_PACKET+14, clock);
+				r = socket_sendto(m_socket[0], packet, MAX_UDP_PACKET-1+14, 0, (struct sockaddr*)&addrin, sizeof(addrin));
+				assert(r == MAX_UDP_PACKET-1+14 && 60 != r);
+				rtp_onsend(m_rtp, packet, MAX_UDP_PACKET-1+14, clock);
 				//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, s_max_packet_size);
 
-				nalu_size -= MAX_UDP_PACKET;
-				p1 += MAX_UDP_PACKET;
+				nalu_size -= MAX_UDP_PACKET-1;
+				p1 += MAX_UDP_PACKET-1;
 				fu_header = 0x1F & fu_header; // FU-A fragment
 			}
 
 			// FU-A end
-			fu_header = (0x40 | (fu_header & 0x1F));
+			fu_header = 0x40 | (fu_header & 0x1F);
 			//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, nalu_size);
 			packet[1] |= 0x80; // marker
 			packet[2] = (unsigned char)(m_seq >> 8);
