@@ -122,7 +122,7 @@ int rtp_rtcp_interval(void* rtp)
 	double interval;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
 	interval = rtcp_interval(rtp_member_list_count(ctx->members),
-		rtp_member_list_count(ctx->senders) + (ctx->role & RTP_SENDER) ? 1 : 0,
+		rtp_member_list_count(ctx->senders) + ((ctx->role & RTP_SENDER) ? 1 : 0),
 		ctx->rtcp_bw, 
 		ctx->self->rtp_clock + 2*5*1000 > time64_now() ? 1 : 0,
 		ctx->avg_rtcp_size,

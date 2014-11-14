@@ -329,6 +329,7 @@ static struct rtsp_server_request_t* rtsp_server_session_create(struct rtsp_serv
 	struct rtsp_server_request_t* req;
 
 	req = (struct rtsp_server_request_t*)malloc(sizeof(*req));
+	if(!req) return NULL;
 	memset(req, 0, sizeof(*req));
 	req->server = ctx;
 	return req;

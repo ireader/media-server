@@ -436,10 +436,12 @@ static int sdp_parse_email(struct sdp_context* sdp)
 	{
 		if(sdp->e.count - N_EMAIL >= sdp->e.capacity)
 		{
-			sdp->e.ptr = (struct sdp_email*)realloc(sdp->e.ptr, (sdp->e.capacity+8)*sizeof(struct sdp_email));
-			if(!sdp->e.ptr)
+			void* ptr;
+			ptr = (struct sdp_email*)realloc(sdp->e.ptr, (sdp->e.capacity+8)*sizeof(struct sdp_email));
+			if(!ptr)
 				return ENOMEM;
 
+			sdp->e.ptr = ptr;
 			sdp->e.capacity += 8;
 		}
 
@@ -471,10 +473,12 @@ static int sdp_parse_phone(struct sdp_context* sdp)
 	{
 		if(sdp->p.count - N_PHONE >= sdp->p.capacity)
 		{
-			sdp->p.ptr = (struct sdp_phone*)realloc(sdp->p.ptr, (sdp->p.capacity+8)*sizeof(struct sdp_phone));
-			if(!sdp->p.ptr)
+			void* ptr;
+			ptr = (struct sdp_phone*)realloc(sdp->p.ptr, (sdp->p.capacity+8)*sizeof(struct sdp_phone));
+			if(!ptr)
 				return ENOMEM;
 
+			sdp->p.ptr = ptr;
 			sdp->p.capacity += 8;
 		}
 
@@ -521,10 +525,12 @@ static int sdp_parse_connection(struct sdp_context* sdp)
 		{
 			if(m->c.count - N_CONNECTION >= m->c.capacity)
 			{
-				m->c.ptr = (struct sdp_connection*)realloc(m->c.ptr, (m->c.capacity+8)*sizeof(struct sdp_connection));
-				if(!m->c.ptr)
+				void* ptr;
+				ptr = (struct sdp_connection*)realloc(m->c.ptr, (m->c.capacity+8)*sizeof(struct sdp_connection));
+				if(!ptr)
 					return ENOMEM;
 
+				m->c.ptr = ptr;
 				m->c.capacity += 8;
 			}
 
@@ -594,10 +600,12 @@ static int sdp_parse_bandwidth(struct sdp_context* sdp)
 	{
 		if(bs->count - N_BANDWIDTH >= bs->capacity)
 		{
-			bs->ptr = (struct sdp_bandwidth*)realloc(bs->ptr, (bs->capacity+8)*sizeof(struct sdp_bandwidth));
-			if(!bs->ptr)
+			void* ptr;
+			ptr = (struct sdp_bandwidth*)realloc(bs->ptr, (bs->capacity+8)*sizeof(struct sdp_bandwidth));
+			if(!ptr)
 				return ENOMEM;
 
+			bs->ptr = ptr;
 			bs->capacity += 8;
 		}
 
@@ -648,10 +656,12 @@ static int sdp_parse_timing(struct sdp_context* sdp)
 	{
 		if(sdp->t.count - N_TIMING >= sdp->t.capacity)
 		{
-			sdp->t.ptr = (struct sdp_timing*)realloc(sdp->t.ptr, (sdp->t.capacity+8)*sizeof(struct sdp_timing));
-			if(!sdp->t.ptr)
+			void* ptr;
+			ptr = (struct sdp_timing*)realloc(sdp->t.ptr, (sdp->t.capacity+8)*sizeof(struct sdp_timing));
+			if(!ptr)
 				return ENOMEM;
 
+			sdp->t.ptr = ptr;
 			sdp->t.capacity += 8;
 		}
 
@@ -690,10 +700,12 @@ static int sdp_append_timing_repeat_offset(struct sdp_repeat *r, char* offset)
 	{
 		if(r->offsets.count - N_REPEAT_OFFSET >= r->offsets.capacity)
 		{
-			r->offsets.ptr = (char**)realloc(r->offsets.ptr, (r->offsets.capacity+8)*sizeof(char*));
-			if(!r->offsets.ptr)
+			void* ptr;
+			ptr = (char**)realloc(r->offsets.ptr, (r->offsets.capacity+8)*sizeof(char*));
+			if(!ptr)
 				return ENOMEM;
 
+			r->offsets.ptr = ptr;
 			r->offsets.capacity += 8;
 		}
 
@@ -730,10 +742,12 @@ static int sdp_parse_repeat(struct sdp_context* sdp)
 	{
 		if(t->r.count - N_REPEAT >= t->r.capacity)
 		{
-			t->r.ptr = (struct sdp_repeat*)realloc(t->r.ptr, (t->r.capacity+8)*sizeof(struct sdp_repeat));
-			if(!t->r.ptr)
+			void* ptr;
+			ptr = (struct sdp_repeat*)realloc(t->r.ptr, (t->r.capacity+8)*sizeof(struct sdp_repeat));
+			if(!ptr)
 				return ENOMEM;
 
+			t->r.ptr = ptr;
 			t->r.capacity += 8;
 		}
 
@@ -820,10 +834,12 @@ static int sdp_parse_timezone(struct sdp_context* sdp)
 		{
 			if(t->z.count - N_TIMEZONE >= t->z.capacity)
 			{
-				t->z.ptr = (struct sdp_timezone*)realloc(t->z.ptr, (t->z.capacity+8)*sizeof(struct sdp_timezone));
-				if(!t->z.ptr)
+				void* ptr;
+				ptr = (struct sdp_timezone*)realloc(t->z.ptr, (t->z.capacity+8)*sizeof(struct sdp_timezone));
+				if(!ptr)
 					return ENOMEM;
 
+				t->z.ptr = ptr;
 				t->z.capacity += 8;
 			}
 
@@ -929,10 +945,12 @@ static int sdp_parse_attribute(struct sdp_context* sdp)
 	{
 		if(as->count - N_ATTRIBUTE >= as->capacity)
 		{
-			as->ptr = (struct sdp_attribute*)realloc(as->ptr, (as->capacity+8)*sizeof(struct sdp_attribute));
-			if(!as->ptr)
+			void* ptr;
+			ptr = (struct sdp_attribute*)realloc(as->ptr, (as->capacity+8)*sizeof(struct sdp_attribute));
+			if(!ptr)
 				return ENOMEM;
 
+			as->ptr = ptr;
 			as->capacity += 8;
 		}
 
@@ -974,10 +992,12 @@ static int sdp_append_media_format(struct sdp_media *m, char* fmt)
 	{
 		if(m->fmt.count - N_MEDIA_FORMAT >= m->fmt.capacity)
 		{
-			m->fmt.ptr = (char**)realloc(m->fmt.ptr, (m->fmt.capacity+8)*sizeof(char*));
-			if(!m->fmt.ptr)
+			void* ptr;
+			ptr = (char**)realloc(m->fmt.ptr, (m->fmt.capacity+8)*sizeof(char*));
+			if(!ptr)
 				return ENOMEM;
 
+			m->fmt.ptr = ptr;
 			m->fmt.capacity += 8;
 		}
 
@@ -1011,10 +1031,12 @@ static int sdp_parse_media(struct sdp_context* sdp)
 	{
 		if(sdp->m.count - N_MEDIA >= sdp->m.capacity)
 		{
-			sdp->m.ptr = (struct sdp_media*)realloc(sdp->m.ptr, (sdp->m.capacity+8)*sizeof(struct sdp_media));
-			if(!sdp->m.ptr)
+			void* ptr;
+			ptr = (struct sdp_media*)realloc(sdp->m.ptr, (sdp->m.capacity+8)*sizeof(struct sdp_media));
+			if(!ptr)
 				return ENOMEM;
 
+			sdp->m.ptr = ptr;
 			sdp->m.capacity += 8;
 		}
 

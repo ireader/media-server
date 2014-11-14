@@ -44,7 +44,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 		if(adp->PCR_flag)
 		{
 			adp->program_clock_reference_base = data[i];
-			adp->program_clock_reference_base = (adp->program_clock_reference_base << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
+			adp->program_clock_reference_base = (adp->program_clock_reference_base << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
 
 			i += 6;

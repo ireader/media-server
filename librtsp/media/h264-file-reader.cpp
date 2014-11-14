@@ -14,13 +14,14 @@ H264FileReader::H264FileReader(const char* file)
     {
         m_offset = 0;
         m_capacity = 128 * 1024;
-        m_ptr = (unsigned char*)realloc(m_ptr, m_capacity);
+        m_ptr = (unsigned char*)malloc(m_capacity);
         m_bytes = fread(m_ptr, 1, m_capacity, m_fp);
         if(m_bytes > 0)
             Init();
+
+		fseek(m_fp, 0, SEEK_SET);
     }
 
-	fseek(m_fp, 0, SEEK_SET);
 	m_vit = m_videos.begin();
 }
 
@@ -129,9 +130,11 @@ const unsigned char* H264FileReader::ReadNextFrame()
             else
             {
                 // 1. more memory
-                m_ptr = (unsigned char*)realloc(m_ptr, m_capacity + m_capacity/2);
-                if(m_ptr)
+				unsigned char* ptr = NULL;
+                ptr = (unsigned char*)realloc(m_ptr, m_capacity + m_capacity/2);
+                if(ptr)
                 {
+					m_ptr = ptr;
                     m_capacity += m_capacity/2;
 
                     // 2. read file
@@ -139,6 +142,10 @@ const unsigned char* H264FileReader::ReadNextFrame()
                     n = fread(m_ptr + m_bytes, 1, m_capacity - m_bytes, m_fp);
                     m_bytes += n;
                 }
+				else
+				{
+					break; // don't have enough memory
+				}
             }
         }
     } while(!p && m_ptr && m_capacity < 10*1024*1024 && n > 0); // Max frame size 10MB

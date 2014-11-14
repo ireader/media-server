@@ -78,7 +78,7 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, mpeg_ps_cbwrite fun
 	assert((0x04 & data[6]) == 0x04); // 'xxxxx1xx'
 	assert((0x04 & data[8]) == 0x04); // 'xxxxx1xx'
 	assert((0x01 & data[9]) == 0x01); // 'xxxxxxx1'
-	pkhd.system_clock_reference_base = (((int64_t)(data[4] >> 3) & 0x07) << 30) | ((data[4] & 0x3) << 28) | (data[5] << 20) | (((data[6] >> 3) & 0x1F) << 15) | ((data[6] & 0x3) << 13) | (data[7] << 5) | ((data[8] >> 3) & 0x1F);
+	pkhd.system_clock_reference_base = (((uint64_t)(data[4] >> 3) & 0x07) << 30) | (((uint64_t)data[4] & 0x3) << 28) | ((uint64_t)data[5] << 20) | ((((uint64_t)data[6] >> 3) & 0x1F) << 15) | (((uint64_t)data[6] & 0x3) << 13) | ((uint64_t)data[7] << 5) | ((data[8] >> 3) & 0x1F);
 	pkhd.system_clock_reference_extension = ((data[8] & 0x3) << 7) | ((data[9] >> 1) & 0x7F);
 
 	assert((0x03 & data[12]) == 0x03); // 'xxxxxx11'
@@ -100,10 +100,10 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, mpeg_ps_cbwrite fun
 	// MPEG_program_end_code = 0x000000B9
 	while(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
 	{
-		uint16_t len;
-		len = (data[i+4] << 8) | data[i+5];
-		assert(len + 6 <= bytes - i);
-		pes_read(data + i, len + 6, &pes);
+		uint16_t len2;
+		len2 = (data[i+4] << 8) | data[i+5];
+		assert(len2 + 6 <= bytes - i);
+		pes_read(data + i, len2 + 6, &pes);
 
 		if(pes.payload_len > 0)
 		{
@@ -111,7 +111,7 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, mpeg_ps_cbwrite fun
 			pes.payload_len = 0;
 		}
 
-		i += len + 6;
+		i += len2 + 6;
 	}
 
 	return i + (PES_SID_END==data[i+3] ? 4 : 0);

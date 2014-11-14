@@ -214,14 +214,15 @@ static int rtp_h264_unpack_fu_a(struct rtp_h264_unpack_t *unpacker, const void* 
 
 	if(unpacker->size + bytes - 2 > unpacker->capacity)
 	{
+		void* p = NULL;
 		int size = unpacker->size + bytes * 2;
-		unpacker->ptr = realloc(unpacker->ptr, size);
-		if(!unpacker->ptr)
+		p = realloc(unpacker->ptr, size);
+		if(!p)
 		{
-			unpacker->capacity = 0;
 			unpacker->size = 0;
 			return -1;
 		}
+		unpacker->ptr = p;
 		unpacker->capacity = size;
 	}
 
@@ -263,14 +264,15 @@ static int rtp_h264_unpack_fu_b(struct rtp_h264_unpack_t *unpacker, const void* 
 
 	if(unpacker->size + bytes - 4 > unpacker->capacity)
 	{
+		void* p = NULL;
 		int size = unpacker->size + bytes * 2;
-		unpacker->ptr = realloc(unpacker->ptr, size);
-		if(!unpacker->ptr)
+		p = realloc(unpacker->ptr, size);
+		if(!p)
 		{
-			unpacker->capacity = 0;
 			unpacker->size = 0;
 			return -1;
 		}
+		unpacker->ptr = p;
 		unpacker->capacity = size;
 	}
 

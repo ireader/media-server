@@ -166,11 +166,11 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 		memset(&item, 0, sizeof(item));
 		item.media = H264FileSource::Create(filename.c_str());
 
-		char session[32];
-		snprintf(session, sizeof(session), "%p", item.media);
+		char rtspsession[32];
+		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media);
 
 		AutoThreadLocker locker(s_locker);
-		it = s_sessions.insert(std::make_pair(session, item)).first;
+		it = s_sessions.insert(std::make_pair(rtspsession, item)).first;
 	}
 
 	assert(NULL == transport);

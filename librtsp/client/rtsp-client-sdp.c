@@ -32,7 +32,7 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 	assert(uri && base && path);
 	n = strlen(base);
 	n2 = strlen(path);
-	if(n + n2 + 1 > bytes)
+	if(n + n2 + 1 > bytes || !uri)
 		return NULL;
 
 	strcpy(uri, base);

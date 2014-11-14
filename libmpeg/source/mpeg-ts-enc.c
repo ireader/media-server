@@ -334,6 +334,7 @@ int mpeg_ts_add_stream(void* ts, int avtype)
 	mpeg_ts_enc_context_t *tsctx;
 
 	tsctx = (mpeg_ts_enc_context_t*)ts;
+	pmt = tsctx->pat.pmt;
 	if(pmt->stream_count + 1 >= N_MPEG_TS_STREAM)
 	{
 		assert(0);

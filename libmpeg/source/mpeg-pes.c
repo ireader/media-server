@@ -52,24 +52,24 @@ static size_t pes_packet(const uint8_t* data, size_t bytes, pes_t *pes)
 	if(0x02 == pes->PTS_DTS_flags)
 	{
 		assert(0x20 == (data[i] & 0xF0));
-		pes->pts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 
 		i += 5;
 	}
 	else if(0x03 == pes->PTS_DTS_flags)
 	{
 		assert(0x30 == (data[i] & 0xF0));
-		pes->pts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 		i += 5;
 
 		assert(0x10 == (data[i] & 0xF0));
-		pes->dts = (((int64_t)(data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
+		pes->dts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 		i += 5;
 	}
 
 	if(pes->ESCR_flag)
 	{
-		pes->ESCR_base = (((int64_t)(data[i] >> 3) & 0x07) << 30) | ((data[i] & 0x03) << 28) | (data[i+1] << 20) | (((data[i+2] >> 3) & 0x1F) << 15) | ((data[i+2] & 0x3) << 13) | (data[i+3] << 5) | ((data[i+4] >> 3) & 0x1F);
+		pes->ESCR_base = ((((uint64_t)data[i] >> 3) & 0x07) << 30) | (((uint64_t)data[i] & 0x03) << 28) | ((uint64_t)data[i+1] << 20) | ((((uint64_t)data[i+2] >> 3) & 0x1F) << 15) | (((uint64_t)data[i+2] & 0x3) << 13) | ((uint64_t)data[i+3] << 5) | ((data[i+4] >> 3) & 0x1F);
 		pes->ESCR_extension = ((data[i+4] & 0x03) << 7) | ((data[i+5] >> 1) & 0x3F);
 		i += 6;
 	}

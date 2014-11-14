@@ -22,7 +22,7 @@ static int rtpport(void* UNUSED(transport), unsigned short *rtp)
 	socket_t sock[2];
 	unsigned short port[2];
 	rtp_socket_create(NULL, sock, port);
-	*rtp = port[2];
+	*rtp = port[0];
 	return 0;
 }
 

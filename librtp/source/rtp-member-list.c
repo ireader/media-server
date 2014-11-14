@@ -88,9 +88,11 @@ int rtp_member_list_add(void* members, struct rtp_member* s)
 	{
 		if(p->count - N_SOURCE >= p->capacity)
 		{
-			p->ptr = (struct rtp_member **)realloc(p->ptr, (p->capacity+8)*sizeof(struct rtp_member*));
-			if(!p->ptr)
+			void* ptr;
+			ptr = (struct rtp_member **)realloc(p->ptr, (p->capacity+8)*sizeof(struct rtp_member*));
+			if(!ptr)
 				return ENOMEM;
+			p->ptr = ptr;
 			p->capacity += 8;
 		}
 		p->ptr[p->count++ - N_SOURCE] = s;
