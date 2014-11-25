@@ -27,7 +27,7 @@ void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 
 	for(i = 0; i < header->rc; i++)
 	{
-		msg.u.bye.ssrc = be_read_uint32(ptr + i * 4);
+		msg.u.bye.ssrc = nbo_r32(ptr + i * 4);
 		rtp_member_list_delete(ctx->members, msg.u.bye.ssrc);
 		rtp_member_list_delete(ctx->senders, msg.u.bye.ssrc);
 
@@ -47,9 +47,9 @@ size_t rtcp_bye_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	header.pt = RTCP_BYE;
 	header.rc = 1; // self only
 	header.length = 1;
-	be_write_rtcp_header(ptr, &header);
+	nbo_write_rtcp_header(ptr, &header);
 
-	be_write_uint32(ptr+4, ctx->self->ssrc);
+	nbo_w32(ptr+4, ctx->self->ssrc);
 
 	assert(8 == (header.length+1)*4);
 	return 8;

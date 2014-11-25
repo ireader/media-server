@@ -55,7 +55,7 @@ static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t
 	rtcp_header_t header;
 
 	assert(bytes >= sizeof(rtcphd));
-	rtcphd = be_read_uint32(data);
+	rtcphd = nbo_r32(data);
 
 	header.v = RTCP_V(rtcphd);
 	header.p = RTCP_P(rtcphd);

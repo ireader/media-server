@@ -59,7 +59,7 @@ static int rtp_h264_unpack_stap_a(struct rtp_h264_unpack_t *unpacker, const void
 	{
 		unsigned char nal;
 
-		nallen = be_read_uint16(ptr);
+		nallen = nbo_r16(ptr);
 		if(nallen + 2 > bytes)
 		{
 			assert(0);
@@ -87,7 +87,7 @@ static int rtp_h264_unpack_stap_b(struct rtp_h264_unpack_t *unpacker, const void
 	ptr = (const unsigned char*)data;
 
 	stapnal = ptr[0];
-	don = be_read_uint16(ptr + 1);
+	don = nbo_r16(ptr + 1);
 
 	ptr += 3;
 	nallen = 0;
@@ -95,7 +95,7 @@ static int rtp_h264_unpack_stap_b(struct rtp_h264_unpack_t *unpacker, const void
 	{
 		unsigned char nal;
 
-		nallen = be_read_uint16(ptr);
+		nallen = nbo_r16(ptr);
 		if(nallen + 2> bytes)
 		{
 			assert(0);
@@ -122,7 +122,7 @@ static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void
 	ptr = (const unsigned char*)data;
 
 	mtapnal = ptr[0];
-	donb = be_read_uint16(ptr+1);
+	donb = nbo_r16(ptr+1);
 
 	ptr += 3;
 	for(bytes -= 1; bytes > 6; bytes -= nallen + 2)
@@ -130,7 +130,7 @@ static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void
 		unsigned char nal, dond;
 		uint16_t timestamp;
 
-		nallen = be_read_uint16(ptr);
+		nallen = nbo_r16(ptr);
 		if(nallen + 2 > bytes)
 		{
 			assert(0);
@@ -139,7 +139,7 @@ static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void
 
 		assert(nallen > 4);
 		dond = ptr[2];
-		timestamp = be_read_uint16(ptr+3);
+		timestamp = nbo_r16(ptr+3);
 
 		nal = ptr[5];
 		assert(H264_NAL(nal) > 0 && H264_NAL(nal) < 24);
@@ -161,7 +161,7 @@ static int rtp_h264_unpack_mtap24(struct rtp_h264_unpack_t *unpacker, const void
 	ptr = (const unsigned char*)data;
 
 	mtapnal = ptr[0];
-	donb = be_read_uint16(ptr + 1);
+	donb = nbo_r16(ptr + 1);
 
 	ptr += 3;
 	for(bytes -= 1; bytes > 2; bytes -= nallen + 2)
@@ -171,7 +171,7 @@ static int rtp_h264_unpack_mtap24(struct rtp_h264_unpack_t *unpacker, const void
 		const unsigned short *p;
 		p = (const unsigned short *)ptr;
 
-		nallen = be_read_uint16(ptr);
+		nallen = nbo_r16(ptr);
 		if(nallen > bytes - 2)
 		{
 			assert(0);
@@ -250,7 +250,7 @@ static int rtp_h264_unpack_fu_b(struct rtp_h264_unpack_t *unpacker, const void* 
 
 	fuindicator = ptr[0];
 	fuheader = ptr[1];
-	don = be_read_uint16(ptr + 2);
+	don = nbo_r16(ptr + 2);
 
 	if(FU_START(fuheader))
 	{

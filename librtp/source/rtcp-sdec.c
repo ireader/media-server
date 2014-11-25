@@ -15,7 +15,7 @@ void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsi
 	for(i = 0; i < header->rc; i++)
 	{
 		rtcp_sdes_item_t item;
-		ssrc = be_read_uint32(p);
+		ssrc = nbo_r32(p);
 		member = rtp_member_fetch(ctx, ssrc);
 		if(!member)
 			continue;
@@ -109,8 +109,8 @@ size_t rtcp_sdes_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	ctx->rtcp_cycle = (ctx->rtcp_cycle+1) % 24; // 3 * SDES item number
 
 	header.length = (n+4+3)/4; // see 6.4.1 SR: Sender Report RTCP Packet
-	be_write_rtcp_header(ptr, &header);
-	be_write_uint32(ptr+4, ctx->self->ssrc);
+	nbo_write_rtcp_header(ptr, &header);
+	nbo_w32(ptr+4, ctx->self->ssrc);
 
 	return (header.length+1)*4;
 }

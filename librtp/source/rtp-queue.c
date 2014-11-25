@@ -214,7 +214,7 @@ int rtp_queue_unlock(void* queue, void* ptr, int size)
 	frame = (struct rtp_frame *)ptr - 1;
 	assert(frame->ptr == (unsigned char *)ptr);
 
-	v = be_read_uint32((unsigned char *)ptr);
+	v = nbo_r32((unsigned char *)ptr);
 	frame->seq = RTP_SEQ(v);
 //	frame->timestamp = ntohl(((const unsigned int *)ptr)[1]);
 //	frame->ssrc = ntohl(((const unsigned int *)ptr)[2]);

@@ -13,7 +13,7 @@ void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 		return;
 
 	msg.type = RTCP_MSG_APP;
-	msg.u.app.ssrc = be_read_uint32(ptr);
+	msg.u.app.ssrc = nbo_r32(ptr);
 
 	member = rtp_member_fetch(ctx, msg.u.app.ssrc);
 	if(!member) return; // error	
@@ -45,9 +45,9 @@ size_t rtcp_app_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes, 
 		header.pt = RTCP_APP;
 		header.rc = 0;
 		header.length = 2+(len+3)/4;
-		be_write_rtcp_header(ptr, &header);
+		nbo_write_rtcp_header(ptr, &header);
 
-		be_write_uint32(ptr+4, ctx->self->ssrc);
+		nbo_w32(ptr+4, ctx->self->ssrc);
 		memcpy(ptr+8, name, 4);
 
 		if(len > 0)

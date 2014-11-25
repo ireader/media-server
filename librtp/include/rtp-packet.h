@@ -29,7 +29,7 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 	memset(pkt, 0, sizeof(rtp_packet_t));
 
 	// pkt header
-	v = be_read_uint32(ptr);
+	v = nbo_r32(ptr);
 	pkt->rtp.v = RTP_V(v);
 	pkt->rtp.p = RTP_P(v);
 	pkt->rtp.x = RTP_X(v);
@@ -37,8 +37,8 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 	pkt->rtp.m = RTP_M(v);
 	pkt->rtp.pt = RTP_PT(v);
 	pkt->rtp.seq = RTP_SEQ(v);
-	pkt->rtp.timestamp = be_read_uint32(ptr+4);
-	pkt->rtp.ssrc = be_read_uint32(ptr+8);
+	pkt->rtp.timestamp = nbo_r32(ptr+4);
+	pkt->rtp.ssrc = nbo_r32(ptr+8);
 
 	assert(2 == pkt->rtp.v); // RTP version field must equal 2 (p66)
 	hdrlen = sizeof(rtp_header_t) + pkt->rtp.cc * 4;
@@ -48,7 +48,7 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 	// pkt contributing source
 	for(i = 0; i < pkt->rtp.cc; i++)
 	{
-		pkt->csrc[i] = be_read_uint32(ptr + 12 + i*4);
+		pkt->csrc[i] = nbo_r32(ptr + 12 + i*4);
 	}
 
 	assert(bytes > hdrlen);
@@ -60,7 +60,7 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 	{
 		unsigned char *rtpext = (unsigned char*)data + hdrlen;
 		pkt->extension = rtpext + 4;
-		pkt->extlen = be_read_uint16(rtpext+2) * 4;
+		pkt->extlen = nbo_r16(rtpext+2) * 4;
 		assert(pkt->payloadlen >= pkt->extlen + 4);
 		pkt->payload = (unsigned char*)pkt->payload + pkt->extlen + 4;
 		pkt->payloadlen -= pkt->extlen + 4;

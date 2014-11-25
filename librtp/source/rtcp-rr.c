@@ -12,7 +12,7 @@ void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	assert(24 == sizeof(rtcp_rb_t));
 	assert(4 == sizeof(rtcp_rr_t));
 	assert((header->length+1) * 4 >= sizeof(rtcp_rr_t));
-	ssrc = be_read_uint32(ptr);
+	ssrc = nbo_r32(ptr);
 
 	receiver = rtp_member_fetch(ctx, ssrc);
 	if(!receiver) return; // error
@@ -25,17 +25,17 @@ void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	// report block
 	for(i = 0; i < header->rc; i++, ptr+=sizeof(rtcp_rb_t)) 
 	{
-		ssrc = be_read_uint32(ptr);
+		ssrc = nbo_r32(ptr);
 		if(ssrc != ctx->self->ssrc)
 			continue; // ignore
 
 		rb = &receiver->rtcp_rb;
 		rb->fraction = ptr[4];
 		rb->cumulative = (((uint32_t)ptr[5])<<16) | (((uint32_t)ptr[6])<<8)| ptr[7];
-		rb->exthsn = be_read_uint32(ptr+8);
-		rb->jitter = be_read_uint32(ptr+12);
-		rb->lsr = be_read_uint32(ptr+16);
-		rb->dlsr = be_read_uint32(ptr+20);
+		rb->exthsn = nbo_r32(ptr+8);
+		rb->jitter = nbo_r32(ptr+12);
+		rb->lsr = nbo_r32(ptr+16);
+		rb->dlsr = nbo_r32(ptr+20);
 	}
 }
 
@@ -60,10 +60,10 @@ size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	if(bytes < 4 + header.length*4)
 		return 4 + header.length*4;
 
-	be_write_rtcp_header(ptr, &header);
+	nbo_write_rtcp_header(ptr, &header);
 
 	// receiver SSRC
-	be_write_uint32(ptr+4, ctx->self->ssrc);
+	nbo_w32(ptr+4, ctx->self->ssrc);
 
 	ptr += 8;
 	// report block
@@ -110,15 +110,15 @@ size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 		// 65536/1000000 == 1024/15625
 		dlsr = (uint32_t)(delay/1000.0f * 65536);
 
-		be_write_uint32(ptr, sender->ssrc);
+		nbo_w32(ptr, sender->ssrc);
 		ptr[4] = (unsigned char)fraction;
 		ptr[5] = (unsigned char)((cumulative >> 16) & 0xFF);
 		ptr[6] = (unsigned char)((cumulative >> 8) & 0xFF);
 		ptr[7] = (unsigned char)(cumulative & 0xFF);
-		be_write_uint32(ptr+8, extseq);
-		be_write_uint32(ptr+12, (uint32_t)sender->jitter);
-		be_write_uint32(ptr+16, lsr);
-		be_write_uint32(ptr+20, 0==lsr ? 0 : dlsr);
+		nbo_w32(ptr+8, extseq);
+		nbo_w32(ptr+12, (uint32_t)sender->jitter);
+		nbo_w32(ptr+16, lsr);
+		nbo_w32(ptr+20, 0==lsr ? 0 : dlsr);
 
 		sender->rtp_expected = expected; // update source prior data
 		sender->rtp_received = sender->rtp_packets;
