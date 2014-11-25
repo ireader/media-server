@@ -62,6 +62,7 @@ struct rtp_profile_t
 	// 77-95 unassigned
 	// 96-127 dynamic
 	{96, "MPG4",	90000,  0 }, // RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
+	{97, "MP2P",	90000,  0 }, // RFC3555 4.2.11 Registration of MIME media type video/MP2P
 	{98, "H264",	90000,	0 }, // RFC6184 RTP Payload Format for H.264 Video
 };
 
