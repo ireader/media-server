@@ -68,7 +68,7 @@ int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
 		port[1] = i+1;
 		return 0;
 
-	} while(socket_invalid!=sock[0] && socket_invalid!=sock[1]);
+	} while(socket_invalid==sock[0] || socket_invalid==sock[1]);
 
 	return -1;
 }
