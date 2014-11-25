@@ -10,7 +10,22 @@
 static locker_t s_locker; // lock live list(consider lock-free list???)
 static struct list_head s_head;
 
-static void hls_live_onwrite(void* param, const void* packet, size_t bytes)
+static void* hls_live_alloc(void* param, size_t bytes)
+{
+	struct hls_live_t *live;
+	live = (struct hls_live_t *)param;
+	assert(bytes < sizeof(live->tspacket));
+	return live->tspacket;
+}
+
+static void hls_live_free(void* param, void* packet)
+{
+	struct hls_live_t *live;
+	live = (struct hls_live_t *)param;
+	assert(packet == live->tspacket);
+}
+
+static void hls_live_write(void* param, const void* packet, size_t bytes)
 {
 	struct hls_live_t *live;
 	live = (struct hls_live_t *)param;
@@ -25,13 +40,17 @@ static void hls_live_onwrite(void* param, const void* packet, size_t bytes)
 static struct hls_live_t* hls_live_create(const char* name)
 {
 	struct hls_live_t* live;
+	struct mpeg_ts_func_t func;
 
 	live = (struct hls_live_t*)malloc(sizeof(live[0]) + 2*1024*1024);
 	if(!live)
 		return NULL;
 
+	func.alloc = hls_live_alloc;
+	func.free = hls_live_free;
+	func.write = hls_live_write;
 	memset(live, 0, sizeof(live[0]));
-	live->ts = mpeg_ts_create(hls_live_onwrite, live);
+	live->ts = mpeg_ts_create(&func, live);
     if(!live->ts)
     {
         free(live);

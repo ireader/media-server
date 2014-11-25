@@ -19,6 +19,7 @@ struct hls_live_t
 	int32_t refcnt;
 	locker_t locker;
 	char name[MAX_NAME];
+	char tspacket[188]; // max ts packet
 
 	unsigned int m3u8seq; // EXT-X-MEDIA-SEQUENCE
 
