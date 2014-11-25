@@ -1,34 +1,22 @@
 #ifndef _mpeg_ps_h_
 #define _mpeg_ps_h_
-	
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
-		#define DLL_EXPORT_API __declspec(dllexport)
-		#define DLL_IMPORT_API __declspec(dllimport)
-#else
-	#if __GNUC__ >= 4
-		#define DLL_EXPORT_API __attribute__((visibility ("default")))
-		#define DLL_IMPORT_API
-	#else
-		#define DLL_EXPORT_API
-		#define DLL_IMPORT_API
-	#endif
-#endif
-
-#ifdef LIBMPEG_EXPORTS
-	#define LIBMPEG_API DLL_EXPORT_API
-#else
-	#define LIBMPEG_API DLL_IMPORT_API
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(OS_WINDOWS)
-	typedef __int64 int64_t;
+#include <stdlib.h>
+#ifndef OS_INT64_TYPE
+#if defined(_WIN32) || defined(_WIN64)
+	typedef __int64				int64_t;	
+	typedef unsigned __int64	uint64_t;
 #else
-	typedef long long int64_t;
+	#include <stdint.h>
+	typedef long long			int64_t;
+	typedef unsigned long long	uint64_t;
 #endif
+#define OS_INT64_TYPE
+#endif /* OS_INT64_TYPE */
 
 enum
 {
@@ -38,15 +26,33 @@ enum
 	STREAM_AUDIO_SVAC	= 0x90,
 };
 
-typedef void (*mpeg_ps_cbwrite)(void* param, const void* packet, size_t bytes);
+struct mpeg_ps_func_t
+{
+	/// alloc new packet
+	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] bytes alloc memory size in byte
+	/// @return memory pointer
+	void* (*alloc)(void* param, size_t bytes);
 
-LIBMPEG_API void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param);
-LIBMPEG_API int mpeg_ps_destroy(void* ps);
-LIBMPEG_API int mpeg_ps_add_stream(void* ps, int streamType, const void* info, int bytes);
-LIBMPEG_API int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
-LIBMPEG_API int mpeg_ps_reset(void* ps);
+	/// free packet
+	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] packet PS packet pointer(alloc return pointer)
+	void (*free)(void* param, void* packet);
 
-LIBMPEG_API size_t mpeg_ps_packet_dec(const unsigned char* data, size_t bytes, mpeg_ps_cbwrite func, void* param);
+	/// callback on PS packet done
+	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] packet PS packet pointer(alloc return pointer)
+	/// @param[in] bytes packet size
+	void (*write)(void* param, void* packet, size_t bytes);
+};
+
+void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param);
+int mpeg_ps_destroy(void* ps);
+int mpeg_ps_add_stream(void* ps, int streamType, const void* info, int bytes);
+int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
+int mpeg_ps_reset(void* ps);
+
+size_t mpeg_ps_packet_dec(const unsigned char* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param);
 
 #ifdef __cplusplus
 }

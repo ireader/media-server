@@ -21,13 +21,15 @@ typedef struct _mpeg_ts_enc_context_t
 	unsigned int pat_period;
 	unsigned int pcr_period;
 
-	mpeg_ts_cbwrite write;
+	struct mpeg_ts_func_t func;
 	void* param;
 } mpeg_ts_enc_context_t;
 
-static void mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, size_t len)
+static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, int cc, const void* payload, size_t len)
 {
-	uint8_t data[TS_PACKET_SIZE];
+	uint8_t *data = NULL;
+	data = ts->func.alloc(ts->param, TS_PACKET_SIZE);
+	if(!data) return ENOMEM;
 
 	assert(len < TS_PACKET_SIZE - 5); // TS-header + pointer
 
@@ -66,7 +68,8 @@ static void mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pi
     memmove(data + 5, payload, len);
     memset(data+5+len, 0xff, TS_PACKET_SIZE-len-5);
 
-	ts->write(ts->param, data, TS_PACKET_SIZE);
+	ts->func.write(ts->param, data, TS_PACKET_SIZE);
+	return 0;
 }
 
 #define TS_AF_FLAG_PCR(flag) ((flag) & 0x10)
@@ -81,11 +84,14 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 //    int keyframe = 0; // video IDR-frame
 	uint8_t *p = NULL;
 	uint8_t *pes = NULL;
-	uint8_t data[TS_PACKET_SIZE];
+	uint8_t *data = NULL;
 	int64_t pcr = 0x8000000000000000L;
 
 	while(bytes > 0)
 	{
+		data = tsctx->func.alloc(tsctx->param, TS_PACKET_SIZE);
+		if(!data) return ENOMEM;
+
 		stream->cc = (stream->cc + 1 ) % 16;
 
 		// TS Header
@@ -199,7 +205,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 		start = 0;
 
 		// send with TS-header
-		tsctx->write(tsctx->param, data, TS_PACKET_SIZE);
+		tsctx->func.write(tsctx->param, data, TS_PACKET_SIZE);
 	}
 
 	return 0;
@@ -248,7 +254,7 @@ int mpeg_ts_write(void* ts, int avtype, int64_t pts, int64_t dts, const void* da
 	return 0;
 }
 
-void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
+void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
 {
 	mpeg_ts_enc_context_t *tsctx = NULL;
 
@@ -295,7 +301,7 @@ void* mpeg_ts_create(mpeg_ts_cbwrite func, void* param)
     tsctx->pat.pmt[0].streams[1].esinfo = NULL;
     tsctx->pat.pmt[0].streams[1].cc = (uint8_t)(-1); // +1 => 0
 
-	tsctx->write = func;
+	memcpy(&tsctx->func, func, sizeof(tsctx->func));
 	tsctx->param = param;
 	return tsctx;
 }

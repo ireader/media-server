@@ -26,10 +26,10 @@ typedef struct _mpeg_ps_enc_context_t
 	unsigned int psm_period;
 	unsigned int scr_period;
 
-	mpeg_ps_cbwrite write;
+	struct mpeg_ps_func_t func;
 	void* param;
 
-	uint8_t packet[MAX_PACKET_SIZE];
+//	uint8_t packet[MAX_PACKET_SIZE];
 
 } mpeg_ps_enc_context_t;
 
@@ -120,11 +120,17 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 
 int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
 {
+	int first;
 	size_t i, n;
+	uint8_t *packet;
 	mpeg_ps_enc_context_t *psctx;
 
 	i = 0;
+	first = 1;
 	psctx = (mpeg_ps_enc_context_t*)ps;
+
+	packet = psctx->func.alloc(psctx->param, MAX_PACKET_SIZE);
+	if(!packet) return ENOMEM;
 
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference
@@ -133,15 +139,15 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 	psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
 	psctx->packhd.system_clock_reference_extension = 0;
 	psctx->packhd.program_mux_rate = 6106;
-	i += ps_packet_header_write(&psctx->packhd, psctx->packet + i);
+	i += ps_packet_header_write(&psctx->packhd, packet + i);
 
 	// write system_header(p76)
 	if(0 == (psctx->psm_period % 30))
-		i += ps_system_header_write(&psctx->syshd, psctx->packet + i);
+		i += ps_system_header_write(&psctx->syshd, packet + i);
 
 	// write program_stream_map(p79)
 	if(0 == (psctx->psm_period % 30))
-		i += psm_write(&psctx->psm, psctx->packet + i);
+		i += psm_write(&psctx->psm, packet + i);
 
 	// check packet size
 	assert(i < MAX_PACKET_SIZE - 0xFF);
@@ -150,14 +156,14 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 	while(bytes > 0)
 	{
 		uint8_t *p;
-		uint8_t *pes = psctx->packet + i;
+		uint8_t *pes = packet + i;
 		uint8_t streamId;
 
 		streamId = ps_stream_find(psctx, avtype);
 		assert(PES_SID_VIDEO==streamId || PES_SID_AUDIO==streamId);
 		p = pes + pes_write_header(pts, dts, streamId, pes);
 
-		if(PSI_STREAM_H264 == avtype && 0x09 != h264_type(payload, bytes))
+		if(first && PSI_STREAM_H264 == avtype && 0x09 != h264_type(payload, bytes))
 		{
 			// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 			// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -188,16 +194,19 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 
 		// notify packet already
 		i += n + (p - pes);
-		psctx->write(psctx->param, psctx->packet, i);
+		psctx->func.write(psctx->param, packet, i);
 
 		i = 0; // clear value, the next pes packet don't need pack_header
+		first = 0; // clear first packet flag
+		packet = psctx->func.alloc(psctx->param, MAX_PACKET_SIZE);
+		if(!packet) return ENOMEM;
 	}
 
 	++psctx->psm_period;
 	return 0;
 }
 
-void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param)
+void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param)
 {
 	mpeg_ps_enc_context_t *psctx = NULL;
 
@@ -207,7 +216,7 @@ void* mpeg_ps_create(mpeg_ps_cbwrite func, void* param)
 		return NULL;
 
 	memset(psctx, 0, sizeof(mpeg_ps_enc_context_t));
-	psctx->write = func;
+	memcpy(&psctx->func, func, sizeof(psctx->func));
 	psctx->param = param;
 
 	psctx->syshd.rate_bound = 26234; //10493600~10mbps(50BPS * 8 = 400bps)

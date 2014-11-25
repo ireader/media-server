@@ -63,7 +63,7 @@ uint32_t ps_system_header_dec(const uint8_t* data, int bytes)
 	return len + 4 + 2;
 }
 
-size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, mpeg_ps_cbwrite func, void* param)
+size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param)
 {
 	size_t i, len;
 	pes_t pes;
@@ -102,12 +102,12 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, mpeg_ps_cbwrite fun
 	{
 		uint16_t len2;
 		len2 = (data[i+4] << 8) | data[i+5];
-		assert(len2 + 6 <= bytes - i);
+		assert((size_t)len2 + 6 <= bytes - i);
 		pes_read(data + i, len2 + 6, &pes);
 
 		if(pes.payload_len > 0)
 		{
-			func(param, pes.payload, pes.payload_len);
+			func->write(param, pes.payload, pes.payload_len);
 			pes.payload_len = 0;
 		}
 

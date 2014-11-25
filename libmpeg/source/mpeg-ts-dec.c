@@ -26,6 +26,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 	uint32_t i = 0;
 	uint32_t j = 0;
 
+	assert(bytes <= TS_PACKET_SIZE);
 	adp->adaptation_field_length = data[i++];
 	printf("adaptaion(%d)  flag: %0x\n", adp->adaptation_field_length, (unsigned int)data[i]);
 
@@ -119,8 +120,8 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-static char s_video[1024*1024];
-static char s_audio[1024*1024];
+static uint8_t s_video[1024*1024];
+static uint8_t s_audio[1024*1024];
 
 int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 {
