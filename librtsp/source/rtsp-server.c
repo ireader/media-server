@@ -483,12 +483,12 @@ int rtsp_server_get_client(void* rtsp, char ip[40], unsigned short *port)
 	return 0;
 }
 
-int rtsp_server_init()
+int rtsp_server_init(void)
 {
     return 0;
 }
 
-int rtsp_server_cleanup()
+int rtsp_server_cleanup(void)
 {
     return 0;
 }
@@ -506,6 +506,8 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	udphandler.onsend = rtsp_server_onsend;
 
 	ctx = (struct rtsp_server_context_t *)malloc(sizeof(struct rtsp_server_context_t));
+	if(!ctx) return NULL;
+
 	memset(ctx, 0, sizeof(struct rtsp_server_context_t));
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	ctx->tcptransport = rtsp_transport_tcp();

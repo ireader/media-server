@@ -46,6 +46,8 @@ static void* rtsp_transport_tcp_onconnected(void* ptr, void* sid, const char* ip
 	transport = (struct rtsp_tcp_transport_t *)ptr;
 
 	session = (struct rtsp_tcp_session_t *)malloc(sizeof(*session));
+	if(!session) return NULL;
+
 	memset(session, 0, sizeof(*session));
     memcpy(&session->handler, &transport->handler, sizeof(session->handler));
     session->ptr = transport->ptr;
@@ -109,6 +111,8 @@ static void* rtsp_transport_tcp_create(socket_t socket, const struct rtsp_transp
 	struct aio_tcp_transport_handler_t aiohandler;
 
 	transport = (struct rtsp_tcp_transport_t*)malloc(sizeof(*transport));
+	if(!transport) return NULL;
+
 	memset(transport, 0, sizeof(*transport));
 	memcpy(&transport->handler, handler, sizeof(transport->handler));
 	transport->ptr = ptr;

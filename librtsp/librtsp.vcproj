@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include"
+				AdditionalIncludeDirectories=".;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include;../libmpeg/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -298,6 +298,14 @@
 			</File>
 			<File
 				RelativePath=".\media\h264-file-source.h"
+				>
+			</File>
+			<File
+				RelativePath=".\media\ps-file-source.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\media\ps-file-source.h"
 				>
 			</File>
 		</Filter>

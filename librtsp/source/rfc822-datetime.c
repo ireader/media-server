@@ -1,5 +1,5 @@
 #include "rfc822-datetime.h"
-#include "cstringext.h"
+#include <stdio.h>
 #include <assert.h>
 #include <time.h>
 
@@ -39,12 +39,12 @@ zone        =  "UT"  / "GMT"                ; Universal Time
 											;  hours+min. (HHMM)
 */
 
-static const char* s_month[12] = {
+static const char* s_month[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static const char* s_week[7] = {
+static const char* s_week[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
@@ -58,7 +58,7 @@ int datetime_format(time_t time, rfc822_datetime_t datetime)
 	struct tm *tm = gmtime(&time);
 	assert(0 <= tm->tm_wday && tm->tm_wday < 7);
 	assert(0 <= tm->tm_mon && tm->tm_mon < 12);
-	snprintf(datetime, sizeof(rfc822_datetime_t), "%s, %02d %s %04d %02d:%02d:%02d GMT", 
+	sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT", 
 		s_week[tm->tm_wday],
 		tm->tm_mday,
 		s_month[tm->tm_mon],
@@ -69,7 +69,7 @@ int datetime_format(time_t time, rfc822_datetime_t datetime)
 	return 0;
 }
 
-time_t datetime_parse(const char* datetime)
-{
-	return 0;
-}
+//time_t datetime_parse(const char* datetime)
+//{
+//	return 0;
+//}

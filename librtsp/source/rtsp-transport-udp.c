@@ -48,6 +48,8 @@ static void* rtsp_transport_udp_create(socket_t socket, const struct rtsp_transp
 	struct aio_udp_transport_handler_t aiohandler;
 
 	transport = (struct rtsp_udp_transport_t*)malloc(sizeof(*transport));
+	if(!transport) return NULL;
+
 	memset(transport, 0, sizeof(*transport));
 	memcpy(&transport->handler, handler, sizeof(transport->handler));
 	transport->ptr = ptr;

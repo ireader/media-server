@@ -53,8 +53,8 @@ struct rtsp_handler_t
 
 // Initialize/Finalize
 // call once only
-int rtsp_server_init();
-int rtsp_server_cleanup();
+int rtsp_server_init(void);
+int rtsp_server_cleanup(void);
 
 /// start rtsp server
 /// @param[in] ip bind ip address, NULL for any network interface

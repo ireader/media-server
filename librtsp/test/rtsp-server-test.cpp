@@ -11,6 +11,7 @@
 #include "ntp-time.h"
 #include "rtp-profile.h"
 #include "rtp-socket.h"
+#include "ps-file-source.h"
 #include "h264-file-source.h"
 #include "url.h"
 #include "path.h"
@@ -113,7 +114,7 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
 			// unlock
 			TFileDescription describe;
 			IMediaSource *source = NULL;
-			source = H264FileSource::Create(filename.c_str());
+			source = PSFileSource::Create(filename.c_str());
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
 			delete source;
@@ -164,7 +165,7 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 
 		rtsp_session_t item;
 		memset(&item, 0, sizeof(item));
-		item.media = H264FileSource::Create(filename.c_str());
+		item.media = PSFileSource::Create(filename.c_str());
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media);
