@@ -6,7 +6,6 @@
 #include "mpeg-pes-proto.h"
 #include "mpeg-ts.h"
 #include "crc32.h"
-#include "dlog.h"
 #include <string.h>
 #include <assert.h>
 

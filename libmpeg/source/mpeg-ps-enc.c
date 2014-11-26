@@ -14,8 +14,8 @@
 #include <memory.h>
 #include <assert.h>
 
-#define MAX_PACKET_SIZE		70000 // 64k pes data + pack_header + system_header
-#define N_MPEG_TS_STREAM	8
+#define MAX_PES_HEADER	1024	// pack_header + system_header + psm
+#define MAX_PES_PACKET	0xFFFF	// 64k pes data
 
 typedef struct _mpeg_ps_enc_context_t
 {
@@ -121,7 +121,7 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
 {
 	int first;
-	size_t i, n;
+	size_t i, n, sz;
 	uint8_t *packet;
 	mpeg_ps_enc_context_t *psctx;
 
@@ -129,14 +129,21 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 	first = 1;
 	psctx = (mpeg_ps_enc_context_t*)ps;
 
-	packet = psctx->func.alloc(psctx->param, MAX_PACKET_SIZE);
+	// TODO: 
+	// 1. update packet header program_mux_rate
+	// 2. update system header rate_bound
+
+	// alloc once (include Multi-PES packet)
+	sz = bytes + MAX_PES_HEADER + (bytes/MAX_PES_PACKET+1) * 64; // 64 = 0x000001 + stream_id + PES_packet_length + other
+	packet = psctx->func.alloc(psctx->param, sz);
 	if(!packet) return ENOMEM;
 
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference
 	// http://www.bretl.com/mpeghtml/SCR.HTM
 	//the maximum allowed interval between SCRs is 700ms 
-	psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
+//	psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
+	psctx->packhd.system_clock_reference_base = (dts-0) % (((int64_t)1)<<33);
 	psctx->packhd.system_clock_reference_extension = 0;
 	psctx->packhd.program_mux_rate = 6106;
 	i += ps_packet_header_write(&psctx->packhd, packet + i);
@@ -150,7 +157,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		i += psm_write(&psctx->psm, packet + i);
 
 	// check packet size
-	assert(i < MAX_PACKET_SIZE - 0xFF);
+	assert(i < MAX_PES_HEADER);
 
 	// write data
 	while(bytes > 0)
@@ -162,6 +169,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		streamId = ps_stream_find(psctx, avtype);
 		assert(PES_SID_VIDEO==streamId || PES_SID_AUDIO==streamId);
 		p = pes + pes_write_header(pts, dts, streamId, pes);
+		assert(p - pes < 64);
 
 		if(first && PSI_STREAM_H264 == avtype && 0x09 != h264_type(payload, bytes))
 		{
@@ -177,10 +185,10 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 		// A value of 0 indicates that the PES packet length is neither specified nor bounded 
 		// and is allowed only in PES packets whose payload consists of bytes from a 
 		// video elementary stream contained in transport stream packets
-		if((p - pes - 6) + bytes > 0xFFFF)
+		if((p - pes - 6) + bytes > MAX_PES_PACKET)
 		{
-			nbo_w16(pes + 4, 0xFFFF);
-			n = 0xFFFF - (p - pes - 6);
+			nbo_w16(pes + 4, MAX_PES_PACKET);
+			n = MAX_PES_PACKET - (p - pes - 6);
 		}
 		else
 		{
@@ -194,13 +202,14 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t*
 
 		// notify packet already
 		i += n + (p - pes);
-		psctx->func.write(psctx->param, packet, i);
 
-		i = 0; // clear value, the next pes packet don't need pack_header
+//		i = 0; // clear value, the next pes packet don't need pack_header
 		first = 0; // clear first packet flag
-		packet = psctx->func.alloc(psctx->param, MAX_PACKET_SIZE);
-		if(!packet) return ENOMEM;
+		pts = dts = 0; // only first packet write PTS/DTS
 	}
+
+	assert(i < sz);
+	psctx->func.write(psctx->param, packet, i);
 
 	++psctx->psm_period;
 	return 0;
@@ -247,11 +256,12 @@ int mpeg_ps_destroy(void* ps)
 	return 0;
 }
 
-int mpeg_ps_add_stream(void* ps, int avtype, const void* info, int bytes)
+int mpeg_ps_add_stream(void* ps, int avtype, const void* info, size_t bytes)
 {
 	mpeg_ps_enc_context_t* psctx;
 	psm_t *psm;
 
+	assert(bytes < 512);
 	psctx = (mpeg_ps_enc_context_t*)ps;
 	if(!psctx || psctx->psm.stream_count + 1 >= NSTREAM)
 	{

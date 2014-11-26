@@ -10,9 +10,6 @@
 #include <assert.h>
 #include <memory.h>
 
-static uint8_t s_video[1024*1024];
-static uint8_t s_audio[1024*1024];
-
 uint32_t ps_system_header_dec(const uint8_t* data, int bytes)
 {
 	int i,j;
@@ -65,9 +62,14 @@ uint32_t ps_system_header_dec(const uint8_t* data, int bytes)
 
 size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param)
 {
-	size_t i, len;
+	size_t i, n, len;
 	pes_t pes;
 	ps_packet_header_t pkhd;
+	uint8_t *packet;
+
+	packet = func->alloc(param, bytes);
+	if(!packet) return bytes; // TODO: check return
+	n = 0; // packet length
 
 	memset(&pkhd, 0, sizeof(pkhd));
 	// 2.5.3.3 Pack layer of program stream
@@ -95,24 +97,22 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_p
 		assert(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2]);
 	}
 
-	pes.payload = s_video;
-
 	// MPEG_program_end_code = 0x000000B9
 	while(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
 	{
 		uint16_t len2;
+		pes.payload = packet + n;
+		pes.payload_len = 0;
 		len2 = (data[i+4] << 8) | data[i+5];
 		assert((size_t)len2 + 6 <= bytes - i);
 		pes_read(data + i, len2 + 6, &pes);
 
-		if(pes.payload_len > 0)
-		{
-			func->write(param, pes.payload, pes.payload_len);
-			pes.payload_len = 0;
-		}
-
+		n += pes.payload_len;
 		i += len2 + 6;
 	}
+
+	func->write(param, packet, n);
+//	func->free(param, packet);
 
 	return i + (PES_SID_END==data[i+3] ? 4 : 0);
 }

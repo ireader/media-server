@@ -48,9 +48,18 @@ struct mpeg_ps_func_t
 
 void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param);
 int mpeg_ps_destroy(void* ps);
-int mpeg_ps_add_stream(void* ps, int streamType, const void* info, int bytes);
-int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
+int mpeg_ps_add_stream(void* ps, int streamType, const void* info, size_t bytes);
 int mpeg_ps_reset(void* ps);
+
+/// input ES
+/// @param[in] ps MPEG-2 Program Stream packer(mpeg_ps_create)
+/// @param[in] streamType such as: STREAM_VIDEO_H264/STREAM_AUDIO_AAC
+/// @param[in] pts presentation time stamp(in 90KHZ)
+/// @param[in] dts decoding time stamp(in 90KHZ)
+/// @param[in] data ES memory
+/// @param[in] bytes ES length in byte
+/// @return 0-ok, ENOMEM-alloc failed, <0-error
+int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 size_t mpeg_ps_packet_dec(const unsigned char* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param);
 

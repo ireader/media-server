@@ -253,10 +253,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\sdk\source\dlog.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\sdk\video\h264-util.h"
 				>
 			</File>
