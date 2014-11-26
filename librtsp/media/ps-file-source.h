@@ -8,6 +8,10 @@
 #include "rtp.h"
 #include <string>
 
+#ifndef MAX_UDP_PACKET
+#define MAX_UDP_PACKET (1450-16)
+#endif
+
 class PSFileSource : public IMediaSource
 {
 public:
@@ -31,27 +35,31 @@ private:
 	static void *Alloc(void* param, size_t bytes);
 	static void Free(void* param, void* packet);
 	static void Packet(void* param, void* packet, size_t bytes);
+	static void* RTPAlloc(void* param, size_t bytes);
+	static void RTPFree(void* param, void *packet);
+	static void RTPPacket(void* param, void *packet, size_t bytes, int64_t time);
 
 	unsigned char* CreateRTPPacket();
 
 	static void OnRTCPEvent(void* param, const struct rtcp_msg_t* msg);
 	void OnRTCPEvent(const struct rtcp_msg_t* msg);
 	int SendRTCP();
-	int Pack(const void* h264, size_t bytes);
 
 private:
 	void* m_ps;
 	void* m_rtp;
 	int m_status;
-	unsigned int m_ssrc;
-	unsigned int m_timestamp;
-	unsigned short m_seq;
+
+	time64_t m_ps_clock;
 	time64_t m_rtp_clock;
 	time64_t m_rtcp_clock;
 	H264FileReader m_reader;
 	socket_t m_socket[2];
 	unsigned short m_port[2];
 	std::string m_ip;
+
+	void *m_pspacker;
+	unsigned char m_packet[MAX_UDP_PACKET+14];
 };
 
 #endif /* !_ps_file_source_h_ */

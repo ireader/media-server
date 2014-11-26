@@ -1,6 +1,7 @@
 #include "ps-file-source.h"
 #include "cstringext.h"
 #include "mpeg-ps.h"
+#include "../payload/rtp-pack.h"
 #include <assert.h>
 
 #define MAX_UDP_PACKET (1450-16)
@@ -11,11 +12,11 @@ PSFileSource::PSFileSource(const char *file)
 :m_reader(file)
 {
 	m_status = 0;
+	m_ps_clock = 0;
 	m_rtp_clock = 0;
 	m_rtcp_clock = 0;
-	m_timestamp = 0;
-	m_ssrc = (unsigned int)rtp_ssrc();
-	m_seq = (unsigned short)m_ssrc;
+
+	unsigned int ssrc = (unsigned int)rtp_ssrc();
 
 	struct mpeg_ps_func_t func;
 	func.alloc = Alloc;
@@ -24,9 +25,16 @@ PSFileSource::PSFileSource(const char *file)
 	m_ps = mpeg_ps_create(&func, this);
 	mpeg_ps_add_stream(m_ps, STREAM_VIDEO_H264, NULL, 0);
 
+	static struct rtp_pack_func_t s_psfunc = {
+		PSFileSource::RTPAlloc,
+		PSFileSource::RTPFree,
+		PSFileSource::RTPPacket,
+	};
+	m_pspacker = rtp_ps_packer()->create(ssrc, 98, &s_psfunc, this);
+
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, m_ssrc, 90000, 4*1024);
+	m_rtp = rtp_create(&event, this, ssrc, 90000, 4*1024);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 
@@ -34,6 +42,8 @@ PSFileSource::~PSFileSource()
 {
 	if(m_rtp)
 		rtp_destroy(m_rtp);
+	if(m_pspacker)
+		rtp_ps_packer()->destroy(m_pspacker);
 	mpeg_ps_destroy(m_ps);
 }
 
@@ -64,10 +74,10 @@ int PSFileSource::Play()
 		size_t bytes = 0;
 		if(0 == m_reader.GetNextFrame(ptr, bytes))
 		{
+			if(0 == m_ps_clock)
+				m_ps_clock = clock;
+			mpeg_ps_write(m_ps, STREAM_VIDEO_H264, (clock-m_ps_clock)*90, (clock-m_ps_clock)*90, ptr, bytes);
 			m_rtp_clock = clock;
-//			Pack(ptr, bytes);
-			mpeg_ps_write(m_ps, STREAM_VIDEO_H264, m_timestamp, m_timestamp, ptr, bytes);
-			m_timestamp += 3600;
 
 			SendRTCP();
 			return 1;
@@ -101,8 +111,8 @@ int PSFileSource::GetDuration(int64_t& duration) const
 int PSFileSource::GetSDPMedia(std::string& sdp) const
 {
 	static const char* pattern =
-		"m=video 0 RTP/AVP 96\n"
-		"a=rtpmap:96 MP2P/90000\n";
+		"m=video 0 RTP/AVP 98\n"
+		"a=rtpmap:98 MP2P/90000\n";
 	
 	sdp = pattern;
 	return 0;
@@ -162,47 +172,32 @@ void PSFileSource::Free(void* param, void* packet)
 void PSFileSource::Packet(void* param, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
-
-	const uint8_t *p;
-	unsigned char rtp[MAX_UDP_PACKET+14];
-
-	rtp[0] = (unsigned char)(0x80);
-	rtp[1] = (unsigned char)(96);
-
-	rtp[4] = (unsigned char)(self->m_timestamp >> 24);
-	rtp[5] = (unsigned char)(self->m_timestamp >> 16);
-	rtp[6] = (unsigned char)(self->m_timestamp >> 8);
-	rtp[7] = (unsigned char)(self->m_timestamp);
-
-	rtp[8] = (unsigned char)(self->m_ssrc >> 24);
-	rtp[9] = (unsigned char)(self->m_ssrc >> 16);
-	rtp[10] = (unsigned char)(self->m_ssrc >> 8);
-	rtp[11] = (unsigned char)(self->m_ssrc);
-
-	p = (const unsigned char *)pes;
-	while(bytes > 0)
-	{
-		size_t len;
-
-		assert(0 == (rtp[1] & 0x80)); // don't set market
-		if(bytes <= MAX_UDP_PACKET)
-			rtp[1] |= 0x80; // set marker flag
-		rtp[2] = (unsigned char)(self->m_seq >> 8);
-		rtp[3] = (unsigned char)(self->m_seq);
-		++self->m_seq;
-
-		len = bytes > MAX_UDP_PACKET ? MAX_UDP_PACKET : bytes;
-		memcpy(rtp+12, p, len);
-
-		struct sockaddr_in addrin;
-		socket_addr_ipv4(&addrin, self->m_ip.c_str(), self->m_port[0]);
-		int r = socket_sendto(self->m_socket[0], rtp, len+12, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-		assert(r == len+12);
-		rtp_onsend(self->m_rtp, rtp, len+12, self->m_rtcp_clock);
-
-		p += len;
-		bytes -= len;
-	}
-
+	time64_t clock = time64_now();
+	rtp_ps_packer()->input(self->m_pspacker, pes, bytes, clock);
 	free(pes);
+}
+
+void* PSFileSource::RTPAlloc(void* param, size_t bytes)
+{
+	PSFileSource *self = (PSFileSource*)param;
+	assert(bytes <= sizeof(self->m_packet));
+	return self->m_packet;
+}
+
+void PSFileSource::RTPFree(void* param, void *packet)
+{
+	PSFileSource *self = (PSFileSource*)param;
+	assert(self->m_packet == packet);
+}
+
+void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+{
+	PSFileSource *self = (PSFileSource*)param;
+	assert(self->m_packet == packet);
+
+	struct sockaddr_in addrin;
+	socket_addr_ipv4(&addrin, self->m_ip.c_str(), self->m_port[0]);
+	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&addrin, sizeof(addrin));
+	assert(r == bytes);
+	rtp_onsend(self->m_rtp, packet, bytes, time);
 }

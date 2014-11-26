@@ -1,9 +1,10 @@
 #include "h264-file-source.h"
 #include "cstringext.h"
 #include "base64.h"
+extern "C" {
+#include "../payload/rtp-pack.h"
+}
 #include <assert.h>
-
-#define MAX_UDP_PACKET (1450-16)
 
 extern "C" int rtp_ssrc(void);
 
@@ -13,13 +14,18 @@ H264FileSource::H264FileSource(const char *file)
 	m_status = 0;
 	m_rtp_clock = 0;
 	m_rtcp_clock = 0;
-	m_timestamp = 0;
-	m_ssrc = (unsigned int)rtp_ssrc();
-	m_seq = (unsigned short)m_ssrc;
+
+	unsigned int ssrc = (unsigned int)rtp_ssrc();
+	static struct rtp_pack_func_t s_rtpfunc = {
+		H264FileSource::RTPAlloc,
+		H264FileSource::RTPFree,
+		H264FileSource::RTPPacket,
+	};
+	m_rtppacker = rtp_h264_packer()->create(ssrc, 98, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, m_ssrc, 90000, 4*1024);
+	m_rtp = rtp_create(&event, this, ssrc, 90000, 4*1024);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 
@@ -27,6 +33,9 @@ H264FileSource::~H264FileSource()
 {
 	if(m_rtp)
 		rtp_destroy(m_rtp);
+
+	if(m_rtppacker)
+		rtp_h264_packer()->destroy(m_rtppacker);
 }
 
 H264FileSource* H264FileSource::Create(const char *file)
@@ -56,9 +65,8 @@ int H264FileSource::Play()
 		size_t bytes = 0;
 		if(0 == m_reader.GetNextFrame(ptr, bytes))
 		{
-			Pack(ptr, bytes);
+			rtp_h264_packer()->input(m_rtppacker, ptr, bytes, clock);
 			m_rtp_clock = clock;
-			m_timestamp += 3600;
 
 			SendRTCP();
 			return 1;
@@ -143,135 +151,6 @@ void H264FileSource::OnRTCPEvent(void* param, const struct rtcp_msg_t* msg)
 	self->OnRTCPEvent(msg);
 }
 
-inline const unsigned char* search_start_code(const unsigned char* ptr, size_t bytes)
-{
-	const unsigned char *p;
-	for(p = ptr; p + 3 < ptr + bytes; p++)
-	{
-		if(0x00 == p[0] && 0x00 == p[1] && (0x01 == p[2] || (0x00==p[2] && 0x01==p[3])))
-			return p;
-	}
-	return NULL;
-}
-
-int H264FileSource::Pack(const void* h264, size_t bytes)
-{
-	int r;
-	const unsigned char *p1, *p2;
-	unsigned char packet[MAX_UDP_PACKET+14];
-
-	p1 = (const unsigned char *)h264;
-	assert(p1 == search_start_code(p1, bytes));
-
-	packet[0] = (unsigned char)(0x80);
-	packet[1] = (unsigned char)(98);
-
-	packet[4] = (unsigned char)(m_timestamp >> 24);
-	packet[5] = (unsigned char)(m_timestamp >> 16);
-	packet[6] = (unsigned char)(m_timestamp >> 8);
-	packet[7] = (unsigned char)(m_timestamp);
-
-	packet[8] = (unsigned char)(m_ssrc >> 24);
-	packet[9] = (unsigned char)(m_ssrc >> 16);
-	packet[10] = (unsigned char)(m_ssrc >> 8);
-	packet[11] = (unsigned char)(m_ssrc);
-
-	time64_t clock = time64_now();
-
-	while(bytes > 0)
-	{
-		size_t nalu_size;
-
-		p2 = search_start_code(p1+3, bytes - 3);
-		if(!p2) p2 = p1 + bytes;
-		nalu_size = p2 - p1;
-		bytes -= nalu_size;
-
-		// filter suffix '00' bytes
-		while(0 == p1[nalu_size-1]) --nalu_size;
-
-		// filter H.264 start code(0x00000001)
-		nalu_size -= (0x01 == p1[2]) ? 3 : 4;
-		p1 += (0x01 == p1[2]) ? 3 : 4;
-		assert(0 < (*p1 & 0x1F) && (*p1 & 0x1F) < 24);
-
-		if(nalu_size < MAX_UDP_PACKET)
-		{
-			packet[1] |= 0x80; // marker
-			packet[2] = (unsigned char)(m_seq >> 8);
-			packet[3] = (unsigned char)(m_seq);
-			++m_seq;
-
-			memcpy(packet+12, p1, nalu_size);
-			struct sockaddr_in addrin;
-			socket_addr_ipv4(&addrin, m_ip.c_str(), m_port[0]);
-			r = socket_sendto(m_socket[0], packet, nalu_size+12, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-			rtp_onsend(m_rtp, packet, nalu_size+12, clock);
-
-			// single NAl unit packet 
-			//packer->callback(packer->cbparam, p1, nalu_size);
-		}
-		else
-		{
-			// RFC6184 5.3. NAL Unit Header Usage: Table 2 (p15)
-			// RFC6184 5.8. Fragmentation Units (FUs) (p29)
-			unsigned char fu_indicator = (*p1 & 0xE0) | 28; // FU-A
-			unsigned char fu_header = *p1 & 0x1F;
-
-			p1 += 1; // skip NAL Unit Type byte
-			nalu_size -= 1;
-
-			// FU-A start
-			fu_header = 0x80 | fu_header;
-			while(nalu_size > MAX_UDP_PACKET-1)
-			{
-				packet[1] &= ~0x80; // clean marker
-				packet[2] = (unsigned char)(m_seq >> 8);
-				packet[3] = (unsigned char)(m_seq);
-				packet[12] = fu_indicator;
-				packet[13] = fu_header;
-				++m_seq;
-
-				memcpy(packet+14, p1, MAX_UDP_PACKET-1);
-				struct sockaddr_in addrin;
-				socket_addr_ipv4(&addrin, m_ip.c_str(), m_port[0]);
-				r = socket_sendto(m_socket[0], packet, MAX_UDP_PACKET-1+14, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-				assert(r == MAX_UDP_PACKET-1+14 && 60 != r);
-				rtp_onsend(m_rtp, packet, MAX_UDP_PACKET-1+14, clock);
-				//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, s_max_packet_size);
-
-				nalu_size -= MAX_UDP_PACKET-1;
-				p1 += MAX_UDP_PACKET-1;
-				fu_header = 0x1F & fu_header; // FU-A fragment
-			}
-
-			// FU-A end
-			fu_header = 0x40 | (fu_header & 0x1F);
-			//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, nalu_size);
-			packet[1] |= 0x80; // marker
-			packet[2] = (unsigned char)(m_seq >> 8);
-			packet[3] = (unsigned char)(m_seq);
-			packet[12] = fu_indicator;
-			packet[13] = fu_header;
-			++m_seq;
-
-			while(nalu_size > 1 && 0 == p1[nalu_size-1])
-				--nalu_size;
-
-			memcpy(packet+14, p1, nalu_size);
-			struct sockaddr_in addrin;
-			socket_addr_ipv4(&addrin, m_ip.c_str(), m_port[0]);
-			r = socket_sendto(m_socket[0], packet, nalu_size+14, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-			assert(r == nalu_size+14);
-			rtp_onsend(m_rtp, packet, nalu_size+14, clock);
-		}
-
-		p1 = p2;
-	}
-
-	return 0;
-}
-
 int H264FileSource::SendRTCP()
 {
 	// make sure have sent RTP packet
@@ -292,4 +171,29 @@ int H264FileSource::SendRTCP()
 	}
 	
 	return 0;
+}
+
+void* H264FileSource::RTPAlloc(void* param, size_t bytes)
+{
+	H264FileSource *self = (H264FileSource*)param;
+	assert(bytes <= sizeof(self->m_packet));
+	return self->m_packet;
+}
+
+void H264FileSource::RTPFree(void* param, void *packet)
+{
+	H264FileSource *self = (H264FileSource*)param;
+	assert(self->m_packet == packet);
+}
+
+void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+{
+	H264FileSource *self = (H264FileSource*)param;
+	assert(self->m_packet == packet);
+
+	struct sockaddr_in addrin;
+	socket_addr_ipv4(&addrin, self->m_ip.c_str(), self->m_port[0]);
+	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&addrin, sizeof(addrin));
+	assert(r == bytes);
+	rtp_onsend(self->m_rtp, packet, bytes, time);
 }
