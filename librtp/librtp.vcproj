@@ -269,15 +269,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\payload\rtp-h264-pack.h"
-				>
-			</File>
-			<File
 				RelativePath=".\payload\rtp-h264-unpack.c"
 				>
 			</File>
 			<File
-				RelativePath=".\payload\rtp-h264-unpack.h"
+				RelativePath=".\payload\rtp-pack.h"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-ps-pack.c"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-ps-unpack.c"
+				>
+			</File>
+			<File
+				RelativePath=".\payload\rtp-unpack.h"
 				>
 			</File>
 		</Filter>
