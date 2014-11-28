@@ -642,11 +642,16 @@ static int sdp_parse_bandwidth(struct sdp_context* sdp)
 	return -1;
 }
 
-// RFC4566 5.9
+// RFC4566 5.9 (p17)
 // t=<start-time> <stop-time>
 // If the <stop-time> is set to zero, then the session is not bounded,
 // though it will not become active until after the <start-time>. If
 // the <start-time> is also zero, the session is regarded as permanent.
+//
+// 1. These values are the decimal representation of Network Time Protocol (NTP) time values in seconds
+//    since 1900 [13]. To convert these values to UNIX time, subtract decimal 2208988800.
+// 2. If the <stop-time> is set to zero, then the session is not bounded, though it will not become active 
+//    until after the <start-time>. If the <start-time> is also zero, the session is regarded as permanent.
 static int sdp_parse_timing(struct sdp_context* sdp)
 {
 	int n[2];

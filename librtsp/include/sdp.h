@@ -54,6 +54,10 @@ int sdp_bandwidth_count(void* sdp);
 const char* sdp_bandwidth_get_type(void* sdp, int idx); // CT/AS
 int sdp_bandwidth_get_value(void* sdp, int idx); // kbps-kilobits per second
 
+// 1. These values are the decimal representation of Network Time Protocol (NTP) time values in seconds
+//    since 1900 [13]. To convert these values to UNIX time, subtract decimal 2208988800.
+// 2. If the <stop-time> is set to zero, then the session is not bounded, though it will not become active 
+//    until after the <start-time>. If the <start-time> is also zero, the session is regarded as permanent.
 int sdp_timing_count(void* sdp);
 int sdp_timing_repeat_count(void* sdp, int time);
 int sdp_timing_repeat_offset_count(void* sdp, int time);
