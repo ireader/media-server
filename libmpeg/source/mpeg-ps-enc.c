@@ -118,16 +118,18 @@ static size_t ps_system_header_write(const ps_system_header_t *syshd, uint8_t *d
 	return i;
 }
 
-int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const uint8_t* payload, size_t bytes)
+int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	int first;
 	size_t i, n, sz;
 	uint8_t *packet;
+	const uint8_t* payload;
 	mpeg_ps_enc_context_t *psctx;
 
 	i = 0;
 	first = 1;
 	psctx = (mpeg_ps_enc_context_t*)ps;
+	payload = (const uint8_t*)data;
 
 	// TODO: 
 	// 1. update packet header program_mux_rate

@@ -153,7 +153,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
 			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			printf("pcr: %02d:%02d:%02d.%03d - %lld/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
+			printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
 
@@ -198,13 +198,13 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 							if(tsctx.pes[k].PTS_DTS_flags & 0x02)
 							{
 								t = tsctx.pes[k].pts / 90;
-								printf("pts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
+								printf("pts: %02d:%02d:%02d.%03d - %" PRId64 "\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
 							}
 
 							if(tsctx.pes[k].PTS_DTS_flags & 0x01)
 							{
 								t = tsctx.pes[k].dts / 90;
-								printf("dts: %02d:%02d:%02d.%03d - %lld\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
+								printf("dts: %02d:%02d:%02d.%03d - %" PRId64 "\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
 							}
 						}
 						else

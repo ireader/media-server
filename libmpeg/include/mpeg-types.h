@@ -19,13 +19,16 @@
 	#ifndef OS_INT64_TYPE
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
+	#define PRId64 "I64d"
+	#define PRIu64 "I64u"
 	#define OS_INT64_TYPE
 	#endif /* OS_INT64_TYPE */
 #else
 	#include <stdint.h>
+	#include <inttypes.h>
 	#ifndef OS_INT64_TYPE
-	typedef long long			int64_t;
-	typedef unsigned long long	uint64_t;
+	typedef long long int		int64_t;
+	typedef unsigned long long int uint64_t;
 	#define OS_INT64_TYPE
 	#endif /* OS_INT64_TYPE */
 #endif

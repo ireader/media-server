@@ -158,8 +158,8 @@ enum EPSI_STREAM_TYPE
 };
 
 size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat);
-uint32_t pat_write(const pat_t *pat, uint8_t *data);
+size_t pat_write(const pat_t *pat, uint8_t *data);
 size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt);
-uint32_t pmt_write(const pmt_t *pmt, uint8_t *data);
+size_t pmt_write(const pmt_t *pmt, uint8_t *data);
 
 #endif /* !_mpeg_ts_proto_h_ */
