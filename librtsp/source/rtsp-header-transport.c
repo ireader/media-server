@@ -36,6 +36,7 @@
 //    number with the next lower (even) number to use as the base of the port pair.
 
 #include "rtsp-header-transport.h"
+#include "ctypedef.h"
 #include "cstringext.h"
 #include "string-util.h"
 #include <stdlib.h>

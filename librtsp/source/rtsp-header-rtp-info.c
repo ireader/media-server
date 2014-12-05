@@ -11,6 +11,7 @@
 // e.g. RTP-Info: url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
 
 #include "rtsp-header-rtp-info.h"
+#include "ctypedef.h"
 #include "cstringext.h"
 #include "string-util.h"
 #include <assert.h>
@@ -32,10 +33,10 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 			rtpinfo->url[p1-p-4] = '\0';
 			p = p1;
 		}
-		else if(1 == sscanf(p, "seq = %lld", &rtpinfo->seq))
+		else if(1 == sscanf(p, "seq = %" PRId64, &rtpinfo->seq))
 		{
 		}
-		else if(1 == sscanf(p, "rtptime = %lld", &rtpinfo->rtptime))
+		else if(1 == sscanf(p, "rtptime = %" PRId64, &rtpinfo->rtptime))
 		{
 		}
 		else

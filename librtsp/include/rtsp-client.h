@@ -6,12 +6,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-
-#if defined(OS_WINDOWS)
-	typedef __int64				int64_t;
-#else
-	typedef long long			int64_t;
-#endif
+#include "ctypedef.h"
 
 struct rtsp_transport_t
 {

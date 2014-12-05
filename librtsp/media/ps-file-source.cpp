@@ -1,6 +1,7 @@
 #include "ps-file-source.h"
 #include "cstringext.h"
 #include "mpeg-ps.h"
+#include "rtp-profile.h"
 #include "../payload/rtp-pack.h"
 #include <assert.h>
 
@@ -30,11 +31,11 @@ PSFileSource::PSFileSource(const char *file)
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_ps_packer()->create(ssrc, 98, &s_psfunc, this);
+	m_pspacker = rtp_ps_packer()->create(ssrc, RTP_PAYLOAD_MPEG2PS, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, ssrc, 90000, 4*1024);
+	m_rtp = rtp_create(&event, this, ssrc, rtp_profiles[RTP_PAYLOAD_MPEG2PS].clock, 4*1024);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 
@@ -111,10 +112,12 @@ int PSFileSource::GetDuration(int64_t& duration) const
 int PSFileSource::GetSDPMedia(std::string& sdp) const
 {
 	static const char* pattern =
-		"m=video 0 RTP/AVP 98\n"
-		"a=rtpmap:98 MP2P/90000\n";
+		"m=video 0 RTP/AVP %d\n"
+		"a=rtpmap:%d MP2P/90000\n";
 	
-	sdp = pattern;
+	char media[64];
+	snprintf(media, sizeof(media), pattern, RTP_PAYLOAD_MPEG2PS, RTP_PAYLOAD_MPEG2PS);
+	sdp = media;
 	return 0;
 }
 
@@ -155,17 +158,15 @@ int PSFileSource::SendRTCP()
 	return 0;
 }
 
-void* PSFileSource::Alloc(void* param, size_t bytes)
+void* PSFileSource::Alloc(void* /*param*/, size_t bytes)
 {
-	PSFileSource* self = (PSFileSource*)param;
-	self;
+//	PSFileSource* self = (PSFileSource*)param;
 	return malloc(bytes);
 }
 
-void PSFileSource::Free(void* param, void* packet)
+void PSFileSource::Free(void* /*param*/, void* packet)
 {
-	PSFileSource* self = (PSFileSource*)param;
-	self;
+//	PSFileSource* self = (PSFileSource*)param;
 	return free(packet);
 }
 

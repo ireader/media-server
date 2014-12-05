@@ -195,7 +195,7 @@ int rtsp_client_play(void* rtsp, const int64_t *npt, const float *speed)
 	ctx->progress = 0;
 
 	if(npt)
-		snprintf(ctx->range, sizeof(ctx->range), "Range: npt=%lld.%lld-\r\n", *npt/1000, *npt%1000);
+		snprintf(ctx->range, sizeof(ctx->range), "Range: npt=%" PRId64 ".%" PRId64 "-\r\n", *npt/1000, *npt%1000);
 	else
 		ctx->range[0] = '\0';
 

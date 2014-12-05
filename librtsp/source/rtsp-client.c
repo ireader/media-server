@@ -1,5 +1,5 @@
 #include "rtsp-client.h"
-#include "rtsp-client-internal.h"
+#include "client/rtsp-client-internal.h"
 #include "rtsp-parser.h"
 #include "sdp.h"
 #include <stdlib.h>

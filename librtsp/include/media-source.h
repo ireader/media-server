@@ -1,16 +1,12 @@
 #ifndef _media_source_h_
 #define _media_source_h_
 
+#include "ctypedef.h"
 #include "sys/sock.h"
+#include "libct/object.h"
 #include <string>
 
-#if defined(OS_WINDOWS)
-typedef __int64				int64_t;
-#else
-typedef long long			int64_t;
-#endif
-
-struct IMediaSource
+struct IMediaSource : public libct::object
 {
 	virtual ~IMediaSource(){}
 

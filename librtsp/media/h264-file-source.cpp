@@ -1,9 +1,8 @@
 #include "h264-file-source.h"
 #include "cstringext.h"
 #include "base64.h"
-extern "C" {
+#include "rtp-profile.h"
 #include "../payload/rtp-pack.h"
-}
 #include <assert.h>
 
 extern "C" int rtp_ssrc(void);
@@ -21,7 +20,7 @@ H264FileSource::H264FileSource(const char *file)
 		H264FileSource::RTPFree,
 		H264FileSource::RTPPacket,
 	};
-	m_rtppacker = rtp_h264_packer()->create(ssrc, 98, &s_rtpfunc, this);
+	m_rtppacker = rtp_h264_packer()->create(ssrc, RTP_PAYLOAD_H264, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -100,9 +99,9 @@ int H264FileSource::GetDuration(int64_t& duration) const
 int H264FileSource::GetSDPMedia(std::string& sdp) const
 {
     static const char* pattern =
-        "m=video 0 RTP/AVP 98\n"
-        "a=rtpmap:98 H264/90000\n"
-        "a=fmtp:98 profile-level-id=%02X%02X%02X;"
+        "m=video 0 RTP/AVP %d\n"
+        "a=rtpmap:%d H264/90000\n"
+        "a=fmtp:%d profile-level-id=%02X%02X%02X;"
     			 "packetization-mode=1;"
     			 "sprop-parameter-sets=";
 
@@ -115,7 +114,9 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
     {
         if(parameters.empty())
         {
-            snprintf(base64, sizeof(base64), pattern, (unsigned int)(*it)[1], (unsigned int)(*it)[2], (unsigned int)(*it)[3]);
+            snprintf(base64, sizeof(base64), pattern, 
+				RTP_PAYLOAD_H264, RTP_PAYLOAD_H264,RTP_PAYLOAD_H264, 
+				(unsigned int)(*it)[1], (unsigned int)(*it)[2], (unsigned int)(*it)[3]);
             sdp = base64;
         }
         else

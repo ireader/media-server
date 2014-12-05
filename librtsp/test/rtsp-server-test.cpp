@@ -250,16 +250,19 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 {
 	IMediaSource* source = NULL;
 	TSessions::iterator it;
-	AutoThreadLocker locker(s_locker);
-	it = s_sessions.find(session ? session : "");
-	if(it == s_sessions.end())
 	{
-		// 454 Session Not Found
-		rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-		return;
-	}
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.find(session ? session : "");
+		if(it == s_sessions.end())
+		{
+			// 454 Session Not Found
+			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return;
+		}
 
-	source = it->second.media;
+		source = it->second.media;
+		source->addref();
+	}
 	if(npt && 0 != source->Seek(*npt))
 	{
 		// 457 Invalid Range
@@ -297,20 +300,24 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 
 static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
 {
+	IMediaSource* source = NULL;
 	TSessions::iterator it;
-	AutoThreadLocker locker(s_locker);
-	it = s_sessions.find(session ? "" : session);
-	if(it == s_sessions.end())
 	{
-		// 454 Session Not Found
-		rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-		return;
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.find(session ? "" : session);
+		if(it == s_sessions.end())
+		{
+			// 454 Session Not Found
+			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return;
+		}
+
+		source = it->second.media;
+		source->addref();
+		it->second.status = 2;
 	}
 
-	IMediaSource* source = NULL;
-	source = it->second.media;
 	source->Pause();
-	it->second.status = 2;
 
 	// 457 Invalid Range
 
@@ -337,7 +344,7 @@ static void rtsp_onteardown(void* /*ptr*/, void* rtsp, const char* /*uri*/, cons
 
 	rtsp_server_reply_teardown(rtsp, 200);
 
-	delete source; // clean source
+	source->release(); // clean source
 }
 
 extern "C" void rtsp_example()

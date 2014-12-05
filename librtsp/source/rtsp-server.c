@@ -72,12 +72,10 @@ static int rtsp_server_reply(struct rtsp_server_request_t *req, int code)
 }
 
 // RFC 2326 10.1 OPTIONS (p30)
-static void rtsp_server_options(struct rtsp_server_request_t* req, void *parser, const char* uri)
+static void rtsp_server_options(struct rtsp_server_request_t* req, void* UNUSED(parser), const char* UNUSED(uri))
 {
 	static const char* methods = "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE";
 
-	UNUSED(uri);
-	UNUSED(parser);
 //	assert(0 == strcmp("*", uri));
 	snprintf(req->reply, sizeof(req->reply), 
 		"RTSP/1.0 200 OK\r\n"
@@ -89,7 +87,7 @@ static void rtsp_server_options(struct rtsp_server_request_t* req, void *parser,
 	req->transport->send(req->session, req->reply, strlen(req->reply));
 }
 
-static void rtsp_server_describe(struct rtsp_server_request_t *req, void *parser, const char* uri)
+static void rtsp_server_describe(struct rtsp_server_request_t *req, void* UNUSED(parser), const char* uri)
 {
 	struct rtsp_server_context_t* ctx = req->server;
 	ctx->handler.describe(ctx->ptr, req, uri);
@@ -121,7 +119,6 @@ static void rtsp_server_describe(struct rtsp_server_request_t *req, void *parser
 	//	"Content-Length: %d\r\n"
 	//	"\r\n", 
 	//	seq, date, sdplen);
-	UNUSED(parser);
 }
 
 static void rtsp_server_setup(struct rtsp_server_request_t *req, void *parser, const char* uri)
@@ -356,7 +353,6 @@ static void rtsp_server_onsend(void *ptr, void* user, int code, size_t bytes)
 {
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)user;
-	ptr,code,bytes;
 }
 
 void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
@@ -563,6 +559,5 @@ int rtsp_server_destroy(void* server)
 
 int rtsp_server_report(void* server)
 {
-	UNUSED(server);
 	return 0;
 }
