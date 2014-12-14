@@ -30,7 +30,15 @@ int rtsp_header_session(const char* field, struct rtsp_header_session_t* session
 	}
 	else
 	{
+#if defined(OS_WINDOWS)
+		size_t n = strlen(field);
+		if(n >= sizeof(session->session))
+			return -1;
+		memcpy(session->session, field, n);
+		session->session[n] = '\0';
+#else
 		strlcpy(session->session, field, sizeof(session->session));
+#endif
 	}
 
 	return 0;
@@ -52,7 +60,6 @@ void rtsp_header_session_test(void)
 	memset(id1, '1', sizeof(id1));
 	memset(id2, '1', sizeof(id2));
 	id1[sizeof(session.session)-1] = '\0';
-	assert(0 == rtsp_header_session(id2, &session));
-	assert(0 == strcmp(id1, session.session) && 0 == session.timeout);
+	assert(0 != rtsp_header_session(id2, &session));
 }
 #endif

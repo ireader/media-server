@@ -8,7 +8,8 @@
 #define inline static
 
 #if defined(OS_WINDOWS)
-#define strcasecmp stricmp
+#define strdup		_strdup
+#define strcasecmp	_stricmp
 #endif
 
 enum { SDP_M_MEDIA_UNKOWN=0, SDP_M_MEDIA_AUDIO, SDP_M_MEDIA_VIDEO, SDP_M_MEDIA_TEXT, SDP_M_MEDIA_APPLICATION, SDP_M_MEDIA_MESSAGE };
