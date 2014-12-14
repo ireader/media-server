@@ -12,35 +12,32 @@
 int rtsp_header_session(const char* field, struct rtsp_header_session_t* session)
 {
 	const char* p;
-	p = strchr(field, ';');
+
+    session->timeout = 0;
+
+    p = strchr(field, ';');
 	if(p)
 	{
-		if(p - field > sizeof(session->session)-1)
-		{
-			strncpy(session->session, field, sizeof(session->session)-1);
-			session->session[sizeof(session->session)-1] = '\0';
-		}
-		else
-		{
-			strncpy(session->session, field, p-field);
-			session->session[p-field] = '\0';
-		}
+        size_t n = (size_t)(p - field);
+		if(n >= sizeof(session->session))
+            return -1;
+
+		memcpy(session->session, field, n);
+        session->session[n] = '\0';
 
 		if(0 == strncmp("timeout=", p+1, 8))
 			session->timeout = (int)(atof(p+9) * 1000);
 	}
 	else
 	{
-		strncpy(session->session, field, sizeof(session->session));
-		session->session[sizeof(session->session)-1] = '\0';
-		session->timeout = 0;
+		strlcpy(session->session, field, sizeof(session->session));
 	}
 
 	return 0;
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
-void rtsp_header_session_test()
+void rtsp_header_session_test(void)
 {
 	struct rtsp_header_session_t session;
 	char id1[sizeof(session.session)];

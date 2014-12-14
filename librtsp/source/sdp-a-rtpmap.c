@@ -13,6 +13,7 @@
 #include "sdp-a-rtpmap.h"
 #include <stdlib.h>
 #include <string.h>
+#include <memory.h>
 #include <assert.h>
 
 int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, char *parameters)
@@ -22,7 +23,7 @@ int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, ch
 
 	// payload type
 	p1 = strchr(p, ' ');
-	if(' ' != *p1)
+	if(!p1)
 		return -1;
 
 	if(payload)
@@ -34,37 +35,35 @@ int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, ch
 	// encoding name
 	assert(' ' == *p1);
 	p1 = strchr(p, '/');
-	if('/' != *p1)
+	if(!p1)
 		return -1;
 
 	if(encoding)
 	{
-		strncpy(encoding, p, p1-p);
+        memcpy(encoding, p, p1-p);
 		encoding[p1-p] = '\0';
 	}
-	p = p1 + 1;
 
 	// clock rate	
 	assert('/' == *p1);
 	if(rate)
 	{
-		*rate = atoi(p);
-	}
-	else
-	{
-		*rate = 0;
+		*rate = atoi(p1+1);
 	}
 
 	// encoding parameters
-	p1 = strchr(p, '/');
-	if(p1 && '/' == *p1 && parameters)
-	{
-		strcpy(parameters, p1+1);
-	}
-	else
-	{
-		parameters[0] = '\0';
-	}
+    if(parameters)
+    {
+        p1 = strchr(p1+1, '/');
+        if(p1)
+        {
+            strcpy(parameters, p1+1);
+        }
+        else
+        {
+            parameters[0] = '\0';
+        }
+    }
 
 	return 0;
 }

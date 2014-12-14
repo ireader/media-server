@@ -28,10 +28,11 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 		p1 = string_token(p, RTP_INFO_SPECIAL);
 		if(0 == strnicmp("url=", p, 4))
 		{
-			assert(p1 - p < sizeof(rtpinfo->url)-1);
-			strncpy(rtpinfo->url, p+4, p1-p-4);
-			rtpinfo->url[p1-p-4] = '\0';
-			p = p1;
+            size_t n = (size_t)(p1 - p - 4); // ptrdiff_t -> size_t
+			if(n >= sizeof(rtpinfo->url))
+                return -1;
+			memcpy(rtpinfo->url, p+4, n);
+			rtpinfo->url[n] = '\0';
 		}
 		else if(1 == sscanf(p, "seq = %" PRId64, &rtpinfo->seq))
 		{
@@ -53,7 +54,7 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
-void rtsp_header_rtp_info_test()
+void rtsp_header_rtp_info_test(void)
 {
 	struct rtsp_header_rtp_info_t rtp;
 

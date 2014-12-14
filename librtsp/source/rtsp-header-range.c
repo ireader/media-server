@@ -47,6 +47,24 @@ struct time_clock_t
 
 #define RANGE_SPECIAL ",;\r\n"
 
+static int64_t utc_mktime(const struct tm *t)
+{
+    int mon = t->tm_mon+1, year = t->tm_year+1900;
+
+    /* 1..12 -> 11,12,1..10 */
+    if (0 >= (int) (mon -= 2)) {
+        mon += 12;  /* Puts Feb last since it has leap day */
+        year -= 1;
+    }
+    
+    return ((((int64_t)
+              (year/4 - year/100 + year/400 + 367*mon/12 + t->tm_mday) +
+              year*365 - 719499
+              )*24 + t->tm_hour /* now have hours */
+             )*60 + t->tm_min /* now have minutes */
+            )*60 + t->tm_sec; /* finally seconds */
+}
+
 // smpte-time = 1*2DIGIT ":" 1*2DIGIT ":" 1*2DIGIT [ ":" 1*2DIGIT ][ "." 1*2DIGIT ]
 // hours:minutes:seconds:frames.subframes
 static const char* rtsp_header_range_smpte_time(const char* str, int *hours, int *minutes, int *seconds, int *frames, int *subframes)
@@ -245,7 +263,8 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 	*second = 0;
 	*fraction = 0;
 	p = string_token_int64(str + 13, second);
-	if(p && *p == '.')
+    assert(p);
+	if(*p == '.')
 	{
 		p = string_token_int(p+1, fraction);
 	}
@@ -256,10 +275,11 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 	t.tm_mday = day;
 	t.tm_hour = hour;
 	t.tm_min = minute;
-	*second += mktime(&t);
+//	*second += mktime(&t);
+    *second += utc_mktime(&t);
 
-	assert('Z' == *p);
-	assert('\0' == p[1] || strchr(RANGE_SPECIAL"-", p[1]));
+//	assert('Z' == *p);
+//	assert('\0' == p[1] || strchr(RANGE_SPECIAL"-", p[1]));
 	return 'Z'==*p ? p+1 : p;
 }
 
@@ -381,7 +401,7 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
-void rtsp_header_range_test()
+void rtsp_header_range_test(void)
 {
 	struct tm t;
 	struct rtsp_header_range_t range;
@@ -424,13 +444,13 @@ void rtsp_header_range_test()
 	assert(0==rtsp_header_range("clock=19961108T143720.25Z-", &range));
 	assert(range.type == RTSP_RANGE_CLOCK && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
 	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 8; t.tm_hour = 14; t.tm_min = 37; t.tm_sec = 20;
-	assert(range.from == mktime(&t)*1000 + 25);
+	assert(range.from == utc_mktime(&t)*1000 + 25);
 
 	assert(0==rtsp_header_range("clock=19961110T1925-19961110T2015", &range)); // rfc2326 (p72)
 	assert(range.type == RTSP_RANGE_CLOCK && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NORMAL);
 	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 10; t.tm_hour = 19; t.tm_min = 25; t.tm_sec = 00;
-	assert(range.from == mktime(&t)*1000);
+	assert(range.from == utc_mktime(&t)*1000);
 	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 10; t.tm_hour = 20; t.tm_min = 15; t.tm_sec = 00;
-	assert(range.to == mktime(&t)*1000);
+	assert(range.to == utc_mktime(&t)*1000);
 }
 #endif

@@ -19,7 +19,7 @@
 //			 sprop-parameter-sets=<parameter sets data>
 int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h264)
 {
-	size_t n;
+	size_t nc, vc;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
@@ -44,20 +44,21 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 
 		while(' ' == *p) p++; // skip space
 
-		n = p2 - p1 - 1;
+        nc = (size_t)(p1 - p); // ptrdiff_t to size_t
+		vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
 		switch(*p)
 		{
 		case 'p':
 			// profile-level-id
 			// packetization-mode
-			if(0 == strncasecmp("profile-level-id", p, p1-p) && 6==n)
+			if(0 == strncasecmp("profile-level-id", p, nc))
 			{
-				assert(6 == n);
+				if(6 != vc) return -1;
 				h264->flags |= SDP_A_FMTP_H264_PROFILE_LEVEL_ID;
-				strncpy(h264->profile_level_id, p1+1, 6);
+				memcpy(h264->profile_level_id, p1+1, 6);
 				h264->profile_level_id[6] = '\0';
 			}
-			else if(0 == strncasecmp("packetization-mode", p, p1-p))
+			else if(0 == strncasecmp("packetization-mode", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_PACKETIZATION_MODE;
 				h264->packetization_mode = atoi(p1+1);
@@ -73,45 +74,45 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 			// max-dbp
 			// max-br
 			// max-rcmd-nalu-size
-			if(0 == strncasecmp("max-recv-level", p, p1-p))
+			if(0 == strncasecmp("max-recv-level", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_RECV_LEVEL;
 				h264->max_recv_level = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-mbps", p, p1-p))
+			else if(0 == strncasecmp("max-mbps", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_MBPS;
 				h264->max_mbps = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-smbps", p, p1-p))
+			else if(0 == strncasecmp("max-smbps", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_SMBPS;
 				h264->max_smbps = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-fs", p, p1-p))
+			else if(0 == strncasecmp("max-fs", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_FS;
 				h264->max_fs = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-cbp", p, p1-p))
+			else if(0 == strncasecmp("max-cbp", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_CPB;
 				h264->max_cpb = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-dbp", p, p1-p))
+			else if(0 == strncasecmp("max-dbp", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_DPB;
 				h264->max_dpb = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-br", p, p1-p))
+			else if(0 == strncasecmp("max-br", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_BR;
 				h264->max_br = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("max-rcmd-nalu-size", p, p1-p))
+			else if(0 == strncasecmp("max-rcmd-nalu-size", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_MAX_RCMD_NALU_SIZE;
-				h264->max_rcmd_nalu_size = atoi(p1+1);
+				h264->max_rcmd_nalu_size = (unsigned int)atoi(p1+1);
 			}
 			break;
 
@@ -124,48 +125,48 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 			// sprop-init-buf-time
 			// sar-understood
 			// sar-supported
-			if(0 == strncasecmp("sprop-parameter-sets", p, p1-p) && n < sizeof(h264->sprop_parameter_sets)-1)
+			if(0 == strncasecmp("sprop-parameter-sets", p, nc))
 			{
-				assert(n < sizeof(h264->sprop_parameter_sets)-1);
+				if(vc >= sizeof(h264->sprop_parameter_sets)) return -1;
 				h264->flags |= SDP_A_FMTP_H264_SPROP_PARAMETER_SETS;
-				strncpy(h264->sprop_parameter_sets, p1+1, n);
-				h264->sprop_parameter_sets[n] = '\0';
+				memcpy(h264->sprop_parameter_sets, p1+1, vc);
+				h264->sprop_parameter_sets[vc] = '\0';
 			}
-			else if(0 == strncasecmp("sprop-level-parameter-sets", p, p1-p) && n < sizeof(h264->sprop_level_parameter_sets)-1)
+			else if(0 == strncasecmp("sprop-level-parameter-sets", p, nc))
 			{
-				assert(n < sizeof(h264->sprop_level_parameter_sets)-1);
+				if(vc >= sizeof(h264->sprop_level_parameter_sets)) return -1;
 				h264->flags |= SDP_A_FMTP_H264_SPROP_LEVEL_PARAMETER_SETS;
-				strncpy(h264->sprop_level_parameter_sets, p1+1, n);
-				h264->sprop_level_parameter_sets[n] = '\0';
+				memcpy(h264->sprop_level_parameter_sets, p1+1, vc);
+				h264->sprop_level_parameter_sets[vc] = '\0';
 			}
-			else if(0 == strncasecmp("sprop-deint-buf-req", p, p1-p))
+			else if(0 == strncasecmp("sprop-deint-buf-req", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_SPROP_DEINT_BUF_REQ;
-				h264->sprop_deint_buf_req = atoi(p1+1);
+				h264->sprop_deint_buf_req = (unsigned int)atoi(p1+1);
 			}
-			else if(0 == strncasecmp("sprop-interleaving-depth", p, p1-p))
+			else if(0 == strncasecmp("sprop-interleaving-depth", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_SPROP_INTERLEAVING_DEPTH;
 				h264->sprop_interleaving_depth = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("sprop-max-don-diff", p, p1-p))
+			else if(0 == strncasecmp("sprop-max-don-diff", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_SPROP_MAX_DON_DIFF;
-				h264->sprop_max_don_diff = atoi(p1+1);
+				h264->sprop_max_don_diff = (unsigned int)atoi(p1+1);
 			}
-			else if(0 == strncasecmp("sprop-init-buf-time", p, p1-p) && n < sizeof(h264->sprop_init_buf_time)-1)
+			else if(0 == strncasecmp("sprop-init-buf-time", p, nc))
 			{
-				assert(n < sizeof(h264->sprop_init_buf_time)-1);
+				if(vc >= sizeof(h264->sprop_init_buf_time)) return -1;
 				h264->flags |= SDP_A_FMTP_H264_SPROP_INIT_BUF_TIME;
-				strncpy(h264->sprop_init_buf_time, p1+1, n);
-				h264->sprop_init_buf_time[n] = '\0';
+				memcpy(h264->sprop_init_buf_time, p1+1, vc);
+				h264->sprop_init_buf_time[vc] = '\0';
 			}
-			else if(0 == strncasecmp("sar-understood", p, p1-p))
+			else if(0 == strncasecmp("sar-understood", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_SAR_UNDERSTOOD;
 				h264->sar_understood = atoi(p1+1); 
 			}
-			else if(0 == strncasecmp("sar-supported", p, p1-p))
+			else if(0 == strncasecmp("sar-supported", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_SAR_SUPPORTED;
 				h264->sar_supported = atoi(p1+1);
@@ -174,7 +175,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 
 		case 'r':
 			// redundant-pic-cap
-			if(0 == strncasecmp("redundant-pic-cap", p, p1-p))
+			if(0 == strncasecmp("redundant-pic-cap", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_REDUNDANT_PIC_CAP;
 				h264->redundant_pic_cap = atoi(p1+1);
@@ -183,16 +184,16 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 
 		case 'd':
 			// deint-buf-cap
-			if(0 == strncasecmp("deint-buf-cap", p, p1-p))
+			if(0 == strncasecmp("deint-buf-cap", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_DEINT_BUF_CAP;
-				h264->deint_buf_cap = atoi(p1+1);
+				h264->deint_buf_cap = (unsigned int)atoi(p1+1);
 			}
 			break;
 
 		case 'i':
 			// in-band-parameter-sets
-			if(0 == strncasecmp("in-band-parameter-sets", p, p1-p))
+			if(0 == strncasecmp("in-band-parameter-sets", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_IN_BAND_PARAMETER_SETS;
 				h264->in_band_parameter_sets = atoi(p1+1);
@@ -201,7 +202,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 
 		case 'u':
 			// use-level-src-parameter-sets
-			if(0 == strncasecmp("use-level-src-parameter-sets", p, p1-p))
+			if(0 == strncasecmp("use-level-src-parameter-sets", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_USE_LEVEL_SRC_PARAMETER_SETS;
 				h264->use_level_src_parameter_sets = atoi(p1+1);
@@ -210,7 +211,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 
 		case 'l':
 			// level-asymmetry-allowed
-			if(0 == strncasecmp("level-asymmetry-allowed", p, p1-p))
+			if(0 == strncasecmp("level-asymmetry-allowed", p, nc))
 			{
 				h264->flags |= SDP_A_FMTP_H264_LEVEL_ASYMMETRY_ALLOWED;
 				h264->level_asymmetry_allowed = atoi(p1+1);
@@ -236,7 +237,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 //			 CTSDeltaLength=16; randomAccessIndication=1; streamStateIndication=4
 int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *mpeg4)
 {
-	size_t n;
+	size_t nc, vc;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
@@ -261,23 +262,24 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		while(' ' == *p) p++; // skip space
 
-		n = p2 - p1 - 1;
+        nc = (size_t)(p1 - p); // ptrdiff_t to size_t
+		vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
 		switch(*p)
 		{
 		case 's':
 			// streamType
 			// sizeLength
 			// streamStateIndication
-			if(0 == strncasecmp("streamType", p, p1-p))
+			if(0 == strncasecmp("streamType", p, nc))
 			{
 				mpeg4->streamType = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("sizeLength", p, p1-p))
+			else if(0 == strncasecmp("sizeLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_SIZELENGTH;
 				mpeg4->sizeLength = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("streamStateIndication", p, p1-p))
+			else if(0 == strncasecmp("streamStateIndication", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_STREAMSTATEINDICATION;
 				mpeg4->streamStateIndication = atoi(p1+1);
@@ -286,10 +288,11 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'p':
 			// profile-level-id
-			if(0 == strncasecmp("profile-level-id", p, p1-p) && n < sizeof(mpeg4->profile_level_id)-1)
+			if(0 == strncasecmp("profile-level-id", p, nc))
 			{
-				strncpy(mpeg4->profile_level_id, p1+1, n);
-				mpeg4->profile_level_id[n] = '\0';
+                if(vc >= sizeof(mpeg4->profile_level_id)) return -1;
+				memcpy(mpeg4->profile_level_id, p1+1, vc);
+				mpeg4->profile_level_id[vc] = '\0';
 			}
 			break;
 
@@ -297,17 +300,18 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 			// config
 			// constantSize
 			// constantDuration
-			if(0 == strncasecmp("config", p, p1-p) && n < sizeof(mpeg4->config)-1)
+			if(0 == strncasecmp("config", p, nc))
 			{
-				strncpy(mpeg4->config, p1+1, n);
-				mpeg4->config[n] = '\0';
+                if(vc >= sizeof(mpeg4->config)) return -1;
+				memcpy(mpeg4->config, p1+1, vc);
+				mpeg4->config[vc] = '\0';
 			}
-			else if(0 == strncasecmp("constantSize", p, p1-p))
+			else if(0 == strncasecmp("constantSize", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_CONSTANTSIZE;
 				mpeg4->constantSize = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("constantDuration", p, p1-p))
+			else if(0 == strncasecmp("constantDuration", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_CONSTANTDURATION;
 				mpeg4->constantDuration = atoi(p1+1);
@@ -317,22 +321,22 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 		case 'm':
 			// mode
 			// maxDisplacement
-			if(0 == strncasecmp("mode", p, p1-p))
+			if(0 == strncasecmp("mode", p, nc))
 			{
-				if(0 == strncasecmp("generic", p1+1, n))
+				if(0 == strncasecmp("generic", p1+1, vc))
 					mpeg4->mode = 1;
-				else if(0 == strncasecmp("CELP-cbr", p1+1, n))
+				else if(0 == strncasecmp("CELP-cbr", p1+1, vc))
 					mpeg4->mode = 2;
-				else if(0 == strncasecmp("CELP-vbr", p1+1, n))
+				else if(0 == strncasecmp("CELP-vbr", p1+1, vc))
 					mpeg4->mode = 3;
-				else if(0 == strncasecmp("AAC-lbr", p1+1, n))
+				else if(0 == strncasecmp("AAC-lbr", p1+1, vc))
 					mpeg4->mode = 4;
-				else if(0 == strncasecmp("AAC-hbr", p1+1, n))
+				else if(0 == strncasecmp("AAC-hbr", p1+1, vc))
 					mpeg4->mode = 5;
 				else
 					mpeg4->mode = 0; // unknown
 			}
-			else if(0 == strncasecmp("maxDisplacement", p, p1-p))
+			else if(0 == strncasecmp("maxDisplacement", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_MAXDISPLACEMENT;
 				mpeg4->maxDisplacement = atoi(p1+1);
@@ -341,7 +345,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'o':
 			// objectType
-			if(0 == strncasecmp("objectType", p, p1-p))
+			if(0 == strncasecmp("objectType", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_OBJECTTYPE;
 				mpeg4->objectType = atoi(p1+1);
@@ -350,7 +354,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'd':
 			// deinterleaveBufferSize
-			if(0 == strncasecmp("deinterleaveBufferSize", p, p1-p))
+			if(0 == strncasecmp("deinterleaveBufferSize", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_DEINTERLEAVEBUFFERSIZE;
 				mpeg4->deinterleaveBufferSize = atoi(p1+1);
@@ -360,12 +364,12 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 		case 'i':
 			// indexLength
 			// indexDeltaLength
-			if(0 == strncasecmp("indexLength", p, p1-p))
+			if(0 == strncasecmp("indexLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_INDEXLENGTH;
 				mpeg4->indexLength = atoi(p1+1);
 			}
-			else if(0 == strncasecmp("indexDeltaLength", p, p1-p))
+			else if(0 == strncasecmp("indexDeltaLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_INDEXDELTALENGTH;
 				mpeg4->indexDeltaLength = atoi(p1+1);
@@ -374,7 +378,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'C':
 			// CTSDeltaLength
-			if(0 == strncasecmp("CTSDeltaLength", p, p1-p))
+			if(0 == strncasecmp("CTSDeltaLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_CTSDELTALENGTH;
 				mpeg4->CTSDeltaLength = atoi(p1+1);
@@ -383,7 +387,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'D':
 			// DTSDeltaLength
-			if(0 == strncasecmp("DTSDeltaLength", p, p1-p))
+			if(0 == strncasecmp("DTSDeltaLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_DTSDELTALENGTH;
 				mpeg4->DTSDeltaLength = atoi(p1+1);
@@ -392,7 +396,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'r':
 			// randomAccessIndication
-			if(0 == strncasecmp("randomAccessIndication", p, p1-p))
+			if(0 == strncasecmp("randomAccessIndication", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_RANDOMACCESSINDICATION;
 				mpeg4->randomAccessIndication = atoi(p1+1);
@@ -401,7 +405,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 
 		case 'a':
 			// auxiliaryDataSizeLength
-			if(0 == strncasecmp("auxiliaryDataSizeLength", p, p1-p))
+			if(0 == strncasecmp("auxiliaryDataSizeLength", p, nc))
 			{
 				mpeg4->flags |= SDP_A_FMTP_MPEG4_AUXILIARYDATASIZELENGTH;
 				mpeg4->auxiliaryDataSizeLength = atoi(p1+1);

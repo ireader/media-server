@@ -59,10 +59,10 @@ struct sdp_bandwidth
 
 struct bandwidths
 {
-	int count;
+	size_t count;
 	struct sdp_bandwidth bandwidths[N_BANDWIDTH];
 	struct sdp_bandwidth *ptr;
-	int capacity;
+	size_t capacity;
 };
 
 struct sdp_repeat
@@ -1101,7 +1101,7 @@ static int sdp_parse_media(struct sdp_context* sdp)
 	return -1;
 }
 
-void* sdp_create()
+static void* sdp_create(void)
 {
 	struct sdp_context *sdp;
 	sdp = (struct sdp_context*)malloc(sizeof(struct sdp_context));
@@ -1193,7 +1193,6 @@ void* sdp_parse(const char* s)
 
 		sdp_skip_space(sdp);
 
-		r = 0;
 		switch(c)
 		{
 		case 'v':
@@ -1258,6 +1257,7 @@ void* sdp_parse(const char* s)
 
 		default:
 			assert(0); // unknown sdp
+            r = 0;
 			while(*s && '\n' != *s)
 				++s; // skip line
 		}
@@ -1485,7 +1485,7 @@ int sdp_media_port(void* sdp, int media, int *port)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(m && port)
 	{
 		*port = atoi(m->port);
@@ -1499,7 +1499,7 @@ const char* sdp_media_proto(void* sdp, int media)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	return m ? m->proto : NULL;
 }
 
@@ -1537,7 +1537,7 @@ int sdp_media_formats(void* sdp, int media, int *formats, int count)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(!m)
 		return -1;
 
@@ -1559,7 +1559,7 @@ int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes)
 	struct sdp_context *ctx;
 	struct sdp_connection *conn;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
@@ -1589,7 +1589,7 @@ int sdp_media_get_connection_network(void* sdp, int media)
 	struct sdp_context *ctx;
 	struct sdp_connection *conn;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
@@ -1609,7 +1609,7 @@ int sdp_media_get_connection_addrtype(void* sdp, int media)
 	struct sdp_context *ctx;
 	struct sdp_connection *conn;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
@@ -1632,7 +1632,7 @@ const char* sdp_media_attribute_find(void* sdp, int media, const char* name)
 	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	for(i = 0; name && m && i < m->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
@@ -1654,7 +1654,7 @@ int sdp_media_attribute_list(void* sdp, int media, const char* name, void (*onat
 	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	for(i = 0; m && i < m->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
@@ -1674,7 +1674,7 @@ int sdp_media_bandwidth_count(void* sdp, int media)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(!m)
 		return 0;
 	return m->b.count;
@@ -1685,7 +1685,7 @@ const char* sdp_media_bandwidth_get_type(void* sdp, int media, int idx)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(!m)
 		return NULL;
 
@@ -1700,7 +1700,7 @@ int sdp_media_bandwidth_get_value(void* sdp, int media, int idx)
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(sdp, media);
+	m = sdp_get_media(ctx, media);
 	if(!m)
 		return -1;
 
