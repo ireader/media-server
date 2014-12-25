@@ -30,14 +30,14 @@ int rtsp_header_session(const char* field, struct rtsp_header_session_t* session
 	}
 	else
 	{
-#if defined(OS_WINDOWS)
+#if defined(OS_MAC)
+		strlcpy(session->session, field, sizeof(session->session));
+#else
 		size_t n = strlen(field);
 		if(n >= sizeof(session->session))
 			return -1;
 		memcpy(session->session, field, n);
 		session->session[n] = '\0';
-#else
-		strlcpy(session->session, field, sizeof(session->session));
 #endif
 	}
 

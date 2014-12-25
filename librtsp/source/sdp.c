@@ -1450,7 +1450,7 @@ const char* sdp_bandwidth_get_type(void* sdp, int idx)
 {
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(idx >= ctx->b.count || idx < 0)
+	if(idx >= (int)ctx->b.count || idx < 0)
 		return NULL;
 	return idx < N_BANDWIDTH ? ctx->b.bandwidths[idx].bwtype : ctx->b.ptr[idx - N_BANDWIDTH].bwtype;
 }
@@ -1460,7 +1460,7 @@ int sdp_bandwidth_get_value(void* sdp, int idx)
 	const char* b;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
-	if(idx >= ctx->b.count || idx < 0)
+	if(idx >= (int)ctx->b.count || idx < 0)
 		return -1;
 
 	b = idx < N_BANDWIDTH ? ctx->b.bandwidths[idx].bandwidth : ctx->b.ptr[idx - N_BANDWIDTH].bandwidth;
@@ -1690,7 +1690,7 @@ const char* sdp_media_bandwidth_get_type(void* sdp, int media, int idx)
 	if(!m)
 		return NULL;
 
-	if(idx >= m->b.count || idx < 0)
+	if(idx >= (int)m->b.count || idx < 0)
 		return NULL;
 	return idx < N_BANDWIDTH ? m->b.bandwidths[idx].bwtype : m->b.ptr[idx - N_BANDWIDTH].bwtype;
 }
@@ -1705,7 +1705,7 @@ int sdp_media_bandwidth_get_value(void* sdp, int media, int idx)
 	if(!m)
 		return -1;
 
-	if(idx >= m->b.count || idx < 0)
+	if(idx >= (int)m->b.count || idx < 0)
 		return -1;
 
 	b = idx < N_BANDWIDTH ? m->b.bandwidths[idx].bandwidth : m->b.ptr[idx - N_BANDWIDTH].bandwidth;
