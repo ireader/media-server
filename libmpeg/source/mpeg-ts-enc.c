@@ -361,7 +361,8 @@ int mpeg_ts_add_stream(void* ts, int avtype)
 		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
 		pmt->streams[pmt->stream_count].sid = PES_SID_VIDEO;
 	}
-	else if(PSI_STREAM_AAC==avtype || PSI_STREAM_MPEG4_AAC_LATM==avtype || PSI_STREAM_MPEG4_AAC==avtype || PSI_STREAM_MP3==avtype || PSI_STREAM_AUDIO_AC3==avtype || PSI_STREAM_AUDIO_SVAC==avtype)
+	else if(PSI_STREAM_AAC==avtype || PSI_STREAM_MPEG4_AAC_LATM==avtype || PSI_STREAM_MPEG4_AAC==avtype || PSI_STREAM_MP3==avtype || PSI_STREAM_AUDIO_AC3==avtype 
+		|| PSI_STREAM_AUDIO_SVAC==avtype || PSI_STREAM_AUDIO_G711==avtype || PSI_STREAM_AUDIO_G722==avtype || PSI_STREAM_AUDIO_G723==avtype || PSI_STREAM_AUDIO_G729==avtype)
 	{
 		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
 		// audio stream number
