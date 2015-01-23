@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sipmedia", "sipmedia\sipmedia.vcproj", "{7ACBC56D-90F9-4C1B-9449-EEA77673D810}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.vcproj", "{C34CC56F-34FE-4D93-8582-5853B05442EA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtp", "librtp\librtp.vcproj", "{B6A95553-A736-4083-8B96-C5F845FA8C6D}"
@@ -20,15 +18,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhls", "libhls\libhls.vcp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpeg", "libmpeg\libmpeg.vcproj", "{D4FD8942-4634-4598-B1C0-55D61815A9E8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hls-server", "hls-server\hls-server.vcproj", "{D73D1C5C-FC4B-45E3-885B-9AFC45392298}"
-	ProjectSection(ProjectDependencies) = postProject
-		{84B0AF1D-D52E-4BDF-8FD5-A8DBF12DDA1B} = {84B0AF1D-D52E-4BDF-8FD5-A8DBF12DDA1B}
-		{D4FD8942-4634-4598-B1C0-55D61815A9E8} = {D4FD8942-4634-4598-B1C0-55D61815A9E8}
-		{B6A95553-A736-4083-8B96-C5F845FA8C6D} = {B6A95553-A736-4083-8B96-C5F845FA8C6D}
-		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C} = {B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}
-		{C34CC56F-34FE-4D93-8582-5853B05442EA} = {C34CC56F-34FE-4D93-8582-5853B05442EA}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "..\sdk\libhttp\libhttp.vcproj", "{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}"
 EndProject
 Global
@@ -37,10 +26,6 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Debug|Win32.Build.0 = Debug|Win32
-		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Release|Win32.ActiveCfg = Release|Win32
-		{7ACBC56D-90F9-4C1B-9449-EEA77673D810}.Release|Win32.Build.0 = Release|Win32
 		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Debug|Win32.Build.0 = Debug|Win32
 		{C34CC56F-34FE-4D93-8582-5853B05442EA}.Release|Win32.ActiveCfg = Release|Win32
@@ -61,10 +46,6 @@ Global
 		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Debug|Win32.Build.0 = Debug|Win32
 		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|Win32.ActiveCfg = Release|Win32
 		{D4FD8942-4634-4598-B1C0-55D61815A9E8}.Release|Win32.Build.0 = Release|Win32
-		{D73D1C5C-FC4B-45E3-885B-9AFC45392298}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D73D1C5C-FC4B-45E3-885B-9AFC45392298}.Debug|Win32.Build.0 = Debug|Win32
-		{D73D1C5C-FC4B-45E3-885B-9AFC45392298}.Release|Win32.ActiveCfg = Release|Win32
-		{D73D1C5C-FC4B-45E3-885B-9AFC45392298}.Release|Win32.Build.0 = Release|Win32
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|Win32.Build.0 = Debug|Win32
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|Win32.ActiveCfg = Release|Win32

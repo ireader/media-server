@@ -165,10 +165,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\client\rtsp-client-test.c"
-				>
-			</File>
-			<File
 				RelativePath=".\source\rtsp-header-range.c"
 				>
 			</File>
@@ -190,10 +186,6 @@
 			</File>
 			<File
 				RelativePath=".\source\rtsp-reason.c"
-				>
-			</File>
-			<File
-				RelativePath=".\test\rtsp-server-test.cpp"
 				>
 			</File>
 			<File
