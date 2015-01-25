@@ -16,6 +16,7 @@
 struct rtp_ps_packer_t
 {
 	uint32_t ssrc;
+	uint32_t timestamp;
 	uint16_t seq;
 	uint8_t payload;
 
@@ -23,7 +24,7 @@ struct rtp_ps_packer_t
 	void* cbparam;
 };
 
-static void* rtp_ps_pack_create(uint32_t ssrc, uint8_t payload, struct rtp_pack_func_t *func, void* param)
+static void* rtp_ps_pack_create(uint32_t ssrc, unsigned short seq, uint8_t payload, struct rtp_pack_func_t *func, void* param)
 {
 	struct rtp_ps_packer_t *packer;
 	packer = (struct rtp_ps_packer_t *)malloc(sizeof(*packer));
@@ -34,7 +35,7 @@ static void* rtp_ps_pack_create(uint32_t ssrc, uint8_t payload, struct rtp_pack_
 	packer->cbparam = param;
 	packer->ssrc = ssrc;
 	packer->payload = payload;
-	packer->seq = (uint16_t)ssrc;
+	packer->seq = seq;
 	return packer;
 }
 
@@ -74,12 +75,11 @@ static unsigned char* alloc_packet(struct rtp_ps_packer_t *packer, uint32_t time
 static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t time)
 {
 	size_t MAX_PACKET;
-	uint32_t timestamp;
 	const unsigned char *p;
 	struct rtp_ps_packer_t *packer;
 	packer = (struct rtp_ps_packer_t *)pack;
 
-	timestamp = (uint32_t)time * 90; // ms -> 90KHZ (RFC2250 section2 p2)
+	packer->timestamp = ((uint32_t)time + (uint32_t)pack) * 90; // ms -> 90KHZ (RFC2250 section2 p2)
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
 
@@ -89,7 +89,7 @@ static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t t
 		size_t len;
 		unsigned char *rtp;
 
-		rtp = alloc_packet(packer, timestamp, MAX_PACKET);
+		rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
 		if(!rtp) return ENOMEM;
 		assert(0 == (rtp[1] & 0x80)); // don't set market
 		if(bytes <= MAX_PACKET)
@@ -108,11 +108,20 @@ static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t t
 	return 0;
 }
 
+static void rtp_ps_pack_get_info(void* pack, unsigned short* seq, unsigned int* timestamp)
+{
+	struct rtp_ps_packer_t *packer;
+	packer = (struct rtp_ps_packer_t *)pack;
+	*seq = packer->seq;
+	*timestamp = packer->timestamp;
+}
+
 struct rtp_pack_t *rtp_ps_packer()
 {
 	static struct rtp_pack_t packer = {
 		rtp_ps_pack_create,
 		rtp_ps_pack_destroy,
+		rtp_ps_pack_get_info,
 		rtp_ps_pack_input,
 	};
 

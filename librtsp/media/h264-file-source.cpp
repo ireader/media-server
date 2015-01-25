@@ -20,7 +20,7 @@ H264FileSource::H264FileSource(const char *file)
 		H264FileSource::RTPFree,
 		H264FileSource::RTPPacket,
 	};
-	m_rtppacker = rtp_h264_packer()->create(ssrc, RTP_PAYLOAD_H264, &s_rtpfunc, this);
+	m_rtppacker = rtp_h264_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_H264, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -62,7 +62,7 @@ int H264FileSource::Play()
 	{
 		void* ptr = NULL;
 		size_t bytes = 0;
-		if(0 == m_reader.GetNextFrame(ptr, bytes))
+		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
 			rtp_h264_packer()->input(m_rtppacker, ptr, bytes, clock);
 			m_rtp_clock = clock;
@@ -83,7 +83,8 @@ int H264FileSource::Pause()
 
 int H264FileSource::Seek(int64_t pos)
 {
-	return m_reader.Seek(pos);
+	m_pos = pos;
+	return m_reader.Seek(m_pos);
 }
 
 int H264FileSource::SetSpeed(double speed)
@@ -139,6 +140,8 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
 
 int H264FileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
 {
+	rtp_h264_packer()->get_info(m_rtppacker, &seq, &rtptime);
+	pos = m_pos;
 	return 0;
 }
 

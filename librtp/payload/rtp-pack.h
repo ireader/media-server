@@ -16,13 +16,16 @@ struct rtp_pack_t
 {
 	/// create RTP packer
 	/// @param[in] ssrc RTP header SSRC filed
+	/// @param[in] seq RTP header sequence number filed
 	/// @param[in] payload RTP header PT filed (see more about rtp-profile.h)
 	/// @param[in] func user-defined callback
 	/// @param[in] param user-defined parameter
 	/// @return RTP packer
-	void* (*create)(unsigned int ssrc, unsigned char payload, struct rtp_pack_func_t *func, void* param);
+	void* (*create)(unsigned int ssrc, unsigned short seq, unsigned char payload, struct rtp_pack_func_t *func, void* param);
 	/// destroy RTP Packer
 	void (*destroy)(void* packer);
+
+	void (*get_info)(void* packer, unsigned short* seq, unsigned int* timestamp);
 
 	/// PS/H.264 Elementary Stream to RTP Packet
 	/// @param[in] packer

@@ -42,13 +42,15 @@ private:
 
 private:
 	void* m_rtp;
-	int m_status;
 	time64_t m_rtp_clock;
 	time64_t m_rtcp_clock;
     H264FileReader m_reader;
 	socket_t m_socket[2];
 	unsigned short m_port[2];
 	std::string m_ip;
+
+	int m_status;
+	int64_t m_pos;
 
 	void *m_rtppacker;
 	unsigned char m_packet[MAX_UDP_PACKET+14];

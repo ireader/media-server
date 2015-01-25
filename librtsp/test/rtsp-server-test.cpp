@@ -95,7 +95,8 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
         "o=- %llu %llu IN IP4 %s\n"
         "s=%s\n"
         "c=IN IP4 0.0.0.0\n"
-        "t=0 %lld\n"
+        "t=0 0\n"
+		"a=range:npt=0-%f\n"
         "a=recvonly\n";
 
     char sdp[512];
@@ -114,16 +115,16 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
 			// unlock
 			TFileDescription describe;
 			IMediaSource *source = NULL;
-			source = PSFileSource::Create(filename.c_str());
+			source = H264FileSource::Create(filename.c_str());
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
-			delete source;
+			source->release();
 
 			// re-lock
 			it = s_describes.insert(std::make_pair(filename, describe)).first;
 		}
 	}
-    snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration);
+    snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
     strcat(sdp, it->second.sdpmedia.c_str());
 
     rtsp_server_reply_describe(rtsp, 200, sdp);
@@ -165,7 +166,7 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 
 		rtsp_session_t item;
 		memset(&item, 0, sizeof(item));
-		item.media = PSFileSource::Create(filename.c_str());
+		item.media = H264FileSource::Create(filename.c_str());
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media);
@@ -295,7 +296,6 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 
 	it->second.status = 1;
 	rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
-    //rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
 }
 
 static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
@@ -304,7 +304,7 @@ static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const c
 	TSessions::iterator it;
 	{
 		AutoThreadLocker locker(s_locker);
-		it = s_sessions.find(session ? "" : session);
+		it = s_sessions.find(session ? session : "");
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found

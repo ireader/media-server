@@ -31,11 +31,11 @@ PSFileSource::PSFileSource(const char *file)
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_ps_packer()->create(ssrc, RTP_PAYLOAD_MPEG2PS, &s_psfunc, this);
+	m_pspacker = rtp_ps_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_MPEG2PS, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, ssrc, rtp_profiles[RTP_PAYLOAD_MPEG2PS].clock, 4*1024);
+	m_rtp = rtp_create(&event, this, ssrc, 90000, 4*1024);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 
@@ -73,7 +73,7 @@ int PSFileSource::Play()
 	{
 		void* ptr = NULL;
 		size_t bytes = 0;
-		if(0 == m_reader.GetNextFrame(ptr, bytes))
+		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
 			if(0 == m_ps_clock)
 				m_ps_clock = clock;
@@ -123,6 +123,8 @@ int PSFileSource::GetSDPMedia(std::string& sdp) const
 
 int PSFileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
 {
+	rtp_h264_packer()->get_info(m_pspacker, &seq, &rtptime);
+	pos = m_pos;
 	return 0;
 }
 

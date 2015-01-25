@@ -49,6 +49,8 @@ private:
 	void* m_ps;
 	void* m_rtp;
 	int m_status;
+	int64_t m_pos;
+	unsigned short m_seq;
 
 	time64_t m_ps_clock;
 	time64_t m_rtp_clock;

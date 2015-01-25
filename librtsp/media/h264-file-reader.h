@@ -19,7 +19,7 @@ public:
     typedef std::vector<unsigned char> sps_t;
     const std::list<sps_t> GetParameterSets() const { return m_sps; }
 	int GetDuration(int64_t& duration) const { duration = m_duration; return 0; }
-	int GetNextFrame(void* &ptr, size_t &bytes);
+	int GetNextFrame(int64_t &pos, void* &ptr, size_t &bytes);
 	int Seek(int64_t &pos);
 
 private:

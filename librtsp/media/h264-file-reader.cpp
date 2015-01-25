@@ -46,7 +46,7 @@ bool H264FileReader::IsOpened() const
 	return !!m_fp;
 }
 
-int H264FileReader::GetNextFrame(void* &ptr, size_t &bytes)
+int H264FileReader::GetNextFrame(int64_t &pos, void* &ptr, size_t &bytes)
 {
 	if(m_vit == m_videos.end())
 		return -1; // file end
@@ -55,6 +55,7 @@ int H264FileReader::GetNextFrame(void* &ptr, size_t &bytes)
 	assert(n == m_vit->bytes);
 
 	ptr = m_ptr;
+	pos = m_vit->time;
 	bytes = m_vit->bytes;
 
 	++m_vit;

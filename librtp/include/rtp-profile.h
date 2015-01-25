@@ -8,7 +8,10 @@ struct rtp_profile_t
 	const char* encoding;
 	int clock;
 	int channels;
-} rtp_profiles[] = {
+};
+
+/***
+{
 	// audio
 	{ 0, "PCMU",	8000,	1 }, // G711 mu-law
 	{ 1, "",		0,		0 }, // reserved
@@ -64,6 +67,22 @@ struct rtp_profile_t
 	{96, "MPG4",	90000,  0 }, // RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
 	{97, "MP2P",	90000,  0 }, // RFC3555 4.2.11 Registration of MIME media type video/MP2P
 	{98, "H264",	90000,	0 }, // RFC6184 RTP Payload Format for H.264 Video
+};
+***/
+
+enum
+{
+	RTP_PAYLOAD_G711		= 0,
+	RTP_PAYLOAD_G722		= 9,
+	RTP_PAYLOAD_G729		= 18,
+
+	RTP_PAYLOAD_MPEG2TS		= 33,
+	RTP_PAYLOAD_MPEG2PS		= 97,
+	RTP_PAYLOAD_JPEG		= 26,
+	RTP_PAYLOAD_MPEG2		= 32,
+	RTP_PAYLOAD_MPEG4		= 96,
+	RTP_PAYLOAD_H263		= 34,
+	RTP_PAYLOAD_H264		= 98,
 };
 
 #endif /* _rtp_profile_h_ */
