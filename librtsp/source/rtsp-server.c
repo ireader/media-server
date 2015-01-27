@@ -463,19 +463,19 @@ void rtsp_server_reply_teardown(void* rtsp, int code)
 	rtsp_server_reply(req, code);
 }
 
-const char* rtsp_server_find_header(void* rtsp, const char* name)
+const char* rtsp_server_get_header(void* rtsp, const char* name)
 {
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
 	return rtsp_get_header_by_name(req->parser, name);
 }
 
-int rtsp_server_get_client(void* rtsp, char ip[40], unsigned short *port)
+int rtsp_server_get_client(void* rtsp, const char **ip, int *port)
 {
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
-	strcpy(ip, req->ip);
-	*port = req->port;
+	if(ip) *ip = req->ip;
+	if(port) *port = (int)req->port;
 	return 0;
 }
 

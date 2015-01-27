@@ -105,9 +105,14 @@ void rtsp_server_reply_teardown(void* rtsp, int code);
 /// @param[in] name header name
 /// @return header value, NULL if not found.
 /// Required: call in rtsp_handler_t callback only
-const char* rtsp_server_find_header(void* rtsp, const char* name);
+const char* rtsp_server_get_header(void* rtsp, const char* name);
 
-int rtsp_server_get_client(void* rtsp, char ip[40], unsigned short *port);
+/// Get client ip/port
+/// @param[in] rtsp request handle
+/// @param[out] ip client bind ip(don't need free)
+/// @param[out] port client bind port
+/// @return 0-ok, other-error
+int rtsp_server_get_client(void* rtsp, const char **ip, int *port);
 
 #if defined(__cplusplus)
 }
