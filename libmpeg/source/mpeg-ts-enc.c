@@ -69,6 +69,7 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
     memset(data+5+len, 0xff, TS_PACKET_SIZE-len-5);
 
 	ts->func.write(ts->param, data, TS_PACKET_SIZE);
+	ts->func.free(ts->param, data);
 	return 0;
 }
 
@@ -206,6 +207,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 
 		// send with TS-header
 		tsctx->func.write(tsctx->param, data, TS_PACKET_SIZE);
+		tsctx->func.free(tsctx->param, data);
 	}
 
 	return 0;

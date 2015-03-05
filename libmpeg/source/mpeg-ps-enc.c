@@ -140,11 +140,11 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const void* da
 	packet = psctx->func.alloc(psctx->param, sz);
 	if(!packet) return ENOMEM;
 
-	pts = dts = 0xFFFFFFFFFFFFFFFFL;
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference
 	// http://www.bretl.com/mpeghtml/SCR.HTM
 	//the maximum allowed interval between SCRs is 700ms 
+	//psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
 	psctx->packhd.system_clock_reference_base = dts - 3600;
 	psctx->packhd.system_clock_reference_extension = 0;
 	psctx->packhd.program_mux_rate = 6106;
@@ -212,6 +212,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const void* da
 
 	assert(i < sz);
 	psctx->func.write(psctx->param, packet, i);
+	psctx->func.free(psctx->param, packet);
 
 	++psctx->psm_period;
 	return 0;

@@ -62,43 +62,46 @@ uint32_t ps_system_header_dec(const uint8_t* data, int bytes)
 
 size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param)
 {
-	size_t i, n, len;
+	size_t i=0, n=0, len;
 	pes_t pes;
 	ps_packet_header_t pkhd;
 	uint8_t *packet;
 
 	packet = func->alloc(param, bytes);
-	if(!packet) return bytes; // TODO: check return
-	n = 0; // packet length
+	if(!packet) 
+		return bytes; // TODO: check return
 
 	memset(&pkhd, 0, sizeof(pkhd));
 	// 2.5.3.3 Pack layer of program stream
 	// Table 2-38 ¨C Program stream pack
 	// Table 2-39 ¨C Program stream pack header
-	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && PES_SID_START==data[3]);
-	assert((0x44 & data[4]) == 0x44); // '01xxx1xx'
-	assert((0x04 & data[6]) == 0x04); // 'xxxxx1xx'
-	assert((0x04 & data[8]) == 0x04); // 'xxxxx1xx'
-	assert((0x01 & data[9]) == 0x01); // 'xxxxxxx1'
-	pkhd.system_clock_reference_base = (((uint64_t)(data[4] >> 3) & 0x07) << 30) | (((uint64_t)data[4] & 0x3) << 28) | ((uint64_t)data[5] << 20) | ((((uint64_t)data[6] >> 3) & 0x1F) << 15) | (((uint64_t)data[6] & 0x3) << 13) | ((uint64_t)data[7] << 5) | ((data[8] >> 3) & 0x1F);
-	pkhd.system_clock_reference_extension = ((data[8] & 0x3) << 7) | ((data[9] >> 1) & 0x7F);
-
-	assert((0x03 & data[12]) == 0x03); // 'xxxxxx11'
-	pkhd.program_mux_rate = (data[10] << 14) | (data[11] << 6) | ((data[12] >> 2) & 0x3F);
-
-	//assert((0xF8 & data[13]) == 0x00); // '00000xxx'
-	len = data[13] & 0x07; // stuffing
-
-	i = 14 + len;
-	assert(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2]);
-	if(PES_SID_SYS == data[i+3])
+	if (0x00==data[0] && 0x00==data[1] && 0x01==data[2] && PES_SID_START==data[3])
 	{
-		i += ps_system_header_dec(data + i, bytes - i);
+		//assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && PES_SID_START==data[3]);
+		assert((0x44 & data[4]) == 0x44); // '01xxx1xx'
+		assert((0x04 & data[6]) == 0x04); // 'xxxxx1xx'
+		assert((0x04 & data[8]) == 0x04); // 'xxxxx1xx'
+		assert((0x01 & data[9]) == 0x01); // 'xxxxxxx1'
+		pkhd.system_clock_reference_base = (((uint64_t)(data[4] >> 3) & 0x07) << 30) | (((uint64_t)data[4] & 0x3) << 28) | ((uint64_t)data[5] << 20) | ((((uint64_t)data[6] >> 3) & 0x1F) << 15) | (((uint64_t)data[6] & 0x3) << 13) | ((uint64_t)data[7] << 5) | ((data[8] >> 3) & 0x1F);
+		pkhd.system_clock_reference_extension = ((data[8] & 0x3) << 7) | ((data[9] >> 1) & 0x7F);
+
+		assert((0x03 & data[12]) == 0x03); // 'xxxxxx11'
+		pkhd.program_mux_rate = (data[10] << 14) | (data[11] << 6) | ((data[12] >> 2) & 0x3F);
+
+		//assert((0xF8 & data[13]) == 0x00); // '00000xxx'
+		len = data[13] & 0x07; // stuffing
+
+		i = 14 + len;
 		assert(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2]);
+		if(PES_SID_SYS == data[i+3])
+		{
+			i += ps_system_header_dec(data + i, bytes - i);
+			assert(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2]);
+		}
 	}
 
 	// MPEG_program_end_code = 0x000000B9
-	while(0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
+	while(i<bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
 	{
 		uint16_t len2;
 		pes.payload = packet + n;
@@ -112,7 +115,7 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_p
 	}
 
 	func->write(param, packet, n);
-//	func->free(param, packet);
+	func->free(param, packet);
 
 	return i + (PES_SID_END==data[i+3] ? 4 : 0);
 }
