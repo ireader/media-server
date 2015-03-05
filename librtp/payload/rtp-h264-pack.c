@@ -14,7 +14,6 @@ struct rtp_h264_packer_t
 	struct rtp_pack_func_t func;
 	void* cbparam;
 	uint32_t ssrc;
-	uint32_t timestamp;
 	uint16_t seq;
 	uint8_t payload;
 };
@@ -29,7 +28,7 @@ size_t rtp_pack_getsize()
 	return s_max_packet_size;
 }
 
-static void* rtp_h264_pack_create(uint32_t ssrc, unsigned short seq, uint8_t payload, struct rtp_pack_func_t *func, void* param)
+static void* rtp_h264_pack_create(uint32_t ssrc, uint8_t payload, struct rtp_pack_func_t *func, void* param)
 {
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)malloc(sizeof(*packer));
@@ -40,8 +39,7 @@ static void* rtp_h264_pack_create(uint32_t ssrc, unsigned short seq, uint8_t pay
 	packer->cbparam = param;
 	packer->ssrc = ssrc;
 	packer->payload = payload;
-	packer->seq = seq;
-	packer->timestamp = (uint32_t)packer;
+	packer->seq = (uint16_t)ssrc;
 	return packer;
 }
 
@@ -91,12 +89,13 @@ static unsigned char* alloc_packet(struct rtp_h264_packer_t *packer, uint32_t ti
 static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64_t time)
 {
 	size_t MAX_PACKET;
+	uint32_t timestamp;
 	unsigned char *rtp;
 	const unsigned char *p1, *p2;
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)pack;
 
-	packer->timestamp = ((uint32_t)time + (uint32_t)pack) * 90; // ms -> 90KHZ
+	timestamp = (uint32_t)time * 90; // ms -> 90KHZ
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
 
@@ -122,7 +121,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 
 		if(nalu_size < MAX_PACKET)
 		{
-			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
+			rtp = alloc_packet(packer, timestamp, MAX_PACKET);
 			if(!rtp) return ENOMEM;
 			rtp[1] |= 0x80; // marker
 			rtp[2] = (unsigned char)(packer->seq >> 8);
@@ -133,6 +132,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 
 			// single NAl unit packet 
 			packer->func.packet(packer->cbparam, rtp, nalu_size+12, time);
+			packer->func.free(packer->cbparam, rtp);
 		}
 		else
 		{
@@ -148,7 +148,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 			fu_header = 0x80 | fu_header;
 			while(nalu_size > MAX_PACKET-1)
 			{
-				rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
+				rtp = alloc_packet(packer, timestamp, MAX_PACKET);
 				if(!rtp) return ENOMEM;
 				rtp[1] &= ~0x80; // clean marker
 				rtp[2] = (unsigned char)(packer->seq >> 8);
@@ -160,6 +160,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 				memcpy(rtp+14, p1, MAX_PACKET-1);
 				//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, s_max_packet_size);
 				packer->func.packet(packer->cbparam, rtp, MAX_PACKET-1+14, time);
+				packer->func.free(packer->cbparam, rtp);
 
 				nalu_size -= MAX_PACKET-1;
 				p1 += MAX_PACKET-1;
@@ -168,7 +169,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 
 			// FU-A end
 			fu_header = 0x40 | (fu_header & 0x1F);
-			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
+			rtp = alloc_packet(packer, timestamp, MAX_PACKET);
 			if(!rtp) return ENOMEM;
 			rtp[1] |= 0x80; // marker
 			rtp[2] = (unsigned char)(packer->seq >> 8);
@@ -182,6 +183,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 
 			memcpy(rtp+14, p1, nalu_size);
 			packer->func.packet(packer->cbparam, rtp, nalu_size+14, time);
+			packer->func.free(packer->cbparam, rtp);
 		}
 
 		p1 = p2;
@@ -190,20 +192,11 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 	return 0;
 }
 
-static void rtp_h264_pack_get_info(void* pack, unsigned short* seq, unsigned int* timestamp)
-{
-	struct rtp_h264_packer_t *packer;
-	packer = (struct rtp_h264_packer_t *)pack;
-	*seq = packer->seq;
-	*timestamp = packer->timestamp;
-}
-
 struct rtp_pack_t *rtp_h264_packer()
 {
 	static struct rtp_pack_t packer = {
 		rtp_h264_pack_create,
 		rtp_h264_pack_destroy,
-		rtp_h264_pack_get_info,
 		rtp_h264_pack_input,
 	};
 
