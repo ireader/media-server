@@ -50,6 +50,7 @@ private:
 	void* m_rtp;
 	int m_status;
 	int64_t m_pos;
+	double m_speed;
 	unsigned short m_seq;
 
 	time64_t m_ps_clock;

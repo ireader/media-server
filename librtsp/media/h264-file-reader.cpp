@@ -16,11 +16,14 @@ H264FileReader::H264FileReader(const char* file)
         m_offset = 0;
         m_capacity = 128 * 1024;
         m_ptr = (unsigned char*)malloc(m_capacity);
-        m_bytes = fread(m_ptr, 1, m_capacity, m_fp);
-        if(m_bytes > 0)
-            Init();
+		if(m_ptr)
+		{
+			m_bytes = fread(m_ptr, 1, m_capacity, m_fp);
+			if(m_bytes > 0)
+				Init();
 
-		fseek(m_fp, 0, SEEK_SET);
+			fseek(m_fp, 0, SEEK_SET);
+		}
     }
 
 	m_vit = m_videos.begin();
@@ -52,7 +55,7 @@ int H264FileReader::GetNextFrame(int64_t &pos, void* &ptr, size_t &bytes)
 		return -1; // file end
 
 	size_t n = fread(m_ptr, 1, m_vit->bytes, m_fp);
-	assert(n == m_vit->bytes);
+	assert((long)n == m_vit->bytes);
 
 	ptr = m_ptr;
 	pos = m_vit->time;

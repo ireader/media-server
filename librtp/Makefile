@@ -1,10 +1,10 @@
-ROOT:=../../sdk
+ROOT:=../../pub/mdpub
 
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
 #--------------------------------------------------------------------
 OUTTYPE = 2
-OUTFILE = librtsp.a
+OUTFILE = librtp.a
 
 #-------------------------------Include------------------------------
 #
@@ -12,15 +12,12 @@ OUTFILE = librtsp.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					$(ROOT)/include \
-					$(ROOT)/libhttp/include \
-					../librtp/include \
-					../libmpeg/include
+					$(ROOT)/include 
 
 #-------------------------------Source-------------------------------
 #
 #--------------------------------------------------------------------
-SOURCE_PATHS = source client media
+SOURCE_PATHS = source payload
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 

@@ -127,8 +127,8 @@ static int rtsp_header_range_smpte(const char* fields, struct rtsp_header_range_
 	}
 	else
 	{
-		if(!(p = rtsp_header_range_smpte_time(p+1, &hours, &minutes, &seconds, &frames, &subframes)) )
-			return -1;
+		p = rtsp_header_range_smpte_time(p+1, &hours, &minutes, &seconds, &frames, &subframes);
+		if(!p ) return -1;
 		assert('\0' == p[0] || strchr(RANGE_SPECIAL, p[0]));
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
@@ -152,7 +152,7 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 
 	assert(str);
 	p = string_token(str, "-\r\n");
-	if(p-str==3 && 0==strnicmp(str, "now", 3))
+	if(!str || (p-str==3 && 0==strnicmp(str, "now", 3)))
 	{
 		*seconds = -1; // now
 		*fraction = 0;
@@ -234,8 +234,8 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 	}
 	else
 	{
-		if(!(p = rtsp_header_range_npt_time(p+1, &seconds, &fraction)))
-			return -1;
+		p = rtsp_header_range_npt_time(p+1, &seconds, &fraction);
+		if( !p ) return -1;
 		assert('\0' == p[0] || strchr(RANGE_SPECIAL, p[0]));
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
@@ -257,7 +257,7 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 	int hour, minute;
 
 	assert(str);
-	if(5 != sscanf(str, "%4d%2d%2dT%2d%2d", &year, &month, &day, &hour, &minute))
+	if(!str || 5 != sscanf(str, "%4d%2d%2dT%2d%2d", &year, &month, &day, &hour, &minute))
 		return NULL;
 
 	*second = 0;
@@ -309,8 +309,8 @@ static int rtsp_header_range_clock(const char* fields, struct rtsp_header_range_
 	}
 	else
 	{
-		if(! (p = rtsp_header_range_clock_time(p+1, &second, &fraction)) )
-			return -1;
+		p = rtsp_header_range_clock_time(p+1, &second, &fraction);
+		if( !p ) return -1;
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
 		range->to = second * 1000;

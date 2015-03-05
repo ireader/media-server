@@ -34,7 +34,8 @@ size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)
 	pat->tsid = transport_stream_id;
 	pat->ver = version_number;
 
-	for(i = 8; i < section_length + 8 - 4 - 5; i += 4)
+	assert(bytes >= section_length + 3); // PAT = section_length + 3
+	for(i = 8; i < section_length + 8 - 5 - 4; i += 4) // 4:CRC, 5:follow section_length item
 	{
 		pat->pmt[j].pn = (data[i] << 8) | data[i+1];
 		pat->pmt[j].pid = ((data[i+2] & 0x1F) << 8) | data[i+3];

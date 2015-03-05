@@ -12,6 +12,7 @@ extern "C" int rtp_ssrc(void);
 PSFileSource::PSFileSource(const char *file)
 :m_reader(file)
 {
+	m_speed = 1.0;
 	m_status = 0;
 	m_ps_clock = 0;
 	m_rtp_clock = 0;
@@ -101,6 +102,7 @@ int PSFileSource::Seek(int64_t pos)
 
 int PSFileSource::SetSpeed(double speed)
 {
+	m_speed = speed;
 	return 0;
 }
 
@@ -130,6 +132,7 @@ int PSFileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rt
 
 void PSFileSource::OnRTCPEvent(const struct rtcp_msg_t* msg)
 {
+	msg;
 }
 
 void PSFileSource::OnRTCPEvent(void* param, const struct rtcp_msg_t* msg)
@@ -201,6 +204,6 @@ void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t ti
 	struct sockaddr_in addrin;
 	socket_addr_ipv4(&addrin, self->m_ip.c_str(), self->m_port[0]);
 	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&addrin, sizeof(addrin));
-	assert(r == bytes);
+	assert(r == (int)bytes);
 	rtp_onsend(self->m_rtp, packet, bytes, time);
 }

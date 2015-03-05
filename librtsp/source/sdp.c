@@ -283,6 +283,7 @@ static int sdp_parse_version(struct sdp_context* sdp)
 	char c;
 	assert(sdp);
 
+	if(!sdp) return -1;
 	sdp->v = 0;
 
 	sdp_skip_space(sdp);

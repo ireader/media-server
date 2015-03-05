@@ -99,7 +99,7 @@ static int rtsp_client_send(socket_t socket, const void* p, size_t n)
 {
 	int r;
 	r = socket_send(socket, p, n, 0);
-	if(r != n)
+	if((size_t)r != n)
 		return -1;
 
 	return 0;
@@ -134,10 +134,10 @@ static int rtsp_client_recv(struct rtsp_tcp_transport_t* transport, void* rtsp, 
 		len = (p[2] << 8) | p[3];
 
 		assert(len+3 < sizeof(p));
-		if(r < len + 3 && len+3 < sizeof(p))
+		if((size_t)r < len + 3 && len+3 < sizeof(p))
 		{
 			s = socket_recv_all_by_time(transport->sock, p+r, len+3-r, 0, 10000);
-			if(s != len+3-r)
+			if((size_t)s != len+3-(size_t)r)
 				return -1; // recv error
 
 			r += s;

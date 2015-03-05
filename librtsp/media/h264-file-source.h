@@ -51,6 +51,7 @@ private:
 
 	int m_status;
 	int64_t m_pos;
+	double m_speed;
 
 	void *m_rtppacker;
 	unsigned char m_packet[MAX_UDP_PACKET+14];

@@ -17,6 +17,8 @@
 #include "path.h"
 #include <map>
 
+#define PS_VOD
+
 static int s_running;
 static thread_pool_t s_pool;
 static const char* s_workdir = "e:";
@@ -42,15 +44,10 @@ static std::map<std::string, TFileDescription> s_describes;
 
 static void worker(void* param)
 {
-    int r;
     do
     {
-        r = aio_socket_process(2*60*1000);
-        if(0 != r)
-        {
-            //printf("http_server_process =>%d\n", r);
-        }
-    } while(*(int*)param && -1 != r);
+        aio_socket_process(2*60*1000);    
+    } while(*(int*)param);
 }
 
 static int init()
@@ -115,7 +112,11 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
 			// unlock
 			TFileDescription describe;
 			IMediaSource *source = NULL;
+#if defined(PS_VOD)
+			source = PSFileSource::Create(filename.c_str());
+#else
 			source = H264FileSource::Create(filename.c_str());
+#endif
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
 			source->release();
@@ -166,7 +167,11 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 
 		rtsp_session_t item;
 		memset(&item, 0, sizeof(item));
+#if defined(PS_VOD)
+		item.media = PSFileSource::Create(filename.c_str());
+#else
 		item.media = H264FileSource::Create(filename.c_str());
+#endif
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media);
@@ -227,17 +232,17 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
 			item.port[0], item.port[1]);
 
-		char ip[40] = {0};
+		const char *ip = NULL;
 		if(transport->destination[0])
 		{
-			strncpy(ip, transport->destination, sizeof(ip)-1);
+			ip = transport->destination;
 			strcat(rtsp_transport, ";destination=");
 			strcat(rtsp_transport, transport->destination);
 		}
 		else
 		{
-			unsigned short port = 0;
-			rtsp_server_get_client(rtsp, ip, &port);
+			int port = 0;
+			rtsp_server_get_client(rtsp, &ip, &port);
 		}
 
 		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
@@ -296,6 +301,7 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 
 	it->second.status = 1;
 	rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
+    //rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
 }
 
 static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)

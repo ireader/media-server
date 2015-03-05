@@ -373,10 +373,10 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 			"CSeq: %u\r\n"
 			"Date: %s\r\n"
 			"Content-Type: application/sdp\r\n"
-			"Content-Length: %lu\r\n"
+			"Content-Length: %u\r\n"
 			"\r\n"
 			"%s", 
-			req->cseq, datetime, strlen(sdp), sdp);
+			req->cseq, datetime, (unsigned int)strlen(sdp), sdp);
 
 	req->transport->send(req->session, req->reply, strlen(req->reply));
 }

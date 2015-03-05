@@ -3,8 +3,8 @@ ROOT:=../../sdk
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
 #--------------------------------------------------------------------
-OUTTYPE = 1
-OUTFILE = libmpeg.so
+OUTTYPE = 2
+OUTFILE = libmpeg.a
 
 #-------------------------------Include------------------------------
 #
@@ -12,8 +12,7 @@ OUTFILE = libmpeg.so
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					$(ROOT)/include \
-					$(ROOT)/video/
+					$(ROOT)/include
 
 #-------------------------------Source-------------------------------
 #
@@ -44,6 +43,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = LIBMPEG_EXPORTS
+DEFINES = OS_INT64_TYPE
 
 include $(ROOT)/gcc.mk

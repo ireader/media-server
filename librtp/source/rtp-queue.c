@@ -54,7 +54,7 @@ int rtp_queue_destroy(void* queue)
 	struct rtp_queue *q;
 	struct rtp_frame *frame, *next;
 
-	assert(queue);
+	if(!queue) return -1;
 	q = (struct rtp_queue *)queue;
 	for(frame = q->head; frame; frame = next)
 	{
@@ -208,7 +208,7 @@ int rtp_queue_unlock(void* queue, void* ptr, int size)
 	unsigned int v;
 	struct rtp_queue *q;
 	struct rtp_frame *frame;
-	time64_t tnow =  time64_now();
+//	time64_t tnow =  time64_now();
 
 	q = (struct rtp_queue *)queue;
 	frame = (struct rtp_frame *)ptr - 1;

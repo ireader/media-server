@@ -11,9 +11,7 @@
 size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 {
 	int i = 0;
-	uint32_t j = 0;
-	uint32_t k = 0;
-	uint32_t n = 0;
+	uint32_t j = 0, k = 0, n = 0;
 
 	uint32_t table_id = data[0];
 	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
@@ -40,6 +38,7 @@ size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 	pmt->PCR_PID = PCR_PID;
 	pmt->pn = program_number;
 	pmt->ver = version_number;
+	pmt->pminfo_len = program_info_length;
 
 	i = 12;
 	if(program_info_length)
@@ -47,7 +46,8 @@ size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 		// descriptor()
 	}
 
-	for(j = 0; j < section_length - 9 - pmt->pminfo_len - 4; j += 5)
+	assert(bytes >= section_length + 3); // PMT = section_length + 3
+	for(j = 0; j < section_length - 9 - pmt->pminfo_len - 4; j += 5) // 4:CRC, 9: follow section_length item
 	{
 		pmt->streams[n].avtype = data[i+j];
 		pmt->streams[n].pid = ((data[i+j+1] & 0x1F) << 8) | data[i+j+2];

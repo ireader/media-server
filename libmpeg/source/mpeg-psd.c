@@ -13,7 +13,8 @@ size_t psd_read(const uint8_t* data, size_t bytes, psd_t *psd)
 
 	// Table 2-42 ¨C Program stream directory packet(p81)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xFF==data[3]);
-	packet_length = (data[4] << 8) | data[5];
+	packet_length = (((uint16_t)data[4]) << 8) | data[5];
+	assert(bytes >= (size_t)packet_length + 6);
 
 	assert((0x01 & data[7]) == 0x01); // 'xxxxxxx1'
 	number_of_access_units = (data[6] << 8) | ((data[7] >> 7) & 0x7F);
