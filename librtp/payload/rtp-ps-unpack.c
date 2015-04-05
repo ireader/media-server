@@ -12,8 +12,9 @@ struct rtp_ps_unpack_t
 	struct rtp_unpack_func_t func;
 	void* cbparam;
 
-	uint16_t seq; // rtp seq
 	int flag; // lost packet
+	uint16_t seq; // rtp seq
+	uint32_t timestamp;
 
 	uint8_t* ptr;
 	size_t size, capacity;
@@ -51,47 +52,85 @@ static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, int64_
 	struct rtp_ps_unpack_t *unpacker;
 
 	unpacker = (struct rtp_ps_unpack_t *)p;
-	if(0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 1)
+	if(!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 1)
 		return -1;
 
 	if((uint16_t)pkt.rtp.seq != unpacker->seq+1 && 0!=unpacker->seq)
 	{
 		// packet lost
-		unpacker->size = 0; // clear flags
 		unpacker->flag = 1;
+		unpacker->size = 0;
+		unpacker->seq = (uint16_t)pkt.rtp.seq;
+		printf("%s: rtp packet lost.\n", __FUNCTION__);
+		return EFAULT;
 	}
 
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 
 	assert(pkt.payloadlen > 0);
-	if(pkt.payloadlen > 0 && 0 == unpacker->flag)
+	if(pkt.payloadlen > 0)
 	{
 		if(pkt.payloadlen > 0 && unpacker->size + pkt.payloadlen > unpacker->capacity)
 		{
-			uint8_t *ptr = (uint8_t*)realloc(unpacker->ptr, unpacker->capacity + pkt.payloadlen + 2048);
-			if(!p)
+			void *ptr = realloc(unpacker->ptr, unpacker->capacity + pkt.payloadlen + 2048);
+			if(!ptr)
 			{
 				unpacker->flag = 1;
+				unpacker->size = 0;
 				return ENOMEM;
 			}
 
-			unpacker->ptr = ptr;
+			unpacker->ptr = (uint8_t*)ptr;
 			unpacker->capacity += pkt.payloadlen + 2048;
 		}
-
-		memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
-		unpacker->size += pkt.payloadlen;
 	}
 
 	// RTP marker bit
 	if(pkt.rtp.m)
 	{
-		if(unpacker->size > 0 && 0==unpacker->flag)
+		assert(pkt.payloadlen > 0);
+		assert(1==unpacker->flag || 0==unpacker->size || pkt.rtp.timestamp == unpacker->timestamp);
+		if(pkt.payload && pkt.payloadlen > 0)
+		{
+			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
+			unpacker->size += pkt.payloadlen;
+		}
+
+		if(unpacker->size > 0 && 0 == unpacker->flag)
+		{
 			unpacker->func.packet(unpacker->cbparam, (uint8_t)pkt.rtp.pt, unpacker->ptr, unpacker->size, time);
+		}
+
+		// frame boundary
 		unpacker->flag = 0;
 		unpacker->size = 0;
 	}
+	else if (unpacker->timestamp != 0 && pkt.rtp.timestamp != unpacker->timestamp)
+	{
+		if(unpacker->size > 0 && 0 == unpacker->flag)
+		{
+			unpacker->func.packet(unpacker->cbparam, (uint8_t)pkt.rtp.pt, unpacker->ptr, unpacker->size, time);
+		}
 
+		// frame boundary
+		unpacker->flag = 0;
+		unpacker->size = 0;
+		if(pkt.payload && pkt.payloadlen > 0)
+		{
+			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
+			unpacker->size = pkt.payloadlen;
+		}
+	}
+	else
+	{
+		if(pkt.payload && pkt.payloadlen > 0)
+		{
+			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
+			unpacker->size += pkt.payloadlen;
+		}
+	}
+
+	unpacker->timestamp = pkt.rtp.timestamp;
 	return 0;
 }
 

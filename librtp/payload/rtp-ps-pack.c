@@ -36,6 +36,7 @@ static void* rtp_ps_pack_create(uint32_t ssrc, unsigned short seq, uint8_t paylo
 	packer->ssrc = ssrc;
 	packer->payload = payload;
 	packer->seq = seq;
+	packer->timestamp = 0;
 	return packer;
 }
 
@@ -79,7 +80,7 @@ static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t t
 	struct rtp_ps_packer_t *packer;
 	packer = (struct rtp_ps_packer_t *)pack;
 
-	packer->timestamp = ((uint32_t)time + (uint32_t)pack) * 90; // ms -> 90KHZ (RFC2250 section2 p2)
+	packer->timestamp = (uint32_t)time * 90; // ms -> 90KHZ (RFC2250 section2 p2)
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
 

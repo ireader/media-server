@@ -118,8 +118,8 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 		mvc_extension_descriptor(data, bytes);
 		break;
 
-	default:
-		assert(0);
+	//default:
+	//	assert(0);
 	}
 
 	return descriptor_len+2;
@@ -130,8 +130,9 @@ int video_stream_descriptor(const uint8_t* data, int bytes)
 	// 2.6.2 Video stream descriptor(p85)
 	int i;
 	video_stream_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -157,8 +158,9 @@ int audio_stream_descriptor(const uint8_t* data, int bytes)
 	// 2.6.4 Audio stream descriptor(p86)
 	int i;
 	audio_stream_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -176,8 +178,9 @@ int hierarchy_descriptor(const uint8_t* data, int bytes)
 	// 2.6.6 Hierarchy descriptor(p86)
 	int i;
 	hierarchy_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -198,8 +201,9 @@ int language_descriptor(const uint8_t* data, int bytes)
 {
 	// 2.6.18 ISO 639 language descriptor(p92)
 	int i;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	for(i = 2; i < descriptor_len; i += 4)
 	{
@@ -218,8 +222,9 @@ int system_clock_descriptor(const uint8_t* data, int bytes)
 	// 2.6.20 System clock descriptor(p92)
 	int i;
 	system_clock_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -236,8 +241,9 @@ int mpeg4_video_descriptor(const uint8_t* data, int bytes)
 	// 2.6.36 MPEG-4 video descriptor(p96)
 	int i;
 	mpeg4_video_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -252,8 +258,9 @@ int mpeg4_audio_descriptor(const uint8_t* data, int bytes)
 	// 2.6.38 MPEG-4 audio descriptor(p97)
 	int i;
 	mpeg4_audio_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -268,8 +275,9 @@ int avc_video_descriptor(const uint8_t* data, int bytes)
 	// 2.6.64 AVC video descriptor(p110)
 	int i;
 	avc_video_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -295,8 +303,9 @@ int avc_timing_hrd_descriptor(const uint8_t* data, int bytes)
 	// 2.6.66 AVC timing and HRD descriptor(p112)
 	int i;
 	avc_timing_hrd_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -327,8 +336,9 @@ int mpeg2_aac_descriptor(const uint8_t* data, int bytes)
 	// 2.6.68 MPEG-2 AAC audio descriptor(p113)
 	int i;
 	mpeg2_aac_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -345,8 +355,9 @@ int svc_extension_descriptor(const uint8_t* data, int bytes)
 	// 2.6.76 SVC extension descriptor(p116)
 	int i;
 	svc_extension_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));
@@ -371,8 +382,9 @@ int mvc_extension_descriptor(const uint8_t* data, int bytes)
 	// 2.6.78 MVC extension descriptor(p117)
 	int i;
 	mvc_extension_descriptor_t desc;
-	uint8_t descriptor_tag = data[0];
+//	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
 	memset(&desc, 0, sizeof(desc));

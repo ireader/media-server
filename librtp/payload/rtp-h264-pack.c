@@ -41,7 +41,7 @@ static void* rtp_h264_pack_create(uint32_t ssrc, unsigned short seq, uint8_t pay
 	packer->ssrc = ssrc;
 	packer->payload = payload;
 	packer->seq = seq;
-	packer->timestamp = (uint32_t)packer;
+	packer->timestamp = 0;
 	return packer;
 }
 
@@ -96,7 +96,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)pack;
 
-	packer->timestamp = ((uint32_t)time + (uint32_t)pack) * 90; // ms -> 90KHZ
+	packer->timestamp = (uint32_t)time * 90; // ms -> 90KHZ
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
 
