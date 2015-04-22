@@ -120,9 +120,25 @@ int rtp_member_list_delete(void* members, uint32_t ssrc)
 			continue;
 
 		if(i < N_SOURCE)
-			memmove(p->members + i, p->members+i+1, N_SOURCE-i);
+		{
+			if(i+1 < N_SOURCE)
+			{
+				memmove(p->members + i, p->members+i+1, N_SOURCE-i-1);
+			}
+
+			if(p->count > N_SOURCE)
+			{
+				p->members[N_SOURCE-1] = p->ptr[0];
+				memmove(p->ptr, p->ptr + 1, p->count-N_SOURCE-1);
+			}
+		}
 		else
-			memmove(p->ptr + i - N_SOURCE, p->ptr + i - N_SOURCE, p->count-N_SOURCE-i);
+		{
+			if(i + 1 < p->count)
+			{
+				memmove(p->ptr + i - N_SOURCE, p->ptr + i + 1 - N_SOURCE, p->count-i-1);
+			}
+		}
 
 		--p->count;
 
