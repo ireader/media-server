@@ -44,32 +44,23 @@ void rtp_member_release(struct rtp_member *member)
 int rtp_member_setvalue(struct rtp_member *member, int item, const unsigned char* data, size_t bytes)
 {
 	rtcp_sdes_item_t *sdes;
-	if(item < RTCP_SDES_CNAME || item > RTCP_SDES_PRIVATE || bytes > 255)
+	assert(RTCP_SDES_CNAME <= item && item <= RTCP_SDES_PRIVATE);
+	if((size_t)item >= sizeof(member->sdes)/sizeof(member->sdes[0]) || bytes > 255)
 		return -1;
 
 	sdes = &member->sdes[item];
-	if(bytes == sdes->len && sdes->data && 0 == memcmp(sdes->data, data, bytes))
-		return 0; // the same value
 
-	if(sdes->data)
+	if(bytes > sdes->len)
 	{
-		assert(sdes->len > 0);
-		free(sdes->data);
-		sdes->data = NULL;
-		sdes->len = 0;
+		void* p = realloc(sdes->data, bytes);
+		if(!p)
+			return -1; // no memory
+		sdes->data = p;
 	}
 
 	if(bytes > 0)
-	{
-		sdes->data = (unsigned char*)malloc(bytes);
-		if(!sdes->data)
-			return -1;
-
-		assert(bytes < 256);
 		memcpy(sdes->data, data, bytes);
-		sdes->len = (unsigned char)bytes;
-		sdes->pt = (unsigned char)item;
-	}
-
+	sdes->pt = (unsigned char)item;
+	sdes->len = (unsigned char)bytes;
 	return 0;
 }

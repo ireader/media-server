@@ -21,10 +21,10 @@ time64_t ntp2clock(time64_t ntp)
 	time64_t clock;
 
 	// high 32 bits in seconds
-	clock = ((ntp >> 32) - 0x83AA7E80) * 1000; // 1/1/1900 -> 1/1/1970
+	clock = ((time64_t)((unsigned int)(ntp >> 32) - 0x83AA7E80)) * 1000; // 1/1/1900 -> 1/1/1970
 
 	// low 32 bits in picosecond
-	clock += (unsigned int)((ntp & 0xFFFFFFFF) * 15.625 / 0x4000000);
+	clock += (unsigned int)(((unsigned int)(ntp & 0xFFFFFFFF)) * 15.625 / 0x4000000);
 
 	return clock;
 }
