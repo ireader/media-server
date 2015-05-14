@@ -9,6 +9,7 @@ time64_t ntp2clock(time64_t ntp);
 time64_t clock2ntp(time64_t clock);
 
 #define RTP_SEQ_DIFF(sn1, sn2) ( (sn1) > (sn2) ? (sn1) - (sn2) : (sn2) - (sn1))
+#define RTP_ABS(v)	( (v) > 0 ? (v) : -(v))
 
 struct rtp_member* rtp_member_fetch(struct rtp_context *ctx, uint32_t ssrc)
 {
@@ -199,7 +200,8 @@ int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes, time
 
 		// rtp timestamp round per 13-hours(0xFFFFFFFF / 90000 / 3600)
 		// update wall-clock per hour
-		if(clock - sender->rtcp_sr_clock > 1 * 3600 * 1000)
+		if(clock - sender->rtcp_sr_clock > 1 * 3600 * 1000 
+			|| (uint32_t)RTP_ABS((int32_t)(sender->rtp_timestamp - sender->rtcp_sr.rtpts)) > 0x10000000)
 		{
 			time64_t ltnow;
 			ltnow = clock2ntp(*time);
