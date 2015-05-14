@@ -6,6 +6,9 @@
 #include <stdlib.h>
 
 time64_t ntp2clock(time64_t ntp);
+time64_t clock2ntp(time64_t clock);
+
+#define RTP_SEQ_DIFF(sn1, sn2) ( (sn1) > (sn2) ? (sn1) - (sn2) : (sn2) - (sn1))
 
 struct rtp_member* rtp_member_fetch(struct rtp_context *ctx, uint32_t ssrc)
 {
@@ -161,17 +164,50 @@ int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes, time
 	// RFC3550 A.1 RTP Data Header Validity Checks
 	if(0 == sender->seq_max && 0 == sender->seq_cycles)
 	{
+		sender->seq_probation = 0;
 		sender->seq_max = (uint16_t)pkt.rtp.seq;
 		sender->seq_base = (uint16_t)pkt.rtp.seq;
 	}
-	else if(pkt.rtp.seq - sender->seq_max < RTP_MISORDER)
+	else if( RTP_SEQ_DIFF(pkt.rtp.seq, sender->seq_max) < RTP_MISORDER)
 	{
-		if(pkt.rtp.seq < sender->seq_max)
+		if(pkt.rtp.seq < 0x1000 && sender->seq_max > 0x8000)
+		{
 			sender->seq_cycles += 1;
-		sender->seq_max = (uint16_t)pkt.rtp.seq;
+			sender->seq_max = (uint16_t)pkt.rtp.seq;
+		}
+		else
+		{
+			sender->seq_max = (uint16_t)MAX(pkt.rtp.seq, sender->seq_max);
+		}
+	}
+	else
+	{
+		if(++sender->seq_probation > RTP_MINISEQ)
+		{
+			sender->seq_cycles = 0;
+			sender->seq_probation = 0;
+			sender->seq_max = (uint16_t)pkt.rtp.seq;
+			sender->seq_base = (uint16_t)pkt.rtp.seq;
+		}
 	}
 
+	// calculate wallclock from RTP timestamp
 	if(0 != sender->rtcp_sr.ntpmsw)
-		*time = (int64_t)(sender->rtp_timestamp - sender->rtcp_sr.rtpts)*1000/ctx->frequence + ntp2clock((((time64_t)sender->rtcp_sr.ntpmsw) << 32) | sender->rtcp_sr.ntplsw);
+	{
+		*time = (uint64_t)ntp2clock((((uint64_t)sender->rtcp_sr.ntpmsw) << 32) | sender->rtcp_sr.ntplsw);
+		*time += ((uint64_t)(uint32_t)(sender->rtp_timestamp - sender->rtcp_sr.rtpts)) * 1000 / ctx->frequence;
+
+		// rtp timestamp round per 13-hours(0xFFFFFFFF / 90000 / 3600)
+		// update wall-clock per hour
+		if(clock - sender->rtcp_sr_clock > 1 * 3600 * 1000)
+		{
+			time64_t ltnow;
+			ltnow = clock2ntp(*time);
+			sender->rtcp_sr_clock = clock;
+			sender->rtcp_sr.rtpts = sender->rtp_timestamp;
+			sender->rtcp_sr.ntpmsw = (uint32_t)((ltnow >> 32) & 0xFFFFFFFF);
+			sender->rtcp_sr.ntplsw = (uint32_t)ltnow;
+		}
+	}
 	return 0;
 }

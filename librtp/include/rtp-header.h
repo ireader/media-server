@@ -23,5 +23,6 @@ typedef struct _rtp_header_t
 #define RTP_SEQ(v)	((v >> 00) & 0xFFFF) /* sequence number */
 
 #define RTP_MISORDER 1000
+#define RTP_MINISEQ	 5
 
 #endif /* !_rtp_header_h_ */

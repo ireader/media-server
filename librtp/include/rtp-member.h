@@ -24,7 +24,8 @@ struct rtp_member
 
 	double jitter;
 
-	uint16_t seq_base;				// max sequence number
+	uint16_t seq_probation;			// sequence probation
+	uint16_t seq_base;				// init sequence number
 	uint16_t seq_max;				// max sequence number
 	uint16_t seq_cycles;			// high extension sequence number
 	uint32_t rtp_expected;			// previous SR/RR expect RTP sequence number
