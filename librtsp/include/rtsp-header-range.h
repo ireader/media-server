@@ -23,10 +23,10 @@ struct rtsp_header_range_t
 	enum ERTSP_RANGE_TIME_VALUE from_value;
 	enum ERTSP_RANGE_TIME_VALUE to_value;
 
-	int64_t from; // ms
-	int64_t to; // ms
+	uint64_t from; // ms
+	uint64_t to; // ms
 
-	int64_t time; // range time parameter(in ms), 0 if no value
+	uint64_t time; // range time parameter(in ms), 0 if no value
 };
 
 /// parse RTSP Range header

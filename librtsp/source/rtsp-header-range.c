@@ -47,7 +47,7 @@ struct time_clock_t
 
 #define RANGE_SPECIAL ",;\r\n"
 
-static int64_t utc_mktime(const struct tm *t)
+static uint64_t utc_mktime(const struct tm *t)
 {
     int mon = t->tm_mon+1, year = t->tm_year+1900;
 
@@ -57,7 +57,7 @@ static int64_t utc_mktime(const struct tm *t)
         year -= 1;
     }
     
-    return ((((int64_t)
+    return ((((uint64_t)
               (year/4 - year/100 + year/400 + 367*mon/12 + t->tm_mday) +
               year*365 - 719499
               )*24 + t->tm_hour /* now have hours */
@@ -123,7 +123,7 @@ static int rtsp_header_range_smpte(const char* fields, struct rtsp_header_range_
 	if('\0' == p[1] || strchr(RANGE_SPECIAL, p[1]))
 	{
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		range->to = -1L;
+		range->to = 0;
 	}
 	else
 	{
@@ -145,7 +145,7 @@ static int rtsp_header_range_smpte(const char* fields, struct rtsp_header_range_
 // npt-hh = 1*DIGIT ; any positive number
 // npt-mm = 1*2DIGIT ; 0-59
 // npt-ss = 1*2DIGIT ; 0-59
-static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds, int *fraction)
+static const char* rtsp_header_range_npt_time(const char* str, uint64_t *seconds, int *fraction)
 {
 	const char* p;
 	int v1, v2;
@@ -154,12 +154,12 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 	p = string_token(str, "-\r\n");
 	if(!str || (p-str==3 && 0==strnicmp(str, "now", 3)))
 	{
-		*seconds = -1; // now
-		*fraction = 0;
+		*seconds = 0; // now
+		*fraction = -1;
 	}
 	else
 	{
-		p = string_token_int64(str, seconds);
+		p = string_token_int64(str, (int64_t*)seconds);
 		if(*p == ':')
 		{
 			// npt-hhmmss
@@ -171,7 +171,7 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 
 			assert(0 <= v1 && v1 < 60);
 			assert(0 <= v2 && v2 < 60);
-			*seconds = *seconds*3600 + (v1%60)*60 + v2%60;
+			*seconds = *seconds * 3600 + (v1%60)*60 + v2%60;
 		}
 		else
 		{
@@ -197,7 +197,7 @@ static const char* rtsp_header_range_npt_time(const char* str, int64_t *seconds,
 static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t* range)
 {
 	const char* p;
-	int64_t seconds;
+	uint64_t seconds;
 	int fraction;
 
 	p = fields;
@@ -207,7 +207,7 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 		if(!p || '-' != *p)
 			return -1;
 
-		if(-1 == seconds && 0 == fraction)
+		if(0 == seconds && -1 == fraction)
 		{
 			range->from_value = RTSP_RANGE_TIME_NOW;
 			range->from = 0L;
@@ -222,7 +222,7 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 	else
 	{
 		range->from_value = RTSP_RANGE_TIME_NOVALUE;
-		range->from = -1L;
+		range->from = 0;
 	}
 
 	assert('-' == *p);
@@ -230,7 +230,7 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 	{
 		assert('-' != *fields);
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		range->to = -1L;
+		range->to = 0;
 	}
 	else
 	{
@@ -249,7 +249,7 @@ static int rtsp_header_range_npt(const char* fields, struct rtsp_header_range_t*
 // utc-time = utc-date "T" utc-time "Z"
 // utc-date = 8DIGIT ; < YYYYMMDD >
 // utc-time = 6DIGIT [ "." fraction ] ; < HHMMSS.fraction >
-static const char* rtsp_header_range_clock_time(const char* str, int64_t *second, int *fraction)
+static const char* rtsp_header_range_clock_time(const char* str, uint64_t *second, int *fraction)
 {
 	struct tm t;
 	const char* p;
@@ -262,7 +262,7 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 
 	*second = 0;
 	*fraction = 0;
-	p = string_token_int64(str + 13, second);
+	p = string_token_int64(str + 13, (int64_t*)second);
     assert(p);
 	if(*p == '.')
 	{
@@ -290,7 +290,7 @@ static const char* rtsp_header_range_clock_time(const char* str, int64_t *second
 static int rtsp_header_range_clock(const char* fields, struct rtsp_header_range_t* range)
 {
 	const char* p;
-	int64_t second;
+	uint64_t second;
 	int fraction;
 
 	p = rtsp_header_range_clock_time(fields, &second, &fraction);
@@ -305,7 +305,7 @@ static int rtsp_header_range_clock(const char* fields, struct rtsp_header_range_
 	if('\0'==p[1] || strchr(RANGE_SPECIAL, p[1]))
 	{
 		range->to_value = RTSP_RANGE_TIME_NOVALUE;
-		range->to = -1L;
+		range->to = 0;
 	}
 	else
 	{
@@ -314,7 +314,7 @@ static int rtsp_header_range_clock(const char* fields, struct rtsp_header_range_
 
 		range->to_value = RTSP_RANGE_TIME_NORMAL;
 		range->to = second * 1000;
-		range->to += fraction % 1000;
+		range->to += (unsigned int)fraction % 1000;
 	}
 
 	return 0;
