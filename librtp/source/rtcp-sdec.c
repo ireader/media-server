@@ -14,17 +14,19 @@ void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsi
 	p = ptr;
 	for(i = 0; i < header->rc; i++)
 	{
-		rtcp_sdes_item_t item;
 		ssrc = nbo_r32(p);
 		member = rtp_member_fetch(ctx, ssrc);
 		if(!member)
 			continue;
 
-		item.pt = p[4];
-		item.len = p[5];
-		item.data = (unsigned char*)(p+6);
-		while(RTCP_SDES_END != item.pt)
+		p += 4;
+		while(RTCP_SDES_END != p[0] /*PT*/)
 		{
+			rtcp_sdes_item_t item;
+			item.pt = p[0];
+			item.len = p[1];
+			item.data = (unsigned char*)(p+2);
+
 			switch(item.pt)
 			{
 			case RTCP_SDES_CNAME:
