@@ -3,6 +3,7 @@
 // 2.4.3.1 Transport stream(p34)
 
 #include "mpeg-ts-proto.h"
+#include "mpeg-ps-proto.h"
 #include "mpeg-pes-proto.h"
 #include "mpeg-ts.h"
 #include "crc32.h"
@@ -126,6 +127,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 {
 	uint32_t i, j, k;
 	int64_t t;
+	psm_t psm;
 	ts_packet_header_t pkhd;
 	uint32_t PID;
 
@@ -190,7 +192,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
                             if(!tsctx.pes[k].payload)
                                 tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].avtype) ? s_video : s_audio;
 
-                            pes_read(data + i, bytes - i, &tsctx.pes[k]);
+                            pes_read(data + i, bytes - i, &psm, &tsctx.pes[k]);
 
                             if(0 == k)
                                 printf("pes payload: %u\n", tsctx.pes[k].len);

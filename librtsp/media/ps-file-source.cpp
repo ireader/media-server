@@ -175,7 +175,7 @@ void PSFileSource::Free(void* /*param*/, void* packet)
 	return free(packet);
 }
 
-void PSFileSource::Packet(void* param, void* pes, size_t bytes)
+void PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
@@ -196,7 +196,7 @@ void PSFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, uint64_t time)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);

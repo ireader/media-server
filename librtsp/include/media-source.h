@@ -1,12 +1,11 @@
 #ifndef _media_source_h_
 #define _media_source_h_
 
-#include "ctypedef.h"
 #include "sys/sock.h"
-#include "libct/object.h"
+#include "ctypedef.h"
 #include <string>
 
-struct IMediaSource : public libct::object
+struct IMediaSource
 {
 	virtual ~IMediaSource(){}
 

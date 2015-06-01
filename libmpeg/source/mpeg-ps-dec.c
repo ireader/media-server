@@ -62,8 +62,9 @@ uint32_t ps_system_header_dec(const uint8_t* data, int bytes)
 
 size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param)
 {
-	size_t i=0, n=0, len;
+	size_t i=0, n=0, len, c;
 	pes_t pes;
+	psm_t psm;
 	ps_packet_header_t pkhd;
 	uint8_t *packet;
 
@@ -101,6 +102,8 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_p
 	}
 
 	// MPEG_program_end_code = 0x000000B9
+	memset(&psm, 0, sizeof(psm));
+	memset(&pes, 0, sizeof(pes));
 	while(i<bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
 	{
 		uint16_t len2;
@@ -108,13 +111,23 @@ size_t mpeg_ps_packet_dec(const uint8_t* data, size_t bytes, const struct mpeg_p
 		pes.payload_len = 0;
 		len2 = (data[i+4] << 8) | data[i+5];
 		assert((size_t)len2 + 6 <= bytes - i);
-		pes_read(data + i, len2 + 6, &pes);
+		pes_read(data + i, len2 + 6, &psm, &pes);
 
 		n += pes.payload_len;
 		i += len2 + 6;
 	}
 
-	func->write(param, packet, n);
+	// find stream type
+	for(c = 0; c < psm.stream_count; ++c)
+	{
+		if(psm.streams[c].pesid == pes.sid)
+		{
+			pes.avtype = psm.streams[c].avtype;
+			break;
+		}
+	}
+
+	func->write(param, (int)pes.avtype, packet, n);
 	func->free(param, packet);
 
 	return i + (PES_SID_END==data[i+3] ? 4 : 0);

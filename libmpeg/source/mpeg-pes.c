@@ -108,9 +108,8 @@ static size_t pes_packet(const uint8_t* data, size_t bytes, pes_t *pes)
 	return 0;
 }
 
-size_t pes_read(const uint8_t* data, size_t bytes, pes_t *pes)
+size_t pes_read(const uint8_t* data, size_t bytes, psm_t *psm, pes_t *pes)
 {
-	psm_t psm;
 	psd_t psd;
 
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2]);
@@ -119,7 +118,7 @@ size_t pes_read(const uint8_t* data, size_t bytes, pes_t *pes)
 	switch(data[3])
 	{
 	case PES_SID_PSM:
-		psm_read(data, bytes, &psm);
+		psm_read(data, bytes, psm);
 		break;
 
 	case PES_SID_PSD:

@@ -44,6 +44,7 @@ enum EPES_STREAM_ID
 };
 
 struct _pmt_t;
+struct _psm_t;
 
 typedef struct _pes_t
 {
@@ -103,7 +104,7 @@ typedef struct _pes_t
 	uint32_t payload_len;
 } pes_t;
 
-size_t pes_read(const uint8_t* data, size_t bytes, pes_t *pes);
+size_t pes_read(const uint8_t* data, size_t bytes, struct _psm_t *psm, pes_t *pes);
 size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data);
 
 #endif /* !_mpeg_pes_dec_h_ */

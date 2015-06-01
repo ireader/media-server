@@ -193,7 +193,7 @@ void H264FileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, uint64_t time)
 {
 	H264FileSource *self = (H264FileSource*)param;
 	assert(self->m_packet == packet);

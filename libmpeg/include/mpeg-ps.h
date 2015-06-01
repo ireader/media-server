@@ -46,9 +46,10 @@ struct mpeg_ps_func_t
 
 	/// callback on PS packet done
 	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] avtype STREAM_VIDEO_XXX/STREAM_AUDIO_XXX
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	/// @param[in] bytes packet size
-	void (*write)(void* param, void* packet, size_t bytes);
+	void (*write)(void* param, int avtype, void* packet, size_t bytes);
 };
 
 void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param);

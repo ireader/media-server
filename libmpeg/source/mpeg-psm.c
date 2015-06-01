@@ -41,7 +41,7 @@ size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 
 	j = i + 2;
 	psm->stream_count = 0;
-	while(j < i+2+element_stream_map_length)
+	while(j < i+2+element_stream_map_length && psm->stream_count < NSTREAM)
 	{
 		psm->streams[psm->stream_count].avtype = data[j];
 		psm->streams[psm->stream_count].pesid = data[j+1];

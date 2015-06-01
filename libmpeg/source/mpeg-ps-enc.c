@@ -211,7 +211,7 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const void* da
 	}
 
 	assert(i < sz);
-	psctx->func.write(psctx->param, packet, i);
+	psctx->func.write(psctx->param, avtype, packet, i);
 	psctx->func.free(psctx->param, packet);
 
 	++psctx->psm_period;

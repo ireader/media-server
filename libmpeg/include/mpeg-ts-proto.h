@@ -53,8 +53,8 @@ typedef struct _ts_packet_header_t
 
 typedef struct _pmt_t
 {
-	uint32_t pid;		// PID : 13
-	uint32_t pn;		// program_number: 16
+	uint32_t pid;		// PID : 13 [0x0010, 0x1FFE]
+	uint32_t pn;		// program_number: 16 [1, 0xFFFF]
 	uint32_t ver;		// version_number : 5
 	uint32_t cc;		// continuity_counter : 4
 	uint32_t PCR_PID;	// 13-bits
