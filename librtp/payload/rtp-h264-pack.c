@@ -88,7 +88,7 @@ static unsigned char* alloc_packet(struct rtp_h264_packer_t *packer, uint32_t ti
 	return rtp;
 }
 
-static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64_t time)
+static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, uint64_t time)
 {
 	size_t MAX_PACKET;
 	unsigned char *rtp;

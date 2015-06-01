@@ -46,7 +46,7 @@ static void rtp_ps_unpack_destroy(void* p)
 	free(unpacker);
 }
 
-static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, int64_t time)
+static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, uint64_t time)
 {
 	rtp_packet_t pkt;
 	struct rtp_ps_unpack_t *unpacker;

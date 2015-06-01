@@ -49,7 +49,7 @@ static void rtp_h264_unpack_destroy(void* p)
 	free(unpacker);
 }
 
-static int rtp_h264_unpack_stap_a(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_stap_a(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	// 5.7.1. Single-Time Aggregation Packet (STAP) (p20)
 	unsigned char stapnal;
@@ -82,7 +82,7 @@ static int rtp_h264_unpack_stap_a(struct rtp_h264_unpack_t *unpacker, const void
 	return 0;
 }
 
-static int rtp_h264_unpack_stap_b(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_stap_b(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	// 5.7.1. Single-Time Aggregation Packet (STAP)
 	unsigned char stapnal;
@@ -117,7 +117,7 @@ static int rtp_h264_unpack_stap_b(struct rtp_h264_unpack_t *unpacker, const void
 	return 0;
 }
 
-static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	// 5.7.2. Multi-Time Aggregation Packets (MTAPs)
 	unsigned char mtapnal;
@@ -156,7 +156,7 @@ static int rtp_h264_unpack_mtap16(struct rtp_h264_unpack_t *unpacker, const void
 	return 0;
 }
 
-static int rtp_h264_unpack_mtap24(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_mtap24(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	// 5.7.2. Multi-Time Aggregation Packets (MTAPs)
 	unsigned char mtapnal;
@@ -198,7 +198,7 @@ static int rtp_h264_unpack_mtap24(struct rtp_h264_unpack_t *unpacker, const void
 	return 0;
 }
 
-static int rtp_h264_unpack_fu_a(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_fu_a(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	unsigned char fuindicator, fuheader;
 	const unsigned char* ptr;
@@ -246,7 +246,7 @@ static int rtp_h264_unpack_fu_a(struct rtp_h264_unpack_t *unpacker, const void* 
 	return 0;
 }
 
-static int rtp_h264_unpack_fu_b(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, int64_t time)
+static int rtp_h264_unpack_fu_b(struct rtp_h264_unpack_t *unpacker, const void* data, int bytes, uint64_t time)
 {
 	unsigned char fuindicator, fuheader;
 	unsigned short don;
@@ -296,7 +296,7 @@ static int rtp_h264_unpack_fu_b(struct rtp_h264_unpack_t *unpacker, const void* 
 	return 0;
 }
 
-static int rtp_h264_unpack_input(void* p, const void* packet, size_t bytes, int64_t time)
+static int rtp_h264_unpack_input(void* p, const void* packet, size_t bytes, uint64_t time)
 {
 	rtp_packet_t pkt;
 	unsigned char nal;

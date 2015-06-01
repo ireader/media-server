@@ -73,7 +73,7 @@ static unsigned char* alloc_packet(struct rtp_ps_packer_t *packer, uint32_t time
 	return rtp;
 }
 
-static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t time)
+static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, uint64_t time)
 {
 	size_t MAX_PACKET;
 	const unsigned char *p;

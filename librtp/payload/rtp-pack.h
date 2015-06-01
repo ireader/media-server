@@ -9,7 +9,7 @@ struct rtp_pack_func_t
 {
 	void* (*alloc)(void* param, size_t bytes);
 	void (*free)(void* param, void *packet);
-	void (*packet)(void* param, void *packet, size_t bytes, int64_t time);
+	void (*packet)(void* param, void *packet, size_t bytes, uint64_t time);
 };
 
 struct rtp_pack_t
@@ -33,7 +33,7 @@ struct rtp_pack_t
 	/// @param[in] bytes stream length in bytes
 	/// @param[in] time stream UTC time
 	/// @return 0-ok, ENOMEM-alloc failed, <0-failed
-	int (*input)(void* packer, const void* data, size_t bytes, int64_t time);
+	int (*input)(void* packer, const void* data, size_t bytes, uint64_t time);
 };
 
 struct rtp_pack_t *rtp_ps_packer();
