@@ -67,7 +67,10 @@ int mpeg_ps_reset(void* ps);
 /// @return 0-ok, ENOMEM-alloc failed, <0-error
 int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
-size_t mpeg_ps_packet_dec(const unsigned char* data, size_t bytes, const struct mpeg_ps_func_t *func, void* param);
+
+void* mpeg_ps_unpacker_create(struct mpeg_ps_func_t *func, void* param);
+int mpeg_ps_unpacker_destroy(void* unpacker);
+size_t mpeg_ps_unpacker_input(void* unpacker, const unsigned char* data, size_t bytes);
 
 #ifdef __cplusplus
 }
