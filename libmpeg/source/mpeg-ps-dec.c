@@ -78,7 +78,7 @@ size_t mpeg_ps_unpacker_input(void* ptr, const uint8_t* data, size_t bytes)
 
 	unpacker = (struct mpeg_ps_unpacker_t*)ptr;
 	packet = unpacker->func->alloc(unpacker->param, bytes);
-	if(!packet) 
+	if(!packet || bytes < 4) 
 		return bytes; // TODO: check return
 
 	memset(&pkhd, 0, sizeof(pkhd));
@@ -112,7 +112,7 @@ size_t mpeg_ps_unpacker_input(void* ptr, const uint8_t* data, size_t bytes)
 
 	// MPEG_program_end_code = 0x000000B9
 	memset(&pes, 0, sizeof(pes));
-	while(i<bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
+	while(i + 3 < bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
 	{
 		uint16_t len2;
 		pes.payload = packet + n;
@@ -138,7 +138,7 @@ size_t mpeg_ps_unpacker_input(void* ptr, const uint8_t* data, size_t bytes)
 	unpacker->func->write(unpacker->param, (int)pes.avtype, packet, n);
 	unpacker->func->free(unpacker->param, packet);
 
-	return i + (PES_SID_END==data[i+3] ? 4 : 0);
+	return i + ((i+3 < bytes && PES_SID_END==data[i+3]) ? 4 : 0);
 }
 
 void* mpeg_ps_unpacker_create(struct mpeg_ps_func_t *func, void* param)
