@@ -327,11 +327,14 @@ static int rtsp_parse_request_line(struct rtsp_context *ctx)
 			}
 			else
 			{
-				// validate URI
-				// RFC 1738: 
-				// only alphanumerics, the special characters "$-_.+!*'(),", and reserved characters 
-				// used for their reserved purposes may be used unencoded within a URL.
-				assert(isalnum(ctx->raw[ctx->offset]) || strchr("$-_.+!*'(),;/?:@=&", ctx->raw[ctx->offset]));
+				// RFC3986 
+				// 2.2 Reserved Characters
+				// reserved    = gen-delims / sub-delims
+				// gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+				// sub-delims  = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+				// 2.3.  Unreserved Characters
+				// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+				assert(isalnum(ctx->raw[ctx->offset]) || strchr("-._~:/?#[]@!$&'()*+,;=", ctx->raw[ctx->offset]));
 			}
 			break;
 
