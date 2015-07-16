@@ -112,7 +112,10 @@ size_t mpeg_ps_unpacker_input(void* ptr, const uint8_t* data, size_t bytes)
 
 	// MPEG_program_end_code = 0x000000B9
 	memset(&pes, 0, sizeof(pes));
-	while(i + 3 < bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] && PES_SID_END != data[i+3] && PES_SID_START != data[i+3])
+	while(i + 3 < bytes && 0x00==data[i] && 0x00==data[i+1] && 0x01==data[i+2] 
+			&& PES_SID_END != data[i+3] 
+			&& PES_SID_START != data[i+3]
+			&& (0 == pes.sid || pes.sid == data[i+3])) // the same pes stream(video/audio combine)
 	{
 		uint16_t len2;
 		pes.payload = packet + n;
