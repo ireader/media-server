@@ -195,7 +195,7 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	p = data + 9;
 	if(flags & 0x80)
 	{
-		*p++ = ((flags & 0xFF)>>2) | ((pts >> 28) & 0x0E) | 0x01;
+		*p++ = ((flags & 0xFF)>>2) | ((pts >> 29) & 0x0E) | 0x01;
 		*p++ = (pts >> 22) & 0xFF;
 		*p++ = 0x01 | ((pts >> 14) & 0xFE);
 		*p++ = (pts >> 7) & 0xFF;;
@@ -204,7 +204,7 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 
 	if(flags & 0x40)
 	{
-		*p++ = 0x11 | ((dts >> 28) & 0x0E);
+		*p++ = 0x11 | ((dts >> 29) & 0x0E);
 		*p++ = (dts >> 22) & 0xFF;
 		*p++ = 0x01 | ((dts >> 14) & 0xFE);
 		*p++ = (dts >> 7) & 0xFF;;
