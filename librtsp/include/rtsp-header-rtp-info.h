@@ -6,8 +6,8 @@
 struct rtsp_header_rtp_info_t
 {
 	char url[256];
-	int64_t seq;
-	int64_t rtptime;
+	uint64_t seq;
+	uint64_t rtptime;
 };
 
 /// parse RTSP RTP-Info header

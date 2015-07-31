@@ -34,10 +34,10 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 			memcpy(rtpinfo->url, p+4, n);
 			rtpinfo->url[n] = '\0';
 		}
-		else if(1 == sscanf(p, "seq = %" PRId64, &rtpinfo->seq))
+		else if(1 == sscanf(p, "seq = %" PRIu64, &rtpinfo->seq))
 		{
 		}
-		else if(1 == sscanf(p, "rtptime = %" PRId64, &rtpinfo->rtptime))
+		else if(1 == sscanf(p, "rtptime = %" PRIu64, &rtpinfo->rtptime))
 		{
 		}
 		else

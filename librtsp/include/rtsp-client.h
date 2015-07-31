@@ -26,8 +26,8 @@ struct rtsp_transport_t
 struct rtsp_rtp_info_t
 {
 	const char* uri;
-	unsigned int seq;	// uint16_t
-	unsigned int time;	// uint32_t
+	uint32_t seq;	// uint16_t
+	uint32_t time;	// uint32_t
 };
 
 typedef void (*rtsp_onreply)(void* rtsp, int code, void* parser);
@@ -39,7 +39,7 @@ typedef struct _rtsp_client_t
 
 	int (*onopen)(void* ptr, int code, const struct rtsp_transport_t* transport, int count);
 	int (*onclose)(void* ptr, int code);
-	int (*onplay)(void* ptr, int code, const int64_t *nptbegin, const int64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
+	int (*onplay)(void* ptr, int code, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
 	int (*onpause)(void* ptr, int code);
 } rtsp_client_t;
 
@@ -63,7 +63,7 @@ int rtsp_client_close(void* rtsp);
 /// @param[in] speed PLAY scale+speed parameter [optional, NULL is acceptable]
 /// @return 0-ok, other-error.
 /// Notice: if npt and speed is null, resume play only
-int rtsp_client_play(void* rtsp, const int64_t *npt, const float *speed);
+int rtsp_client_play(void* rtsp, const uint64_t *npt, const float *speed);
 
 /// pause session(PAUSE)
 /// call onpause on done
