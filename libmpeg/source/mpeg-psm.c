@@ -38,6 +38,8 @@ size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 	// program element stream
 	i = 10 + program_stream_info_length;
 	element_stream_map_length = (data[i] << 8) | data[i+1];
+	 /* Ignore es_map_length, trust psm_length */
+	element_stream_map_length = program_stream_map_length - program_stream_info_length - 10;
 
 	j = i + 2;
 	psm->stream_count = 0;
