@@ -307,6 +307,10 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, size_t bytes)
 	case PSI_STREAM_AUDIO_AC3:
 	case PSI_STREAM_AUDIO_DTS:
 	case PSI_STREAM_AUDIO_SVAC:
+	case PSI_STREAM_AUDIO_G711:
+	case PSI_STREAM_AUDIO_G722:
+	case PSI_STREAM_AUDIO_G723:
+	case PSI_STREAM_AUDIO_G729:
 		psm->streams[psm->stream_count].pesid = (uint8_t)(PES_SID_AUDIO + psctx->syshd.audio_bound);
 
 		assert(psctx->syshd.audio_bound + 1 < 32);
