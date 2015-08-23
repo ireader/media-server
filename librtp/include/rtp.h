@@ -61,34 +61,40 @@ int rtp_destroy(void* rtp);
 /// @param[in] rtp RTP object
 /// @param[in] data RTP packet(include RTP Header)
 /// @param[in] bytes RTP packet size in byte
-/// @param[in] time UTC time (map rtp timestamp to wall-clock)
-/// @return 0-ok
-int rtp_onsend(void* rtp, const void* data, size_t bytes, time64_t time);
+/// @return 0-ok, <0-error
+int rtp_onsend(void* rtp, const void* data, size_t bytes);
 
 /// RTP receive notify
 /// @param[in] rtp RTP object
 /// @param[in] data RTP packet(include RTP Header)
 /// @param[in] bytes RTP packet size in byte
-/// @param[out] time UTC time
-/// @return 0-ok, -1-failed(don't receive RTCP packet)
-int rtp_onreceived(void* rtp, const void* data, size_t bytes, time64_t *time);
+/// @return 1-ok, 0-rtp packet ok, seq disorder, <0-error
+int rtp_onreceived(void* rtp, const void* data, size_t bytes);
 
 /// received RTCP packet
 /// @param[in] rtp RTP object
 /// @param[in] rtcp RTCP packet(include RTCP Header)
 /// @param[in] bytes RTCP packet size in byte
-/// @return 0-ok
+/// @return 0-ok, <0-error
 int rtp_onreceived_rtcp(void* rtp, const void* rtcp, size_t bytes);
 
 /// create RTCP Report(SR/RR) packet
 /// @param[in] rtp RTP object
 /// @param[out] rtcp RTCP packet(include RTCP Header)
 /// @param[in] bytes RTCP packet size in byte
-/// @return 0-ok
+/// @return 0-error, >0-rtcp package size(maybe need call more times)
 size_t rtp_rtcp_report(void* rtp, void* rtcp, size_t bytes);
 
+/// create RTCP BYE packet
+/// @param[in] rtp RTP object
+/// @param[out] rtcp RTCP packet(include RTCP Header)
+/// @param[in] bytes RTCP packet size in byte
+/// @return 0-error, >0-rtcp package size(maybe need call more times)
 size_t rtp_rtcp_bye(void* rtp, void* rtcp, size_t bytes);
 
+/// get RTCP interval
+/// @param[in] rtp RTP object
+/// 0-ok, <0-error
 int rtp_rtcp_interval(void* rtp);
 
 const char* rtp_get_cname(void* rtp, unsigned int ssrc);

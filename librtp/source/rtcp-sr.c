@@ -14,7 +14,9 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 
 	assert(24 == sizeof(rtcp_sr_t));
 	assert(24 == sizeof(rtcp_rb_t));
-	assert(header->length * 4 >= sizeof(rtcp_sr_t));
+	assert(header->length * 4 >= 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/);
+	if(header->length * 4 < 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/)
+		return;
 	ssrc = nbo_r32(ptr);
 
 	sender = rtp_sender_fetch(ctx, ssrc);
@@ -23,7 +25,7 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	assert(sender != ctx->self);
 	assert(sender->rtcp_sr.ssrc == ssrc);
 	assert(sender->rtcp_rb.ssrc == ssrc);
-	sender->rtcp_sr_clock = time64_now();
+	sender->rtcp_clock = time64_now();
 
 	// update sender information
 	sr = &sender->rtcp_sr;
@@ -35,7 +37,7 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 
 	ptr += 24;
 	// report block
-	for(i = 0; i < header->rc; i++, ptr+=sizeof(rtcp_rb_t)) 
+	for(i = 0; i < header->rc; i++, ptr+=24/*sizeof(rtcp_rb_t)*/) 
 	{
 		ssrc = nbo_r32(ptr);
 		if(ssrc != ctx->self->ssrc)
@@ -53,7 +55,7 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 
 size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 {
-	uint32_t i;
+	uint32_t i, timestamp;
 	time64_t ntp;
 	rtcp_header_t header;
 
@@ -64,24 +66,32 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	header.p = 0;
 	header.pt = RTCP_SR;
 	header.rc = MIN(31, rtp_member_list_count(ctx->senders));
-	header.length = (sizeof(rtcp_sr_t) + header.rc*sizeof(rtcp_rb_t))/4; // see 6.4.1 SR: Sender Report RTCP Packet
+	header.length = (24/*sizeof(rtcp_sr_t)*/ + header.rc*24/*sizeof(rtcp_rb_t)*/)/4; // see 6.4.1 SR: Sender Report RTCP Packet
 
 	if(bytes < (header.length+1) * 4)
 		return (header.length+1) * 4;
 
 	nbo_write_rtcp_header(ptr, &header);
 
-	ntp = clock2ntp(ctx->self->rtp_clock);
+	// RFC3550 6.4.1 SR: Sender Report RTCP Packet (p32)
+	// Note that in most cases this timestamp will not be equal to the RTP
+	// timestamp in any adjacent data packet. Rather, it must be calculated from the corresponding
+	// NTP timestamp using the relationship between the RTP timestamp counter and real time as
+	// maintained by periodically checking the wallclock time at a sampling instant.
+	ntp = time64_now();
+	timestamp = (uint32_t)((ntp - ctx->self->rtp_clock) * ctx->frequence / 1000) + ctx->self->rtp_timestamp;
+
+	ntp = clock2ntp(ntp);
 	nbo_w32(ptr+4, ctx->self->ssrc);
 	nbo_w32(ptr+8, (uint32_t)(ntp >> 32));
 	nbo_w32(ptr+12, (uint32_t)(ntp & 0xFFFFFFFF));
-	nbo_w32(ptr+16, ctx->self->rtp_timestamp);
+	nbo_w32(ptr+16, timestamp);
 	nbo_w32(ptr+20, ctx->self->rtp_packets); // send packets
-	nbo_w32(ptr+24, ctx->self->rtp_octets); // send bytes
+	nbo_w32(ptr+24, (uint32_t)ctx->self->rtp_bytes); // send bytes
 
 	ptr += 28;
 	// report block
-	for(i = 0; i < header.rc; i++, ptr += sizeof(rtcp_rb_t))
+	for(i = 0; i < header.rc; i++, ptr += 24/*sizeof(rtcp_rb_t)*/)
 	{
 		time64_t delay;
 		int lost_interval;
@@ -94,13 +104,14 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 		struct rtp_member *sender;
 
 		sender = rtp_member_list_get(ctx->senders, i);
-		assert(sender != ctx->self);
+		if(0 == sender->rtp_packets || sender->ssrc == ctx->self->ssrc)
+			continue; // don't receive any packet
 
-		extseq = (sender->seq_cycles << 16) + sender->seq_max; // 32-bits sequence number
-		assert(extseq >= sender->seq_base);
-		expected = extseq - sender->seq_base + 1;
-		expected_interval = expected - sender->rtp_expected;
-		received_interval = sender->rtp_packets - sender->rtp_received;
+		extseq = sender->rtp_seq_cycles + sender->rtp_seq; // 32-bits sequence number
+		assert(extseq >= sender->rtp_seq_base);
+		expected = extseq - sender->rtp_seq_base + 1;
+		expected_interval = expected - sender->rtp_expected0;
+		received_interval = sender->rtp_packets - sender->rtp_packets0;
 		lost_interval = (int)(expected_interval - received_interval);
 		if(lost_interval < 0 || 0 == expected_interval)
 			fraction = 0;
@@ -119,7 +130,7 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 			cumulative = 0;
 		}
 
-		delay = time64_now() - sender->rtcp_sr_clock; // now - Last SR time
+		delay = time64_now() - sender->rtcp_clock; // now - Last SR time
 		lsr = ((sender->rtcp_sr.ntpmsw&0xFFFF)<<16) | ((sender->rtcp_sr.ntplsw>>16) & 0xFFFF);
 		// in units of 1/65536 seconds
 		// 65536/1000000 == 1024/15625
@@ -135,8 +146,8 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 		nbo_w32(ptr+16, lsr);
 		nbo_w32(ptr+20, 0==lsr ? 0 : dlsr);
 
-		sender->rtp_expected = expected; // update source prior data
-		sender->rtp_received = sender->rtp_packets;
+		sender->rtp_expected0 = expected; // update source prior data
+		sender->rtp_packets0 = sender->rtp_packets;
 	}
 
 	return (header.length+1) * 4;

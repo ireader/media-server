@@ -6,6 +6,11 @@
 #include "rtcp-header.h"
 #include <stdlib.h>
 
+#define RTP_PROBATION	2
+#define RTP_DROPOUT		500
+#define RTP_MISORDER	100
+
+
 struct rtp_member
 {
 	int32_t ref;
@@ -14,22 +19,23 @@ struct rtp_member
 	rtcp_sr_t rtcp_sr;
 	rtcp_rb_t rtcp_rb;
 	rtcp_sdes_item_t sdes[9];		// SDES item
-	time64_t rtcp_rr_clock;			// last RTCP RR packet received time	
-	time64_t rtcp_sr_clock;			// last RTCP SR packet received time	
 
-	time64_t rtp_clock;				// last send/received RTP packet time
+	time64_t rtcp_clock;			// last RTCP SR/RR packet clock(local time)
+
+	uint16_t rtp_seq;				// last send/received RTP packet RTP sequence(in packet header)
 	uint32_t rtp_timestamp;			// last send/received RTP packet RTP timestamp(in packet header)
-	uint32_t rtp_packets;			// send/received RTP packet count
-	uint32_t rtp_octets;			// send/received RTP octet count
+	time64_t rtp_clock;				// last send/received RTP packet clock(local time)
+	uint32_t rtp_packets;			// send/received RTP packet count(include duplicate, late)
+	uint64_t rtp_bytes;				// send/received RTP octet count
 
 	double jitter;
+	uint32_t rtp_packets0;			// last SR received RTP packets
+	uint32_t rtp_expected0;			// last SR expect RTP sequence number
 
-	uint16_t seq_probation;			// sequence probation
-	uint16_t seq_base;				// init sequence number
-	uint16_t seq_max;				// max sequence number
-	uint16_t seq_cycles;			// high extension sequence number
-	uint32_t rtp_expected;			// previous SR/RR expect RTP sequence number
-	uint32_t rtp_received;			// previous SR/RR RTP packet count
+	uint16_t rtp_probation;
+	uint16_t rtp_seq_base;			// init sequence number
+	uint32_t rtp_seq_bad;			// bad sequence number
+	uint32_t rtp_seq_cycles;		// high extension sequence number
 };
 
 struct rtp_member* rtp_member_create(uint32_t ssrc);

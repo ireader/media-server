@@ -32,7 +32,7 @@ struct rtp_context
 struct rtp_member* rtp_sender_fetch(struct rtp_context *ctx, uint32_t ssrc);
 struct rtp_member* rtp_member_fetch(struct rtp_context *ctx, uint32_t ssrc);
 
-int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes, time64_t *time);
+int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes);
 int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes);
 
 size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* data, size_t bytes);

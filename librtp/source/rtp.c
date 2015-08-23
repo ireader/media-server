@@ -3,8 +3,8 @@
 #include "rtp-packet.h"
 
 enum { 
-	RTP_SENDER		= 0x01,	/// send RTP packet
-	RTP_RECEIVER	= 0x02,	/// receive RTP packet
+	RTP_SENDER		= 1,	/// send RTP packet
+	RTP_RECEIVER	= 2,	/// receive RTP packet
 };
 
 double rtcp_interval(int members, int senders, double rtcp_bw, int we_sent, double avg_rtcp_size, int initial);
@@ -52,32 +52,30 @@ int rtp_destroy(void* rtp)
 	return 0;
 }
 
-int rtp_onsend(void* rtp, const void* data, size_t bytes, time64_t time)
+int rtp_onsend(void* rtp, const void* data, size_t bytes)
 {
+	time64_t ntp;
 	rtp_packet_t pkt;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
 
-	if(0 == (ctx->role & RTP_SENDER))
-	{
-		ctx->role |= RTP_SENDER;
-		// don't need add self to sender list
-		// rtp_member_list_add(ctx->senders, ctx->self);
-	}
+	ctx->role = RTP_SENDER;
+	// don't need add self to sender list
+	// rtp_member_list_add(ctx->senders, ctx->self);
 
 	if(0 != rtp_packet_deserialize(&pkt, data, bytes))
 		return -1; // packet error
 
-	ctx->self->rtp_clock = time;
+	ctx->self->rtp_clock = time64_now();
 	ctx->self->rtp_timestamp = pkt.rtp.timestamp; // RTP timestamp
-	ctx->self->rtp_octets += pkt.payloadlen;
-	++ctx->self->rtp_packets;
+	ctx->self->rtp_bytes += pkt.payloadlen;
+	ctx->self->rtp_packets += 1;
 	return 0;
 }
 
-int rtp_onreceived(void* rtp, const void* data, size_t bytes, time64_t *time)
+int rtp_onreceived(void* rtp, const void* data, size_t bytes)
 {
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
-	return rtcp_input_rtp(ctx, data, bytes, time);
+	return rtcp_input_rtp(ctx, data, bytes);
 }
 
 int rtp_onreceived_rtcp(void* rtp, const void* rtcp, size_t bytes)
@@ -90,14 +88,19 @@ size_t rtp_rtcp_report(void* rtp, void* data, size_t bytes)
 {
 	size_t n;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
-	if(ctx->role & RTP_SENDER)
+
+#pragma message("update we_sent flag")
+	// don't send packet in 2T
+	//ctx->role = RTP_RECEIVER
+
+	if(RTP_SENDER == ctx->role)
 	{
 		// send RTP in 2T
 		n = rtcp_sr_pack(ctx, (unsigned char*)data, bytes);
 	}
 	else
 	{
-		assert(ctx->role & RTP_RECEIVER);
+		assert(RTP_RECEIVER == ctx->role);
 		n = rtcp_rr_pack(ctx, (unsigned char*)data, bytes);
 	}
 
@@ -122,9 +125,9 @@ int rtp_rtcp_interval(void* rtp)
 	double interval;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
 	interval = rtcp_interval(rtp_member_list_count(ctx->members),
-		rtp_member_list_count(ctx->senders) + ((ctx->role & RTP_SENDER) ? 1 : 0),
+		rtp_member_list_count(ctx->senders) + ((RTP_SENDER==ctx->role) ? 1 : 0),
 		ctx->rtcp_bw, 
-		ctx->self->rtp_clock + 2*5*1000 > time64_now() ? 1 : 0,
+		(ctx->self->rtp_clock + 2*RTCP_REPORT_INTERVAL > time64_now()) ? 1 : 0,
 		ctx->avg_rtcp_size,
 		ctx->init);
 

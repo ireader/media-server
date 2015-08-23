@@ -7,4 +7,7 @@
 #define RTCP_BANDWIDTH_FRACTION			0.05
 #define RTCP_SENDER_BANDWIDTH_FRACTION	0.25
 
+#define RTCP_REPORT_INTERVAL			5000 /* milliseconds RFC3550 p25 */
+#define RTCP_REPORT_INTERVAL_MIN		2500 /* milliseconds RFC3550 p25 */
+
 #endif /* !_rtp_param_h_ */

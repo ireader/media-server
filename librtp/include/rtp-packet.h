@@ -23,7 +23,7 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 
 	assert(12 == sizeof(rtp_header_t));
 	ptr = (const unsigned char *)data;
-	if(bytes < sizeof(rtp_header_t))
+	if(bytes < 12) // RFC3550 5.1 RTP Fixed Header Fields(p12)
 		return -1;
 
 	memset(pkt, 0, sizeof(rtp_packet_t));
@@ -41,7 +41,7 @@ inline int rtp_packet_deserialize(rtp_packet_t *pkt, const void* data, size_t by
 	pkt->rtp.ssrc = nbo_r32(ptr+8);
 
 	assert(2 == pkt->rtp.v); // RTP version field must equal 2 (p66)
-	hdrlen = sizeof(rtp_header_t) + pkt->rtp.cc * 4;
+	hdrlen = 12/*sizeof(rtp_header_t)*/ + pkt->rtp.cc * 4;
 	if(bytes < hdrlen + (pkt->rtp.x?4:0) + (pkt->rtp.p?1:0))
 		return -1;
 
