@@ -1,5 +1,6 @@
 #include "rtmp-client.h"
 #include <assert.h>
+#include <stdio.h>
 
 typedef unsigned char uint8_t;
 

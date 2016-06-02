@@ -16,11 +16,11 @@ extern "C" {
 
 	// @param[in] video: H264 packet(include startcode(00 00 00 01))
 	// @param[in] bytes: video length in bytes
-	int rtmp_client_send_video(void* rtmp, const void* video, unsigned int bytes, long pts);
+	int rtmp_client_send_video(void* rtmp, const void* video, unsigned int bytes, unsigned int pts, unsigned int dts);
 
 	// @param[in] audio: AAC audio packet(include AAC packet header(ADTS))
 	// @param[in] bytes: video length in bytes
-	int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int bytes, long pts);
+	int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int bytes, unsigned int pts);
 
 	void rtmp_client_getserver(void* rtmp, char ip[65]);
 

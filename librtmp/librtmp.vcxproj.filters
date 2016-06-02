@@ -14,13 +14,22 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="librtmp">
-      <UniqueIdentifier>{10314db4-8682-40ad-8de0-a43b7c21a0b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="h264">
-      <UniqueIdentifier>{be4be2b9-934f-4b23-81dd-00ff6343c3aa}</UniqueIdentifier>
+      <UniqueIdentifier>{a06ba49b-823b-4e63-84eb-9290c2ab496b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\rtmp-audiospecificconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-client.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-meta.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="librtmp\amf.c">
       <Filter>librtmp</Filter>
     </ClCompile>
@@ -36,41 +45,11 @@
     <ClCompile Include="librtmp\rtmp.c">
       <Filter>librtmp</Filter>
     </ClCompile>
-    <ClCompile Include="h264\bitstream.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-hrd.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-nalu.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-parser.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-pps.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-sps.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="h264\h264-vui.c">
-      <Filter>h264</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-audiospecificconfig.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-client.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-meta.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\rtmp-client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="librtmp\amf.h">
       <Filter>librtmp</Filter>
     </ClInclude>
@@ -97,21 +76,6 @@
     </ClInclude>
     <ClInclude Include="librtmp\rtmp_sys.h">
       <Filter>librtmp</Filter>
-    </ClInclude>
-    <ClInclude Include="h264\bitstream.h">
-      <Filter>h264</Filter>
-    </ClInclude>
-    <ClInclude Include="h264\h264-internal.h">
-      <Filter>h264</Filter>
-    </ClInclude>
-    <ClInclude Include="h264\h264-parser.h">
-      <Filter>h264</Filter>
-    </ClInclude>
-    <ClInclude Include="h264\h264-util.h">
-      <Filter>h264</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rtmp-client.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

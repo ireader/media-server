@@ -1,5 +1,5 @@
 #include "rtmp-client.h"
-#include "h264/h264-parser.h"
+#include "h264-parser.h"
 #include <assert.h>
 #include <memory.h>
 #include <stdio.h>
@@ -69,7 +69,6 @@ int rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video,
 
 	memset(&sps, 0, sizeof(struct h264_sps_t));
 	h264_parse_sps(ctx.sps + 2, (ctx.sps[0] << 8) | ctx.sps[1], &sps);
-//		rtmp_client_send_meta(ctx, (sps->pic_width_in_mbs_minus1 + 1) * 16, (sps->pic_height_in_map_units_minus1 + 1)*(2 - sps->frame_mbs_only_flag) * 16, ctx->fps, ctx->aac);
 
 	// AVCDecoderConfigurationRecord
 	// ISO/IEC 14496-15:2010

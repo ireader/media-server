@@ -1,16 +1,18 @@
 #include "rtmp-client.h"
 #include "librtmp/rtmp.h"
-#include "h264/h264-parser.h"
-#include "h264/h264-util.h"
+#include "librtmp/log.h"
+#include "h264-parser.h"
+#include "h264-util.h"
 #include "sys/sock.h"
 #include <assert.h>
 #include <memory.h>
+//#pragma comment(lib, "libmpeg.lib")
+//#pragma comment(lib, "h264.lib")
 
 typedef struct _RTMPContext
 {
 	RTMP* rtmp;
 	RTMPPacket pkt;
-	long pts;
 
 	uint32_t capacity;
 } RTMPContext;
@@ -32,6 +34,7 @@ void* rtmp_client_create(const char* url)
 	if (!ctx) return NULL;
 	memset(ctx, 0, sizeof(RTMPContext));
 	
+	RTMP_LogSetLevel(RTMP_LOGDEBUG);
 	ctx->rtmp = RTMP_Alloc();
 	if (!ctx->rtmp)
 	{
@@ -42,7 +45,7 @@ void* rtmp_client_create(const char* url)
 	RTMP_Init(ctx->rtmp);
 
 	r = RTMP_SetupURL(ctx->rtmp, url);
-	if (0 != r)
+	if (1 != r)
 	{
 		RTMP_Free(ctx->rtmp);
 		free(ctx);
@@ -80,7 +83,7 @@ static int rtmp_client_alloc(RTMPContext* ctx, uint32_t len)
 	{
 		RTMPPacket_Free(&ctx->pkt);
 
-		if (0 == RTMPPacket_Alloc(&ctx->pkt, len))
+		if (!RTMPPacket_Alloc(&ctx->pkt, len))
 			return ENOMEM;
 
 		ctx->capacity = len;
@@ -92,18 +95,17 @@ static int rtmp_client_alloc(RTMPContext* ctx, uint32_t len)
 
 static int rtmp_client_send(RTMP* rtmp, RTMPPacket* packet)
 {
-	int r;
 	if (!RTMP_IsConnected(rtmp))
 	{
-		r = RTMP_Connect(rtmp, NULL);
-		if (0 != r)
-			return r;
+		if (!RTMP_Connect(rtmp, NULL))
+			return -1;
 
-		r = RTMP_ConnectStream(rtmp, 0);
-		if (0 != r)
-			return r;
+		if (!RTMP_ConnectStream(rtmp, 0))
+			return -1;
 	}
 
+	packet->m_hasAbsTimestamp = TRUE;
+	packet->m_nInfoField2 = rtmp->m_stream_id;
 	return RTMP_SendPacket(rtmp, packet, 0);
 }
 
@@ -127,9 +129,10 @@ static void rtmp_client_video_handler(void* param, const unsigned char* nalu, un
 	}
 }
 
-int rtmp_client_send_video(void* p, const void* video, unsigned int len, long pts)
+static uint8_t s_abc[2 * 1024 * 1024];
+int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigned int pts, unsigned int dts)
 {
-	uint32_t timediff;
+	uint32_t compositionTimeOffset;
 	uint8_t *out;
 	RTMPContext* ctx;
 	ctx = (RTMPContext*)p;
@@ -137,38 +140,40 @@ int rtmp_client_send_video(void* p, const void* video, unsigned int len, long pt
 	if (0 != rtmp_client_alloc(ctx, len + 32))
 		return -1;
 
+	out = (uint8_t*)ctx->pkt.m_body;
+	out[0] = 0x27; // AVC inter frame
+
 	ctx->pkt.m_nBodySize = 5;
 	h264_nalu((const unsigned char*)video, len, rtmp_client_video_handler, ctx);
 	if (0 == ctx->pkt.m_body[0])
 		return -1; // don't have video data ???
 
-	if (0 == ctx->pts)
-		ctx->pts = pts;
-	timediff = pts - ctx->pts;
+	compositionTimeOffset = pts - dts;
 
-	out = (uint8_t*)ctx->pkt.m_body;
-	out[0] = 0x27; // AVC inter frame
 	out[1] = 0x01; // AVC NALU
-	out[2] = (timediff >> 16) & 0xFF; // composition time
-	out[3] = (timediff >> 8) & 0xFF;
-	out[4] = timediff & 0xFF;
+	out[2] = (compositionTimeOffset >> 16) & 0xFF; // composition time
+	out[3] = (compositionTimeOffset >> 8) & 0xFF;
+	out[4] = compositionTimeOffset & 0xFF;
 
 	ctx->pkt.m_packetType = RTMP_PACKET_TYPE_VIDEO; // video
 	ctx->pkt.m_nTimeStamp = pts;
 	ctx->pkt.m_nChannel = 4;
 	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
-	ctx->pkt.m_nInfoField2 = ctx->rtmp->m_stream_id;
 
 	return rtmp_client_send(ctx->rtmp, &ctx->pkt);
 }
 
-int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int len, long pts)
+int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int len, unsigned int pts)
 {
+	uint8_t *out;
 	unsigned int aacHeaderLen;
 	RTMPContext* ctx = (RTMPContext*)rtmp;
-	uint8_t *out = (uint8_t *)ctx->pkt.m_body;
 	const uint8_t *aac = (const uint8_t *)audio;
 
+	if (0 != rtmp_client_alloc(ctx, len + 2))
+		return -1;
+
+	out = (uint8_t *)ctx->pkt.m_body;
 	out[0] = 0xAF; // AAC 44kHz 16-bits samples Streteo sound
 	out[1] = 0x01; // AAC raw
 
@@ -180,14 +185,12 @@ int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int len, long
 		return -1;
 	}
 
-	ctx->pkt.m_nBodySize = 2 + len - aacHeaderLen;
 	memcpy(out + 2, aac + aacHeaderLen, len - aacHeaderLen);
-
+	ctx->pkt.m_nBodySize = 2 + len - aacHeaderLen;
 	ctx->pkt.m_packetType = RTMP_PACKET_TYPE_AUDIO; // video
 	ctx->pkt.m_nTimeStamp = pts;
 	ctx->pkt.m_nChannel = 4;
 	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
-	ctx->pkt.m_nInfoField2 = ctx->rtmp->m_stream_id;
 
 	return rtmp_client_send(ctx->rtmp, &ctx->pkt);
 }
@@ -213,15 +216,18 @@ static int rtmp_client_send_meta(RTMPContext* ctx, int width, int height, int ha
 	ctx->pkt.m_nTimeStamp = 0;
 	ctx->pkt.m_nChannel = 4;
 	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
-	ctx->pkt.m_nInfoField2 = ctx->rtmp->m_stream_id;
 
 	return rtmp_client_send(ctx->rtmp, &ctx->pkt);
 }
 
 static int rtmp_client_send_AVCDecoderConfigurationRecord(RTMPContext* ctx, const void* data, unsigned int bytes)
 {
-	uint8_t *out = (uint8_t *)ctx->pkt.m_body;
+	uint8_t *out;
 
+	if (0 != rtmp_client_alloc(ctx, bytes + 5))
+		return -1;
+
+	out = (uint8_t *)ctx->pkt.m_body;
 	out[0] = 0x17; // AVC key frame
 	out[1] = 0x00; // AVC sequence header
 	out[2] = 0x00; // composition time
@@ -234,15 +240,18 @@ static int rtmp_client_send_AVCDecoderConfigurationRecord(RTMPContext* ctx, cons
 	ctx->pkt.m_nTimeStamp = 0;
 	ctx->pkt.m_nChannel = 4;
 	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
-	ctx->pkt.m_nInfoField2 = ctx->rtmp->m_stream_id;
 
 	return rtmp_client_send(ctx->rtmp, &ctx->pkt);
 }
 
 static int rtmp_client_send_AudioSpecificConfig(RTMPContext* ctx, const void* data, unsigned int bytes)
 {
-	uint8_t *out = (uint8_t *)ctx->pkt.m_body;
+	uint8_t *out;
 
+	if (0 != rtmp_client_alloc(ctx, bytes + 2))
+		return -1;
+
+	out = (uint8_t *)ctx->pkt.m_body;
 	out[0] = 0xAF; // AAC 44kHz 16-bits samples Streteo sound
 	out[1] = 0x00; // AAC sequence header
 	memcpy(out + 2, data, bytes);
@@ -251,8 +260,7 @@ static int rtmp_client_send_AudioSpecificConfig(RTMPContext* ctx, const void* da
 	ctx->pkt.m_packetType = RTMP_PACKET_TYPE_AUDIO;
 	ctx->pkt.m_nTimeStamp = 0;
 	ctx->pkt.m_nChannel = 4;
-	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_MINIMUM;
-	ctx->pkt.m_nInfoField2 = ctx->rtmp->m_stream_id;
+	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
 
 	return rtmp_client_send(ctx->rtmp, &ctx->pkt);
 }
@@ -263,9 +271,6 @@ int rtmp_client_send_first(void* rtmp, const void* audio, unsigned int abytes, c
 	RTMPContext* ctx = (RTMPContext*)rtmp;
 	const uint8_t* p = (const uint8_t*)video;
 
-	if (0 != rtmp_client_alloc(ctx, vbytes + 1024))
-		return -1;
-	
 	// send first video packet(SPS/PPS only)
 	memset(&sps, 0, sizeof(struct h264_sps_t));
 	if (video && vbytes > 5 && (p[5] & 0x1F) > 0)

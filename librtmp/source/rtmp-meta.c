@@ -53,8 +53,9 @@ char* rtmp_metadata_create(char* out, size_t len, int width, int height, int aud
 		out = amf_encode_name_value_double(out, outend, "videocodecid", (double)7); // FLV VIDEODATA AVC/H.264
 		out = amf_encode_name_value_double(out, outend, "width", (double)width);
 		out = amf_encode_name_value_double(out, outend, "height", (double)height);
-		//out = amf_encode_name_value_double(out, outend, "framerate", fps);
-		//out = amf_encode_name_value_double(out, outend, "videodatarate", (double)2000000);
+		//out = amf_encode_name_value_double(out, outend, "framerate", 25.0);
+		//out = amf_encode_name_value_double(out, outend, "videodatarate", 2000000.0);
+		//out = amf_encode_name_value_double(out, outend, "duration", 0.0);
 		//out = amf_encode_name_value_double(out, outend, "avclevel", );
 		//out = amf_encode_name_value_double(out, outend, "avcprofile", );
 		//out = amf_encode_name_value_double(out, outend, "videokeyframe_frequency", 2.0);
@@ -64,6 +65,9 @@ char* rtmp_metadata_create(char* out, size_t len, int width, int height, int aud
 	{
 //		out = amf_encode_name_value_string(out, outend, "audiocodecid", "mp4a"); // FLV AUDIODATA AAC
 		out = amf_encode_name_value_double(out, outend, "audiocodecid", (double)10); // FLV AUDIODATA AAC
+//		out = amf_encode_name_value_double(out, outend, "audiodatarate", 44100);
+//		out = amf_encode_name_value_double(out, outend, "audiosamplesize", 16.0);
+//		out = amf_encode_name_value_double(out, outend, "audiochannels", 2.0);
 //		out = amf_encode_name_value_double(out, outend, "audiosamplerate", );
 	}
 
