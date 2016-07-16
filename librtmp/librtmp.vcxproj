@@ -41,11 +41,6 @@
     <ClInclude Include="librtmp\rtmp.h" />
     <ClInclude Include="librtmp\rtmp_sys.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\h264\h264.vcxproj">
-      <Project>{11fda5d5-41b7-4a1e-9b79-c38851b8d8ae}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -105,7 +100,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;NO_CRYPTO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\sdk\include;..\..\h264</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\..\sdk\include;..\..\avcodec\h264</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,7 +127,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;OS_WINDOWS;NO_CRYPTO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\sdk\include;..\..\h264</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\..\sdk\include;..\..\avcodec\h264</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
