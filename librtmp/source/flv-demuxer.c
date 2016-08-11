@@ -1,0 +1,331 @@
+#include "flv-demuxer.h"
+#include "ctypedef.h"
+#include "cstringext.h"
+#include "byte-order.h"
+#include "aac-adts.h"
+#include <stdlib.h>
+#include <memory.h>
+#include <assert.h>
+
+// FLV Tag Type
+#define FLV_AUDIO			8
+#define FLV_VIDEO			9
+#define FLV_SCRIPT			18
+
+// FLV Audio Type
+#define FLV_AUDIO_ADPCM		1
+#define FLV_AUDIO_MP3		2
+#define FLV_AUDIO_G711		7
+#define FLV_AUDIO_AAC		10
+
+// FLV Video Type
+#define FLV_VIDEO_H263		2
+#define FLV_VIDEO_VP6		4
+#define FLV_VIDEO_AVC		7
+
+#define N_FLV_HEADER		9		// DataOffset included
+#define N_TAG_HEADER		11		// StreamID included
+#define N_TAG_SIZE			4		// previous tag size
+
+#define N_SPSPPS			4096
+
+struct flv_header_t
+{
+	//uint8_t F;
+	//uint8_t L;
+	//uint8_t V;
+	uint8_t version;
+	bool_t audio;
+	bool_t video;
+	uint32_t dataoffset;
+};
+
+struct flv_audio_tag_t
+{
+	uint8_t format; // 1-ADPCM, 2-MP3, 10-AAC, 14-MP3 8kHz
+	uint8_t bitrate; // 0-5.5kHz, 1-11kHz, 2-22kHz,3-44kHz
+	uint8_t bitsPerSample; // 0-8bits, 1-16bits
+	uint8_t channel; // 0-Mono sound, ,1-Stereo sound
+};
+
+struct flv_video_tag_t
+{
+	uint8_t frame; // 1-key frame, 2-inter frame, 3-disposable inter frame(H.263 only), 4-generated key frame, 5-video info/command frame
+	uint8_t codecid; // 2-Sorenson H.263, 3-Screen video 4-On2 VP6, 7-AVC
+
+	uint8_t nalu; // flv nalu size
+};
+
+struct flv_tag_t
+{
+	bool_t  filter; // 0-No pre-processing required
+	uint8_t type; // 8-audio, 9-video, 18-script data
+	uint32_t datasize;
+	uint32_t timestamp;
+	uint32_t streamId;
+};
+
+struct flv_demuxer_t
+{
+	struct flv_header_t header;
+	struct flv_audio_tag_t audio;
+	struct flv_video_tag_t video;
+	struct aac_adts_t adts;
+
+	flv_demuxer_handler handler;
+	void* param;
+
+	uint8_t ps[N_SPSPPS]; // SPS/PPS
+	uint32_t pslen;
+
+	uint8_t* data;
+	uint32_t bytes;
+};
+
+void* flv_demuxer_create(flv_demuxer_handler handler, void* param)
+{
+	struct flv_demuxer_t* flv;
+	flv = (struct flv_demuxer_t*)malloc(sizeof(struct flv_demuxer_t));
+	if (NULL == flv)
+		return NULL;
+
+	memset(flv, 0, sizeof(struct flv_demuxer_t));
+	flv->handler = handler;
+	flv->param = param;
+	return flv;
+}
+
+void flv_demuxer_destroy(void* demuxer)
+{
+	struct flv_demuxer_t* flv;
+	flv = (struct flv_demuxer_t*)demuxer;
+
+	if (flv)
+	{
+		if (flv->data)
+		{
+			assert(flv->bytes > 0);
+			free(flv->data);
+		}
+
+		free(flv);
+	}
+}
+
+static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, uint32_t bytes)
+{
+	if (bytes > flv->bytes)
+	{
+		void* p = realloc(flv->data, bytes + 2 * 1024);
+		if (NULL == p)
+			return -1;
+		flv->data = (uint8_t*)p;
+		flv->bytes = bytes + 2 * 1024;
+	}
+	return 0;
+}
+
+static int flv_demuxer_header(struct flv_header_t* header, const uint8_t* data, uint32_t bytes)
+{
+	uint32_t firstTagSize;
+	if (bytes < N_FLV_HEADER + N_TAG_SIZE)
+		return -1;
+
+	if ('F' != data[0] || 'L' != data[1] || 'V' != data[2])
+		return -1;
+
+	//header->F = data[0];
+	//header->L = data[1];
+	//header->V = data[2];
+	header->version = data[3];
+	assert(0x00 == (data[4] & 0xF8) && 0x00 == (data[4] & 0x20));
+	header->audio = (data[4] & 0x04) ? 1 : 0;
+	header->video = data[4] & 0x01;
+	be_read_uint32(data + 5, &header->dataoffset);
+	if (header->dataoffset < N_FLV_HEADER)
+		return -1;
+
+	be_read_uint32(data + header->dataoffset, &firstTagSize);
+	assert(0 == firstTagSize);
+	return header->dataoffset + N_TAG_SIZE;
+}
+
+static int flv_demuxer_tag(struct flv_tag_t* tag, const uint8_t* data, uint32_t bytes)
+{
+	if (bytes < N_TAG_HEADER)
+		return -1;
+
+	assert(0 == (data[0] >> 6));
+	tag->filter = (data[0] >> 5) & 0x01;
+	tag->type = data[0] & 0x1F;
+	tag->datasize = (data[1] << 16) | (data[2] << 8) | data[3];
+	tag->timestamp = (data[7] << 24) | (data[4] << 16) | (data[5] << 8) | data[6];
+	tag->streamId = (data[8] << 16) | (data[9] << 8) | data[10];
+	assert(0 == tag->streamId);
+	return N_TAG_HEADER;
+}
+
+static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, const uint8_t* data)
+{
+	flv->audio.format = (data[0] & 0xF0) >> 4;
+	flv->audio.bitrate = (data[0] & 0x0C) >> 2;
+	flv->audio.bitsPerSample = (data[0] & 0x02) >> 1;
+	flv->audio.channel = data[0] & 0x01;
+
+	if (FLV_AUDIO_AAC == flv->audio.format)
+	{
+		if (0 == data[1])
+		{
+			aac_adts_from_AudioSpecificConfig(data + 2, tag->datasize - 2, &flv->adts);
+		}
+		else
+		{
+			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 7))
+				return ENOMEM;
+
+			// AAC ES stream with ADTS header
+			assert(tag->datasize <= 0x1FFF);
+			flv->adts.aac_frame_length = (uint16_t)tag->datasize - 2; // 13-bits
+			aac_adts_save(&flv->adts, flv->data, 7);
+			memmove(flv->data + 7, data + 2, tag->datasize - 2);
+			flv->handler(flv->param, FLV_AAC, flv->data, tag->datasize - 2 + 7, tag->timestamp, tag->timestamp);
+		}
+	}
+	else
+	{
+		// Audio frame data
+	}
+
+	return 0;
+}
+
+int AVCDecoderConfigurationRecord(const uint8_t* data, uint32_t bytes, uint8_t* h264);
+static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, const uint8_t* data)
+{
+	uint8_t packetType; // 0-AVC sequence header, 1-AVC NALU, 2-AVC end of sequence
+	uint32_t compositionTime; // 0
+
+	flv->video.frame = (data[0] & 0xF0) >> 4;
+	flv->video.codecid = (data[0] & 0x0F);
+
+	if (FLV_VIDEO_AVC == flv->video.codecid)
+	{
+		packetType = data[1];
+		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
+		printf("video timestamp: %ud, compositionTime: %ud\n", tag->timestamp, compositionTime);
+
+		if (0 == packetType)
+		{
+			// AVCDecoderConfigurationRecord
+			assert(tag->datasize > 5 + 7);
+			if (tag->datasize > 5 + 7)
+			{
+				//uint8_t version = data[5];
+				//uint8_t profile = data[6];
+				//uint8_t flags = data[7];
+				//uint8_t level = data[8];
+				flv->video.nalu = (data[9] & 0x03) + 1;
+				assert(sizeof(flv->ps) > tag->datasize + 128);
+				if (sizeof(flv->ps) > tag->datasize + 128)
+					flv->pslen = AVCDecoderConfigurationRecord(data + 5, tag->datasize - 5, flv->ps);
+				//flv->handler(flv->param, FLV_AVC_CONFIG, data + 5, tag->datasize - 5, tag->timestamp, tag->timestamp);
+			}
+		}
+		else
+		{
+			// H.264
+			uint32_t k = 0;
+			const uint8_t* p = data + 5;
+			const uint8_t* end = data + tag->datasize;
+
+			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 4))
+				return ENOMEM;
+
+			while (p + flv->video.nalu < end)
+			{
+				uint32_t bytes = 0;
+				for (int i = 0; i < flv->video.nalu; i++)
+					bytes = (bytes << 8) + p[i];
+
+				if (p + flv->video.nalu + bytes > end)
+					break; // invalid nalu size
+
+				// nalu start code
+				flv->data[k] = flv->data[k+1] = flv->data[k+2] = 0x00;
+				flv->data[k+3] = 0x01;
+				memcpy(flv->data + k + 4, p + flv->video.nalu, bytes);
+
+				k += bytes + 4;
+				p += flv->video.nalu + bytes;
+			}
+
+			flv->handler(flv->param, FLV_AVC, flv->data, k, tag->timestamp, tag->timestamp - compositionTime);
+		}
+	}
+	else
+	{
+		// Video frame data
+	}
+
+	return 0;
+}
+
+//static int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data)
+//{
+//	// FLV I-index
+//	return 0;
+//}
+
+int flv_demuxer_input(void* demuxer, const void* data, unsigned int bytes)
+{
+	int n;
+	uint32_t offset;
+	uint32_t tagsize;
+	struct flv_tag_t tag;
+	struct flv_demuxer_t* flv;
+
+	offset = 0;
+	flv = (struct flv_demuxer_t*)demuxer;
+	if (bytes > 3 && 0==memcmp("FLV", data, 3))
+	{
+		n = flv_demuxer_header(&flv->header, (const uint8_t*)data, bytes);
+		if (n < 0)
+			return 0;
+		offset += n;
+	}
+
+	while (offset < bytes)
+	{
+		// tag header
+		memset(&tag, 0, sizeof(struct flv_tag_t));
+		n = flv_demuxer_tag(&tag, (const uint8_t*)data + offset, bytes - offset);
+		if (n < 0)
+			return offset;
+
+		// tag data
+		if (n + tag.datasize + N_TAG_SIZE > bytes - offset) // tag size
+			break;
+
+		be_read_uint32((const uint8_t*)data + offset + tag.datasize + n, &tagsize);
+		assert(tagsize == tag.datasize + n);
+
+		switch (tag.type)
+		{
+		case FLV_AUDIO:
+			flv_demuxer_audio(flv, &tag, (const uint8_t*)data + offset + n);
+			break;
+
+		case FLV_VIDEO:
+			flv_demuxer_video(flv, &tag, (const uint8_t*)data + offset + n);
+			break;
+
+		case FLV_SCRIPT:
+			//flv_demuxer_script(flv, (const uint8_t*)data + offset + n);
+			break;
+		}
+
+		offset += n + tag.datasize + N_TAG_SIZE;
+	}
+
+	return offset;
+}
