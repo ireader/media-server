@@ -1,6 +1,6 @@
-// ITU-T H.222.0(06/2012)
+// ITU-T H.222.0(10/2014)
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
-// 2.4.3.6 PES packet(p47)
+// 2.4.3.6 PES packet(p51)
 
 #include <stdio.h>
 #include "mpeg-ps-proto.h"
@@ -26,7 +26,6 @@ static size_t pes_packet(const uint8_t* data, size_t bytes, pes_t *pes)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2]);
 	pes->sid = data[3];
 	pes->len = (data[4] << 8) | data[5];
-	assert(bytes >= pes->len + 2);
 
 	i = 6;
 	assert(0x02 == ((data[i] >> 6) & 0x3));
