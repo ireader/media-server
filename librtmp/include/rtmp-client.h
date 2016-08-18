@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 	void* rtmp_client_create(const char* url);
-	void rtmp_client_destroy(void* p);
+	void rtmp_client_destroy(void* rtmp);
 
 	///@param[in] audio: AAC AudioSpecificConfig
 	///@param[in] abytes: AudioSpecificConfig length in bytes

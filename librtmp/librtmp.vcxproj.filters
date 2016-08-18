@@ -16,6 +16,12 @@
     <Filter Include="librtmp">
       <UniqueIdentifier>{a06ba49b-823b-4e63-84eb-9290c2ab496b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{51336c83-f203-48e3-b3d8-70125ba148e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{6e719aff-e93a-4e19-99e2-86cc99bae508}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\rtmp-audiospecificconfig.c">
@@ -44,6 +50,24 @@
     </ClCompile>
     <ClCompile Include="librtmp\rtmp.c">
       <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-reader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\flv-demuxer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\AVCDecoderConfigurationRecord.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\string\strlcpy.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="test\rtmp-reader-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="test\rtmp-sender-test.cpp">
+      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +100,15 @@
     </ClInclude>
     <ClInclude Include="librtmp\rtmp_sys.h">
       <Filter>librtmp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtmp-reader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\flv-demuxer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\aac-adts.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

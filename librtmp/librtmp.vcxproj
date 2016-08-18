@@ -19,18 +19,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\sdk\string\strlcpy.c" />
     <ClCompile Include="librtmp\amf.c" />
     <ClCompile Include="librtmp\hashswf.c" />
     <ClCompile Include="librtmp\log.c" />
     <ClCompile Include="librtmp\parseurl.c" />
     <ClCompile Include="librtmp\rtmp.c" />
+    <ClCompile Include="source\AVCDecoderConfigurationRecord.c" />
+    <ClCompile Include="source\flv-demuxer.c" />
     <ClCompile Include="source\rtmp-audiospecificconfig.c" />
     <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c" />
     <ClCompile Include="source\rtmp-client.c" />
     <ClCompile Include="source\rtmp-meta.c" />
+    <ClCompile Include="source\rtmp-reader.c" />
+    <ClCompile Include="test\rtmp-reader-test.cpp" />
+    <ClCompile Include="test\rtmp-sender-test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\aac-adts.h" />
+    <ClInclude Include="include\flv-demuxer.h" />
     <ClInclude Include="include\rtmp-client.h" />
+    <ClInclude Include="include\rtmp-reader.h" />
     <ClInclude Include="librtmp\amf.h" />
     <ClInclude Include="librtmp\bytes.h" />
     <ClInclude Include="librtmp\dh.h" />

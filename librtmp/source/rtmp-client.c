@@ -1,6 +1,6 @@
 #include "rtmp-client.h"
-#include "librtmp/rtmp.h"
 #include "librtmp/log.h"
+#include "librtmp/rtmp.h"
 #include "h264-parser.h"
 #include "h264-util.h"
 #include "sys/sock.h"
@@ -9,6 +9,7 @@
 //#pragma comment(lib, "libmpeg.lib")
 //#pragma comment(lib, "h264.lib")
 
+#define N_URL 1024
 #define N_STREAM 2
 #define VIDEO_STREAM 0
 #define AUDIO_STREAM 1
@@ -17,6 +18,7 @@ typedef struct _RTMPContext
 {
 	RTMP* rtmp;
 	RTMPPacket pkt;
+	char url[N_URL];
 
 	void* streams[N_STREAM];
 	size_t stream_bytes[N_STREAM];
@@ -40,6 +42,7 @@ void* rtmp_client_create(const char* url)
 	ctx = (RTMPContext*)malloc(sizeof(RTMPContext));
 	if (!ctx) return NULL;
 	memset(ctx, 0, sizeof(RTMPContext));
+	strlcpy(ctx->url, url, sizeof(ctx->url));
 	
 	RTMP_LogSetLevel(RTMP_LOGDEBUG);
 	ctx->rtmp = RTMP_Alloc();
@@ -51,7 +54,7 @@ void* rtmp_client_create(const char* url)
 
 	RTMP_Init(ctx->rtmp);
 
-	r = RTMP_SetupURL(ctx->rtmp, url);
+	r = RTMP_SetupURL(ctx->rtmp, ctx->url);
 	if (1 != r)
 	{
 		RTMP_Free(ctx->rtmp);
