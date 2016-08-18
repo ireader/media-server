@@ -100,14 +100,14 @@ static struct hls_live_t* hls_live_find(const char* name)
 	return NULL;
 }
 
-int hls_live_init()
+int hls_live_init(void)
 {
     locker_create(&s_locker);
     LIST_INIT_HEAD(&s_head);
     return 0;
 }
 
-int hls_live_cleanup()
+int hls_live_cleanup(void)
 {
     struct hls_live_t *live;
     struct list_head *pos, *next;
@@ -159,7 +159,7 @@ int hls_live_m3u8(struct hls_live_t* live, char* m3u8)
 		"#EXTM3U\n" // MUST
 		"#EXT-X-VERSION:3\n" // Optional
 		"#EXT-X-TARGETDURATION:%d\n" // MUST
-		"#EXT-X-MEDIA-SEQUENCE:%d\n", // Live
+		"#EXT-X-MEDIA-SEQUENCE:%u\n", // Live
 //		"#EXT-X-ALLOW-CACHE:NO\n",
 		HLS_MAX_DURATION,
         MAX(0, live->m3u8seq - live->file_count));
@@ -251,7 +251,7 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
 	else
 	{
 		assert(HLS_AUDIO_AAC == stream);
-		//live->apts += 90 * 40; // 90kHZ * 40ms
+		live->pts += 90 * 40; // 90kHZ * 40ms
 	}
 
 	return mpeg_ts_write(live->ts, stream, live->pts, live->pts, data, bytes);

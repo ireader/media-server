@@ -84,11 +84,11 @@
     <ClCompile Include="source\hls-vod.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hls-segment.h" />
     <ClInclude Include="include\hls-block.h" />
     <ClInclude Include="include\hls-file.h" />
     <ClInclude Include="include\hls-live.h" />
     <ClInclude Include="include\hls-param.h" />
+    <ClInclude Include="include\hls-segment.h" />
     <ClInclude Include="include\hls-server.h" />
     <ClInclude Include="include\hls-vod.h" />
   </ItemGroup>

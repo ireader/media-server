@@ -35,8 +35,8 @@ struct hls_live_t
     unsigned char *vbuffer;
 };
 
-int hls_live_init();
-int hls_live_cleanup();
+int hls_live_init(void);
+int hls_live_cleanup(void);
 
 /// create/destroy live object
 struct hls_live_t* hls_live_fetch(const char* name);

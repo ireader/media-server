@@ -21,7 +21,6 @@ struct hls_vod_t
 
 	locker_t locker;
 	struct list_head root;
-	struct hls_segment_t* segment;
 
 	void* ts;
     uint8_t* ptr;
@@ -29,9 +28,10 @@ struct hls_vod_t
 	uint32_t capacity;
 
 	uint64_t vpacket;		// video packet in segment
-	int64_t duration;		// maximum segment duration
+	int64_t duration;		// user setting segment duration
 	int64_t target_duration;// maximum segment duration
 	int64_t pts;			// last packet pts
+	int64_t segment_pts;
 
 	hls_vod_handler handler;
 	void* param;
@@ -40,7 +40,7 @@ struct hls_vod_t
 struct hls_segments_t
 {
 	struct list_head link;
-	struct hls_segment_t segments[50];
+	struct hls_segment_t segments[N_SEGMENT];
 	int num;
 };
 
@@ -113,6 +113,8 @@ void* hls_vod_create(unsigned int duration, hls_vod_handler handler, void* param
 void hls_vod_destroy(void* p)
 {
 	struct hls_vod_t* hls;
+	struct list_head* link, *n;
+	struct hls_segments_t* seg;
 	hls = (struct hls_vod_t*)p;
 
 	locker_destroy(&hls->locker);
@@ -126,13 +128,19 @@ void hls_vod_destroy(void* p)
 		free(hls->ptr);
 	}
 
+	list_for_each_safe(link, n, &hls->root)
+	{
+		seg = list_entry(link, struct hls_segments_t, link);
+		free(seg);
+	}
+
 #if defined(_DEBUG) || defined(DEBUG)
 	memset(hls, 0xCC, sizeof(*hls));
 #endif
 	free(hls);
 }
 
-static int hls_segment_fetch(struct hls_vod_t* hls)
+static struct hls_segment_t* hls_segment_fetch(struct hls_vod_t* hls)
 {
 	struct hls_segments_t* s;
 
@@ -140,11 +148,11 @@ static int hls_segment_fetch(struct hls_vod_t* hls)
 	s = list_entry(hls->root.prev, struct hls_segments_t, link);
 	locker_unlock(&hls->locker);
 
-	if (list_empty(&hls->root) || s->num + 1 >= N_SEGMENT)
+	if (list_empty(&hls->root) || s->num >= N_SEGMENT)
 	{
 		s = (struct hls_segments_t*)malloc(sizeof(*s));
 		if (NULL == s)
-			return ENOMEM;
+			return NULL;
 		memset(s, 0, sizeof(*s));
 
 		locker_lock(&hls->locker);
@@ -153,43 +161,46 @@ static int hls_segment_fetch(struct hls_vod_t* hls)
 		locker_unlock(&hls->locker);
 	}
 	
-	assert(s->num + 1 < N_SEGMENT);
-	hls->segment = s->segments + s->num++;
-	return 0;
+	assert(s->num < N_SEGMENT);
+	return s->segments + s->num++;
 }
 
 int hls_vod_input(void* p, int avtype, const void* data, unsigned int bytes, int64_t pts, int64_t dts)
 {
 	int r;
 	struct hls_vod_t* hls;
+	struct hls_segment_t* seg;
 	hls = (struct hls_vod_t*)p;
 
-	if (NULL == hls->segment || 
-		(pts - hls->segment->pts > hls->duration &&  // duration check
+	if (0 == hls->bytes ||
+		(pts - hls->segment_pts > hls->duration &&  // duration check
+			// TODO: check sps/pps???
 			(0 == hls->vpacket || (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes)))))  // IDR-frame or audio only stream
 	{
-		if (NULL != hls->segment)
+		if (hls->bytes > 0)
 		{
+			// new segment
+			seg = hls_segment_fetch(hls);
+			if (0 == seg)
+				return ENOMEM;
+
 			// fill file information
-			hls->segment->duration = hls->pts - hls->segment->pts;
-			hls->target_duration = hls->target_duration > hls->segment->duration ? hls->target_duration : hls->segment->duration; // update EXT-X-TARGETDURATION
+			seg->pts = hls->segment_pts;
+			seg->m3u8seq = hls->m3u8seq++; // EXT-X-MEDIA-SEQUENCE
+			seg->duration = hls->pts - hls->segment_pts;
+			seg->discontinue = EXT_X_DISCONTINUITY(pts, hls->pts); // EXT-X-DISCONTINUITY
+			hls->target_duration = hls->target_duration > seg->duration ? hls->target_duration : seg->duration; // update EXT-X-TARGETDURATION
 			
 			// new file callback
-			hls->handler(hls->param, hls->ptr, hls->bytes, hls->segment->pts, hls->segment->duration, hls->segment->m3u8seq, hls->segment->name);
+			r = hls->handler(hls->param, hls->ptr, hls->bytes, seg->pts, seg->duration, seg->m3u8seq, seg->name);
+			if (0 != r)
+				return r;
 
 			// reset mpeg ts generator
 			mpeg_ts_reset(hls->ts);
-			hls->segment = NULL;
 		}
 
-		// new segment
-		r = hls_segment_fetch(hls);
-		if (0 != r || NULL == hls->segment)
-			return r;
-
-		hls->segment->pts = pts;
-		hls->segment->m3u8seq = hls->m3u8seq++; // EXT-X-MEDIA-SEQUENCE
-		hls->segment->discontinue = EXT_X_DISCONTINUITY(pts, hls->pts); // EXT-X-DISCONTINUITY
+		hls->segment_pts = pts;
 		hls->vpacket = 0;
 		hls->bytes = 0;
 	}
@@ -199,6 +210,24 @@ int hls_vod_input(void* p, int avtype, const void* data, unsigned int bytes, int
 
 	hls->pts = pts;
 	return mpeg_ts_write(hls->ts, avtype, pts * 90, dts * 90, data, bytes);
+}
+
+int hls_vod_count(void* p)
+{
+	int n;
+	struct hls_vod_t* hls;
+	struct list_head* link;
+	struct hls_segments_t* seg;
+	hls = (struct hls_vod_t*)p;
+
+	n = 0;
+	list_for_each(link, &hls->root)
+	{
+		seg = list_entry(link, struct hls_segments_t, link);
+		n += seg->num;
+	}
+
+	return n;
 }
 
 int hls_vod_m3u8(void* p, char* m3u8, int bytes)
@@ -226,12 +255,14 @@ int hls_vod_m3u8(void* p, char* m3u8, int bytes)
 		{
 			struct hls_segment_t* segment;
 			segment = segments->segments + i;
+			if (segment->discontinue)
+				n += snprintf(m3u8 + n, bytes - n, "#EXT-X-DISCONTINUITY\n");
 			n += snprintf(m3u8 + n, bytes - n, "#EXTINF:%.3f\n%s\n", segment->duration / 1000.0, segment->name);
 		}
 	}
 
 	if(bytes - n > 10)
-		n = snprintf(m3u8 + n, bytes-n, "#EXT-X-ENDLIST\n");
+		n += snprintf(m3u8 + n, bytes-n, "#EXT-X-ENDLIST\n");
 
 	return n;
 }
