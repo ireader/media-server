@@ -27,7 +27,7 @@ static int isAbsoluteURL(char const* url)
 
 static const char* uri_join(char* uri, size_t bytes, const char* base, const char* path)
 {
-	size_t n, n2;
+	size_t n, n2, offset;
 
 	assert(uri && base && path);
 	n = strlen(base);
@@ -35,16 +35,16 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 	if(n + n2 + 1 > bytes || !uri)
 		return NULL;
 
-	strcpy(uri, base);
+	offset = strlcpy(uri, base, bytes);
 
 	if( ('/' == path[0] || '\\' == path[0])
 		&& n > 0 && ('/' == uri[n-1] || '\\' == uri[n-1]) )
 	{
-		strcat(uri, path+1);
+		offset += strlcat(uri + offset, path+1, bytes - offset);
 	}
 	else
 	{
-		strcat(uri, path);
+		offset += strlcat(uri + offset, path, bytes - offset);
 	}
 
 	return uri;
@@ -66,7 +66,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 	control = sdp_attribute_find(sdp, "control");
 	if(!control || 0==*control || '*' == *control)
 		control = "";
-	strncpy(uri, control, bytes-1);
+	strlcpy(uri, control, bytes);
 
 	if(!isAbsoluteURL(uri) && baseuri && *baseuri)
 	{
@@ -75,7 +75,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), baseuri, uri);
 			baseuri = path;
 		}
-		strncpy(uri, baseuri, bytes-1);	
+		strlcpy(uri, baseuri, bytes);	
 	}
 
 	if(!isAbsoluteURL(uri) && location && *location)
@@ -85,7 +85,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), location, uri);
 			location = path;
 		}
-		strncpy(uri, location, bytes-1);
+		strlcpy(uri, location, bytes);
 	}
 
 	if(!isAbsoluteURL(uri) && requri && *requri)
@@ -95,7 +95,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), requri, uri);
 			requri = path;
 		}
-		strncpy(uri, requri, bytes-1);
+		strlcpy(uri, requri, bytes);
 	}
 
 	return 0;
@@ -112,7 +112,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 	control = sdp_media_attribute_find(sdp, media, "control");
 	if(!control || 0==*control || '*' == *control)
 		control = "";
-	strncpy(uri, control, bytes-1);
+	strlcpy(uri, control, bytes-1);
 
 	if(!isAbsoluteURL(uri) && sessionuri && *sessionuri)
 	{
@@ -121,7 +121,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 			uri_join(path, sizeof(path), sessionuri, uri);
 			sessionuri = path;
 		}
-		strncpy(uri, sessionuri, bytes-1);
+		strlcpy(uri, sessionuri, bytes);
 	}
 
 	return 0;
@@ -154,7 +154,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 				{
 					if(media->avformats[i].pt == payload)
 					{
-						strncpy(media->avformats[i].encoding, encoding, sizeof(media->avformats[i].encoding)-1);
+						strlcpy(media->avformats[i].encoding, encoding, sizeof(media->avformats[i].encoding));
 						break;
 					}
 				}
@@ -175,7 +175,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 						sdp_a_fmtp_h264(value, &payload, &h264);
 						if(h264.flags & SDP_A_FMTP_H264_SPROP_PARAMETER_SETS)
 						{
-							strncpy(media->avformats[i].spspps, h264.sprop_parameter_sets, sizeof(media->avformats[i].spspps));
+							strlcpy(media->avformats[i].spspps, h264.sprop_parameter_sets, sizeof(media->avformats[i].spspps));
 						}
 					}
 					else if(0 == strcmp("mpeg4-generic", media->avformats[i].encoding))

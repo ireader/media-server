@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="media">
+      <UniqueIdentifier>{addb3d67-671d-4f67-8252-45fec44f7846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{359f7f50-5e95-48ae-a691-c4df0e952611}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="client">
+      <UniqueIdentifier>{88d67443-d584-4f4a-b74c-2655a9d5abd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="server">
+      <UniqueIdentifier>{31fad31d-bddd-4f3a-b2f6-e7865ab2e8d2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\rfc822-datetime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtp-socket.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-header-range.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-header-rtp-info.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-header-session.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-header-transport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-reason.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp-a-fmtp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp-a-rtpmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test\rtsp-client-test.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test\rtsp-server-test.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="media\h264-file-reader.cpp">
+      <Filter>media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\h264-file-source.cpp">
+      <Filter>media</Filter>
+    </ClCompile>
+    <ClCompile Include="media\ps-file-source.cpp">
+      <Filter>media</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-announce.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-describe.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-pause.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-play.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-sdp.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-setup.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-teardown.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\rtsp-client-transport-tcp.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-client.c">
+      <Filter>client</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-server.c">
+      <Filter>server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-transport-tcp.c">
+      <Filter>server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtsp-transport-udp.c">
+      <Filter>server</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\rfc822-datetime.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\media-source.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtp-socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-header-range.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-header-rtp-info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-header-session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-header-transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-reason.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-server-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sdp-a-fmtp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sdp-a-rtpmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sdp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="media\h264-file-reader.h">
+      <Filter>media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\h264-file-source.h">
+      <Filter>media</Filter>
+    </ClInclude>
+    <ClInclude Include="media\ps-file-source.h">
+      <Filter>media</Filter>
+    </ClInclude>
+    <ClInclude Include="client\rtsp-client-internal.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="client\rtsp-client-transport-tcp.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-client.h">
+      <Filter>client</Filter>
+    </ClInclude>
+    <ClInclude Include="client\rtsp-url-parser.h">
+      <Filter>client</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

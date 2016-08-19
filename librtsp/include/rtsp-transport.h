@@ -5,7 +5,7 @@
 
 struct rtsp_transport_handler_t
 {
-	void (*onrecv)(void *ptr, void *session, const char *ip, int port, void *parser, void **user);
+	void (*onrecv)(void *ptr, void *session, const struct sockaddr* addr, socklen_t addrlen, void *parser, void **user);
 	void (*onsend)(void *ptr, void *user, int code, size_t bytes);
 };
 

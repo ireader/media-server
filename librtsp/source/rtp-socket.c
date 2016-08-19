@@ -9,18 +9,17 @@
 static unsigned short s_base_port = 30000;
 static unsigned short s_port_num = 30000;
 
-static char s_multicast_ip[32];
+static char s_multicast_ip[SOCKET_ADDRLEN];
 static unsigned int s_multicast_num = 250;
 
 #if defined(OS_LINUX)
 static unsigned char s_port_map[(1<<(sizeof(unsigned short)*8))/8];
-static int32_t s_port = 0;
 
 static void system_list_port()
 {
 	FILE* fp;
-	int port;
 	char line[256];
+	unsigned int port;
 
 	memset(s_port_map, 0, sizeof(s_port_map));
 
@@ -88,12 +87,12 @@ void rtp_socket_get_port_range(unsigned short *base, unsigned short *num)
 void rtp_socket_set_multicast_range(const char* multicast, unsigned int num)
 {
 	memset(s_multicast_ip, 0, sizeof(s_multicast_ip));
-	strncpy(s_multicast_ip, multicast, sizeof(s_multicast_ip));
+	strlcpy(s_multicast_ip, multicast, sizeof(s_multicast_ip));
 	s_multicast_num = num;
 }
 
-void rtp_socket_get_multicast_range(char multicast[32], unsigned int *num)
+void rtp_socket_get_multicast_range(char multicast[SOCKET_ADDRLEN], unsigned int *num)
 {
-	strcpy(multicast, s_multicast_ip);
+	strlcpy(multicast, s_multicast_ip, SOCKET_ADDRLEN);
 	*num = s_multicast_num;
 }

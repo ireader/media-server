@@ -53,7 +53,7 @@ static void rtsp_client_media_setup_onreply(void* rtsp, int r, void* parser)
 	}
 
 	assert(strlen(session) < sizeof(ctx->media[0].session));
-	strncpy(ctx->media[ctx->progress].session, session, sizeof(ctx->media[0].session)-1);
+	strlcpy(ctx->media[ctx->progress].session, session, sizeof(ctx->media[0].session));
 	assert(!ctx->aggregate || 0 == strcmp(ctx->media[0].session, session));
 
 	if(ctx->media_count == ++ctx->progress)
@@ -90,6 +90,7 @@ static void rtsp_client_media_setup_onreply(void* rtsp, int r, void* parser)
 
 int rtsp_client_media_setup(struct rtsp_client_context_t* ctx)
 {
+	int len;
 	struct rtsp_media_t *media;
 	char session[sizeof(media->session)];
 
@@ -102,16 +103,16 @@ int rtsp_client_media_setup(struct rtsp_client_context_t* ctx)
 	{
 		assert(ctx->media_count > 0);
 		snprintf(session, sizeof(session), "Session: %s\r\n", ctx->media[0].session);
-		snprintf(ctx->req, sizeof(ctx->req), 
-			RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
-			media->uri, ctx->cseq++, session, media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
+		len = snprintf(ctx->req, sizeof(ctx->req),
+				RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
+				media->uri, ctx->cseq++, session, media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
 	}
 	else
 	{
-		snprintf(ctx->req, sizeof(ctx->req), 
-			RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
-			media->uri, media->cseq++, "", media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
+		len = snprintf(ctx->req, sizeof(ctx->req),
+				RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
+				media->uri, media->cseq++, "", media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
 	}
 
-	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_setup_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, len, ctx, rtsp_client_media_setup_onreply);
 }

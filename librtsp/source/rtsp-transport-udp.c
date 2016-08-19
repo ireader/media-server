@@ -11,7 +11,7 @@ struct rtsp_udp_transport_t
 	void* transport;
 };
 
-static void rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg, size_t bytes, const char* ip, int port, void** user)
+static void rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg, size_t bytes, const struct sockaddr* addr, socklen_t addrlen, void** user)
 {
 	int remain;
 	void* parser;
@@ -24,7 +24,7 @@ static void rtsp_transport_udp_onrecv(void* ptr, void* session, const void* msg,
 	{
 		// callback
 		aio_udp_transport_addref(session);
-		transport->handler.onrecv(transport->ptr, session, ip, port, parser, user);
+		transport->handler.onrecv(transport->ptr, session, addr, addrlen, parser, user);
 	}
 	else
 	{

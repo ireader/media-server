@@ -59,7 +59,7 @@ int datetime_format(time_t time, rfc822_datetime_t datetime)
 	assert(0 <= tm->tm_wday && tm->tm_wday < 7);
 	assert(0 <= tm->tm_mon && tm->tm_mon < 12);
 	assert(sizeof(rfc822_datetime_t) >= 30);
-	sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT", 
+	snprintf(datetime, sizeof(rfc822_datetime_t), "%s, %02d %s %04d %02d:%02d:%02d GMT",
 		s_week[(unsigned int)tm->tm_wday % 7],
 		tm->tm_mday,
 		s_month[(unsigned int)tm->tm_mon % 12],

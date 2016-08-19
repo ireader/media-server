@@ -109,10 +109,10 @@ const char* rtsp_server_get_header(void* rtsp, const char* name);
 
 /// Get client ip/port
 /// @param[in] rtsp request handle
-/// @param[out] ip client bind ip(don't need free)
+/// @param[out] ip client bind ip
 /// @param[out] port client bind port
 /// @return 0-ok, other-error
-int rtsp_server_get_client(void* rtsp, const char **ip, int *port);
+int rtsp_server_get_client(void* rtsp, char ip[65], unsigned short *port);
 
 #if defined(__cplusplus)
 }

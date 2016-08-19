@@ -15,9 +15,6 @@
 class PSFileSource : public IMediaSource
 {
 public:
-	static PSFileSource* Create(const char* file);
-
-protected:
 	PSFileSource(const char *file);
 	virtual ~PSFileSource();
 
@@ -58,8 +55,8 @@ private:
 	time64_t m_rtcp_clock;
 	H264FileReader m_reader;
 	socket_t m_socket[2];
-	unsigned short m_port[2];
-	std::string m_ip;
+	socklen_t m_addrlen[2];
+	struct sockaddr_storage m_addr[2];
 
 	void *m_pspacker;
 	unsigned char m_packet[MAX_UDP_PACKET+14];

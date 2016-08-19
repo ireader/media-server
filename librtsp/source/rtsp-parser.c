@@ -292,9 +292,9 @@ static int rtsp_parse_request_line(struct rtsp_context *ctx)
 			assert('\n' != ctx->raw[ctx->offset]);
 			if(' ' == ctx->raw[ctx->offset])
 			{
-				size_t n = MIN(ctx->offset, sizeof(ctx->req.method)-1);
-				assert(ctx->offset < sizeof(ctx->req.method)-1);
-				strncpy(ctx->req.method, ctx->raw, n);
+				size_t n = MIN(ctx->offset, sizeof(ctx->req.method));
+				assert(ctx->offset < sizeof(ctx->req.method));
+				strlcpy(ctx->req.method, ctx->raw, n);
 				ctx->stateM = SM_REQUEST_METHOD_SP;
 				assert(0 == ctx->req.uri_pos);
 				assert(0 == ctx->req.uri_len);

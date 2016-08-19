@@ -44,7 +44,7 @@ int rtsp_client_open(void* rtsp, const char* uri)
 	struct rtsp_client_context_t *ctx;
 	ctx = (struct rtsp_client_context_t*)rtsp;
 
-	strncpy(ctx->uri, uri, sizeof(ctx->uri)-1);
+	strlcpy(ctx->uri, uri, sizeof(ctx->uri));
 	r = rtsp_client_describe(ctx, uri);
 //	r = rtsp_client_setup(ctx);
 	return r;
@@ -59,7 +59,7 @@ int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp)
 	ctx = (struct rtsp_client_context_t*)rtsp;
 
 	if(uri != ctx->uri)
-		strncpy(ctx->uri, uri, sizeof(ctx->uri)-1);
+		strlcpy(ctx->uri, uri, sizeof(ctx->uri));
 
 	sdpparser = sdp_parse(sdp);
 	if(!sdpparser)

@@ -27,8 +27,8 @@ struct rtsp_header_transport_t
 {
 	int transport; // RTSP_TRANSPORT_xxx
 	int multicast; // 0-unicast/1-multicast, default multicast
-	char destination[40]; // IPv4/IPv6
-	char source[40]; // IPv4/IPv6
+	char destination[65]; // IPv4/IPv6
+	char source[65]; // IPv4/IPv6
 	int layer; // rtsp setup response only
 	int mode; // PLAY/RECORD, default PLAY, rtsp setup response only
 	int append; // use with RECORD mode only, rtsp setup response only

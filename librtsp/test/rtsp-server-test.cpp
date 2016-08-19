@@ -16,6 +16,7 @@
 #include "url.h"
 #include "path.h"
 #include <map>
+#include <memory>
 
 #define PS_VOD
 
@@ -27,7 +28,7 @@ static ThreadLocker s_locker;
 
 struct rtsp_session_t
 {
-	IMediaSource* media;
+	std::shared_ptr<IMediaSource> media;
 	socket_t socket[2];
 	unsigned short port[2];
 	int status; // setup-init, 1-play, 2-pause
@@ -111,22 +112,21 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
 		{
 			// unlock
 			TFileDescription describe;
-			IMediaSource *source = NULL;
+			std::shared_ptr<IMediaSource> source;
 #if defined(PS_VOD)
-			source = PSFileSource::Create(filename.c_str());
+			source.reset(new PSFileSource(filename.c_str()));
 #else
-			source = H264FileSource::Create(filename.c_str());
+			source.reset(new H264FileSource(filename.c_str()));
 #endif
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
-			source->release();
 
 			// re-lock
 			it = s_describes.insert(std::make_pair(filename, describe)).first;
 		}
 	}
-    snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
-    strcat(sdp, it->second.sdpmedia.c_str());
+    int offset = snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
+	offset += strlcat(sdp + offset, it->second.sdpmedia.c_str(), sizeof(sdp) - offset);
 
     rtsp_server_reply_describe(rtsp, 200, sdp);
 }
@@ -168,13 +168,13 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 		rtsp_session_t item;
 		memset(&item, 0, sizeof(item));
 #if defined(PS_VOD)
-		item.media = PSFileSource::Create(filename.c_str());
+		item.media.reset(new PSFileSource(filename.c_str()));
 #else
-		item.media = H264FileSource::Create(filename.c_str());
+		item.media.reset(new H264FileSource(filename.c_str()));
 #endif
 
 		char rtspsession[32];
-		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media);
+		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
 
 		AutoThreadLocker locker(s_locker);
 		it = s_sessions.insert(std::make_pair(rtspsession, item)).first;
@@ -232,7 +232,8 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
 			item.port[0], item.port[1]);
 
-		const char *ip = NULL;
+		char ipaddr[SOCKET_ADDRLEN] = { 0 };
+		const char *ip = ipaddr;
 		if(transport->destination[0])
 		{
 			ip = transport->destination;
@@ -241,8 +242,8 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 		}
 		else
 		{
-			int port = 0;
-			rtsp_server_get_client(rtsp, &ip, &port);
+			unsigned short port = 0;
+			rtsp_server_get_client(rtsp, ipaddr, &port);
 		}
 
 		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
@@ -254,7 +255,7 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
 
 static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
 {
-	IMediaSource* source = NULL;
+	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
 	{
 		AutoThreadLocker locker(s_locker);
@@ -267,7 +268,6 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 		}
 
 		source = it->second.media;
-		source->addref();
 	}
 	if(npt && 0 != source->Seek(*npt))
 	{
@@ -306,7 +306,7 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
 
 static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
 {
-	IMediaSource* source = NULL;
+	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
 	{
 		AutoThreadLocker locker(s_locker);
@@ -319,7 +319,6 @@ static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const c
 		}
 
 		source = it->second.media;
-		source->addref();
 		it->second.status = 2;
 	}
 
@@ -332,7 +331,7 @@ static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const c
 
 static void rtsp_onteardown(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session)
 {
-	IMediaSource *source = NULL;
+	std::shared_ptr<IMediaSource> source;
 	TSessions::const_iterator it;
 	{
 		AutoThreadLocker locker(s_locker);
@@ -349,8 +348,6 @@ static void rtsp_onteardown(void* /*ptr*/, void* rtsp, const char* /*uri*/, cons
 	}
 
 	rtsp_server_reply_teardown(rtsp, 200);
-
-	source->release(); // clean source
 }
 
 extern "C" void rtsp_example()

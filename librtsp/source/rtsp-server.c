@@ -31,10 +31,10 @@ struct rtsp_server_request_t
 {
 	struct rtsp_server_context_t *server;
 	struct rtsp_transport_t *transport;
+	struct sockaddr_storage addr;
+	socklen_t addrlen;
 	void* session;
 	void* parser;
-	char ip[40]; // IPv4/IPv6
-	unsigned short port;
 	unsigned int cseq;
 	char reply[MAX_UDP_PACKAGE];
 };
@@ -58,33 +58,35 @@ static int rtsp_header_transport_ex(const char* value, struct rtsp_header_transp
 
 static int rtsp_server_reply(struct rtsp_server_request_t *req, int code)
 {
+	int len;
 	rfc822_datetime_t datetime;
 	datetime_format(time(NULL), datetime);
 
-	snprintf(req->reply, sizeof(req->reply), 
+	len = snprintf(req->reply, sizeof(req->reply),
 		"RTSP/1.0 %d %s\r\n"
 		"CSeq: %u\r\n"
 		"Date: %s\r\n"
 		"\r\n",
 		code, rtsp_reason_phrase(code), req->cseq, datetime);
 
-	return req->transport->send(req->session, req->reply, strlen(req->reply));
+	return req->transport->send(req->session, req->reply, len);
 }
 
 // RFC 2326 10.1 OPTIONS (p30)
 static void rtsp_server_options(struct rtsp_server_request_t* req, void* UNUSED(parser), const char* UNUSED(uri))
 {
 	static const char* methods = "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE";
+	int len;
 
 //	assert(0 == strcmp("*", uri));
-	snprintf(req->reply, sizeof(req->reply), 
+	len = snprintf(req->reply, sizeof(req->reply), 
 		"RTSP/1.0 200 OK\r\n"
 		"CSeq: %u\r\n"
 		"Public: %s\r\n"
 		"\r\n", 
 		req->cseq, methods);
 
-	req->transport->send(req->session, req->reply, strlen(req->reply));
+	req->transport->send(req->session, req->reply, len);
 }
 
 static void rtsp_server_describe(struct rtsp_server_request_t *req, void* UNUSED(parser), const char* uri)
@@ -332,7 +334,7 @@ static struct rtsp_server_request_t* rtsp_server_session_create(struct rtsp_serv
 	return req;
 }
 
-static void rtsp_server_onrecv(void* ptr, void* session, const char* ip, int port, void* parser, void** user)
+static void rtsp_server_onrecv(void* ptr, void* session, const struct sockaddr* addr, socklen_t addrlen, void* parser, void** user)
 {
 	struct rtsp_server_context_t *ctx;
 	struct rtsp_server_request_t *req;
@@ -342,8 +344,9 @@ static void rtsp_server_onrecv(void* ptr, void* session, const char* ip, int por
 	req->session = session;
 	req->transport = ctx->tcptransport;
 	req->cseq = (unsigned int)-1;
-	strncpy(req->ip, ip, sizeof(req->ip)-1);
-	req->port = (unsigned short)port;
+	assert(addrlen <= sizeof(req->addr));
+	memcpy(&req->addr, addr, addrlen);
+	req->addrlen = addrlen;
 
 	*user = req;
 	rtsp_server_handle(req, parser);
@@ -357,6 +360,7 @@ static void rtsp_server_onsend(void *ptr, void* user, int code, size_t bytes)
 
 void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 {
+	int len;
 	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
@@ -368,7 +372,7 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 	}
 
 	datetime_format(time(NULL), datetime);
-	snprintf(req->reply, sizeof(req->reply), 
+	len = snprintf(req->reply, sizeof(req->reply),
 			"RTSP/1.0 200 OK\r\n"
 			"CSeq: %u\r\n"
 			"Date: %s\r\n"
@@ -378,11 +382,12 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 			"%s", 
 			req->cseq, datetime, (unsigned int)strlen(sdp), sdp);
 
-	req->transport->send(req->session, req->reply, strlen(req->reply));
+	req->transport->send(req->session, req->reply, len);
 }
 
 void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const char* transport)
 {
+	int len;
 	rfc822_datetime_t datetime;
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
@@ -396,7 +401,7 @@ void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const ch
 	datetime_format(time(NULL), datetime);
 
 	// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
-	snprintf(req->reply, sizeof(req->reply), 
+	len = snprintf(req->reply, sizeof(req->reply),
 			"RTSP/1.0 200 OK\r\n"
 			"CSeq: %u\r\n"
 			"Date: %s\r\n"
@@ -405,11 +410,12 @@ void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const ch
 			"\r\n",
 			req->cseq, datetime, session, transport);
 
-	req->transport->send(req->session, req->reply, strlen(req->reply));
+	req->transport->send(req->session, req->reply, len);
 }
 
 void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
 {
+	int len;
 	char range[64] = {0};
 	char rtpinfo[256] = {0};
 	rfc822_datetime_t datetime;
@@ -424,20 +430,20 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 
 	if(rtp)
 	{
-		snprintf(rtpinfo, sizeof(rtpinfo), "RTP-Info: %s\r\n", rtp);
+		len = snprintf(rtpinfo, sizeof(rtpinfo), "RTP-Info: %s\r\n", rtp);
 	}
 
 	if(nptstart)
 	{
 		if(nptend)
-			snprintf(range, sizeof(range), "Range: %.3f-%.3f\r\n", (float)(*nptstart/1000.0f), (float)(*nptend/1000.0f));
+			len = snprintf(range, sizeof(range), "Range: %.3f-%.3f\r\n", (float)(*nptstart/1000.0f), (float)(*nptend/1000.0f));
 		else
-			snprintf(range, sizeof(range), "Range: %.3f-\r\n", (float)(*nptstart/1000.0f));
+			len = snprintf(range, sizeof(range), "Range: %.3f-\r\n", (float)(*nptstart/1000.0f));
 	}
 
 	datetime_format(time(NULL), datetime);
 	// smpte=0:10:22-;time=19970123T153600Z
-	snprintf(req->reply, sizeof(req->reply), 
+	len = snprintf(req->reply, sizeof(req->reply),
 		"RTSP/1.0 200 OK\r\n"
 		"CSeq: %u\r\n"
 		"Date: %s\r\n"
@@ -446,7 +452,7 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 		"\r\n",
 		req->cseq, datetime, range, rtpinfo);
 
-	req->transport->send(req->session, req->reply, strlen(req->reply));
+	req->transport->send(req->session, req->reply, len);
 }
 
 void rtsp_server_reply_pause(void* rtsp, int code)
@@ -470,13 +476,13 @@ const char* rtsp_server_get_header(void* rtsp, const char* name)
 	return rtsp_get_header_by_name(req->parser, name);
 }
 
-int rtsp_server_get_client(void* rtsp, const char **ip, int *port)
+int rtsp_server_get_client(void* rtsp, char ip[65], unsigned short *port)
 {
 	struct rtsp_server_request_t *req;
 	req = (struct rtsp_server_request_t *)rtsp;
-	if(ip) *ip = req->ip;
-	if(port) *port = (int)req->port;
-	return 0;
+	if (NULL == ip || NULL == port)
+		return -1;
+	return socket_addr_to((struct sockaddr*)&req->addr, req->addrlen, ip, port);
 }
 
 int rtsp_server_init(void)

@@ -12,8 +12,8 @@ struct rtsp_tcp_session_t
     locker_t locker;
 	void* session;
 	void* parser; // rtsp parser
-	char ip[32];
-	int port;
+	struct sockaddr_storage addr;
+	socklen_t addrlen;
 	void* data;
     struct rtsp_transport_handler_t handler;
     void* ptr;
@@ -39,7 +39,7 @@ static void rtsp_transport_tcp_session_release(struct rtsp_tcp_session_t *sessio
     }
 }
 
-static void* rtsp_transport_tcp_onconnected(void* ptr, void* sid, const char* ip, int port)
+static void* rtsp_transport_tcp_onconnected(void* ptr, void* sid, const struct sockaddr* sa, socklen_t salen)
 {
 	struct rtsp_tcp_session_t *session;
 	struct rtsp_tcp_transport_t *transport;
@@ -55,8 +55,9 @@ static void* rtsp_transport_tcp_onconnected(void* ptr, void* sid, const char* ip
     locker_create(&session->locker);
 	session->parser = rtsp_parser_create(RTSP_PARSER_SERVER);
 	session->session = sid;
-	strncpy(session->ip, ip, sizeof(session->ip));
-	session->port = port;
+	assert(salen < sizeof(session->addr));
+	memcpy(&session->addr, sa, salen);
+	session->addrlen = salen;
 	return session;
 }
 
@@ -84,7 +85,7 @@ static int rtsp_transport_tcp_onrecv(void* param, const void* msg, size_t bytes)
 
 		// call
 		// user must reply(send/send_vec/send_file) in handle
-		session->handler.onrecv(session->ptr, session, session->ip, session->port, session->parser, &session->data);
+		session->handler.onrecv(session->ptr, session, (struct sockaddr*)&session->addr, session->addrlen, session->parser, &session->data);
 		return 0;
 	}
 	else

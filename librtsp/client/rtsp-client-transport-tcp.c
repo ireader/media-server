@@ -10,7 +10,7 @@
 struct rtsp_tcp_transport_t
 {
 	socket_t sock; // rtsp connection
-	char ip[64]; // rtsp server
+	char ip[SOCKET_ADDRLEN]; // rtsp server
 	int port;
 
 	void* parser; // rtsp parser
@@ -61,7 +61,6 @@ int rtsp_client_tcp_transport_destroy(void* t)
 
 static int rtsp_client_connect(const char* ip, int port, socket_t* socket)
 {
-	int r;
 	if(socket_invalid == *socket || 0!=socket_readable(*socket))
 	{
 		socket_close(*socket);
@@ -70,14 +69,9 @@ static int rtsp_client_connect(const char* ip, int port, socket_t* socket)
 
 	if(socket_invalid == *socket)
 	{
-		*socket = socket_tcp();
-		r = socket_connect_ipv4_by_time(*socket, ip, (u_short)port, 5000);
-		if(0 != r)
-		{
-			socket_close(*socket);
-			*socket = socket_invalid;
-			return r;
-		}
+		*socket = socket_connect_host(ip, (u_short)port, 5000);
+		if(socket_invalid == *socket)
+			return socket_geterror();
 
 		socket_setnonblock(*socket, 0); // reset to block mode
 	}
@@ -184,7 +178,7 @@ int rtsp_client_tcp_transport_request(void* t, const char* uri, const void* req,
 {
 	int scheme;
 	int port;
-	char ip[64];
+	char ip[SOCKET_ADDRLEN];
 	int r;
 
 	struct rtsp_transport_context_t *ctx;
@@ -202,7 +196,7 @@ int rtsp_client_tcp_transport_request(void* t, const char* uri, const void* req,
 
 		transport = &ctx->transport[ctx->count++];
 		transport->sock = socket_invalid;
-		strncpy(transport->ip, ip, sizeof(transport->ip));
+		strlcpy(transport->ip, ip, sizeof(transport->ip));
 		transport->port = port;
 		transport->parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
 	}

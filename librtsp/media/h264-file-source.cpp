@@ -38,19 +38,15 @@ H264FileSource::~H264FileSource()
 		rtp_h264_packer()->destroy(m_rtppacker);
 }
 
-H264FileSource* H264FileSource::Create(const char *file)
-{
-	H264FileSource* s = new H264FileSource(file);
-	return s;
-}
-
 int H264FileSource::SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2])
 {
+	int r1 = socket_addr_from(&m_addr[0], &m_addrlen[0], ip, port[0]);
+	int r2 = socket_addr_from(&m_addr[1], &m_addrlen[1], ip, port[1]);
+	if (0 != r1 || 0 != r2)
+		return 0 != r1 ? r1 : r2;
+
 	m_socket[0] = socket[0];
 	m_socket[1] = socket[1];
-	m_port[0] = port[0];
-	m_port[1] = port[1];
-	m_ip.assign(ip);
 	return 0;
 }
 
@@ -170,9 +166,7 @@ int H264FileSource::SendRTCP()
 		size_t n = rtp_rtcp_report(m_rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		struct sockaddr_in addrin;
-		socket_addr_ipv4(&addrin, m_ip.c_str(), m_port[1]);
-		socket_sendto(m_socket[1], rtcp, n, 0, (struct sockaddr*)&addrin, sizeof(addrin));
+		socket_sendto(m_socket[1], rtcp, n, 0, (struct sockaddr*)&m_addr[1], m_addrlen[1]);
 
 		m_rtcp_clock = clock;
 	}
@@ -198,9 +192,7 @@ void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, uint64_t
 	H264FileSource *self = (H264FileSource*)param;
 	assert(self->m_packet == packet);
 
-	struct sockaddr_in addrin;
-	socket_addr_ipv4(&addrin, self->m_ip.c_str(), self->m_port[0]);
-	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&addrin, sizeof(addrin));
+	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&self->m_addr[0], self->m_addrlen[0]);
 	assert(r == (int)bytes);
 	rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
 }

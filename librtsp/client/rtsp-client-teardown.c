@@ -49,6 +49,7 @@ static void rtsp_client_media_teardown_onreply(void* rtsp, int r, void* parser)
 
 int rtsp_client_media_teardown(struct rtsp_client_context_t* ctx)
 {
+	int len;
 	struct rtsp_media_t* media;
 
 	assert(RTSP_TEARDWON == ctx->status);
@@ -56,7 +57,7 @@ int rtsp_client_media_teardown(struct rtsp_client_context_t* ctx)
 	media = rtsp_get_media(ctx, ctx->progress);
 
 	assert(media->uri[0] && media->session[0]);
-	snprintf(ctx->req, sizeof(ctx->req), 
+	len = snprintf(ctx->req, sizeof(ctx->req),
 		"TEARDOWN %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
@@ -64,5 +65,5 @@ int rtsp_client_media_teardown(struct rtsp_client_context_t* ctx)
 		"\r\n", 
 		media->uri, media->cseq++, media->session, USER_AGENT);
 
-	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_teardown_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, len, ctx, rtsp_client_media_teardown_onreply);
 }

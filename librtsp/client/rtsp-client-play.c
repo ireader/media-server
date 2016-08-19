@@ -128,6 +128,7 @@ static void rtsp_client_media_play_onreply(void* rtsp, int r, void* parser)
 
 int rtsp_client_media_play(struct rtsp_client_context_t *ctx)
 {
+	int len;
 	struct rtsp_media_t* media;
 
 	assert(0 == ctx->aggregate);
@@ -136,7 +137,7 @@ int rtsp_client_media_play(struct rtsp_client_context_t *ctx)
 
 	media = rtsp_get_media(ctx, ctx->progress);
 	assert(media && media->uri && media->session);
-	snprintf(ctx->req, sizeof(ctx->req), 
+	len = snprintf(ctx->req, sizeof(ctx->req),
 		"PLAY %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
@@ -146,7 +147,7 @@ int rtsp_client_media_play(struct rtsp_client_context_t *ctx)
 		"\r\n", 
 		media->uri, media->cseq++, media->session, ctx->range, ctx->speed, USER_AGENT);
 
-	return ctx->client.request(ctx->transport, media->uri, ctx->req, strlen(ctx->req), ctx, rtsp_client_media_play_onreply);
+	return ctx->client.request(ctx->transport, media->uri, ctx->req, len, ctx, rtsp_client_media_play_onreply);
 }
 
 // aggregate control reply

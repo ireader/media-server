@@ -28,7 +28,7 @@ static int rtpport(void* UNUSED(transport), unsigned short *rtp)
 
 int onopen(void* ptr, int UNUSED(code), const struct rtsp_transport_t* UNUSED(transport), int UNUSED(count))
 {
-	int64_t npt = 0;
+	uint64_t npt = 0;
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)ptr;
 	assert(0 == rtsp_client_play(ctx->rtsp, &npt, NULL));
 	return 0;
@@ -39,7 +39,7 @@ int onclose(void* UNUSED(ptr), int UNUSED(code))
 	return 0;
 }
 
-int onplay(void* UNUSED(ptr), int UNUSED(code), const int64_t* UNUSED(nptbegin), const int64_t* UNUSED(nptend), const double* UNUSED(scale), const struct rtsp_rtp_info_t* UNUSED(rtpinfo), int UNUSED(count))
+int onplay(void* UNUSED(ptr), int UNUSED(code), const uint64_t* UNUSED(nptbegin), const uint64_t* UNUSED(nptend), const double* UNUSED(scale), const struct rtsp_rtp_info_t* UNUSED(rtpinfo), int UNUSED(count))
 {
 	return 0;
 }

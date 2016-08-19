@@ -31,8 +31,7 @@ inline int rtsp_url_parse(const char* uri, int *scheme, char *ip, int bytes, int
 		return -1;
 	}
 
-	memset(ip, 0, bytes);
-	strncpy(ip, host, bytes-1);
+	strlcpy(ip, host, bytes);
 
 	*port = url_getport(parser);
 	if(0 == *port)

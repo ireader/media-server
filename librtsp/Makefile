@@ -44,7 +44,7 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = OS_INT64_TYPE
+DEFINES =
 
 include $(ROOT)/gcc.mk
 

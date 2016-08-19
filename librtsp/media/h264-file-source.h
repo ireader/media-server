@@ -4,6 +4,7 @@
 #include "h264-file-reader.h"
 #include "media-source.h"
 #include "sys/process.h"
+#include "sys/sock.h"
 #include "time64.h"
 #include "rtp.h"
 #include <string>
@@ -15,9 +16,6 @@
 class H264FileSource : public IMediaSource
 {
 public:
-	static H264FileSource* Create(const char* file);
-
-protected:
 	H264FileSource(const char *file);
 	virtual ~H264FileSource();
 
@@ -46,8 +44,8 @@ private:
 	time64_t m_rtcp_clock;
     H264FileReader m_reader;
 	socket_t m_socket[2];
-	unsigned short m_port[2];
-	std::string m_ip;
+	socklen_t m_addrlen[2];
+	struct sockaddr_storage m_addr[2];
 
 	int m_status;
 	int64_t m_pos;
