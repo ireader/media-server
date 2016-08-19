@@ -44,7 +44,7 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES =
+DEFINES = NO_CRYPTO
 
 include $(ROOT)/gcc.mk
 

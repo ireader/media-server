@@ -174,7 +174,6 @@ static void rtmp_client_video_handler(void* param, const unsigned char* nalu, un
 	}
 }
 
-static uint8_t s_abc[2 * 1024 * 1024];
 int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigned int pts, unsigned int dts)
 {
 	uint32_t compositionTimeOffset;

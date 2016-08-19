@@ -1,12 +1,12 @@
 #ifndef _mpeg_ts_h_
 #define _mpeg_ts_h_
 
+#include <stdint.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <stddef.h>
 
 struct mpeg_ts_func_t
 {
