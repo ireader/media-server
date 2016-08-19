@@ -12,7 +12,7 @@ OUTFILE = libhls.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					../libhttp/include \
+					$(ROOT)/libhttp/include \
 					../libmpeg/include \
 					$(ROOT)/include \
 					$(ROOT)/video
@@ -44,7 +44,7 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = LIBHLS_EXPORTS OS_MAC
+DEFINES =
 
 include $(ROOT)/gcc.mk
 

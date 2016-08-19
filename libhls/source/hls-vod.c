@@ -9,6 +9,8 @@
 #include "h264-util.h"
 #include "ctypedef.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
 
 #define N_SEGMENT	50
 #define N_TS_PACKET 188
@@ -24,8 +26,8 @@ struct hls_vod_t
 
 	void* ts;
     uint8_t* ptr;
-	uint32_t bytes;
-	uint32_t capacity;
+	size_t bytes;
+	size_t capacity;
 
 	uint64_t vpacket;		// video packet in segment
 	int64_t duration;		// user setting segment duration
@@ -240,7 +242,7 @@ int hls_vod_m3u8(void* p, char* m3u8, int bytes)
 	n = snprintf(m3u8, bytes,
 		"#EXTM3U\n" // MUST
 		"#EXT-X-VERSION:3\n" // Optional
-		"#EXT-X-TARGETDURATION:%I64d\n" // MUST, decimal-integer, in seconds
+		"#EXT-X-TARGETDURATION:%" PRId64 "\n" // MUST, decimal-integer, in seconds
 //		"EXT-X-PLAYLIST-TYPE:VOD\n"
 //		"#EXT-X-MEDIA-SEQUENCE:0\n", // VOD
 //		"#EXT-X-ALLOW-CACHE:NO\n"

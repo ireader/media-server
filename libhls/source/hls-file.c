@@ -1,5 +1,6 @@
 #include "hls-file.h"
 #include "hls-param.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>

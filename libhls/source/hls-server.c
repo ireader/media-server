@@ -150,8 +150,7 @@ static int hls_server_live(struct hls_server_t *ctx, void* session, const char* 
     http_server_send(session, 200, bundle);
     http_bundle_free(bundle);
 #else
-	int i, r;
-    size_t n;
+	int i, r, n;
 	char name[64];
 	char file[64];
 	void** bundles;
