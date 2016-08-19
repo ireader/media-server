@@ -212,7 +212,6 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 	{
 		packetType = data[1];
 		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
-		printf("video timestamp: %ud, compositionTime: %ud\n", tag->timestamp, compositionTime);
 
 		if (0 == packetType)
 		{
