@@ -243,8 +243,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 
 			while (p + flv->video.nalu < end)
 			{
+				int i;
 				uint32_t bytes = 0;
-				for (int i = 0; i < flv->video.nalu; i++)
+				for (i = 0; i < flv->video.nalu; i++)
 					bytes = (bytes << 8) + p[i];
 
 				if (p + flv->video.nalu + bytes > end)

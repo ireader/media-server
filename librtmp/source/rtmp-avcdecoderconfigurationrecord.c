@@ -1,7 +1,9 @@
 #include "rtmp-client.h"
-#include "h264-parser.h"
+#include "h264-nalu.h"
+#include "h264-sps.h"
 #include <assert.h>
 #include <memory.h>
+#include <stdint.h>
 #include <stdio.h>
 
 struct H264Context
