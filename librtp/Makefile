@@ -1,4 +1,4 @@
-ROOT:=../../pub/mdpub
+ROOT:=../../sdk
 
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
@@ -41,7 +41,7 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = OS_INT64_TYPE
+DEFINES =
 
 include $(ROOT)/gcc.mk
 
