@@ -12,7 +12,8 @@ OUTFILE = libmpeg.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					$(ROOT)/include
+					$(ROOT)/include \
+					$(ROOT)/video
 
 #-------------------------------Source-------------------------------
 #
@@ -43,6 +44,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = OS_INT64_TYPE
+DEFINES =
 
 include $(ROOT)/gcc.mk

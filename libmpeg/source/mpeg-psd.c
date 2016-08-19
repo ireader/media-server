@@ -1,6 +1,6 @@
-// ITU-T H.222.0(06/2012)
+// ITU-T H.222.0(10/2014)
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
-// 2.5.5 Program stream directory(p81)
+// 2.5.5 Program stream directory(p84)
 
 #include "mpeg-ps-proto.h"
 #include <assert.h>

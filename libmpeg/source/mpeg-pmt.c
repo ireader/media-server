@@ -1,6 +1,6 @@
-// ITU-T H.222.0(06/2012)
+// ITU-T H.222.0(10/2014)
 // Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
-// 2.4.4.8 Program map table(p64)
+// 2.4.4.8 Program map table(p68)
 
 #include "mpeg-ts-proto.h"
 #include "mpeg-util.h"

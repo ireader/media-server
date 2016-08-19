@@ -9,6 +9,7 @@
 #include "crc32.h"
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 typedef struct _mpeg_ts_dec_context_t
 {
@@ -28,7 +29,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 	assert(bytes <= TS_PACKET_SIZE);
 	adp->adaptation_field_length = data[i++];
-	printf("adaptaion(%d)  flag: %0x\n", adp->adaptation_field_length, (unsigned int)data[i]);
+	printf("adaptaion(%u)  flag: %0x\n", adp->adaptation_field_length, (unsigned int)data[i]);
 
 	if(adp->adaptation_field_length > 0)
 	{

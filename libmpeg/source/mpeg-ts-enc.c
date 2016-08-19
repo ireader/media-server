@@ -5,7 +5,6 @@
 #include "mpeg-util.h"
 #include "mpeg-ts-proto.h"
 #include "mpeg-ts.h"
-#include "cstringext.h"
 #include "h264-util.h"
 #include "crc32.h"
 #include <memory.h>

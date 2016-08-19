@@ -7,7 +7,6 @@
 #include "mpeg-pes-proto.h"
 #include "mpeg-util.h"
 #include "mpeg-ps.h"
-#include "cstringext.h"
 #include "h264-util.h"
 #include <stdio.h>
 #include <stdlib.h>

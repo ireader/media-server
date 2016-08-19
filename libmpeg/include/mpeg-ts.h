@@ -5,18 +5,8 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
-#ifndef OS_INT64_TYPE
-#if defined(_WIN32) || defined(_WIN64)
-	typedef __int64				int64_t;	
-	typedef unsigned __int64	uint64_t;
-#else
-	#include <stdint.h>
-	typedef long long			int64_t;
-	typedef unsigned long long	uint64_t;
-#endif
-#define OS_INT64_TYPE
-#endif /* OS_INT64_TYPE */
+#include <stdint.h>
+#include <stddef.h>
 
 struct mpeg_ts_func_t
 {
