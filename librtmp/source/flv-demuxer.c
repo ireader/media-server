@@ -29,6 +29,10 @@
 
 #define N_SPSPPS			4096
 
+#define H264_NALU_IDR		5 // Coded slice of an IDR picture
+#define H264_NALU_SPS		7 // Sequence parameter set
+#define H264_NALU_PPS		8 // Picture parameter set
+
 struct flv_header_t
 {
 	//uint8_t F;
@@ -125,14 +129,14 @@ static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, uint32_t bytes
 	return 0;
 }
 
-static int flv_demuxer_header(struct flv_header_t* header, const uint8_t* data, uint32_t bytes)
+static size_t flv_demuxer_header(struct flv_header_t* header, const uint8_t* data, size_t bytes)
 {
 	uint32_t firstTagSize;
 	if (bytes < N_FLV_HEADER + N_TAG_SIZE)
-		return -1;
+		return 0;
 
 	if ('F' != data[0] || 'L' != data[1] || 'V' != data[2])
-		return -1;
+		return 0;
 
 	//header->F = data[0];
 	//header->L = data[1];
@@ -143,17 +147,17 @@ static int flv_demuxer_header(struct flv_header_t* header, const uint8_t* data, 
 	header->video = data[4] & 0x01;
 	be_read_uint32(data + 5, &header->dataoffset);
 	if (header->dataoffset < N_FLV_HEADER)
-		return -1;
+		return 0;
 
 	be_read_uint32(data + header->dataoffset, &firstTagSize);
 	assert(0 == firstTagSize);
 	return header->dataoffset + N_TAG_SIZE;
 }
 
-static int flv_demuxer_tag(struct flv_tag_t* tag, const uint8_t* data, uint32_t bytes)
+static size_t flv_demuxer_tag(struct flv_tag_t* tag, const uint8_t* data, size_t bytes)
 {
 	if (bytes < N_TAG_HEADER)
-		return -1;
+		return 0;
 
 	assert(0 == (data[0] >> 6));
 	tag->filter = (data[0] >> 5) & 0x01;
@@ -234,21 +238,36 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 		{
 			// H.264
 			uint32_t k = 0;
+			uint8_t sps_pps_flag = 0;
 			const uint8_t* p = data + 5;
 			const uint8_t* end = data + tag->datasize;
 
-			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 4))
+			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 4 + flv->pslen))
 				return ENOMEM;
 
 			while (p + flv->video.nalu < end)
 			{
 				int i;
+				uint8_t nalu;
 				uint32_t bytes = 0;
 				for (i = 0; i < flv->video.nalu; i++)
 					bytes = (bytes << 8) + p[i];
 
 				if (p + flv->video.nalu + bytes > end)
 					break; // invalid nalu size
+
+				// insert SPS/PPS before IDR frame
+				nalu = p[flv->video.nalu] & 0x1f;
+				if (H264_NALU_SPS == nalu || H264_NALU_PPS == nalu)
+				{
+					sps_pps_flag = 1;
+				}
+				else if (H264_NALU_IDR == nalu && 0 == sps_pps_flag)
+				{
+					sps_pps_flag = 1; // don't insert more than one-times
+					memcpy(flv->data + k, flv->ps, flv->pslen); //
+					k += flv->pslen;
+				}
 
 				// nalu start code
 				flv->data[k] = flv->data[k+1] = flv->data[k+2] = 0x00;
@@ -276,10 +295,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 //	return 0;
 //}
 
-int flv_demuxer_input(void* demuxer, const void* data, unsigned int bytes)
+size_t flv_demuxer_input(void* demuxer, const void* data, size_t bytes)
 {
-	int n;
-	uint32_t offset;
+	size_t n, offset;
 	uint32_t tagsize;
 	struct flv_tag_t tag;
 	struct flv_demuxer_t* flv;
@@ -289,7 +307,7 @@ int flv_demuxer_input(void* demuxer, const void* data, unsigned int bytes)
 	if (bytes > 3 && 0==memcmp("FLV", data, 3))
 	{
 		n = flv_demuxer_header(&flv->header, (const uint8_t*)data, bytes);
-		if (n < 0)
+		if (n <= 0)
 			return 0;
 		offset += n;
 	}
@@ -299,7 +317,7 @@ int flv_demuxer_input(void* demuxer, const void* data, unsigned int bytes)
 		// tag header
 		memset(&tag, 0, sizeof(struct flv_tag_t));
 		n = flv_demuxer_tag(&tag, (const uint8_t*)data + offset, bytes - offset);
-		if (n < 0)
+		if (n <= 0)
 			return offset;
 
 		// tag data
@@ -307,7 +325,7 @@ int flv_demuxer_input(void* demuxer, const void* data, unsigned int bytes)
 			break;
 
 		be_read_uint32((const uint8_t*)data + offset + tag.datasize + n, &tagsize);
-		assert(tagsize == tag.datasize + n);
+		assert(tagsize == tag.datasize + (uint32_t)n);
 
 		switch (tag.type)
 		{

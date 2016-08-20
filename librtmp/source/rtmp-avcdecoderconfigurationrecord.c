@@ -63,7 +63,7 @@ int rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video,
 
 	memset(&ctx, 0, sizeof(struct H264Context));
 	h264_nalu((const unsigned char*)video, bytes, rtmp_client_sps_handler, &ctx);
-	if (ctx.spsCount < 0)
+	if (ctx.spsCount < 1)
 	{
 		printf("video sequence don't have SPS/PPS NALU\n");
 		return -1;

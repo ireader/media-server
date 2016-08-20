@@ -7,7 +7,7 @@ static unsigned char packet[8 * 1024 * 1024];
 static FILE* aac;
 static FILE* h264;
 
-static void onFLV(void* param, int type, const void* data, unsigned int bytes, unsigned int pts, unsigned int dts)
+static void onFLV(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	if (FLV_AAC == type)
 	{
