@@ -133,18 +133,15 @@ static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 
 int rtmp_client_set_header(void* param, const void* audio, unsigned int abytes, const void* video, unsigned int vbytes)
 {
+	void* aptr, *vptr;
 	RTMPContext* ctx = (RTMPContext*)param;
-	ctx->streams[AUDIO_STREAM] = realloc(ctx->streams[AUDIO_STREAM], abytes + 1);
-	ctx->streams[VIDEO_STREAM] = realloc(ctx->streams[VIDEO_STREAM], vbytes + 1);
-	if (NULL == ctx->streams[AUDIO_STREAM] || NULL == ctx->streams[VIDEO_STREAM])
-	{
-		if(ctx->streams[AUDIO_STREAM])
-			free(ctx->streams[AUDIO_STREAM]);
-		if(ctx->streams[VIDEO_STREAM])
-			free(ctx->streams[VIDEO_STREAM]);
+	aptr = realloc(ctx->streams[AUDIO_STREAM], abytes + 1);
+	vptr = realloc(ctx->streams[VIDEO_STREAM], vbytes + 1);
+	if (NULL == aptr || NULL == vptr)
 		return ENOMEM;
-	}
 
+	ctx->streams[AUDIO_STREAM] = aptr;
+	ctx->streams[VIDEO_STREAM] = vptr;
 	if(abytes > 0)
 		memcpy(ctx->streams[AUDIO_STREAM], audio, abytes);
 	if(vbytes > 0)
