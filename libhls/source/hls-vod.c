@@ -19,7 +19,7 @@
 
 struct hls_vod_t
 {
-	unsigned int m3u8seq; // start from 0
+	uint64_t m3u8seq; // start from 0
 
 	locker_t locker;
 	struct list_head root;
@@ -43,7 +43,7 @@ struct hls_segments_t
 {
 	struct list_head link;
 	struct hls_segment_t segments[N_SEGMENT];
-	int num;
+	size_t num;
 };
 
 static void* hls_ts_alloc(void* param, size_t bytes)
@@ -89,7 +89,7 @@ static void* hls_ts_create(struct hls_vod_t* hls)
 	return mpeg_ts_create(&handler, hls);
 }
 
-void* hls_vod_create(unsigned int duration, hls_vod_handler handler, void* param)
+void* hls_vod_create(int64_t duration, hls_vod_handler handler, void* param)
 {
 	struct hls_vod_t* hls;
 	hls = (struct hls_vod_t*)malloc(sizeof(*hls));
@@ -167,7 +167,7 @@ static struct hls_segment_t* hls_segment_fetch(struct hls_vod_t* hls)
 	return s->segments + s->num++;
 }
 
-int hls_vod_input(void* p, int avtype, const void* data, unsigned int bytes, int64_t pts, int64_t dts)
+int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts)
 {
 	int r;
 	struct hls_vod_t* hls;
@@ -214,9 +214,9 @@ int hls_vod_input(void* p, int avtype, const void* data, unsigned int bytes, int
 	return mpeg_ts_write(hls->ts, avtype, pts * 90, dts * 90, data, bytes);
 }
 
-int hls_vod_count(void* p)
+size_t hls_vod_count(void* p)
 {
-	int n;
+	size_t n;
 	struct hls_vod_t* hls;
 	struct list_head* link;
 	struct hls_segments_t* seg;
@@ -232,14 +232,15 @@ int hls_vod_count(void* p)
 	return n;
 }
 
-int hls_vod_m3u8(void* p, char* m3u8, int bytes)
+size_t hls_vod_m3u8(void* p, char* m3u8, size_t bytes)
 {
-	int i, n;
+	int r;
+	size_t i, n;
 	struct hls_vod_t* hls;
 	struct list_head* link;
 	hls = (struct hls_vod_t*)p;
 	
-	n = snprintf(m3u8, bytes,
+	r = snprintf(m3u8, bytes,
 		"#EXTM3U\n" // MUST
 		"#EXT-X-VERSION:3\n" // Optional
 		"#EXT-X-TARGETDURATION:%" PRId64 "\n" // MUST, decimal-integer, in seconds
@@ -247,7 +248,10 @@ int hls_vod_m3u8(void* p, char* m3u8, int bytes)
 //		"#EXT-X-MEDIA-SEQUENCE:0\n", // VOD
 //		"#EXT-X-ALLOW-CACHE:NO\n"
 		, (hls->target_duration+999)/1000);
+	if (r <= 0)
+		return 0;
 
+	n = r;
 	list_for_each(link, &hls->root)
 	{
 		struct hls_segments_t* segments;
