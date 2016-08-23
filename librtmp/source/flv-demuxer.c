@@ -181,6 +181,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 		if (0 == data[1])
 		{
 			aac_adts_from_AudioSpecificConfig(data + 2, tag->datasize - 2, &flv->adts);
+			flv->handler(flv->param, FLV_AAC_HEADER, data + 2, tag->datasize - 2, tag->timestamp, tag->timestamp);
 		}
 		else
 		{
@@ -231,7 +232,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				assert(sizeof(flv->ps) > tag->datasize + 128);
 				if (sizeof(flv->ps) > tag->datasize + 128)
 					flv->pslen = AVCDecoderConfigurationRecord(data + 5, tag->datasize - 5, flv->ps);
-				//flv->handler(flv->param, FLV_AVC_CONFIG, data + 5, tag->datasize - 5, tag->timestamp, tag->timestamp);
+				flv->handler(flv->param, FLV_AVC_HEADER, data + 5, tag->datasize - 5, tag->timestamp, tag->timestamp);
 			}
 		}
 		else
