@@ -14,8 +14,7 @@ INCLUDES = . \
 					./include \
 					../libmpeg/include \
 					$(ROOT)/libhttp/include \
-					$(ROOT)/include \
-					$(ROOT)/video
+					$(ROOT)/include
 
 #-------------------------------Source-------------------------------
 #
