@@ -54,7 +54,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 		if(adp->OPCR_flag)
 		{
-			adp->original_program_clock_reference_base = (data[i] << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
+			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
 
 			i += 6;
