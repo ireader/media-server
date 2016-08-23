@@ -22,6 +22,7 @@ typedef struct _RTMPContext
 	RTMPPacket pkt;
 	char url[N_URL];
 
+	int send_sequence_header;
 	void* streams[N_STREAM];
 	size_t stream_bytes[N_STREAM];
 
@@ -122,9 +123,11 @@ static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 		if (!RTMP_ConnectStream(ctx->rtmp, 0))
 			return -1;
 
-		if (!rtmp_client_send_first(ctx, ctx->streams[AUDIO_STREAM], ctx->stream_bytes[AUDIO_STREAM], ctx->streams[VIDEO_STREAM], ctx->stream_bytes[VIDEO_STREAM], packet->m_nTimeStamp))
-			return -1;
+		ctx->send_sequence_header = 1;
 	}
+
+	if (ctx->send_sequence_header && !rtmp_client_send_first(ctx, ctx->streams[AUDIO_STREAM], ctx->stream_bytes[AUDIO_STREAM], ctx->streams[VIDEO_STREAM], ctx->stream_bytes[VIDEO_STREAM], packet->m_nTimeStamp))
+		return -1;
 
 	packet->m_hasAbsTimestamp = TRUE;
 	packet->m_nInfoField2 = ctx->rtmp->m_stream_id;
@@ -148,6 +151,7 @@ int rtmp_client_set_header(void* param, const void* audio, unsigned int abytes, 
 		memcpy(ctx->streams[VIDEO_STREAM], video, vbytes);
 	ctx->stream_bytes[AUDIO_STREAM] = abytes;
 	ctx->stream_bytes[VIDEO_STREAM] = vbytes;
+	ctx->send_sequence_header = 1;
 	return 0;
 }
 
@@ -335,5 +339,6 @@ static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, unsigned 
 		r = rtmp_client_send_AudioSpecificConfig(ctx, audio, abytes, pts);
 	}
 
+	ctx->send_sequence_header = r; // clear sequence header flags
 	return r;
 }
