@@ -45,8 +45,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 		if(adp->PCR_flag)
 		{
-			adp->program_clock_reference_base = data[i];
-			adp->program_clock_reference_base = (adp->program_clock_reference_base << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
+			adp->program_clock_reference_base = ((uint64_t)data[i] << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
 
 			i += 6;
@@ -54,7 +53,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 		if(adp->OPCR_flag)
 		{
-			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | (data[i+1] << 17) | (data[i+2] << 9) | (data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
+			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
 
 			i += 6;
@@ -124,7 +123,7 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 static uint8_t s_video[1024*1024];
 static uint8_t s_audio[1024*1024];
 
-int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
+int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void* param)
 {
 	uint32_t i, j, k;
 	int64_t t;
@@ -141,15 +140,18 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
     memset(&pkhd, 0, sizeof(pkhd));
 	assert(0x47 == data[0]); // sync_byte
 	PID = ((data[1] << 8) | data[2]) & 0x1FFF;
+	pkhd.transport_error_indicator = (data[1] >> 7) & 0x01;
+	pkhd.payload_unit_start_indicator = (data[1] >> 6) & 0x01;
+	pkhd.transport_priority = (data[1] >> 5) & 0x01;
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
 
-	printf("-----------------------------------------------\n");
-	printf("packet: %0x %0x %0x %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3]);
+//	printf("-----------------------------------------------\n");
+//	printf("PID[%u]: Start:%u, Priority:%u, Scrambler:%u, AF: %u, CC: %u\n", PID, pkhd.payload_unit_start_indicator, pkhd.transport_priority, pkhd.transport_scrambling_control, pkhd.adaptation_field_control, pkhd.continuity_counter);
 
 	i = 4;
-	if(0x02 == pkhd.adaptation_field_control || 0x03 == pkhd.adaptation_field_control)
+	if(0x02 & pkhd.adaptation_field_control)
 	{
 		i += ts_packet_adaptation(data + 4, bytes - 4, &pkhd.adaptation);
 
@@ -160,7 +162,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 		}
 	}
 
-	if(0x01 == pkhd.adaptation_field_control || 0x03 == pkhd.adaptation_field_control)
+	if(0x01 & pkhd.adaptation_field_control)
 	{
 		if(0x00 == PID)
 		{
@@ -190,8 +192,24 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes)
 					{
 						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						{
-                            if(!tsctx.pes[k].payload)
+							if(!tsctx.pes[k].payload)
                                 tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].avtype) ? s_video : s_audio;
+
+							if (/*PSI_STREAM_H264 == tsctx.pes[k].avtype && */tsctx.pes[k].payload_len > 0)
+							{
+								//static FILE* fp = NULL;
+								//if (NULL == fp)
+								//	fp = fopen("video.h264", "wb");
+
+								if (tsctx.pes[k].payload[4] == 0x09)
+								{
+									assert(0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3]);
+									handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6);
+								}
+								else
+									handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload, tsctx.pes[k].payload_len);
+								//fwrite(tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6, 1, fp);
+							}
 
                             pes_read(data + i, bytes - i, &psm, &tsctx.pes[k]);
 

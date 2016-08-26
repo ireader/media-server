@@ -20,18 +20,25 @@ static void ts_write(void* param, const void* packet, size_t bytes)
 	fwrite(packet, bytes, 1, (FILE*)param);
 }
 
+extern  "C" size_t mpeg_ts_h264(void* h264, size_t bytes);
+
+static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+{
+	mpeg_ts_write(param, avtype, pts, dts, data, bytes);
+}
+
 static void mpeg_ts_file(const char* file, void* ts)
 {
 	unsigned char ptr[188];
 	FILE* fp = fopen(file, "rb");
 	while (1 == fread(ptr, sizeof(ptr), 1, fp))
 	{
-		mpeg_ts_packet_dec(ptr, sizeof(ptr));
+		mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, ts);
 	}
 	fclose(fp);
 }
 
-static int mpeg_ts_test()
+int mpeg_ts_test()
 {
 	FILE* fp = fopen("test/apple.ts", "wb");
 	struct mpeg_ts_func_t tshandler;
@@ -41,7 +48,7 @@ static int mpeg_ts_test()
 	void* ts = mpeg_ts_create(&tshandler, fp);
 
 	mpeg_ts_file("test/fileSequence0.ts", ts);
-
+	
 	mpeg_ts_destroy(ts);
 	fclose(fp);
 	return 0;

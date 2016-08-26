@@ -74,7 +74,7 @@ size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)
 
 size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 {
-	// 2.4.4.8 Program map table
+	// 2.4.4.8 Program map table (p68)
 	// Table 2-33
 
 	uint32_t i = 0;
@@ -99,13 +99,14 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	data[7] = 0x00;
 
 	// reserved '111'
-	// PCR_PID 15-bits 0x1FFF
+	// PCR_PID 13-bits 0x1FFF
 	nbo_w16(data + 8, (uint16_t)(0xE000 | pmt->PCR_PID));
 
 	// reserved '1111'
-	// program_info_lengt 12-bits
+	// program_info_lengt 12-bits, the first two bits of which shall be '00'.
+	assert(pmt->pminfo_len < 0x400);
 	nbo_w16(data + 10, (uint16_t)(0xF000 | pmt->pminfo_len));
-	if(pmt->pminfo_len > 0)
+	if(pmt->pminfo_len > 0 && pmt->pminfo_len < 0x400)
 	{
 		// fill program info
 		assert(pmt->pminfo);
@@ -114,7 +115,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 
 	// streams
 	p = data + 12 + pmt->pminfo_len;
-	for(i = 0; i < pmt->stream_count; i++)
+	for(i = 0; i < pmt->stream_count && p - data < 1021 - 4 - 5 - pmt->streams[i].esinfo_len; i++)
 	{
 		// stream_type
 		*p = (uint8_t)pmt->streams[i].avtype;

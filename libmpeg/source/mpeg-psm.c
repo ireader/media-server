@@ -128,7 +128,6 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 
 	// crc32
 	crc = crc32(0xffffffff, data, j);
-	crc = 0;
 	data[j+3] = (uint8_t)((crc >> 24) & 0xFF);
 	data[j+2] = (uint8_t)((crc >> 16) & 0xFF);
 	data[j+1] = (uint8_t)((crc >> 8) & 0xFF);

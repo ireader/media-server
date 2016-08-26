@@ -8,70 +8,74 @@
 
 typedef struct _ts_adaptation_field_t
 {
-	uint32_t adaptation_field_length : 8;
-	uint32_t discontinuity_indicator : 1;
-	uint32_t random_access_indicator : 1;
-	uint32_t elementary_stream_priority_indicator : 1;
-	uint32_t PCR_flag : 1;
-	uint32_t OPCR_flag : 1;
-	uint32_t splicing_point_flag : 1;
-	uint32_t transport_private_data_flag : 1;
-	uint32_t adaptation_field_extension_flag : 1;
+	unsigned int adaptation_field_length : 8;
+	unsigned int discontinuity_indicator : 1;
+	unsigned int random_access_indicator : 1;
+	unsigned int elementary_stream_priority_indicator : 1;
+	unsigned int PCR_flag : 1;
+	unsigned int OPCR_flag : 1;
+	unsigned int splicing_point_flag : 1;
+	unsigned int transport_private_data_flag : 1;
+	unsigned int adaptation_field_extension_flag : 1;
 
-	int64_t program_clock_reference_base;
-	uint32_t program_clock_reference_extension;
+	int64_t program_clock_reference_base; // 33-bits
+	unsigned int program_clock_reference_extension; // 9-bits
 
-	int64_t original_program_clock_reference_base;
-	uint32_t original_program_clock_reference_extension;
+	int64_t original_program_clock_reference_base; // 33-bits
+	unsigned int original_program_clock_reference_extension; // 9-bits
 
-	uint32_t splice_countdown : 8;
+	unsigned int splice_countdown : 8;
 
-	uint32_t transport_private_data_length : 8;
+	unsigned int transport_private_data_length : 8;
 
-	uint32_t adaptation_field_extension_length : 8;
-	uint32_t ltw_flag : 1;
-	uint32_t piecewise_rate_flag : 1;
-	uint32_t seamless_splice_flag : 1;
+	unsigned int adaptation_field_extension_length : 8;
+	unsigned int ltw_flag : 1;
+	unsigned int piecewise_rate_flag : 1;
+	unsigned int seamless_splice_flag : 1;
 
-	uint32_t ltw_valid_flag : 1;
-	uint32_t ltw_offset : 15;
+	unsigned int ltw_valid_flag : 1;
+	unsigned int ltw_offset : 15;
 
-	uint32_t piecewise_rate : 22;
+	unsigned int piecewise_rate : 22;
 
-	uint32_t Splice_type : 4;
+	unsigned int Splice_type : 4;
 	int64_t DTS_next_AU;
 } ts_adaptation_field_t;
 
 typedef struct _ts_packet_header_t
 {
-	uint32_t transport_scrambling_control : 2;
-	uint32_t adaptation_field_control : 2;
-	uint32_t continuity_counter : 4;
+	unsigned int transport_error_indicator : 1;
+	unsigned int payload_unit_start_indicator : 1;
+	unsigned int transport_priority : 1;
+
+	unsigned int transport_scrambling_control : 2;
+	unsigned int adaptation_field_control : 2;
+	unsigned int continuity_counter : 4;
 
 	ts_adaptation_field_t adaptation;
 } ts_packet_header_t;
 
 typedef struct _pmt_t
 {
-	uint32_t pid;		// PID : 13 [0x0010, 0x1FFE]
-	uint32_t pn;		// program_number: 16 [1, 0xFFFF]
-	uint32_t ver;		// version_number : 5
-	uint32_t cc;		// continuity_counter : 4
-	uint32_t PCR_PID;	// 13-bits
-	uint32_t pminfo_len;// program_info_length : 12
+	unsigned int pid;		// PID : 13 [0x0010, 0x1FFE]
+	unsigned int pn;		// program_number: 16 [1, 0xFFFF]
+	unsigned int ver;		// version_number : 5
+	unsigned int cc;		// continuity_counter : 4
+	unsigned int PCR_PID;	// 13-bits
+	unsigned int pminfo_len;// program_info_length : 12
 	uint8_t* pminfo;	// program_info;
 
-	uint32_t stream_count;
+	unsigned int stream_count;
 	pes_t *streams;
 } pmt_t;
 
 typedef struct _pat_t
 {
-	uint32_t tsid;	// transport_stream_id : 16;
-	uint32_t ver;	// version_number : 5;
-	uint32_t cc;	//continuity_counter : 4;
+	unsigned int tsid;	// transport_stream_id : 16;
+	unsigned int ver;	// version_number : 5;
+	unsigned int cc;	//continuity_counter : 4;
 
-	uint32_t pmt_count;
+	unsigned int pmt_count;
 	pmt_t *pmt;
 } pat_t;
 
@@ -89,7 +93,7 @@ enum ETS_PID
 };
 
 // 2.4.4.4 Table_id assignments
-// Table 2-31 ¨C table_id assignment values(p61)
+// Table 2-31 ¨C table_id assignment values(p66/p39)
 enum EPAT_TID
 {
 	PAT_TID_PAS				= 0x00, // program_association_section
