@@ -163,11 +163,11 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	// '10'
 	// PES_scrambling_control '00'
 	// PES_priority '0'
-	// data_alignment_indicator '0' ('1' for subtitle data)
+	// data_alignment_indicator '1'
 	// copyright '0'
 	// original_or_copy '0'
 	//data[6] = SUBTITLE ? 0x84 : 0x80;
-	data[6] = 0x80;
+	data[6] = 0x84;
 
 	// PTS_DTS_flag 'xx'
 	// ESCR_flag '0'
@@ -178,12 +178,12 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	// PES_extension_flag '0'
 	if(pts)
 	{
-		flags |= 0x80;
+		flags |= 0x80;  // pts
 		len += 5;
 	}
-	if(PES_SID_VIDEO==data[3] && dts /*&& dts != pts*/)
+	if(PES_SID_VIDEO==data[3])
 	{
-		flags |= 0x40;
+		flags |= 0x40;  // dts
 		len += 5;
 	}
 	data[7] = flags;
@@ -194,19 +194,19 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	p = data + 9;
 	if(flags & 0x80)
 	{
-		*p++ = ((flags & 0xFF)>>2) | ((pts >> 29) & 0x0E) | 0x01;
+		*p++ = ((flags >> 2) & 0x30) | ((pts >> 30) & 0x07) | 0x01;
 		*p++ = (pts >> 22) & 0xFF;
 		*p++ = 0x01 | ((pts >> 14) & 0xFE);
-		*p++ = (pts >> 7) & 0xFF;;
+		*p++ = (pts >> 7) & 0xFF;
 		*p++ = 0x01 | ((pts << 1) & 0xFE);
 	}
 
 	if(flags & 0x40)
 	{
-		*p++ = 0x11 | ((dts >> 29) & 0x0E);
+		*p++ = 0x11 | ((dts >> 30) & 0x07);
 		*p++ = (dts >> 22) & 0xFF;
 		*p++ = 0x01 | ((dts >> 14) & 0xFE);
-		*p++ = (dts >> 7) & 0xFF;;
+		*p++ = (dts >> 7) & 0xFF;
 		*p++ = 0x01 | ((dts << 1) & 0xFE);
 	}
 
