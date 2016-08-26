@@ -201,7 +201,7 @@ int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigne
 	out[4] = compositionTimeOffset & 0xFF;
 
 	ctx->pkt.m_packetType = RTMP_PACKET_TYPE_VIDEO; // video
-	ctx->pkt.m_nTimeStamp = pts;
+	ctx->pkt.m_nTimeStamp = dts;
 	ctx->pkt.m_nChannel = 4;
 	ctx->pkt.m_headerType = RTMP_PACKET_SIZE_LARGE;
 
