@@ -261,6 +261,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				nalu = p[flv->video.nalu] & 0x1f;
 				if (H264_NALU_SPS == nalu || H264_NALU_PPS == nalu)
 				{
+					//flv->data[k++] = 0; // SPS/PPS add zero_byte(ITU H.264 B.1.2 Byte stream NAL unit semantics)
 					sps_pps_flag = 1;
 				}
 				else if (H264_NALU_IDR == nalu && 0 == sps_pps_flag)
@@ -271,15 +272,15 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				}
 
 				// nalu start code
-				flv->data[k] = flv->data[k+1] = flv->data[k+2] = 0x00;
-				flv->data[k+3] = 0x01;
+				flv->data[k] = flv->data[k + 1] = flv->data[k + 2] = 0x00;
+				flv->data[k + 3] = 0x01;
 				memcpy(flv->data + k + 4, p + flv->video.nalu, bytes);
 
 				k += bytes + 4;
 				p += flv->video.nalu + bytes;
 			}
 
-			flv->handler(flv->param, FLV_AVC, flv->data, k, tag->timestamp, tag->timestamp - compositionTime);
+			flv->handler(flv->param, FLV_AVC, flv->data, k, tag->timestamp + compositionTime, tag->timestamp);
 		}
 	}
 	else
