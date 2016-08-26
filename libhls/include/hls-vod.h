@@ -13,7 +13,7 @@ extern "C" {
 /// @param[out] name saved file name
 typedef int (*hls_vod_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t duration, uint64_t seq, char* name);
 
-/// param[in] duration ts file duration(millisecond), 0-defalut duration(4000s)
+/// param[in] duration ts file duration(millisecond), 0-defalut duration(10000s)
 void* hls_vod_create(int64_t duration, hls_vod_handler handler, void* param);
 
 void hls_vod_destroy(void* hls);

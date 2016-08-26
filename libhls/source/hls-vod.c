@@ -1,3 +1,7 @@
+// https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StreamingMediaGuide/FrequentlyAskedQuestions/FrequentlyAskedQuestions.html
+// 10. What settings are recommended for a typical HTTP stream, with alternates, for use with the media segmenter from Apple?
+// A target duration (length of the media segments) of 10 seconds is recommended
+
 #include "hls-vod.h"
 #include "hls-param.h"
 #include "hls-segment.h"
@@ -106,7 +110,7 @@ void* hls_vod_create(int64_t duration, hls_vod_handler handler, void* param)
 
 	LIST_INIT_HEAD(&hls->root);
 	locker_create(&hls->locker);
-	hls->duration = (0 == duration) ? HLS_MIN_DURATION : duration;
+	hls->duration = (0 == duration) ? HLS_DURATION*1000 : duration;
 	hls->handler = handler;
 	hls->param = param;
 	return hls;

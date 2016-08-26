@@ -37,7 +37,7 @@ static void hls_live_write(void* param, const void* packet, size_t bytes)
 	}
 }
 
-static struct hls_live_t* hls_live_create(const char* name)
+static struct hls_live_t* hls_live_create(const char* name, int64_t duration)
 {
 	struct hls_live_t* live;
 	struct mpeg_ts_func_t func;
@@ -59,6 +59,7 @@ static struct hls_live_t* hls_live_create(const char* name)
 
     strncpy(live->name, name, MAX_NAME-1);
     live->pts = 900000;
+	live->duration = (0 == duration) ? HLS_DURATION * 1000 : duration;
     live->refcnt = 2; // one for global list
     live->m3u8seq = 0;
     live->vbuffer = (unsigned char*)(live + 1);
@@ -135,7 +136,7 @@ struct hls_live_t* hls_live_fetch(const char* name)
         return live;
     }
 
-	return hls_live_create(name);
+	return hls_live_create(name, 2000);
 }
 
 int hls_live_release(struct hls_live_t* live)
@@ -161,7 +162,7 @@ int hls_live_m3u8(struct hls_live_t* live, char* m3u8)
 		"#EXT-X-TARGETDURATION:%d\n" // MUST
 		"#EXT-X-MEDIA-SEQUENCE:%u\n", // Live
 //		"#EXT-X-ALLOW-CACHE:NO\n",
-		HLS_MAX_DURATION,
+		HLS_DURATION,
         MAX(0, live->m3u8seq - live->file_count));
 
 	for(i = 0; i < (int)live->file_count; i++)
@@ -212,7 +213,7 @@ int hls_live_input(struct hls_live_t* live, const void* data, size_t bytes, int 
     duration = file ? (int)(live->wtime - file->tcreate) : 0;
     //duration = file ? (int)(live->pts - live->file->pts) : 0;
 
-	if( (!file || duration >= HLS_MIN_DURATION*1000) && HLS_VIDEO_H264==stream && h264_idr(data, bytes) )
+	if( (!file || duration >= live->duration) && HLS_VIDEO_H264==stream && h264_idr(data, bytes) )
 	{
 		// update m3u8 file list
 		if(file)

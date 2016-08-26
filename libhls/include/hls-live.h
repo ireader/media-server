@@ -29,6 +29,7 @@ struct hls_live_t
 
 	void* ts;
     int64_t pts;
+	int64_t duration;
 	time64_t rtime; // last read time
 	time64_t wtime; // last write time
 

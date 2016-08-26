@@ -5,9 +5,7 @@
 // 3. What duration should media files be?
 // A duration of 10 seconds of media per file seems to strike a reasonable balance for most broadcast content.
 // http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8
-#define HLS_MAX_DURATION 5 // 10s, from Apple recommendation
-
-#define HLS_MIN_DURATION 4 // minimum file duration(seconds)
+#define HLS_DURATION 10 // 10s, from Apple recommendation
 
 // 4. How many files should be listed in the index file during a continuous, ongoing session?
 // The normal recommendation is 3, but the optimum number may be larger.

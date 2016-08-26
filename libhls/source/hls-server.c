@@ -89,9 +89,9 @@ static int hls_server_live_m3u8(struct hls_server_t *ctx, void* session, const c
         live->opened = 1; // TODO: close???
 	}
 
-	// VLC need at least 2-file
+	// VLC need at least 3-file
 	ltnow = time64_now();
-	while(live->file_count < 2 && time64_now() - ltnow < 2*HLS_MAX_DURATION*1000)
+	while(live->file_count < 2 && time64_now() - ltnow < HLS_DURATION *1000)
 	{
 		system_sleep(200);
 	}
