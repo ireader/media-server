@@ -29,9 +29,9 @@
 
 #define N_SPSPPS			4096
 
-#define H264_NALU_IDR		5 // Coded slice of an IDR picture
-#define H264_NALU_SPS		7 // Sequence parameter set
-#define H264_NALU_PPS		8 // Picture parameter set
+#define H264_NAL_IDR		5 // Coded slice of an IDR picture
+#define H264_NAL_SPS		7 // Sequence parameter set
+#define H264_NAL_PPS		8 // Picture parameter set
 
 struct flv_header_t
 {
@@ -57,7 +57,7 @@ struct flv_video_tag_t
 	uint8_t frame; // 1-key frame, 2-inter frame, 3-disposable inter frame(H.263 only), 4-generated key frame, 5-video info/command frame
 	uint8_t codecid; // 2-Sorenson H.263, 3-Screen video 4-On2 VP6, 7-AVC
 
-	uint8_t nalu; // flv nalu size
+	uint8_t nal; // flv nalu size
 };
 
 struct flv_tag_t
@@ -228,7 +228,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				//uint8_t profile = data[6];
 				//uint8_t flags = data[7];
 				//uint8_t level = data[8];
-				flv->video.nalu = (data[9] & 0x03) + 1;
+				flv->video.nal = (data[9] & 0x03) + 1;
 				assert(sizeof(flv->ps) > tag->datasize + 128);
 				if (sizeof(flv->ps) > tag->datasize + 128)
 					flv->pslen = AVCDecoderConfigurationRecord(data + 5, tag->datasize - 5, flv->ps);
@@ -246,25 +246,25 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 4 + flv->pslen))
 				return ENOMEM;
 
-			while (p + flv->video.nalu < end)
+			while (p + flv->video.nal < end)
 			{
 				int i;
-				uint8_t nalu;
+				uint8_t nal;
 				uint32_t bytes = 0;
-				for (i = 0; i < flv->video.nalu; i++)
+				for (i = 0; i < flv->video.nal; i++)
 					bytes = (bytes << 8) + p[i];
 
-				if (p + flv->video.nalu + bytes > end)
+				if (p + flv->video.nal + bytes > end)
 					break; // invalid nalu size
 
 				// insert SPS/PPS before IDR frame
-				nalu = p[flv->video.nalu] & 0x1f;
-				if (H264_NALU_SPS == nalu || H264_NALU_PPS == nalu)
+				nal = p[flv->video.nal] & 0x1f;
+				if (H264_NAL_SPS == nal || H264_NAL_PPS == nal)
 				{
 					//flv->data[k++] = 0; // SPS/PPS add zero_byte(ITU H.264 B.1.2 Byte stream NAL unit semantics)
 					sps_pps_flag = 1;
 				}
-				else if (H264_NALU_IDR == nalu && 0 == sps_pps_flag)
+				else if (H264_NAL_IDR == nal && 0 == sps_pps_flag)
 				{
 					sps_pps_flag = 1; // don't insert more than one-times
 					memcpy(flv->data + k, flv->ps, flv->pslen); //
@@ -274,10 +274,10 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				// nalu start code
 				flv->data[k] = flv->data[k + 1] = flv->data[k + 2] = 0x00;
 				flv->data[k + 3] = 0x01;
-				memcpy(flv->data + k + 4, p + flv->video.nalu, bytes);
+				memcpy(flv->data + k + 4, p + flv->video.nal, bytes);
 
 				k += bytes + 4;
-				p += flv->video.nalu + bytes;
+				p += flv->video.nal + bytes;
 			}
 
 			flv->handler(flv->param, FLV_AVC, flv->data, k, tag->timestamp + compositionTime, tag->timestamp);
@@ -291,6 +291,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 	return 0;
 }
 
+// http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
+// metadata keyframes/filepositions
 //static int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data)
 //{
 //	// FLV I-index

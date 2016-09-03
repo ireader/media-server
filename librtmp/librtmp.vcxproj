@@ -33,6 +33,7 @@
     <ClCompile Include="source\rtmp-client.c" />
     <ClCompile Include="source\rtmp-meta.c" />
     <ClCompile Include="source\rtmp-reader.c" />
+    <ClCompile Include="test\flv-reader-test.cpp" />
     <ClCompile Include="test\rtmp-reader-test.cpp" />
     <ClCompile Include="test\rtmp-sender-test.cpp" />
   </ItemGroup>

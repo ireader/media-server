@@ -1,5 +1,6 @@
 #include "rtmp-reader.h"
 #include "flv-demuxer.h"
+#include "flv-reader.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -19,13 +20,17 @@ static void onFLV(void* param, int type, const void* data, size_t bytes, uint32_
 	}
 }
 
-static void rtmp_read(const char* url)
+// flv_reader_test("53340.flv");
+void flv_reader_test(const char* file)
 {
-	void* rtmp = rtmp_reader_create(url);
+	aac = fopen("audio.aac", "wb");
+	h264 = fopen("video.h264", "wb");
+
+	void* reader = flv_reader_create(file);
 	void* flv = flv_demuxer_create(onFLV, NULL);
 
 	int r = 0;
-	while ((r = rtmp_reader_read(rtmp, packet, sizeof(packet))) > 0)
+	while ((r = flv_reader_read(reader, packet, sizeof(packet))) > 0)
 	{
 		int n = flv_demuxer_input(flv, packet, r);
 		if (n != r)
@@ -35,18 +40,7 @@ static void rtmp_read(const char* url)
 	}
 
 	flv_demuxer_destroy(flv);
-	rtmp_reader_destroy(rtmp);
-}
-
-// rtmp_reader_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
-static void rtmp_reader_test(const char* url)
-{
-	aac = fopen("audio.aac", "wb");
-	h264 = fopen("video.h264", "wb");
-
-	//socket_init();
-	rtmp_read(url);
-	//socket_cleanup();
+	flv_reader_destroy(reader);
 
 	fclose(aac);
 	fclose(h264);

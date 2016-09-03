@@ -70,7 +70,7 @@ void flv_reader_destroy(void* p)
 	if (flv->fp)
 		fclose(flv->fp);
 	
-	free(flv->fp);
+	free(flv);
 }
 
 int flv_reader_read(void* p, void* buffer, size_t bytes)

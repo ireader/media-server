@@ -1,5 +1,6 @@
 #include "rtmp-client.h"
-#include "h264-nalu.h"
+#include "h264-util.h"
+#include "h264-nal.h"
 #include "h264-sps.h"
 #include <assert.h>
 #include <memory.h>
@@ -10,8 +11,8 @@ struct H264Context
 {
 	uint8_t sps[1024];
 	uint8_t pps[1024];
-	uint32_t spsOffset;
-	uint32_t ppsOffset;
+	size_t spsOffset;
+	size_t ppsOffset;
 	uint8_t spsCount;
 	uint8_t ppsCount;
 };
@@ -22,12 +23,12 @@ static void rtmp_write_int16(uint8_t* p, uint32_t bytes)
 	p[1] = bytes & 0xFF;
 }
 
-static void rtmp_client_sps_handler(void* param, const unsigned char* nalu, unsigned int bytes)
+static void rtmp_client_sps_handler(void* param, const void* nalu, size_t bytes)
 {
 	struct H264Context* ctx = (struct H264Context*)param;
-	int type = nalu[0] & 0x1f;
+	int type = ((unsigned char*)nalu)[0] & 0x1f;
 
-	if (H264_NALU_SPS == type)
+	if (H264_NAL_SPS == type)
 	{
 		assert(ctx->spsOffset + bytes + 2 <= sizeof(ctx->sps));
 		if (ctx->spsOffset + bytes + 2 <= sizeof(ctx->sps))
@@ -38,7 +39,7 @@ static void rtmp_client_sps_handler(void* param, const unsigned char* nalu, unsi
 			++ctx->spsCount;
 		}
 	}
-	else if (H264_NALU_PPS == type)
+	else if (H264_NAL_PPS == type)
 	{
 		assert(ctx->ppsOffset + bytes + 2 <= sizeof(ctx->pps));
 		if (ctx->ppsOffset + bytes + 2 <= sizeof(ctx->pps))
@@ -49,28 +50,28 @@ static void rtmp_client_sps_handler(void* param, const unsigned char* nalu, unsi
 			++ctx->ppsCount;
 		}
 	}
-	//else if (H264_NALU_SPS_EXTENSION == type || H264_NALU_SPS_SUBSET == type)
+	//else if (H264_NAL_SPS_EXTENSION == type || H264_NAL_SPS_SUBSET == type)
 	//{
 	//}
 }
 
-int rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video, unsigned int bytes)
+size_t rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video, size_t bytes)
 {
-	int i;
+	size_t i;
 	struct h264_sps_t sps;
 	struct H264Context ctx;
 	uint8_t *p = (uint8_t*)out;
 
 	memset(&ctx, 0, sizeof(struct H264Context));
-	h264_nalu((const unsigned char*)video, bytes, rtmp_client_sps_handler, &ctx);
+	h264_stream(video, bytes, rtmp_client_sps_handler, &ctx);
 	if (ctx.spsCount < 1)
 	{
 		printf("video sequence don't have SPS/PPS NALU\n");
-		return -1;
+		return 0;
 	}
 
 	memset(&sps, 0, sizeof(struct h264_sps_t));
-	h264_parse_sps(ctx.sps + 2, (ctx.sps[0] << 8) | ctx.sps[1], &sps);
+	h264_sps_parse(ctx.sps + 2, (ctx.sps[0] << 8) | ctx.sps[1], &sps);
 
 	// AVCDecoderConfigurationRecord
 	// ISO/IEC 14496-15:2010

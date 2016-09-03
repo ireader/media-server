@@ -72,6 +72,9 @@
     <ClCompile Include="source\flv-reader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test\flv-reader-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">

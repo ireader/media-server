@@ -4,7 +4,7 @@
 
 typedef unsigned char uint8_t;
 
-int rtmp_client_make_AudioSpecificConfig(void* out, const void* audio, unsigned int bytes)
+size_t rtmp_client_make_AudioSpecificConfig(void* out, const void* audio, size_t bytes)
 {
 	uint8_t aacProfile, aacFrequence, aacChannel;
 	const uint8_t* aac = (const uint8_t*)audio;
@@ -13,7 +13,7 @@ int rtmp_client_make_AudioSpecificConfig(void* out, const void* audio, unsigned 
 	if (bytes < 7)
 	{
 		printf("audio don't have ADTS header\n");
-		return -1;
+		return 0;
 	}
 
 	// AudioSpecificConfig

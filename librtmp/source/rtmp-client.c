@@ -2,14 +2,11 @@
 #include "librtmp/log.h"
 #include "librtmp/rtmp.h"
 #include "h264-sps.h"
-#include "h264-nalu.h"
 #include "h264-util.h"
 #include "cstringext.h"
 #include "sys/sock.h"
 #include <assert.h>
 #include <memory.h>
-//#pragma comment(lib, "libmpeg.lib")
-//#pragma comment(lib, "h264.lib")
 
 #define N_URL 1024
 #define N_STREAM 2
@@ -26,7 +23,7 @@ typedef struct _RTMPContext
 	void* streams[N_STREAM];
 	size_t stream_bytes[N_STREAM];
 
-	uint32_t capacity;
+	size_t capacity;
 } RTMPContext;
 
 static void rtmp_write_int32(uint8_t* p, uint32_t bytes)
@@ -95,7 +92,7 @@ void rtmp_client_destroy(void* p)
 	free(ctx);
 }
 
-static int rtmp_client_alloc(RTMPContext* ctx, uint32_t len)
+static int rtmp_client_alloc(RTMPContext* ctx, size_t len)
 {
 	if (len > ctx->capacity)
 	{
@@ -111,7 +108,7 @@ static int rtmp_client_alloc(RTMPContext* ctx, uint32_t len)
 	return 0;
 }
 
-static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, unsigned int abytes, const void* video, unsigned int vbytes, unsigned int pts);
+static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, size_t abytes, const void* video, size_t vbytes, uint32_t pts);
 
 static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 {
@@ -134,7 +131,7 @@ static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 	return TRUE==RTMP_SendPacket(ctx->rtmp, packet, 0) ? 0 : -1;
 }
 
-int rtmp_client_set_header(void* param, const void* audio, unsigned int abytes, const void* video, unsigned int vbytes)
+int rtmp_client_set_header(void* param, const void* audio, size_t abytes, const void* video, size_t vbytes)
 {
 	void* aptr, *vptr;
 	RTMPContext* ctx = (RTMPContext*)param;
@@ -155,27 +152,18 @@ int rtmp_client_set_header(void* param, const void* audio, unsigned int abytes, 
 	return 0;
 }
 
-static void rtmp_client_video_handler(void* param, const unsigned char* nalu, unsigned int bytes)
+static void rtmp_client_video_handler(void* param, const void* nalu, size_t bytes)
 {
 	RTMPContext* ctx = (RTMPContext*)param;
-	int type = nalu[0] & 0x1f;
+	rtmp_write_int32((uint8_t*)ctx->pkt.m_body + ctx->pkt.m_nBodySize, bytes);
+	memcpy(ctx->pkt.m_body + ctx->pkt.m_nBodySize + 4, nalu, bytes);
+	ctx->pkt.m_nBodySize += 4 + bytes;
 
-	if (H264_NALU_SPS == type || H264_NALU_PPS == type /*|| H264_NALU_SPS_EXTENSION == type || H264_NALU_SPS_SUBSET == type*/)
-	{
-		// filter sps/pps
-	}
-	else
-	{
-		rtmp_write_int32((uint8_t*)ctx->pkt.m_body + ctx->pkt.m_nBodySize, bytes);
-		memcpy(ctx->pkt.m_body + ctx->pkt.m_nBodySize + 4, nalu, bytes);
-		ctx->pkt.m_nBodySize += 4 + bytes;
-
-		if (H264_NALU_IDR == type)
-			ctx->pkt.m_body[0] = 0x17; // AVC key frame
-	}
+	if (5/*H264_NAL_IDR*/ == (((unsigned char*)nalu)[0] & 0x1f))
+		ctx->pkt.m_body[0] = 0x17; // AVC key frame
 }
 
-int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigned int pts, unsigned int dts)
+int rtmp_client_send_video(void* p, const void* video, size_t len, uint32_t pts, uint32_t dts)
 {
 	uint32_t compositionTimeOffset;
 	uint8_t *out;
@@ -189,7 +177,7 @@ int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigne
 	out[0] = 0x27; // AVC inter frame
 
 	ctx->pkt.m_nBodySize = 5;
-	h264_nalu((const unsigned char*)video, len, rtmp_client_video_handler, ctx);
+	h264_stream(video, len, rtmp_client_video_handler, ctx);
 	if (0 == ctx->pkt.m_body[0])
 		return -1; // don't have video data ???
 
@@ -208,7 +196,7 @@ int rtmp_client_send_video(void* p, const void* video, unsigned int len, unsigne
 	return rtmp_client_send(ctx, &ctx->pkt);
 }
 
-int rtmp_client_send_audio(void* rtmp, const void* audio, unsigned int len, unsigned int pts, unsigned int dts)
+int rtmp_client_send_audio(void* rtmp, const void* audio, size_t len, uint32_t pts, uint32_t dts)
 {
 	uint8_t *out;
 	unsigned int aacHeaderLen = 0;
@@ -249,7 +237,7 @@ void rtmp_client_getserver(void* rtmp, char ip[65])
 }
 
 char* rtmp_metadata_create(char* out, size_t len, int width, int height, int hasAudio);
-static int rtmp_client_send_meta(RTMPContext* ctx, int width, int height, int hasAudio, unsigned int pts)
+static int rtmp_client_send_meta(RTMPContext* ctx, int width, int height, int hasAudio, uint32_t pts)
 {
 	char* outend;
 	if (0 != rtmp_client_alloc(ctx, 1024 * 8))
@@ -266,7 +254,7 @@ static int rtmp_client_send_meta(RTMPContext* ctx, int width, int height, int ha
 	return RTMP_SendPacket(ctx->rtmp, &ctx->pkt, 0);
 }
 
-static int rtmp_client_send_AVCDecoderConfigurationRecord(RTMPContext* ctx, const void* data, unsigned int bytes, unsigned int pts)
+static int rtmp_client_send_AVCDecoderConfigurationRecord(RTMPContext* ctx, const void* data, size_t bytes, uint32_t pts)
 {
 	uint8_t *out;
 
@@ -290,7 +278,7 @@ static int rtmp_client_send_AVCDecoderConfigurationRecord(RTMPContext* ctx, cons
 	return RTMP_SendPacket(ctx->rtmp, &ctx->pkt, 0);
 }
 
-static int rtmp_client_send_AudioSpecificConfig(RTMPContext* ctx, const void* data, unsigned int bytes, unsigned int pts)
+static int rtmp_client_send_AudioSpecificConfig(RTMPContext* ctx, const void* data, size_t bytes, uint32_t pts)
 {
 	uint8_t *out;
 
@@ -311,7 +299,7 @@ static int rtmp_client_send_AudioSpecificConfig(RTMPContext* ctx, const void* da
 	return RTMP_SendPacket(ctx->rtmp, &ctx->pkt, 0);
 }
 
-static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, unsigned int abytes, const void* video, unsigned int vbytes, unsigned int pts)
+static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, size_t abytes, const void* video, size_t vbytes, uint32_t pts)
 {
 	int r = -1;
 	struct h264_sps_t sps;
@@ -322,7 +310,7 @@ static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, unsigned 
 	if (video && vbytes > 5 && (p[5] & 0x1F) > 0)
 	{
 		// get sps from AVCDecoderConfigurationRecord
-		if (0 == h264_parse_sps(p + 8,  (p[6] << 8) | p[7], &sps))
+		if (0 == h264_sps_parse(p + 8,  (p[6] << 8) | p[7], &sps))
 		{
 			r = rtmp_client_send_meta(ctx, (sps.pic_width_in_mbs_minus1 + 1) * 16, (sps.pic_height_in_map_units_minus1 + 1)*(2 - sps.frame_mbs_only_flag) * 16, (audio && abytes > 0) ? 1 : 0, pts);
 
