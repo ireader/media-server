@@ -10,6 +10,7 @@
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
+#include "cstringext.h"
 #include "h264-util.h"
 #include "ctypedef.h"
 #include <stdio.h>
@@ -36,8 +37,10 @@ struct hls_vod_t
 	uint64_t vpacket;		// video packet in segment
 	int64_t duration;		// user setting segment duration
 	int64_t target_duration;// maximum segment duration
-	int64_t pts;			// last packet pts
-	int64_t segment_pts;
+	int64_t pts_last;		// last packet pts
+	int64_t pts_first;		// segment first pts
+
+	int discontinue;		// EXT-X-DISCONTINUITY flag
 
 	hls_vod_handler handler;
 	void* param;
@@ -171,42 +174,47 @@ static struct hls_segment_t* hls_segment_fetch(struct hls_vod_t* hls)
 	return s->segments + s->num++;
 }
 
-int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts)
+static int hls_segment_new(struct hls_vod_t* hls, int64_t pts, int flags)
 {
-	int r;
-	struct hls_vod_t* hls;
 	struct hls_segment_t* seg;
+
+	seg = hls_segment_fetch(hls);
+	if (0 == seg)
+		return ENOMEM;
+
+	// fill file information
+	seg->pts = hls->pts_first;
+	seg->m3u8seq = hls->m3u8seq; // EXT-X-MEDIA-SEQUENCE
+	seg->duration = (flags ? hls->pts_last : pts) - hls->pts_first;
+	seg->discontinue = hls->discontinue; // EXT-X-DISCONTINUITY
+
+	// get segment name
+	return hls->handler(hls->param, hls->ptr, hls->bytes, seg->pts, seg->duration, seg->m3u8seq, seg->name);
+}
+
+int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
+{
+	struct hls_vod_t* hls;
 	hls = (struct hls_vod_t*)p;
 
-	if (0 == hls->bytes ||
-		(pts - hls->segment_pts > hls->duration &&  // duration check
+	if (0 == hls->bytes || flags ||
+		(pts - hls->pts_first > hls->duration &&  // duration check
 			// TODO: check sps/pps???
 			(0 == hls->vpacket || (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes)))))  // IDR-frame or audio only stream
 	{
 		if (hls->bytes > 0)
 		{
-			// new segment
-			seg = hls_segment_fetch(hls);
-			if (0 == seg)
-				return ENOMEM;
+			hls_segment_new(hls, pts, flags);
 
-			// fill file information
-			seg->pts = hls->segment_pts;
-			seg->m3u8seq = hls->m3u8seq++; // EXT-X-MEDIA-SEQUENCE
-			seg->duration = hls->pts - hls->segment_pts;
-			seg->discontinue = EXT_X_DISCONTINUITY(pts, hls->pts); // EXT-X-DISCONTINUITY
-			hls->target_duration = hls->target_duration > seg->duration ? hls->target_duration : seg->duration; // update EXT-X-TARGETDURATION
-			
-			// new file callback
-			r = hls->handler(hls->param, hls->ptr, hls->bytes, seg->pts, seg->duration, seg->m3u8seq, seg->name);
-			if (0 != r)
-				return r;
+			hls->target_duration = MAX(hls->target_duration, hls->pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
+			++hls->m3u8seq; // update sequence
 
 			// reset mpeg ts generator
 			mpeg_ts_reset(hls->ts);
 		}
 
-		hls->segment_pts = pts;
+		hls->discontinue = list_empty(&hls->root) ? 0 : EXT_X_DISCONTINUITY(pts, hls->pts_last); // EXT-X-DISCONTINUITY
+		hls->pts_first = pts;
 		hls->vpacket = 0;
 		hls->bytes = 0;
 	}
@@ -214,7 +222,7 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 	if (STREAM_VIDEO_H264 == avtype)
 		hls->vpacket++;
 
-	hls->pts = pts;
+	hls->pts_last = pts;
 	return mpeg_ts_write(hls->ts, avtype, pts * 90, dts * 90, data, bytes);
 }
 

@@ -20,8 +20,9 @@ void hls_vod_destroy(void* hls);
 
 /// @param[in] pts present timestamp in millisecond
 /// @param[in] dts decode timestamp in millisecond
+/// @param[in] flags 1-force new segment
 /// @return 0-ok, other-error
-int hls_vod_input(void* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts);
+int hls_vod_input(void* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
 /// @return HLS segment count
 size_t hls_vod_count(void* hls);

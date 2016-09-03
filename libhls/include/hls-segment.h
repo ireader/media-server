@@ -7,7 +7,7 @@ struct hls_segment_t
 	int64_t duration;	// segment duration (millisecond)
 
 	uint64_t m3u8seq;	// m3u8 file sequence number (base 0)
-	uint8_t discontinue; // EXT-X-DISCONTINUITY flag
+	int discontinue; // EXT-X-DISCONTINUITY flag
 
 	char name[128];
 };
