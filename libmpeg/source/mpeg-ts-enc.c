@@ -246,6 +246,12 @@ int mpeg_ts_write(void* ts, int avtype, int64_t pts, int64_t dts, const void* da
 		{
 			stream->pts = pts;
 			stream->dts = dts;
+
+			if (0x1FFF == tsctx->pat.pmt[0].PCR_PID ||
+				(0xE0 == (tsctx->pat.pmt[0].streams[i].sid&PES_SID_VIDEO) && tsctx->pat.pmt[0].PCR_PID != tsctx->pat.pmt[0].streams[i].pid))
+			{
+				tsctx->pat.pmt[0].PCR_PID = tsctx->pat.pmt[0].streams[i].pid;
+			}
 			break;
 		}
 	}
@@ -282,7 +288,7 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
     tsctx->pat.pmt[0].cc = 0;
     tsctx->pat.pmt[0].pminfo_len = 0;
     tsctx->pat.pmt[0].pminfo = NULL;
-    tsctx->pat.pmt[0].PCR_PID = 0x101; // 0x1FFF-don't set PCR
+    tsctx->pat.pmt[0].PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
 
     tsctx->pat.pmt[0].stream_count = 2; // H.264 + AAC
     tsctx->pat.pmt[0].streams = (pes_t*)(tsctx->pat.pmt + 1);

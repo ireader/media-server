@@ -38,7 +38,7 @@ static void mpeg_ts_file(const char* file, void* ts)
 	fclose(fp);
 }
 
-int mpeg_ts_test()
+void mpeg_ts_test()
 {
 	FILE* fp = fopen("test/apple.ts", "wb");
 	struct mpeg_ts_func_t tshandler;
@@ -51,5 +51,4 @@ int mpeg_ts_test()
 	
 	mpeg_ts_destroy(ts);
 	fclose(fp);
-	return 0;
 }
