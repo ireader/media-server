@@ -334,7 +334,7 @@ static int rtsp_parse_request_line(struct rtsp_context *ctx)
 				// sub-delims  = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 				// 2.3.  Unreserved Characters
 				// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
-				assert(isalnum(ctx->raw[ctx->offset]) || strchr("-._~:/?#[]@!$&'()*+,;=", ctx->raw[ctx->offset]) || || '%' == ctx->raw[ctx->offset]);
+				assert(isalnum(ctx->raw[ctx->offset]) || strchr("-._~:/?#[]@!$&'()*+,;=", ctx->raw[ctx->offset]) || '%' == ctx->raw[ctx->offset]);
 			}
 			break;
 
