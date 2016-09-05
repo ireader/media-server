@@ -254,6 +254,10 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				for (i = 0; i < flv->video.nal; i++)
 					bytes = (bytes << 8) + p[i];
 
+				// fix 0x00 00 00 01 => flv nalu size
+				if (1 == bytes)
+					bytes = end - p - flv->video.nal;
+
 				if (p + flv->video.nal + bytes > end)
 					break; // invalid nalu size
 
