@@ -20,7 +20,7 @@
 #define N_SEGMENT	50
 #define N_TS_PACKET 188
 
-#define EXT_X_DISCONTINUITY(x, y) ( ((x) < (y) || (x) - (y) > 30000) ? 1 : 0 )
+#define EXT_X_DISCONTINUITY(x, y) ( abs((x) - (y)) > 30000) ? 1 : 0 )
 
 struct hls_vod_t
 {
