@@ -221,6 +221,24 @@ int mpeg_ts_write(void* ts, int avtype, int64_t pts, int64_t dts, const void* da
 
 	tsctx = (mpeg_ts_enc_context_t*)ts;
 
+	// Elementary Stream
+	for (i = 0; i < tsctx->pat.pmt[0].stream_count; i++)
+	{
+		stream = &tsctx->pat.pmt[0].streams[i];
+		if (avtype == (int)stream->avtype)
+		{
+			stream->pts = pts;
+			stream->dts = dts;
+
+			if (0x1FFF == tsctx->pat.pmt[0].PCR_PID ||
+				(0xE0 == (tsctx->pat.pmt[0].streams[i].sid&PES_SID_VIDEO) && tsctx->pat.pmt[0].PCR_PID != tsctx->pat.pmt[0].streams[i].pid))
+			{
+				tsctx->pat.pmt[0].PCR_PID = tsctx->pat.pmt[0].streams[i].pid;
+			}
+			break;
+		}
+	}
+
 	if(0 == tsctx->pat_period)
 	{
 		// PAT(program_association_section)
@@ -237,24 +255,6 @@ int mpeg_ts_write(void* ts, int avtype, int64_t pts, int64_t dts, const void* da
 	}
 
 	tsctx->pat_period = (tsctx->pat_period + 1) % 200;
-
-	// Elementary Stream
-	for(i = 0; i < tsctx->pat.pmt[0].stream_count; i++)
-	{
-		stream = &tsctx->pat.pmt[0].streams[i];
-		if(avtype == (int)stream->avtype)
-		{
-			stream->pts = pts;
-			stream->dts = dts;
-
-			if (0x1FFF == tsctx->pat.pmt[0].PCR_PID ||
-				(0xE0 == (tsctx->pat.pmt[0].streams[i].sid&PES_SID_VIDEO) && tsctx->pat.pmt[0].PCR_PID != tsctx->pat.pmt[0].streams[i].pid))
-			{
-				tsctx->pat.pmt[0].PCR_PID = tsctx->pat.pmt[0].streams[i].pid;
-			}
-			break;
-		}
-	}
 
 	ts_write_pes(tsctx, stream, data, bytes);
 	return 0;
