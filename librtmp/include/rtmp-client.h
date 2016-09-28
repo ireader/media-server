@@ -36,7 +36,7 @@ extern "C" {
 
 	/// creaate AVCDecoderConfigurationRecord from H.264 sps/pps nalu(all nalu must start with 00 00 00 01)
 	///@return 0-error
-	size_t rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video, size_t bytes);
+	size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t bytes, void* out, size_t osize);
 
 #if defined(__cplusplus)
 }
