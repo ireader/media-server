@@ -55,7 +55,7 @@ static void rtmp_client_sps_handler(void* param, const void* nalu, size_t bytes)
 	//}
 }
 
-size_t rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* video, size_t bytes)
+size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t bytes, void* out, size_t osize)
 {
 	size_t i;
 	struct h264_sps_t sps;
@@ -69,6 +69,9 @@ size_t rtmp_client_make_AVCDecoderConfigurationRecord(void* out, const void* vid
 		printf("video sequence don't have SPS/PPS NALU\n");
 		return 0;
 	}
+
+	if (osize < ctx.spsOffset + ctx.ppsOffset + 10)
+		return ctx.spsOffset + ctx.ppsOffset + 10;
 
 	memset(&sps, 0, sizeof(struct h264_sps_t));
 	h264_sps_parse(ctx.sps + 2, (ctx.sps[0] << 8) | ctx.sps[1], &sps);
