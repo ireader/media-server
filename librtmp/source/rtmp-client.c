@@ -36,7 +36,6 @@ static void rtmp_write_int32(uint8_t* p, uint32_t bytes)
 
 void* rtmp_client_create(const char* url)
 {
-	int r;
 	RTMPContext* ctx;
 
 	ctx = (RTMPContext*)malloc(sizeof(RTMPContext));
@@ -54,15 +53,15 @@ void* rtmp_client_create(const char* url)
 
 	RTMP_Init(ctx->rtmp);
 
-	r = RTMP_SetupURL(ctx->rtmp, ctx->url);
-	if (1 != r)
-	{
-		RTMP_Free(ctx->rtmp);
-		free(ctx);
-		return NULL;
-	}
+	// setup url before connect
+	//if (!RTMP_SetupURL(ctx->rtmp, ctx->url))
+	//{
+	//	RTMP_Free(ctx->rtmp);
+	//	free(ctx);
+	//	return NULL;
+	//}
 	
-	RTMP_EnableWrite(ctx->rtmp);
+	//RTMP_EnableWrite(ctx->rtmp);
 
 	return ctx;
 }
@@ -114,6 +113,10 @@ static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 {
 	if (!RTMP_IsConnected(ctx->rtmp))
 	{
+		// reset url(CloseInternal free r->Link.playpath0)
+		RTMP_SetupURL(ctx->rtmp, ctx->url);
+		RTMP_EnableWrite(ctx->rtmp);
+
 		if (!RTMP_Connect(ctx->rtmp, NULL))
 			return -1;
 
