@@ -63,6 +63,9 @@
     <ClCompile Include="source\mpeg-ts-h264.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test\mpeg-ts-dec-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mpeg-element-descriptor.h">

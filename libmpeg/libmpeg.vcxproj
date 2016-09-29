@@ -146,6 +146,7 @@
     <ClCompile Include="source\mpeg-ts-enc.c" />
     <ClCompile Include="source\mpeg-ts-h264.c" />
     <ClCompile Include="source\mpeg-util.c" />
+    <ClCompile Include="test\mpeg-ts-dec-test.cpp" />
     <ClCompile Include="test\mpeg-ts-test.cpp" />
   </ItemGroup>
   <ItemGroup>
