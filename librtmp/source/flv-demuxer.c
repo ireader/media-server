@@ -2,7 +2,7 @@
 #include "ctypedef.h"
 #include "cstringext.h"
 #include "byte-order.h"
-#include "aac-adts.h"
+#include "mpeg4-aac.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
@@ -74,7 +74,7 @@ struct flv_demuxer_t
 	struct flv_header_t header;
 	struct flv_audio_tag_t audio;
 	struct flv_video_tag_t video;
-	struct aac_adts_t adts;
+	struct mpeg4_aac_t aac;
 
 	flv_demuxer_handler handler;
 	void* param;
@@ -180,7 +180,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 	{
 		if (0 == data[1])
 		{
-			aac_adts_from_AudioSpecificConfig(data + 2, tag->datasize - 2, &flv->adts);
+			mpeg4_aac_audio_specific_config_load(data + 2, tag->datasize - 2, &flv->aac);
 			flv->handler(flv->param, FLV_AAC_HEADER, data + 2, tag->datasize - 2, tag->timestamp, tag->timestamp);
 		}
 		else
@@ -190,8 +190,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 
 			// AAC ES stream with ADTS header
 			assert(tag->datasize <= 0x1FFF);
-			flv->adts.aac_frame_length = (uint16_t)tag->datasize - 2; // 13-bits
-			aac_adts_save(&flv->adts, flv->data, 7);
+			mpeg4_aac_adts_save(&flv->aac, (uint16_t)tag->datasize - 2, flv->data, 7); // 13-bits
 			memmove(flv->data + 7, data + 2, tag->datasize - 2);
 			flv->handler(flv->param, FLV_AAC, flv->data, tag->datasize - 2 + 7, tag->timestamp, tag->timestamp);
 		}

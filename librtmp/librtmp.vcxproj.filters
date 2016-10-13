@@ -57,9 +57,6 @@
     <ClCompile Include="source\flv-demuxer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\AVCDecoderConfigurationRecord.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sdk\string\strlcpy.c">
       <Filter>utils</Filter>
     </ClCompile>
@@ -74,6 +71,12 @@
     </ClCompile>
     <ClCompile Include="test\flv-reader-test.cpp">
       <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg4-aac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg4-avc.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,10 +116,13 @@
     <ClInclude Include="include\flv-demuxer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\aac-adts.h">
+    <ClInclude Include="include\flv-reader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\flv-reader.h">
+    <ClInclude Include="include\mpeg4-aac.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg4-avc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

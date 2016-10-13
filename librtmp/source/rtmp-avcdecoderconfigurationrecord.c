@@ -6,49 +6,26 @@
 #include <memory.h>
 #include <stdint.h>
 #include <stdio.h>
-
-struct H264Context
-{
-	uint8_t sps[1024];
-	uint8_t pps[1024];
-	size_t spsOffset;
-	size_t ppsOffset;
-	uint8_t spsCount;
-	uint8_t ppsCount;
-};
-
-static void rtmp_write_int16(uint8_t* p, uint32_t bytes)
-{
-	p[0] = (bytes >> 8) & 0xFF;
-	p[1] = bytes & 0xFF;
-}
+#include "mpeg4-avc.h"
 
 static void rtmp_client_sps_handler(void* param, const void* nalu, size_t bytes)
 {
-	struct H264Context* ctx = (struct H264Context*)param;
+	struct mpeg4_avc_t* avc = (struct mpeg4_avc_t*)param;
 	int type = ((unsigned char*)nalu)[0] & 0x1f;
 
 	if (H264_NAL_SPS == type)
 	{
-		assert(ctx->spsOffset + bytes + 2 <= sizeof(ctx->sps));
-		if (ctx->spsOffset + bytes + 2 <= sizeof(ctx->sps))
-		{
-			rtmp_write_int16(ctx->sps + ctx->spsOffset, bytes);
-			memcpy(ctx->sps + ctx->spsOffset + 2, nalu, bytes);
-			ctx->spsOffset += 2 + bytes;
-			++ctx->spsCount;
-		}
+		assert(bytes <= sizeof(avc->sps[avc->nb_sps].data));
+		avc->sps[avc->nb_sps].bytes = (uint16_t)bytes;
+		memcpy(avc->sps[avc->nb_sps].data, nalu, bytes);
+		++avc->nb_sps;
 	}
 	else if (H264_NAL_PPS == type)
 	{
-		assert(ctx->ppsOffset + bytes + 2 <= sizeof(ctx->pps));
-		if (ctx->ppsOffset + bytes + 2 <= sizeof(ctx->pps))
-		{
-			rtmp_write_int16(ctx->pps + ctx->ppsOffset, bytes);
-			memcpy(ctx->pps + ctx->ppsOffset + 2, nalu, bytes);
-			ctx->ppsOffset += 2 + bytes;
-			++ctx->ppsCount;
-		}
+		assert(bytes <= sizeof(avc->pps[avc->nb_pps].data));
+		avc->pps[avc->nb_pps].bytes = (uint16_t)bytes;
+		memcpy(avc->pps[avc->nb_pps].data, nalu, bytes);
+		++avc->nb_pps;
 	}
 	//else if (H264_NAL_SPS_EXTENSION == type || H264_NAL_SPS_SUBSET == type)
 	//{
@@ -57,56 +34,26 @@ static void rtmp_client_sps_handler(void* param, const void* nalu, size_t bytes)
 
 size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t bytes, void* out, size_t osize)
 {
-	size_t i;
+	int r;
 	struct h264_sps_t sps;
-	struct H264Context ctx;
-	uint8_t *p = (uint8_t*)out;
+	struct mpeg4_avc_t avc;
 
-	memset(&ctx, 0, sizeof(struct H264Context));
-	h264_stream(video, bytes, rtmp_client_sps_handler, &ctx);
-	if (ctx.spsCount < 1)
-	{
-		printf("video sequence don't have SPS/PPS NALU\n");
+	memset(&avc, 0, sizeof(avc));
+	h264_stream(video, bytes, rtmp_client_sps_handler, &avc);
+	if (avc.nb_sps < 1)
 		return 0;
-	}
-
-	if (osize < ctx.spsOffset + ctx.ppsOffset + 10)
-		return ctx.spsOffset + ctx.ppsOffset + 10;
 
 	memset(&sps, 0, sizeof(struct h264_sps_t));
-	h264_sps_parse(ctx.sps + 2, (ctx.sps[0] << 8) | ctx.sps[1], &sps);
+	h264_sps_parse(avc.sps[0].data, avc.sps[0].bytes, &sps);
 
-	// AVCDecoderConfigurationRecord
-	// ISO/IEC 14496-15:2010
-	// 5.2.4.1.1 Syntax
-	p[0] = 1; // configurationVersion
-	p[1] = sps.profile_idc; // AVCProfileIndication
-	p[2] = sps.constraint_set_flag; // profile_compatibility
-	p[3] = sps.level_idc; // AVCLevelIndication
-	p[4] = 0xFF; // lengthSizeMinusOne: 3
-	i = 5;
+	avc.profile = sps.profile_idc;
+	avc.level = sps.level_idc;
+	avc.compatibility = sps.constraint_set_flag;
+	avc.nalu = 3;
 
-	// sps
-	p[i++] = 0xE0 | ctx.spsCount;
-	memcpy(p + i, ctx.sps, ctx.spsOffset);
-	i += ctx.spsOffset;
+	if (osize < (size_t)(avc.nb_sps + avc.nb_pps) * 66 + 7)
+		return 0;
 
-	// pps
-	p[i++] = ctx.ppsCount;
-	memcpy(p + i, ctx.pps, ctx.ppsOffset);
-	i += ctx.ppsOffset;
-
-	if (sps.profile_idc == 100 || sps.profile_idc == 110 ||
-		sps.profile_idc == 122 || sps.profile_idc == 244 || sps.profile_idc == 44 ||
-		sps.profile_idc == 83 || sps.profile_idc == 86 || sps.profile_idc == 118 ||
-		sps.profile_idc == 128 || sps.profile_idc == 138 || sps.profile_idc == 139 ||
-		sps.profile_idc == 134)
-	{
-		p[i++] = 0xFC | sps.chroma_format_idc;
-		p[i++] = 0xF8 | sps.chroma.bit_depth_luma_minus8;
-		p[i++] = 0xF8 | sps.chroma.bit_depth_chroma_minus8;
-		p[i++] = 0; // numOfSequenceParameterSetExt
-	}
-
-	return i;
+	r = mpeg4_avc_to_nalu(&avc, (uint8_t*)out, osize);
+	return r < 0 ? 0 : (size_t)r;
 }
