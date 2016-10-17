@@ -3,6 +3,7 @@
 #include "cstringext.h"
 #include "byte-order.h"
 #include "mpeg4-aac.h"
+#include "mpeg4-avc.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
@@ -56,8 +57,6 @@ struct flv_video_tag_t
 {
 	uint8_t frame; // 1-key frame, 2-inter frame, 3-disposable inter frame(H.263 only), 4-generated key frame, 5-video info/command frame
 	uint8_t codecid; // 2-Sorenson H.263, 3-Screen video 4-On2 VP6, 7-AVC
-
-	uint8_t nal; // flv nalu size
 };
 
 struct flv_tag_t
@@ -75,6 +74,7 @@ struct flv_demuxer_t
 	struct flv_audio_tag_t audio;
 	struct flv_video_tag_t video;
 	struct mpeg4_aac_t aac;
+	struct mpeg4_avc_t avc;
 
 	flv_demuxer_handler handler;
 	void* param;
@@ -203,7 +203,6 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 	return 0;
 }
 
-int AVCDecoderConfigurationRecord(const uint8_t* data, uint32_t bytes, uint8_t* h264);
 static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, const uint8_t* data)
 {
 	uint8_t packetType; // 0-AVC sequence header, 1-AVC NALU, 2-AVC end of sequence
@@ -227,10 +226,14 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				//uint8_t profile = data[6];
 				//uint8_t flags = data[7];
 				//uint8_t level = data[8];
-				flv->video.nal = (data[9] & 0x03) + 1;
+				//flv->video.nal = (data[9] & 0x03) + 1;
 				assert(sizeof(flv->ps) > tag->datasize + 128);
 				if (sizeof(flv->ps) > tag->datasize + 128)
-					flv->pslen = AVCDecoderConfigurationRecord(data + 5, tag->datasize - 5, flv->ps);
+				{
+					mpeg4_avc_decoder_configuration_record_load(data + 5, tag->datasize - 5, &flv->avc);
+					flv->pslen = mpeg4_avc_to_nalu(&flv->avc, flv->ps, sizeof(flv->ps));
+					assert(flv->pslen < sizeof(flv->ps));
+				}
 				flv->handler(flv->param, FLV_AVC_HEADER, data + 5, tag->datasize - 5, tag->timestamp, tag->timestamp);
 			}
 		}
@@ -245,23 +248,23 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 			if (0 != flv_demuxer_check_and_alloc(flv, tag->datasize + 4 + flv->pslen))
 				return ENOMEM;
 
-			while (p + flv->video.nal < end)
+			while (p + flv->avc.nalu < end)
 			{
 				int i;
 				uint8_t nal;
 				uint32_t bytes = 0;
-				for (i = 0; i < flv->video.nal; i++)
+				for (i = 0; i < flv->avc.nalu; i++)
 					bytes = (bytes << 8) + p[i];
 
 				// fix 0x00 00 00 01 => flv nalu size
 				if (1 == bytes)
-					bytes = end - p - flv->video.nal;
+					bytes = end - p - flv->avc.nalu;
 
-				if (p + flv->video.nal + bytes > end)
+				if (p + flv->avc.nalu + bytes > end)
 					break; // invalid nalu size
 
 				// insert SPS/PPS before IDR frame
-				nal = p[flv->video.nal] & 0x1f;
+				nal = p[flv->avc.nalu] & 0x1f;
 				if (H264_NAL_SPS == nal || H264_NAL_PPS == nal)
 				{
 					//flv->data[k++] = 0; // SPS/PPS add zero_byte(ITU H.264 B.1.2 Byte stream NAL unit semantics)
@@ -277,10 +280,10 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 				// nalu start code
 				flv->data[k] = flv->data[k + 1] = flv->data[k + 2] = 0x00;
 				flv->data[k + 3] = 0x01;
-				memcpy(flv->data + k + 4, p + flv->video.nal, bytes);
+				memcpy(flv->data + k + 4, p + flv->avc.nalu, bytes);
 
 				k += bytes + 4;
-				p += flv->video.nal + bytes;
+				p += flv->avc.nalu + bytes;
 			}
 
 			flv->handler(flv->param, FLV_AVC, flv->data, k, tag->timestamp + compositionTime, tag->timestamp);
