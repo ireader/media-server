@@ -36,6 +36,26 @@ static void rtmp_write_int32(uint8_t* p, uint32_t bytes)
 	p[3] = bytes & 0xFF;
 }
 
+static int rtmp_client_connect(RTMPContext* ctx)
+{
+	if (!RTMP_IsConnected(ctx->rtmp))
+	{
+		// reset url(CloseInternal free r->Link.playpath0)
+		RTMP_SetupURL(ctx->rtmp, ctx->url);
+		RTMP_EnableWrite(ctx->rtmp);
+
+		if (!RTMP_Connect(ctx->rtmp, NULL))
+			return -1;
+
+		if (!RTMP_ConnectStream(ctx->rtmp, 0))
+			return -1;
+
+		ctx->send_sequence_header = 1;
+	}
+
+	return 0;
+}
+
 void* rtmp_client_create(const char* url)
 {
 	RTMPContext* ctx;
@@ -64,6 +84,8 @@ void* rtmp_client_create(const char* url)
 	//}
 	
 	//RTMP_EnableWrite(ctx->rtmp);
+
+	rtmp_client_connect(ctx);
 
 	return ctx;
 }
@@ -113,20 +135,8 @@ static int rtmp_client_send_first(RTMPContext* ctx, const void* audio, size_t ab
 
 static int rtmp_client_send(RTMPContext* ctx, RTMPPacket* packet)
 {
-	if (!RTMP_IsConnected(ctx->rtmp))
-	{
-		// reset url(CloseInternal free r->Link.playpath0)
-		RTMP_SetupURL(ctx->rtmp, ctx->url);
-		RTMP_EnableWrite(ctx->rtmp);
-
-		if (!RTMP_Connect(ctx->rtmp, NULL))
-			return -1;
-
-		if (!RTMP_ConnectStream(ctx->rtmp, 0))
-			return -1;
-
-		ctx->send_sequence_header = 1;
-	}
+	if (0 != rtmp_client_connect(ctx))
+		return -1;
 
 	if (ctx->send_sequence_header && !rtmp_client_send_first(ctx, ctx->streams[AUDIO_STREAM], ctx->stream_bytes[AUDIO_STREAM], ctx->streams[VIDEO_STREAM], ctx->stream_bytes[VIDEO_STREAM], packet->m_nTimeStamp))
 		return -1;

@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+	/// setup URL and connect server(timeout???)
 	void* rtmp_client_create(const char* url);
 	void rtmp_client_destroy(void* rtmp);
 
