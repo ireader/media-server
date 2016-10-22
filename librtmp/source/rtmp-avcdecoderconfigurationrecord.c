@@ -54,6 +54,6 @@ size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t 
 	if (osize < (size_t)(avc.nb_sps + avc.nb_pps) * 66 + 7)
 		return 0;
 
-	r = mpeg4_avc_to_nalu(&avc, (uint8_t*)out, osize);
+	r = mpeg4_avc_decoder_configuration_record_save(&avc, (uint8_t*)out, osize);
 	return r < 0 ? 0 : (size_t)r;
 }
