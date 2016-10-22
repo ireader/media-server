@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 struct mpeg4_avc_t
 {
 //	uint8_t version; // 1-only
@@ -38,4 +42,7 @@ int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, u
 
 int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_mpeg4_avc_h_ */

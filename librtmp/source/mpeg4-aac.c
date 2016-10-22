@@ -116,7 +116,7 @@ int mpeg4_aac_audio_frequency_to(enum mpeg4_aac_frequency index)
 int mpeg4_aac_audio_frequency_from(int frequence)
 {
 	int i = 0;
-	while (i < ARRAYOF(s_frequency) && s_frequency[i] == frequence) i++;
+	while (i < ARRAYOF(s_frequency) && s_frequency[i] != frequence) i++;
 	return i >= ARRAYOF(s_frequency) ? -1 : i;
 }
 

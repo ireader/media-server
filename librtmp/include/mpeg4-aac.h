@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 struct mpeg4_aac_t
 {
 	uint8_t profile; // 0-NULL, 1-AAC Main, 2-AAC LC, 2-AAC SSR, 3-AAC LTP
@@ -32,7 +36,7 @@ enum mpeg4_aac_profile
 
 enum mpeg4_aac_frequency
 {
-	MPEG4_AAC_96000	= 0,
+	MPEG4_AAC_96000 = 0,
 	MPEG4_AAC_88200,	// 0x1
 	MPEG4_AAC_64000,	// 0x2
 	MPEG4_AAC_48000,	// 0x3
@@ -68,4 +72,7 @@ int mpeg4_aac_audio_frequency_to(enum mpeg4_aac_frequency index);
 /// @return -1-error, other-frequency index
 int mpeg4_aac_audio_frequency_from(int frequency);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_mpeg4_aac_h_ */
