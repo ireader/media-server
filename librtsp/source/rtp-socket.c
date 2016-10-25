@@ -29,7 +29,7 @@ static void system_list_port()
 		// sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops
 		// 16: 83331C73:007B 00000000:0000 07 00000000:00000000 00:00000000 00000000     0        0 8869 2 ffff88007b9aaa40 0
 		// 16: E92F900A:007B 00000000:0000 07 00000000:00000000 00:00000000 00000000     0        0 8868 2 ffff88007b9aad80 0
-		if(1 == sscanf(line, " %*d: %*p:%x", port))
+		if(1 == sscanf(line, " %*d: %*p:%x", &port))
 		{
 			s_port_map[port/8] |= (1 << (port%8));
 		}

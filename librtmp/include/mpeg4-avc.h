@@ -2,6 +2,7 @@
 #define _mpeg4_avc_h_
 
 #include <stdint.h>
+#include <stddef.h>
 
 #if defined(__cplusplus)
 extern "C" {
