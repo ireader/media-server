@@ -7,6 +7,7 @@
 #include "mpeg-ts.h"
 #include "h264-util.h"
 #include "crc32.h"
+#include <stdlib.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>

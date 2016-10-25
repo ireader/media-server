@@ -8,6 +8,7 @@
 #include "mpeg-util.h"
 #include "mpeg-ps.h"
 #include "h264-util.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
