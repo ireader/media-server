@@ -10,7 +10,6 @@
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
-#include "cstringext.h"
 #include "h264-util.h"
 #include "ctypedef.h"
 #include <stdio.h>
@@ -20,7 +19,8 @@
 #define N_SEGMENT	50
 #define N_TS_PACKET 188
 
-#define EXT_X_DISCONTINUITY(x, y) ( abs((x) - (y)) > 30000 ? 1 : 0 )
+#define EXT_X_DISCONTINUITY(x, y)	( abs((x) - (y)) > 30000 ? 1 : 0 )
+#define VMAX(a, b)					((a) > (b) ? (a) : (b))
 
 struct hls_vod_t
 {
@@ -206,7 +206,7 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 		{
 			hls_segment_new(hls, pts, flags);
 
-			hls->target_duration = MAX(hls->target_duration, hls->pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
+			hls->target_duration = VMAX(hls->target_duration, hls->pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
 			++hls->m3u8seq; // update sequence
 
 			// reset mpeg ts generator

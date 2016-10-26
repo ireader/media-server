@@ -4,9 +4,10 @@
 #include "rtsp-client-transport-tcp.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "cstringext.h"
 #include "rtp-socket.h"
+#include "cstringext.h"
 #include "sys/system.h"
+#include "cpm/unuse.h"
 
 struct rtsp_client_test_t
 {

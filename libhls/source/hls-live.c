@@ -1,11 +1,13 @@
-#include "cstringext.h"
 #include "hls-live.h"
 #include "hls-file.h"
 #include "hls-server.h"
 #include "h264-util.h"
 #include "mpeg-ts.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+
+#define VMAX(a, b)	((a) > (b) ? (a) : (b))
 
 static locker_t s_locker; // lock live list(consider lock-free list???)
 static struct list_head s_head;
@@ -163,13 +165,13 @@ int hls_live_m3u8(struct hls_live_t* live, char* m3u8)
 		"#EXT-X-MEDIA-SEQUENCE:%u\n", // Live
 //		"#EXT-X-ALLOW-CACHE:NO\n",
 		HLS_DURATION,
-        MAX(0, live->m3u8seq - live->file_count));
+		VMAX(0, live->m3u8seq - live->file_count));
 
 	for(i = 0; i < (int)live->file_count; i++)
 	{
         file = live->files[i];
         t = file->duration / 1000;
-        n += sprintf(m3u8 + n, "#EXTINF:%d,live\n%s/%d.ts\n", MAX(1, t), live->name, file->seq);
+        n += sprintf(m3u8 + n, "#EXTINF:%d,live\n%s/%d.ts\n", VMAX(1, t), live->name, file->seq);
 	}
 
     live->rtime = time64_now();

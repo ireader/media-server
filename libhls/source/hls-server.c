@@ -159,7 +159,6 @@ static int hls_server_live(struct hls_server_t *ctx, void* session, const char* 
 	struct hls_file_t *tsfile;
 	struct hls_block_t *block;
 
-	ctx;
 	r = hls_server_live_parse(path, name, sizeof(name), file, sizeof(file));
     if(0 != r)
         return hls_server_reply(session, 404, "");
@@ -212,21 +211,22 @@ static int hls_server_onhttp(void* param, void* session, const char* method, con
 {
 	size_t n;
 	char uri[256];
+	const char* p;
 	struct hls_server_t *ctx;
 	ctx = (struct hls_server_t *)param;
 
-	method;
 	// decode request uri
 	url_decode(path, -1, uri, sizeof(uri));
 
 	n = strlen(uri);
-	if(strstartswith(uri, "/live/"))
+	if(0 == strncmp(uri, "/live/", 6))
 	{
-		if(n > 11 && strendswith(uri, ".m3u8"))
+		p = strrchr(uri, '.');
+		if (p && 0 == strcmp(p, ".m3u8"))
 		{
 			return hls_server_live_m3u8(ctx, session, uri);
 		}
-		else if(strendswith(uri, ".ts"))
+		else if (p && 0 == strcmp(p, ".ts"))
 		{
 			return hls_server_live(ctx, session, uri);
 		}

@@ -73,7 +73,7 @@ static int rtsp_server_reply(struct rtsp_server_request_t *req, int code)
 }
 
 // RFC 2326 10.1 OPTIONS (p30)
-static void rtsp_server_options(struct rtsp_server_request_t* req, void* UNUSED(parser), const char* UNUSED(uri))
+static void rtsp_server_options(struct rtsp_server_request_t* req, void* parser, const char* uri)
 {
 	static const char* methods = "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE";
 	int len;
@@ -89,7 +89,7 @@ static void rtsp_server_options(struct rtsp_server_request_t* req, void* UNUSED(
 	req->transport->send(req->session, req->reply, len);
 }
 
-static void rtsp_server_describe(struct rtsp_server_request_t *req, void* UNUSED(parser), const char* uri)
+static void rtsp_server_describe(struct rtsp_server_request_t *req, void* parser, const char* uri)
 {
 	struct rtsp_server_context_t* ctx = req->server;
 	ctx->handler.describe(ctx->ptr, req, uri);
@@ -270,7 +270,7 @@ static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 	{
 	case 'o':
 	case 'O':
-		if(0 == stricmp("OPTIONS", method))
+		if(0 == strcasecmp("OPTIONS", method))
 		{
 			rtsp_server_options(req, parser, uri);
 			return;
@@ -279,7 +279,7 @@ static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 
 	case 'd':
 	case 'D':
-		if(0 == stricmp("DESCRIBE", method))
+		if(0 == strcasecmp("DESCRIBE", method))
 		{
 			rtsp_server_describe(req, parser, uri);
 			return;
@@ -288,7 +288,7 @@ static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 
 	case 's':
 	case 'S':
-		if(0 == stricmp("SETUP", method))
+		if(0 == strcasecmp("SETUP", method))
 		{
 			rtsp_server_setup(req, parser, uri);
 			return;
@@ -297,12 +297,12 @@ static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 
 	case 'p':
 	case 'P':
-		if(0 == stricmp("PLAY", method))
+		if(0 == strcasecmp("PLAY", method))
 		{
 			rtsp_server_play(req, parser, uri);
 			return;
 		}
-		else if(0 == stricmp("PAUSE", method))
+		else if(0 == strcasecmp("PAUSE", method))
 		{
 			rtsp_server_pause(req, parser, uri);
 			return;
@@ -311,7 +311,7 @@ static void rtsp_server_handle(struct rtsp_server_request_t *req, void* parser)
 
 	case 't':
 	case 'T':
-		if(0 == stricmp("TEARDOWN", method))
+		if(0 == strcasecmp("TEARDOWN", method))
 		{
 			rtsp_server_teardown(req, parser, uri);
 			return;

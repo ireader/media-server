@@ -247,7 +247,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void
 	return 0;
 }
 
-static int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
+static inline int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
 {
 	const unsigned char *data;
 	ts_packet_header_t pkhd;

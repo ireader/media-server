@@ -5,8 +5,6 @@
 #include <memory.h>
 #include <assert.h>
 
-#define inline static
-
 #if defined(OS_WINDOWS)
 #define strdup		_strdup
 #define strcasecmp	_stricmp
@@ -208,21 +206,21 @@ struct sdp_context
 	} m;
 };
 
-inline void sdp_skip_space(struct sdp_context* sdp)
+static inline void sdp_skip_space(struct sdp_context* sdp)
 {
 	char c = sdp->raw[sdp->offset];
 	while(' ' == c || '\t' == c) 
 		c = sdp->raw[++sdp->offset];
 }
 
-inline size_t sdp_token_word(struct sdp_context* sdp, const char* escape)
+static inline size_t sdp_token_word(struct sdp_context* sdp, const char* escape)
 {
 	size_t n = sdp->offset;
 	sdp->offset += strcspn(sdp->raw + sdp->offset, escape);
 	return sdp->offset - n;
 }
 
-inline int sdp_token_crlf(struct sdp_context* sdp)
+static inline int sdp_token_crlf(struct sdp_context* sdp)
 {
 	if('\r' == sdp->raw[sdp->offset])
 		++sdp->offset;
@@ -240,7 +238,7 @@ inline int sdp_token_crlf(struct sdp_context* sdp)
 	return -1;
 }
 
-inline void trim_right(const char* s, size_t *len)
+static inline void trim_right(const char* s, size_t *len)
 {
 	//// left trim
 	//while(*len > 0 && isspace(s[*pos]))
@@ -256,7 +254,7 @@ inline void trim_right(const char* s, size_t *len)
 	}
 }
 
-static struct sdp_timing* sdp_get_timing(struct sdp_context* sdp, size_t idx)
+static inline struct sdp_timing* sdp_get_timing(struct sdp_context* sdp, size_t idx)
 {
 	if(idx >= sdp->t.count)
 		return NULL;
@@ -264,7 +262,7 @@ static struct sdp_timing* sdp_get_timing(struct sdp_context* sdp, size_t idx)
 	return idx >= N_TIMING ? &sdp->t.ptr[idx - N_TIMING] : &sdp->t.times[idx];
 }
 
-static struct sdp_media* sdp_get_media(struct sdp_context* sdp, size_t idx)
+static inline struct sdp_media* sdp_get_media(struct sdp_context* sdp, size_t idx)
 {
 	if(idx >= sdp->m.count)
 		return NULL;
@@ -1504,7 +1502,7 @@ const char* sdp_media_proto(void* sdp, int media)
 // (p24) If the <proto> sub-field is "udp" the <fmt> sub-fields MUST
 // reference a media type describing the format under the "audio",
 // "video", "text", "application", or "message" top-level media types.
-inline int sdp_media_format_value(const char* format)
+static inline int sdp_media_format_value(const char* format)
 {
 	switch(format[0])
 	{

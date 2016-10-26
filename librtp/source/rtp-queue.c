@@ -185,23 +185,23 @@ int rtp_queue_lock(void* queue, void** ptr, int size)
 	return 0;
 }
 
-#if defined(_DEBUG)
-static void rtp_queue_dump(struct rtp_queue *q)
-{
-	char msg[1024] = {0};
-	struct rtp_frame *p;
-
-	for(p = q->head; p; p = p->next)
-	{
-		char seq[8];
-		sprintf(seq, "-%u", p->seq);
-		strcat(msg, seq);
-	}
-
-	strcat(msg, "\r\n");
-	OutputDebugString(msg);
-}
-#endif
+//#if defined(_DEBUG)
+//static void rtp_queue_dump(struct rtp_queue *q)
+//{
+//	char msg[1024] = {0};
+//	struct rtp_frame *p;
+//
+//	for(p = q->head; p; p = p->next)
+//	{
+//		char seq[8];
+//		sprintf(seq, "-%u", p->seq);
+//		strcat(msg, seq);
+//	}
+//
+//	strcat(msg, "\r\n");
+//	OutputDebugStringA(msg);
+//}
+//#endif
 
 int rtp_queue_unlock(void* queue, void* ptr, int size)
 {

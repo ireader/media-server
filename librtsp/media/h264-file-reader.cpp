@@ -89,7 +89,7 @@ int H264FileReader::Seek(int64_t &pos)
 	return 0;
 }
 
-inline const unsigned char* search_start_code(const unsigned char* ptr, size_t bytes)
+static inline const unsigned char* search_start_code(const unsigned char* ptr, size_t bytes)
 {
     const unsigned char *p;
     for(p = ptr; p + 3 < ptr + bytes; p++)
@@ -100,7 +100,7 @@ inline const unsigned char* search_start_code(const unsigned char* ptr, size_t b
     return NULL;
 }
 
-inline int h264_nal_type(const unsigned char* ptr)
+static inline int h264_nal_type(const unsigned char* ptr)
 {
     int i = 2;
     assert(0x00 == ptr[0] && 0x00 == ptr[1]);

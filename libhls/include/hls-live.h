@@ -1,7 +1,6 @@
 #ifndef _hls_live_h_
 #define _hls_live_h_
 
-#include "cstringext.h"
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "ctypedef.h"

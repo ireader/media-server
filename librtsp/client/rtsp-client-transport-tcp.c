@@ -168,7 +168,7 @@ static struct rtsp_tcp_transport_t* rtsp_client_transport_find(struct rtsp_trans
 	{
 		struct rtsp_tcp_transport_t *transport;
 		transport = ctx->transport + i; 
-		if(transport->port == port && 0 == stricmp(transport->ip, ip))
+		if(transport->port == port && 0 == strcasecmp(transport->ip, ip))
 			return transport;
 	}
 	return NULL;

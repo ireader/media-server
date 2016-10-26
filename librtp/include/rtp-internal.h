@@ -2,14 +2,17 @@
 #define _rtp_internal_h_
 
 #include <stdlib.h>
-#include "ctypedef.h"
 #include "time64.h"
+#include "ctypedef.h"
 #include "cstringext.h"
 #include "rtp.h"
 #include "rtp-header.h"
 #include "rtcp-header.h"
 #include "rtp-member.h"
 #include "rtp-member-list.h"
+
+#define MIN(a, b)	((a) < (b) ? (a) : (b))
+#define MAX(a, b)	((a) > (b) ? (a) : (b))
 
 struct rtp_context
 {

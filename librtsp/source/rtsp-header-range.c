@@ -15,13 +15,13 @@
 // Range: smpte-25=10:07:00-10:07:33:05.01,smpte-25=11:07:00-11:07:33:05.01
 
 #include "rtsp-header-range.h"
-#include "cstringext.h"
-#include "string-util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#include "cstringext.h"
+#include "string-util.h"
 
 struct time_smpte_t
 {
@@ -152,7 +152,7 @@ static const char* rtsp_header_range_npt_time(const char* str, uint64_t *seconds
 
 	assert(str);
 	p = string_token(str, "-\r\n");
-	if(!str || (p-str==3 && 0==strnicmp(str, "now", 3)))
+	if(!str || (p-str==3 && 0==strncasecmp(str, "now", 3)))
 	{
 		*seconds = 0; // now
 		*fraction = -1;
@@ -327,17 +327,17 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 	range->time = 0L;
 	while(field && 0 == r)
 	{
-		if(0 == strnicmp("clock=", field, 6))
+		if(0 == strncasecmp("clock=", field, 6))
 		{
 			range->type = RTSP_RANGE_CLOCK;
 			r = rtsp_header_range_clock(field+6, range);
 		}
-		else if(0 == strnicmp("npt=", field, 4))
+		else if(0 == strncasecmp("npt=", field, 4))
 		{
 			range->type = RTSP_RANGE_NPT;
 			r = rtsp_header_range_npt(field+4, range);
 		}
-		else if(0 == strnicmp("smpte=", field, 6))
+		else if(0 == strncasecmp("smpte=", field, 6))
 		{
 			range->type = RTSP_RANGE_SMPTE;
 			r = rtsp_header_range_smpte(field+6, range);
@@ -346,7 +346,7 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
 				range->to = (range->to/1000 * 1000) + (1000/30 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("smpte-30-drop=", field, 15))
+		else if(0 == strncasecmp("smpte-30-drop=", field, 15))
 		{
 			range->type = RTSP_RANGE_SMPTE_30;
 			r = rtsp_header_range_smpte(field+15, range);
@@ -355,7 +355,7 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
 				range->to = (range->to/1000 * 1000) + (1000/30 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("smpte-25=", field, 9))
+		else if(0 == strncasecmp("smpte-25=", field, 9))
 		{
 			range->type = RTSP_RANGE_SMPTE_25;
 			r = rtsp_header_range_smpte(field+9, range);
@@ -364,7 +364,7 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 			if(RTSP_RANGE_TIME_NORMAL == range->to_value)
 				range->to = (range->to/1000 * 1000) + (1000/25 * (range->to%1000)); // frame to ms
 		}
-		else if(0 == strnicmp("time=", field, 5))
+		else if(0 == strncasecmp("time=", field, 5))
 		{
 			int h, m, s, frame, subframe;
 			switch(range->type)

@@ -64,7 +64,7 @@ static void rtsp_client_describe_onreply(void* rtsp, int r, void* parser)
 		if(contentLocation)
 			strlcpy(ctx->location, contentLocation, sizeof(ctx->location));
 
-		if(!contentType || 0 == stricmp("application/sdp", contentType))
+		if(!contentType || 0 == strcasecmp("application/sdp", contentType))
 			r = rtsp_client_open_with_sdp(rtsp, ctx->uri, content);
 		else
 			r = -1;

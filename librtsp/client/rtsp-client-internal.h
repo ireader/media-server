@@ -65,7 +65,7 @@ struct rtsp_client_context_t
 	char location[256]; // Content-Location
 };
 
-inline struct rtsp_media_t* rtsp_get_media(struct rtsp_client_context_t *ctx, int i)
+static inline struct rtsp_media_t* rtsp_get_media(struct rtsp_client_context_t *ctx, int i)
 {
 	if(i < 0 || i >= ctx->media_count)
 		return NULL;

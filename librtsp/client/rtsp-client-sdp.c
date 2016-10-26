@@ -3,7 +3,7 @@
 #include "sdp-a-fmtp.h"
 #include "sdp-a-rtpmap.h"
 
-inline int rtsp_media_aggregate_control_enable(void *sdp)
+static inline int rtsp_media_aggregate_control_enable(void *sdp)
 {
 	const char* control;
 

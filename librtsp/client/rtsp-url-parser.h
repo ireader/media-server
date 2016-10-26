@@ -2,6 +2,7 @@
 #define _rtsp_url_parser_h_
 
 #include "url.h"
+#include "cstringext.h"
 
 // 3.2 RTSP URL (p14)
 enum { 
@@ -9,7 +10,7 @@ enum {
 	RTSP_SCHEME_UDP,	 // rtspu
 };
 
-inline int rtsp_url_parse(const char* uri, int *scheme, char *ip, int bytes, int *port)
+static inline int rtsp_url_parse(const char* uri, int *scheme, char *ip, int bytes, int *port)
 {
 	void* parser;
 	const char* transport;
@@ -19,7 +20,7 @@ inline int rtsp_url_parse(const char* uri, int *scheme, char *ip, int bytes, int
 	if(!parser) return -1;
 
 	transport = url_getscheme(parser);
-	if(transport && 0 == stricmp("rtspu", transport))
+	if(transport && 0 == strcasecmp("rtspu", transport))
 		*scheme = RTSP_SCHEME_UDP;
 	else
 		*scheme = RTSP_SCHEME_TCP;

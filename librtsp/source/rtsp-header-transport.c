@@ -36,12 +36,12 @@
 //    number with the next lower (even) number to use as the base of the port pair.
 
 #include "rtsp-header-transport.h"
-#include "ctypedef.h"
-#include "cstringext.h"
-#include "string-util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "ctypedef.h"
+#include "cstringext.h"
+#include "string-util.h"
 
 #define TRANSPORT_SPECIAL ",;\r\n"
 
@@ -88,19 +88,19 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 		{
 		case 'r':
 		case 'R':
-			if(11 == n && 0 == strnicmp("RTP/AVP/UDP", p, 11))
+			if(11 == n && 0 == strncasecmp("RTP/AVP/UDP", p, 11))
 			{
 				t->transport = RTSP_TRANSPORT_RTP_UDP;
 			}
-			else if(11 == n && 0 == strnicmp("RTP/AVP/TCP", p, 11))
+			else if(11 == n && 0 == strncasecmp("RTP/AVP/TCP", p, 11))
 			{
 				t->transport = RTSP_TRANSPORT_RTP_TCP;
 			}
-			else if(11 == n && 0 == strnicmp("RAW/RAW/UDP", p, 11))
+			else if(11 == n && 0 == strncasecmp("RAW/RAW/UDP", p, 11))
 			{
 				t->transport = RTSP_TRANSPORT_RAW;
 			}
-			else if(7 == n && 0 == strnicmp("RTP/AVP", p, 7))
+			else if(7 == n && 0 == strncasecmp("RTP/AVP", p, 7))
 			{
 				t->transport = RTSP_TRANSPORT_RTP_UDP;
 			}
@@ -108,7 +108,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 
 		case 'u':
 		case 'U':
-			if(7 == n && 0 == strnicmp("unicast", p, 7))
+			if(7 == n && 0 == strncasecmp("unicast", p, 7))
 			{
 				t->multicast = 0;
 			}
@@ -116,22 +116,22 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 
 		case 'm':
 		case 'M':
-			if(9 == n && 0 == strnicmp("multicast", p, 9))
+			if(9 == n && 0 == strncasecmp("multicast", p, 9))
 			{
 				t->multicast = 1;
 			}
-			else if(n > 5 && 0 == strnicmp("mode=", p, 5))
+			else if(n > 5 && 0 == strncasecmp("mode=", p, 5))
 			{
-				if( (11==n && 0 == stricmp("\"PLAY\"", p+5)) || (9==n && 0 == stricmp("PLAY", p+5)) )
+				if( (11==n && 0 == strcasecmp("\"PLAY\"", p+5)) || (9==n && 0 == strcasecmp("PLAY", p+5)) )
 					t->mode = RTSP_TRANSPORT_PLAY;
-				else if( (13==n && 0 == stricmp("\"RECORD\"", p+5)) || (11==n && 0 == stricmp("RECORD", p+5)) )
+				else if( (13==n && 0 == strcasecmp("\"RECORD\"", p+5)) || (11==n && 0 == strcasecmp("RECORD", p+5)) )
 					t->mode = RTSP_TRANSPORT_RECORD;
 			}
 			break;
 
 		case 'd':
 		case 'D':
-			if(n >= 12 && 0 == strnicmp("destination=", p, 12))
+			if(n >= 12 && 0 == strncasecmp("destination=", p, 12))
 			{
                 if(n-12 >= sizeof(t->destination)) return -1;
                 memcpy(t->destination, p+12, n - 12);
@@ -141,13 +141,13 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 
 		case 's':
 		case 'S':
-			if(n >= 7 && 0 == strnicmp("source=", p, 7))
+			if(n >= 7 && 0 == strncasecmp("source=", p, 7))
 			{
                 if(n-7 >= sizeof(t->source)) return -1;
                 memcpy(t->source, p+7, n - 7);
                 t->source[n-7] = '\0';
 			}
-			else if(13 == n && 0 == strnicmp("ssrc=", p, 5))
+			else if(13 == n && 0 == strncasecmp("ssrc=", p, 5))
 			{
 				// unicast only
 				assert(0 == t->multicast);
@@ -166,7 +166,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 			break;
 
 		case 'a':
-			if(6 == n && 0 == stricmp("append", p))
+			if(6 == n && 0 == strcasecmp("append", p))
 			{
 				t->append = 1;
 			}
@@ -246,8 +246,8 @@ void rtsp_header_transport_test(void)
 	assert(t.multicast==1 && 127==t.rtp.m.ttl && RTSP_TRANSPORT_PLAY==t.mode);
 
 	memset(&t, 0, sizeof(t));
-	assert(-1 == rtsp_header_transport("RTP/AVP;unicast;source=192.168.111.333.444.555.666.777.888.999.000", &t)); // rfc2326 p61
-//	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
-//	assert(t.multicast==0 && 0==strncmp("192.168.111.333.444.555.666.777.888.999.000", t.source, sizeof(t.source)-1) && strlen(t.source)<sizeof(t.source));
+	assert(0 == rtsp_header_transport("RTP/AVP;unicast;source=192.168.111.333.444.555.666.777.888.999.000.123", &t)); // rfc2326 p61
+	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
+	assert(t.multicast==0 && 0==strncmp("192.168.111.333.444.555.666.777.888.999.000.123", t.source, sizeof(t.source)-1) && strlen(t.source)<sizeof(t.source));
 }
 #endif

@@ -1,7 +1,6 @@
 #ifndef _hls_file_h_
 #define _hls_file_h_
 
-#include "cstringext.h"
 #include "sys/atomic.h"
 #include "time64.h"
 #include "hls-block.h"

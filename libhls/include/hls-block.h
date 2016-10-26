@@ -2,6 +2,7 @@
 #define _hls_block_h_
 
 #include "list.h"
+#include "ctypedef.h"
 
 struct hls_block_t
 {
