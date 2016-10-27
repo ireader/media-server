@@ -11,7 +11,8 @@ extern "C" {
 /// @param[in] duration file duration(ms)
 /// @param[in] seq m3u8 sequence number(from 0)
 /// @param[out] name saved file name
-typedef int (*hls_vod_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t duration, uint64_t seq, char* name);
+/// @param[in] namelen name size
+typedef int (*hls_vod_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t duration, uint64_t seq, char* name, size_t namelen);
 
 /// param[in] duration ts file duration(millisecond), 0-defalut duration(10000s)
 void* hls_vod_create(int64_t duration, hls_vod_handler handler, void* param);

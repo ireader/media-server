@@ -174,7 +174,7 @@ static struct hls_segment_t* hls_segment_fetch(struct hls_vod_t* hls)
 	return s->segments + s->num++;
 }
 
-static int hls_segment_new(struct hls_vod_t* hls, int64_t pts, int flags)
+static int hls_segment_new(struct hls_vod_t* hls, int64_t pts)
 {
 	struct hls_segment_t* seg;
 
@@ -185,11 +185,11 @@ static int hls_segment_new(struct hls_vod_t* hls, int64_t pts, int flags)
 	// fill file information
 	seg->pts = hls->pts_first;
 	seg->m3u8seq = hls->m3u8seq; // EXT-X-MEDIA-SEQUENCE
-	seg->duration = (flags ? hls->pts_last : pts) - hls->pts_first;
+	seg->duration = pts - hls->pts_first;
 	seg->discontinue = hls->discontinue; // EXT-X-DISCONTINUITY
 
 	// get segment name
-	return hls->handler(hls->param, hls->ptr, hls->bytes, seg->pts, seg->duration, seg->m3u8seq, seg->name);
+	return hls->handler(hls->param, hls->ptr, hls->bytes, seg->pts, seg->duration, seg->m3u8seq, seg->name, sizeof(seg->name));
 }
 
 int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
@@ -204,9 +204,10 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 	{
 		if (hls->bytes > 0)
 		{
-			hls_segment_new(hls, pts, flags);
+			int64_t pts_last = (!bytes || flags) ? hls->pts_last : pts;
+			hls_segment_new(hls, pts_last);
 
-			hls->target_duration = VMAX(hls->target_duration, hls->pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
+			hls->target_duration = VMAX(hls->target_duration, pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
 			++hls->m3u8seq; // update sequence
 
 			// reset mpeg ts generator
