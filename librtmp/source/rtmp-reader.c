@@ -64,6 +64,13 @@ void rtmp_reader_destroy(void* p)
 	free(ctx);
 }
 
+void rtmp_reader_settimeout(void* p, int timeout)
+{
+	RTMPContext* ctx;
+	ctx = (RTMPContext*)p;
+	ctx->rtmp->Link.timeout = timeout; // in seconds
+}
+
 int rtmp_reader_read(void* p, void* packet, int bytes)
 {
 	RTMPContext* ctx;
