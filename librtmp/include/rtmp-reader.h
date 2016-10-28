@@ -14,6 +14,9 @@ extern "C" {
 	/// @param[in] timeout connect/recv timeout(seconds), default 30sec
 	void rtmp_reader_settimeout(void* rtmp, int timeout);
 
+	/// reset rtmp read status to continue read(only valid on rtmp_reader_read return 0)
+	void rtmp_reader_resume(void* rtmp);
+
 #if defined(__cplusplus)
 }
 #endif
