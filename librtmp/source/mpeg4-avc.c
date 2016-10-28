@@ -64,7 +64,6 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	}
 
 	j = 6;
-	avc->nb_sps = 0;
 	for (i = 0; i < avc->nb_sps && j + 2 < bytes; ++i)
 	{
 		len = (data[j] << 8) | data[j + 1];
