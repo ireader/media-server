@@ -1,5 +1,6 @@
 #include "mpeg4-aac.h"
 #include <assert.h>
+#include <memory.h>
 
 /*
 // ISO-14496-3 adts_frame (p122)
@@ -121,3 +122,23 @@ int mpeg4_aac_audio_frequency_from(int frequence)
 }
 
 #undef ARRAYOF
+
+void mpeg4_aac_test(void)
+{
+	const unsigned char src[] = { 0x13, 0x88 };
+	const unsigned char adts[] = { 0xFF, 0xF1, 0x9C, 0x40, 0x01, 0x1F, 0xFC };
+	unsigned char data[8];
+
+	struct mpeg4_aac_t aac, aac2;
+	assert(sizeof(src) == mpeg4_aac_audio_specific_config_load(src, sizeof(src), &aac));
+	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 1 == aac.channel_configuration);
+	assert(sizeof(src) == mpeg4_aac_audio_specific_config_save(&aac, data, sizeof(data)));
+	assert(0 == memcmp(src, data, sizeof(src)));
+
+	assert(sizeof(adts) == mpeg4_aac_adts_save(&aac, 1, data, sizeof(data)));
+	assert(mpeg4_aac_adts_load(data, sizeof(adts), &aac2) > 0);
+	assert(0 == memcmp(&aac, &aac2, sizeof(aac)));
+
+	assert(22050 == mpeg4_aac_audio_frequency_to(aac.sampling_frequency_index));
+	assert(aac.sampling_frequency_index == mpeg4_aac_audio_frequency_from(22050));
+}

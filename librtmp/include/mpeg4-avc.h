@@ -14,7 +14,7 @@ struct mpeg4_avc_t
 	uint8_t profile;
 	uint8_t compatibility; // constraint_set[0-5]_flag
 	uint8_t level;
-	uint8_t nalu; // NALUnitLength, default 0x03
+	uint8_t nalu; // NALUnitLength = (lengthSizeMinusOne + 1), default 4(0x03+1)
 
 	uint8_t nb_sps;
 	uint8_t nb_pps;

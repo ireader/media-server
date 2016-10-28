@@ -106,7 +106,7 @@ int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, u
 	uint8_t i;
 	uint8_t *p = data;
 
-	assert(0 != avc->nalu);
+	assert(0 < avc->nalu && avc->nalu <= 4);
 	if (bytes < 7 || avc->nb_sps > 32) return -1;
 	bytes -= 7;
 
@@ -117,7 +117,7 @@ int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, u
 	p[1] = avc->profile; // AVCProfileIndication
 	p[2] = avc->compatibility; // profile_compatibility
 	p[3] = avc->level; // AVCLevelIndication
-	p[4] = 0xFC | avc->nalu; // lengthSizeMinusOne: 3
+	p[4] = 0xFC | (avc->nalu - 1); // lengthSizeMinusOne: 3
 	p += 5;
 
 	// sps
@@ -205,4 +205,29 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 	if (i < avc->nb_pps) return -1; // check length
 
 	return k;
+}
+
+void mpeg4_avc_test(void)
+{
+	const unsigned char src[] = {
+		0x01,0x42,0xe0,0x1e,0xff,0xe1,0x00,0x21,0x67,0x42,0xe0,0x1e,0xab,0x40,0xf0,0x28,
+		0xd0,0x80,0x00,0x00,0x00,0x80,0x00,0x00,0x19,0x70,0x20,0x00,0x78,0x00,0x00,0x0f,
+		0x00,0x16,0xb1,0xb0,0x3c,0x50,0xaa,0x80,0x80,0x01,0x00,0x04,0x28,0xce,0x3c,0x80
+	};
+	const unsigned char nalu[] = {
+		0x00,0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab,0x40,0xf0,0x28,0xd0,0x80,0x00,0x00,
+		0x00,0x80,0x00,0x00,0x19,0x70,0x20,0x00,0x78,0x00,0x00,0x0f,0x00,0x16,0xb1,0xb0,
+		0x3c,0x50,0xaa,0x80,0x80,0x00,0x00,0x00,0x01,0x28,0xce,0x3c,0x80
+	};
+	unsigned char data[sizeof(src)];
+
+	struct mpeg4_avc_t avc;
+	assert(sizeof(src) == mpeg4_avc_decoder_configuration_record_load(src, sizeof(src), &avc));
+	assert(0x42 == avc.profile && 0xe0 == avc.compatibility && 0x1e == avc.level);
+	assert(4 == avc.nalu && 1 == avc.nb_sps && 1 == avc.nb_pps);
+	assert(sizeof(src) == mpeg4_avc_decoder_configuration_record_save(&avc, data, sizeof(data)));
+	assert(0 == memcmp(src, data, sizeof(src)));
+
+	assert(sizeof(nalu) == mpeg4_avc_to_nalu(&avc, data, sizeof(data)));
+	assert(0 == memcmp(nalu, data, sizeof(nalu)));
 }

@@ -49,7 +49,7 @@ size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t 
 	avc.profile = sps.profile_idc;
 	avc.level = sps.level_idc;
 	avc.compatibility = sps.constraint_set_flag;
-	avc.nalu = 3;
+	avc.nalu = 4;
 
 	if (osize < (size_t)(avc.nb_sps + avc.nb_pps) * 66 + 7)
 		return 0;
