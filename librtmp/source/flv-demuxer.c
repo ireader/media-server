@@ -178,6 +178,12 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 
 	if (FLV_AUDIO_AAC == flv->audio.format)
 	{
+		// Adobe Flash Video File Format Specification Version 10.1 >> E.4.2.1 AUDIODATA (p77)
+		// If the SoundFormat indicates AAC, the SoundType should be 1 (stereo) and the SoundRate should be 3 (44 kHz).
+		// However, this does not mean that AAC audio in FLV is always stereo, 44 kHz data.Instead, the Flash Player ignores
+		// these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
+		assert(3 == flv->audio.bitrate && 1 == flv->audio.channel);
+
 		if (0 == data[1])
 		{
 			mpeg4_aac_audio_specific_config_load(data + 2, tag->datasize - 2, &flv->aac);

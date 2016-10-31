@@ -31,16 +31,16 @@ adts_variable_header()
 /// @return >=0-adts header length, <0-error
 int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
-	if (bytes < 4) return -1;
+	if (bytes < 7) return -1;
 
 	assert(0xFF == data[0] && 0xF0 == (data[1] & 0xF0)); /* syncword */
-	aac->profile = ((data[1] >> 3) & 0x01) + ((data[2] >> 6) & 0x03); // 2 bits: the MPEG-2 Audio Object Type add 1
+	aac->profile = ((data[1] >> 3) & 0x01) /*1-ID*/ + ((data[2] >> 6) & 0x03); // 2 bits: the MPEG-2 Audio Object Type add 1
 	aac->sampling_frequency_index = (data[2] >> 2) & 0x0F; // 4 bits: MPEG-4 Sampling Frequency Index (15 is forbidden)
 	aac->channel_configuration = ((data[2] & 0x01) << 2) | ((data[3] >> 6) & 0x03); // 3 bits: MPEG-4 Channel Configuration 
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
-	return 4;
+	return 7;
 }
 
 /// @return >=0-adts header length, <0-error
@@ -136,6 +136,7 @@ void mpeg4_aac_test(void)
 	assert(0 == memcmp(src, data, sizeof(src)));
 
 	assert(sizeof(adts) == mpeg4_aac_adts_save(&aac, 1, data, sizeof(data)));
+	assert(0 == memcmp(adts, data, sizeof(adts)));
 	assert(mpeg4_aac_adts_load(data, sizeof(adts), &aac2) > 0);
 	assert(0 == memcmp(&aac, &aac2, sizeof(aac)));
 

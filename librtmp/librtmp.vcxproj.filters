@@ -78,6 +78,9 @@
     <ClCompile Include="source\mpeg4-avc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\flv-writer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">
@@ -123,6 +126,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mpeg4-avc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\flv-writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
