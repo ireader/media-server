@@ -34,7 +34,7 @@ int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* a
 	if (bytes < 7) return -1;
 
 	assert(0xFF == data[0] && 0xF0 == (data[1] & 0xF0)); /* syncword */
-	aac->profile = ((data[1] >> 3) & 0x01) /*1-ID*/ + ((data[2] >> 6) & 0x03); // 2 bits: the MPEG-2 Audio Object Type add 1
+	aac->profile = ((data[2] >> 6) & 0x03) + 1; // 2 bits: the MPEG-2 Audio Object Type add 1
 	aac->sampling_frequency_index = (data[2] >> 2) & 0x0F; // 4 bits: MPEG-4 Sampling Frequency Index (15 is forbidden)
 	aac->channel_configuration = ((data[2] & 0x01) << 2) | ((data[3] >> 6) & 0x03); // 3 bits: MPEG-4 Channel Configuration 
 	assert(aac->profile > 0 && aac->profile < 31);
@@ -55,7 +55,7 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 	data[0] = 0xFF; /* 12-syncword */
 	data[1] = 0xF0 /* 12-syncword */ | (ID << 3)/*1-ID*/ | (0x00 << 2) /*2-layer*/ | 0x01 /*1-protection_absent*/;
-	data[2] = ((aac->profile - ID) << 6) | ((aac->sampling_frequency_index & 0x0F) << 2) | ((aac->channel_configuration >> 2) & 0x01);
+	data[2] = ((aac->profile - 1) << 6) | ((aac->sampling_frequency_index & 0x0F) << 2) | ((aac->channel_configuration >> 2) & 0x01);
 	data[3] = (aac->channel_configuration << 6) | ((len >> 11) & 0x03); /*0-original_copy*/ /*0-home*/ /*0-copyright_identification_bit*/ /*0-copyright_identification_start*/
 	data[4] = (uint8_t)(len >> 3);
 	data[5] = ((len & 0x07) << 5) | 0x1F;
@@ -126,7 +126,7 @@ int mpeg4_aac_audio_frequency_from(int frequence)
 void mpeg4_aac_test(void)
 {
 	const unsigned char src[] = { 0x13, 0x88 };
-	const unsigned char adts[] = { 0xFF, 0xF1, 0x9C, 0x40, 0x01, 0x1F, 0xFC };
+	const unsigned char adts[] = { 0xFF, 0xF1, 0x5C, 0x40, 0x01, 0x1F, 0xFC };
 	unsigned char data[8];
 
 	struct mpeg4_aac_t aac, aac2;
