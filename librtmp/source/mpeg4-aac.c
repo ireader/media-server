@@ -99,7 +99,7 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 	data[0] = (aac->profile << 3) | ((aac->sampling_frequency_index >> 1) & 0x07);
-	data[1] = ((aac->sampling_frequency_index & 0x01) << 7) | (aac->channel_configuration << 3) | 0x00;
+	data[1] = ((aac->sampling_frequency_index & 0x01) << 7) | ((aac->channel_configuration & 0xF) << 3) | (0 << 2) /* frame length-1024 samples*/ | (0 << 1) /* don't depend on core */ | 0 /* not extension */;
 	return 2;
 }
 
@@ -137,7 +137,7 @@ void mpeg4_aac_test(void)
 
 	assert(sizeof(adts) == mpeg4_aac_adts_save(&aac, 1, data, sizeof(data)));
 	assert(0 == memcmp(adts, data, sizeof(adts)));
-	assert(mpeg4_aac_adts_load(data, sizeof(adts), &aac2) > 0);
+	assert(7 == mpeg4_aac_adts_load(data, sizeof(adts), &aac2));
 	assert(0 == memcmp(&aac, &aac2, sizeof(aac)));
 
 	assert(22050 == mpeg4_aac_audio_frequency_to(aac.sampling_frequency_index));
