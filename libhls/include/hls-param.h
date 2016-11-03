@@ -16,4 +16,6 @@
 #define HLS_M3U8_TYPE   "application/vnd.apple.mpegURL" // HTTP Content-Type
 #define HLS_TS_TYPE     "video/MP2T" // HTTP Content-Type
 
+#define PTS_NO_VALUE INT64_MIN //(int64_t)0x8000000000000000L
+
 #endif /* !_hls_param_h_ */

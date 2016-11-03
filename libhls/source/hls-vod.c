@@ -3,6 +3,7 @@
 // A target duration (length of the media segments) of 10 seconds is recommended
 
 #include "hls-vod.h"
+#include "hls-h264.h"
 #include "hls-param.h"
 #include "hls-segment.h"
 #include "mpeg-ts.h"
@@ -10,7 +11,6 @@
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
-#include "h264-util.h"
 #include "ctypedef.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -194,17 +194,19 @@ static int hls_segment_new(struct hls_vod_t* hls, int64_t pts)
 
 int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
+	int64_t timestamp;
 	struct hls_vod_t* hls;
 	hls = (struct hls_vod_t*)p;
+	timestamp = PTS_NO_VALUE == dts ? pts : dts;
 
 	if (0 == hls->bytes || flags ||
-		(pts - hls->pts_first > hls->duration &&  // duration check
+		(timestamp - hls->pts_first > hls->duration &&  // duration check
 			// TODO: check sps/pps???
 			(0 == hls->vpacket || (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes)))))  // IDR-frame or audio only stream
 	{
 		if (hls->bytes > 0)
 		{
-			int64_t pts_last = (!bytes || flags) ? hls->pts_last : pts;
+			int64_t pts_last = (!bytes || flags) ? hls->pts_last : timestamp;
 			hls_segment_new(hls, pts_last);
 
 			hls->target_duration = VMAX(hls->target_duration, pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
@@ -214,8 +216,8 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 			mpeg_ts_reset(hls->ts);
 		}
 
-		hls->discontinue = list_empty(&hls->root) ? 0 : EXT_X_DISCONTINUITY(pts, hls->pts_last); // EXT-X-DISCONTINUITY
-		hls->pts_first = pts;
+		hls->discontinue = list_empty(&hls->root) ? 0 : EXT_X_DISCONTINUITY(timestamp, hls->pts_last); // EXT-X-DISCONTINUITY
+		hls->pts_first = timestamp;
 		hls->vpacket = 0;
 		hls->bytes = 0;
 	}
@@ -223,8 +225,8 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 	if (STREAM_VIDEO_H264 == avtype)
 		hls->vpacket++;
 
-	hls->pts_last = pts;
-	return mpeg_ts_write(hls->ts, avtype, pts * 90, dts * 90, data, bytes);
+	hls->pts_last = timestamp;
+	return mpeg_ts_write(hls->ts, avtype, pts * 90, (PTS_NO_VALUE==dts ? pts : dts) * 90, data, bytes);
 }
 
 size_t hls_vod_count(void* p)
@@ -255,10 +257,10 @@ size_t hls_vod_m3u8(void* p, char* m3u8, size_t bytes)
 	
 	r = snprintf(m3u8, bytes,
 		"#EXTM3U\n" // MUST
-		"#EXT-X-VERSION:3\n" // Optional
+		"#EXT-X-VERSION:4\n" // Optional
 		"#EXT-X-TARGETDURATION:%" PRId64 "\n" // MUST, decimal-integer, in seconds
-//		"EXT-X-PLAYLIST-TYPE:VOD\n"
-//		"#EXT-X-MEDIA-SEQUENCE:0\n", // VOD
+		"#EXT-X-MEDIA-SEQUENCE:0\n" // VOD
+		"EXT-X-PLAYLIST-TYPE:VOD\n"
 //		"#EXT-X-ALLOW-CACHE:NO\n"
 		, (hls->target_duration+999)/1000);
 	if (r <= 0)

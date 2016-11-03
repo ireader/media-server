@@ -53,5 +53,8 @@
     <ClInclude Include="include\hls-segment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\hls-h264.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 #include "hls-live.h"
 #include "hls-file.h"
+#include "hls-h264.h"
 #include "hls-server.h"
-#include "h264-util.h"
 #include "mpeg-ts.h"
 #include <stdio.h>
 #include <stdlib.h>
