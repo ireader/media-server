@@ -260,8 +260,8 @@ size_t hls_vod_m3u8(void* p, char* m3u8, size_t bytes)
 		"#EXT-X-VERSION:4\n" // Optional
 		"#EXT-X-TARGETDURATION:%" PRId64 "\n" // MUST, decimal-integer, in seconds
 		"#EXT-X-MEDIA-SEQUENCE:0\n" // VOD
-		"EXT-X-PLAYLIST-TYPE:VOD\n"
-//		"#EXT-X-ALLOW-CACHE:NO\n"
+		"#EXT-X-PLAYLIST-TYPE:VOD\n"
+		"#EXT-X-ALLOW-CACHE:YES\n"
 		, (hls->target_duration+999)/1000);
 	if (r <= 0)
 		return 0;
