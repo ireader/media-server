@@ -110,7 +110,7 @@ size_t rtcp_sdes_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 
 	ctx->rtcp_cycle = (ctx->rtcp_cycle+1) % 24; // 3 * SDES item number
 
-	header.length = (n+4+3)/4; // see 6.4.1 SR: Sender Report RTCP Packet
+	header.length = (uint16_t)((n+4+3)/4); // see 6.4.1 SR: Sender Report RTCP Packet
 	nbo_write_rtcp_header(ptr, &header);
 	nbo_w32(ptr+4, ctx->self->ssrc);
 

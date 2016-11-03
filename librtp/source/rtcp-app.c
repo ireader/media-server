@@ -44,7 +44,7 @@ size_t rtcp_app_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes, 
 		header.p = 0;
 		header.pt = RTCP_APP;
 		header.rc = 0;
-		header.length = 2+(len+3)/4;
+		header.length = (uint16_t)(2+(len+3)/4);
 		nbo_write_rtcp_header(ptr, &header);
 
 		nbo_w32(ptr+4, ctx->self->ssrc);
