@@ -1,7 +1,6 @@
 #include "rtmp-client.h"
 #include "h264-util.h"
 #include "h264-nal.h"
-#include "h264-sps.h"
 #include <assert.h>
 #include <memory.h>
 #include <stdint.h>
@@ -35,7 +34,6 @@ static void rtmp_client_sps_handler(void* param, const void* nalu, size_t bytes)
 size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t bytes, void* out, size_t osize)
 {
 	int r;
-	struct h264_sps_t sps;
 	struct mpeg4_avc_t avc;
 
 	memset(&avc, 0, sizeof(avc));
@@ -43,12 +41,9 @@ size_t rtmp_client_make_AVCDecoderConfigurationRecord(const void* video, size_t 
 	if (avc.nb_sps < 1)
 		return 0;
 
-	memset(&sps, 0, sizeof(struct h264_sps_t));
-	h264_sps_parse(avc.sps[0].data, avc.sps[0].bytes, &sps);
-
-	avc.profile = sps.profile_idc;
-	avc.level = sps.level_idc;
-	avc.compatibility = sps.constraint_set_flag;
+	avc.profile = avc.sps[0].data[1];
+	avc.compatibility = avc.sps[0].data[2];
+	avc.level = avc.sps[0].data[3];
 	avc.nalu = 4;
 
 	if (osize < (size_t)(avc.nb_sps + avc.nb_pps) * 66 + 7)
