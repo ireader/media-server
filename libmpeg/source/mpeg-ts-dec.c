@@ -6,21 +6,28 @@
 #include "mpeg-ps-proto.h"
 #include "mpeg-pes-proto.h"
 #include "mpeg-ts.h"
-#include "crc32.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+
+struct mpeg_ts_handler_t
+{
+	void(*handler)();
+};
 
 typedef struct _mpeg_ts_dec_context_t
 {
 	pat_t pat;
 	pmt_t pmt[1];
 	pes_t pes[2];
+	struct mpeg_ts_handler_t handlers[0x1fff + 1]; // TODO: setup PID handler
+
+	uint8_t payload[4 * 1024 * 1024]; // TODO: need more payload buffer!!!
 } mpeg_ts_dec_context_t;
 
 static mpeg_ts_dec_context_t tsctx;
 
-static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptation_field_t *adp)
+static uint32_t ts_packet_adaptation(const uint8_t* data, size_t bytes, ts_adaptation_field_t *adp)
 {
 	// 2.4.3.4 Adaptation field
 	// Table 2-6
@@ -29,8 +36,6 @@ static uint32_t ts_packet_adaptation(const uint8_t* data, int bytes, ts_adaptati
 
 	assert(bytes <= TS_PACKET_SIZE);
 	adp->adaptation_field_length = data[i++];
-	printf("adaptaion(%u)  flag: %0x\n", adp->adaptation_field_length, (unsigned int)data[i]);
-
 	if(adp->adaptation_field_length > 0)
 	{
 		adp->discontinuity_indicator = (data[i] >> 7) & 0x01;
@@ -185,63 +190,46 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void
 					pmt_read(data + i, bytes - i, &tsctx.pmt[j]);
 					break;
 				}
-
-				for(k = 0; k < tsctx.pat.pmt[j].stream_count; k++)
+				else
 				{
-					if(PID == tsctx.pes[k].pid)
+					for (k = 0; k < tsctx.pat.pmt[j].stream_count; k++)
 					{
-						if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
+						if (PID == tsctx.pes[k].pid)
 						{
-							if(!tsctx.pes[k].payload)
-                                tsctx.pes[k].payload = (PSI_STREAM_H264==tsctx.pes[k].avtype) ? s_video : s_audio;
-
-							if (/*PSI_STREAM_H264 == tsctx.pes[k].avtype && */tsctx.pes[k].payload_len > 0)
+							if (TS_PAYLOAD_UNIT_START_INDICATOR(data))
 							{
-								//static FILE* fp = NULL;
-								//if (NULL == fp)
-								//	fp = fopen("video.h264", "wb");
+								if (!tsctx.pes[k].payload)
+									tsctx.pes[k].payload = (PSI_STREAM_H264 == tsctx.pes[k].avtype) ? s_video : s_audio;
 
-								if (tsctx.pes[k].payload[4] == 0x09)
+								if (tsctx.pes[k].payload_len > 0)
 								{
-									assert(0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3]);
-									handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6);
+									assert(0 == tsctx.pes[k].len || tsctx.pes[k].payload_len == tsctx.pes[k].len - tsctx.pes[k].PES_header_data_length - 3);
+									// TODO: filter 0x09 AUD
+									if ((tsctx.pes[k].payload[4] == 0x09 && 0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3]))
+										handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6);
+									else
+										handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload, tsctx.pes[k].payload_len);
+
+									tsctx.pes[k].payload_len = 0;
 								}
-								else
-									handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload, tsctx.pes[k].payload_len);
-								//fwrite(tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6, 1, fp);
+
+								pes_read(data + i, bytes - i, &psm, &tsctx.pes[k]);
 							}
-
-                            pes_read(data + i, bytes - i, &psm, &tsctx.pes[k]);
-
-                            if(0 == k)
-                                printf("pes payload: %u\n", tsctx.pes[k].len);
-
-							if(tsctx.pes[k].PTS_DTS_flags & 0x02)
+							else
 							{
-								t = tsctx.pes[k].pts / 90;
-								printf("pts: %02d:%02d:%02d.%03d - %" PRId64 "\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].pts);
+								memcpy(tsctx.pes[k].payload + tsctx.pes[k].payload_len, data + i, bytes - i);
+								tsctx.pes[k].payload_len += bytes - i;
+
+								//if(tsctx.pes[i].len > 0)
+								//    tsctx.pes[k].len -= bytes - i;
 							}
 
-							if(tsctx.pes[k].PTS_DTS_flags & 0x01)
-							{
-								t = tsctx.pes[k].dts / 90;
-								printf("dts: %02d:%02d:%02d.%03d - %" PRId64 "\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), tsctx.pes[k].dts);
-							}
+							break; // find stream
 						}
-						else
-						{
-                            memcpy(tsctx.pes[k].payload + tsctx.pes[k].payload_len, data + i, bytes - i);
-                            tsctx.pes[k].payload_len += bytes - i;
-
-                            //if(tsctx.pes[i].len > 0)
-                            //    tsctx.pes[k].len -= bytes - i;
-						}
-
-						break; // goto out?
 					}
-				}
+				} // PMT handler
 			}
-		}
+		} // PAT handler
 	}
 
 	return 0;

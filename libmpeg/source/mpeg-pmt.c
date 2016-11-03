@@ -4,7 +4,6 @@
 
 #include "mpeg-ts-proto.h"
 #include "mpeg-util.h"
-#include "crc32.h"
 #include <memory.h>
 #include <assert.h>
 
@@ -78,8 +77,8 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	// Table 2-33
 
 	uint32_t i = 0;
-	uint32_t len = 0;
 	uint32_t crc = 0;
+	ptrdiff_t len = 0;
 	uint8_t *p = NULL;
 
 	data[0] = PAT_TID_PMS;	// program map table
@@ -148,7 +147,7 @@ size_t pmt_write(const pmt_t *pmt, uint8_t *data)
 	nbo_w16(data + 1, (uint16_t)(0xb000 | len)); 
 
 	// crc32
-	crc = crc32(0xffffffff, data, p-data);
+	crc = crc32(0xffffffff, data, (uint32_t)(p-data));
 	//put32(p, crc);
 	p[3] = (crc >> 24) & 0xFF;
 	p[2] = (crc >> 16) & 0xFF;

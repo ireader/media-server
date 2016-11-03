@@ -46,6 +46,8 @@ extern  "C" size_t mpeg_ts_h264(void* h264, size_t bytes);
 static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
 {
 	struct mpeg_ts_test_t* ctx = (struct mpeg_ts_test_t*)param;
+	char s_char[] = { ' ', 'A', 'V', 'a', 'v' };
+	printf("[%c] pts: %08u, dts: %08u\n", s_char[avtype], pts, dts);
 
 	if (PSI_STREAM_AAC == avtype)
 	{
@@ -58,7 +60,7 @@ static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* d
 		while (!ctx->audios.empty())
 		{
 			const mpeg_ts_test_t::audio& audio = ctx->audios.front();
-			if (audio.pts > pts)
+			if (audio.dts > dts)
 				break;
 
 			mpeg_ts_write(ctx->ts, PSI_STREAM_AAC, audio.pts, audio.dts, audio.data.get(), audio.bytes);

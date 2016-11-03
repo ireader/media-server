@@ -19,7 +19,7 @@ typedef struct _video_stream_descriptor_t
 	uint32_t frame_rate_extension_flag : 1;
 } video_stream_descriptor_t;
 
-int video_stream_descriptor(const uint8_t* data, int bytes);
+size_t video_stream_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _audio_stream_descriptor_t
 {
@@ -29,7 +29,7 @@ typedef struct _audio_stream_descriptor_t
 	uint32_t variable_rate_audio_indicator : 1;
 } audio_stream_descriptor_t;
 
-int audio_stream_descriptor(const uint8_t* data, int bytes);
+size_t audio_stream_descriptor(const uint8_t* data, size_t bytes);
 
 /*
 Table 2-50 ¨C Hierarchy_type field values
@@ -63,7 +63,7 @@ typedef struct _hierarchy_descriptor_t
 	uint32_t hierarchy_channel : 6;
 } hierarchy_descriptor_t;
 
-int hierarchy_descriptor(const uint8_t* data, int bytes);
+size_t hierarchy_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _language_descriptor_t
 {
@@ -71,7 +71,7 @@ typedef struct _language_descriptor_t
 	uint32_t audio : 8;
 } language_descriptor_t;
 
-int language_descriptor(const uint8_t* data, int bytes);
+size_t language_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _system_clock_descriptor_t
 {
@@ -80,21 +80,21 @@ typedef struct _system_clock_descriptor_t
 	uint32_t clock_accuracy_exponent : 3;
 } system_clock_descriptor_t;
 
-int system_clock_descriptor(const uint8_t* data, int bytes);
+size_t system_clock_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _mpeg4_video_descriptor_t
 {
 	uint8_t visual_profile_and_level;
 } mpeg4_video_descriptor_t;
 
-int mpeg4_video_descriptor(const uint8_t* data, int bytes);
+size_t mpeg4_video_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _mpeg4_audio_descriptor_t
 {
 	uint8_t profile_and_level;
 } mpeg4_audio_descriptor_t;
 
-int mpeg4_audio_descriptor(const uint8_t* data, int bytes);
+size_t mpeg4_audio_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _avc_video_descriptor_t
 {
@@ -112,7 +112,7 @@ typedef struct _avc_video_descriptor_t
 	uint32_t frame_packing_SEI_not_present_flag : 1;
 } avc_video_descriptor_t;
 
-int avc_video_descriptor(const uint8_t* data, int bytes);
+size_t avc_video_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _avc_timing_hrd_descriptor_t
 {
@@ -127,7 +127,7 @@ typedef struct _avc_timing_hrd_descriptor_t
 	uint32_t num_unit_in_tick;
 } avc_timing_hrd_descriptor_t;
 
-int avc_timing_hrd_descriptor(const uint8_t* data, int bytes);
+size_t avc_timing_hrd_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _mpeg2_aac_descriptor_t
 {
@@ -136,7 +136,7 @@ typedef struct _mpeg2_aac_descriptor_t
 	uint32_t additional_information : 8;
 } mpeg2_aac_descriptor_t;
 
-int mpeg2_aac_descriptor(const uint8_t* data, int bytes);
+size_t mpeg2_aac_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _svc_extension_descriptor_t
 {
@@ -153,7 +153,7 @@ typedef struct _svc_extension_descriptor_t
 	uint32_t no_sei_nal_unit_present : 1;
 } svc_extension_descriptor_t;
 
-int svc_extension_descriptor(const uint8_t* data, int bytes);
+size_t svc_extension_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _mvc_extension_descriptor_t
 {
@@ -167,6 +167,6 @@ typedef struct _mvc_extension_descriptor_t
 	uint32_t no_prefix_nal_unit_present : 1;
 } mvc_extension_descriptor_t;
 
-int mvc_extension_descriptor(const uint8_t* data, int bytes);
+size_t mvc_extension_descriptor(const uint8_t* data, size_t bytes);
 
 #endif /* !_mpeg_element_descriptor_h_ */

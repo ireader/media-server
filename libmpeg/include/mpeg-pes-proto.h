@@ -101,7 +101,7 @@ typedef struct _pes_t
 
 	//uint32_t pack_field_length : 8;
 	uint8_t *payload;
-	uint32_t payload_len;
+	size_t payload_len;
 } pes_t;
 
 size_t pes_read(const uint8_t* data, size_t bytes, struct _psm_t *psm, pes_t *pes);

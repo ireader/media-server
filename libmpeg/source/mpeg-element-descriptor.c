@@ -125,13 +125,13 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 	return descriptor_len+2;
 }
 
-int video_stream_descriptor(const uint8_t* data, int bytes)
+size_t video_stream_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.2 Video stream descriptor(p85)
-	int i;
+	size_t i;
 	video_stream_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -153,13 +153,13 @@ int video_stream_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int audio_stream_descriptor(const uint8_t* data, int bytes)
+size_t audio_stream_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.4 Audio stream descriptor(p86)
-	int i;
+	size_t i;
 	audio_stream_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -173,13 +173,13 @@ int audio_stream_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int hierarchy_descriptor(const uint8_t* data, int bytes)
+size_t hierarchy_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.6 Hierarchy descriptor(p86)
-	int i;
+	size_t i;
 	hierarchy_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -197,12 +197,12 @@ int hierarchy_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int language_descriptor(const uint8_t* data, int bytes)
+size_t language_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.18 ISO 639 language descriptor(p92)
-	int i;
+	size_t i;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	for(i = 2; i < descriptor_len; i += 4)
@@ -217,13 +217,13 @@ int language_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int system_clock_descriptor(const uint8_t* data, int bytes)
+size_t system_clock_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.20 System clock descriptor(p92)
-	int i;
+	size_t i;
 	system_clock_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -236,13 +236,13 @@ int system_clock_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int mpeg4_video_descriptor(const uint8_t* data, int bytes)
+size_t mpeg4_video_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.36 MPEG-4 video descriptor(p96)
-	int i;
+	size_t i;
 	mpeg4_video_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -253,13 +253,13 @@ int mpeg4_video_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int mpeg4_audio_descriptor(const uint8_t* data, int bytes)
+size_t mpeg4_audio_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.38 MPEG-4 audio descriptor(p97)
-	int i;
+	size_t i;
 	mpeg4_audio_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -270,13 +270,13 @@ int mpeg4_audio_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int avc_video_descriptor(const uint8_t* data, int bytes)
+size_t avc_video_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.64 AVC video descriptor(p110)
-	int i;
+	size_t i;
 	avc_video_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -298,13 +298,13 @@ int avc_video_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int avc_timing_hrd_descriptor(const uint8_t* data, int bytes)
+size_t avc_timing_hrd_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.66 AVC timing and HRD descriptor(p112)
-	int i;
+	size_t i;
 	avc_timing_hrd_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -331,13 +331,13 @@ int avc_timing_hrd_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int mpeg2_aac_descriptor(const uint8_t* data, int bytes)
+size_t mpeg2_aac_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.68 MPEG-2 AAC audio descriptor(p113)
-	int i;
+	size_t i;
 	mpeg2_aac_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -350,13 +350,13 @@ int mpeg2_aac_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int svc_extension_descriptor(const uint8_t* data, int bytes)
+size_t svc_extension_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.76 SVC extension descriptor(p116)
-	int i;
+	size_t i;
 	svc_extension_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;
@@ -377,13 +377,13 @@ int svc_extension_descriptor(const uint8_t* data, int bytes)
 	return descriptor_len+2;
 }
 
-int mvc_extension_descriptor(const uint8_t* data, int bytes)
+size_t mvc_extension_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.78 MVC extension descriptor(p117)
-	int i;
+	size_t i;
 	mvc_extension_descriptor_t desc;
 //	uint8_t descriptor_tag = data[0];
-	uint8_t descriptor_len = data[1];
+	size_t descriptor_len = data[1];
 	assert(descriptor_len+2 <= bytes);
 
 	i = 2;

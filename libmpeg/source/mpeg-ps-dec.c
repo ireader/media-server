@@ -19,10 +19,10 @@ struct mpeg_ps_unpacker_t
 	void* param;	
 };
 
-static uint32_t ps_system_header_dec(const uint8_t* data, int bytes, ps_system_header_t *syshd)
+static size_t ps_system_header_dec(const uint8_t* data, size_t bytes, ps_system_header_t *syshd)
 {
 	int i,j;
-	uint16_t len;
+	size_t len;
 
 	// 2.5.3.5 System header
 	// Table 2-40 ¨C Program stream system header

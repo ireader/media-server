@@ -4,7 +4,6 @@
 
 #include "mpeg-ts-proto.h"
 #include "mpeg-util.h"
-#include "crc32.h"
 #include <assert.h>
 
 size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)

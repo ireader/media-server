@@ -92,11 +92,5 @@
     <ClInclude Include="source\mpeg-util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\sdk\include\crc32.h">
-      <Filter>util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\sdk\video\h264-util.h">
-      <Filter>util</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -6,13 +6,12 @@
 #include "mpeg-pes-proto.h"
 #include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
-#include "crc32.h"
 #include <assert.h>
 #include <memory.h>
 
 size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 {
-	int i, j, k;
+	size_t i, j, k;
 	uint8_t current_next_indicator;
 	uint8_t single_extension_stream_flag;
 	uint16_t program_stream_map_length;
@@ -127,7 +126,7 @@ size_t psm_write(const psm_t *psm, uint8_t *data)
 	nbo_w16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
 	// crc32
-	crc = crc32(0xffffffff, data, j);
+	crc = crc32(0xffffffff, data, (uint32_t)j);
 	data[j+3] = (uint8_t)((crc >> 24) & 0xFF);
 	data[j+2] = (uint8_t)((crc >> 16) & 0xFF);
 	data[j+1] = (uint8_t)((crc >> 8) & 0xFF);

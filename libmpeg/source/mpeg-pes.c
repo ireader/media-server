@@ -9,7 +9,7 @@
 #include <memory.h>
 #include <assert.h>
 
-static int pes_payload(void* param, const uint8_t* data, int bytes)
+static int pes_payload(void* param, const uint8_t* data, size_t bytes)
 {
 	pes_t *pes;
 	pes = (pes_t*)param;
@@ -21,7 +21,7 @@ static int pes_payload(void* param, const uint8_t* data, int bytes)
 
 static size_t pes_packet(const uint8_t* data, size_t bytes, pes_t *pes)
 {
-	int i;
+	size_t i;
 
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2]);
 	pes->sid = data[3];
@@ -48,28 +48,33 @@ static size_t pes_packet(const uint8_t* data, size_t bytes, pes_t *pes)
 	pes->PES_header_data_length = data[i];
 
 	i++;
-	if(0x02 == pes->PTS_DTS_flags)
+	if(0x02 & pes->PTS_DTS_flags)
 	{
-		assert(0x20 == (data[i] & 0xF0));
+		assert(0x20 == (data[i] & 0x20));
 		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 
 		i += 5;
 	}
-	else if(0x03 == pes->PTS_DTS_flags)
+	else
 	{
-		assert(0x30 == (data[i] & 0xF0));
-		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
-		i += 5;
+		pes->pts = PTS_NO_VALUE;
+	}
 
-		assert(0x10 == (data[i] & 0xF0));
+	if(0x01 & pes->PTS_DTS_flags)
+	{
+		assert(0x10 == (data[i] & 0x10));
 		pes->dts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i+1] << 22) | ((((uint64_t)data[i+2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
 		i += 5;
+	}
+	else
+	{
+		pes->dts = PTS_NO_VALUE;
 	}
 
 	if(pes->ESCR_flag)
 	{
 		pes->ESCR_base = ((((uint64_t)data[i] >> 3) & 0x07) << 30) | (((uint64_t)data[i] & 0x03) << 28) | ((uint64_t)data[i+1] << 20) | ((((uint64_t)data[i+2] >> 3) & 0x1F) << 15) | (((uint64_t)data[i+2] & 0x3) << 13) | ((uint64_t)data[i+3] << 5) | ((data[i+4] >> 3) & 0x1F);
-		pes->ESCR_extension = ((data[i+4] & 0x03) << 7) | ((data[i+5] >> 1) & 0x3F);
+		pes->ESCR_extension = ((data[i+4] & 0x03) << 7) | ((data[i+5] >> 1) & 0x7F);
 		i += 6;
 	}
 
@@ -167,7 +172,9 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	// copyright '0'
 	// original_or_copy '0'
 	//data[6] = SUBTITLE ? 0x84 : 0x80;
-	data[6] = 0x84;
+	data[6] = 0x80;
+	//if (IDR | subtitle | raw data)
+		//data[6] |= 0x04;
 
 	// PTS_DTS_flag 'xx'
 	// ESCR_flag '0'
@@ -176,12 +183,13 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	// additional_copy_info_flag '0'
 	// PES_CRC_flag '0'
 	// PES_extension_flag '0'
-	if(pts)
+	if(PTS_NO_VALUE != pts)
 	{
 		flags |= 0x80;  // pts
 		len += 5;
 	}
-	if(PES_SID_VIDEO==data[3])
+	assert(PTS_NO_VALUE == dts || pts == dts || PES_SID_VIDEO == data[3]); // audio PTS==DTS
+	if(PES_SID_VIDEO==data[3] && PTS_NO_VALUE != dts)
 	{
 		flags |= 0x40;  // dts
 		len += 5;
@@ -194,20 +202,20 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 	p = data + 9;
 	if(flags & 0x80)
 	{
-		*p++ = ((flags >> 2) & 0x30) | ((pts >> 30) & 0x07) | 0x01;
-		*p++ = (pts >> 22) & 0xFF;
-		*p++ = 0x01 | ((pts >> 14) & 0xFE);
-		*p++ = (pts >> 7) & 0xFF;
-		*p++ = 0x01 | ((pts << 1) & 0xFE);
+		*p++ = ((flags >> 2) & 0x30)/* 0011/0010 */ | (((pts >> 30) & 0x07) << 1) /* PTS 30-32 */ | 0x01 /* marker_bit */;
+		*p++ = (pts >> 22) & 0xFF; /* PTS 22-29 */
+		*p++ = ((pts >> 14) & 0xFE) /* PTS 15-21 */ | 0x01 /* marker_bit */;
+		*p++ = (pts >> 7) & 0xFF; /* PTS 7-14 */
+		*p++ = ((pts << 1) & 0xFE) /* PTS 0-6 */ | 0x01 /* marker_bit */;
 	}
 
 	if(flags & 0x40)
 	{
-		*p++ = 0x11 | ((dts >> 30) & 0x07);
-		*p++ = (dts >> 22) & 0xFF;
-		*p++ = 0x01 | ((dts >> 14) & 0xFE);
-		*p++ = (dts >> 7) & 0xFF;
-		*p++ = 0x01 | ((dts << 1) & 0xFE);
+		*p++ = 0x10 /* 0001 */ | (((dts >> 30) & 0x07) << 1) /* DTS 30-32 */ | 0x01 /* marker_bit */;
+		*p++ = (dts >> 22) & 0xFF; /* DTS 22-29 */
+		*p++ = ((dts >> 14) & 0xFE) /* DTS 15-21 */ | 0x01 /* marker_bit */;
+		*p++ = (dts >> 7) & 0xFF; /* DTS 7-14 */
+		*p++ = ((dts << 1) & 0xFE) /* DTS 0-6 */ | 0x01 /* marker_bit */;
 	}
 
 	return p - data;
