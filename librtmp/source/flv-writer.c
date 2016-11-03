@@ -8,8 +8,11 @@
 #include "mpeg4-avc.h"
 #include "byte-order.h"
 #include "h264-util.h"
-#include "h264-sps.h"
 #include "h264-nal.h"
+
+#define FLV_TYPE_AUDIO 8
+#define FLV_TYPE_VDIEO 9
+#define FLV_TYPE_SCRIPT 18
 
 struct flv_writer_t
 {
@@ -19,7 +22,6 @@ struct flv_writer_t
 
 	struct mpeg4_aac_t aac;
 	struct mpeg4_avc_t avc;
-	struct h264_sps_t sps;
 	int keyframe;
 
 	uint8_t* ptr;
@@ -63,6 +65,22 @@ static inline void flv_write_tag(uint8_t* tag, uint8_t type, uint32_t bytes, uin
 	tag[10] = 0;
 }
 
+static int flv_write_eos(struct flv_writer_t* flv)
+{
+	uint8_t header[11 + 5 + 4];
+	flv_write_tag(header, FLV_TYPE_VDIEO, 5, 0);
+	flv->ptr[11] = (1 << 4) /* FrameType */ | 7 /* AVC */;
+	flv->ptr[12] = 2; // AVC end of sequence
+	flv->ptr[13] = 0;
+	flv->ptr[14] = 0;
+	flv->ptr[15] = 0;
+	be_write_uint32(header + 16, 16); // TAG size
+
+	if (sizeof(header) != fwrite(header, 1, sizeof(header), flv->fp))
+		return ferror(flv->fp);
+	return 0;
+}
+
 void* flv_writer_create(const char* file)
 {
 	struct flv_writer_t* flv;
@@ -88,6 +106,7 @@ void flv_writer_destroy(void* p)
 
 	if (flv->fp)
 	{
+		flv_write_eos(flv);
 		fclose(flv->fp);
 		flv->fp = NULL;
 	}
@@ -136,7 +155,7 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 		m = mpeg4_aac_audio_specific_config_save(&flv->aac, flv->ptr + 13, flv->bytes - 13);
 		assert(13 + m + 4 <= (int)flv->bytes);
 
-		flv_write_tag(flv->ptr, 8, m + 2, pts);
+		flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, m + 2, pts);
 		flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 		flv->ptr[12] = flv->audio;
 		be_write_uint32(flv->ptr + 13 + m, 13 + m); // TAG size
@@ -148,7 +167,7 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 	}
 
 	dts = 0;
-	flv_write_tag(flv->ptr, 8, bytes - n + 2, pts);
+	flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, bytes - n + 2, pts);
 	flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 	flv->ptr[12] = flv->audio;
 	memcpy(flv->ptr + 13, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
@@ -218,22 +237,19 @@ int flv_writer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint
 		flv->avc.nb_pps = 0;
 		h264_stream(data, bytes, flv_h264_handler, flv);
 
-		if (flv->avc.nb_sps < 1)
+		if (flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
 			return 0;
 
-		memset(&flv->sps, 0, sizeof(struct h264_sps_t));
-		h264_sps_parse(flv->avc.sps[0].data, flv->avc.sps[0].bytes, &flv->sps);
-
-		flv->avc.profile = flv->sps.profile_idc;
-		flv->avc.level = flv->sps.level_idc;
-		flv->avc.compatibility = flv->sps.constraint_set_flag;
+		flv->avc.profile = flv->avc.sps[0].data[1];
+		flv->avc.compatibility = flv->avc.sps[0].data[2];
+		flv->avc.level = flv->avc.sps[0].data[3];
 		flv->avc.nalu = 4;
 
 		m = mpeg4_avc_decoder_configuration_record_save(&flv->avc, flv->ptr + 16, flv->bytes - 16);
 		if (m <= 0)
 			return -1; // invalid data
 
-		flv_write_tag(flv->ptr, 9, m + 5, dts);
+		flv_write_tag(flv->ptr, FLV_TYPE_VDIEO, m + 5, dts);
 		flv->ptr[11] = ((flv->keyframe?1:2) << 4) /* FrameType */ | 7 /* AVC */;
 		flv->ptr[12] = 0; // AVC sequence header
 		flv->ptr[13] = 0;
@@ -254,9 +270,8 @@ int flv_writer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint
 	h264_stream(data, bytes, flv_h264_handler, flv);
 
 	assert(flv->offset - 16 >= bytes);
-	dts = dts ? dts : pts;
 	compositionTime = pts - dts;
-	flv_write_tag(flv->ptr, 9, flv->offset - 11, dts);
+	flv_write_tag(flv->ptr, FLV_TYPE_VDIEO, flv->offset - 11, dts);
 	flv->ptr[11] = ((flv->keyframe ? 1 : 2) << 4) /* FrameType */ | 7 /* AVC */;
 	flv->ptr[12] = 1; // AVC NALU
 	flv->ptr[13] = (compositionTime >> 16) & 0xFF;
