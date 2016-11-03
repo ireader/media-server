@@ -1,5 +1,6 @@
 #include "flv-writer.h"
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
