@@ -189,7 +189,7 @@ size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data)
 		len += 5;
 	}
 	assert(PTS_NO_VALUE == dts || pts == dts || PES_SID_VIDEO == data[3]); // audio PTS==DTS
-	if(PES_SID_VIDEO==data[3] && PTS_NO_VALUE != dts)
+	if(PTS_NO_VALUE != dts && /*PES_SID_VIDEO==data[3] && */dts != pts)
 	{
 		flags |= 0x40;  // dts
 		len += 5;
