@@ -1,5 +1,4 @@
 ROOT:=../../sdk
-H264:=../../avcodec/h264
 
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
@@ -14,7 +13,6 @@ OUTFILE = libhls.a
 INCLUDES = . \
 					./include \
 					../libmpeg/include \
-					$(H264)/include \
 					$(ROOT)/libhttp/include \
 					$(ROOT)/include
 

@@ -1,5 +1,4 @@
 ROOT:=../../sdk
-H264:=../../avcodec/h264
 
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
@@ -11,10 +10,7 @@ OUTFILE = libmpeg.a
 #
 # INCLUDES = $(addprefix -I,$(INCLUDES)) # add -I prefix
 #--------------------------------------------------------------------
-INCLUDES = . \
-					./include \
-					$(H264)/include \
-					$(ROOT)/include
+INCLUDES = . ./include
 
 #-------------------------------Source-------------------------------
 #

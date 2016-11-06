@@ -83,16 +83,13 @@ static unsigned int s_body_max_size = 0*MB;
 //				| "," | ";" | ":" | "\" | <">
 //				| "/" | "[" | "]" | "?" | "="
 //				| "{" | "}" | SP | HT
-#define isseparators(c)	(!!strchr("()<>@,;:\\\"/[]?={} \t", (c)))
-#define isspace(c)		((c)==' ')
-
 static inline int is_valid_token(const char* s, int len)
 {
 	const char *p;
 	for(p = s; p < s + len && *p; ++p)
 	{
 		// CTLs or separators
-		if(*p <= 31 || *p >= 127 || isseparators(*p))
+		if(*p <= 31 || *p >= 127 || !!strchr("()<>@,;:\\\"/[]?={} \t", *p))
 			break;
 	}
 
@@ -102,14 +99,14 @@ static inline int is_valid_token(const char* s, int len)
 static inline void trim_right(const char* s, size_t *pos, size_t *len)
 {
 	//// left trim
-	//while(*len > 0 && isspace(s[*pos]))
+	//while(*len > 0 && ISSPACE(s[*pos]))
 	//{
 	//	--*len;
 	//	++*pos;
 	//}
 
 	// right trim
-	while(*len > 0 && isspace(s[*pos + *len - 1]))
+	while(*len > 0 && ISSPACE(s[*pos + *len - 1]))
 	{
 		--*len;
 	}
@@ -309,7 +306,7 @@ static int rtsp_parse_request_line(struct rtsp_context *ctx)
 			break;
 
 		case SM_REQUEST_METHOD_SP:
-			if(isspace(ctx->raw[ctx->offset]))
+			if(ISSPACE(ctx->raw[ctx->offset]))
 				break; // skip SP
 
 			assert('\r' != ctx->raw[ctx->offset]);
@@ -444,7 +441,7 @@ static int rtsp_parse_status_line(struct rtsp_context *ctx)
 		case SM_STATUS_CODE_SP:
 			assert('\r' != ctx->raw[ctx->offset]);
 			assert('\n' != ctx->raw[ctx->offset]);
-			if(isspace(ctx->raw[ctx->offset]))
+			if(ISSPACE(ctx->raw[ctx->offset]))
 				break; // skip SP
 
 			assert(0 == ctx->reply.reason_pos);

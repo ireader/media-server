@@ -11,7 +11,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define PCR_DELAY			0 //(40 * 90) // 40ms
+#define PCR_DELAY			0 //(700 * 90) // 700ms
 #define N_MPEG_TS_STREAM	8
 
 #define TS_HEADER_LEN		4 // 1-bytes sync byte + 2-bytes PID + 1-byte CC

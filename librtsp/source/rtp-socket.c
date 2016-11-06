@@ -15,7 +15,7 @@ static unsigned int s_multicast_num = 250;
 #if defined(OS_LINUX)
 static unsigned char s_port_map[(1<<(sizeof(unsigned short)*8))/8];
 
-static void system_list_port()
+static inline void system_list_port()
 {
 	FILE* fp;
 	char line[256];
