@@ -26,7 +26,9 @@ void* rtmp_reader_create(const char* url)
 	memset(ctx, 0, sizeof(RTMPContext));
 	strlcpy(ctx->url, url, sizeof(ctx->url));
 
+#if defined(_DEBUG) || defined(DEBUG)
 	RTMP_LogSetLevel(RTMP_LOGINFO);
+#endif
 	ctx->rtmp = RTMP_Alloc();
 	if (!ctx->rtmp)
 	{

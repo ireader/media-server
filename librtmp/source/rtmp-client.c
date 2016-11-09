@@ -65,7 +65,9 @@ void* rtmp_client_create(const char* url)
 	memset(ctx, 0, sizeof(RTMPContext));
 	strlcpy(ctx->url, url, sizeof(ctx->url));
 	
-	RTMP_LogSetLevel(RTMP_LOGDEBUG);
+#if defined(_DEBUG) || defined(DEBUG)
+	RTMP_LogSetLevel(RTMP_LOGINFO);
+#endif
 	ctx->rtmp = RTMP_Alloc();
 	if (!ctx->rtmp)
 	{
