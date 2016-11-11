@@ -18,6 +18,7 @@
 #define FLV_AUDIO_MP3		2
 #define FLV_AUDIO_G711		7
 #define FLV_AUDIO_AAC		10
+#define FLV_AUDIO_MP3_8k	14
 
 // FLV Video Type
 #define FLV_VIDEO_H263		2
@@ -202,9 +203,15 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 			flv->handler(flv->param, FLV_AAC, flv->data, tag->datasize - 2 + 7, tag->timestamp, tag->timestamp);
 		}
 	}
+	else if (FLV_AUDIO_MP3 == flv->audio.format || FLV_AUDIO_MP3_8k == flv->audio.format)
+	{
+		flv->handler(flv->param, flv->audio.format, data + 1, tag->datasize - 1, tag->timestamp, tag->timestamp);
+	}
 	else
 	{
 		// Audio frame data
+		assert(0);
+		flv->handler(flv->param, flv->audio.format, data + 1, tag->datasize - 1, tag->timestamp, tag->timestamp);
 	}
 
 	return 0;
@@ -299,6 +306,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, struct flv_tag_t* tag, c
 	else
 	{
 		// Video frame data
+		assert(0);
+		flv->handler(flv->param, flv->video.codecid << 4, data + 1, tag->datasize - 1, tag->timestamp, tag->timestamp);
 	}
 
 	return 0;

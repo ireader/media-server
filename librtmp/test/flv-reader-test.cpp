@@ -16,6 +16,7 @@ inline const char* ftimestamp(uint32_t t, char* buf)
 
 inline size_t get_astd_length(const uint8_t* data, size_t bytes)
 {
+	assert(bytes >= 6);
 	return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] >> 5) & 0x07);
 }
 
@@ -49,6 +50,7 @@ static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uin
 	else
 	{
 		// nothing to do
+		assert(0);
 	}
 
 	printf("\n");

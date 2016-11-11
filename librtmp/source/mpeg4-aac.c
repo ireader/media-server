@@ -123,6 +123,7 @@ int mpeg4_aac_audio_frequency_from(int frequence)
 
 #undef ARRAYOF
 
+#if defined(_DEBUG) || defined(DEBUG)
 void mpeg4_aac_test(void)
 {
 	const unsigned char src[] = { 0x13, 0x88 };
@@ -143,3 +144,4 @@ void mpeg4_aac_test(void)
 	assert(22050 == mpeg4_aac_audio_frequency_to(aac.sampling_frequency_index));
 	assert(aac.sampling_frequency_index == mpeg4_aac_audio_frequency_from(22050));
 }
+#endif

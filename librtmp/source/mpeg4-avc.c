@@ -207,6 +207,7 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 	return k;
 }
 
+#if defined(_DEBUG) || defined(DEBUG)
 void mpeg4_avc_test(void)
 {
 	const unsigned char src[] = {
@@ -231,3 +232,4 @@ void mpeg4_avc_test(void)
 	assert(sizeof(nalu) == mpeg4_avc_to_nalu(&avc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));
 }
+#endif

@@ -169,7 +169,7 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 
 	dts = 0;
 	flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, bytes - n + 2, pts);
-	flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
+	flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 	flv->ptr[12] = flv->audio;
 	memcpy(flv->ptr + 13, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
 	be_write_uint32(flv->ptr + 13 + bytes - n, bytes - n + 13); // TAG size

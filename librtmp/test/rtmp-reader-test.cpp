@@ -17,6 +17,10 @@ static void onFLV(void* param, int type, const void* data, size_t bytes, uint32_
 	{
 		fwrite(data, bytes, 1, h264);
 	}
+	else
+	{
+		assert(0);
+	}
 }
 
 static void rtmp_read(const char* url)
@@ -39,7 +43,7 @@ static void rtmp_read(const char* url)
 }
 
 // rtmp_reader_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
-static void rtmp_reader_test(const char* url)
+void rtmp_reader_test(const char* url)
 {
 	aac = fopen("audio.aac", "wb");
 	h264 = fopen("video.h264", "wb");

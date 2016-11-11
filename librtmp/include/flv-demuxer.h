@@ -8,7 +8,19 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-	enum { FLV_AAC = 1, FLV_AVC, FLV_AAC_HEADER, FLV_AVC_HEADER };
+	enum 
+	{
+		// audio 0xF
+		FLV_MP3 = 2, 
+		FLV_AAC = 10, 
+		
+		// video 0xF0
+		FLV_AVC = (7 << 4), 
+		
+		// other 0xF00
+		FLV_AAC_HEADER = (1 << 8), 
+		FLV_AVC_HEADER = (2 << 8)
+	};
 
 	typedef void (*flv_demuxer_handler)(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
