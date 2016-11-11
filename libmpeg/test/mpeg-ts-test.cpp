@@ -47,7 +47,7 @@ static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* d
 {
 	struct mpeg_ts_test_t* ctx = (struct mpeg_ts_test_t*)param;
 	char s_char[] = { ' ', 'A', 'V', 'a', 'v' };
-	printf("[%c] pts: %08u, dts: %08u\n", s_char[avtype], pts, dts);
+	printf("[%c] pts: %08lu, dts: %08lu\n", s_char[avtype], (unsigned long)pts, (unsigned long)dts);
 
 	if (PSI_STREAM_AAC == avtype)
 	{

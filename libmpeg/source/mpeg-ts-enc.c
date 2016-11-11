@@ -98,7 +98,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 	uint8_t *pes = NULL;
 	uint8_t *data = NULL;
 
-	keyframe = (PSI_STREAM_AAC == stream->avtype || (PSI_STREAM_H264 == stream->avtype && find_h264_keyframe(payload, bytes)));
+	keyframe = (PSI_STREAM_H264 == stream->avtype && find_h264_keyframe(payload, bytes));
 
 	while(bytes > 0)
 	{
@@ -244,18 +244,18 @@ int mpeg_ts_write(void* ts, int avtype, int64_t pts, int64_t dts, const void* da
 	for (i = 0; i < tsctx->pat.pmt[0].stream_count; i++)
 	{
 		stream = &tsctx->pat.pmt[0].streams[i];
+
+		// enable audio stream type change (AAC -> MP3)
+		if (PES_SID_AUDIO == stream->sid 
+			&& (PSI_STREAM_AAC == avtype || PSI_STREAM_MP3 == avtype)
+			&& avtype != stream->avtype)
+		{
+			stream->avtype = (uint8_t)avtype;
+			mpeg_ts_reset(tsctx);
+		}
+
 		if (avtype == (int)stream->avtype)
 		{
-			//if (0 != stream->dts)
-			//{
-			//	if (dts - stream->dts > tsctx->pcr_period)
-			//	{
-			//		tsctx->pcr_period = dts - stream->dts;
-			//		tsctx->pat.pmt[0].PCR_PID = tsctx->pat.pmt[0].streams[i].pid;
-			//		tsctx->pat_period = 0;
-			//	}
-			//}
-
 			stream->pts = pts;
 			stream->dts = dts;
 
