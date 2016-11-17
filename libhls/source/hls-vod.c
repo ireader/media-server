@@ -19,7 +19,7 @@
 #define N_SEGMENT	50
 #define N_TS_PACKET 188
 
-#define EXT_X_DISCONTINUITY(x, y)	( abs((x) - (y)) > 30000 ? 1 : 0 )
+#define TIMESTAMP_DISCONTINUE		30000 // 30s
 #define VMAX(a, b)					((a) > (b) ? (a) : (b))
 
 struct hls_vod_t
@@ -194,19 +194,21 @@ static int hls_segment_new(struct hls_vod_t* hls, int64_t pts)
 
 int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
+	int discontinue;
 	int64_t timestamp;
 	struct hls_vod_t* hls;
 	hls = (struct hls_vod_t*)p;
 	timestamp = PTS_NO_VALUE == dts ? pts : dts;
+	discontinue = (timestamp + TIMESTAMP_DISCONTINUE < hls->pts_last || timestamp > hls->pts_last + TIMESTAMP_DISCONTINUE) ? 1 : 0;
 
-	if (0 == hls->bytes || flags ||
-		(timestamp - hls->pts_first > hls->duration &&  // duration check
+	if (0 == hls->bytes || flags || discontinue
+		|| ( timestamp - hls->pts_first > hls->duration // duration check
 			// TODO: check sps/pps???
-			(0 == hls->vpacket || (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes)))))  // IDR-frame or audio only stream
+			&& (0 == hls->vpacket || (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes)))))  // IDR-frame or audio only stream
 	{
 		if (hls->bytes > 0)
 		{
-			int64_t pts_last = (!bytes || flags) ? hls->pts_last : timestamp;
+			int64_t pts_last = (!bytes || flags || discontinue) ? hls->pts_last : timestamp;
 			hls_segment_new(hls, pts_last);
 
 			hls->target_duration = VMAX(hls->target_duration, pts_last - hls->pts_first); // update EXT-X-TARGETDURATION
@@ -216,7 +218,7 @@ int hls_vod_input(void* p, int avtype, const void* data, size_t bytes, int64_t p
 			mpeg_ts_reset(hls->ts);
 		}
 
-		hls->discontinue = list_empty(&hls->root) ? 0 : EXT_X_DISCONTINUITY(timestamp, hls->pts_last); // EXT-X-DISCONTINUITY
+		hls->discontinue = list_empty(&hls->root) ? 0 : discontinue; // EXT-X-DISCONTINUITY
 		hls->pts_first = timestamp;
 		hls->vpacket = 0;
 		hls->bytes = 0;
