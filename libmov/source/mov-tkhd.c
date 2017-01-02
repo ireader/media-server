@@ -49,7 +49,7 @@ int mov_read_tkhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 		tkhd.v1.modification_time = file_reader_rb64(mov->fp);
 		tkhd.v1.track_ID = file_reader_rb32(mov->fp);
 		/*tkhd.v1.reserved = */file_reader_rb32(mov->fp);
-		tkhd.v1.creation_time = file_reader_rb64(mov->fp);
+		tkhd.v1.duration = file_reader_rb64(mov->fp);
 	}
 	else
 	{
@@ -58,7 +58,7 @@ int mov_read_tkhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 		tkhd.v0.modification_time = file_reader_rb32(mov->fp);
 		tkhd.v0.track_ID = file_reader_rb32(mov->fp);
 		/*tkhd.v0.reserved = */file_reader_rb32(mov->fp);
-		tkhd.v0.creation_time = file_reader_rb32(mov->fp);
+		tkhd.v0.duration = file_reader_rb32(mov->fp);
 	}
 
 	// const unsigned int(32)[2] reserved = 0;

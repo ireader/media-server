@@ -47,7 +47,7 @@ int mov_read_mvhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 		mvhd.v1.creation_time = file_reader_rb64(mov->fp);
 		mvhd.v1.modification_time = file_reader_rb64(mov->fp);
 		mvhd.v1.timescale = file_reader_rb32(mov->fp);
-		mvhd.v1.creation_time = file_reader_rb64(mov->fp);
+		mvhd.v1.duration = file_reader_rb64(mov->fp);
 	}
 	else
 	{
@@ -55,7 +55,7 @@ int mov_read_mvhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 		mvhd.v0.creation_time = file_reader_rb32(mov->fp);
 		mvhd.v0.modification_time = file_reader_rb32(mov->fp);
 		mvhd.v0.timescale = file_reader_rb32(mov->fp);
-		mvhd.v0.creation_time = file_reader_rb32(mov->fp);
+		mvhd.v0.duration = file_reader_rb32(mov->fp);
 	}
 
 	mvhd.rate = file_reader_rb32(mov->fp);
