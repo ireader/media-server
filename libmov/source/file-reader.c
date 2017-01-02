@@ -41,6 +41,8 @@ void* file_reader_create(const char* file)
 void file_reader_destroy(void* file)
 {
 	struct file_t* f = (struct file_t*)file;
+	if(f->fp)
+		fclose(f->fp);
 	free(f);
 }
 
@@ -62,6 +64,7 @@ int file_reader_seek(void* file, uint64_t bytes)
 			f->offset -= INT32_MAX;
 		}
 		f->error = fseek(f->fp, f->offset - f->bytes, SEEK_CUR);
+		f->bytes = f->offset = 0; // clear buffer offset/size
 	}
 	return f->error;
 }
@@ -78,13 +81,38 @@ uint64_t file_reader_tell(void* file)
 
 size_t file_reader_read(void* file, void* buffer, size_t bytes)
 {
-	size_t r;
+	size_t n, r = 0;
 	struct file_t* f = (struct file_t*)file;
-	r = fread(buffer, 1, bytes, f->fp);
-	if (r != bytes)
+
+	// copy from memory
+	if(bytes > r && f->offset < f->bytes) 
 	{
-		f->error = feof(f->fp) ? 0 : ferror(f->fp);
-		return 0;
+		r = bytes <= (f->bytes - f->offset) ? bytes : (f->bytes - f->offset);
+		memcpy(buffer, f->ptr + f->offset, r);
+		f->offset += r;
+	}
+
+	// load from file
+	n = bytes - r;
+	if(n > 0) 
+	{
+		if(n >= FILE_CAPACITY) 
+		{
+			r += fread((uint8_t*)buffer + r, 1, n, f->fp);
+		} 
+		else 
+		{
+			f->bytes = fread(f->ptr, 1, FILE_CAPACITY, f->fp);
+			if (0 == f->bytes)
+			{
+				f->error = -1; // end-of-file mark an error
+				return 0;
+			}
+
+			f->offset = f->bytes >= n ? n : f->bytes;
+			memcpy((uint8_t*)buffer + r, f->ptr, f->offset);
+			r += f->offset;
+		}
 	}
 
 	return r;
