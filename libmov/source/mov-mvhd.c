@@ -1,5 +1,5 @@
-#include "mov-mvhd.h"
 #include "file-reader.h"
+#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 
@@ -34,7 +34,7 @@ aligned(8) class MovieHeaderBox extends FullBox(¡®mvhd¡¯, version, 0) {
 	unsigned int(32) next_track_ID; 
 }
 */
-int mov_read_mvhd(struct mov_reader_t* mov, const struct mov_box_t* box)
+int mov_read_mvhd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	int i;
 	struct mov_mvhd_t mvhd;
@@ -44,18 +44,18 @@ int mov_read_mvhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 
 	if (1 == mvhd.version)
 	{
-		mvhd.v1.creation_time = file_reader_rb64(mov->fp);
-		mvhd.v1.modification_time = file_reader_rb64(mov->fp);
-		mvhd.v1.timescale = file_reader_rb32(mov->fp);
-		mvhd.v1.duration = file_reader_rb64(mov->fp);
+		mvhd.creation_time = file_reader_rb64(mov->fp);
+		mvhd.modification_time = file_reader_rb64(mov->fp);
+		mvhd.timescale = file_reader_rb32(mov->fp);
+		mvhd.duration = file_reader_rb64(mov->fp);
 	}
 	else
 	{
 		assert(0 == mvhd.version);
-		mvhd.v0.creation_time = file_reader_rb32(mov->fp);
-		mvhd.v0.modification_time = file_reader_rb32(mov->fp);
-		mvhd.v0.timescale = file_reader_rb32(mov->fp);
-		mvhd.v0.duration = file_reader_rb32(mov->fp);
+		mvhd.creation_time = file_reader_rb32(mov->fp);
+		mvhd.modification_time = file_reader_rb32(mov->fp);
+		mvhd.timescale = file_reader_rb32(mov->fp);
+		mvhd.duration = file_reader_rb32(mov->fp);
 	}
 
 	mvhd.rate = file_reader_rb32(mov->fp);
@@ -79,4 +79,47 @@ int mov_read_mvhd(struct mov_reader_t* mov, const struct mov_box_t* box)
 #endif
 	mvhd.next_track_ID = file_reader_rb32(mov->fp);
 	return 0;
+}
+
+size_t mov_write_mvhd(const struct mov_t* mov)
+{
+//	int rotation = 0; // 90/180/270
+	const struct mov_track_t* track = mov->track;
+
+	file_writer_wb32(mov->fp, 108); /* size */
+	file_writer_write(mov->fp, "mvhd", 4);
+	file_writer_wb32(mov->fp, 0); /* version & flags */
+
+	file_writer_wb32(mov->fp, (uint32_t)track->mvhd.creation_time); /* creation_time */
+	file_writer_wb32(mov->fp, (uint32_t)track->mvhd.modification_time); /* modification_time */
+	file_writer_wb32(mov->fp, track->mvhd.timescale); /* timescale */
+	file_writer_wb32(mov->fp, (uint32_t)track->mvhd.duration); /* duration */
+
+	file_writer_wb32(mov->fp, 0x00010000); /* rate 1.0 */
+	file_writer_wb16(mov->fp, 0x0100); /* volume 1.0 = normal */
+	file_writer_wb16(mov->fp, 0); /* reserved */
+	file_writer_wb32(mov->fp, 0); /* reserved */
+	file_writer_wb32(mov->fp, 0); /* reserved */
+
+	// matrix
+	file_writer_wb32(mov->fp, 0x00010000); /* u */
+	file_writer_wb32(mov->fp, 0);
+	file_writer_wb32(mov->fp, 0);
+	file_writer_wb32(mov->fp, 0); /* v */
+	file_writer_wb32(mov->fp, 0x00010000);
+	file_writer_wb32(mov->fp, 0);
+	file_writer_wb32(mov->fp, 0); /* w */
+	file_writer_wb32(mov->fp, 0);
+	file_writer_wb32(mov->fp, 0x40000000);
+
+	file_writer_wb32(mov->fp, 0); /* reserved (preview time) */
+	file_writer_wb32(mov->fp, 0); /* reserved (preview duration) */
+	file_writer_wb32(mov->fp, 0); /* reserved (poster time) */
+	file_writer_wb32(mov->fp, 0); /* reserved (selection time) */
+	file_writer_wb32(mov->fp, 0); /* reserved (selection duration) */
+	file_writer_wb32(mov->fp, 0); /* reserved (current time) */
+
+	file_writer_wb32(mov->fp, track->mvhd.next_track_ID); /* Next track id */
+
+	return 108;
 }

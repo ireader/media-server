@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 	void* file_reader_create(const char* file);
-	void file_reader_destroy(void* file);
+	void file_reader_destroy(void** file);
 
 	/// @return 0-ok/eof, other-error
 	int file_reader_error(void* file);

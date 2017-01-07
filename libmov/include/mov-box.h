@@ -11,7 +11,7 @@ struct mov_box_t
 	uint32_t type;
 
 	// if 'uuid' == type
-	uint8_t usertype[16];
+	//uint8_t usertype[16];
 
 	// FullBox
 	//uint32_t version : 8;

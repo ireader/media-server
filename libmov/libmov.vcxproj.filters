@@ -45,6 +45,12 @@
     <ClInclude Include="include\mov-esds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mov-tag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\file-writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\file-reader.c">
@@ -84,6 +90,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-elst.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\file-writer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-ftyp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-hdlr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-minf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
