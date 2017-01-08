@@ -25,6 +25,8 @@
     <ClCompile Include="librtmp\log.c" />
     <ClCompile Include="librtmp\parseurl.c" />
     <ClCompile Include="librtmp\rtmp.c" />
+    <ClCompile Include="source\amf0.c" />
+    <ClCompile Include="source\amf3.c" />
     <ClCompile Include="source\flv-demuxer.c" />
     <ClCompile Include="source\flv-reader.c" />
     <ClCompile Include="source\flv-writer.c" />
@@ -33,19 +35,28 @@
     <ClCompile Include="source\rtmp-audiospecificconfig.c" />
     <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c" />
     <ClCompile Include="source\rtmp-client.c" />
+    <ClCompile Include="source\rtmp-control-message.c" />
     <ClCompile Include="source\rtmp-meta.c" />
+    <ClCompile Include="source\rtmp-netconnection.c" />
+    <ClCompile Include="source\rtmp-netstream.c" />
     <ClCompile Include="source\rtmp-reader.c" />
     <ClCompile Include="test\flv-reader-test.cpp" />
     <ClCompile Include="test\rtmp-reader-test.cpp" />
     <ClCompile Include="test\rtmp-sender-test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\amf0.h" />
+    <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\flv-demuxer.h" />
     <ClInclude Include="include\flv-reader.h" />
     <ClInclude Include="include\flv-writer.h" />
     <ClInclude Include="include\mpeg4-aac.h" />
     <ClInclude Include="include\mpeg4-avc.h" />
+    <ClInclude Include="include\rtmp-control-message.h" />
+    <ClInclude Include="include\rtmp-helper.h" />
+    <ClInclude Include="include\rtmp-netconnection.h" />
     <ClInclude Include="include\rtmp-client.h" />
+    <ClInclude Include="include\rtmp-netstream.h" />
     <ClInclude Include="include\rtmp-reader.h" />
     <ClInclude Include="librtmp\amf.h" />
     <ClInclude Include="librtmp\bytes.h" />
