@@ -96,6 +96,9 @@
     <ClCompile Include="source\rtmp-control-message.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\rtmp-handshake.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">
@@ -162,6 +165,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtmp-msgtypeid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtmp-handshake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

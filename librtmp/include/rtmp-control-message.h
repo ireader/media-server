@@ -6,6 +6,13 @@
 
 enum
 {
+	// 5.4.1. Set Chunk Size (1) (p19)
+	// The maximum chunk size defaults to 128 bytes
+	RTMP_CHUNK_SIZE = 128,
+};
+
+enum
+{
 	RTMP_CONTROL_SETCHUNKSIZE = 1,
 	RTMP_CONTROL_ABORT = 2,
 	RTMP_CONTROL_ACKNOWLEDGEMENT = 3,

@@ -36,6 +36,7 @@
     <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c" />
     <ClCompile Include="source\rtmp-client.c" />
     <ClCompile Include="source\rtmp-control-message.c" />
+    <ClCompile Include="source\rtmp-handshake.c" />
     <ClCompile Include="source\rtmp-meta.c" />
     <ClCompile Include="source\rtmp-netconnection.c" />
     <ClCompile Include="source\rtmp-netstream.c" />
@@ -53,7 +54,9 @@
     <ClInclude Include="include\mpeg4-aac.h" />
     <ClInclude Include="include\mpeg4-avc.h" />
     <ClInclude Include="include\rtmp-control-message.h" />
+    <ClInclude Include="include\rtmp-handshake.h" />
     <ClInclude Include="include\rtmp-helper.h" />
+    <ClInclude Include="include\rtmp-msgtypeid.h" />
     <ClInclude Include="include\rtmp-netconnection.h" />
     <ClInclude Include="include\rtmp-client.h" />
     <ClInclude Include="include\rtmp-netstream.h" />
