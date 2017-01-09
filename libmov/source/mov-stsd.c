@@ -4,6 +4,12 @@
 #include "mov-internal.h"
 #include <assert.h>
 
+// stsd: Sample Description Box
+#define MOV_AUDIO MOV_TAG('s', 'o', 'u', 'n')
+#define MOV_VIDEO MOV_TAG('v', 'i', 'd', 'e')
+#define MOV_HINT  MOV_TAG('h', 'i', 'n', 't')
+#define MOV_META  MOV_TAG('m', 'e', 't', 'a')
+
 static int mov_read_sample_entry(struct mov_t* mov, struct mov_box_t* box)
 {
 	box->size = file_reader_rb32(mov->fp);
@@ -111,11 +117,11 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		{
 			mov_read_video(mov, box);
 		}
-		else if (MOV_TAG('h', 'i', 'n', 't') == mov->handler_type)
+		else if (MOV_HINT == mov->handler_type)
 		{
 			mov_read_hint_sample_entry(mov, box);
 		}
-		else if (MOV_TAG('m', 'e', 't', 'a') == mov->handler_type)
+		else if (MOV_META == mov->handler_type)
 		{
 			mov_read_meta_sample_entry(mov, box);
 		}
@@ -166,8 +172,8 @@ static int mov_write_video(const struct mov_t* mov)
 	file_writer_wb32(mov->fp, 0); /* Reserved */
 	file_writer_wb32(mov->fp, 0); /* Reserved */
 
-	file_writer_wb16(mov->fp, track->video.width); /* Video width */
-	file_writer_wb16(mov->fp, track->video.height); /* Video height */
+	file_writer_wb16(mov->fp, track->av.video.width); /* Video width */
+	file_writer_wb16(mov->fp, track->av.video.height); /* Video height */
 	file_writer_wb32(mov->fp, 0x00480000); /* Horizontal resolution 72dpi */
 	file_writer_wb32(mov->fp, 0x00480000); /* Vertical resolution 72dpi */
 	file_writer_wb32(mov->fp, 0); /* reserved / Data size (= 0) */
@@ -213,7 +219,7 @@ static int mov_write_audio(const struct mov_t* mov)
 	file_writer_wb16(mov->fp, 0); /* pre_defined */
 	file_writer_wb16(mov->fp, 0); /* reserved / packet size (= 0) */
 
-	file_writer_wb16(mov->fp, track->audio.sample_rate);
+	file_writer_wb16(mov->fp, track->av.audio.sample_rate);
 	file_writer_wb16(mov->fp, 0); /* Reserved */
 
 	//size += mov_write_mp4a(mov);

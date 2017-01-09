@@ -19,10 +19,6 @@
 #define MOV_DINF MOV_TAG('d', 'i', 'n', 'f')
 #define MOV_STBL MOV_TAG('s', 't', 'b', 'l')
 
-// stsd: Sample Description Box
-#define MOV_AUDIO MOV_TAG('s', 'o', 'u', 'n')
-#define MOV_VIDEO MOV_TAG('v', 'i', 'd', 'e')
-
 enum AVCodecID
 {
 	AV_VIDEO_H264 = 1,
@@ -112,7 +108,7 @@ struct mov_sample_t
 			uint32_t count;
 			int32_t duration;
 		} timestamp;
-	};
+	} u;
 };
 
 struct mov_track_t
@@ -135,7 +131,7 @@ struct mov_track_t
 			uint16_t channels;
 			uint16_t bits_per_sample;
 		} audio;
-	};
+	} av;
 
 	uint8_t* extra_data; // H.264 sps/pps
 	size_t extra_data_size;
@@ -190,20 +186,23 @@ int mov_read_ftyp(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_mvhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tkhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_mdhd(struct mov_t* mov, const struct mov_box_t* box);
-int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_vmhd(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_esds(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stsz(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stz2(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stsc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box);
-int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
+size_t mov_write_mdhd(const struct mov_t* mov);
 size_t mov_write_tkhd(const struct mov_t* mov);
-size_t mov_write_stco(const struct mov_t* mov);
 size_t mov_write_hdlr(const struct mov_t* mov);
 size_t mov_write_minf(const struct mov_t* mov);
 size_t mov_write_elst(const struct mov_t* mov);
@@ -212,9 +211,7 @@ size_t mov_write_stts(const struct mov_t* mov);
 size_t mov_write_ctts(const struct mov_t* mov);
 size_t mov_write_stsc(const struct mov_t* mov);
 size_t mov_write_stsz(const struct mov_t* mov);
-size_t mov_write_mdhd(const struct mov_t* mov);
-size_t mov_write_hdlr(const struct mov_t* mov);
-size_t mov_write_minf(const struct mov_t* mov);
+size_t mov_write_stco(const struct mov_t* mov);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 

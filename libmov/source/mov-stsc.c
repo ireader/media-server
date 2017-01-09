@@ -54,12 +54,12 @@ size_t mov_write_stsc(const struct mov_t* mov)
 	for (i = 0; i < track->stsz_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->chunk.first_chunk)
+		if (0 == sample->u.chunk.first_chunk)
 			continue;
 
-		file_writer_wb32(mov->fp, sample->chunk.first_chunk);
-		file_writer_wb32(mov->fp, sample->chunk.samples_per_chunk);
-		file_writer_wb32(mov->fp, sample->chunk.sample_description_index);
+		file_writer_wb32(mov->fp, sample->u.chunk.first_chunk);
+		file_writer_wb32(mov->fp, sample->u.chunk.samples_per_chunk);
+		file_writer_wb32(mov->fp, sample->u.chunk.sample_description_index);
 	}
 
 	return size;

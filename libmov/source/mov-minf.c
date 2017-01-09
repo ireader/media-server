@@ -3,6 +3,26 @@
 #include "mov-internal.h"
 #include <assert.h>
 
+int mov_read_vmhd(struct mov_t* mov, const struct mov_box_t* box)
+{
+	file_reader_r8(mov->fp); /* version */
+	file_reader_rb24(mov->fp); /* flags */
+	uint16_t graphicsmode = file_reader_rb16(mov->fp);
+	// template unsigned int(16)[3] opcolor = {0, 0, 0};
+	file_reader_seek(mov->fp, 6);
+	return 0;
+}
+
+int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box)
+{
+	file_reader_r8(mov->fp); /* version */
+	file_reader_rb24(mov->fp); /* flags */
+	uint16_t balance = file_reader_rb16(mov->fp);
+	//const unsigned int(16) reserved = 0;
+	file_reader_seek(mov->fp, 2);
+	return 0;
+}
+
 size_t mov_write_minf(const struct mov_t* mov)
 {
 	size_t size;

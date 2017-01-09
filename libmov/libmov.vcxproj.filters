@@ -104,5 +104,8 @@
     <ClCompile Include="source\mov-minf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mov-stss.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,6 +1,8 @@
 #include "mov-writer.h"
 #include "mov-internal.h"
 #include "file-writer.h"
+#include <stdlib.h>
+#include <memory.h>
 #include <assert.h>
 
 static void mov_build_chunk(struct mov_track_t* track)
@@ -14,16 +16,16 @@ static void mov_build_chunk(struct mov_track_t* track)
 	{
 		if(i > 0 && sample->offset + bytes == track->samples[i].offset)
 		{
-			track->samples[i].chunk.first_chunk = 0; // mark invalid value
+			track->samples[i].u.chunk.first_chunk = 0; // mark invalid value
 			bytes += track->samples[i].bytes;
-			++sample->chunk.samples_per_chunk;
+			++sample->u.chunk.samples_per_chunk;
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->chunk.first_chunk = ++track->chunk_count;
-			sample->chunk.samples_per_chunk = 1;
-			sample->chunk.sample_description_index = track->id;
+			sample->u.chunk.first_chunk = ++track->chunk_count;
+			sample->u.chunk.samples_per_chunk = 1;
+			sample->u.chunk.sample_description_index = track->id;
 			bytes = sample->bytes;
 		}
 	}
@@ -46,16 +48,16 @@ static void mov_build_stts(struct mov_track_t* track)
 	for (i = 0; i < track->stsz_count; i++)
 	{
 		duration = mov_sample_duration(track, i);
-		if (i > 0 && duration == sample->timestamp.duration)
+		if (i > 0 && duration == sample->u.timestamp.duration)
 		{
-			sample->timestamp.count = 0;
-			++sample->timestamp.count; // compress
+			sample->u.timestamp.count = 0;
+			++sample->u.timestamp.count; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->timestamp.count = 1;
-			sample->timestamp.duration = duration;
+			sample->u.timestamp.count = 1;
+			sample->u.timestamp.duration = duration;
 			++track->chunk_count;
 		}
 	}
@@ -69,16 +71,16 @@ static void mov_build_ctts(struct mov_track_t* track)
 	track->chunk_count = 0;
 	for (i = 0; i < track->stsz_count; i++)
 	{
-		if (i > 0 && track->samples[i].pts - track->samples[i].dts == sample->timestamp.duration)
+		if (i > 0 && track->samples[i].pts - track->samples[i].dts == sample->u.timestamp.duration)
 		{
-			sample->timestamp.count = 0;
-			++sample->timestamp.count; // compress
+			sample->u.timestamp.count = 0;
+			++sample->u.timestamp.count; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->timestamp.count = 1;
-			sample->timestamp.duration = (int32_t)(sample->pts - sample->dts);
+			sample->u.timestamp.count = 1;
+			sample->u.timestamp.duration = (int32_t)(sample->pts - sample->dts);
 			++track->chunk_count;
 		}
 	}
@@ -221,7 +223,7 @@ void mov_write_size(void* fp, uint64_t offset, size_t size)
 
 static int mov_writer_init(struct mov_t* mov)
 {
-	mov->ftyp.major_brand = MOV_TAG('i', 's', 'o', 'm');
+	mov->ftyp.major_brand = MOV_BRAND_ISOM;
 	mov->ftyp.minor_version = 0;
 	mov->ftyp.brands_count = 0;
 	mov->header = 0;

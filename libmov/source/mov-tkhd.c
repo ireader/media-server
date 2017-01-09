@@ -112,8 +112,8 @@ size_t mov_write_tkhd(const struct mov_t* mov)
 	
 	if(AVSTREAM_VIDEO == track->stream_type)
 	{
-		file_writer_wb32(mov->fp, track->video.width * 0x10000U); /* width */
-		file_writer_wb32(mov->fp, track->video.height * 0x10000U); /* height */
+		file_writer_wb32(mov->fp, track->av.video.width * 0x10000U); /* width */
+		file_writer_wb32(mov->fp, track->av.video.height * 0x10000U); /* height */
 	}
 	else
 	{

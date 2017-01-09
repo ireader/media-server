@@ -1,12 +1,12 @@
 #include "mov-reader.h"
+#include "file-reader.h"
+#include "mov-internal.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
-#include "file-reader.h"
-#include "mov-internal.h"
 
 #define MOV_NULL MOV_TAG(0, 0, 0, 0)
 #define MOV_ROOT MOV_TAG('r', 'o', 'o', 't')
@@ -142,26 +142,6 @@ static int mov_read_hdlr(struct mov_t* mov, const struct mov_box_t* box)
 	return 0;
 }
 
-static int mov_read_vmhd(struct mov_t* mov, const struct mov_box_t* box)
-{
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	uint16_t graphicsmode = file_reader_rb16(mov->fp);
-	// template unsigned int(16)[3] opcolor = {0, 0, 0};
-	file_reader_seek(mov->fp, 6);
-	return 0;
-}
-
-static int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box)
-{
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	uint16_t balance = file_reader_rb16(mov->fp);
-	//const unsigned int(16) reserved = 0;
-	file_reader_seek(mov->fp, 2);
-	return 0;
-}
-
 static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 {
 	uint32_t i, entry_count;
@@ -176,34 +156,6 @@ static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 		uint32_t vern = file_reader_rb32(mov->fp); /* version + flags */
 		file_reader_seek(mov->fp, size-12);
 	}
-	return 0;
-}
-
-// 8.6.2 Sync Sample Box (p50)
-static int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box)
-{
-	uint32_t i, entry_count;
-	struct mov_track_t* stream;
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	entry_count = file_reader_rb32(mov->fp);
-
-	assert(mov->track);
-	stream = mov->track;
-	if (stream->stss)
-	{
-		assert(0);
-		free(stream->stss); // duplicated STSS atom
-	}
-	stream->stss_count = 0;
-	stream->stss = malloc(sizeof(stream->stss[0]) * entry_count);
-	if (NULL == stream->stss)
-		return ENOMEM;
-
-	for (i = 0; i < entry_count; i++)
-		stream->stss[i] = file_reader_rb32(mov->fp); // uint32_t sample_number
-
-	stream->stss_count = i;
 	return 0;
 }
 
@@ -343,7 +295,7 @@ void* mov_reader_create(const char* file)
 	// ISO/IEC 14496-12:2012(E) 4.3.1 Definition (p17)
 	// Files with no file-type box should be read as if they contained an FTYP box 
 	// with Major_brand='mp41', minor_version=0, and the single compatible brand 'mp41'.
-	mov->ftyp.major_brand = MOV_TAG('m', 'p', '4', '1');
+	mov->ftyp.major_brand = MOV_BRAND_MP41;
 	mov->ftyp.minor_version = 0;
 	mov->ftyp.brands_count = 0;
 	mov->header = 0;

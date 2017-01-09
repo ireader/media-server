@@ -83,11 +83,11 @@ size_t mov_write_stts(const struct mov_t* mov)
 	for (i = 0; i < track->stsz_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->timestamp.count)
+		if (0 == sample->u.timestamp.count)
 			continue;
 
-		file_writer_wb32(mov->fp, sample->timestamp.count); // count
-		file_writer_wb32(mov->fp, sample->timestamp.duration); // duration
+		file_writer_wb32(mov->fp, sample->u.timestamp.count); // count
+		file_writer_wb32(mov->fp, sample->u.timestamp.duration); // duration
 	}
 
 	return size;
@@ -109,11 +109,11 @@ size_t mov_write_ctts(const struct mov_t* mov)
 	for (i = 0; i < track->stsz_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->timestamp.count)
+		if (0 == sample->u.timestamp.count)
 			continue;
 
-		file_writer_wb32(mov->fp, sample->timestamp.count); // count
-		file_writer_wb32(mov->fp, sample->timestamp.duration); // duration
+		file_writer_wb32(mov->fp, sample->u.timestamp.count); // count
+		file_writer_wb32(mov->fp, sample->u.timestamp.duration); // duration
 	}
 
 	return size;

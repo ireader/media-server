@@ -66,7 +66,7 @@ size_t mov_write_stco(const struct mov_t* mov)
 	for (i = 0; i < track->stsz_count; i++)
 	{
 		sample = &track->samples[i];
-		if(0 == sample->chunk.first_chunk)
+		if(0 == sample->u.chunk.first_chunk)
 			continue;
 
 		if(0 != co64)

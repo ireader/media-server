@@ -45,6 +45,7 @@
     <ClCompile Include="source\mov-mdhd.c" />
     <ClCompile Include="source\mov-mvhd.c" />
     <ClCompile Include="source\mov-reader.c" />
+    <ClCompile Include="source\mov-stss.c" />
     <ClCompile Include="source\mov-stsz.c" />
     <ClCompile Include="source\mov-stsd.c" />
     <ClCompile Include="source\mov-stts.c" />
