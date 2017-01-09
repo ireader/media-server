@@ -11,15 +11,6 @@ enum
 	RTMP_CHUNK_SIZE = 128,
 };
 
-enum
-{
-	RTMP_CONTROL_SETCHUNKSIZE = 1,
-	RTMP_CONTROL_ABORT = 2,
-	RTMP_CONTROL_ACKNOWLEDGEMENT = 3,
-	RTMP_CONTROL_WINDOWACKNOWLEDGEMENTSIZE = 5,
-	RTMP_CONTROL_SETPEERBANDWIDTH = 6,
-};
-
 /// 5.4.1. Set Chunk Size (1)
 /// @return 0-error, >0-ok
 int rtmp_set_chunk_size(uint8_t* out, size_t size, uint32_t chunkSize);

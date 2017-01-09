@@ -3,13 +3,33 @@
 
 enum RTMPMessageTypeId
 {
-	RTMP_TYPE_PING = 0x04, /* User Control Messages (4) */
+	/* Protocol Control Messages */
+	RTMP_TYPE_SET_CHUNK_SIZE = 1,
+	RTMP_TYPE_ABORT = 2,
+	RTMP_TYPE_ACKNOWLEDGEMENT = 3,
+	RTMP_TYPE_WINDOW_ACKNOWLEDGEMENT_SIZE = 5,
+	RTMP_TYPE_SET_PEER_BANDWIDTH = 6,
 
-	RTMP_TYPE_AUDIO = 0x08,
-	RTMP_TYPE_VIDEO = 0x09,
-	RTMP_TYPE_AMF3 = 0x11,
-	RTMP_TYPE_INVOKE = 0x12,
-	RTMP_TYPE_AMF0 = 0x14,
+	/* User Control Messages (4) */
+	RTMP_TYPE_PING = 4,
+
+	RTMP_TYPE_AUDIO = 8,
+	RTMP_TYPE_VIDEO = 9,
+	
+	/* Data Message */
+	RTMP_TYPE_DATA_AMF3 = 15,
+	RTMP_TYPE_DATA_AMF0 = 18,
+
+	/* Shared Object Message */
+	RTMP_TYPE_SHARED_OBJECT_AMF3 = 16,
+	RTMP_TYPE_SHARED_OBJECT_AMF0 = 19,
+
+	/* Command Message */
+	RTMP_TYPE_COMMAND_AMF3 = 17,
+	RTMP_TYPE_COMMAND_AMF0 = 20,
+
+	/* Aggregate Message */
+	RTMP_TYPE_AGGREGATE = 22,
 };
 
 #endif /* !_rtmp_msgtypeid_h_ */
