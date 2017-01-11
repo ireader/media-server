@@ -1,9 +1,9 @@
 #include "rtmp-handshake.h"
+#include "rtmp-util.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
 #include <math.h>
-#include "byte-order.h"
 
 static void rtmp_handshake_random(uint8_t* p, uint32_t timestamp)
 {

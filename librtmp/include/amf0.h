@@ -1,6 +1,7 @@
 #ifndef _amf0_h_
 #define _amf0_h_
 
+#include <stdint.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -29,17 +30,17 @@ enum AMFDataType
 	AMF_AVMPLUS_OBJECT,
 };
 
-char* AMFWriteBoolean(char* out, size_t size, int value);
-char* AMFWriteDouble(char* out, size_t size, double value);
-char* AMFWriteString(char* out, size_t size, const char* string, size_t length);
+uint8_t* AMFWriteBoolean(uint8_t* out, size_t size, int value);
+uint8_t* AMFWriteDouble(uint8_t* out, size_t size, double value);
+uint8_t* AMFWriteString(uint8_t* out, size_t size, const char* string, size_t length);
 
-char* AMFWriteNamedString(char* out, size_t size, const char* name, size_t length, const char* value, size_t length2);
-char* AMFWriteNamedDouble(char* out, size_t size, const char* name, size_t length, double value);
-char* AMFWriteNamedBoolean(char* out, size_t size, const char* name, size_t length, int value);
+uint8_t* AMFWriteNamedString(uint8_t* out, size_t size, const char* name, size_t length, const char* value, size_t length2);
+uint8_t* AMFWriteNamedDouble(uint8_t* out, size_t size, const char* name, size_t length, double value);
+uint8_t* AMFWriteNamedBoolean(uint8_t* out, size_t size, const char* name, size_t length, int value);
 
-const char* AMFReadBoolean(const char* in, size_t size, int* value);
-const char* AMFReadDouble(const char* in, size_t size, double* value);
-const char* AMFReadString(const char* in, size_t size, int isLongString, char* string, size_t* length);
+const uint8_t* AMFReadBoolean(const uint8_t* in, size_t size, int* value);
+const uint8_t* AMFReadDouble(const uint8_t* in, size_t size, double* value);
+const uint8_t* AMFReadString(const uint8_t* in, size_t size, int isLongString, char* string, size_t* length);
 
 #ifdef __cplusplus
 }

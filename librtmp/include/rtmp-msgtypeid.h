@@ -6,9 +6,9 @@ enum RTMPMessageTypeId
 	/* Protocol Control Messages */
 	RTMP_TYPE_SET_CHUNK_SIZE = 1,
 	RTMP_TYPE_ABORT = 2,
-	RTMP_TYPE_ACKNOWLEDGEMENT = 3,
-	RTMP_TYPE_WINDOW_ACKNOWLEDGEMENT_SIZE = 5,
-	RTMP_TYPE_SET_PEER_BANDWIDTH = 6,
+	RTMP_TYPE_ACKNOWLEDGEMENT = 3, // bytes read
+	RTMP_TYPE_WINDOW_ACKNOWLEDGEMENT_SIZE = 5, // server bandwidth
+	RTMP_TYPE_SET_PEER_BANDWIDTH = 6, // client bandwidth
 
 	/* User Control Messages (4) */
 	RTMP_TYPE_PING = 4,
@@ -17,19 +17,19 @@ enum RTMPMessageTypeId
 	RTMP_TYPE_VIDEO = 9,
 	
 	/* Data Message */
-	RTMP_TYPE_DATA_AMF3 = 15,
-	RTMP_TYPE_DATA_AMF0 = 18,
+	RTMP_TYPE_FLEX_STREAM = 15, // AMF3
+	RTMP_TYPE_NOTIFY = 18, // AMF0
 
 	/* Shared Object Message */
-	RTMP_TYPE_SHARED_OBJECT_AMF3 = 16,
-	RTMP_TYPE_SHARED_OBJECT_AMF0 = 19,
+	RTMP_TYPE_FLEX_OBJECT = 16, // AMF3
+	RTMP_TYPE_SHARED_OBJECT = 19, // AMF0
 
 	/* Command Message */
-	RTMP_TYPE_COMMAND_AMF3 = 17,
-	RTMP_TYPE_COMMAND_AMF0 = 20,
+	RTMP_TYPE_FLEX_MESSAGE = 17, // AMF3
+	RTMP_TYPE_INVOKE = 20, // AMF0
 
 	/* Aggregate Message */
-	RTMP_TYPE_AGGREGATE = 22,
+	RTMP_TYPE_METADATA = 22,
 };
 
 #endif /* !_rtmp_msgtypeid_h_ */
