@@ -204,7 +204,7 @@ int rtmp_chunk_input(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 			if (parser.payloadSize >= header->length)
 			{
 				assert(parser.payloadSize == header->length);
-				rtmp->onrecv(rtmp->param, parser.header, parser.bytes, parser.payload, header->length);
+				rtmp->onpacket(rtmp->param, header, parser.payload);
 				parser.state = RTMP_STATE_INIT;
 			}
 			else if (0 == parser.payloadSize % rtmp->chunk_size)

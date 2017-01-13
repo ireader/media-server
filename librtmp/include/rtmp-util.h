@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+static void be_write_uint16(uint8_t* ptr, uint16_t val)
+{
+	ptr[0] = (uint8_t)((val >> 8) & 0xFF);
+	ptr[1] = (uint8_t)(val & 0xFF);
+}
+
 static void be_write_uint24(uint8_t* ptr, uint32_t val)
 {
 	ptr[0] = (uint8_t)((val >> 16) & 0xFF);
@@ -16,6 +22,11 @@ static void be_write_uint32(uint8_t* ptr, uint32_t val)
 	ptr[1] = (uint8_t)((val >> 16) & 0xFF);
 	ptr[2] = (uint8_t)((val >> 8) & 0xFF);
 	ptr[3] = (uint8_t)(val & 0xFF);
+}
+
+static void be_read_uint16(const uint8_t* ptr, uint16_t* val)
+{
+	*val = (ptr[0] << 8) | ptr[1];
 }
 
 static void be_read_uint24(const uint8_t* ptr, uint32_t* val)

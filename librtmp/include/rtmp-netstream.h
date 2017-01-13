@@ -18,7 +18,8 @@ enum rtmp_stream_type_t
 	RTMP_STREAM_APPEND,
 };
 uint8_t* rtmp_netstream_publish(uint8_t* out, size_t bytes, int transactionId, const char* name, enum rtmp_stream_type_t stream);
-uint8_t* rtmp_netstream_delete_stream(uint8_t* out, size_t bytes, int transactionId, int id);
+uint8_t* rtmp_netstream_delete_stream(uint8_t* out, size_t bytes, int transactionId, int streamId);
+uint8_t* rtmp_netconnection_close_stream(uint8_t* out, size_t bytes, int transactionId, int streamId);
 
 enum rtmp_level_t
 {

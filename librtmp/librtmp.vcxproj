@@ -31,14 +31,15 @@
     <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c" />
     <ClCompile Include="source\rtmp-chunk-read.c" />
     <ClCompile Include="source\rtmp-chunk-write.c" />
-    <ClCompile Include="source\rtmp-client.c" />
+    <ClCompile Include="source\rtmp-control-handler.c" />
     <ClCompile Include="source\rtmp-control-message.c" />
     <ClCompile Include="source\rtmp-handshake.c" />
+    <ClCompile Include="source\rtmp-invoke-handler.c" />
     <ClCompile Include="source\rtmp-message.cpp" />
-    <ClCompile Include="source\rtmp-meta.c" />
     <ClCompile Include="source\rtmp-netconnection.c" />
     <ClCompile Include="source\rtmp-netstream.c" />
-    <ClCompile Include="source\rtmp-reader.c" />
+    <ClCompile Include="source\rtmp-notify-handler.c" />
+    <ClCompile Include="source\rtmp-server.c" />
     <ClCompile Include="test\flv-reader-test.cpp" />
     <ClCompile Include="test\rtmp-reader-test.cpp" />
     <ClCompile Include="test\rtmp-sender-test.cpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="include\rtmp-client.h" />
     <ClInclude Include="include\rtmp-netstream.h" />
     <ClInclude Include="include\rtmp-reader.h" />
+    <ClInclude Include="include\rtmp-server.h" />
     <ClInclude Include="include\rtmp-util.h" />
     <ClInclude Include="include\rtmp.h" />
   </ItemGroup>

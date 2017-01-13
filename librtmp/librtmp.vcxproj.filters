@@ -27,15 +27,6 @@
     <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtmp-client.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-meta.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-reader.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\flv-demuxer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,6 +79,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rtmp-chunk-read.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-invoke-handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-notify-handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-server.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-control-handler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -150,6 +153,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtmp-server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

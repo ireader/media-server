@@ -47,29 +47,29 @@ enum rtmp_encoding_amf_t
 
 struct rtmp_connect_t
 {
-	char* app; // Server application name, e.g.: testapp
-	char* flashver; // Flash Player version, FMSc/1.0
-	char* swfUrl; // URL of the source SWF file
-	char* tcUrl; // URL of the Server, rtmp://host:1935/testapp/instance1
-	int fpad; // boolean: True if proxy is being used.
-	int audioCodecs; // double
-	int videoCodecs; // double
-	int videoFunction; // double
-	char* pageUrl; // http://host/sample.html
-	int objectEncoding; // double, AMF3/AMF0
+	char app[64]; // Server application name, e.g.: testapp
+	char flashver[32]; // Flash Player version, FMSc/1.0
+	char swfUrl[256]; // URL of the source SWF file
+	char tcUrl[256]; // URL of the Server, rtmp://host:1935/testapp/instance1
+	uint8_t fpad; // boolean: True if proxy is being used.
+	double audioCodecs; // double
+	double videoCodecs; // double
+	double videoFunction; // double
+	char pageUrl[256]; // http://host/sample.html
 };
 
 struct rtmp_connect_reply_t
 {
-	char* fmsver;
-	char* code;
-	char* level;
-	char* description;
+	char fmsver[16]; // FMS/3,0,1,123
+	double capabilities; // 31
+
+	char code[64];
+	char level[16];
+	char description[128];
 };
 
 uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_t* connect);
 uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transactionId);
-//uint8_t* rtmp_netconnection_call(uint8_t* out, size_t bytes);
 
 uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_reply_t* reply);
 uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int transactionId, int id);

@@ -16,28 +16,21 @@ uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionI
 	uint8_t* end = out + bytes;
 	const char* command = s_netconnection_command[RTMP_NETCONNECTION_CONNECT];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command));
-	if (out) out = AMFWriteDouble(out, end - out, transactionId);
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
 
-	if (out) *out++ = AMF_OBJECT;
-	if (out && connect->app) out = AMFWriteNamedString(out, end - out, "app", 3, connect->app, strlen(connect->app));
-	if (out && connect->flashver) out = AMFWriteNamedString(out, end - out, "flashver", 8, connect->flashver, strlen(connect->flashver));
-	if (out && connect->swfUrl) out = AMFWriteNamedString(out, end - out, "swfUrl", 6, connect->swfUrl, strlen(connect->swfUrl));
-	if (out && connect->tcUrl) out = AMFWriteNamedString(out, end - out, "tcUrl", 5, connect->tcUrl, strlen(connect->tcUrl));
-	if (out && -1 != connect->fpad) out = AMFWriteNamedBoolean(out, end - out, "fpad", 4, connect->fpad);
-	if (out && -1 != connect->audioCodecs) out = AMFWriteNamedDouble(out, end - out, "audioCodecs", 11, connect->audioCodecs);
-	if (out && -1 != connect->videoCodecs) out = AMFWriteNamedDouble(out, end - out, "videoCodecs", 11, connect->videoCodecs);
-	if (out && -1 != connect->videoFunction) out = AMFWriteNamedDouble(out, end - out, "videoFunction", 13, connect->videoFunction);
-	if (out && connect->pageUrl) out = AMFWriteNamedString(out, end - out, "pageUrl", 7, connect->pageUrl, strlen(connect->pageUrl));
-	if (out) out = AMFWriteNamedDouble(out, end - out, "objectEncoding", 14, connect->objectEncoding);
-
-	if (out && end - out >= 3)
-	{
-		*out++ = 0;
-		*out++ = 0;	/* end of object - 0x00 0x00 0x09 */
-		*out++ = AMF_OBJECT_END;
-	}
-
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "app", 3, connect->app, strlen(connect->app));
+	out = AMFWriteNamedString(out, end, "flashver", 8, connect->flashver, strlen(connect->flashver));
+	out = AMFWriteNamedString(out, end, "swfUrl", 6, connect->swfUrl, strlen(connect->swfUrl));
+	out = AMFWriteNamedString(out, end, "tcUrl", 5, connect->tcUrl, strlen(connect->tcUrl));
+	out = AMFWriteNamedBoolean(out, end, "fpad", 4, connect->fpad);
+	out = AMFWriteNamedDouble(out, end, "audioCodecs", 11, connect->audioCodecs);
+	out = AMFWriteNamedDouble(out, end, "videoCodecs", 11, connect->videoCodecs);
+	out = AMFWriteNamedDouble(out, end, "videoFunction", 13, connect->videoFunction);
+	out = AMFWriteNamedString(out, end, "pageUrl", 7, connect->pageUrl, strlen(connect->pageUrl));
+	out = AMFWriteNamedDouble(out, end, "objectEncoding", 14, RTMP_ENCODING_AMF_0);
+	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
 
@@ -46,28 +39,19 @@ uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transa
 	uint8_t* end = out + bytes;
 	const char* command = s_netconnection_command[RTMP_NETCONNECTION_RESULT];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command));
-	if (out) out = AMFWriteDouble(out, end - out, transactionId);
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
 
-	if (out) *out++ = AMF_OBJECT;
-	if (out && reply->fmsver) out = AMFWriteNamedString(out, end - out, "fmsver", 6, reply->fmsver, strlen(reply->fmsver));
-	if (out && end - out >= 3)
-	{
-		*out++ = 0;
-		*out++ = 0;	/* end of object - 0x00 0x00 0x09 */
-		*out++ = AMF_OBJECT_END;
-	}
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "fmsVer", 6, reply->fmsver, strlen(reply->fmsver));
+	out = AMFWriteNamedDouble(out, end, "capabilities", 12, reply->capabilities);
+	out = AMFWriteObjectEnd(out, end);
 
-	if (out) *out++ = AMF_OBJECT;
-	if (out && reply->code) out = AMFWriteNamedString(out, end - out, "code", 4, reply->code, strlen(reply->code));
-	if (out && reply->level) out = AMFWriteNamedString(out, end - out, "level", 5, reply->level, strlen(reply->level));
-	if (out && reply->description) out = AMFWriteNamedString(out, end - out, "description", 11, reply->description, strlen(reply->description));
-	if (out && end - out >= 3)
-	{
-		*out++ = 0;
-		*out++ = 0;	/* end of object - 0x00 0x00 0x09 */
-		*out++ = AMF_OBJECT_END;
-	}
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "code", 4, reply->code, strlen(reply->code));
+	out = AMFWriteNamedString(out, end, "level", 5, reply->level, strlen(reply->level));
+	out = AMFWriteNamedString(out, end, "description", 11, reply->description, strlen(reply->description));
+	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
 
@@ -76,9 +60,9 @@ uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transa
 	uint8_t* end = out + bytes;
 	const char* command = s_netconnection_command[RTMP_NETCONNECTION_CREATE_STREAM];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command));
-	if (out) out = AMFWriteDouble(out, end - out, transactionId);
-	if (out) *out++ = AMF_NULL;
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
 	return out;
 }
 
@@ -87,9 +71,9 @@ uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int 
 	uint8_t* end = out + bytes;
 	const char* command = s_netconnection_command[RTMP_NETCONNECTION_RESULT];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command));
-	if (out) out = AMFWriteDouble(out, end - out, transactionId);
-	if (out) *out++ = AMF_NULL;
-	if (out) out = AMFWriteDouble(out, end - out, id);
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
+	out = AMFWriteDouble(out, end, id);
 	return out;
 }

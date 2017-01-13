@@ -3,149 +3,184 @@
 #include <memory.h>
 #include <assert.h>
 
-static uint8_t* AMFWriteInt16(uint8_t* out, size_t size, uint16_t value)
+static uint8_t* AMFWriteInt16(uint8_t* ptr, const uint8_t* end, uint16_t value)
 {
-	assert(size >= 2);
-	out[0] = value >> 8;
-	out[1] = value & 0xFF;
-	return out + 2;
+	assert(end - ptr >= 2);
+	ptr[0] = value >> 8;
+	ptr[1] = value & 0xFF;
+	return ptr + 2;
 }
 
-static uint8_t* AMFWriteInt32(uint8_t* out, size_t size, uint32_t value)
+static uint8_t* AMFWriteInt32(uint8_t* ptr, const uint8_t* end, uint32_t value)
 {
-	assert(size >= 4);
-	out[0] = value >> 24;
-	out[1] = value >> 16;
-	out[2] = value >> 8;
-	out[3] = value & 0xFF;
-	return out + 4;
+	assert(end - ptr >= 4);
+	ptr[0] = (uint8_t)(value >> 24);
+	ptr[1] = (uint8_t)(value >> 16);
+	ptr[2] = (uint8_t)(value >> 8);
+	ptr[3] = (uint8_t)(value & 0xFF);
+	return ptr + 4;
 }
 
-static uint8_t* AMFWriteString16(uint8_t* out, size_t size, const char* string, size_t length)
+static uint8_t* AMFWriteString16(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	assert(size >= 2 + length);
-	out = AMFWriteInt16(out, size, (uint16_t)length);
-	memcpy(out, string, length);
-	return out + length;
+	assert(ptr + 2 + length <= end);
+	ptr = AMFWriteInt16(ptr, end, (uint16_t)length);
+	memcpy(ptr, string, length);
+	return ptr + length;
 }
 
-static uint8_t* AMFWriteString32(uint8_t* out, size_t size, const char* string, size_t length)
+static uint8_t* AMFWriteString32(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	assert(size >= 4 + length);
-	out = AMFWriteInt32(out, size, (uint32_t)length);
-	memcpy(out, string, length);
-	return out + length;
+	assert(ptr + 4 + length <= end);
+	ptr = AMFWriteInt32(ptr, end, (uint32_t)length);
+	memcpy(ptr, string, length);
+	return ptr + length;
 }
 
-uint8_t* AMFWriteBoolean(uint8_t* out, size_t size, int value)
+uint8_t* AMFWriteNull(uint8_t* ptr, const uint8_t* end)
 {
-	if (!out || size < 2) return NULL;
+	if (!ptr || end - ptr < 1) return NULL;
 
-	out[0] = AMF_BOOLEAN;
-	out[1] = 0 == value ? 0 : 1;
-	return out + 2;
+	*ptr++ = AMF_NULL;
+	return ptr;
 }
 
-uint8_t* AMFWriteDouble(uint8_t* out, size_t size, double value)
+uint8_t* AMFWriteObject(uint8_t* ptr, const uint8_t* end)
 {
-	if (!out || size < 9) return NULL;
+	if (!ptr || end - ptr < 1) return NULL;
+
+	*ptr++ = AMF_OBJECT;
+	return ptr;
+}
+
+uint8_t* AMFWriteObjectEnd(uint8_t* ptr, const uint8_t* end)
+{
+	if (!ptr || end - ptr < 3) return NULL;
+
+	/* end of object - 0x00 0x00 0x09 */
+	*ptr++ = 0;
+	*ptr++ = 0;
+	*ptr++ = AMF_OBJECT;
+	return ptr;
+}
+
+uint8_t* AMFWriteBoolean(uint8_t* ptr, const uint8_t* end, uint8_t value)
+{
+	if (!ptr || end - ptr < 2) return NULL;
+
+	ptr[0] = AMF_BOOLEAN;
+	ptr[1] = 0 == value ? 0 : 1;
+	return ptr + 2;
+}
+
+uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value)
+{
+	if (!ptr || end - ptr < 9) return NULL;
 
 	assert(8 == sizeof(double));
-	*out++ = AMF_NUMBER;
-	memcpy(out, &value, sizeof(double));
-	return out + 8;
+	*ptr++ = AMF_NUMBER;
+	memcpy(ptr, &value, sizeof(double));
+	return ptr + 8;
 }
 
-uint8_t* AMFWriteString(uint8_t* out, size_t size, const char* string, size_t length)
+uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	if (!out || size < 1 + (length < 65536 ? 2 : 4) + length || length > UINT32_MAX) return NULL;
+	if (!ptr || ptr + 1 + (length < 65536 ? 2 : 4) + length > end || length > UINT32_MAX) return NULL;
 
 	if (length < 65536)
 	{
-		*out++ = AMF_STRING;
-		AMFWriteString16(out, size - 1, string, length);
+		*ptr++ = AMF_STRING;
+		AMFWriteString16(ptr, end, string, length);
 	}
 	else
 	{
-		*out++ = AMF_LONG_STRING;
-		AMFWriteString32(out, size - 1, string, length);
+		*ptr++ = AMF_LONG_STRING;
+		AMFWriteString32(ptr, end, string, length);
 	}
-	return out + length;
+	return ptr + length;
 }
 
-static const uint8_t* AMFReadInt16(const uint8_t* in, size_t size, uint16_t* value)
+static const uint8_t* AMFReadInt16(const uint8_t* ptr, const uint8_t* end, uint16_t* value)
 {
-	if (!in || size < 2) return NULL;
+	if (!ptr || end - ptr < 2) return NULL;
 
-	*value = in[0] << 8;
-	*value |= in[1];
-	return in + 2;
+	*value = ptr[0] << 8;
+	*value |= ptr[1];
+	return ptr + 2;
 }
 
-static const uint8_t* AMFReadInt32(const uint8_t* in, size_t size, uint32_t* value)
+static const uint8_t* AMFReadInt32(const uint8_t* ptr, const uint8_t* end, uint32_t* value)
 {
-	if (size < 4) return NULL;
+	if (end - ptr < 4) return NULL;
 
-	*value = in[0] << 24;
-	*value |= in[1] << 16;
-	*value |= in[2] << 8;
-	*value |= in[3];
-	return in + 4;
+	*value = ptr[0] << 24;
+	*value |= ptr[1] << 16;
+	*value |= ptr[2] << 8;
+	*value |= ptr[3];
+	return ptr + 4;
 }
 
-const uint8_t* AMFReadBoolean(const uint8_t* in, size_t size, int* value)
+const uint8_t* AMFReadNull(const uint8_t* ptr, const uint8_t* end)
 {
-	if (size < 1) return NULL;
-	*value = in[0];
-	return in + 1;
+	assert(ptr && end);
+	return ptr;
 }
 
-const uint8_t* AMFReadDouble(const uint8_t* in, size_t size, double* value)
+const uint8_t* AMFReadBoolean(const uint8_t* ptr, const uint8_t* end, uint8_t* value)
 {
-	if (size < sizeof(double)) return NULL;
-	memcpy(value, in, sizeof(double));
-	return in + sizeof(double);
+	if (end - ptr < 1) return NULL;
+	*value = ptr[0];
+	return ptr + 1;
 }
 
-const uint8_t* AMFReadString(const uint8_t* in, size_t size, int isLongString, char* string, size_t* length)
+const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* value)
+{
+	if (end - ptr < 8) return NULL;
+	memcpy(value, ptr, sizeof(double));
+	return ptr + 8;
+}
+
+const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongString, char* string, size_t length)
 { 
+	uint32_t len = 0xFFFFFFFF;
 	if (isLongString)
-		in = AMFReadInt16(in, size, (uint16_t*)length);
+		ptr = AMFReadInt16(ptr, end, (uint16_t*)len);
 	else
-		in = AMFReadInt32(in, size, (uint32_t*)length);
+		ptr = AMFReadInt32(ptr, end, (uint32_t*)len);
 
-	if (NULL == in || size < *length) return NULL;
+	if (NULL == ptr || ptr + len > end || len + 1 > length) return NULL;
 
-	memcpy(string, in, *length);
-	return in + *length;
+	memcpy(string, ptr, len);
+	string[len] = 0; // null-terminal string
+	return ptr + len;
 }
 
-uint8_t* AMFWriteNamedString(uint8_t* out, size_t size, const char* name, size_t length, const char* value, size_t length2)
+uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2)
 {
-	if (length + 2 + length2 + 3 > size)
+	if (ptr + length + 2 + length2 + 3 > end)
 		return NULL;
 
-	out = AMFWriteString16(out, size, name, length);
+	ptr = AMFWriteString16(ptr, end, name, length);
 
-	return AMFWriteString(out, size - 2 - length, value, length2);
+	return AMFWriteString(ptr, end, value, length2);
 }
 
-uint8_t* AMFWriteNamedDouble(uint8_t* out, size_t size, const char* name, size_t length, double value)
+uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value)
 {
-	if (length + 2 + 8 + 1 > size)
+	if (ptr + length + 2 + 8 + 1 > end)
 		return NULL;
 
-	out = AMFWriteString16(out, size, name, length);
+	ptr = AMFWriteString16(ptr, end, name, length);
 
-	return AMFWriteDouble(out, size - 2 - length, value);
+	return AMFWriteDouble(ptr, end, value);
 }
 
-uint8_t* AMFWriteNamedBoolean(uint8_t* out, size_t size, const char* name, size_t length, int value)
+uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, int value)
 {
-	if (length + 2 + 2 > size)
+	if (ptr + length + 2 + 2 > end)
 		return NULL;
 
-	out = AMFWriteString16(out, size, name, length);
+	ptr = AMFWriteString16(ptr, end, name, length);
 
-	return AMFWriteBoolean(out, size - 2 - length, value);
+	return AMFWriteBoolean(ptr, end, value);
 }

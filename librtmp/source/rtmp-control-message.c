@@ -37,8 +37,7 @@ int rtmp_set_chunk_size(uint8_t* out, size_t size, uint32_t chunkSize)
 	if (size < N_CHUNK_HEADER + 4) return 0;
 
 	rtmp_protocol_control_message_header(out, RTMP_TYPE_SET_CHUNK_SIZE, 4);
-	be_write_uint32(out + N_CHUNK_HEADER, chunkSize);
-	out[N_CHUNK_HEADER] &= 0x7F; // first bit MUST be zero
+	be_write_uint32(out + N_CHUNK_HEADER, chunkSize & 0x7FFFFFFF); // first bit MUST be zero
 	return N_CHUNK_HEADER + 4;
 }
 

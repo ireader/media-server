@@ -6,13 +6,20 @@
 static const char* s_netstream_command[] = 
 {
 	"onStatus",
+
 	"play", 
 	"deleteStream", 
+	"closeStream",
 	"receiveAudio", 
 	"receiveVideo", 
 	"publish", 
 	"seek",
 	"pause",
+
+	"FCPublish",
+	"FCUnpublish",
+	"FCSubscribe",
+	"FCUnsubscribe",
 };
 
 enum 
@@ -20,11 +27,16 @@ enum
 	RTMP_NETSTREAM_ONSTATUS = 0,
 	RTMP_NETSTREAM_PLAY,
 	RTMP_NETSTREAM_DELETE_STREAM,
+	RTMP_NETSTREAM_CLOSE_STREAM,
 	RTMP_NETSTREAM_RECEIVE_AUDIO,
 	RTMP_NETSTREAM_RECEIVE_VIDEO,
 	RTMP_NETSTREAM_PUBLISH,
 	RTMP_NETSTREAM_SEEK,
 	RTMP_NETSTREAM_PAUSE,
+	RTMP_NETSTREAM_FCPUBLISH,
+	RTMP_NETSTREAM_FCUNPUBLISH,
+	RTMP_NETSTREAM_FCSUBSCRIBE,
+	RTMP_NETSTREAM_FCUNSUBSCRIBE,
 };
 
 static const char* s_rtmp_level[] = { "warning", "status", "error" };
@@ -42,14 +54,13 @@ uint8_t* rtmp_netstream_play(uint8_t* out, size_t bytes, int transactionId, cons
 	if (NULL == name)
 		return NULL;
 
-	out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteString(out, bytes, name, strlen(name)); // Stream Name
-	if (out) out = AMFWriteDouble(out, end - out, start); // Start Number
-	if (out) out = AMFWriteDouble(out, end - out, duration); // Duration Number
-	if (out) out = AMFWriteBoolean(out, end - out, reset); // Reset Boolean
-
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, name, strlen(name)); // Stream Name
+	out = AMFWriteDouble(out, end, start); // Start Number
+	out = AMFWriteDouble(out, end, duration); // Duration Number
+	out = AMFWriteBoolean(out, end, (uint8_t)reset); // Reset Boolean
 	return out;
 }
 
@@ -59,10 +70,22 @@ uint8_t* rtmp_netstream_delete_stream(uint8_t* out, size_t bytes, int transactio
 	uint8_t* end = out + bytes;
 	const char* command = s_netstream_command[RTMP_NETSTREAM_DELETE_STREAM];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteDouble(out, end - out, id); // Stream ID
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteDouble(out, end, id); // Stream ID
+	return out;
+}
+
+uint8_t* rtmp_netconnection_close_stream(uint8_t* out, size_t bytes, int transactionId, int streamId)
+{
+	uint8_t* end = out + bytes;
+	const char* command = s_netstream_command[RTMP_NETSTREAM_CLOSE_STREAM];
+
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
+	out = AMFWriteDouble(out, end, streamId);
 	return out;
 }
 
@@ -72,10 +95,10 @@ uint8_t* rtmp_netstream_receive_audio(uint8_t* out, size_t bytes, int transactio
 	uint8_t* end = out + bytes;
 	const char* command = s_netstream_command[RTMP_NETSTREAM_RECEIVE_AUDIO];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteBoolean(out, end - out, enable); // Bool Flag
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteBoolean(out, end, (uint8_t)enable); // Bool Flag
 	return out;
 }
 
@@ -85,10 +108,10 @@ uint8_t* rtmp_netstream_receive_video(uint8_t* out, size_t bytes, int transactio
 	uint8_t* end = out + bytes;
 	const char* command = s_netstream_command[RTMP_NETSTREAM_RECEIVE_VIDEO];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteBoolean(out, end - out, enable); // Bool Flag
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteBoolean(out, end, (uint8_t)enable); // Bool Flag
 	return out;
 }
 
@@ -102,11 +125,11 @@ uint8_t* rtmp_netstream_publish(uint8_t* out, size_t bytes, int transactionId, c
 	if (NULL == name)
 		return NULL;
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteString(out, end - out, name, strlen(name)); // Publishing Name
-	if (out) out = AMFWriteString(out, end - out, streamType, strlen(streamType)); // Publishing Type
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, name, strlen(name)); // Publishing Name
+	out = AMFWriteString(out, end, streamType, strlen(streamType)); // Publishing Type
 	return out;
 }
 
@@ -116,10 +139,10 @@ uint8_t* rtmp_netstream_seek(uint8_t* out, size_t bytes, int transactionId, int 
 	uint8_t* end = out + bytes;
 	const char* command = s_netstream_command[RTMP_NETSTREAM_SEEK];
 	
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteDouble(out, end - out, ms); // milliSeconds Number
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteDouble(out, end, ms); // milliSeconds Number
 	return out;
 }
 
@@ -130,11 +153,11 @@ uint8_t* rtmp_netstream_pause(uint8_t* out, size_t bytes, int transactionId, int
 	uint8_t* end = out + bytes;
 	const char* command = s_netstream_command[RTMP_NETSTREAM_PAUSE];
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
-	if (out) out = AMFWriteBoolean(out, end - out, pause); // milliSeconds Number
-	if (out) out = AMFWriteDouble(out, end - out, ms); // milliSeconds Number
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteBoolean(out, end, (uint8_t)pause); // pause/unpause
+	out = AMFWriteDouble(out, end, ms); // milliSeconds Number
 	return out;
 }
 
@@ -147,20 +170,14 @@ uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, int transactionId, 
 	if (NULL == code || NULL == description)
 		return NULL;
 
-	if (out) out = AMFWriteString(out, bytes, command, strlen(command)); // Command Name
-	if (out) out = AMFWriteDouble(out, end - out, transactionId); // Transaction ID
-	if (out) *out++ = AMF_NULL; // command object
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
 
-	if (out) *out++ = AMF_OBJECT;
-	if (out) out = AMFWriteNamedString(out, end - out, "level", 5, slevel, strlen(slevel));
-	if (out) out = AMFWriteNamedString(out, end - out, "code", 4, code, strlen(code));
-	if (out) out = AMFWriteNamedString(out, end - out, "description", 11, description, strlen(description));
-	if (out && end - out >= 3)
-	{
-		*out++ = 0;
-		*out++ = 0;	/* end of object - 0x00 0x00 0x09 */
-		*out++ = AMF_OBJECT_END;
-	}
-
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "level", 5, slevel, strlen(slevel));
+	out = AMFWriteNamedString(out, end, "code", 4, code, strlen(code));
+	out = AMFWriteNamedString(out, end, "description", 11, description, strlen(description));
+	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
