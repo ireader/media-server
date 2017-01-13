@@ -20,15 +20,26 @@ inline size_t get_astd_length(const uint8_t* data, size_t bytes)
 	return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] >> 5) & 0x07);
 }
 
+inline char flv_type(int type)
+{
+	switch (type)
+	{
+	case FLV_AAC: return 'A';
+	case FLV_MP3: return 'M';
+	case FLV_AVC: return 'V';
+	case FLV_AAC_HEADER: return 'a';
+	case FLV_AVC_HEADER: return 'v';
+	default: return '*';
+	}
+}
+
 static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	static char s_pts[64], s_dts[64];
 	static uint32_t v_pts = 0, v_dts = 0;
 	static uint32_t a_pts = 0, a_dts = 0;
-	const char s_avtype[] = { '*', 'A', 'V', 'a', 'v' };
 
-	assert(type >= 0 && type < sizeof(s_avtype));
-	printf("[%c] pts: %s, dts: %s, ", s_avtype[type], ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
+	printf("[%c] pts: %s, dts: %s, ", flv_type(type), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
 
 	if (FLV_AAC == type)
 	{
@@ -46,6 +57,14 @@ static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uin
 		v_dts = dts;
 
 		fwrite(data, bytes, 1, h264);
+	}
+	else if (FLV_MP3 == type)
+	{
+		assert(0);
+	}
+	else if (FLV_AVC_HEADER == type || FLV_AAC_HEADER == type)
+	{
+		// nothing to do
 	}
 	else
 	{
@@ -72,6 +91,13 @@ void flv_reader_test(const char* file)
 		if (n != r)
 		{
 			assert(0);
+		}
+
+		if (0x09 == packet[0] && r == 45)
+		{
+			FILE* wf = fopen("E:\\video\\mp4\\59895-20170106155701-v.flv", "wb");
+			fwrite(packet, 1, 45, wf);
+			fclose(wf);
 		}
 	}
 
