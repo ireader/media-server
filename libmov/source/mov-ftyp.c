@@ -17,7 +17,7 @@ int mov_read_ftyp(struct mov_t* mov, const struct mov_box_t* box)
 	}
 
 	assert(box->size == 4 * mov->ftyp.brands_count + 8);
-	file_reader_seek(mov->fp, box->size - 4 * mov->ftyp.brands_count - 8 ); // skip compatible_brands
+	file_reader_skip(mov->fp, box->size - 4 * mov->ftyp.brands_count - 8 ); // skip compatible_brands
 	return 0;
 }
 

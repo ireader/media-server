@@ -5,94 +5,104 @@
 #include <memory.h>
 #include <assert.h>
 
-static void mov_build_chunk(struct mov_track_t* track)
+static uint32_t mov_build_chunk(struct mov_track_t* track)
 {
 	size_t bytes, i;
+	uint32_t count = 0;
 	struct mov_sample_t* sample = NULL;
 
-	assert(0 == track->chunk_count);
-
-	for(i = 0; i < track->stsz_count; i++)
+	for(i = 0; i < track->sample_count; i++)
 	{
-		if(i > 0 && sample->offset + bytes == track->samples[i].offset)
+		if(i > 0 && sample->offset + bytes == track->samples[i].offset 
+			&& sample->u.stsc.sample_description_index == track->samples[i].stsd->data_reference_index)
 		{
-			track->samples[i].u.chunk.first_chunk = 0; // mark invalid value
+			track->samples[i].u.stsc.first_chunk = 0; // mark invalid value
 			bytes += track->samples[i].bytes;
-			++sample->u.chunk.samples_per_chunk;
+			++sample->u.stsc.samples_per_chunk;
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.chunk.first_chunk = ++track->chunk_count;
-			sample->u.chunk.samples_per_chunk = 1;
-			sample->u.chunk.sample_description_index = track->id;
+			sample->u.stsc.first_chunk = ++count;
+			sample->u.stsc.samples_per_chunk = 1;
+			sample->u.stsc.sample_description_index = sample->stsd->data_reference_index;
 			bytes = sample->bytes;
 		}
 	}
+
+	return count;
 }
 
 static int32_t mov_sample_duration(const struct mov_track_t* track, size_t idx)
 {
 	uint64_t next_dts;
-	next_dts = idx + 1 < track->stsz_count ? track->samples[idx + 1].dts : track->samples[idx].dts;
+	next_dts = idx + 1 < track->sample_count ? track->samples[idx + 1].dts : track->samples[idx].dts;
 	return (int32_t)(next_dts - track->samples[idx].dts);
 }
 
-static void mov_build_stts(struct mov_track_t* track)
+static uint32_t mov_build_stts(struct mov_track_t* track)
 {
 	size_t i;
-	uint32_t duration;
+	uint32_t duration, count = 0;
 	struct mov_sample_t* sample;
 
-	track->chunk_count = 0;
-	for (i = 0; i < track->stsz_count; i++)
+	for (i = 0; i < track->sample_count; i++)
 	{
 		duration = mov_sample_duration(track, i);
-		if (i > 0 && duration == sample->u.timestamp.duration)
+		if (i > 0 && duration == sample->u.stts.duration)
 		{
-			sample->u.timestamp.count = 0;
-			++sample->u.timestamp.count; // compress
+			track->samples[i].u.stts.count = 0;
+			++sample->u.stts.count; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.timestamp.count = 1;
-			sample->u.timestamp.duration = duration;
-			++track->chunk_count;
+			sample->u.stts.count = 1;
+			sample->u.stts.duration = duration;
+			++count;
 		}
 	}
+	return count;
 }
 
-static void mov_build_ctts(struct mov_track_t* track)
+static uint32_t mov_build_ctts(struct mov_track_t* track)
 {
 	size_t i;
+	uint32_t count = 0;
 	struct mov_sample_t* sample;
 
-	track->chunk_count = 0;
-	for (i = 0; i < track->stsz_count; i++)
+	for (i = 0; i < track->sample_count; i++)
 	{
-		if (i > 0 && track->samples[i].pts - track->samples[i].dts == sample->u.timestamp.duration)
+		int32_t diff = (int32_t)(track->samples[i].pts - track->samples[i].dts);
+		if (i > 0 && diff == sample->u.stts.duration)
 		{
-			sample->u.timestamp.count = 0;
-			++sample->u.timestamp.count; // compress
+			track->samples[i].u.stts.count = 0;
+			++sample->u.stts.count; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.timestamp.count = 1;
-			sample->u.timestamp.duration = (int32_t)(sample->pts - sample->dts);
-			++track->chunk_count;
+			sample->u.stts.count = 1;
+			sample->u.stts.duration = (int32_t)(sample->pts - sample->dts);
+			++count;
 		}
 	}
+
+	return count;
 }
 
 static int mov_write_edts()
 {
 }
 
+
+// ISO/IEC 14496-12:2012(E) 6.2.3 Box Order (p23)
+// It is recommended that the boxes within the Sample Table Box be in the following order: 
+// Sample Description, Time to Sample, Sample to Chunk, Sample Size, Chunk Offset.
 static int mov_write_stbl(const struct mov_t* mov)
 {
 	size_t size;
+	uint32_t count;
 	uint64_t offset;
 	const struct mov_track_t* track = mov->track;
 
@@ -103,18 +113,17 @@ static int mov_write_stbl(const struct mov_t* mov)
 
 	size += mov_write_stsd(mov);
 
-	mov_build_stts(track);
-	size += mov_write_stts(mov);
-	if(track->stream_type == AVSTREAM_VIDEO)
-	{
-		mov_build_ctts(track);
-		size += mov_write_ctts(mov);
-	}
+	count = mov_build_stts(track);
+	size += mov_write_stts(mov, count);
+	count = mov_build_ctts(track);
+	if (track->sample_count > 0 && (count > 1 || track->samples[0].u.stts.duration != 0))
+		size += mov_write_ctts(mov, count);
 
+	count = mov_build_chunk(track);
 //	size += mov_write_stss(mov);
-	size += mov_write_stsc(mov);
+	size += mov_write_stsc(mov, count);
 	size += mov_write_stsz(mov);
-	size += mov_write_stco(mov);
+	size += mov_write_stco(mov, count);
 
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;
@@ -203,7 +212,6 @@ static size_t mov_write_moov(struct mov_t* mov)
 	for(i = 0; i < mov->track_count; i++)
 	{
 		mov->track = &mov->tracks[i];
-		mov_build_chunk(&mov->tracks[i]);
 		size += mov_write_trak(mov);
 	}
 	

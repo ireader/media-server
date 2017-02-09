@@ -59,6 +59,35 @@ int file_reader_error(void* file)
 
 int file_reader_seek(void* file, uint64_t bytes)
 {
+	int origin = SEEK_SET;
+	struct file_t* f = (struct file_t*)file;
+
+	for (origin = SEEK_SET; bytes > INT32_MAX && 0 == f->error; bytes -= INT32_MAX)
+	{
+		f->error = fseek(f->fp, INT32_MAX, origin);
+		origin = SEEK_CUR;
+	}
+
+	if (bytes > 0)
+	{
+		f->error = fseek(f->fp, bytes, origin);
+	}
+	f->bytes = f->offset = 0; // clear buffer offset/size
+	return f->error;
+}
+
+uint64_t file_reader_tell(void* file)
+{
+	long n;
+	struct file_t* f = (struct file_t*)file;
+	n = ftell(f->fp);
+	if (f->offset < f->bytes)
+		n -= f->bytes - f->offset;
+	return n;
+}
+
+int file_reader_skip(void* file, uint64_t bytes)
+{
 	struct file_t* f = (struct file_t*)file;
 	f->offset += bytes;
 	if (f->offset > f->bytes)
@@ -72,16 +101,6 @@ int file_reader_seek(void* file, uint64_t bytes)
 		f->bytes = f->offset = 0; // clear buffer offset/size
 	}
 	return f->error;
-}
-
-uint64_t file_reader_tell(void* file)
-{
-	long n;
-	struct file_t* f = (struct file_t*)file;
-	n = ftell(f->fp);
-	if (f->offset < f->bytes)
-		n -= f->bytes - f->offset;
-	return n;
 }
 
 size_t file_reader_read(void* file, void* buffer, size_t bytes)

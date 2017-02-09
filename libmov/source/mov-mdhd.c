@@ -1,4 +1,3 @@
-#include "mov-mdhd.h"
 #include "file-reader.h"
 #include "file-writer.h"
 #include "mov-internal.h"
@@ -55,23 +54,23 @@ int mov_read_mdhd(struct mov_t* mov, const struct mov_box_t* box)
 	val = file_reader_rb32(mov->fp);
 	mdhd->language = (val >> 16) & 0x7FFF;
 	mdhd->pre_defined = val & 0xFFFF;
-	return 0;
+	return file_reader_error(mov->fp);
 }
 
 size_t mov_write_mdhd(const struct mov_t* mov)
 {
-	const struct mov_track_t* track = mov->track;
+	const struct mov_mdhd_t* mdhd = &mov->track->mdhd;
 	
 	file_writer_wb32(mov->fp, 32); /* size */
 	file_writer_write(mov->fp, "mdhd", 4);
 	file_writer_wb32(mov->fp, 0); /* version 1 & flags */
 
-	file_writer_wb32(mov->fp, (uint32_t)track->mdhd.creation_time); /* creation_time */
-	file_writer_wb32(mov->fp, (uint32_t)track->mdhd.modification_time); /* modification_time */
-	file_writer_wb32(mov->fp, track->mdhd.timescale); /* timescale */
-	file_writer_wb32(mov->fp, (uint32_t)track->mdhd.duration); /* duration */
+	file_writer_wb32(mov->fp, (uint32_t)mdhd->creation_time); /* creation_time */
+	file_writer_wb32(mov->fp, (uint32_t)mdhd->modification_time); /* modification_time */
+	file_writer_wb32(mov->fp, mdhd->timescale); /* timescale */
+	file_writer_wb32(mov->fp, (uint32_t)mdhd->duration); /* duration */
 	
-	file_writer_wb16(mov->fp, (uint16_t)track->mdhd.language); /* ISO-639-2/T language code */
+	file_writer_wb16(mov->fp, (uint16_t)mdhd->language); /* ISO-639-2/T language code */
 	file_writer_wb16(mov->fp, 0); /* pre_defined (quality) */
 	return 32;
 }

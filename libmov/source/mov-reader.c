@@ -9,10 +9,6 @@
 #include <assert.h>
 
 #define MOV_NULL MOV_TAG(0, 0, 0, 0)
-#define MOV_ROOT MOV_TAG('r', 'o', 'o', 't')
-
-#define MP4_VERSION_1 "mp41" //  ISO/IEC 14496-1:2001
-#define MP4_VERSION_2 "mp42" //  ISO/IEC 14496-14:2003
 
 struct mov_parse_t
 {
@@ -21,19 +17,17 @@ struct mov_parse_t
 	int(*parse)(struct mov_t* mov, const struct mov_box_t* box);
 };
 
-static int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent);
-
 // 8.1.1 Media Data Box (p28)
 static int mov_read_mdat(struct mov_t* mov, const struct mov_box_t* box)
 {
-	return file_reader_seek(mov->fp, box->size);
+	return file_reader_skip(mov->fp, box->size);
 }
 
 // 8.1.2 Free Space Box (p28)
 static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 {
 	// Container: File or other box
-	return file_reader_seek(mov->fp, box->size);
+	return file_reader_skip(mov->fp, box->size);
 }
 
 // 8.2.1.1 Movie Box (p29)
@@ -42,57 +36,79 @@ static int mov_read_moov(struct mov_t* mov, const struct mov_box_t* box)
 	return mov_reader_box(mov, box);
 }
 
-static int mov_trak_build(struct mov_t* mov, struct mov_track_t* track)
+static struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index)
+{
+	size_t i;
+	for (i = 0; i < track->stsd_count; i++)
+	{
+		if (track->stsd[i].data_reference_index == sample_description_index)
+			return &track->stsd[i];
+	}
+	return NULL;
+}
+
+static int mov_track_build(struct mov_t* mov, struct mov_track_t* track)
 {
 	size_t i, j, k;
 	uint64_t n = 0, chunk_offset;
+	struct mov_stbl_t* stbl = &track->stbl;
 
-	track->samples = malloc(sizeof(struct mov_sample_t) *  (track->stsz_count+1/*store last sample PTS/DTS*/));
-	if (NULL == track->samples)
-		return ENOMEM;
-
-	// sample size
-	for (n = 0; n < track->stsz_count; n++)
-		track->samples[n].bytes = track->stsz[n];
+	assert(stbl->stsc_count > 0 && stbl->stco_count > 0);
+	assert(NULL != track->samples && track->sample_count > 0);
+	if (NULL == track->samples || track->sample_count < 1 || stbl->stsc_count < 1)
+		return -1;
 
 	// sample offset
-	track->stsc[track->stsc_count].first_chunk = track->stco_count + 1; // fill stco count
-	for (i = 0, n = 0; i < track->stsc_count && track->stsc[i].first_chunk <= track->stco_count; i++)
+	stbl->stsc[stbl->stsc_count].first_chunk = stbl->stco_count + 1; // fill stco count
+	for (i = 0, n = 0; i < stbl->stsc_count && stbl->stsc[i].first_chunk <= stbl->stco_count; i++)
 	{
-		for (j = track->stsc[i].first_chunk; j < track->stsc[i + 1].first_chunk; j++)
+		for (j = stbl->stsc[i].first_chunk; j < stbl->stsc[i + 1].first_chunk; j++)
 		{
-			chunk_offset = track->stco[j-1];
-			for (k = 0; k < track->stsc[i].samples_per_chunk; k++, n++)
+			chunk_offset = stbl->stco[j-1];
+			for (k = 0; k < stbl->stsc[i].samples_per_chunk; k++, n++)
 			{
-				track->samples[n].sample_description_index = track->stsc[i].sample_description_index;
+				track->samples[n].stsd = mov_track_dref_find(track, stbl->stsc[i].sample_description_index);
 				track->samples[n].offset = chunk_offset;
 				chunk_offset += track->samples[n].bytes;
+				assert(track->samples[n].bytes > 0);
 				assert(0 == n || track->samples[n-1].offset + track->samples[n-1].bytes <= track->samples[n].offset);
 			}
 		}
 	}
-	assert(n == track->stsz_count);
+	assert(n == track->sample_count);
 
 	// sample dts
 	track->samples[0].dts = 0;
 	track->samples[0].pts = 0;
-	for (i = 0, n = 1; i < track->stts_count; i++)
+	if (track->elst_count > 0)
 	{
-		for (j = 0; j < track->stts[i].sample_count; j++, n++)
+		for (i = 0; i < track->elst_count; i++)
 		{
-			track->samples[n].dts = track->samples[n - 1].dts + track->stts[i].sample_delta * 1000 / track->mdhd.timescale;
+			if (-1 == track->elst[i].media_time)
+			{
+				track->samples[0].dts = track->elst[i].segment_duration * 1000 / track->mdhd.timescale;
+				track->samples[0].pts = track->samples[0].dts;
+			}
+		}
+	}
+
+	for (i = 0, n = 1; i < stbl->stts_count; i++)
+	{
+		for (j = 0; j < stbl->stts[i].sample_count; j++, n++)
+		{
+			track->samples[n].dts = track->samples[n - 1].dts + stbl->stts[i].sample_delta * 1000 / track->mdhd.timescale;
 			track->samples[n].pts = track->samples[n].dts;
 		}
 	}
-	assert(n - 1 == track->stsz_count);
+	assert(n - 1 == track->sample_count);
 
 	// sample cts/pts
-	for (i = 0, n = 0; i < track->ctts_count; i++)
+	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
-		for (j = 0; j < track->ctts[i].sample_count; j++, n++)
-			track->samples[n].pts += (int64_t)((int32_t)track->ctts[i].sample_delta) * 1000 / track->mdhd.timescale;
+		for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
+			track->samples[n].pts += (int64_t)((int32_t)stbl->ctts[i].sample_delta) * 1000 / track->mdhd.timescale;
 	}
-	assert(0 == track->ctts_count || n == track->stsz_count);
+	assert(0 == stbl->ctts_count || n == track->sample_count);
 
 	return 0;
 }
@@ -106,7 +122,6 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 {
 	int r;
 	void* p;
-	size_t i;
 	p = realloc(mov->tracks, sizeof(struct mov_track_t) * (mov->track_count + 1));
 	if (NULL == p) return ENOMEM;
 	mov->tracks = p;
@@ -117,29 +132,10 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 	r = mov_reader_box(mov, box);
 	if (0 == r)
 	{
-		mov_trak_build(mov, mov->track);
+		mov_track_build(mov, mov->track);
 	}
 
 	return r;
-}
-
-// 8.4.3 Handler Reference Box (p36)
-// Box Type: ¡®hdlr¡¯ 
-// Container: Media Box (¡®mdia¡¯) or Meta Box (¡®meta¡¯) 
-// Mandatory: Yes 
-// Quantity: Exactly one
-static int mov_read_hdlr(struct mov_t* mov, const struct mov_box_t* box)
-{
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	//uint32_t pre_defined = file_reader_rb32(mov->fp);
-	file_reader_seek(mov->fp, 4);
-	mov->handler_type = file_reader_rb32(mov->fp);
-	// const unsigned int(32)[3] reserved = 0;
-	file_reader_seek(mov->fp, 12);
-	// string name;
-	file_reader_seek(mov->fp, box->size - 24); // String name
-	return 0;
 }
 
 static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
@@ -154,7 +150,7 @@ static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 		uint32_t size = file_reader_rb32(mov->fp);
 		uint32_t type = file_reader_rb32(mov->fp);
 		uint32_t vern = file_reader_rb32(mov->fp); /* version + flags */
-		file_reader_seek(mov->fp, size-12);
+		file_reader_skip(mov->fp, size-12);
 	}
 	return 0;
 }
@@ -165,7 +161,7 @@ static int mov_read_uuid(struct mov_t* mov, const struct mov_box_t* box)
 	if(box->size > 16) 
 	{
 		file_reader_read(mov->fp, usertype, sizeof(usertype));
-		file_reader_seek(mov->fp, box->size - 16);
+		file_reader_skip(mov->fp, box->size - 16);
 	}
 	return 0;
 }
@@ -204,12 +200,13 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('s', 't', 's', 's'), MOV_STBL, mov_read_stss },
 	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
-	{ MOV_TAG('e', 's', 'd', 's'), MOV_STBL, mov_read_esds },
+	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
+	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcC }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ 0, 0, NULL } // last
 };
 
-static int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
+int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 {
 	int i;
 	uint64_t bytes = 0;
@@ -260,7 +257,7 @@ static int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 		if (NULL == parse)
 		{
-			file_reader_seek(mov->fp, box.size);
+			file_reader_skip(mov->fp, box.size);
 		}
 		else
 		{
@@ -268,7 +265,7 @@ static int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 			parse(mov, &box);
 			uint64_t pos2 = file_reader_tell(mov->fp);
 			assert(pos2 - pos == box.size);
-			file_reader_seek(mov->fp, box.size - (pos2 - pos));
+			file_reader_skip(mov->fp, box.size - (pos2 - pos));
 		}
 	}
 
@@ -277,50 +274,149 @@ static int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 static int mov_reader_init(struct mov_t* mov)
 {
-	size_t i;
 	struct mov_box_t box;
 	box.type = MOV_ROOT;
 	box.size = UINT64_MAX;
 	return mov_reader_box(mov, &box);
 }
 
+struct mov_reader_t
+{
+	struct mov_t mov;
+	int64_t dts;
+};
+
 void* mov_reader_create(const char* file)
 {
-	struct mov_t* mov;
-	mov = (struct mov_t*)malloc(sizeof(*mov));
-	if (NULL == mov)
+	struct mov_reader_t* reader;
+	reader = (struct mov_reader_t*)malloc(sizeof(*reader));
+	if (NULL == reader)
 		return NULL;
 
-	memset(mov, 0, sizeof(*mov));
+	memset(reader, 0, sizeof(*reader));
 	// ISO/IEC 14496-12:2012(E) 4.3.1 Definition (p17)
 	// Files with no file-type box should be read as if they contained an FTYP box 
 	// with Major_brand='mp41', minor_version=0, and the single compatible brand 'mp41'.
-	mov->ftyp.major_brand = MOV_BRAND_MP41;
-	mov->ftyp.minor_version = 0;
-	mov->ftyp.brands_count = 0;
-	mov->header = 0;
+	reader->mov.ftyp.major_brand = MOV_BRAND_MP41;
+	reader->mov.ftyp.minor_version = 0;
+	reader->mov.ftyp.brands_count = 0;
+	reader->mov.header = 0;
 
-	mov->fp = file_reader_create(file);
-	if (NULL == mov->fp || 0 != mov_reader_init(mov))
+	reader->mov.fp = file_reader_create(file);
+	if (NULL == reader->mov.fp || 0 != mov_reader_init(&reader->mov))
 	{
-		mov_reader_destroy(mov);
+		mov_reader_destroy(reader);
 		return NULL;
 	}
 
-	return mov;
+	reader->dts = INT64_MAX;
+	return reader;
 }
+
+#define FREE(p) do { if(p) free(p); } while(0)
 
 void mov_reader_destroy(void* p)
 {
-	struct mov_t* mov;
-	mov = (struct mov_t*)p;
-	file_reader_destroy(&mov->fp);
-	free(mov);
+	size_t i;
+	struct mov_reader_t* reader;
+	reader = (struct mov_reader_t*)p;
+	file_reader_destroy(&reader->mov.fp);
+	for (i = 0; i < reader->mov.track_count; i++)
+	{
+		FREE(reader->mov.tracks[i].extra_data);
+		FREE(reader->mov.tracks[i].stsd);
+		FREE(reader->mov.tracks[i].elst);
+		FREE(reader->mov.tracks[i].samples);
+		FREE(reader->mov.tracks[i].stbl.stco);
+		FREE(reader->mov.tracks[i].stbl.stsc);
+		FREE(reader->mov.tracks[i].stbl.stss);
+		FREE(reader->mov.tracks[i].stbl.stts);
+		FREE(reader->mov.tracks[i].stbl.ctts);
+	}
+	free(reader);
 }
 
-int mov_reader_read(void* p, void* buffer, size_t bytes)
+static struct mov_sample_t* mov_reader_next(struct mov_reader_t* reader)
 {
-	struct mov_t* mov;
-	mov = (struct mov_t*)p;
-	return -1;
+	size_t i;
+	struct mov_track_t* track = NULL;
+	struct mov_track_t* track2;
+
+	for (i = 0; i < reader->mov.track_count; i++)
+	{
+		assert(reader->mov.tracks[i].sample_offset <= reader->mov.tracks[i].sample_count);
+		if (reader->mov.tracks[i].sample_offset >= reader->mov.tracks[i].sample_count)
+			continue;
+
+		track2 = &reader->mov.tracks[i];
+		if (NULL == track || track->samples[track->sample_offset].dts > track2->samples[track2->sample_offset].dts)
+		{
+			track = track2;
+		}
+	}
+
+	if (NULL == track)
+		return NULL;
+	return &track->samples[track->sample_offset++];// mark as read
+}
+
+int mov_reader_read(void* p, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
+{
+	struct mov_reader_t* reader;
+	struct mov_sample_t* sample;
+	reader = (struct mov_reader_t*)p;
+
+	sample = mov_reader_next(reader);
+	if (NULL == sample)
+	{
+		return 0; // EOF
+	}
+
+	if (bytes < sample->bytes)
+		return ENOMEM;
+
+	if (0 != file_reader_seek(reader->mov.fp, sample->offset))
+	{
+		return -1;
+	}
+
+	if (sample->bytes != file_reader_read(reader->mov.fp, buffer, sample->bytes))
+	{
+		return file_reader_error(reader->mov.fp);
+	}
+
+	onread(param, sample->stsd->type, buffer, sample->bytes, sample->pts, sample->dts);
+	return 1;
+}
+
+int mov_reader_getinfo(void* p, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param)
+{
+	size_t i, j;
+	struct mov_stsd_t* stsd;
+	struct mov_track_t* track;
+	struct mov_reader_t* reader;
+	reader = (struct mov_reader_t*)p;
+
+	for (i = 0; i < reader->mov.track_count; i++)
+	{
+		track = &reader->mov.tracks[i];
+		for (j = 0; j < track->stsd_count; j++)
+		{
+			stsd = &track->stsd[j];
+			switch (track->handler_type)
+			{
+			case MOV_VIDEO:
+				onvideo(param, stsd->type, stsd->u.visual.width, stsd->u.visual.height, track->extra_data, track->extra_data_size);
+				break;
+
+			case MOV_AUDIO:
+				onaudio(param, stsd->type, stsd->u.audio.channelcount, stsd->u.audio.samplesize, stsd->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
+				break;
+
+			default:
+				break;
+			}
+		}	
+	}
+	return 0;
 }

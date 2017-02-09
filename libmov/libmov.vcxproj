@@ -21,20 +21,17 @@
   <ItemGroup>
     <ClInclude Include="include\file-reader.h" />
     <ClInclude Include="include\file-writer.h" />
+    <ClInclude Include="include\mov-atom.h" />
     <ClInclude Include="include\mov-box.h" />
-    <ClInclude Include="include\mov-esds.h" />
     <ClInclude Include="include\mov-internal.h" />
-    <ClInclude Include="include\mov-mdhd.h" />
-    <ClInclude Include="include\mov-mvhd.h" />
     <ClInclude Include="include\mov-reader.h" />
-    <ClInclude Include="include\mov-stsd.h" />
     <ClInclude Include="include\mov-tag.h" />
-    <ClInclude Include="include\mov-tkhd.h" />
     <ClInclude Include="include\mov-writer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\file-reader.c" />
     <ClCompile Include="source\file-writer.c" />
+    <ClCompile Include="source\mov-avc1.c" />
     <ClCompile Include="source\mov-elst.c" />
     <ClCompile Include="source\mov-ftyp.c" />
     <ClCompile Include="source\mov-hdlr.c" />
@@ -51,6 +48,8 @@
     <ClCompile Include="source\mov-stts.c" />
     <ClCompile Include="source\mov-tkhd.c" />
     <ClCompile Include="source\mov-writer.c" />
+    <ClCompile Include="test\mov-reader-test.cpp" />
+    <ClCompile Include="test\mov-writer-test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D5106098-7B37-4DE0-B8FB-233BBABC2D72}</ProjectGuid>

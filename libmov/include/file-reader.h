@@ -20,6 +20,7 @@ extern "C" {
 	int file_reader_seek(void* file, uint64_t bytes);
 	uint64_t file_reader_tell(void* file);
 
+	int file_reader_skip(void* file, uint64_t bytes);
 	unsigned int file_reader_r8(void* file);
 	
 	// little-endian

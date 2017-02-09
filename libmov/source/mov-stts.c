@@ -9,112 +9,115 @@
 int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box)
 {
 	uint32_t i, entry_count;
-	struct mov_track_t* track;
+	struct mov_stbl_t* stbl = &mov->track->stbl;
+
 	file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
 	entry_count = file_reader_rb32(mov->fp);
 
-	assert(mov->track);
-	track = mov->track;
-	if (track->stts)
+	assert(0 == stbl->stts_count && NULL == stbl->stts); // duplicated STTS atom
+	if (stbl->stts_count < entry_count)
 	{
-		assert(0);
-		free(track->stts); // duplicated STTS atom
+		void* p = realloc(stbl->stts, sizeof(struct mov_stts_t) * entry_count);
+		if (NULL == p) return ENOMEM;
+		stbl->stts = (struct mov_stts_t*)p;
 	}
-	track->stts_count = 0;
-	track->stts = malloc(sizeof(struct mov_stts_t) * entry_count);
-	if (NULL == track->stts)
-		return ENOMEM;
+	stbl->stts_count = entry_count;
 
 	for (i = 0; i < entry_count; i++)
 	{
-		track->stts[i].sample_count = file_reader_rb32(mov->fp);
-		track->stts[i].sample_delta = file_reader_rb32(mov->fp);
+		stbl->stts[i].sample_count = file_reader_rb32(mov->fp);
+		stbl->stts[i].sample_delta = file_reader_rb32(mov->fp);
 	}
 
-	track->stts_count = i;
 	return file_reader_error(mov->fp);
 }
 
 // 8.6.1.3 Composition Time to Sample Box (p47)
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 {
-	uint32_t i, entry_count;
-	struct mov_track_t* track;
-	file_reader_r8(mov->fp); /* version */
+	unsigned int version;
+	uint32_t i, entry_count, sample_offset;
+	struct mov_stbl_t* stbl = &mov->track->stbl;
+
+	version = file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
 	entry_count = file_reader_rb32(mov->fp);
 
-	assert(mov->track);
-	track = mov->track;
-	if (track->ctts)
+	assert(0 == stbl->ctts_count && NULL == stbl->ctts); // duplicated CTTS atom
+	if (stbl->ctts_count < entry_count)
 	{
-		assert(0);
-		free(track->ctts); // duplicated CTTS atom
+		void* p = realloc(stbl->ctts, sizeof(struct mov_stts_t) * entry_count);
+		if (NULL == p) return ENOMEM;
+		stbl->ctts = (struct mov_stts_t*)p;
 	}
-	track->ctts_count = 0;
-	track->ctts = malloc(sizeof(struct mov_stts_t) * entry_count);
-	if (NULL == track->ctts)
-		return ENOMEM;
+	stbl->ctts_count = entry_count;
 
 	for (i = 0; i < entry_count; i++)
 	{
-		track->ctts[i].sample_count = file_reader_rb32(mov->fp);
-		track->ctts[i].sample_delta = file_reader_rb32(mov->fp); // uint32_t sample_offset
+		stbl->ctts[i].sample_count = file_reader_rb32(mov->fp);
+		sample_offset = file_reader_rb32(mov->fp); // uint32_t sample_offset
+		if (1 == version)
+			stbl->ctts[i].sample_delta = (int32_t)sample_offset;
+		else
+			stbl->ctts[i].sample_delta = sample_offset;
 	}
 
-	track->ctts_count = i;
 	return file_reader_error(mov->fp);
 }
 
-size_t mov_write_stts(const struct mov_t* mov)
+size_t mov_write_stts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	size_t size, i, j = 0;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
-	size = 12/* full box */ + 4/* entry count */ + track->chunk_count * 8/* entry */;
+	size = 12/* full box */ + 4/* entry count */ + count * 8/* entry */;
 
 	file_writer_wb32(mov->fp, size); /* size */
 	file_writer_write(mov->fp, "stts", 4);
 	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, track->chunk_count); /* entry count */
+	file_writer_wb32(mov->fp, count); /* entry count */
 
-	for (i = 0; i < track->stsz_count; i++)
+	for (i = 0; i < track->sample_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->u.timestamp.count)
+		if (0 == sample->u.stts.count)
 			continue;
 
-		file_writer_wb32(mov->fp, sample->u.timestamp.count); // count
-		file_writer_wb32(mov->fp, sample->u.timestamp.duration); // duration
+		++j;
+		file_writer_wb32(mov->fp, sample->u.stts.count); // count
+		file_writer_wb32(mov->fp, sample->u.stts.duration); // duration * timescale / 1000
 	}
 
+	assert(j == count);
 	return size;
 }
 
-size_t mov_write_ctts(const struct mov_t* mov)
+size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	size_t size, i, j = 0;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
-	size = 12/* full box */ + 4/* entry count */ + track->chunk_count * 8/* entry */;
+	size = 12/* full box */ + 4/* entry count */ + count * 8/* entry */;
 
 	file_writer_wb32(mov->fp, size); /* size */
 	file_writer_write(mov->fp, "ctts", 4);
 	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, track->chunk_count); /* entry count */
+	file_writer_wb32(mov->fp, count); /* entry count */
 
-	for (i = 0; i < track->stsz_count; i++)
+	for (i = 0; i < track->sample_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->u.timestamp.count)
+		if (0 == sample->u.stts.count)
 			continue;
 
-		file_writer_wb32(mov->fp, sample->u.timestamp.count); // count
-		file_writer_wb32(mov->fp, sample->u.timestamp.duration); // duration
+		++j;
+		file_writer_wb32(mov->fp, sample->u.stts.count); // count
+		file_writer_wb32(mov->fp, sample->u.stts.duration); // duration
 	}
 
+	assert(j == count);
 	return size;
 }
