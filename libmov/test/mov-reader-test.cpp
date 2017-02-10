@@ -1,11 +1,10 @@
 #include "mov-reader.h"
+#include "mov-format.h"
 #include "../librtmp/include/mpeg4-avc.h"
 #include "../librtmp/include/mpeg4-aac.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
-#define AV_FOURCC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
 static char s_buffer[4 * 1024 * 1024];
 static FILE *s_vfp, *s_afp;
@@ -14,7 +13,7 @@ static struct mpeg4_aac_t s_aac;
 
 static void onread(void* param, int avtype, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
-	if (AV_FOURCC('a', 'v', 'c', '1') == avtype)
+	if (MOV_AVC1 == avtype)
 	{
 		static uint8_t s_nalu[] = { 0x00, 0x00, 0x00, 0x01 };
 		const uint8_t* p = (const uint8_t*)buffer;
@@ -27,7 +26,7 @@ static void onread(void* param, int avtype, const void* buffer, size_t bytes, in
 			bytes -= n + 4;
 		}
 	}
-	else if (AV_FOURCC('m', 'p', '4', 'a') == avtype)
+	else if (MOV_MP4A == avtype)
 	{
 		uint8_t adts[32];
 		int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));

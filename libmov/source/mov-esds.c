@@ -1,7 +1,9 @@
 #include "file-reader.h"
+#include "file-writer.h"
 #include "mov-internal.h"
-#include "mov-tag.h"
 #include <assert.h>
+#include <stdlib.h>
+#include <errno.h>
 
 static int mp4_read_tag(struct mov_t* mov, uint64_t bytes);
 
@@ -66,6 +68,16 @@ static int mov_read_base_descr(struct mov_t* mov, int* tag,  int* len)
 	return 1 + 4 - count;
 }
 
+static size_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
+{
+	file_writer_w8(mov->fp, tag);
+	file_writer_w8(mov->fp, (uint8_t)(0x80 | (len >> 21)));
+	file_writer_w8(mov->fp, (uint8_t)(0x80 | (len >> 14)));
+	file_writer_w8(mov->fp, (uint8_t)(0x80 | (len >> 7)));
+	file_writer_w8(mov->fp, (uint8_t)(0x7F & len));
+	return 5;
+}
+
 // ISO/IEC 14496-1:2010(E) 7.2.6.5 ES_Descriptor (p47)
 /*
 class ES_Descriptor extends BaseDescriptor : bit(8) tag=ES_DescrTag {
@@ -104,7 +116,7 @@ static int mp4_read_es_descriptor(struct mov_t* mov, uint64_t bytes)
 {
 	uint64_t p1, p2;
 	p1 = file_reader_tell(mov->fp);
-	uint32_t ES_ID = file_reader_rb16(mov->fp);
+	/*uint32_t ES_ID = */file_reader_rb16(mov->fp);
 	uint32_t flags = file_reader_r8(mov->fp);
 	if (flags & 0x80) //streamDependenceFlag
 		file_reader_rb16(mov->fp);
@@ -118,6 +130,36 @@ static int mp4_read_es_descriptor(struct mov_t* mov, uint64_t bytes)
 
 	p2 = file_reader_tell(mov->fp);
 	return mp4_read_tag(mov, bytes - (p2 - p1));
+}
+
+// ISO/IEC 14496-1:2010(E) 7.2.6.7 DecoderSpecificInfo (p51)
+/*
+abstract class DecoderSpecificInfo extends BaseDescriptor : bit(8)
+	tag=DecSpecificInfoTag
+{
+	// empty. To be filled by classes extending this class.
+}
+*/
+static int mp4_read_decoder_specific_info(struct mov_t* mov, size_t len)
+{
+	struct mov_track_t* track = mov->track;
+	if (track->extra_data_size < len)
+	{
+		void* p = realloc(track->extra_data, len);
+		if (NULL == p) return ENOMEM;
+		track->extra_data = p;
+	}
+
+	file_reader_read(mov->fp, track->extra_data, len);
+	track->extra_data_size = len;
+	return file_reader_error(mov->fp);
+}
+
+static int mp4_write_decoder_specific_info(const struct mov_t* mov)
+{
+	mov_write_base_descr(mov, ISO_DecSpecificInfoTag, mov->track->extra_data_size);
+	file_writer_write(mov->fp, mov->track->extra_data, mov->track->extra_data_size);
+	return mov->track->extra_data_size;
 }
 
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor (p48)
@@ -134,14 +176,30 @@ class DecoderConfigDescriptor extends BaseDescriptor : bit(8) tag=DecoderConfigD
 	profileLevelIndicationIndexDescriptor profileLevelIndicationIndexDescr[0..255];
 }
 */
-static int mp4_read_decoder_config_descriptor(struct mov_t* mov)
+static int mp4_read_decoder_config_descriptor(struct mov_t* mov, int len)
 {
-	int object_type_id = file_reader_r8(mov->fp);
-	file_reader_r8(mov->fp); /* stream type */
-	uint32_t bufferSizeDB = file_reader_rb24(mov->fp); /* buffer size db */
-	uint32_t max_rate = file_reader_rb32(mov->fp); /* max bit-rate */
-	uint32_t bit_rate = file_reader_rb32(mov->fp); /* avg bit-rate */
-	return file_reader_error(mov->fp);
+	/*uint8_t object_type_id = */(uint8_t)file_reader_r8(mov->fp); /* objectTypeIndication */
+	/*uint8_t stream_type = */(uint8_t)file_reader_r8(mov->fp); /* stream type */
+	/*uint32_t bufferSizeDB = */file_reader_rb24(mov->fp); /* buffer size db */
+	/*uint32_t max_rate = */file_reader_rb32(mov->fp); /* max bit-rate */
+	/*uint32_t bit_rate = */file_reader_rb32(mov->fp); /* avg bit-rate */
+	return mp4_read_tag(mov, len - 13); // mp4_read_decoder_specific_info
+}
+
+static int mp4_write_decoder_config_descriptor(const struct mov_t* mov)
+{
+	size_t size = 13 + (mov->track->extra_data_size > 0 ? mov->track->extra_data_size + 5 : 0);
+	mov_write_base_descr(mov, ISO_DecoderConfigDescrTag, size);
+	file_writer_w8(mov->fp, (uint8_t)mov->track->codec_id);
+	file_writer_w8(mov->fp, 0x01/*reserved*/ | ((MOV_VIDEO == mov->track->handler_type ? MP4_STREAM_VISUAL : MP4_STREAM_AUDIO) << 2));
+	file_writer_wb24(mov->fp, 0); /* buffer size db */
+	file_writer_wb32(mov->fp, 88360); /* max bit-rate */
+	file_writer_wb32(mov->fp, 88360); /* avg bit-rate */
+
+	if (mov->track->extra_data_size > 0)
+		mp4_write_decoder_specific_info(mov);
+
+	return size;
 }
 
 // ISO/IEC 14496-1:2010(E) 7.3.2.3 SL Packet Header Configuration (p92)
@@ -187,24 +245,23 @@ tag=ExtSLConfigDescrTag {
 static int mp4_read_sl_config_descriptor(struct mov_t* mov)
 {
 	int flags = 0;
-	int timeStampLength = 0;
 	int predefined = file_reader_r8(mov->fp);
 	if (0 == predefined)
 	{
 		flags = file_reader_r8(mov->fp);
-		uint32_t timeStampResolution = file_reader_rb32(mov->fp);
-		uint32_t OCRResolution = file_reader_rb32(mov->fp);
-		int timeStampLength = file_reader_r8(mov->fp);
-		int OCRLength = file_reader_r8(mov->fp);
-		int AU_Length = file_reader_r8(mov->fp);
-		int instantBitrateLength = file_reader_r8(mov->fp);
-		uint16_t length = file_reader_rb16(mov->fp);
+		/*uint32_t timeStampResolution = */file_reader_rb32(mov->fp);
+		/*uint32_t OCRResolution = */file_reader_rb32(mov->fp);
+		/*int timeStampLength = */file_reader_r8(mov->fp);
+		/*int OCRLength = */file_reader_r8(mov->fp);
+		/*int AU_Length = */file_reader_r8(mov->fp);
+		/*int instantBitrateLength = */file_reader_r8(mov->fp);
+		/*uint16_t length = */file_reader_rb16(mov->fp);
 	}
 	else if (1 == predefined) // null SL packet header
 	{
 		flags = 0x00;
-		int TimeStampResolution = 1000;
-		int timeStampLength = 32;
+		//int TimeStampResolution = 1000;
+		//int timeStampLength = 32;
 	}
 	else if (2 == predefined) // Reserved for use in MP4 files
 	{ 
@@ -215,18 +272,26 @@ static int mp4_read_sl_config_descriptor(struct mov_t* mov)
 	// durationFlag
 	if (flags & 0x01)
 	{
-		uint32_t timeScale = file_reader_rb32(mov->fp);
-		uint16_t accessUnitDuration = file_reader_rb16(mov->fp);
-		uint16_t compositionUnitDuration = file_reader_rb16(mov->fp);
+		/*uint32_t timeScale = */file_reader_rb32(mov->fp);
+		/*uint16_t accessUnitDuration = */file_reader_rb16(mov->fp);
+		/*uint16_t compositionUnitDuration = */file_reader_rb16(mov->fp);
 	}
 
 	// useTimeStampsFlag
 	if (0 == (flags & 0x04))
 	{
-		uint64_t startDecodingTimeStamp = 0; // file_reader_rb8(timeStampLength / 8)
-		uint64_t startCompositionTimeStamp = 0; // file_reader_rb8(timeStampLength / 8)
+		//uint64_t startDecodingTimeStamp = 0; // file_reader_rb8(timeStampLength / 8)
+		//uint64_t startCompositionTimeStamp = 0; // file_reader_rb8(timeStampLength / 8)
 	}
 	return file_reader_error(mov->fp);
+}
+
+static size_t mp4_write_sl_config_descriptor(const struct mov_t* mov)
+{
+	size_t size = 1;
+	size += mov_write_base_descr(mov, ISO_SLConfigDescrTag, 1);
+	file_writer_w8(mov->fp, 0x02);
+	return size;
 }
 
 static int mp4_read_tag(struct mov_t* mov, uint64_t bytes)
@@ -234,10 +299,13 @@ static int mp4_read_tag(struct mov_t* mov, uint64_t bytes)
 	int tag, len;
 	uint64_t p1, p2, offset;
 
-	for (offset = 0; offset + 2 < bytes; offset += len)
+	for (offset = 0; offset + 5 < bytes; offset += len)
 	{
 		tag = len = 0;
 		offset += mov_read_base_descr(mov, &tag, &len);
+		if (offset + len > bytes)
+			break;
+
 		p1 = file_reader_tell(mov->fp);
 		switch (tag)
 		{
@@ -246,7 +314,11 @@ static int mp4_read_tag(struct mov_t* mov, uint64_t bytes)
 			break;
 
 		case ISO_DecoderConfigDescrTag:
-			mp4_read_decoder_config_descriptor(mov);
+			mp4_read_decoder_config_descriptor(mov, len);
+			break;
+
+		case ISO_DecSpecificInfoTag:
+			mp4_read_decoder_specific_info(mov, len);
 			break;
 
 		case ISO_SLConfigDescrTag:
@@ -270,4 +342,36 @@ int mov_read_esds(struct mov_t* mov, const struct mov_box_t* box)
 	file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
 	return mp4_read_tag(mov, box->size - 4);
+}
+
+static size_t mp4_write_es_descriptor(const struct mov_t* mov)
+{
+	size_t size = 3; // mp4_write_decoder_config_descriptor
+	size += 5 + 13 + (mov->track->extra_data_size > 0 ? mov->track->extra_data_size + 5 : 0); // mp4_write_decoder_config_descriptor
+	size += 5 + 1; // mp4_write_sl_config_descriptor
+
+	size += mov_write_base_descr(mov, ISO_ESDescrTag, size);
+	file_writer_wb16(mov->fp, (uint16_t)mov->track->tkhd.track_ID); // ES_ID
+	file_writer_w8(mov->fp, 0x00); // flags (= no flags)
+
+	mp4_write_decoder_config_descriptor(mov);
+	mp4_write_sl_config_descriptor(mov);
+	return size;
+}
+
+size_t mov_write_esds(const struct mov_t* mov)
+{
+	size_t size;
+	uint64_t offset;
+
+	size = 12 /* full box */;
+	offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
+	file_writer_write(mov->fp, "esds", 4);
+	file_writer_wb32(mov->fp, 0); /* version & flags */
+
+	size += mp4_write_es_descriptor(mov);
+
+	mov_write_size(mov->fp, offset, size); /* update size */
+	return size;
 }

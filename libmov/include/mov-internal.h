@@ -3,6 +3,7 @@
 
 #include "mov-box.h"
 #include "mov-atom.h"
+#include "mov-format.h"
 
 #define MOV_TAG(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
@@ -20,6 +21,7 @@
 #define MOV_HINT  MOV_TAG('h', 'i', 'n', 't')
 #define MOV_META  MOV_TAG('m', 'e', 't', 'a')
 
+// ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor (p48)
 // MPEG-4 systems ObjectTypeIndication
 // http://www.mp4ra.org/object.html
 enum
@@ -34,10 +36,30 @@ enum
 	MP4_MEDIA_AAC_LOW	= 0x67, /* MPEG-2 AAC Low */
 	MP4_MEDIA_AAC_SSR	= 0x68, /* MPEG-2 AAC SSR */
 	MP4_MEDIA_MP3		= 0x69, /* Audio ISO/IEC 13818-3 */
+	MP4_MEDIA_MP1V		= 0x6A, /* Visual ISO/IEC 11172-2 */
+	MP4_MEDIA_MP1A		= 0x6B, /* Audio ISO/IEC 11172-3 */
+	MP4_MEDIA_JPEG		= 0x6C, /* Visual ISO/IEC 10918-1 (JPEG)*/
 	MP4_MEDIA_PNG		= 0x6D, /* Portable Network Graphics (f) */
 	MP4_MEDIA_JPEG2000	= 0x6E, /* Visual ISO/IEC 15444-1 (JPEG 2000) */
 	MP4_MEDIA_G719		= 0xA8, /* ITU G.719 Audio */
 	MP4_MEDIA_OPUS		= 0xAD, /* Opus audio */
+};
+
+// ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor
+// Table 6 - streamType Values (p51)
+enum
+{
+	MP4_STREAM_ODS		= 0x01, /* ObjectDescriptorStream */
+	MP4_STREAM_CRS		= 0x02, /* ClockReferenceStream */
+	MP4_STREAM_SDS		= 0x03, /* SceneDescriptionStream */
+	MP4_STREAM_VISUAL	= 0x04, /* VisualStream */
+	MP4_STREAM_AUDIO	= 0x05, /* AudioStream */
+	MP4_STREAM_MP7		= 0x06, /* MPEG7Stream */
+	MP4_STREAM_IPMP		= 0x07, /* IPMPStream */
+	MP4_STREAM_OCIS		= 0x08, /* ObjectContentInfoStream */
+	MP4_STREAM_MPEGJ	= 0x09, /* MPEGJStream */
+	MP4_STREAM_IS		= 0x0A, /* Interaction Stream */
+	MP4_STREAM_IPMPTOOL = 0x0B, /* IPMPToolStream */
 };
 
 enum
@@ -99,26 +121,8 @@ struct mov_sample_t
 
 struct mov_track_t
 {
-	uint32_t id;
-	uint32_t codec_id; // H.264/AAC MP4_MEDIA_XXX
+	uint32_t codec_id; // H.264/AAC MP4_MEDIA_XXX (DecoderConfigDescriptor)
 	uint32_t handler_type; // MOV_VIDEO/MOV_AUDIO
-
-	union
-	{
-		struct  
-		{
-			uint32_t width;
-			uint32_t height;
-		} video;
-
-		struct
-		{
-			uint32_t sample_rate;
-			uint16_t channels;
-			uint16_t bits_per_sample;
-		} audio;
-	} av;
-
 	uint8_t* extra_data; // H.264 sps/pps
 	size_t extra_data_size;
 
@@ -188,6 +192,9 @@ size_t mov_write_ctts(const struct mov_t* mov, uint32_t count);
 size_t mov_write_stsc(const struct mov_t* mov, uint32_t count);
 size_t mov_write_stco(const struct mov_t* mov, uint32_t count);
 size_t mov_write_stsz(const struct mov_t* mov);
+size_t mov_write_stbl(const struct mov_t* mov);
+size_t mov_write_avcC(const struct mov_t* mov);
+size_t mov_write_esds(const struct mov_t* mov);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 

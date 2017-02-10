@@ -256,7 +256,8 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	file_writer_wb16(mov->fp, 0x18); /* Reserved */
 	file_writer_wb16(mov->fp, 0xffff); /* Reserved */
 
-	//size += mov_write_h264(mov);
+	if(MOV_AVC1 == stsd->type)
+		size += mov_write_avcC(mov);
 	//size += mov_write_mp4v(mov);
 
 	mov_write_size(mov->fp, offset, size); /* update size */
@@ -291,7 +292,8 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	file_writer_wb32(mov->fp, stsd->u.audio.samplerate); /* samplerate */
 
-	//size += mov_write_mp4a(mov);
+	if(MOV_MP4A == stsd->type)
+		size += mov_write_esds(mov);
 
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;

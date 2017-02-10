@@ -4,6 +4,15 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
+#include <errno.h>
+#include <time.h>
+
+struct mov_writer_t
+{
+	struct mov_t mov;
+	uint64_t mdat_size;
+	uint64_t mdat_offset;
+};
 
 static uint32_t mov_build_chunk(struct mov_track_t* track)
 {
@@ -13,7 +22,7 @@ static uint32_t mov_build_chunk(struct mov_track_t* track)
 
 	for(i = 0; i < track->sample_count; i++)
 	{
-		if(i > 0 && sample->offset + bytes == track->samples[i].offset 
+		if(NULL != sample && sample->offset + bytes == track->samples[i].offset 
 			&& sample->u.stsc.sample_description_index == track->samples[i].stsd->data_reference_index)
 		{
 			track->samples[i].u.stsc.first_chunk = 0; // mark invalid value
@@ -44,12 +53,12 @@ static uint32_t mov_build_stts(struct mov_track_t* track)
 {
 	size_t i;
 	uint32_t duration, count = 0;
-	struct mov_sample_t* sample;
+	struct mov_sample_t* sample = NULL;
 
 	for (i = 0; i < track->sample_count; i++)
 	{
 		duration = mov_sample_duration(track, i);
-		if (i > 0 && duration == sample->u.stts.duration)
+		if (NULL != sample && duration == sample->u.stts.duration)
 		{
 			track->samples[i].u.stts.count = 0;
 			++sample->u.stts.count; // compress
@@ -99,7 +108,7 @@ static int mov_write_edts()
 // ISO/IEC 14496-12:2012(E) 6.2.3 Box Order (p23)
 // It is recommended that the boxes within the Sample Table Box be in the following order: 
 // Sample Description, Time to Sample, Sample to Chunk, Sample Size, Chunk Offset.
-static int mov_write_stbl(const struct mov_t* mov)
+size_t mov_write_stbl(const struct mov_t* mov)
 {
 	size_t size;
 	uint32_t count;
@@ -215,6 +224,7 @@ static size_t mov_write_moov(struct mov_t* mov)
 		size += mov_write_trak(mov);
 	}
 	
+//  size += mov_write_mvex(mov);
 //  size += mov_write_udta(mov);
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;
@@ -232,8 +242,12 @@ void mov_write_size(void* fp, uint64_t offset, size_t size)
 static int mov_writer_init(struct mov_t* mov)
 {
 	mov->ftyp.major_brand = MOV_BRAND_ISOM;
-	mov->ftyp.minor_version = 0;
-	mov->ftyp.brands_count = 0;
+	mov->ftyp.minor_version = 0x200;
+	mov->ftyp.brands_count = 4;
+	mov->ftyp.compatible_brands[0] = MOV_BRAND_ISOM;
+	mov->ftyp.compatible_brands[1] = MOV_BRAND_ISO2;
+	mov->ftyp.compatible_brands[2] = MOV_BRAND_AVC1;
+	mov->ftyp.compatible_brands[3] = MOV_BRAND_MP41;
 	mov->header = 0;
 	return 0;
 }
@@ -241,32 +255,199 @@ static int mov_writer_init(struct mov_t* mov)
 void* mov_writer_create(const char* file)
 {
 	struct mov_t* mov;
-	mov = (struct mov_t*)malloc(sizeof(*mov));
-	if (NULL == mov)
+	struct mov_writer_t* writer;
+	writer = (struct mov_writer_t*)malloc(sizeof(struct mov_writer_t));
+	if (NULL == writer)
 		return NULL;
+	memset(writer, 0, sizeof(*writer));
 
-	memset(mov, 0, sizeof(*mov));
+	mov = &writer->mov;
 	mov->fp = file_writer_create(file);
 	if (NULL == mov->fp || 0 != mov_writer_init(mov))
 	{
-		mov_writer_destroy(mov);
+		mov_writer_destroy(writer);
 		return NULL;
 	}
 
-	return mov;
+	mov_write_ftyp(mov);
+
+	// mdat
+	writer->mdat_offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
+	file_writer_write(mov->fp, "mdat", 4);
+
+	mov->mvhd.next_track_ID = 1;
+	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
+	mov->mvhd.modification_time = mov->mvhd.creation_time;
+	mov->mvhd.timescale = 1000;
+	mov->mvhd.duration = 0;
+	return writer;
 }
 
 void mov_writer_destroy(void* p)
 {
 	struct mov_t* mov;
-	mov = (struct mov_t*)p;
-	file_writer_destroy(&mov->fp);
-	free(mov);
+	struct mov_writer_t* writer;
+	writer = (struct mov_writer_t*)p;
+	mov = &writer->mov;
+
+	// finish mdat box
+	mov_write_size(mov->fp, writer->mdat_offset, writer->mdat_size); /* update size */
+
+	// write moov box
+	mov_write_moov(mov);
+
+	file_writer_destroy(&writer->mov.fp);
+	free(writer);
 }
 
-int mov_writer_write(void* p, void* buffer, size_t bytes)
+static struct mov_track_t* mov_writer_find_track(struct mov_t* mov, uint32_t handler)
+{
+	size_t i;
+	for (i = 0; i < mov->track_count; i++)
+	{
+		if (mov->tracks[i].handler_type == handler)
+			return &mov->tracks[i];
+	}
+	return NULL;
+}
+
+static int mov_writer_write(void* p, uint32_t handler, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
 	struct mov_t* mov;
-	mov = (struct mov_t*)p;
-	return -1;
+	struct mov_sample_t* sample;
+	struct mov_writer_t* writer;
+	writer = (struct mov_writer_t*)p;
+	mov = &writer->mov;
+	mov->track = mov_writer_find_track(mov, handler);
+	if (NULL == mov->track)
+		return ENOENT; // not found
+
+	if (mov->track->sample_offset + 1 >= mov->track->sample_count)
+	{
+		void* ptr = realloc(mov->track->samples, sizeof(struct mov_sample_t) * (mov->track->sample_count + 1024));
+		if (NULL == ptr) return ENOMEM;
+		mov->track->samples = ptr;
+		mov->track->sample_count += 1024;
+	}
+
+	sample = &mov->track->samples[mov->track->sample_offset++];
+	sample->offset = file_writer_tell(mov->fp);
+	sample->bytes = bytes;
+	sample->pts = pts;
+	sample->dts = dts;
+	sample->flags = 0;
+
+	if (bytes != file_writer_write(mov->fp, buffer, bytes))
+		return -1; // file write error
+
+	writer->mdat_size += bytes; // update media data size
+	return file_writer_error(mov->fp);
+}
+
+int mov_writer_write_audio(void* p, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+{
+	return mov_writer_write(p, MOV_AUDIO, buffer, bytes, pts, dts);
+}
+
+int mov_writer_write_video(void* p, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+{
+	return mov_writer_write(p, MOV_VIDEO, buffer, bytes, pts, dts);
+}
+
+int mov_writer_audio_meta(void* p, uint32_t avtype, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
+{
+	void* ptr = NULL;
+	struct mov_t* mov;
+	struct mov_stsd_t* stsd;
+	mov = &((struct mov_writer_t*)p)->mov;
+
+	ptr = realloc(mov->tracks, sizeof(struct mov_track_t) * (mov->track_count + 1));
+	if (NULL == ptr)
+		return ENOMEM;
+
+	mov->tracks = ptr;
+	mov->track = &mov->tracks[mov->track_count++];
+	memset(mov->track, 0, sizeof(struct mov_track_t));
+
+	mov->track->extra_data = malloc(extra_data_size);
+	if (NULL == mov->track->extra_data)
+		return ENOMEM;
+	memcpy(mov->track->extra_data, extra_data, extra_data_size);
+	mov->track->extra_data_size = extra_data_size;
+
+	stsd = &mov->track->stsd[mov->track->stsd_count++];
+	stsd->data_reference_index = 1;
+	stsd->type = avtype;
+	stsd->u.audio.channelcount = (uint16_t)channel_count;
+	stsd->u.audio.samplesize = (uint16_t)bits_per_sample;
+	stsd->u.audio.samplerate = sample_rate;
+
+	mov->track->dref_id = stsd->data_reference_index;
+	mov->track->codec_id = avtype;
+	mov->track->handler_type = MOV_AUDIO;
+
+	mov->track->tkhd.track_ID = mov->mvhd.next_track_ID++;
+	mov->track->tkhd.creation_time = mov->mvhd.creation_time;
+	mov->track->tkhd.modification_time = mov->mvhd.modification_time;
+	mov->track->tkhd.width = 0;
+	mov->track->tkhd.height = 0;
+	mov->track->tkhd.volume = 0x0100;
+	mov->track->tkhd.duration = 0; // placeholder
+
+	mov->track->mdhd.creation_time = mov->mvhd.creation_time;
+	mov->track->mdhd.modification_time = mov->mvhd.modification_time;
+	mov->track->mdhd.timescale = sample_rate;
+	mov->track->mdhd.duration = 0; // placeholder
+	return 0;
+}
+
+int mov_writer_video_meta(void* p, uint32_t avtype, int width, int height, const void* extra_data, size_t extra_data_size)
+{
+	void* ptr = NULL;
+	struct mov_t* mov;
+	struct mov_stsd_t* stsd;
+	mov = &((struct mov_writer_t*)p)->mov;
+
+	ptr = realloc(mov->tracks, sizeof(struct mov_track_t) * (mov->track_count + 1));
+	if (NULL == ptr)
+		return ENOMEM;
+
+	mov->tracks = ptr;
+	mov->track = &mov->tracks[mov->track_count++];
+	memset(mov->track, 0, sizeof(struct mov_track_t));
+
+	mov->track->extra_data = malloc(extra_data_size);
+	if (NULL == mov->track->extra_data)
+		return ENOMEM;
+	memcpy(mov->track->extra_data, extra_data, extra_data_size);
+	mov->track->extra_data_size = extra_data_size;
+
+	stsd = &mov->track->stsd[mov->track->stsd_count++];
+	stsd->data_reference_index = 1;
+	stsd->type = avtype;
+	stsd->u.visual.width = (uint16_t)width;
+	stsd->u.visual.height = (uint16_t)height;
+	stsd->u.visual.depth = 0x0018;
+	stsd->u.visual.frame_count = 1;
+	stsd->u.visual.horizresolution = 0x00480000;
+	stsd->u.visual.vertresolution = 0x00480000;
+
+	mov->track->dref_id = stsd->data_reference_index;
+	mov->track->codec_id = avtype;
+	mov->track->handler_type = MOV_VIDEO;
+	
+	mov->track->tkhd.track_ID = mov->mvhd.next_track_ID++;
+	mov->track->tkhd.creation_time = mov->mvhd.creation_time;
+	mov->track->tkhd.modification_time = mov->mvhd.modification_time;
+	mov->track->tkhd.width = width << 16;
+	mov->track->tkhd.height = height << 16;
+	mov->track->tkhd.volume = 0;
+	mov->track->tkhd.duration = 0; // placeholder
+
+	mov->track->mdhd.creation_time = mov->mvhd.creation_time;
+	mov->track->mdhd.modification_time = mov->mvhd.modification_time;
+	mov->track->mdhd.timescale = mov->mvhd.timescale;
+	mov->track->mdhd.duration = 0; // placeholder
+	return 0;
 }

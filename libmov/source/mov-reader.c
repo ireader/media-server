@@ -148,8 +148,8 @@ static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 	for (i = 0; i < entry_count; i++)
 	{
 		uint32_t size = file_reader_rb32(mov->fp);
-		uint32_t type = file_reader_rb32(mov->fp);
-		uint32_t vern = file_reader_rb32(mov->fp); /* version + flags */
+		/*uint32_t type = */file_reader_rb32(mov->fp);
+		/*uint32_t vern = */file_reader_rb32(mov->fp); /* version + flags */
 		file_reader_skip(mov->fp, size-12);
 	}
 	return 0;

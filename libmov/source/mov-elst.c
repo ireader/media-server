@@ -37,8 +37,8 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 			track->elst[i].segment_duration = file_reader_rb32(mov->fp);
 			track->elst[i].media_time = (int32_t)file_reader_rb32(mov->fp);
 		}
-		track->elst[i].media_rate_integer = file_reader_rb16(mov->fp);
-		track->elst[i].media_rate_fraction = file_reader_rb16(mov->fp);
+		track->elst[i].media_rate_integer = (int16_t)file_reader_rb16(mov->fp);
+		track->elst[i].media_rate_fraction = (int16_t)file_reader_rb16(mov->fp);
 	}
 
 	return file_reader_error(mov->fp);
@@ -46,6 +46,5 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_elst(const struct mov_t* mov)
 {
-	const struct mov_track_t* track = mov->track;
 	return 0;
 }

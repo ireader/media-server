@@ -33,13 +33,13 @@
     <ClInclude Include="include\mov-box.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\mov-tag.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\file-writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mov-atom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mov-format.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
