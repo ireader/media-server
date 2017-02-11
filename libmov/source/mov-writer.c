@@ -18,12 +18,15 @@ static uint32_t mov_build_chunk(struct mov_track_t* track)
 {
 	size_t bytes, i;
 	uint32_t count = 0;
+	struct mov_stsd_t* stsd = NULL;
 	struct mov_sample_t* sample = NULL;
 
+	assert(track->stsd_count > 0);
+	stsd = &track->stsd[0];
 	for(i = 0; i < track->sample_count; i++)
 	{
 		if(NULL != sample && sample->offset + bytes == track->samples[i].offset 
-			&& sample->u.stsc.sample_description_index == track->samples[i].stsd->data_reference_index)
+			&& sample->u.stsc.sample_description_index == stsd->data_reference_index)
 		{
 			track->samples[i].u.stsc.first_chunk = 0; // mark invalid value
 			bytes += track->samples[i].bytes;
@@ -34,7 +37,7 @@ static uint32_t mov_build_chunk(struct mov_track_t* track)
 			sample = &track->samples[i];
 			sample->u.stsc.first_chunk = ++count;
 			sample->u.stsc.samples_per_chunk = 1;
-			sample->u.stsc.sample_description_index = sample->stsd->data_reference_index;
+			sample->u.stsc.sample_description_index = stsd->data_reference_index;
 			bytes = sample->bytes;
 		}
 	}
@@ -221,6 +224,8 @@ static size_t mov_write_moov(struct mov_t* mov)
 	for(i = 0; i < mov->track_count; i++)
 	{
 		mov->track = &mov->tracks[i];
+		if (mov->track->sample_count < 1)
+			continue;
 		size += mov_write_trak(mov);
 	}
 	
@@ -280,19 +285,36 @@ void* mov_writer_create(const char* file)
 	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
 	mov->mvhd.modification_time = mov->mvhd.creation_time;
 	mov->mvhd.timescale = 1000;
-	mov->mvhd.duration = 0;
+	mov->mvhd.duration = 0; // placeholder
 	return writer;
 }
 
 void mov_writer_destroy(void* p)
 {
+	size_t i;
 	struct mov_t* mov;
 	struct mov_writer_t* writer;
 	writer = (struct mov_writer_t*)p;
 	mov = &writer->mov;
 
 	// finish mdat box
-	mov_write_size(mov->fp, writer->mdat_offset, writer->mdat_size); /* update size */
+	mov_write_size(mov->fp, writer->mdat_offset, writer->mdat_size+8); /* update size */
+
+	// finish sample info
+	for (i = 0; i < mov->track_count; i++)
+	{
+		mov->track = &mov->tracks[i];
+		if(mov->track->sample_count < 1)
+			continue;
+
+		// pts in ms
+		mov->track->tkhd.duration = mov->track->samples[mov->track->sample_count-1].pts * mov->mvhd.timescale / 1000;
+		mov->track->mdhd.duration = mov->track->samples[mov->track->sample_count - 1].pts * mov->track->mdhd.timescale / 1000;
+		if (mov->track->tkhd.duration > mov->mvhd.duration)
+		{
+			mov->mvhd.duration = mov->track->tkhd.duration;
+		}
+	}
 
 	// write moov box
 	mov_write_moov(mov);
@@ -323,15 +345,15 @@ static int mov_writer_write(void* p, uint32_t handler, const void* buffer, size_
 	if (NULL == mov->track)
 		return ENOENT; // not found
 
-	if (mov->track->sample_offset + 1 >= mov->track->sample_count)
+	if (mov->track->sample_count + 1 >= mov->track->sample_offset)
 	{
-		void* ptr = realloc(mov->track->samples, sizeof(struct mov_sample_t) * (mov->track->sample_count + 1024));
+		void* ptr = realloc(mov->track->samples, sizeof(struct mov_sample_t) * (mov->track->sample_offset + 1024));
 		if (NULL == ptr) return ENOMEM;
 		mov->track->samples = ptr;
-		mov->track->sample_count += 1024;
+		mov->track->sample_offset += 1024;
 	}
 
-	sample = &mov->track->samples[mov->track->sample_offset++];
+	sample = &mov->track->samples[mov->track->sample_count++];
 	sample->offset = file_writer_tell(mov->fp);
 	sample->bytes = bytes;
 	sample->pts = pts;
@@ -376,6 +398,9 @@ int mov_writer_audio_meta(void* p, uint32_t avtype, int channel_count, int bits_
 	memcpy(mov->track->extra_data, extra_data, extra_data_size);
 	mov->track->extra_data_size = extra_data_size;
 
+	mov->track->stsd = malloc(sizeof(struct mov_stsd_t));
+	if (NULL == mov->track->stsd)
+		return ENOMEM;
 	stsd = &mov->track->stsd[mov->track->stsd_count++];
 	stsd->data_reference_index = 1;
 	stsd->type = avtype;
@@ -383,10 +408,10 @@ int mov_writer_audio_meta(void* p, uint32_t avtype, int channel_count, int bits_
 	stsd->u.audio.samplesize = (uint16_t)bits_per_sample;
 	stsd->u.audio.samplerate = sample_rate;
 
-	mov->track->dref_id = stsd->data_reference_index;
 	mov->track->codec_id = avtype;
 	mov->track->handler_type = MOV_AUDIO;
 
+	mov->track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
 	mov->track->tkhd.track_ID = mov->mvhd.next_track_ID++;
 	mov->track->tkhd.creation_time = mov->mvhd.creation_time;
 	mov->track->tkhd.modification_time = mov->mvhd.modification_time;
@@ -398,6 +423,7 @@ int mov_writer_audio_meta(void* p, uint32_t avtype, int channel_count, int bits_
 	mov->track->mdhd.creation_time = mov->mvhd.creation_time;
 	mov->track->mdhd.modification_time = mov->mvhd.modification_time;
 	mov->track->mdhd.timescale = sample_rate;
+	mov->track->mdhd.language = 0x55c4;
 	mov->track->mdhd.duration = 0; // placeholder
 	return 0;
 }
@@ -423,6 +449,9 @@ int mov_writer_video_meta(void* p, uint32_t avtype, int width, int height, const
 	memcpy(mov->track->extra_data, extra_data, extra_data_size);
 	mov->track->extra_data_size = extra_data_size;
 
+	mov->track->stsd = malloc(sizeof(struct mov_stsd_t));
+	if (NULL == mov->track->stsd)
+		return ENOMEM;
 	stsd = &mov->track->stsd[mov->track->stsd_count++];
 	stsd->data_reference_index = 1;
 	stsd->type = avtype;
@@ -433,10 +462,10 @@ int mov_writer_video_meta(void* p, uint32_t avtype, int width, int height, const
 	stsd->u.visual.horizresolution = 0x00480000;
 	stsd->u.visual.vertresolution = 0x00480000;
 
-	mov->track->dref_id = stsd->data_reference_index;
 	mov->track->codec_id = avtype;
 	mov->track->handler_type = MOV_VIDEO;
 	
+	mov->track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
 	mov->track->tkhd.track_ID = mov->mvhd.next_track_ID++;
 	mov->track->tkhd.creation_time = mov->mvhd.creation_time;
 	mov->track->tkhd.modification_time = mov->mvhd.modification_time;
@@ -448,6 +477,7 @@ int mov_writer_video_meta(void* p, uint32_t avtype, int width, int height, const
 	mov->track->mdhd.creation_time = mov->mvhd.creation_time;
 	mov->track->mdhd.modification_time = mov->mvhd.modification_time;
 	mov->track->mdhd.timescale = mov->mvhd.timescale;
+	mov->track->mdhd.language = 0x55c4;
 	mov->track->mdhd.duration = 0; // placeholder
 	return 0;
 }

@@ -132,8 +132,6 @@ struct mov_track_t
 	struct mov_stsd_t* stsd;
 	size_t stsd_count;
 
-	uint16_t dref_id; // [stsd] data_reference_index, default 1
-
 	struct mov_elst_t* elst;
 	size_t elst_count;
 

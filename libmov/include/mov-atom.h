@@ -51,7 +51,7 @@ struct mov_tkhd_t
 	uint32_t track_ID; // cannot be zero
 	uint64_t creation_time; // seconds sine midnight, Jan. 1, 1904, UTC
 	uint64_t modification_time; // seconds sine midnight, Jan. 1, 1904, UTC
-	uint64_t duration; // default 1s	
+	uint64_t duration; // default UINT64_MAX(by Movie Header Box timescale)
 	//uint32_t reserved;
 
 	//uint32_t reserved2[2];
@@ -71,7 +71,7 @@ struct mov_mdhd_t
 	uint32_t flags : 24;
 
 	uint32_t timescale; // second
-	uint64_t duration; // default 1s
+	uint64_t duration; // default UINT64_MAX(by timescale)
 	uint64_t creation_time; // seconds sine midnight, Jan. 1, 1904, UTC
 	uint64_t modification_time; // seconds sine midnight, Jan. 1, 1904, UTC
 
@@ -136,7 +136,7 @@ struct mov_stsc_t
 
 struct mov_elst_t
 {
-	uint64_t segment_duration;
+	uint64_t segment_duration; // by Movie Header Box timescale
 	int64_t media_time;
 	int16_t media_rate_integer;
 	int16_t media_rate_fraction;
