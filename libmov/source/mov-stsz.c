@@ -115,7 +115,7 @@ size_t mov_write_stsz(const struct mov_t* mov)
 	if(i < track->sample_count)
 	{
 		file_writer_wb32(mov->fp, 0);
-		file_writer_wb32(mov->fp, stbl->stsc_count);
+		file_writer_wb32(mov->fp, track->sample_count);
 		for(i = 0; i < track->sample_count; i++)
 			file_writer_wb32(mov->fp, track->samples[i].bytes);
 	}
