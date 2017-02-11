@@ -72,7 +72,7 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 	size = 12/* full box */ + 4/* entry count */ + count * (co64 ? 8 : 4);
 
 	file_writer_wb32(mov->fp, size); /* size */
-	file_writer_write(mov->fp, co64 ? "stco" : "co64", 4);
+	file_writer_write(mov->fp, co64 ? "co64" : "stco", 4);
 	file_writer_wb32(mov->fp, 0); /* version & flags */
 	file_writer_wb32(mov->fp, count); /* entry count */
 
