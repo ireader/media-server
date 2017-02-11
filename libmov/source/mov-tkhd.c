@@ -81,7 +81,8 @@ size_t mov_write_tkhd(const struct mov_t* mov)
 
 	file_writer_wb32(mov->fp, 92); /* size */
 	file_writer_write(mov->fp, "tkhd", 4);
-	file_writer_wb32(mov->fp, 0); /* version & flags */
+	file_writer_w8(mov->fp, 0); /* version */
+	file_writer_wb24(mov->fp, tkhd->flags); /* flags */
 
 	file_writer_wb32(mov->fp, (uint32_t)tkhd->creation_time); /* creation_time */
 	file_writer_wb32(mov->fp, (uint32_t)tkhd->modification_time); /* modification_time */
