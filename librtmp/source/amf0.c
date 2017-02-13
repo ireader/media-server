@@ -3,6 +3,8 @@
 #include <memory.h>
 #include <assert.h>
 
+#define __LITTLE_ENDIAN
+
 static uint8_t* AMFWriteInt16(uint8_t* ptr, const uint8_t* end, uint16_t value)
 {
 	assert(end - ptr >= 2);
@@ -60,7 +62,7 @@ uint8_t* AMFWriteObjectEnd(uint8_t* ptr, const uint8_t* end)
 	/* end of object - 0x00 0x00 0x09 */
 	*ptr++ = 0;
 	*ptr++ = 0;
-	*ptr++ = AMF_OBJECT;
+	*ptr++ = AMF_OBJECT_END;
 	return ptr;
 }
 
@@ -79,8 +81,20 @@ uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value)
 
 	assert(8 == sizeof(double));
 	*ptr++ = AMF_NUMBER;
-	memcpy(ptr, &value, sizeof(double));
-	return ptr + 8;
+
+#if defined(__LITTLE_ENDIAN)
+	*ptr++ = ((uint8_t*)&value)[7];
+	*ptr++ = ((uint8_t*)&value)[6];
+	*ptr++ = ((uint8_t*)&value)[5];
+	*ptr++ = ((uint8_t*)&value)[4];
+	*ptr++ = ((uint8_t*)&value)[3];
+	*ptr++ = ((uint8_t*)&value)[2];
+	*ptr++ = ((uint8_t*)&value)[1];
+	*ptr++ = ((uint8_t*)&value)[0];
+#else
+	memcpy(ptr, value, 8);
+#endif
+	return ptr;
 }
 
 uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
@@ -91,11 +105,13 @@ uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, si
 	{
 		*ptr++ = AMF_STRING;
 		AMFWriteString16(ptr, end, string, length);
+		ptr += 2;
 	}
 	else
 	{
 		*ptr++ = AMF_LONG_STRING;
 		AMFWriteString32(ptr, end, string, length);
+		ptr += 4;
 	}
 	return ptr + length;
 }
@@ -135,18 +151,30 @@ const uint8_t* AMFReadBoolean(const uint8_t* ptr, const uint8_t* end, uint8_t* v
 
 const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* value)
 {
+	uint8_t* p = (uint8_t*)value;
 	if (end - ptr < 8) return NULL;
-	memcpy(value, ptr, sizeof(double));
+#if defined(__LITTLE_ENDIAN)
+	*p++ = ptr[7];
+	*p++ = ptr[6];
+	*p++ = ptr[5];
+	*p++ = ptr[4];
+	*p++ = ptr[3];
+	*p++ = ptr[2];
+	*p++ = ptr[1];
+	*p++ = ptr[0];
+#else
+	memcpy(value, ptr, 8);
+#endif
 	return ptr + 8;
 }
 
 const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongString, char* string, size_t length)
 { 
-	uint32_t len = 0xFFFFFFFF;
-	if (isLongString)
-		ptr = AMFReadInt16(ptr, end, (uint16_t*)len);
+	uint32_t len = 0;
+	if (0 == isLongString)
+		ptr = AMFReadInt16(ptr, end, (uint16_t*)&len);
 	else
-		ptr = AMFReadInt32(ptr, end, (uint32_t*)len);
+		ptr = AMFReadInt32(ptr, end, (uint32_t*)&len);
 
 	if (NULL == ptr || ptr + len > end || len + 1 > length) return NULL;
 
@@ -175,7 +203,7 @@ uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name,
 	return AMFWriteDouble(ptr, end, value);
 }
 
-uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, int value)
+uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value)
 {
 	if (ptr + length + 2 + 2 > end)
 		return NULL;
