@@ -12,18 +12,18 @@ static int rtmp_write_basic_header(uint8_t* out, uint8_t fmt, uint32_t id)
 		*out++ = (fmt << 6) | 1;
 		*out++ = (uint8_t)((id - 64) & 0xFF);
 		*out++ = (uint8_t)(((id - 64) >> 8) & 0xFF);
-		return 2;
+		return 3;
 	}
 	else if (id > 64)
 	{
 		*out++ = (fmt << 6) | 0;
 		*out++ = (uint8_t)(id - 64);
-		return 1;
+		return 2;
 	}
 	else
 	{
 		*out++ = (fmt << 6) | (uint8_t)id;
-		return 0;
+		return 1;
 	}
 }
 
@@ -82,7 +82,7 @@ int rtmp_chunk_send(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* heade
 
 	do
 	{
-		chunkSize = payloadSize < rtmp->chunk_size ? payloadSize : rtmp->chunk_size;
+		chunkSize = payloadSize < rtmp->out_chunk_size ? payloadSize : rtmp->out_chunk_size;
 		rtmp->send(rtmp->param, p, headerSize, payload, chunkSize); // callback
 
 		payload += chunkSize;
@@ -91,7 +91,7 @@ int rtmp_chunk_send(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* heade
 
 		if (payloadSize > 0)
 		{
-			headerSize = rtmp_write_basic_header(p, header->fmt, header->cid);
+			headerSize = rtmp_write_basic_header(p, 0x03, header->cid);
 			headerSize += rtmp_write_extended_timestamp(p + headerSize, header->timestamp);
 		}
 	} while (headerSize > 0);
