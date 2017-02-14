@@ -6,12 +6,12 @@ enum RTMPMessageTypeId
 	/* Protocol Control Messages */
 	RTMP_TYPE_SET_CHUNK_SIZE = 1,
 	RTMP_TYPE_ABORT = 2,
-	RTMP_TYPE_ACKNOWLEDGEMENT = 3, // bytes read
+	RTMP_TYPE_ACKNOWLEDGEMENT = 3, // bytes read report
 	RTMP_TYPE_WINDOW_ACKNOWLEDGEMENT_SIZE = 5, // server bandwidth
 	RTMP_TYPE_SET_PEER_BANDWIDTH = 6, // client bandwidth
 
-	/* User Control Messages (4) */
-	RTMP_TYPE_PING = 4,
+	/* User Control Messages Event (4) */
+	RTMP_TYPE_EVENT = 4,
 
 	RTMP_TYPE_AUDIO = 8,
 	RTMP_TYPE_VIDEO = 9,
