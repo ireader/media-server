@@ -12,14 +12,14 @@ extern "C" {
 	{
 		// audio 0xF
 		FLV_MP3 = 2, 
-		FLV_AAC = 10, 
+		FLV_AAC = 10, // AAC ADTS + Data
 		
 		// video 0xF0
-		FLV_AVC = (7 << 4), 
+		FLV_AVC = (7 << 4), // H.264 start code + NALU
 		
 		// other 0xF00
-		FLV_AAC_HEADER = (1 << 8), 
-		FLV_AVC_HEADER = (2 << 8)
+		FLV_AAC_HEADER = (1 << 8), // MP4(ISO-14496-3) AudioSpecificConfig
+		FLV_AVC_HEADER = (2 << 8), // MP4(ISO-14496-15) AVCDecoderConfigurationRecord
 	};
 
 	typedef void (*flv_demuxer_handler)(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
