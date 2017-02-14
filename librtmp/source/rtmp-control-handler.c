@@ -77,7 +77,7 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 	{
 	case RTMP_TYPE_SET_CHUNK_SIZE:
 		assert(4 == header->length);
-		return rtmp_read_chunk_size(data, header->length, &rtmp->peer_chunk_size);
+		return rtmp_read_chunk_size(data, header->length, &rtmp->in_chunk_size);
 
 	case RTMP_TYPE_ABORT:
 		assert(4 == header->length);
@@ -95,7 +95,7 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 		assert(5 == header->length);
 		if (5 == rtmp_read_set_peer_bandwidth(data, header->length, &rtmp->peer_bandwidth, &rtmp->limit_type))
 		{
-			rtmp->onbandwidth(rtmp->param);
+			rtmp->u.client.onbandwidth(rtmp->param);
 			return 5;
 		}
 		return 0;
