@@ -139,6 +139,7 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 	int n, m;
 	struct flv_writer_t* flv;
 	flv = (struct flv_writer_t*)p;
+	dts = (0 == dts || UINT32_MAX == data) ? pts : dts;
 
 	if (flv->bytes < bytes + 11/*TAG*/ + 2/*AudioTagHeader*/ + 2/*AACConfig*/ + 4/*TagSize*/)
 	{
@@ -156,9 +157,9 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 		m = mpeg4_aac_audio_specific_config_save(&flv->aac, flv->ptr + 13, flv->bytes - 13);
 		assert(13 + m + 4 <= (int)flv->bytes);
 
-		flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, m + 2, pts);
+		flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, m + 2, dts);
 		flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
-		flv->ptr[12] = flv->audio;
+		flv->ptr[12] = 0; // AACPacketType: 0-AudioSpecificConfig(AAC sequence header)
 		be_write_uint32(flv->ptr + 13 + m, 13 + m); // TAG size
 
 		if (m + 17 != (int)fwrite(flv->ptr, 1, m + 17, flv->fp))
@@ -167,10 +168,9 @@ int flv_writer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint
 		flv->audio = 1;
 	}
 
-	dts = 0;
-	flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, bytes - n + 2, pts);
+	flv_write_tag(flv->ptr, FLV_TYPE_AUDIO, bytes - n + 2, dts);
 	flv->ptr[11] = (10 << 4) /* AAC */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
-	flv->ptr[12] = flv->audio;
+	flv->ptr[12] = 1; // AACPacketType: 1-AAC raw
 	memcpy(flv->ptr + 13, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
 	be_write_uint32(flv->ptr + 13 + bytes - n, bytes - n + 13); // TAG size
 
