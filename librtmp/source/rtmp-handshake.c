@@ -34,7 +34,7 @@ int rtmp_handshake_c1(uint8_t* c1, uint32_t timestamp)
 int rtmp_handshake_c2(uint8_t* c2, uint32_t timestamp, const uint8_t* s1, size_t bytes)
 {
 	assert(RTMP_HANDSHAKE == bytes);
-	memcpy(c2, s1, bytes);
+	memmove(c2, s1, bytes);
 	be_write_uint32(c2 + 4, timestamp);
 	return bytes;
 }
@@ -57,7 +57,7 @@ int rtmp_handshake_s1(uint8_t* s1, uint32_t timestamp)
 int rtmp_handshake_s2(uint8_t* s2, uint32_t timestamp, const uint8_t* c1, size_t bytes)
 {
 	assert(RTMP_HANDSHAKE == bytes);
-	memcpy(s2, c1, bytes);
+	memmove(s2, c1, bytes);
 	be_write_uint32(s2 + 4, timestamp);
 	return bytes;
 }
