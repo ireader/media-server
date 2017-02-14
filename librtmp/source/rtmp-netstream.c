@@ -3,42 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const char* s_netstream_command[] = 
-{
-	"onStatus",
-
-	"play", 
-	"deleteStream", 
-	"closeStream",
-	"receiveAudio", 
-	"receiveVideo", 
-	"publish", 
-	"seek",
-	"pause",
-
-	"FCPublish",
-	"FCUnpublish",
-	"FCSubscribe",
-	"FCUnsubscribe",
-};
-
-enum 
-{
-	RTMP_NETSTREAM_ONSTATUS = 0,
-	RTMP_NETSTREAM_PLAY,
-	RTMP_NETSTREAM_DELETE_STREAM,
-	RTMP_NETSTREAM_CLOSE_STREAM,
-	RTMP_NETSTREAM_RECEIVE_AUDIO,
-	RTMP_NETSTREAM_RECEIVE_VIDEO,
-	RTMP_NETSTREAM_PUBLISH,
-	RTMP_NETSTREAM_SEEK,
-	RTMP_NETSTREAM_PAUSE,
-	RTMP_NETSTREAM_FCPUBLISH,
-	RTMP_NETSTREAM_FCUNPUBLISH,
-	RTMP_NETSTREAM_FCSUBSCRIBE,
-	RTMP_NETSTREAM_FCUNSUBSCRIBE,
-};
-
 static const char* s_rtmp_level[] = { "warning", "status", "error" };
 static const char* s_rtmp_stream[] = { "live", "record", "append" };
 
@@ -46,10 +10,10 @@ static const char* s_rtmp_stream[] = { "live", "record", "append" };
 // @param[in] start -2-live/vod, -1-live only, >=0-seek position
 // @param[in] duration <=-1-all, 0-single frame, >0-period
 // @param[in] reset 1-flush any previous playlist, 0-don't flush
-uint8_t* rtmp_netstream_play(uint8_t* out, size_t bytes, int transactionId, const char* name, int start, int duration, int reset)
+uint8_t* rtmp_netstream_play(uint8_t* out, size_t bytes, int transactionId, const char* name, double start, double duration, int reset)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_PLAY];
+	const char* command = "play";
 	
 	if (NULL == name)
 		return NULL;
@@ -68,7 +32,7 @@ uint8_t* rtmp_netstream_play(uint8_t* out, size_t bytes, int transactionId, cons
 uint8_t* rtmp_netstream_delete_stream(uint8_t* out, size_t bytes, int transactionId, int id)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_DELETE_STREAM];
+	const char* command = "deleteStream";
 
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
@@ -80,7 +44,7 @@ uint8_t* rtmp_netstream_delete_stream(uint8_t* out, size_t bytes, int transactio
 uint8_t* rtmp_netconnection_close_stream(uint8_t* out, size_t bytes, int transactionId, int streamId)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_CLOSE_STREAM];
+	const char* command = "closeStream";
 
 	out = AMFWriteString(out, end, command, strlen(command));
 	out = AMFWriteDouble(out, end, transactionId);
@@ -93,7 +57,7 @@ uint8_t* rtmp_netconnection_close_stream(uint8_t* out, size_t bytes, int transac
 uint8_t* rtmp_netstream_receive_audio(uint8_t* out, size_t bytes, int transactionId, int enable)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_RECEIVE_AUDIO];
+	const char* command = "receiveAudio";
 
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
@@ -106,7 +70,7 @@ uint8_t* rtmp_netstream_receive_audio(uint8_t* out, size_t bytes, int transactio
 uint8_t* rtmp_netstream_receive_video(uint8_t* out, size_t bytes, int transactionId, int enable)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_RECEIVE_VIDEO];
+	const char* command = "receiveVideo";
 
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
@@ -116,28 +80,28 @@ uint8_t* rtmp_netstream_receive_video(uint8_t* out, size_t bytes, int transactio
 }
 
 // response: onStatus beginning of publish
-uint8_t* rtmp_netstream_publish(uint8_t* out, size_t bytes, int transactionId, const char* name, enum rtmp_stream_type_t stream)
+uint8_t* rtmp_netstream_publish(uint8_t* out, size_t bytes, int transactionId, const char* playpath, enum rtmp_stream_type_t stream)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_PUBLISH];
+	const char* command = "publish";
 	const char* streamType = s_rtmp_stream[stream % (sizeof(s_rtmp_stream) / sizeof(s_rtmp_stream[0]))];
 
-	if (NULL == name)
+	if (NULL == playpath)
 		return NULL;
 
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
 	out = AMFWriteNull(out, end); // command object
-	out = AMFWriteString(out, end, name, strlen(name)); // Publishing Name
+	out = AMFWriteString(out, end, playpath, strlen(playpath)); // Publishing Name
 	out = AMFWriteString(out, end, streamType, strlen(streamType)); // Publishing Type
 	return out;
 }
 
 // response: success: onStatus-NetStream.Seek.Notify, failure: _error message
-uint8_t* rtmp_netstream_seek(uint8_t* out, size_t bytes, int transactionId, int ms)
+uint8_t* rtmp_netstream_seek(uint8_t* out, size_t bytes, int transactionId, double ms)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_SEEK];
+	const char* command = "seek";
 	
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
@@ -148,10 +112,10 @@ uint8_t* rtmp_netstream_seek(uint8_t* out, size_t bytes, int transactionId, int 
 
 // @param[in] pause 1-pausing, 0-resuing
 // response: success: onStatus-NetStream.Pause.Notify/NetStream.Unpause.Notify, failure: _error message
-uint8_t* rtmp_netstream_pause(uint8_t* out, size_t bytes, int transactionId, int pause, int ms)
+uint8_t* rtmp_netstream_pause(uint8_t* out, size_t bytes, int transactionId, int pause, double ms)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_PAUSE];
+	const char* command = "pause";
 
 	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
 	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
@@ -161,10 +125,70 @@ uint8_t* rtmp_netstream_pause(uint8_t* out, size_t bytes, int transactionId, int
 	return out;
 }
 
+uint8_t* rtmp_netstream_release_stream(uint8_t* out, size_t bytes, int transactionId, const char* playpath)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "releaseStream";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, playpath, strlen(playpath)); // playpath
+	return out;
+}
+
+uint8_t* rtmp_netstream_fcpublish(uint8_t* out, size_t bytes, int transactionId, const char* playpath)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "FCPublish";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, playpath, strlen(playpath)); // playpath
+	return out;
+}
+
+uint8_t* rtmp_netstream_fcunpublish(uint8_t* out, size_t bytes, int transactionId, const char* playpath)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "FCUnpublish";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, playpath, strlen(playpath)); // playpath
+	return out;
+}
+
+uint8_t* rtmp_netstream_fcsubscribe(uint8_t* out, size_t bytes, int transactionId, const char* subscribepath)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "FCSubscribe";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, subscribepath, strlen(subscribepath)); // subscribepath
+	return out;
+}
+
+uint8_t* rtmp_netstream_fcunsubscribe(uint8_t* out, size_t bytes, int transactionId, const char* subscribepath)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "FCUnsubscribe";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+	out = AMFWriteString(out, end, subscribepath, strlen(subscribepath)); // subscribepath
+	return out;
+}
+
 uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, int transactionId, enum rtmp_level_t level, const char* code, const char* description)
 {
 	uint8_t* end = out + bytes;
-	const char* command = s_netstream_command[RTMP_NETSTREAM_ONSTATUS];
+	const char* command = "onStatus";
 	const char* slevel = s_rtmp_level[level % (sizeof(s_rtmp_level) / sizeof(s_rtmp_level[0]))];
 
 	if (NULL == code || NULL == description)
