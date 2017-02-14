@@ -72,9 +72,6 @@
     <ClCompile Include="source\rtmp-handshake.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtmp-message.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtmp-chunk-write.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,13 +81,25 @@
     <ClCompile Include="source\rtmp-invoke-handler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtmp-notify-handler.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtmp-server.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rtmp-control-handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-event.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-client-invoke-handler.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-client.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtmp-message.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -17,12 +17,9 @@ struct rtmp_server_handler_t
 	void (*on_pause)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
 	void (*on_seek)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
 
-	void (*on_recv_audio)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
-	void (*on_recv_video)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
-
 	void (*on_publish)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
-	void (*on_fcpublish)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
-	void (*on_fcunpublish)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
+	void (*on_audio)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
+	void (*on_video)(void* param, struct rtmp_trunk_header_t* header, const uint8_t* payload);
 };
 
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);

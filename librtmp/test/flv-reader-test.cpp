@@ -92,13 +92,6 @@ void flv_reader_test(const char* file)
 		{
 			assert(0);
 		}
-
-		if (0x09 == packet[0] && r == 45)
-		{
-			FILE* wf = fopen("E:\\video\\mp4\\59895-20170106155701-v.flv", "wb");
-			fwrite(packet, 1, 45, wf);
-			fclose(wf);
-		}
 	}
 
 	flv_demuxer_destroy(flv);
