@@ -52,9 +52,10 @@ struct rtmp_connect_t
 	char swfUrl[256]; // URL of the source SWF file
 	char tcUrl[256]; // URL of the Server, rtmp://host:1935/testapp/instance1
 	uint8_t fpad; // boolean: True if proxy is being used.
-	double audioCodecs; // double
-	double videoCodecs; // double
-	double videoFunction; // double
+	double capabilities; // double default: 15
+	double audioCodecs; // double default: 4071
+	double videoCodecs; // double default: 252
+	double videoFunction; // double default: 1
 	char pageUrl[256]; // http://host/sample.html
 };
 
@@ -70,6 +71,7 @@ struct rtmp_connect_reply_t
 
 uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_t* connect);
 uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transactionId);
+uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, int transactionId, const char* playpath);
 
 uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_reply_t* reply);
 uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int transactionId, int id);
