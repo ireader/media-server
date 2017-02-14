@@ -21,14 +21,22 @@ enum
 // 7.1.7. User Control Message Events (p27)
 enum
 {
-	RTMP_USER_EVENT_STREAM_BEGIN		= 0,
-	RTMP_USER_EVENT_STREAM_EOF			= 1,
-	RTMP_USER_EVENT_STREAM_DRY			= 2,
-	RTMP_USER_EVENT_SET_BUFFER_LENGTH	= 3,
-	RTMP_USER_EVENT_STREAM_IS_RECORD	= 4,
+	RTMP_EVENT_STREAM_BEGIN			= 0,
+	RTMP_EVENT_STREAM_EOF			= 1,
+	RTMP_EVENT_STREAM_DRY			= 2,
+	RTMP_EVENT_SET_BUFFER_LENGTH	= 3,
+	RTMP_EVENT_STREAM_IS_RECORD		= 4,
 
-	RTMP_USER_EVENT_PING_REQUEST		= 6,
-	RTMP_USER_EVENT_PING_RESPONSE		= 7,
+	RTMP_EVENT_PING					= 6, // RTMP_EVENT_PING_REQUEST
+	RTMP_EVENT_PONG					= 7, // RTMP_EVENT_PING_RESPONSE
 };
+
+int rtmp_event_stream_begin(uint8_t* data, size_t bytes, uint32_t streamId);
+int rtmp_event_stream_eof(uint8_t* data, size_t bytes, uint32_t streamId);
+int rtmp_event_stream_dry(uint8_t* data, size_t bytes, uint32_t streamId);
+int rtmp_event_set_buffer_length(uint8_t* data, size_t bytes, uint32_t streamId, uint32_t ms);
+int rtmp_event_stream_is_record(uint8_t* data, size_t bytes, uint32_t streamId);
+int rtmp_event_ping(uint8_t* data, size_t bytes, uint32_t timstamp);
+int rtmp_event_pong(uint8_t* data, size_t bytes, uint32_t timstamp);
 
 #endif /* !_rtmp_event_h_ */
