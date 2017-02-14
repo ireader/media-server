@@ -40,12 +40,22 @@ uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, si
 
 uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2);
 uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value);
-uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, int value);
+uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value);
 
 const uint8_t* AMFReadNull(const uint8_t* ptr, const uint8_t* end);
 const uint8_t* AMFReadBoolean(const uint8_t* ptr, const uint8_t* end, uint8_t* value);
 const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* value);
 const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongString, char* string, size_t length);
+
+
+struct amf_object_item_t
+{
+	enum AMFDataType type;
+	const char* name;
+	void* value;
+	size_t size;
+};
+const uint8_t* amf_read_items(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t count);
 
 #ifdef __cplusplus
 }

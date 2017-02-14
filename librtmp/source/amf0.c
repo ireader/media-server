@@ -1,6 +1,7 @@
 #include "amf0.h"
 #include <stddef.h>
 #include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 #define __LITTLE_ENDIAN
@@ -211,4 +212,98 @@ uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name
 	ptr = AMFWriteString16(ptr, end, name, length);
 
 	return AMFWriteBoolean(ptr, end, value);
+}
+
+
+static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n);
+
+static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enum AMFDataType type, struct amf_object_item_t* item)
+{
+	switch (type)
+	{
+	case AMF_BOOLEAN:
+		return AMFReadBoolean(data, end, (uint8_t*)item->value);
+
+	case AMF_NUMBER:
+		return AMFReadDouble(data, end, (double*)item->value);
+
+	case AMF_STRING:
+		return AMFReadString(data, end, 0, (char*)item->value, item->size);
+
+	case AMF_LONG_STRING:
+		return AMFReadString(data, end, 1, (char*)item->value, item->size);
+
+	case AMF_OBJECT:
+		return amf_read_object(data, end, (struct amf_object_item_t*)item->value, item->size);
+
+	case AMF_NULL:
+		return data;
+
+	default:
+		assert(0);
+		return NULL;
+	}
+}
+
+static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n)
+{
+	uint8_t type;
+	uint32_t len;
+	size_t i;
+
+	while (data + 2 <= end)
+	{
+		len = *data++ << 8;
+		len |= *data++;
+		if (0 == len)
+			break; // last item
+
+		if (data + len + 1 > end)
+			return NULL; // invalid
+
+		for (i = 0; i < n; i++)
+		{
+			if (0 == memcmp(items[i].name, data, len) && strlen(items[i].name) == len && data[len] == items[i].type)
+				break;
+		}
+
+		data += len; // skip name string
+		type = *data++;
+		if (i < n)
+		{
+			data = amf_read_item(data, end, type, &items[i]);
+		}
+		else
+		{
+			// skip unknown item
+			switch (type)
+			{
+			case AMF_BOOLEAN: data += 1; break;
+			case AMF_NUMBER: data += 8; break;
+			case AMF_STRING: data += 2 + (data[0] << 8) + data[1]; break;
+			case AMF_LONG_STRING: data += 4 + (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3]; break;
+			default: return NULL;
+			}
+		}
+	}
+
+	if (data && data < end && AMF_OBJECT_END == *data)
+		return data + 1;
+	return NULL; // invalid object
+}
+
+const uint8_t* amf_read_items(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t count)
+{
+	size_t i;
+	uint8_t type;
+	for (i = 0; i < count && data && data < end; i++)
+	{
+		type = *data++;
+		if (type != items[i].type && !(AMF_OBJECT == items[i].type && AMF_NULL == type))
+			return NULL;
+
+		data = amf_read_item(data, end, type, &items[i]);
+	}
+
+	return data;
 }
