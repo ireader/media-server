@@ -65,7 +65,7 @@ struct rtmp_client_t
 
 static void rtmp_client_chunk_header_default(struct rtmp_chunk_header_t* header, uint32_t channel, uint32_t timestamp, uint32_t length, uint8_t type, uint32_t stream_id)
 {
-	header->fmt = RTMP_CHUNK_TYPE_0;
+	header->fmt = RTMP_CHUNK_TYPE_0; // disable compact header
 	header->cid = channel;
 	header->timestamp = timestamp;
 	header->length = length;
@@ -131,7 +131,7 @@ static void rtmp_client_send_fcunpublish(struct rtmp_client_t* ctx)
 	int r;
 	struct rtmp_chunk_header_t header;
 	r = rtmp_netstream_fcunpublish(ctx->payload, sizeof(ctx->payload), 0, ctx->rtmp.playpath) - ctx->payload;
-	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, 0, r, RTMP_TYPE_INVOKE, ctx->rtmp.stream_id);
+	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, 0, r, RTMP_TYPE_INVOKE, (uint32_t)ctx->rtmp.stream_id);
 	r = rtmp_message_send(&ctx->rtmp, &header, ctx->payload);
 	if (0 != r)
 		ctx->handler.onerror(ctx->param, r, "error: send command: FCUnpublish");
@@ -159,7 +159,7 @@ static void rtmp_client_send_delete_stream(struct rtmp_client_t* ctx)
 	int r;
 	struct rtmp_chunk_header_t header;
 	assert(0 != ctx->rtmp.stream_id);
-	r = rtmp_netstream_delete_stream(ctx->payload, sizeof(ctx->payload), 0, ctx->rtmp.stream_id) - ctx->payload;
+	r = rtmp_netstream_delete_stream(ctx->payload, sizeof(ctx->payload), 0, (uint32_t)ctx->rtmp.stream_id) - ctx->payload;
 	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, 0, r, RTMP_TYPE_INVOKE, (uint32_t)ctx->rtmp.stream_id);
 	r = rtmp_message_send(&ctx->rtmp, &header, ctx->payload);
 	if (0 != r)
@@ -199,6 +199,25 @@ static void rtmp_client_send_play(struct rtmp_client_t* ctx)
 	}
 }
 
+// Window Acknowledgement Size (5)
+static void rtmp_client_send_server_bandwidth(struct rtmp_client_t* ctx)
+{
+	int n, r;
+	n = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	if (n != r)
+		ctx->handler.onerror(ctx->param, r, "error: send command: bandwidth");
+}
+
+static void rtmp_client_send_set_buffer_length(struct rtmp_client_t* ctx)
+{
+	int n, r;
+	n = rtmp_event_set_buffer_length(ctx->payload, sizeof(ctx->payload), (uint32_t)ctx->rtmp.stream_id, ctx->rtmp.buffer_length_ms);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	if (n != r)
+		ctx->handler.onerror(ctx->param, r, "error: send command: SetBufferLength");
+}
+
 static void rtmp_client_onconnect(void* param)
 {
 	struct rtmp_client_t* ctx;
@@ -211,9 +230,8 @@ static void rtmp_client_onconnect(void* param)
 	}
 	else
 	{
-		//RTMP_SendServerBW(r);
-		rtmp_window_acknowledgement_size(ctx->payload, ctx->capacity, ctx->rtmp.window_size);
-		//rtmp_event_set_buffer_length(ctx->payload, ctx->capacity, 0, 300);
+		rtmp_client_send_server_bandwidth(ctx);
+		rtmp_client_send_set_buffer_length(ctx);
 	}
 	rtmp_client_send_create_stream(ctx);
 }
@@ -229,7 +247,7 @@ static void rtmp_client_oncreate_stream(void* param, uint32_t stream_id)
 	else
 	{
 		rtmp_client_send_play(ctx);
-		//rtmp_event_set_buffer_length(ctx->payload, ctx->capacity, ctx->rtmp.stream_id, 300);
+		rtmp_client_send_set_buffer_length(ctx);
 	}
 }
 
@@ -258,28 +276,21 @@ static void rtmp_client_onnotify(void* param, enum rtmp_notify_t notify)
 
 static void rtmp_client_onping(void* param, uint32_t seqNo)
 {
-	int r;
-	struct rtmp_client_t* ctx;
-	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_client_t*)param;
-
-	r = rtmp_event_pong(ctx->payload, sizeof(ctx->payload), seqNo);
-	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, (uint32_t)time(NULL), r, RTMP_TYPE_INVOKE, 0);
-	r = rtmp_message_send(&ctx->rtmp, &header, ctx->payload);
-	if (0 != r)
-		ctx->handler.onerror(ctx->param, r, "error: send command: pong");
-}
-
-static void rtmp_client_onbandwidth(void* param)
-{
 	int n, r;
 	struct rtmp_client_t* ctx;
 	ctx = (struct rtmp_client_t*)param;
 
-	n = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
+	n = rtmp_event_pong(ctx->payload, sizeof(ctx->payload), seqNo);
 	r = ctx->handler.send(ctx->param, ctx->payload, n);
 	if (n != r)
-		ctx->handler.onerror(ctx->param, r, "error: send command: bandwidth");
+		ctx->handler.onerror(ctx->param, r, "error: send command: PingResponse");
+}
+
+static void rtmp_client_onbandwidth(void* param)
+{
+	struct rtmp_client_t* ctx;
+	ctx = (struct rtmp_client_t*)param;
+	rtmp_client_send_server_bandwidth(ctx);
 }
 
 static void rtmp_client_onerror(void* param, int code, const char* msg)
@@ -363,13 +374,13 @@ void* rtmp_client_create(const char* appname, const char* playpath, const char* 
 	return ctx;
 }
 
-void rtmp_client_destroy(void** client)
+void rtmp_client_destroy(void* client)
 {
 	size_t i;
 	struct rtmp_client_t* ctx;
-	if (NULL == client || NULL == *client)
+	if (NULL == client)
 		return;
-	ctx = *(struct rtmp_client_t**)client;
+	ctx = (struct rtmp_client_t*)client;
 
 	if (ctx->streams[AUDIO_STREAM])
 		free(ctx->streams[AUDIO_STREAM]);
@@ -470,7 +481,6 @@ int rtmp_client_start(void* client, int vod)
 int rtmp_client_stop(void* client)
 {
 	struct rtmp_client_t* ctx;
-	struct rtmp_chunk_header_t header;
 	ctx = (struct rtmp_client_t*)client;
 
 	if (0 == ctx->vod)
@@ -514,7 +524,7 @@ int rtmp_client_seek(void* client, double timestamp)
 	ctx = (struct rtmp_client_t*)client;
 
 	r = rtmp_netstream_seek(ctx->payload, sizeof(ctx->payload), 0, timestamp) - ctx->payload;
-	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, 0, r, RTMP_TYPE_INVOKE, ctx->rtmp.stream_id);
+	rtmp_client_chunk_header_default(&header, RTMP_CHANNEL_CONTROL, 0, r, RTMP_TYPE_INVOKE, (uint32_t)ctx->rtmp.stream_id);
 	r = rtmp_message_send(&ctx->rtmp, &header, ctx->payload);
 	if (0 != r)
 		ctx->handler.onerror(ctx->param, r, "error: send command: seek");
@@ -529,14 +539,36 @@ int rtmp_client_getstatus(void* client)
 	return ctx->status;
 }
 
-int rtmp_push_video(void* client, const void* video, size_t bytes, uint32_t pts, uint32_t dts)
+int rtmp_client_push_video(void* client, const void* video, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_client_t* ctx;
+	struct rtmp_chunk_header_t header;
 	ctx = (struct rtmp_client_t*)client;
+
+	assert(0 != ctx->rtmp.stream_id);
+	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
+	header.cid = RTMP_CHANNEL_VIDEO;
+	header.timestamp = timestamp;
+	header.length = bytes;
+	header.type = RTMP_TYPE_VIDEO;
+	header.stream_id = (uint32_t)ctx->rtmp.stream_id;
+
+	return rtmp_message_send(&ctx->rtmp, &header, (const uint8_t*)video);
 }
 
-int rtmp_push_audio(void* client, const void* audio, size_t bytes, uint32_t pts, uint32_t dts)
+int rtmp_client_push_audio(void* client, const void* audio, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_client_t* ctx;
+	struct rtmp_chunk_header_t header;
 	ctx = (struct rtmp_client_t*)client;
+
+	assert(0 != ctx->rtmp.stream_id);
+	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
+	header.cid = RTMP_CHANNEL_AUDIO;
+	header.timestamp = timestamp;
+	header.length = bytes;
+	header.type = RTMP_TYPE_AUDIO;
+	header.stream_id = (uint32_t)ctx->rtmp.stream_id;
+
+	return rtmp_message_send(&ctx->rtmp, &header, (const uint8_t*)audio);
 }

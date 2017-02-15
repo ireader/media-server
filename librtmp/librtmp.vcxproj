@@ -23,6 +23,7 @@
     <ClCompile Include="source\amf0.c" />
     <ClCompile Include="source\amf3.c" />
     <ClCompile Include="source\flv-demuxer.c" />
+    <ClCompile Include="source\flv-muxer.c" />
     <ClCompile Include="source\flv-reader.c" />
     <ClCompile Include="source\flv-writer.c" />
     <ClCompile Include="source\mpeg4-aac.c" />
@@ -51,6 +52,7 @@
     <ClInclude Include="include\amf0.h" />
     <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\flv-demuxer.h" />
+    <ClInclude Include="include\flv-muxer.h" />
     <ClInclude Include="include\flv-reader.h" />
     <ClInclude Include="include\flv-writer.h" />
     <ClInclude Include="include\mpeg4-aac.h" />

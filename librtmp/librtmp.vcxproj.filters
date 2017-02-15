@@ -102,6 +102,9 @@
     <ClCompile Include="source\rtmp-message.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\flv-muxer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">
@@ -165,6 +168,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\flv-muxer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
