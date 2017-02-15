@@ -27,7 +27,7 @@ extern "C" {
 	void* flv_demuxer_create(flv_demuxer_handler handler, void* param);
 	void flv_demuxer_destroy(void* flv);
 
-	size_t flv_demuxer_input(void* flv, const void* data, size_t bytes);
+	int flv_demuxer_input(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp);
 
 #if defined(__cplusplus)
 }
