@@ -56,17 +56,18 @@ static void onFLV(void* mov, int type, const void* data, size_t bytes, uint32_t 
 
 void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 {
-	int r;
+	int r, type;
+	uint32_t timestamp;
 	void* flv = flv_reader_create(inflv);
 	void* mov = mov_writer_create(outmp4);
 	void* demuxer = flv_demuxer_create(onFLV, mov);
 
 	s_width = w;
 	s_height = h;
-	while ((r = flv_reader_read(flv, s_buffer, sizeof(s_buffer))) > 0)
+	while ((r = flv_reader_read(flv, &type, &timestamp, s_buffer, sizeof(s_buffer))) > 0)
 	{
-		int n = flv_demuxer_input(demuxer, s_buffer, r);
-		if (n != r)
+		r = flv_demuxer_input(demuxer, type, s_buffer, r, timestamp);
+		if (r < 0)
 		{
 			assert(0);
 		}
