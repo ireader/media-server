@@ -2,11 +2,18 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
-#include "byte-order.h"
 
 #define FLV_TYPE_AUDIO 8
 #define FLV_TYPE_VDIEO 9
 #define FLV_TYPE_SCRIPT 18
+
+static void be_write_uint32(uint8_t* ptr, uint32_t val)
+{
+	ptr[0] = (uint8_t)((val >> 24) & 0xFF);
+	ptr[1] = (uint8_t)((val >> 16) & 0xFF);
+	ptr[2] = (uint8_t)((val >> 8) & 0xFF);
+	ptr[3] = (uint8_t)(val & 0xFF);
+}
 
 static int flv_write_tag(uint8_t* tag, uint8_t type, uint32_t bytes, uint32_t timestamp)
 {
