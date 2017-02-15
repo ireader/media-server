@@ -56,7 +56,7 @@ void rtmp_reader_test(const char* url)
 
 	rtmp_client_stop(rtmp);
 	flv_writer_destroy(flv);
-	rtmp_client_destroy(&rtmp);
+	rtmp_client_destroy(rtmp);
 	socket_close(socket);
 	socket_cleanup();
 }
