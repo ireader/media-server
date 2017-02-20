@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define __LITTLE_ENDIAN
+static double s_double = 1.0; // 3ff0 0000 0000 0000
 
 static uint8_t* AMFWriteInt16(uint8_t* ptr, const uint8_t* end, uint16_t value)
 {
@@ -83,18 +83,22 @@ uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value)
 	assert(8 == sizeof(double));
 	*ptr++ = AMF_NUMBER;
 
-#if defined(__LITTLE_ENDIAN)
-	*ptr++ = ((uint8_t*)&value)[7];
-	*ptr++ = ((uint8_t*)&value)[6];
-	*ptr++ = ((uint8_t*)&value)[5];
-	*ptr++ = ((uint8_t*)&value)[4];
-	*ptr++ = ((uint8_t*)&value)[3];
-	*ptr++ = ((uint8_t*)&value)[2];
-	*ptr++ = ((uint8_t*)&value)[1];
-	*ptr++ = ((uint8_t*)&value)[0];
-#else
-	memcpy(ptr, value, 8);
-#endif
+	// Little-Endian
+	if (0x00 == *(char*)&s_double)
+	{
+		*ptr++ = ((uint8_t*)&value)[7];
+		*ptr++ = ((uint8_t*)&value)[6];
+		*ptr++ = ((uint8_t*)&value)[5];
+		*ptr++ = ((uint8_t*)&value)[4];
+		*ptr++ = ((uint8_t*)&value)[3];
+		*ptr++ = ((uint8_t*)&value)[2];
+		*ptr++ = ((uint8_t*)&value)[1];
+		*ptr++ = ((uint8_t*)&value)[0];
+	}
+	else
+	{
+		memcpy(ptr, &value, 8);
+	}
 	return ptr;
 }
 
@@ -154,18 +158,22 @@ const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* val
 {
 	uint8_t* p = (uint8_t*)value;
 	if (end - ptr < 8) return NULL;
-#if defined(__LITTLE_ENDIAN)
-	*p++ = ptr[7];
-	*p++ = ptr[6];
-	*p++ = ptr[5];
-	*p++ = ptr[4];
-	*p++ = ptr[3];
-	*p++ = ptr[2];
-	*p++ = ptr[1];
-	*p++ = ptr[0];
-#else
-	memcpy(value, ptr, 8);
-#endif
+
+	if (0x00 == *(char*)&s_double)
+	{// Little-Endian
+		*p++ = ptr[7];
+		*p++ = ptr[6];
+		*p++ = ptr[5];
+		*p++ = ptr[4];
+		*p++ = ptr[3];
+		*p++ = ptr[2];
+		*p++ = ptr[1];
+		*p++ = ptr[0];
+	}
+	else
+	{
+		memcpy(&value, ptr, 8);
+	}
 	return ptr + 8;
 }
 
