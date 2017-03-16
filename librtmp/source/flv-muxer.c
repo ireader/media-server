@@ -5,9 +5,9 @@
 #include <assert.h>
 #include <stdint.h>
 #include <memory.h>
+#include "rtmp-util.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
-#include "byte-order.h"
 #include "h264-util.h"
 #include "h264-nal.h"
 
@@ -141,7 +141,7 @@ static void flv_h264_handler(void* param, const void* nalu, size_t bytes)
 	}
 	//	else
 	{
-		be_write_uint32(flv->ptr + flv->bytes, bytes);
+		be_write_uint32(flv->ptr + flv->bytes, (uint32_t)bytes);
 		memcpy(flv->ptr + flv->bytes + 4, nalu, bytes);
 		flv->bytes += bytes + 4;
 	}

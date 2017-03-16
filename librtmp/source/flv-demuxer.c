@@ -1,7 +1,4 @@
 #include "flv-demuxer.h"
-#include "ctypedef.h"
-#include "cstringext.h"
-#include "byte-order.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include <stdlib.h>
@@ -93,7 +90,7 @@ void flv_demuxer_destroy(void* demuxer)
 	free(flv);
 }
 
-static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, uint32_t bytes)
+static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
 {
 	if (bytes > flv->bytes)
 	{
@@ -203,7 +200,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 			{
 				int i;
 				uint8_t nal;
-				uint32_t n = 0;
+				size_t n = 0;
 				for (i = 0; i < flv->avc.nalu; i++)
 					n = (n << 8) + p[i];
 

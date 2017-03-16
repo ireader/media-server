@@ -6,16 +6,17 @@
 #include "rtmp-netconnection.h"
 #include "rtmp-netstream.h"
 #include "rtmp-event.h"
-//#include "h264-sps.h"
-//#include "h264-util.h"
-#include "cstringext.h"
-#include "sys/sock.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <memory.h>
 #include <errno.h>
 #include <time.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#define strlcpy(t, s, n) strcpy_s(t, n, s)
+#endif
 
 #define N_URL 1024
 #define N_STREAM 2
@@ -549,7 +550,7 @@ int rtmp_client_push_video(void* client, const void* video, size_t bytes, uint32
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_VIDEO;
 	header.timestamp = timestamp;
-	header.length = bytes;
+	header.length = (uint32_t)bytes;
 	header.type = RTMP_TYPE_VIDEO;
 	header.stream_id = (uint32_t)ctx->rtmp.stream_id;
 
@@ -566,7 +567,7 @@ int rtmp_client_push_audio(void* client, const void* audio, size_t bytes, uint32
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_AUDIO;
 	header.timestamp = timestamp;
-	header.length = bytes;
+	header.length = (uint32_t)bytes;
 	header.type = RTMP_TYPE_AUDIO;
 	header.stream_id = (uint32_t)ctx->rtmp.stream_id;
 

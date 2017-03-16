@@ -204,7 +204,8 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 	}
 	if (i < avc->nb_pps) return -1; // check length
 
-	return k;
+	assert(k < 0x7FFF);
+	return (int)k;
 }
 
 #if defined(_DEBUG) || defined(DEBUG)

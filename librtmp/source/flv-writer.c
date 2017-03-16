@@ -100,12 +100,12 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	uint8_t tag[11];
 	FILE* fp = (FILE*)p;
 
-	flv_write_tag(tag, (uint8_t)type, bytes, timestamp);
+	flv_write_tag(tag, (uint8_t)type, (uint32_t)bytes, timestamp);
 	fwrite(tag, 11, 1, fp); // FLV Tag Header
 
 	fwrite(data, bytes, 1, fp);
 
-	be_write_uint32(tag, bytes + 11);
+	be_write_uint32(tag, (uint32_t)bytes + 11);
 	fwrite(tag, 4, 1, fp); // TAG size
 
 	return ferror(fp);
