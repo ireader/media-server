@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-#include "sys/sock.h"
-#include "sys/system.h"
+#include "../../../sdk/include/sockutil.h"
+#include "../../../sdk/include/sys/system.h"
 
 static char packet[2 * 1024 * 1024];
 

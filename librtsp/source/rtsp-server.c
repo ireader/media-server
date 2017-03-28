@@ -3,8 +3,7 @@
 #include "ctypedef.h"
 #include "rtsp-server.h"
 #include "cstringext.h"
-#include "tcpserver.h"
-#include "udpsocket.h"
+#include "sockutil.h"
 #include "error.h"
 #include "rfc822-datetime.h"
 #include "rtsp-server-internal.h"
@@ -517,7 +516,7 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	ctx->ptr = ptr;
 
 	// tcp
-	socket = tcpserver_create(ip, port, 128);
+	socket = socket_tcp_listen(ip, port, 128);
 	if(socket_invalid == socket)
 	{
 		rtsp_server_destroy(ctx);
@@ -532,7 +531,7 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	}
 
 	// udp
-	socket = udpsocket_create(ip, port);
+	socket = socket_udp_bind(ip, port);
 	if(socket_invalid == socket)
 	{
 		rtsp_server_destroy(ctx);

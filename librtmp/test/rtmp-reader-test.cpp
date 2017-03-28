@@ -1,4 +1,4 @@
-#include "sys/sock.h"
+#include "../../../sdk/include/sockutil.h"
 #include "rtmp-client.h"
 #include "flv-writer.h"
 #include <assert.h>

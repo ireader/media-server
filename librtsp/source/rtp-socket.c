@@ -1,7 +1,7 @@
 #include "cstringext.h"
 #include "rtp-socket.h"
-#include "udpsocket.h"
 #include "ctypedef.h"
+#include "sockutil.h"
 #include "sys/atomic.h"
 #include <assert.h>
 #include <time.h>
@@ -50,11 +50,11 @@ int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
 		i = rand() % 30000;
 		i = i/2*2 + s_base_port;
 
-		sock[0] = udpsocket_create(ip, i);
+		sock[0] = socket_udp_bind(ip, i);
 		if(socket_invalid == sock[0])
 			continue;
 
-		sock[1] = udpsocket_create(ip, i + 1);
+		sock[1] = socket_udp_bind(ip, i + 1);
 		if(socket_invalid == sock[1])
 		{
 			socket_close(sock[0]);

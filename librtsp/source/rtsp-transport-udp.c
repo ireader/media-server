@@ -2,7 +2,6 @@
 #include "aio-udp-transport.h"
 #include "rtsp-transport.h"
 #include "rtsp-parser.h"
-#include "udpsocket.h"
 
 struct rtsp_udp_transport_t
 {

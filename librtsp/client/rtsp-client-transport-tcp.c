@@ -1,6 +1,6 @@
 #include "rtsp-client-transport-tcp.h"
 #include "cstringext.h"
-#include "sys/sock.h"
+#include "sockutil.h"
 #include "rtsp-url-parser.h"
 #include "rtsp-parser.h"
 
