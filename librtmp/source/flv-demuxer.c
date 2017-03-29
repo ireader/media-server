@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
+#include <errno.h>
 
 // FLV Tag Type
 #define FLV_AUDIO			8

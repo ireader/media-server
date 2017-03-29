@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
+#include <errno.h>
 
 static struct rtmp_chunk_header_t* rtmp_chunk_header_find(struct rtmp_t* rtmp, uint32_t id)
 {
