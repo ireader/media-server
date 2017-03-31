@@ -7,7 +7,7 @@
 #include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
 size_t psm_read(const uint8_t* data, size_t bytes, psm_t* psm)
 {

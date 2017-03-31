@@ -6,7 +6,6 @@
 #include "rtsp-header-session.h"
 #include <stdlib.h>
 #include <string.h>
-#include <memory.h>
 #include <assert.h>
 
 int rtsp_header_session(const char* field, struct rtsp_header_session_t* session)

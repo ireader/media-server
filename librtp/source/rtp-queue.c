@@ -4,7 +4,7 @@
 #include "rtp-util.h"
 #include "rtp-queue.h"
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 #define MAX_SIZE 128*1024*1024

@@ -6,7 +6,7 @@
 #include "urlcodec.h"
 #include "sys/system.h"
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 
 struct hls_server_t
 {

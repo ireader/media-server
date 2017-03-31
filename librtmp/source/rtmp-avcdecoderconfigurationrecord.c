@@ -2,7 +2,7 @@
 #include "h264-util.h"
 #include "h264-nal.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "mpeg4-avc.h"

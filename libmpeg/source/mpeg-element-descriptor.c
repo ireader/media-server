@@ -4,7 +4,7 @@
 
 #include "mpeg-ps-proto.h"
 #include "mpeg-element-descriptor.h"
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 /*

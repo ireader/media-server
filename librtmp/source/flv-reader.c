@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
-#include <memory.h>
+#include <string.h>
 
 typedef uint8_t bool_t;
 

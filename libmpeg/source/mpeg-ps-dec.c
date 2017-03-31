@@ -8,7 +8,7 @@
 #include "mpeg-ps-proto.h"
 #include "mpeg-pes-proto.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
 struct mpeg_ps_unpacker_t
 {

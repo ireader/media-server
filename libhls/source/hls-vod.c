@@ -14,7 +14,7 @@
 #include "ctypedef.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 
 #define N_SEGMENT	50
 #define N_TS_PACKET 188

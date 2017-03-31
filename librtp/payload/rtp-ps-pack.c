@@ -7,7 +7,7 @@
 ///    these streams are treated as a packetized stream of bytes.
 
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 #include "ctypedef.h"

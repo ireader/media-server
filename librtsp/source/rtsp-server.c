@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include "ctypedef.h"
 #include "rtsp-server.h"
 #include "cstringext.h"

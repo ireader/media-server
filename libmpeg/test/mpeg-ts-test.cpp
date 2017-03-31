@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <list>
-#include <memory.h>
+#include <string.h>
 
 struct mpeg_ts_test_t
 {

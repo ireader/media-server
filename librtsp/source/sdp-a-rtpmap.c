@@ -13,7 +13,6 @@
 #include "sdp-a-rtpmap.h"
 #include <stdlib.h>
 #include <string.h>
-#include <memory.h>
 #include <assert.h>
 
 int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, char *parameters)

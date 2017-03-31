@@ -1,7 +1,6 @@
 #include "rtp-member-list.h"
 #include <stdlib.h>
 #include <string.h>
-#include <memory.h>
 #include <assert.h>
 #include <errno.h>
 

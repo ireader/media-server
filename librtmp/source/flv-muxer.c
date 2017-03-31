@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
-#include <memory.h>
+#include <string.h>
 #include "rtmp-util.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"

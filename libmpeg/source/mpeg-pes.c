@@ -6,7 +6,7 @@
 #include "mpeg-ps-proto.h"
 #include "mpeg-ts-proto.h"
 #include "mpeg-pes-proto.h"
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 static int pes_payload(void* param, const uint8_t* data, size_t bytes)

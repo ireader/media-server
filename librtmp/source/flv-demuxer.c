@@ -2,7 +2,7 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 

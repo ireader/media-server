@@ -1,6 +1,5 @@
 #include "amf0.h"
 #include <stddef.h>
-#include <memory.h>
 #include <string.h>
 #include <assert.h>
 

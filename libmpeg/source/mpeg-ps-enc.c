@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 #define MAX_PES_HEADER	1024	// pack_header + system_header + psm

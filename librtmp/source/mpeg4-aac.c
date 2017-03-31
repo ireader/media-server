@@ -1,6 +1,6 @@
 #include "mpeg4-aac.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
 /*
 // ISO-14496-3 adts_frame (p122)

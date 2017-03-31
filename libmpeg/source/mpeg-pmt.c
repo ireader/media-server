@@ -4,7 +4,7 @@
 
 #include "mpeg-ts-proto.h"
 #include "mpeg-util.h"
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 size_t pmt_read(const uint8_t* data, size_t bytes, pmt_t *pmt)

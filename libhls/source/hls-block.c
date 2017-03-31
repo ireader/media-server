@@ -3,7 +3,7 @@
 #include "http-server.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 struct hls_block_t* hls_block_alloc()

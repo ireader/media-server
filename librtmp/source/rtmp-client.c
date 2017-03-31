@@ -7,10 +7,9 @@
 #include "rtmp-netstream.h"
 #include "rtmp-event.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
-#include <memory.h>
 #include <errno.h>
 #include <time.h>
 

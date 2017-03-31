@@ -1,6 +1,6 @@
 #include "h264-file-reader.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 #include <algorithm>
 
 #define H264_NAL(v)	(v & 0x1F)

@@ -1,6 +1,6 @@
 #include "mpeg-types.h"
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
 int find_h264_access_unit_delimiter(const uint8_t* p, size_t bytes)
 {

@@ -2,7 +2,7 @@
 #include "flv-reader.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include "../../../sdk/include/sockutil.h"
 #include "../../../sdk/include/sys/system.h"
 
