@@ -1,15 +1,14 @@
 #include "flv-muxer.h"
+#include "flv-utils.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include "rtmp-util.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "h264-util.h"
-#include "h264-nal.h"
 
 #define FLV_TYPE_AUDIO 8
 #define FLV_TYPE_VIDEO 9
@@ -141,7 +140,10 @@ static void flv_h264_handler(void* param, const void* nalu, size_t bytes)
 	}
 	//	else
 	{
-		be_write_uint32(flv->ptr + flv->bytes, (uint32_t)bytes);
+		flv->ptr[flv->bytes] = (uint8_t)((bytes >> 24) & 0xFF);
+		flv->ptr[flv->bytes+1] = (uint8_t)((bytes >> 16) & 0xFF);
+		flv->ptr[flv->bytes+2] = (uint8_t)((bytes >> 8) & 0xFF);
+		flv->ptr[flv->bytes+3] = (uint8_t)((bytes >> 0) & 0xFF);
 		memcpy(flv->ptr + flv->bytes + 4, nalu, bytes);
 		flv->bytes += bytes + 4;
 	}

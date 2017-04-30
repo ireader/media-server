@@ -1,4 +1,4 @@
-#include "rtmp-reader.h"
+#define _CRT_SECURE_NO_WARNINGS
 #include "flv-demuxer.h"
 #include "flv-reader.h"
 #include <assert.h>

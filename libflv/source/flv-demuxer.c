@@ -1,4 +1,5 @@
 #include "flv-demuxer.h"
+#include "flv-utils.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include <stdlib.h>
@@ -6,32 +7,11 @@
 #include <assert.h>
 #include <errno.h>
 
-// FLV Tag Type
-#define FLV_AUDIO			8
-#define FLV_VIDEO			9
-#define FLV_SCRIPT			18
-
-// FLV Audio Type
-#define FLV_AUDIO_ADPCM		1
-#define FLV_AUDIO_MP3		2
-#define FLV_AUDIO_G711		7
-#define FLV_AUDIO_AAC		10
-#define FLV_AUDIO_MP3_8k	14
-
-// FLV Video Type
-#define FLV_VIDEO_H263		2
-#define FLV_VIDEO_VP6		4
-#define FLV_VIDEO_AVC		7
-
 #define N_FLV_HEADER		9		// DataOffset included
 #define N_TAG_HEADER		11		// StreamID included
 #define N_TAG_SIZE			4		// previous tag size
 
 #define N_SPSPPS			4096
-
-#define H264_NAL_IDR		5 // Coded slice of an IDR picture
-#define H264_NAL_SPS		7 // Sequence parameter set
-#define H264_NAL_PPS		8 // Picture parameter set
 
 struct flv_audio_tag_t
 {
@@ -263,13 +243,13 @@ int flv_demuxer_input(void* p, int type, const void* data, size_t bytes, uint32_
 
 	switch (type)
 	{
-	case FLV_AUDIO:
+	case FLV_TYPE_AUDIO:
 		return flv_demuxer_audio(flv, data, bytes, timestamp);
 
-	case FLV_VIDEO:
+	case FLV_TYPE_VIDEO:
 		return flv_demuxer_video(flv, data, bytes, timestamp);
 
-	case FLV_SCRIPT:
+	case FLV_TYPE_SCRIPT:
 		//return flv_demuxer_script(flv, data, bytes);
 		return 0;
 
