@@ -74,5 +74,14 @@
     <ClCompile Include="test\flv-reader-test.cpp">
       <Filter>test</Filter>
     </ClCompile>
+    <ClCompile Include="test\flv2ts-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="test\ts2flv-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="test\flv2hls-test.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
