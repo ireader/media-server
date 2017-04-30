@@ -19,16 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\amf0.c" />
-    <ClCompile Include="source\amf3.c" />
-    <ClCompile Include="source\flv-demuxer.c" />
-    <ClCompile Include="source\flv-muxer.c" />
-    <ClCompile Include="source\flv-reader.c" />
-    <ClCompile Include="source\flv-writer.c" />
-    <ClCompile Include="source\mpeg4-aac.c" />
-    <ClCompile Include="source\mpeg4-avc.c" />
-    <ClCompile Include="source\rtmp-audiospecificconfig.c" />
-    <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c" />
     <ClCompile Include="source\rtmp-chunk-read.c" />
     <ClCompile Include="source\rtmp-chunk-write.c" />
     <ClCompile Include="source\rtmp-client-invoke-handler.h" />
@@ -43,19 +33,10 @@
     <ClCompile Include="source\rtmp-netconnection.c" />
     <ClCompile Include="source\rtmp-netstream.c" />
     <ClCompile Include="source\rtmp-server.c" />
-    <ClCompile Include="test\flv-reader-test.cpp" />
     <ClCompile Include="test\rtmp-reader-test.cpp" />
     <ClCompile Include="test\rtmp-sender-test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\amf0.h" />
-    <ClInclude Include="include\amf3.h" />
-    <ClInclude Include="include\flv-demuxer.h" />
-    <ClInclude Include="include\flv-muxer.h" />
-    <ClInclude Include="include\flv-reader.h" />
-    <ClInclude Include="include\flv-writer.h" />
-    <ClInclude Include="include\mpeg4-aac.h" />
-    <ClInclude Include="include\mpeg4-avc.h" />
     <ClInclude Include="include\rtmp-control-message.h" />
     <ClInclude Include="include\rtmp-event.h" />
     <ClInclude Include="include\rtmp-handshake.h" />
@@ -130,7 +111,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\avcodec\h264\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libflv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,7 +124,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\avcodec\h264\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libflv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -158,7 +139,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\avcodec\h264\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libflv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -175,7 +156,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;..\..\avcodec\h264\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libflv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

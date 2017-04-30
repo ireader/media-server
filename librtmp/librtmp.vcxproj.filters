@@ -16,31 +16,13 @@
     <Filter Include="test">
       <UniqueIdentifier>{6e719aff-e93a-4e19-99e2-86cc99bae508}</UniqueIdentifier>
     </Filter>
-    <Filter Include="flv">
-      <UniqueIdentifier>{0f0d1baa-c7c7-41b6-b762-ac531e1ef8bd}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\rtmp-audiospecificconfig.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtmp-avcdecoderconfigurationrecord.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="test\rtmp-reader-test.cpp">
       <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="test\rtmp-sender-test.cpp">
       <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\flv-reader-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="source\mpeg4-aac.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\mpeg4-avc.c">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rtmp-netconnection.c">
       <Filter>Source Files</Filter>
@@ -84,51 +66,12 @@
     <ClCompile Include="source\rtmp-message.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\amf0.c">
-      <Filter>flv</Filter>
-    </ClCompile>
-    <ClCompile Include="source\amf3.c">
-      <Filter>flv</Filter>
-    </ClCompile>
-    <ClCompile Include="source\flv-demuxer.c">
-      <Filter>flv</Filter>
-    </ClCompile>
-    <ClCompile Include="source\flv-muxer.c">
-      <Filter>flv</Filter>
-    </ClCompile>
-    <ClCompile Include="source\flv-reader.c">
-      <Filter>flv</Filter>
-    </ClCompile>
-    <ClCompile Include="source\flv-writer.c">
-      <Filter>flv</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-reader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\flv-demuxer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\flv-reader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mpeg4-aac.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mpeg4-avc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\flv-writer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\amf0.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\amf3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-netstream.h">
@@ -165,9 +108,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\flv-muxer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
