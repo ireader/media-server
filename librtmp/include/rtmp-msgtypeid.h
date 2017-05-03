@@ -18,7 +18,7 @@ enum RTMPMessageTypeId
 	
 	/* Data Message */
 	RTMP_TYPE_FLEX_STREAM = 15, // AMF3
-	RTMP_TYPE_NOTIFY = 18, // AMF0
+	RTMP_TYPE_DATA = 18, // AMF0
 
 	/* Shared Object Message */
 	RTMP_TYPE_FLEX_OBJECT = 16, // AMF3
