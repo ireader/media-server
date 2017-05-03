@@ -6,8 +6,16 @@
 
 enum
 {
-	RTMP_VERSION	= 3,
-	RTMP_HANDSHAKE	= 1536,
+	RTMP_VERSION		= 3,
+	RTMP_HANDSHAKE_SIZE	= 1536,
+};
+
+enum
+{
+	RTMP_HANDSHAKE_UNINIT = 0, // Uninitialized 
+	RTMP_HANDSHAKE_0, // received C0/S0, wait C1/S1
+	RTMP_HANDSHAKE_1, // received C1/S1, wait C2/S2
+	RTMP_HANDSHAKE_2, // received C2/S2, handshake done
 };
 
 int rtmp_handshake_c0(uint8_t* c0, int version);
