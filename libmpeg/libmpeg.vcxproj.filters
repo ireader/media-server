@@ -16,9 +16,6 @@
     <Filter Include="util">
       <UniqueIdentifier>{1c03cf69-0211-4644-94d3-a82e98ec16e8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{b557d3f2-9954-42ce-80fb-5233248e9d27}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\mpeg-element-descriptor.c">
@@ -57,14 +54,8 @@
     <ClCompile Include="..\..\sdk\source\crc32.c">
       <Filter>util</Filter>
     </ClCompile>
-    <ClCompile Include="test\mpeg-ts-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
     <ClCompile Include="source\mpeg-ts-h264.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test\mpeg-ts-dec-test.cpp">
-      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
