@@ -1,8 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "flv-demuxer.h"
 #include "flv-reader.h"
-#include "../libmpeg/include/mpeg-ps.h"
-#include "../libmpeg/include/mpeg-ts.h"
+#include "mpeg-ps.h"
+#include "mpeg-ts.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

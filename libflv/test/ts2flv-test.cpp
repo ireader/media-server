@@ -1,8 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "flv-writer.h"
 #include "flv-muxer.h"
-#include "../libmpeg/include/mpeg-ts.h"
-#include "../libmpeg/include/mpeg-ts-proto.h"
+#include "mpeg-ts.h"
+#include "mpeg-ts-proto.h"
 #include <stdio.h>
 #include <assert.h>
 

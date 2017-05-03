@@ -38,10 +38,6 @@
     <ClCompile Include="source\flv-writer.c" />
     <ClCompile Include="source\mpeg4-aac.c" />
     <ClCompile Include="source\mpeg4-avc.c" />
-    <ClCompile Include="test\flv-reader-test.cpp" />
-    <ClCompile Include="test\flv2hls-test.cpp" />
-    <ClCompile Include="test\flv2ts-test.cpp" />
-    <ClCompile Include="test\ts2flv-test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}</ProjectGuid>

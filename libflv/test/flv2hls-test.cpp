@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include "../libmpeg/include/mpeg-ps.h"
-#include "../libhls/include/hls-vod.h"
+#include "mpeg-ps.h"
+#include "hls-vod.h"
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include <stdio.h>

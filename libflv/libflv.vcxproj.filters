@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{0f76f741-f98a-46be-aa33-26b825309cc6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\flv-demuxer.h">
@@ -70,18 +67,6 @@
     </ClCompile>
     <ClCompile Include="source\amf3.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test\flv-reader-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\flv2ts-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\ts2flv-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\flv2hls-test.cpp">
-      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
