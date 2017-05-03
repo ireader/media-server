@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-enum
+enum rtmp_chunk_type_t
 {
 	RTMP_CHUNK_TYPE_0 = 0, // 11-bytes: timestamp + length + stream type + stream id
 	RTMP_CHUNK_TYPE_1 = 1, // 7-bytes: delta + length + stream type
