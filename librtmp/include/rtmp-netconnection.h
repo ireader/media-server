@@ -59,21 +59,14 @@ struct rtmp_connect_t
 	char pageUrl[256]; // http://host/sample.html
 };
 
-struct rtmp_connect_reply_t
-{
-	char fmsver[16]; // FMS/3,0,1,123
-	double capabilities; // 31
+uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transactionId, const struct rtmp_connect_t* connect);
+uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, double transactionId);
+uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, double transactionId, const char* stream_name);
 
-	char code[64];
-	char level[16];
-	char description[128];
-};
+uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, double transactionId, const char* fmsver, double capabilities, const char* code, const char* level, const char* description);
+uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, double transactionId, double stream_id);
+uint8_t* rtmp_netconnection_get_stream_length_reply(uint8_t* out, size_t bytes, double transactionId, double duration);
 
-uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_t* connect);
-uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transactionId);
-uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, int transactionId, const char* playpath);
-
-uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_reply_t* reply);
-uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int transactionId, int id);
+uint8_t* rtmp_netconnection_error(uint8_t* out, size_t bytes, double transactionId, const char* code, const char* level, const char* description);
 
 #endif /* !_rtmp_netconnection_h_ */

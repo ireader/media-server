@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_t* connect)
+uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transactionId, const struct rtmp_connect_t* connect)
 {
 	uint8_t* end = out + bytes;
 	const char* command = "connect";
@@ -27,7 +27,7 @@ uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, int transactionI
 	return out;
 }
 
-uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transactionId, const struct rtmp_connect_reply_t* reply)
+uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, double transactionId, const char* fmsver, double capabilities, const char* code, const char* level, const char* description)
 {
 	uint8_t* end = out + bytes;
 	const char* command = "_result";
@@ -36,19 +36,19 @@ uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, int transa
 	out = AMFWriteDouble(out, end, transactionId);
 
 	out = AMFWriteObject(out, end);
-	out = AMFWriteNamedString(out, end, "fmsVer", 6, reply->fmsver, strlen(reply->fmsver));
-	out = AMFWriteNamedDouble(out, end, "capabilities", 12, reply->capabilities);
+	out = AMFWriteNamedString(out, end, "fmsVer", 6, fmsver, strlen(fmsver));
+	out = AMFWriteNamedDouble(out, end, "capabilities", 12, capabilities);
 	out = AMFWriteObjectEnd(out, end);
 
 	out = AMFWriteObject(out, end);
-	out = AMFWriteNamedString(out, end, "code", 4, reply->code, strlen(reply->code));
-	out = AMFWriteNamedString(out, end, "level", 5, reply->level, strlen(reply->level));
-	out = AMFWriteNamedString(out, end, "description", 11, reply->description, strlen(reply->description));
+	out = AMFWriteNamedString(out, end, "code", 4, code, strlen(code));
+	out = AMFWriteNamedString(out, end, "level", 5, level, strlen(level));
+	out = AMFWriteNamedString(out, end, "description", 11, description, strlen(description));
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
 
-uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transactionId)
+uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, double transactionId)
 {
 	uint8_t* end = out + bytes;
 	const char* command = "createStream";
@@ -59,7 +59,7 @@ uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, int transa
 	return out;
 }
 
-uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int transactionId, int id)
+uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, double transactionId, double stream_id)
 {
 	uint8_t* end = out + bytes;
 	const char* command = "_result";
@@ -67,11 +67,11 @@ uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, int 
 	out = AMFWriteString(out, end, command, strlen(command));
 	out = AMFWriteDouble(out, end, transactionId);
 	out = AMFWriteNull(out, end);
-	out = AMFWriteDouble(out, end, id);
+	out = AMFWriteDouble(out, end, stream_id);
 	return out;
 }
 
-uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, int transactionId, const char* playpath)
+uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, double transactionId, const char* stream_name)
 {
 	uint8_t* end = out + bytes;
 	const char* command = "getStreamLength";
@@ -79,6 +79,36 @@ uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, int tr
 	out = AMFWriteString(out, end, command, strlen(command));
 	out = AMFWriteDouble(out, end, transactionId);
 	out = AMFWriteNull(out, end);
-	out = AMFWriteString(out, end, playpath, strlen(playpath));
+	out = AMFWriteString(out, end, stream_name, strlen(stream_name));
+	return out;
+}
+
+uint8_t* rtmp_netconnection_get_stream_length_reply(uint8_t* out, size_t bytes, double transactionId, double duration)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "_result";
+
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
+	out = AMFWriteDouble(out, end, duration);
+	return out;
+}
+
+uint8_t* rtmp_netconnection_error(uint8_t* out, size_t bytes, double transactionId, const char* code, const char* level, const char* description)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "_error";
+
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
+	
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "code", 4, code, strlen(code));
+	out = AMFWriteNamedString(out, end, "level", 5, level, strlen(level));
+	out = AMFWriteNamedString(out, end, "description", 11, description, strlen(description));
+	out = AMFWriteObjectEnd(out, end);
+
 	return out;
 }
