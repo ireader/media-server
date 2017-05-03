@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{31ae4487-1918-4861-b047-9ba08076b62c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\file-reader.h">
@@ -97,12 +94,6 @@
     </ClCompile>
     <ClCompile Include="source\mov-stss.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test\mov-reader-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\mov-writer-test.cpp">
-      <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-avc1.c">
       <Filter>Source Files</Filter>

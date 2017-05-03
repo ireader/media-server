@@ -1,8 +1,8 @@
 #include "mov-writer.h"
 #include "mov-format.h"
-#include "../librtmp/include/mpeg4-aac.h"
-#include "../librtmp/include/flv-reader.h"
-#include "../librtmp/include/flv-demuxer.h"
+#include "mpeg4-aac.h"
+#include "flv-reader.h"
+#include "flv-demuxer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
