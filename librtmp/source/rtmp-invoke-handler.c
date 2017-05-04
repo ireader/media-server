@@ -1,4 +1,3 @@
-#include "rtmp-netconnection.h"
 #include "rtmp-internal.h"
 #include "amf0.h"
 #include <errno.h>
@@ -11,124 +10,146 @@
 // connect request parser
 static int rtmp_command_onconnect(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
-	uint8_t fpad = 0;
-	double audioCodecs = 0.0, videoCodecs = 0.0, videoFunction = 0.0;
-	char app[64] = { 0 };
-	char flashver[16] = { 0 };
-	char tcUrl[256] = { 0 };
+	int r;
+	struct rtmp_connect_t connect;
 	struct amf_object_item_t commands[7];
-	AMF_OBJECT_ITEM_VALUE(commands[0], AMF_STRING, "app", app, sizeof(app));
-	AMF_OBJECT_ITEM_VALUE(commands[1], AMF_STRING, "flashver", flashver, sizeof(flashver));
-	AMF_OBJECT_ITEM_VALUE(commands[2], AMF_STRING, "tcUrl", tcUrl, sizeof(tcUrl));
-	AMF_OBJECT_ITEM_VALUE(commands[3], AMF_BOOLEAN, "fpad", &fpad, 1);
-	AMF_OBJECT_ITEM_VALUE(commands[4], AMF_NUMBER, "audioCodecs", &audioCodecs, 8);
-	AMF_OBJECT_ITEM_VALUE(commands[5], AMF_NUMBER, "videoCodecs", &videoCodecs, 8);
-	AMF_OBJECT_ITEM_VALUE(commands[6], AMF_NUMBER, "videoFunction", &videoFunction, 8);
+	AMF_OBJECT_ITEM_VALUE(commands[0], AMF_STRING, "app", connect.app, sizeof(connect.app));
+	AMF_OBJECT_ITEM_VALUE(commands[1], AMF_STRING, "flashver", connect.flashver, sizeof(connect.flashver));
+	AMF_OBJECT_ITEM_VALUE(commands[2], AMF_STRING, "tcUrl", connect.tcUrl, sizeof(connect.tcUrl));
+	AMF_OBJECT_ITEM_VALUE(commands[3], AMF_BOOLEAN, "fpad", &connect.fpad, 1);
+	AMF_OBJECT_ITEM_VALUE(commands[4], AMF_NUMBER, "audioCodecs", &connect.audioCodecs, 8);
+	AMF_OBJECT_ITEM_VALUE(commands[5], AMF_NUMBER, "videoCodecs", &connect.videoCodecs, 8);
+	AMF_OBJECT_ITEM_VALUE(commands[6], AMF_NUMBER, "videoFunction", &connect.videoFunction, 8);
 
 	struct amf_object_item_t items[1];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", commands, sizeof(commands) / sizeof(commands[0]));
 
-	//rtmp->onconnect();
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onconnect(rtmp->param, r, transaction, &connect);
 }
 
 // createStream request parser
 static int rtmp_command_oncreate_stream(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
 	struct amf_object_item_t items[1];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
 
-	//rtmp->oncreate_stream();
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.oncreate_stream(rtmp->param, r, transaction);
 }
 
-// play request parser
+// 7.2.2.1. play (p38)
 static int rtmp_command_onplay(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
 	uint8_t reset = 0;
-	double start, duration;
+	double start = -2; // the start time in seconds, [default] -2-live/vod, -1-live only, >=0-seek position
+	double duration = -1; // duration of playback in seconds, [default] -1-live/record ends, 0-single frame, >0-play duration
+	char stream_name[N_STREAM_NAME] = { 0 };
+
 	struct amf_object_item_t items[5];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "stream", rtmp->result.code, sizeof(rtmp->result.code));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "stream", stream_name, sizeof(stream_name));
 	AMF_OBJECT_ITEM_VALUE(items[2], AMF_NUMBER, "start", &start, 8);
 	AMF_OBJECT_ITEM_VALUE(items[3], AMF_NUMBER, "duration", &duration, 8);
 	AMF_OBJECT_ITEM_VALUE(items[4], AMF_BOOLEAN, "reset", &reset, 1);
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onplay(rtmp->param, r, transaction, stream_name, start, duration, reset);
 }
 
-// deleteStream request parser
+// 7.2.2.3. deleteStream (p43)
 static int rtmp_command_ondelete_stream(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	double stream_id = 0;
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_NUMBER, "streamId", &rtmp->stream_id, 8);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_NUMBER, "streamId", &stream_id, 8);
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.ondelete_stream(rtmp->param, r, transaction, stream_id);
 }
 
-// receiveAudio request parser
+// 7.2.2.4. receiveAudio (p44)
 static int rtmp_command_onreceive_audio(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	uint8_t receiveAudio = 1; // 1-receive audio, 0-no audio
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "boolean", &rtmp->receiveAudio, 1);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "receiveAudio", &receiveAudio, 1);
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onreceive_audio(rtmp->param, r, transaction, receiveAudio);
 }
 
-// receiveVideo request parser
+// 7.2.2.5. receiveVideo (p45)
 static int rtmp_command_onreceive_video(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	uint8_t receiveVideo = 1; // 1-receive video, 0-no video
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "boolean", &rtmp->receiveVideo, 1);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "receiveVideo", &receiveVideo, 1);
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onreceive_video(rtmp->param, r, transaction, receiveVideo);
 }
 
-// publish request parser
+// 7.2.2.6. publish (p45)
 static int rtmp_command_onpublish(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	char stream_name[N_STREAM_NAME] = { 0 };
+	char stream_type[18] = { 0 }; // Publishing type: live/record/append
+
 	struct amf_object_item_t items[3];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "name", rtmp->playpath, sizeof(rtmp->playpath));
-	AMF_OBJECT_ITEM_VALUE(items[2], AMF_STRING, "type", rtmp->stream_type, sizeof(rtmp->stream_type));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "name", stream_name, sizeof(stream_name));
+	AMF_OBJECT_ITEM_VALUE(items[2], AMF_STRING, "type", stream_type, sizeof(stream_type));
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onpublish(rtmp->param, r, transaction, stream_name, stream_type);
 }
 
-// seek request parser
+// 7.2.2.7. seek (p46)
 static int rtmp_command_onseek(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	double milliSeconds = 0;
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_NUMBER, "milliSeconds", &rtmp->milliSeconds, 8);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_NUMBER, "milliSeconds", &milliSeconds, 8);
 
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onseek(rtmp->param, r, transaction, milliSeconds);
 }
 
 // pause request parser
 static int rtmp_command_onpause(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
+	uint8_t pause = 0; // 1-pause, 0-resuming play
+	double milliSeconds = 0;
 	struct amf_object_item_t items[3];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "pause", &rtmp->pause, 1);
-	AMF_OBJECT_ITEM_VALUE(items[2], AMF_NUMBER, "milliSeconds", &rtmp->milliSeconds, 8);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_BOOLEAN, "pause", &pause, 1);
+	AMF_OBJECT_ITEM_VALUE(items[2], AMF_NUMBER, "milliSeconds", &milliSeconds, 8);
 
-	if (NULL != amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
-	{
-		//return rtmp->onpacket(rtmp->param, header, data);
-	}
-	return -1;
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onpause(rtmp->param, r, transaction, pause, milliSeconds);
 }
 
+/*
 // FCPublish request parser
 static int rtmp_command_onfcpublish(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	char stream_name[N_STREAM_NAME] = { 0 };
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", &rtmp->playpath, sizeof(rtmp->playpath));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", stream_name, sizeof(stream_name));
 
 	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
 }
@@ -136,9 +157,10 @@ static int rtmp_command_onfcpublish(struct rtmp_t* rtmp, double transaction, con
 // FCUnpublish request parser
 static int rtmp_command_onfcunpublish(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	char stream_name[N_STREAM_NAME] = { 0 };
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", &rtmp->playpath, sizeof(rtmp->playpath));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", stream_name, sizeof(stream_name));
 
 	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
 }
@@ -146,9 +168,10 @@ static int rtmp_command_onfcunpublish(struct rtmp_t* rtmp, double transaction, c
 // FCSubscribe request parser
 static int rtmp_command_onfcsubscribe(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	char subscribe[N_STREAM_NAME] = { 0 };
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "subscribepath", &rtmp->playpath, sizeof(rtmp->playpath));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "subscribepath", subscribe, sizeof(subscribe));
 
 	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
 }
@@ -156,62 +179,65 @@ static int rtmp_command_onfcsubscribe(struct rtmp_t* rtmp, double transaction, c
 // FCUnsubscribe request parser
 static int rtmp_command_onfcunsubscribe(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	char subscribe[N_STREAM_NAME] = { 0 };
 	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "subscribepath", &rtmp->playpath, sizeof(rtmp->playpath));
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "subscribepath", subscribe, sizeof(subscribe));
 
 	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
 }
+*/
 
 struct rtmp_command_handler_t
 {
 	const char* name;
-	enum rtmp_command_t command;
 	int (*handler)(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes);
 };
 
 const static struct rtmp_command_handler_t s_command_handler[] = {
 	// client side
-	{ "_result",		0, rtmp_command_onresult },
-	{ "_error",			0, rtmp_command_onerror },
-	{ "onStatus",		0, rtmp_command_onstatus },
+	{ "_result",		rtmp_command_onresult },
+	{ "_error",			rtmp_command_onerror },
+	{ "onStatus",		rtmp_command_onstatus },
 
-//	{ "close",			0, rtmp_command_onclose },
+//	{ "close",			rtmp_command_onclose },
 
-//	{ "onBWDone",		0, rtmp_command_onsendcheckbw },
-//	{ "_onbwcheck",		0, rtmp_command_onbwcheck },
-//	{ "_onbwdone",		0, rtmp_command_onbwdone },
+//	{ "onBWDone",		rtmp_command_onsendcheckbw },
 
-//	{ "ping",			0, rtmp_command_onping },
+//	{ "_onbwcheck",		rtmp_command_onbwcheck },
+//	{ "_onbwdone",		rtmp_command_onbwdone },
 
-//	{ "playlist_ready",	0, rtmp_command_onplaylist },
+//	{ "ping",			rtmp_command_onping },
 
-	{ "onFCSubscribe",	0, rtmp_command_onfcsubscribe },
-	{ "onFCUnsubscribe",0, rtmp_command_onfcunsubscribe },
+//	{ "playlist_ready",	rtmp_command_onplaylist },
+
+//	{ "onFCSubscribe",	rtmp_command_onfcsubscribe },
+//	{ "onFCUnsubscribe",rtmp_command_onfcunsubscribe },
 
 	// server side
-	{ "connect",		RTMP_NETCONNECTION_CONNECT,			rtmp_command_onconnect },
-	{ "createStream",	RTMP_NETCONNECTION_CREATE_STREAM,	rtmp_command_oncreate_stream },
+	{ "connect",		rtmp_command_onconnect },
+	{ "createStream",	rtmp_command_oncreate_stream },
 
-	{ "play",			RTMP_NETSTREAM_PLAY,				rtmp_command_onplay },
-	{ "deleteStream",	RTMP_NETSTREAM_DELETE_STREAM,		rtmp_command_ondelete_stream },
-	{ "receiveAudio",	RTMP_NETSTREAM_RECEIVE_VIDEO,		rtmp_command_onreceive_audio },
-	{ "receiveVideo",	RTMP_NETSTREAM_RECEIVE_VIDEO,		rtmp_command_onreceive_video },
-	{ "publish",		RTMP_NETSTREAM_PUBLISH,				rtmp_command_onpublish },
-	{ "seek",			RTMP_NETSTREAM_SEEK,				rtmp_command_onseek },
-	{ "pause",			RTMP_NETSTREAM_PAUSE,				rtmp_command_onpause },
+	{ "play",			rtmp_command_onplay },
+	{ "deleteStream",	rtmp_command_ondelete_stream },
+	{ "receiveAudio",	rtmp_command_onreceive_audio },
+	{ "receiveVideo",	rtmp_command_onreceive_video },
+	{ "publish",		rtmp_command_onpublish },
+	{ "seek",			rtmp_command_onseek },
+	{ "pause",			rtmp_command_onpause },
 
-	{ "FCPublish",		RTMP_NETSTREAM_FCPUBLISH,			rtmp_command_onfcpublish },
-	{ "FCUnpublish",	RTMP_NETSTREAM_FCUNPUBLISH,			rtmp_command_onfcunpublish },
-	{ "FCSubscribe",	RTMP_NETSTREAM_FCSUBSCRIBE,			rtmp_command_onfcsubscribe },
-	{ "FCUnsubscribe",	RTMP_NETSTREAM_FCUNSUBSCRIBE,		rtmp_command_onfcunsubscribe },
+//	{ "FCPublish",		rtmp_command_onfcpublish },
+//	{ "FCUnpublish",	rtmp_command_onfcunpublish },
+//	{ "FCSubscribe",	rtmp_command_onfcsubscribe },
+//	{ "FCUnsubscribe",	rtmp_command_onfcunsubscribe },
+//	{ "_checkbw",		rtmp_command_onsendcheckbw },
 };
 
 int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* header, const uint8_t* data)
 {
-	int i, r;
+	int i;
 	char command[64] = { 0 };
-	double transaction = -1.0;
+	double transaction = -1;
 	const uint8_t *end = data + header->length;
 
 	struct amf_object_item_t items[2];
@@ -226,16 +252,10 @@ int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h
 	{
 		if (0 == strcmp(command, s_command_handler[i].name))
 		{
-			r = s_command_handler[i].handler(rtmp, transaction, data, end - data);
-			if(r >= 0 && 0 != s_command_handler[i].command)
-			{
-				// server side
-				r = rtmp->u.server.onhandler(rtmp->param, s_command_handler[i].command);
-			}
-			return r;
+			return s_command_handler[i].handler(rtmp, transaction, data, end - data);
 		}
 	}
 
-	assert(0);
-	return ENOENT; // not found
+	printf("unknown command: %s\n", command);
+	return 0; // not found
 }

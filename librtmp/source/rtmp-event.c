@@ -2,10 +2,6 @@
 #include "rtmp-msgtypeid.h"
 #include "rtmp-event.h"
 #include "rtmp-util.h"
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 
 #define N_CHUNK_HEADER 12
@@ -117,6 +113,7 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 	if (header->length < 6) return 0;
 	be_read_uint16(data, &event);
 	be_read_uint32(data + 2, &streamId);
+	printf("rtmp_event_handler: event: %d, stream_id: %d", (int)event, (int)streamId);
 
 	switch (event)
 	{
@@ -124,7 +121,6 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 	case RTMP_EVENT_STREAM_EOF:
 	case RTMP_EVENT_STREAM_DRY:
 	case RTMP_EVENT_STREAM_IS_RECORD:
-		printf("%s: event: %d\n", __FUNCTION__, (int)event);
 		return 6;
 
 	case RTMP_EVENT_SET_BUFFER_LENGTH:
@@ -137,11 +133,10 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 		return 6;
 
 	case RTMP_EVENT_PONG:
-		printf("%s: event: ping, timestamp: %u\n", __FUNCTION__, (unsigned int)streamId);
 		return 6;
 
 	default:
-		printf("unknown user control message event: %u\n", (unsigned int)event);
+		assert(0);
 		return 0;
 	}
 }

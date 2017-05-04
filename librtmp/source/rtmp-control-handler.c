@@ -22,7 +22,7 @@ static int rtmp_read_chunk_size(const uint8_t* out, size_t size, uint32_t *chunk
 
 /// 5.4.2. Abort Message (2)
 /// @return 0-error, >0-ok
-int rtmp_read_abort_message(const uint8_t* out, size_t size, uint32_t* chunkStreamId)
+static int rtmp_read_abort_message(const uint8_t* out, size_t size, uint32_t* chunkStreamId)
 {
 	if (size >= 4)
 	{
@@ -34,7 +34,7 @@ int rtmp_read_abort_message(const uint8_t* out, size_t size, uint32_t* chunkStre
 
 /// 5.4.3. Acknowledgement (3)
 /// @return 0-error, >0-ok
-int rtmp_read_acknowledgement(const uint8_t* out, size_t size, uint32_t* sequenceNumber)
+static int rtmp_read_acknowledgement(const uint8_t* out, size_t size, uint32_t* sequenceNumber)
 {
 	if (size >= 4)
 	{
@@ -46,7 +46,7 @@ int rtmp_read_acknowledgement(const uint8_t* out, size_t size, uint32_t* sequenc
 
 /// 5.4.4. Window Acknowledgement Size (5)
 /// @return 0-error, >0-ok
-int rtmp_read_window_acknowledgement_size(const uint8_t* out, size_t size, uint32_t* windowSize)
+static int rtmp_read_window_acknowledgement_size(const uint8_t* out, size_t size, uint32_t* windowSize)
 {
 	if (size >= 4)
 	{
@@ -58,7 +58,7 @@ int rtmp_read_window_acknowledgement_size(const uint8_t* out, size_t size, uint3
 
 /// 5.4.5. Set Peer Bandwidth (6)
 /// @return 0-error, >0-ok
-int rtmp_read_set_peer_bandwidth(const uint8_t* out, size_t size, uint32_t *windowSize, uint8_t *limitType)
+static int rtmp_read_set_peer_bandwidth(const uint8_t* out, size_t size, uint32_t *windowSize, uint8_t *limitType)
 {
 	if (size >= 5)
 	{
@@ -71,6 +71,7 @@ int rtmp_read_set_peer_bandwidth(const uint8_t* out, size_t size, uint32_t *wind
 
 int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* header, const uint8_t* data)
 {
+	uint32_t chunk_stream_id = 0;
 	assert(2 == header->cid);
 
 	switch (header->type)
@@ -81,7 +82,12 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 
 	case RTMP_TYPE_ABORT:
 		assert(4 == header->length);
-		return rtmp_read_abort_message(data, header->length, &rtmp->stream_id);
+		if (4 == rtmp_read_abort_message(data, header->length, &chunk_stream_id))
+		{
+			rtmp->onabort(rtmp->param, chunk_stream_id);
+			return 4;
+		}
+		return 0;
 
 	case RTMP_TYPE_ACKNOWLEDGEMENT:
 		assert(4 == header->length);
@@ -102,6 +108,7 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 
 	default:
 		printf("unknown rtmp protocol control message: %d\n", header->type);
+		assert(0);
 		return 0;
 	}
 }

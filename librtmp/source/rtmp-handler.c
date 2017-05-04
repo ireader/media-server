@@ -5,12 +5,12 @@
 
 static void rtmp_audio(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
 {
-	rtmp->u.client.onaudio(rtmp->param, payload, header->length, header->timestamp);
+	rtmp->onaudio(rtmp->param, payload, header->length, header->timestamp);
 }
 
 static void rtmp_video(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
 {
-	rtmp->u.client.onvideo(rtmp->param, payload, header->length, header->timestamp);
+	rtmp->onvideo(rtmp->param, payload, header->length, header->timestamp);
 }
 
 int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
@@ -40,7 +40,7 @@ int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const 
 	case RTMP_TYPE_SET_PEER_BANDWIDTH:
 		return rtmp_control_handler(rtmp, header, payload);
 
-	case RTMP_TYPE_NOTIFY:
+	case RTMP_TYPE_DATA:
 	case RTMP_TYPE_FLEX_STREAM:
 		// play -> RtmpSampleAccess
 		// finish -> onPlayStatus("NetStream.Play.Complete")

@@ -13,17 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{6e719aff-e93a-4e19-99e2-86cc99bae508}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test\rtmp-reader-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\rtmp-sender-test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtmp-netconnection.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,21 +48,15 @@
     <ClCompile Include="source\rtmp-handler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtmp-client-invoke-handler.h">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtmp-client.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtmp-message.c">
+    <ClCompile Include="source\rtmp-chunk-header.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtmp-client.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rtmp-reader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-netstream.h">
@@ -83,9 +68,6 @@
     <ClInclude Include="include\rtmp-control-message.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\rtmp-helper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\rtmp-msgtypeid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -95,19 +77,19 @@
     <ClInclude Include="include\rtmp-util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\rtmp-message.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\rtmp-event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtmp-internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\rtmp.h">
+    <ClInclude Include="include\rtmp-server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\rtmp-server.h">
+    <ClInclude Include="source\rtmp-client-invoke-handler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtmp-chunk-header.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

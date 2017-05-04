@@ -9,7 +9,7 @@ static void rtmp_handshake_random(uint8_t* p, uint32_t timestamp)
 {
 	int i;
 	
-	srand(timestamp * (unsigned int)&timestamp * (unsigned int)p);
+	srand(timestamp);
 	for (i = 0; i * 4 < RTMP_HANDSHAKE_SIZE - 8; i++)
 	{
 		*((int*)p + i) = rand();

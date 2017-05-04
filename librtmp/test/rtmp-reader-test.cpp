@@ -1,10 +1,9 @@
-#include "../../../sdk/include/sockutil.h"
+#include "sockutil.h"
 #include "rtmp-client.h"
 #include "flv-writer.h"
 #include <assert.h>
 #include <stdio.h>
 
-static unsigned char packet[8 * 1024 * 1024];
 static void* flv;
 
 static int rtmp_send(void* param, const void* data, size_t bytes)
@@ -49,6 +48,8 @@ void rtmp_reader_test(const char* url)
 	flv = flv_writer_create("1.flv");
 
 	int r = rtmp_client_start(rtmp, 1);
+
+	static unsigned char packet[8 * 1024 * 1024];
 	while ((r = socket_recv(socket, packet, sizeof(packet), 0)) > 0)
 	{
 		r = rtmp_client_input(rtmp, packet, r);

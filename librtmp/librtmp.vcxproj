@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\rtmp-chunk-header.c" />
     <ClCompile Include="source\rtmp-chunk-read.c" />
     <ClCompile Include="source\rtmp-chunk-write.c" />
-    <ClCompile Include="source\rtmp-client-invoke-handler.h" />
     <ClCompile Include="source\rtmp-client.c" />
     <ClCompile Include="source\rtmp-control-handler.c" />
     <ClCompile Include="source\rtmp-control-message.c" />
@@ -29,28 +29,23 @@
     <ClCompile Include="source\rtmp-handler.c" />
     <ClCompile Include="source\rtmp-handshake.c" />
     <ClCompile Include="source\rtmp-invoke-handler.c" />
-    <ClCompile Include="source\rtmp-message.c" />
     <ClCompile Include="source\rtmp-netconnection.c" />
     <ClCompile Include="source\rtmp-netstream.c" />
     <ClCompile Include="source\rtmp-server.c" />
-    <ClCompile Include="test\rtmp-reader-test.cpp" />
-    <ClCompile Include="test\rtmp-sender-test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\rtmp-chunk-header.h" />
     <ClInclude Include="include\rtmp-control-message.h" />
     <ClInclude Include="include\rtmp-event.h" />
     <ClInclude Include="include\rtmp-handshake.h" />
-    <ClInclude Include="include\rtmp-helper.h" />
     <ClInclude Include="include\rtmp-internal.h" />
-    <ClInclude Include="include\rtmp-message.h" />
     <ClInclude Include="include\rtmp-msgtypeid.h" />
     <ClInclude Include="include\rtmp-netconnection.h" />
     <ClInclude Include="include\rtmp-client.h" />
     <ClInclude Include="include\rtmp-netstream.h" />
-    <ClInclude Include="include\rtmp-reader.h" />
     <ClInclude Include="include\rtmp-server.h" />
     <ClInclude Include="include\rtmp-util.h" />
-    <ClInclude Include="include\rtmp.h" />
+    <ClInclude Include="source\rtmp-client-invoke-handler.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4440B772-4BFC-4CD3-9700-7FA6F4EC0002}</ProjectGuid>

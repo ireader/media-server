@@ -14,7 +14,6 @@ OUTFILE = librtmp.a
 INCLUDES = . \
 					./include \
 					$(H264)/include \
-					$(ROOT)/include
 
 #-------------------------------Source-------------------------------
 #
@@ -23,8 +22,6 @@ SOURCE_PATHS = source
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 
-_SOURCE_FILES = source/rtmp-reader.c
-_SOURCE_FILES += source/rtmp-meta.c
 SOURCE_FILES := $(filter-out $(_SOURCE_FILES),$(SOURCE_FILES))
 
 #-----------------------------Library--------------------------------
