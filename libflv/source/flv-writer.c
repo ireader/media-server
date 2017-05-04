@@ -46,7 +46,7 @@ static int flv_write_header(FILE* fp)
 	header[1] = 'L';
 	header[2] = 'V';
 	header[3] = 0x01; // File version
-	header[4] = 0x06; // Type flags (audio & video)
+	header[4] = 0x05; // Type flags (audio & video)
 	be_write_uint32(header + 5, 9); // Data offset
 	be_write_uint32(header + 9, 0); // PreviousTagSize0(Always 0)
 
