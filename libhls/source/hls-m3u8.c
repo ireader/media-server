@@ -75,6 +75,7 @@ int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int d
 		seg = (struct hls_segment_t*)malloc(sizeof(*seg));
 		if (!seg)
 			return ENOMEM;
+		++m3u8->count;
 	}
 	else
 	{
