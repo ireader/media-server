@@ -12,9 +12,7 @@ OUTFILE = libhls.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					../libmpeg/include \
-					$(ROOT)/libhttp/include \
-					$(ROOT)/include
+					../libmpeg/include
 
 #-------------------------------Source-------------------------------
 #

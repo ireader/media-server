@@ -15,46 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\hls-block.c">
+    <ClCompile Include="source\hls-media.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\hls-file.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\hls-live.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\hls-server.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\hls-vod.c">
+    <ClCompile Include="source\hls-m3u8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\hls-block.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\hls-file.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\hls-live.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\hls-param.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\hls-server.h">
+    <ClInclude Include="include\hls-media.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\hls-vod.h">
+    <ClInclude Include="include\hls-m3u8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\hls-segment.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\hls-h264.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="source\hls-h264.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

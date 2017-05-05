@@ -18,13 +18,32 @@
 
 // 4. How many files should be listed in the index file during a continuous, ongoing session?
 // The normal recommendation is 3, but the optimum number may be larger.
-#define HLS_FILE_NUM 8
+#define HLS_LIVE_NUM 3
 
 #define HLS_BLOCK_SIZE (188*1024)
 
+// Playlist files whose names end in .m3u8 and/or have the HTTP Content-
+// Type "application/vnd.apple.mpegurl" are encoded in UTF-8[RFC3629].
+// Files whose names end with.m3u and/or have the HTTP Content-Type
+// [RFC2616] "audio/mpegurl" are encoded in US - ASCII[US_ASCII].
 #define HLS_M3U8_TYPE   "application/vnd.apple.mpegURL" // HTTP Content-Type
+#define HLS_M3U_TYPE	"audio/mpegurl"
 #define HLS_TS_TYPE     "video/MP2T" // HTTP Content-Type
 
 #define PTS_NO_VALUE INT64_MIN //(int64_t)0x8000000000000000L
+
+// version: 1 (default)
+// version: 2
+// The IV attribute of the EXT-X-KEY tag.
+// version: 3
+// Floating-point EXTINF duration values.
+// version: 4
+// The EXT-X-BYTERANGE tag.
+// The EXT-X-I-FRAMES-ONLY tag.
+// version: 5
+// The KEYFORMAT and KEYFORMATVERSIONS attributes of the EXT-X-KEY tag.
+// The EXT-X-MAP tag.
+// version: 6
+// The EXT-X-MAP tag in a Media playlist that does not contain EXT-X-I-FRAMES-ONLY.
 
 #endif /* !_hls_param_h_ */
