@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include "mpeg-ps.h"
 #include "hls-vod.h"
 #include "flv-reader.h"

@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include "flv-writer.h"
 #include "flv-muxer.h"
 #include "mpeg-ts.h"
