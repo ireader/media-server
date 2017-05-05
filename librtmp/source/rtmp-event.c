@@ -113,7 +113,6 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 	if (header->length < 6) return 0;
 	be_read_uint16(data, &event);
 	be_read_uint32(data + 2, &streamId);
-	printf("rtmp_event_handler: event: %d, stream_id: %d", (int)event, (int)streamId);
 
 	switch (event)
 	{

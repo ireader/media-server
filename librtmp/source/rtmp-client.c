@@ -274,7 +274,6 @@ static void rtmp_client_onnotify(void* param, enum rtmp_notify_t notify)
 {
 	struct rtmp_client_t* ctx;
 	ctx = (struct rtmp_client_t*)param;
-	printf("rtmp_client_onnotify %d\n", (int)notify);
 
 	switch (notify)
 	{
