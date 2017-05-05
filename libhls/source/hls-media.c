@@ -112,10 +112,9 @@ void hls_media_destroy(void* p)
 	free(hls);
 }
 
-static int hls_media_keyframe(int avtype, const void* data, size_t bytes)
+static inline int hls_media_keyframe(int avtype, const void* data, size_t bytes)
 {
 	// TODO: check sps/pps???
-	assert(STREAM_VIDEO_H264 == avtype);
 	return STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes);  // IDR-frame or audio only stream
 }
 
