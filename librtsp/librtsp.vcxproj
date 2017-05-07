@@ -132,39 +132,33 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="client\rtsp-client-announce.c" />
-    <ClCompile Include="client\rtsp-client-describe.c" />
-    <ClCompile Include="client\rtsp-client-pause.c" />
-    <ClCompile Include="client\rtsp-client-play.c" />
-    <ClCompile Include="client\rtsp-client-sdp.c" />
-    <ClCompile Include="client\rtsp-client-setup.c" />
-    <ClCompile Include="client\rtsp-client-teardown.c" />
-    <ClCompile Include="client\rtsp-client-transport-tcp.c" />
     <ClCompile Include="media\h264-file-reader.cpp" />
     <ClCompile Include="media\h264-file-source.cpp" />
     <ClCompile Include="media\ps-file-source.cpp" />
+    <ClCompile Include="source\client\rtsp-client-announce.c" />
+    <ClCompile Include="source\client\rtsp-client-describe.c" />
+    <ClCompile Include="source\client\rtsp-client-pause.c" />
+    <ClCompile Include="source\client\rtsp-client-play.c" />
+    <ClCompile Include="source\client\rtsp-client-sdp.c" />
+    <ClCompile Include="source\client\rtsp-client-setup.c" />
+    <ClCompile Include="source\client\rtsp-client-teardown.c" />
+    <ClCompile Include="source\client\rtsp-client.c" />
     <ClCompile Include="source\rfc822-datetime.c" />
     <ClCompile Include="source\rtp-socket.c" />
-    <ClCompile Include="source\rtsp-client.c" />
     <ClCompile Include="source\rtsp-header-range.c" />
     <ClCompile Include="source\rtsp-header-rtp-info.c" />
     <ClCompile Include="source\rtsp-header-session.c" />
     <ClCompile Include="source\rtsp-header-transport.c" />
     <ClCompile Include="source\rtsp-parser.c" />
     <ClCompile Include="source\rtsp-reason.c" />
-    <ClCompile Include="source\rtsp-server.c" />
     <ClCompile Include="source\rtsp-transport-tcp.c" />
     <ClCompile Include="source\rtsp-transport-udp.c" />
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
     <ClCompile Include="source\sdp.c" />
-    <ClCompile Include="test\rtsp-client-test.c" />
-    <ClCompile Include="test\rtsp-server-test.cpp" />
+    <ClCompile Include="source\server\rtsp-server.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="client\rtsp-client-internal.h" />
-    <ClInclude Include="client\rtsp-client-transport-tcp.h" />
-    <ClInclude Include="client\rtsp-url-parser.h" />
     <ClInclude Include="include\media-source.h" />
     <ClInclude Include="include\rfc822-datetime.h" />
     <ClInclude Include="include\rtp-socket.h" />
@@ -175,16 +169,16 @@
     <ClInclude Include="include\rtsp-header-transport.h" />
     <ClInclude Include="include\rtsp-parser.h" />
     <ClInclude Include="include\rtsp-reason.h" />
-    <ClInclude Include="include\rtsp-server-internal.h" />
     <ClInclude Include="include\rtsp-server.h" />
     <ClInclude Include="include\rtsp-transport.h" />
-    <ClInclude Include="include\rtsp.h" />
     <ClInclude Include="include\sdp-a-fmtp.h" />
     <ClInclude Include="include\sdp-a-rtpmap.h" />
     <ClInclude Include="include\sdp.h" />
     <ClInclude Include="media\h264-file-reader.h" />
     <ClInclude Include="media\h264-file-source.h" />
     <ClInclude Include="media\ps-file-source.h" />
+    <ClInclude Include="source\client\rtsp-client-internal.h" />
+    <ClInclude Include="source\server\rtsp-server-internal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

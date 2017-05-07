@@ -137,6 +137,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 static void rtsp_media_onattr(void* param, const char* name, const char* value)
 {
 	int i;
+	int payload = -1;
 	struct rtsp_media_t* media;
 
 	media = (struct rtsp_media_t*)param;
@@ -145,15 +146,16 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 	{
 		if(0 == strcmp("rtpmap", name))
 		{
-			int payload = -1;
-			char encoding[32];
+			int rate = 0;
+			char encoding[sizeof(media->avformats[i].encoding)];
 			if(strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
-				sdp_a_rtpmap(value, &payload, encoding, NULL, NULL);
+				sdp_a_rtpmap(value, &payload, encoding, &rate, NULL);
 				for(i = 0; i < media->avformat_count; i++)
 				{
-					if(media->avformats[i].pt == payload)
+					if(media->avformats[i].fmt == payload)
 					{
+						media->avformats[i].rate = rate;
 						strlcpy(media->avformats[i].encoding, encoding, sizeof(media->avformats[i].encoding));
 						break;
 					}
@@ -162,11 +164,10 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if(0 == strcmp("fmtp", name))
 		{
-			int payload = -1;
 			payload = atoi(value);
 			for(i = 0; i < media->avformat_count; i++)
 			{
-				if(media->avformats[i].pt == payload)
+				if(media->avformats[i].fmt == payload)
 				{
 					if(0 == strcmp("H264", media->avformats[i].encoding))
 					{
@@ -206,48 +207,55 @@ m=video 2232 RTP/AVP 31
 m=whiteboard 32416 UDP WB
 a=orient:portrait
 */
-int rtsp_client_sdp(struct rtsp_client_context_t* ctx, void* sdp)
+int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* content)
 {
-	int i, count;
+	int i, j, n, count;
 	int formats[N_MEDIA_FORMAT];
 	struct rtsp_media_t* media;
+	void* sdp;
 
-	assert(sdp);
+	sdp = sdp_parse(content);
+	if (!sdp)
+		return -1;
+
 	count = sdp_media_count(sdp);
 	if(count > N_MEDIA)
 	{
-		ctx->media_ptr = (struct rtsp_media_t*)malloc(sizeof(struct rtsp_media_t)*(count-N_MEDIA));
-		if(!ctx->media_ptr)
-			return -1;
-		memset(ctx->media_ptr, 0, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
+		rtsp->media_ptr = (struct rtsp_media_t*)malloc(sizeof(struct rtsp_media_t)*(count-N_MEDIA));
+		if(!rtsp->media_ptr)
+		{
+			sdp_destroy(sdp);
+			return ENOMEM;
+		}
+		memset(rtsp->media_ptr, 0, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
 	}
 
-	ctx->media_count = count;
+	rtsp->media_count = count;
 
 	// rfc 2326 C.1.1 Control URL (p80)
 	// If found at the session level, the attribute indicates the URL for aggregate control
-	ctx->aggregate = rtsp_media_aggregate_control_enable(sdp);
-	rtsp_get_session_uri(sdp, ctx->aggregate_uri, sizeof(ctx->aggregate_uri), ctx->uri, ctx->baseuri, ctx->location);
+	rtsp->aggregate = rtsp_media_aggregate_control_enable(sdp);
+	rtsp_get_session_uri(sdp, rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), rtsp->uri, rtsp->baseuri, rtsp->location);
 
 	for(i = 0; i < count; i++)
 	{
-		int j, n;
-		media = rtsp_get_media(ctx, i);
+		media = rtsp_get_media(rtsp, i);
 		media->cseq = rand();
 
 		// RTSP2326 C.1.1 Control URL
-		rtsp_get_media_uri(sdp, i, media->uri, sizeof(media->uri), ctx->aggregate_uri);
+		rtsp_get_media_uri(sdp, i, media->uri, sizeof(media->uri), rtsp->aggregate_uri);
 
 		n = sdp_media_formats(sdp, i, formats, N_MEDIA_FORMAT);
 		media->avformat_count = n > N_MEDIA_FORMAT ? N_MEDIA_FORMAT : n;
 		for(j = 0; j < media->avformat_count; j++)
 		{
-			media->avformats[j].pt = formats[j];
+			media->avformats[j].fmt = formats[j];
 		}
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, media);		
 	}
 
+	sdp_destroy(sdp);
 	return 0;
 }

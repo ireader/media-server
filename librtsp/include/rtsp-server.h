@@ -51,11 +51,6 @@ struct rtsp_handler_t
 	void (*teardown)(void* ptr, void* rtsp, const char* uri, const char* session);
 };
 
-// Initialize/Finalize
-// call once only
-int rtsp_server_init(void);
-int rtsp_server_cleanup(void);
-
 /// start rtsp server
 /// @param[in] ip bind ip address, NULL for any network interface
 /// @param[in] port bind port, default 554
@@ -66,8 +61,6 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 /// @param[in] server rtsp server instance
 /// @return 0-ok, other-error code
 int rtsp_server_destroy(void* server);
-
-int rtsp_server_report(void* server);
 
 /// RTSP DESCRIBE reply
 /// @param[in] rtsp request handle

@@ -59,7 +59,7 @@ static int rtsp_server_reply(struct rtsp_server_request_t *req, int code)
 {
 	int len;
 	rfc822_datetime_t datetime;
-	datetime_format(time(NULL), datetime);
+	rfc822_datetime_format(time(NULL), datetime);
 
 	len = snprintf(req->reply, sizeof(req->reply),
 		"RTSP/1.0 %d %s\r\n"
@@ -370,7 +370,6 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 		return;
 	}
 
-	datetime_format(time(NULL), datetime);
 	len = snprintf(req->reply, sizeof(req->reply),
 			"RTSP/1.0 200 OK\r\n"
 			"CSeq: %u\r\n"
@@ -379,7 +378,9 @@ void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
 			"Content-Length: %u\r\n"
 			"\r\n"
 			"%s", 
-			req->cseq, datetime, (unsigned int)strlen(sdp), sdp);
+			req->cseq, 
+			rfc822_datetime_format(time(NULL), datetime), 
+			(unsigned int)strlen(sdp), sdp);
 
 	req->transport->send(req->session, req->reply, len);
 }
@@ -397,7 +398,7 @@ void rtsp_server_reply_setup(void* rtsp, int code, const char* session, const ch
 		return;
 	}
 
-	datetime_format(time(NULL), datetime);
+	rfc822_datetime_format(time(NULL), datetime);
 
 	// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
 	len = snprintf(req->reply, sizeof(req->reply),
@@ -440,7 +441,7 @@ void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const
 			len = snprintf(range, sizeof(range), "Range: %.3f-\r\n", (float)(*nptstart/1000.0f));
 	}
 
-	datetime_format(time(NULL), datetime);
+	rfc822_datetime_format(time(NULL), datetime);
 	// smpte=0:10:22-;time=19970123T153600Z
 	len = snprintf(req->reply, sizeof(req->reply),
 		"RTSP/1.0 200 OK\r\n"
@@ -482,16 +483,6 @@ int rtsp_server_get_client(void* rtsp, char ip[65], unsigned short *port)
 	if (NULL == ip || NULL == port)
 		return -1;
 	return socket_addr_to((struct sockaddr*)&req->addr, req->addrlen, ip, port);
-}
-
-int rtsp_server_init(void)
-{
-    return 0;
-}
-
-int rtsp_server_cleanup(void)
-{
-    return 0;
 }
 
 void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* ptr)
@@ -559,10 +550,5 @@ int rtsp_server_destroy(void* server)
 		ctx->udptransport->destroy(ctx->udp);
 
 	free(ctx);
-	return 0;
-}
-
-int rtsp_server_report(void* server)
-{
 	return 0;
 }

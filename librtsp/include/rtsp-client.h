@@ -1,26 +1,13 @@
 #ifndef _rtsp_client_h_
 #define _rtsp_client_h_
 
+#include <stdint.h>
+#include <stddef.h>
+#include "rtsp-header-transport.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-#include <stdlib.h>
-#include "ctypedef.h"
-
-struct rtsp_transport_t
-{
-	int transport; // 1-AVP/RTP/UDP, 2-AVP/RTP/TCP, 3-RAW-TCP, 4-MP2T/RTP/UDP
-	int multicast; // 0-unicast, 1-multicast
-	int client_port[2]; // rtp unicast client rtp/rtcp port
-	// VLC don't support below parameter
-	int server_port[2]; // rtp unicast server rtp/rtcp port or multicast port
-	const char *destination; // client address or multicast address
-	const char *source; // server address, null if source is rtsp server
-	int ttl;			// multicast TTL
-	int interleaved[2];	// rtp over rtsp only(TCP mode)
-	const char* rtpssrc; // RTP SSRC
-};
 
 // seq=232433;rtptime=972948234
 struct rtsp_rtp_info_t
@@ -30,27 +17,30 @@ struct rtsp_rtp_info_t
 	uint32_t time;	// uint32_t
 };
 
-typedef void (*rtsp_onreply)(void* rtsp, int code, void* parser);
-
-typedef struct _rtsp_client_t
+struct rtsp_client_handler_t
 {
-	int (*request)(void* transport, const char* uri, const void* req, size_t bytes, void* rtsp, rtsp_onreply onreply);
-	int (*rtpport)(void* transport, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
+	///network implementation
+	///@return >0-sent bytes, <0-error
+	int (*send)(void* param, const char* uri, const void* req, size_t bytes);
+	///create rtp/rtcp port 
+	int (*rtpport)(void* param, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
 
-	int (*onopen)(void* ptr, int code, const struct rtsp_transport_t* transport, int count);
-	int (*onclose)(void* ptr, int code);
-	int (*onplay)(void* ptr, int code, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
-	int (*onpause)(void* ptr, int code);
-} rtsp_client_t;
+	void (*onopen)(void* param);
+	void (*onclose)(void* param);
+	void (*onplay)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
+	void (*onpause)(void* param);
+};
 
-void* rtsp_client_create(const rtsp_client_t *client, void* transport, void* ptr);
-int rtsp_client_destroy(void* rtsp);
+/// @param[in] param user-defined parameter
+void* rtsp_client_create(const struct rtsp_client_handler_t *handler, void* param);
+
+void rtsp_client_destroy(void* rtsp);
 
 /// rtsp describe and setup
-int rtsp_client_open(void* rtsp, const char* uri);
-
-/// rtsp setup only(skip describe)
-int rtsp_client_open_with_sdp(void* rtsp, const char* uri, const char* sdp);
+/// @param[in] uri media resource uri
+/// @param[in] sdp resource info. it can be null, sdp will get by describe command
+/// @return 0-ok, other-error.
+int rtsp_client_open(void* rtsp, const char* uri, const char* sdp);
 
 /// stop and close session(TearDown)
 /// call onclose on done
@@ -71,8 +61,11 @@ int rtsp_client_play(void* rtsp, const uint64_t *npt, const float *speed);
 /// use rtsp_client_play(rtsp, NULL, NULL) to resume play
 int rtsp_client_pause(void* rtsp);
 
+int rtsp_client_input(void* rtsp, void* parser);
+
 int rtsp_client_media_count(void* rtsp);
-const char* rtsp_client_media_get_encoding(void* rtsp, int media);
+const struct rtsp_header_transport_t* rtmp_client_get_media_transport(void* rtsp, int media);
+const char* rtsp_client_get_media_encoding(void* rtsp, int media);
 
 #if defined(__cplusplus)
 }
