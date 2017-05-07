@@ -29,9 +29,9 @@ struct rtmp_server_handler_t
 	///@param[in] type: live/record/append
 	int (*onpublish)(void* param, const char* app, const char* stream, const char* type);
 	///@param[in] data FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
-	void (*onvideo)(void* param, const void* data, size_t bytes, uint32_t timestamp);
+	int (*onvideo)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 	///@param[in] data FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
-	void (*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
+	int (*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 };
 
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);

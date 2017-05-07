@@ -92,6 +92,7 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 {
 	const static uint32_t s_header_size[] = { 11, 7, 3, 0 };
 
+	int r;
 	size_t size, offset = 0;
 	struct rtmp_parser_t* parser = &rtmp->parser;
 	struct rtmp_chunk_header_t header;
@@ -187,7 +188,8 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 
 				memcpy(&header, &parser->pkt->header, sizeof(header));
 				header.timestamp = parser->pkt->clock;
-				rtmp_handler(rtmp, &header, parser->pkt->payload);
+				r = rtmp_handler(rtmp, &header, parser->pkt->payload);
+				if(0 != r) return r;
 			}
 			else if (0 == parser->pkt->bytes % rtmp->in_chunk_size)
 			{

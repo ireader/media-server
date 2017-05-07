@@ -55,7 +55,7 @@ static int rtmp_server_send_onstatus(struct rtmp_server_t* ctx, double transacti
 }
 
 // handshake
-static void rtmp_server_send_handshake(struct rtmp_server_t* ctx)
+static int rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_handshake_s0(ctx->handshake, RTMP_VERSION);
@@ -63,53 +63,50 @@ static void rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 	n += rtmp_handshake_s2(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	assert(n == 1 + RTMP_HANDSHAKE_SIZE + RTMP_HANDSHAKE_SIZE);
 	r = ctx->handler.send(ctx->param, ctx->handshake, n);
-	if (n != r)
-		ctx->handler.onerror(ctx->param, -1, "error: send handshake");
+	return n == r ? 0 : r;
 }
 
 /// 5.4.1. Set Chunk Size (1)
-static void rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
+static int rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
 {
-	int r;
-	r = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
-	ctx->handler.send(ctx->param, ctx->payload, r);
+	int n, r;
+	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	return n == r ? 0 : r;
 }
 
 /// 5.4.4. Window Acknowledgement Size (5)
-static void rtmp_server_send_server_bandwidth(struct rtmp_server_t* ctx)
+static int rtmp_server_send_server_bandwidth(struct rtmp_server_t* ctx)
 {
-	int r;
-	r = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
-	ctx->handler.send(ctx->param, ctx->payload, r);
+	int n, r;
+	n = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	return n == r ? 0 : r;
 }
 
 /// 5.4.5. Set Peer Bandwidth (6)
-static void rtmp_server_send_client_bandwidth(struct rtmp_server_t* ctx)
+static int rtmp_server_send_client_bandwidth(struct rtmp_server_t* ctx)
 {
-	int r;
-	r = rtmp_set_peer_bandwidth(ctx->payload, sizeof(ctx->payload), ctx->rtmp.peer_bandwidth, RTMP_BANDWIDTH_LIMIT_DYNAMIC);
-	ctx->handler.send(ctx->param, ctx->payload, r);
+	int n, r;
+	n = rtmp_set_peer_bandwidth(ctx->payload, sizeof(ctx->payload), ctx->rtmp.peer_bandwidth, RTMP_BANDWIDTH_LIMIT_DYNAMIC);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	return n == r ? 0 : r;
 }
 
-static void rtmp_server_send_stream_is_record(struct rtmp_server_t* ctx)
+static int rtmp_server_send_stream_is_record(struct rtmp_server_t* ctx)
 {
-	int r;
-	r = rtmp_event_stream_is_record(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
-	ctx->handler.send(ctx->param, ctx->payload, r);
+	int n, r;
+	n = rtmp_event_stream_is_record(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	return n == r ? 0 : r;
 }
 
-static void rtmp_server_send_stream_begin(struct rtmp_server_t* ctx)
+static int rtmp_server_send_stream_begin(struct rtmp_server_t* ctx)
 {
-	int r;
-	r = rtmp_event_stream_begin(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
-	ctx->handler.send(ctx->param, ctx->payload, r);
-}
-
-static void rtmp_server_onerror(void* param, int code, const char* msg)
-{
-	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)param;
-	ctx->handler.onerror(ctx->param, code, msg);
+	int n, r;
+	n = rtmp_event_stream_begin(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
+	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	return n == r ? 0 : r;
 }
 
 static void rtmp_server_onabort(void* param, uint32_t chunk_stream_id)
@@ -117,27 +114,28 @@ static void rtmp_server_onabort(void* param, uint32_t chunk_stream_id)
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
 	(void)chunk_stream_id;
-	ctx->handler.onerror(ctx->param, -1, "client abort");
+//	ctx->handler.onerror(ctx->param, -1, "client abort");
 }
 
-static void rtmp_server_onaudio(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
+static int rtmp_server_onaudio(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
-	ctx->handler.onaudio(ctx->param, data, bytes, timestamp);
+	return ctx->handler.onaudio(ctx->param, data, bytes, timestamp);
 }
 
-static void rtmp_server_onvideo(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
+static int rtmp_server_onvideo(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
-	ctx->handler.onvideo(ctx->param, data, bytes, timestamp);
+	return ctx->handler.onvideo(ctx->param, data, bytes, timestamp);
 }
 
 // 7.2.1.1. connect (p29)
 // _result/_error
 int rtmp_server_onconnect(void* param, int r, double transaction, const struct rtmp_connect_t* connect)
 {
+	int n;
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
 
@@ -145,18 +143,17 @@ int rtmp_server_onconnect(void* param, int r, double transaction, const struct r
 	{
 		assert(1 == (int)transaction);
 		strlcpy(ctx->app, connect->app, sizeof(ctx->app));
-		rtmp_server_send_server_bandwidth(ctx);
-		rtmp_server_send_client_bandwidth(ctx);
-		rtmp_server_send_set_chunk_size(ctx);
-
-		r = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Successed.") - ctx->payload;
-		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, 0);
+		r = rtmp_server_send_server_bandwidth(ctx);
+		r = 0 == r ? rtmp_server_send_client_bandwidth(ctx) : r;
+		r = 0 == r ? rtmp_server_send_set_chunk_size(ctx) : r;
 	}
 
-	if (0 != r)
+	if(0 == r)
 	{
-		ctx->handler.onerror(ctx->param, r, "onconnect error");
+		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Successed.") - ctx->payload;
+		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, n, 0);
 	}
+
 	return r;
 }
 
@@ -178,10 +175,6 @@ int rtmp_server_oncreate_stream(void* param, int r, double transaction)
 		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "oncreate_stream error");
-	}
 	return r;
 }
 
@@ -199,10 +192,6 @@ int rtmp_server_ondelete_stream(void* param, int r, double transaction, double s
 		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.DeleteStream.Suceess", "NetStream.DeleteStream.Failed");
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "ondelete_stream error");
-	}
 	return r;
 }
 
@@ -215,23 +204,21 @@ int rtmp_server_onpublish(void* param, int r, double transaction, const char* st
 
 	if (0 == r)
 	{
-		ctx->handler.onpublish(ctx->param, ctx->app, stream_name, stream_type);
+		r = ctx->handler.onpublish(ctx->param, ctx->app, stream_name, stream_type);
 		if (0 == r)
 		{
 			strlcpy(ctx->stream_name, stream_name, sizeof(ctx->stream_name));
 			strlcpy(ctx->stream_type, stream_type, sizeof(ctx->stream_type));
 
 			// User Control (StreamBegin)
-			rtmp_server_send_stream_begin(ctx);
+			r = rtmp_server_send_stream_begin(ctx);
+			if(0 != r)
+				return r;
 		}
 
 		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.DeleteStream.Suceess", "NetStream.DeleteStream.Failed");
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "onpublish error");
-	}
 	return r;
 }
 
@@ -251,23 +238,22 @@ int rtmp_server_onplay(void* param, int r, double transaction, const char* strea
 			strlcpy(ctx->stream_type, -1==start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD, sizeof(ctx->stream_type));
 
 			// SetChunkSize
-			rtmp_server_send_set_chunk_size(ctx);
+			r = rtmp_server_send_set_chunk_size(ctx);
 			// User Control (StreamIsRecorded)
-			rtmp_server_send_stream_is_record(ctx);
+			r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
 			// User Control (StreamBegin)
-			rtmp_server_send_stream_begin(ctx);
+			r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;
 
 			// NetStream.Play.Reset
-			if (reset) rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed");
+			if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed") : r;
+
+			if(0 != r)
+				return r;
 		}
 
 		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed");
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "onplay error");
-	}
 	return r;
 }
 
@@ -285,10 +271,6 @@ int rtmp_server_onpause(void* param, int r, double transaction, uint8_t pause, d
 		r = rtmp_server_send_onstatus(ctx, transaction, r, pause ? "NetStream.Pause.Notify" : "NetStream.Unpause.Notify", "NetStream.Pause.Failed");
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "onpause error");
-	}
 	return r;
 }
 
@@ -306,10 +288,6 @@ int rtmp_server_onseek(void* param, int r, double transaction, double milliSecon
 		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed");
 	}
 
-	if (0 != r)
-	{
-		ctx->handler.onerror(ctx->param, r, "onseek error");
-	}
 	return r;
 }
 
@@ -393,7 +371,6 @@ void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handle
 	ctx->rtmp.send = rtmp_server_send;
 	ctx->rtmp.onaudio = rtmp_server_onaudio;
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
-	ctx->rtmp.onerror = rtmp_server_onerror;
 	ctx->rtmp.onabort = rtmp_server_onabort;
 	ctx->rtmp.u.server.onconnect = rtmp_server_onconnect;
 	ctx->rtmp.u.server.oncreate_stream = rtmp_server_oncreate_stream;
@@ -431,6 +408,7 @@ int rtmp_server_getstatus(void* p)
 
 int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes)
 {
+	int r;
 	size_t n;
 	const uint8_t* p;
 	struct rtmp_server_t* ctx;
@@ -462,7 +440,8 @@ int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes)
 			{
 				ctx->handshake_state = RTMP_HANDSHAKE_1;
 				ctx->handshake_bytes = 0; // clear buffer
-				rtmp_server_send_handshake(ctx);
+				r = rtmp_server_send_handshake(ctx);
+				if(0 != r) return r;
 			}
 			break;
 

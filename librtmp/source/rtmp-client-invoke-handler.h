@@ -67,7 +67,7 @@ static int rtmp_command_onconnect_reply(struct rtmp_result_t* result, const uint
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "Information", info, sizeof(info) / sizeof(info[0]));
 
 	//rtmp->onstatus();
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : EINVAL;
 }
 
 // s -> c
@@ -78,12 +78,13 @@ static int rtmp_command_oncreate_stream_reply(const uint8_t* data, uint32_t byte
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_NUMBER, "streamId", stream_id, 8);
 
 	//rtmp->onstatus();
-	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : EINVAL;
 }
 
 // s -> c
 static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	int r;
 	double stream_id = 0;
 	double duration = 0;
 	struct rtmp_result_t result;
@@ -95,34 +96,23 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 		// 1. releaseStream/FCPublish or serverBW/user control message event buffer time
 		// 2. createStream
 		// 3. FCSubscribe
-		if (0 != rtmp_command_onconnect_reply(&result, data, bytes))
-			rtmp->onerror(rtmp->param, -1, "parse connect reply _result failure.");
-		else
-			rtmp->u.client.onconnect(rtmp->param);
-		break;
+		r = rtmp_command_onconnect_reply(&result, data, bytes);
+		return 0 == r ? rtmp->u.client.onconnect(rtmp->param) : r;
 
 	case RTMP_TRANSACTION_CREATE_STREAM:
 		// next: 
 		// publish 
 		// or play/user control message event buffer time
-		if (0 != rtmp_command_oncreate_stream_reply(data, bytes, &stream_id))
-			rtmp->onerror(rtmp->param, -1, "parse createStream reply _result failed.");
-		else
-			rtmp->u.client.oncreate_stream(rtmp->param, stream_id);
-		break;
+		r = rtmp_command_oncreate_stream_reply(data, bytes, &stream_id);
+		return 0 == r ? rtmp->u.client.oncreate_stream(rtmp->param, stream_id) : r;
 
 	case RTMP_TRANSACTION_GET_STREAM_LENGTH:
-		if (0 != rtmp_command_oncreate_stream_reply(data, bytes, &duration))
-			rtmp->onerror(rtmp->param, -1, "parse getStreamLength reply _result failed.");
-		break;
+		return rtmp_command_oncreate_stream_reply(data, bytes, &duration);
 
 	default:
 		assert(0);
-		rtmp->onerror(rtmp->param, -1, "unknow NetConnection command");
-		break;
+		return -1;
 	}
-
-	return 0;
 }
 
 // s -> c
@@ -140,13 +130,13 @@ static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const u
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		rtmp->onerror(rtmp->param, -1, "unknown error");
-		return -1;
+		return EINVAL; // format error
 	}
 
-	rtmp->onerror(rtmp->param, -1, result.code);
+	//rtmp->onerror(rtmp->param, -1, result.code);
 	(void)transaction;
-	return 0;
+	(void)rtmp;
+	return -1;
 }
 
 // s -> c
@@ -164,8 +154,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		rtmp->onerror(rtmp->param, -1, "resut onStatus failed");
-		return -1;
+		return EINVAL;
 	}
 
 	assert(0 == strcmp(RTMP_LEVEL_ERROR, result.level)
@@ -174,7 +163,8 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 
 	if (0 == strcmp(RTMP_LEVEL_ERROR, result.level))
 	{
-		rtmp->onerror(rtmp->param, -1, result.code);
+		//rtmp->onerror(rtmp->param, -1, result.code);
+		return -1;
 	}
 	else
 	{
@@ -216,7 +206,8 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 			|| 0 == strcasecmp(result.code, "NetStream.Play.Failed")
 			|| 0 == strcasecmp(result.code, "NetStream.Play.StreamNotFound"))
 		{
-			rtmp->onerror(rtmp->param, -1, result.code);
+			//rtmp->onerror(rtmp->param, -1, result.code);
+			return -1;
 		}
 		else
 		{

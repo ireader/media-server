@@ -246,7 +246,7 @@ int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h
 
 	data = amf_read_items(data, end, items, sizeof(items) / sizeof(items[0]));
 	if (!data || -1.0 == transaction)
-		return -1; // invalid data
+		return EINVAL; // invalid data
 
 	for (i = 0; i < sizeof(s_command_handler) / sizeof(s_command_handler[0]); i++)
 	{

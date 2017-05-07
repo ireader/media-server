@@ -113,10 +113,8 @@ struct rtmp_t
 	/// @return 0-ok, other-error
 	int (*send)(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes);
 	
-	void (*onaudio)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
-	void (*onvideo)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
-
-	void (*onerror)(void* param, int code, const char* msg);
+	int (*onaudio)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
+	int (*onvideo)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
 
 	void (*onabort)(void* param, uint32_t chunk_stream_id);
 
@@ -139,11 +137,11 @@ struct rtmp_t
 		struct
 		{
 			// client side
-			void (*onconnect)(void* param);
-			void (*oncreate_stream)(void* param, double stream_id);
-			void (*onnotify)(void* param, enum rtmp_notify_t notify);
-			void (*onping)(void* param, uint32_t timestamp); // send pong
-			void (*onbandwidth)(void* param); // send window acknowledgement size
+			int (*onconnect)(void* param);
+			int (*oncreate_stream)(void* param, double stream_id);
+			int (*onnotify)(void* param, enum rtmp_notify_t notify);
+			int (*onping)(void* param, uint32_t timestamp); // send pong
+			int (*onbandwidth)(void* param); // send window acknowledgement size
 		} client;
 	} u;
 };
