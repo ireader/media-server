@@ -246,6 +246,11 @@ void rtsp_header_transport_test(void)
 	assert(t.multicast==1 && 127==t.rtp.m.ttl && RTSP_TRANSPORT_PLAY==t.mode);
 
 	memset(&t, 0, sizeof(t));
+	assert(0 == rtsp_header_transport("RTP/AVP/TCP;interleaved=0-1", &t)); // rfc2326 p40
+	assert(t.transport == RTSP_TRANSPORT_RTP_TCP);
+	assert(t.interleaved1 == 0 && t.interleaved2 == 1);
+
+	memset(&t, 0, sizeof(t));
 	assert(0 == rtsp_header_transport("RTP/AVP;unicast;source=192.168.111.333.444.555.666.777.888.999.000.123", &t)); // rfc2326 p61
 	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
 	assert(t.multicast==0 && 0==strncmp("192.168.111.333.444.555.666.777.888.999.000.123", t.source, sizeof(t.source)-1) && strlen(t.source)<sizeof(t.source));

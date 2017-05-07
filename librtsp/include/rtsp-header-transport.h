@@ -23,6 +23,9 @@ enum {
 	RTSP_TRANSPORT_RECORD
 };
 
+// Transport: RTP/AVP/TCP;interleaved=0-1
+// Transport: RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
+// Transport: RTP/AVP;multicast;destination=224.2.0.1;port=3456-3457;ttl=16
 struct rtsp_header_transport_t
 {
 	int transport; // RTSP_TRANSPORT_xxx
