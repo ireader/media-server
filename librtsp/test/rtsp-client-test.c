@@ -1,7 +1,8 @@
 #if defined(_DEBUG) || defined(DEBUG)
 
+#include "sockutil.h"
 #include "rtsp-client.h"
-#include "rtsp-client-transport-tcp.h"
+#include "rtsp-parser.h"
 #include <assert.h>
 #include <stdlib.h>
 #include "rtp-socket.h"
@@ -12,83 +13,102 @@
 struct rtsp_client_test_t
 {
 	void* rtsp;
-	void* transport;
-	socket_t rtp;
-	socket_t rtcp;
-	unsigned short port;
+	socket_t socket;
+
+	socket_t rtp[2];
+	unsigned short port[2];
 };
 
-static int rtpport(void* UNUSED(transport), unsigned short *rtp)
+static int rtsp_client_send(void* param, const char* uri, const void* req, size_t bytes)
 {
-	socket_t sock[2];
-	unsigned short port[2];
-	rtp_socket_create(NULL, sock, port);
-	*rtp = port[0];
+	//TODO: check uri and make socket
+	//1. uri != rtsp describe uri(user input)
+	//2. multi-uri if media_count > 1
+	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
+	return socket_send_all_by_time(ctx->socket, req, bytes, 0, 2000);
+}
+
+static int rtpport(void* param, unsigned short *rtp)
+{
+	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
+	assert(0 == rtp_socket_create(NULL, ctx->rtp, ctx->port));
+	*rtp = ctx->port[0];
 	return 0;
 }
 
-int onopen(void* ptr, int UNUSED(code), const struct rtsp_transport_t* UNUSED(transport), int UNUSED(count))
+int onopen(void* param)
 {
 	uint64_t npt = 0;
-	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)ptr;
+	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	assert(0 == rtsp_client_play(ctx->rtsp, &npt, NULL));
 	return 0;
 }
 
-int onclose(void* UNUSED(ptr), int UNUSED(code))
+int onclose(void* param)
 {
 	return 0;
 }
 
-int onplay(void* UNUSED(ptr), int UNUSED(code), const uint64_t* UNUSED(nptbegin), const uint64_t* UNUSED(nptend), const double* UNUSED(scale), const struct rtsp_rtp_info_t* UNUSED(rtpinfo), int UNUSED(count))
+int onplay(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count)
 {
 	return 0;
 }
 
-int onpause(void* UNUSED(ptr), int UNUSED(code))
+int onpause(void* param)
 {
 	return 0;
 }
 
-void rtsp_client_test()
+void rtsp_client_test(const char* host, const char* file)
 {
-	int i;
-	void* transport;
-	rtsp_client_t client;
-	struct rtsp_client_test_t *ctx;
-	ctx = (struct rtsp_client_test_t*)malloc(sizeof(*ctx));
-	memset(ctx, 0, sizeof(*ctx));
+	int r, n, ret;
+	void* parser;
+	struct rtsp_client_test_t ctx;
+	struct rtsp_client_handler_t handler;
+	static char packet[2 * 1024 * 1024];
 
-	memset(&client, 0, sizeof(client));
-	client.request = rtsp_client_tcp_transport_request;
-	client.rtpport = rtpport;
-	client.onopen = onopen;
-	client.onplay = onplay;
-	client.onpause = onpause;
-	client.onclose = onclose;
+	memset(&ctx, 0, sizeof(ctx));
+	handler.send = rtsp_client_send;
+	handler.rtpport = rtpport;
+	handler.onopen = onopen;
+	handler.onplay = onplay;
+	handler.onpause = onpause;
+	handler.onclose = onclose;
 
-	transport = rtsp_client_tcp_transport_create(NULL, NULL);
-	assert(transport);
+	parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
+	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
-	ctx->rtsp = rtsp_client_create(&client, transport, ctx);
-	assert(ctx->rtsp);
+	socket_init();
+	ctx.socket = socket_connect_host(host, 554, 2000);
+	assert(socket_invalid != ctx.socket);
+	ctx.rtsp = rtsp_client_create(&handler, &ctx);
+	assert(ctx.rtsp);
+	assert(0 == rtsp_client_open(ctx.rtsp, packet, NULL));
 
-	assert(0 == rtsp_client_open(ctx->rtsp, "rtsp://127.0.0.1/sjz.264"));
-
-	for(i = 0; i < 100; i++)
+	socket_setnonblock(ctx.socket, 0);
+	r = socket_recv(ctx.socket, packet, sizeof(packet), 0);
+	while(r > 0)
 	{
-		if(10 == i)
-			rtsp_client_pause(ctx->rtsp);
-		if(20 == i)
-			rtsp_client_play(ctx->rtsp, NULL, NULL);
+		n = r;
+		ret = rtsp_parser_input(parser, packet, &r);
+		assert(0 == ret || 1 == ret);
+		while (0 == ret)
+		{
+			assert(0 == rtsp_client_input(ctx.rtsp, parser));
 
-		system_sleep(1000);
+			// next round
+			rtsp_parser_clear(parser);
+			ret = rtsp_parser_input(parser, packet + (n - r), &r);
+			assert(0 == ret || 1 == ret);
+		}
+
+		r = socket_recv(ctx.socket, packet, sizeof(packet), 0);
 	}
 
-	assert(0 == rtsp_client_close(ctx->rtsp));
-	rtsp_client_tcp_transport_destroy(transport);
-	rtsp_client_destroy(ctx->rtsp);
-	free(ctx);
+	assert(0 == rtsp_client_close(ctx.rtsp));
+	rtsp_client_destroy(ctx.rtsp);
+	socket_close(ctx.socket);
+	socket_cleanup();
 }
 
 #endif
