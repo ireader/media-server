@@ -399,7 +399,7 @@ void rtmp_server_destroy(void* rtmp)
 	free(ctx);
 }
 
-int rtmp_server_getstatus(void* p)
+int rtmp_server_getstate(void* p)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)p;

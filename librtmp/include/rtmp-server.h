@@ -38,7 +38,7 @@ void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handle
 
 void rtmp_server_destroy(void* rtmp);
 
-int rtmp_client_getstatus(void* rtmp);
+int rtmp_server_getstate(void* rtmp);
 
 /// @param[in] rtmp rtmp_server_create instance
 /// @param[in] data rtmp chunk stream data
