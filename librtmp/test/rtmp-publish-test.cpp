@@ -9,12 +9,7 @@
 static int rtmp_client_send(void* param, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
-	return socket_send(*socket, data, bytes, 0);
-}
-
-static void rtmp_client_onerror(void* /*param*/, int code, const char* msg)
-{
-	printf("rtmp_sender_onerror code: %d, msg: %s\n", code, msg);
+	return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
 }
 
 static void rtmp_client_push(const char* flv, void* rtmp)
@@ -55,7 +50,6 @@ void rtmp_publish_test(const char* host, const char* app, const char* stream, co
 
 	struct rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
-	handler.onerror = rtmp_client_onerror;
 	handler.send = rtmp_client_send;
 
 	socket_init();

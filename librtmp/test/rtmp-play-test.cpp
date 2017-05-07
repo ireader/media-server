@@ -9,26 +9,22 @@ static void* s_flv;
 static int rtmp_client_send(void* param, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
-	return socket_send(*socket, data, bytes, 0);
+	return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
 }
 
-static void rtmp_client_onerror(void* /*param*/, int code, const char* msg)
+static int rtmp_client_onaudio(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
 {
-	printf("rtmp_onerror code: %d, msg: %s\n", code, msg);
+	return flv_writer_input(s_flv, 8, data, bytes, timestamp);
 }
 
-static void rtmp_client_onaudio(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
+static int rtmp_client_onvideo(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(s_flv, 8, data, bytes, timestamp);
+	return flv_writer_input(s_flv, 9, data, bytes, timestamp);
 }
 
-static void rtmp_client_onvideo(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
+static int rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*bytes*/)
 {
-	flv_writer_input(s_flv, 9, data, bytes, timestamp);
-}
-
-static void rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*bytes*/)
-{
+	return 0;
 }
 
 // rtmp_play_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
@@ -43,7 +39,6 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 
 	struct rtmp_client_handler_t handler;
 	handler.send = rtmp_client_send;
-	handler.onerror = rtmp_client_onerror;
 	handler.onmeta = rtmp_client_onmeta;
 	handler.onaudio = rtmp_client_onaudio;
 	handler.onvideo = rtmp_client_onvideo;

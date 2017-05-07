@@ -14,25 +14,20 @@ static int rtmp_server_send(void* param, const void* data, size_t bytes)
 	return socket_send_all_by_time(*c, data, bytes, 0, 10 * 1000);
 }
 
-static void rtmp_server_onerror(void* param, int code, const char* msg)
-{
-	printf("rtmp_server_onerror(%d, %s)\n", code, msg);
-}
-
 static int rtmp_server_onpublish(void* param, const char* app, const char* stream, const char* type)
 {
 	printf("rtmp_server_onpublish(%s, %s, %s)\n", app, stream, type);
 	return 0;
 }
 
-static void rtmp_server_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp)
+static int rtmp_server_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(s_flv, 9, data, bytes, timestamp);
+	return flv_writer_input(s_flv, 9, data, bytes, timestamp);
 }
 
-static void rtmp_server_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp)
+static int rtmp_server_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(s_flv, 8, data, bytes, timestamp);
+	return flv_writer_input(s_flv, 8, data, bytes, timestamp);
 }
 
 void rtmp_server_publish_test(const char* flv)
@@ -41,7 +36,6 @@ void rtmp_server_publish_test(const char* flv)
 	struct rtmp_server_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
 	handler.send = rtmp_server_send;
-	handler.onerror = rtmp_server_onerror;
 	//handler.oncreate_stream = rtmp_server_oncreate_stream;
 	//handler.ondelete_stream = rtmp_server_ondelete_stream;
 	//handler.onplay = rtmp_server_onplay;

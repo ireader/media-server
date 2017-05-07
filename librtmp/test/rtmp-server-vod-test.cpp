@@ -49,16 +49,11 @@ static int rtmp_server_send(void* param, const void* data, size_t bytes)
 	return socket_send_all_by_time(*c, data, bytes, 0, 10 * 1000);
 }
 
-static void rtmp_server_onerror(void* param, int code, const char* msg)
-{
-	printf("rtmp_server_onerror(%d, %s)\n", code, msg);
-}
-
 static int rtmp_server_onplay(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset)
 {
 	printf("rtmp_server_onplay(%s, %s, %f, %f, %d)\n", app, stream, start, duration, (int)reset);
 
-	return thread_create(&t, rtmp_server_worker, NULL);
+	return thread_create(&t, rtmp_server_worker, param);
 }
 
 static int rtmp_server_onpause(void* param, int pause, uint32_t ms)
@@ -79,7 +74,6 @@ void rtmp_server_vod_test(const char* flv)
 	struct rtmp_server_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
 	handler.send = rtmp_server_send;
-	handler.onerror = rtmp_server_onerror;
 	//handler.oncreate_stream = rtmp_server_oncreate_stream;
 	//handler.ondelete_stream = rtmp_server_ondelete_stream;
 	handler.onplay = rtmp_server_onplay;
