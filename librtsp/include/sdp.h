@@ -70,7 +70,8 @@ const char* sdp_timezone_get(void* sdp, int idx);
 const char* sdp_encryption_get(void* sdp);
 
 int sdp_media_count(void* sdp);
-int sdp_media_port(void* sdp, int media, int *port);
+const char* sdp_media_type(void* sdp, int media);
+int sdp_media_port(void* sdp, int media, int *port, int* num);
 const char* sdp_media_proto(void* sdp, int media);
 int sdp_media_formats(void* sdp, int media, int *formats, int count); // return format count
 

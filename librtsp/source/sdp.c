@@ -21,7 +21,7 @@ enum { SDP_M_PROTO_UKNOWN=0, SDP_M_PROTO_UDP, SDP_M_PROTO_RTP_AVP, SDP_M_PROTO_R
 #define N_TIMEZONE 1
 #define N_REPEAT_OFFSET 1
 #define N_ATTRIBUTE 5
-#define N_MEDIA 2
+#define N_MEDIA 3 // audio/video/whiteboard
 #define N_MEDIA_FORMAT 5
 
 struct sdp_connection
@@ -127,9 +127,9 @@ struct attributes
 
 struct sdp_media
 {
-	char* media;
+	char* media; //audio, video, text, application, message
 	char* port;
-	char* proto;
+	char* proto; // udp, RTP/AVP, RTP/SAVP
 	struct format
 	{
 		size_t count;
@@ -1474,15 +1474,27 @@ int sdp_media_count(void* sdp)
 	return ctx->m.count;
 }
 
-int sdp_media_port(void* sdp, int media, int *port)
+const char* sdp_media_type(void* sdp, int media)
 {
+	struct sdp_media *m;
+	struct sdp_context *ctx;
+	ctx = (struct sdp_context*)sdp;
+	m = sdp_get_media(ctx, media);
+	return m ? m->media : NULL;
+}
+
+int sdp_media_port(void* sdp, int media, int *port, int* num)
+{
+	const char* p;
 	struct sdp_media *m;
 	struct sdp_context *ctx;
 	ctx = (struct sdp_context*)sdp;
 	m = sdp_get_media(ctx, media);
 	if(m && port)
 	{
+		p = strchr(m->port, '/');
 		*port = atoi(m->port);
+		*num = atoi(p ? p + 1 : "1");
 		return 0;
 	}
 	return -1;
