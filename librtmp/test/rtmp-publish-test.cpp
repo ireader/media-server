@@ -54,11 +54,12 @@ void rtmp_publish_test(const char* host, const char* app, const char* stream, co
 
 	socket_init();
 	socket_t socket = socket_connect_host(host, 1935, 2000);
+	socket_setnonblock(socket, 0);
 
 	void* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
 	int r = rtmp_client_start(rtmp, 0);
 
-	while ((r = socket_recv_by_time(socket, packet, sizeof(packet), 0, 2000)) > 0)
+	while ((r = socket_recv(socket, packet, sizeof(packet), 0)) > 0)
 	{
 		r = rtmp_client_input(rtmp, packet, r);
 	}
