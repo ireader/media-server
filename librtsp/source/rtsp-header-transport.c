@@ -41,33 +41,8 @@
 #include <assert.h>
 #include "ctypedef.h"
 #include "cstringext.h"
-#include "string-util.h"
 
 #define TRANSPORT_SPECIAL ",;\r\n"
-
-static int Hex2Int(const unsigned char* hex, int len)
-{
-	int i;
-	int v = 0;
-	assert(len <= 8);
-	for(i = 0; i < len; i++)
-	{
-		if('a' <= hex[i] && hex[i] <= 'f')
-		{
-			v = (v << 4) | (hex[i] - 'a');
-		}
-		else if('A' <= hex[i] && hex[i] <= 'F')
-		{
-			v = (v << 4) | (hex[i] - 'a');
-		}
-		else if('0' <= hex[i] && hex[i] <= '9')
-		{
-			v = (v << 4) | (hex[i] - '0');
-		}
-	}
-
-	return v;
-}
 
 int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 {
@@ -81,8 +56,8 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 
 	while(p && *p)
 	{
-		p1 = string_token(p, TRANSPORT_SPECIAL);
-		n = (size_t)(p1 - p); // ptrdiff_t -> size_t
+		p1 = strpbrk(p, TRANSPORT_SPECIAL);
+		n = p1 ? (size_t)(p1 - p) : strlen(p); // ptrdiff_t -> size_t
 
 		switch(*p)
 		{
@@ -151,7 +126,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 			{
 				// unicast only
 				assert(0 == t->multicast);
-				t->rtp.u.ssrc = Hex2Int((const unsigned char*)p+5, 8);
+				t->rtp.u.ssrc = (int)strtol(p+5, NULL, 16);
 			}
 			else if(2 == sscanf(p, "server_port=%hu-%hu", &t->rtp.u.server_port1, &t->rtp.u.server_port2))
 			{
@@ -222,7 +197,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 			break;
 		}
 
-	   if('\r' == *p1 || '\n' == *p1 || '\0' == *p1)
+	   if(NULL == p1 || '\r' == *p1 || '\n' == *p1 || '\0' == *p1 || ',' == *p1)
 		   break;
 	   p = p1 + 1;
    }
@@ -236,9 +211,10 @@ void rtsp_header_transport_test(void)
 	struct rtsp_header_transport_t t;
 
 	memset(&t, 0, sizeof(t));
-	assert(0 == rtsp_header_transport("RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257", &t)); // rfc2326 p61
+	assert(0 == rtsp_header_transport("RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257;ssrc=08abe80f", &t)); // rfc2326 p61
 	assert(t.transport==RTSP_TRANSPORT_RTP_UDP);
 	assert(t.multicast==0 && t.rtp.u.client_port1==4588 && t.rtp.u.client_port2==4589 && t.rtp.u.server_port1==6256 && t.rtp.u.server_port2==6257);
+	assert(t.rtp.u.ssrc == 0x08abe80f);
 
 	memset(&t, 0, sizeof(t));
 	assert(0 == rtsp_header_transport("RTP/AVP;multicast;ttl=127;mode=\"PLAY\"", &t)); // rfc2326 p61
