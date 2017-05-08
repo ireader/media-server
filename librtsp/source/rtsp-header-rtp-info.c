@@ -45,7 +45,7 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 			assert(0); // unknown parameter
 		}
 
-		if('\r' == *p1 || '\n' == *p1 || '\0' == *p1)
+		if('\r' == *p1 || '\n' == *p1 || '\0' == *p1 || ',' == *p1)
 			break;
 		p = p1 + 1;
 	}
