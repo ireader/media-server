@@ -366,30 +366,8 @@ int rtsp_header_range(const char* field, struct rtsp_header_range_t* range)
 		}
 		else if(0 == strncasecmp("time=", field, 5))
 		{
-			int h, m, s, frame, subframe;
-			switch(range->type)
-			{
-//			case RTSP_RANGE_SMPTE:
-			case RTSP_RANGE_SMPTE_30:
-				if(0 == rtsp_header_range_smpte_time(field+5, &h, &m, &s, &frame, &subframe))
-					range->time = h*3600 + m*60 + s + 1000/30 * (frame % 30);
-				break;
-
-			case RTSP_RANGE_SMPTE_25:			
-				if(0 == rtsp_header_range_smpte_time(field+5, &h, &m, &s, &frame, &subframe))
-					range->time = h*3600 + m*60 + s + 1000/25 * (frame % 25);
-				break;
-
-			case RTSP_RANGE_NPT:
-				if(0 == rtsp_header_range_npt_time(field+5, &range->time, &frame))
-					range->time = range->time * 1000 + frame % 1000;
-				break;
-
-			case RTSP_RANGE_CLOCK:
-				if(0 == rtsp_header_range_clock_time(field+5, &range->time, &frame))
-					range->time = range->time * 1000 + frame % 1000;
-				break;
-			}
+			if (rtsp_header_range_clock_time(field + 5, &range->time, &r))
+				range->time = range->time * 1000 + r % 1000;
 		}
 		
 		field = strchr(field, ';');
@@ -452,5 +430,12 @@ void rtsp_header_range_test(void)
 	assert(range.from == utc_mktime(&t)*1000);
 	t.tm_year = 1996-1900; t.tm_mon = 11-1; t.tm_mday = 10; t.tm_hour = 20; t.tm_min = 15; t.tm_sec = 00;
 	assert(range.to == utc_mktime(&t)*1000);
+
+	// time
+	assert(0 == rtsp_header_range("smpte=0:10:20-;time=19970123T153600Z", &range)); // rfc2326 (p35)
+	assert(range.type == RTSP_RANGE_SMPTE && range.from_value == RTSP_RANGE_TIME_NORMAL && range.to_value == RTSP_RANGE_TIME_NOVALUE);
+	assert(range.from == (10 * 60 + 20) * 1000);
+	t.tm_year = 1997 - 1900; t.tm_mon = 1 - 1; t.tm_mday = 23; t.tm_hour = 15; t.tm_min = 36; t.tm_sec = 00;
+	assert(range.time == utc_mktime(&t) * 1000);
 }
 #endif
