@@ -12,7 +12,9 @@ int rtsp_header_session(const char* field, struct rtsp_header_session_t* session
 {
 	const char* p;
 
-    session->timeout = 0;
+	// RFC2326 12.37 Session (p57)
+	// The timeout is measured in seconds, with a default of 60 seconds (1 minute).
+    session->timeout = 60000;
 
     p = strchr(field, ';');
 	if(p)
