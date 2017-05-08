@@ -105,7 +105,7 @@ static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, uint64
 		unpacker->flag = 0;
 		unpacker->size = 0;
 	}
-	else if (unpacker->timestamp != 0 && pkt.rtp.timestamp != unpacker->timestamp)
+	else if (pkt.rtp.timestamp != unpacker->timestamp)
 	{
 		if(unpacker->size > 0 && 0 == unpacker->flag)
 		{
