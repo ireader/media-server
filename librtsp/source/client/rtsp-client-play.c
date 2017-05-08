@@ -61,7 +61,7 @@ static int rtsp_client_media_play(struct rtsp_client_t *rtsp)
 
 	media = rtsp_get_media(rtsp, rtsp->progress);
 	assert(media && media->uri && media->session.session[0]);
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, media->cseq++, media->session.session, rtsp->range, rtsp->speed, USER_AGENT);
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, rtsp->range, rtsp->speed, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
 }
@@ -71,6 +71,8 @@ int rtsp_client_play(void* p, const uint64_t *npt, const float *speed)
 	int r;
 	struct rtsp_client_t *rtsp;
 	rtsp = (struct rtsp_client_t*)p;
+
+	assert(RTSP_SETUP == rtsp->state || RTSP_PLAY == rtsp->state || RTSP_PAUSE == rtsp->state);
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;
 
@@ -97,7 +99,7 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 	uint64_t npt0 = (uint64_t)(-1);
 	uint64_t npt1 = (uint64_t)(-1);
 	double scale = 0.0f;
-	const char *prange, *pscale, *prtpinfo;
+	const char *prange, *pscale, *prtpinfo, *pnext;
 	struct rtsp_header_range_t range;
 	struct rtsp_header_rtp_info_t rtpinfo[N_MEDIA];
 	struct rtsp_rtp_info_t rtpInfo[N_MEDIA];
@@ -125,19 +127,20 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 	memset(rtpInfo, 0, sizeof(rtpInfo));
 	for (i = 0; prtpinfo && i < sizeof(rtpInfo) / sizeof(rtpInfo[0]); i++)
 	{
-		const char* p1 = strchr(prtpinfo, ',');
+		prtpinfo += strspn(prtpinfo, " "); // skip space
+		pnext = strchr(prtpinfo, ',');
 		if (0 == rtsp_header_rtp_info(prtpinfo, &rtpinfo[i]))
 		{
 			rtpInfo[i].uri = rtpinfo[i].url;
 			rtpInfo[i].seq = (unsigned int)rtpinfo[i].seq;
 			rtpInfo[i].time = (unsigned int)rtpinfo[i].rtptime;
 		}
-		prtpinfo = p1 ? p1 + 1 : p1;
+		prtpinfo = pnext ? pnext + 1 : pnext;
 	}
 
 	rtsp->handler.onplay(rtsp->param, rtsp->progress, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, rtpInfo, i);
 
-	if(rtsp->media_count > ++rtsp->progress)
+	if(0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
 	{
 		return rtsp_client_media_play(rtsp);
 	}
@@ -155,6 +158,7 @@ static int rtsp_client_aggregate_play_onreply(struct rtsp_client_t* rtsp, void* 
 	code = rtsp_get_status_code(parser);
 	if (459 == code) // 459 Aggregate operation not allowed (p26)
 	{
+		rtsp->aggregate = 0;
 		return rtsp_client_media_play(rtsp);
 	}
 	else if (200 == code)

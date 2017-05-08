@@ -4,7 +4,6 @@
 #include "sdp.h"
 #include <stdlib.h>
 #include <assert.h>
-#include <time.h>
 
 void* rtsp_client_create(const struct rtsp_client_handler_t *handler, void* param)
 {
@@ -15,11 +14,9 @@ void* rtsp_client_create(const struct rtsp_client_handler_t *handler, void* para
 
 	memset(rtsp, 0, sizeof(*rtsp));
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
+	rtsp->state = RTSP_INIT;
 	rtsp->param = param;
-
-	srand((unsigned int)time(NULL));
-	rtsp->cseq = rand();
-	rtsp->state = RTSP_CREATE;
+	rtsp->cseq = 1;
 	return rtsp;
 }
 
@@ -54,8 +51,6 @@ int rtsp_client_close(void* p)
 	rtsp = (struct rtsp_client_t*)p;
 
 	assert(RTSP_TEARDWON != rtsp->state);
-	rtsp->state = RTSP_TEARDWON;
-	rtsp->progress = 0;
 	return rtsp_client_teardown(rtsp);
 }
 

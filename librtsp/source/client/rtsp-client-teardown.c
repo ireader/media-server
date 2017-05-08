@@ -18,7 +18,7 @@ static const char* sc_format =
 		"User-Agent: %s\r\n"
 		"\r\n";
 
-int rtsp_client_teardown(struct rtsp_client_t* rtsp)
+static int rtsp_client_media_teardown(struct rtsp_client_t* rtsp)
 {
 	int r;
 	struct rtsp_media_t* media;
@@ -28,9 +28,16 @@ int rtsp_client_teardown(struct rtsp_client_t* rtsp)
 	media = rtsp_get_media(rtsp, rtsp->progress);
 
 	assert(media->uri[0] && media->session.session[0]);
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, media->cseq++, media->session.session, USER_AGENT);
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r = rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
+}
+
+int rtsp_client_teardown(struct rtsp_client_t* rtsp)
+{
+	rtsp->state = RTSP_TEARDWON;
+	rtsp->progress = 0;
+	return rtsp_client_media_teardown(rtsp);
 }
 
 int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
@@ -51,6 +58,6 @@ int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
 	else
 	{
 		// teardown next media
-		return rtsp_client_teardown(rtsp);
+		return rtsp_client_media_teardown(rtsp);
 	}
 }

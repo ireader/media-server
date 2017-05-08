@@ -18,7 +18,7 @@ struct rtsp_media_t
 {
 	char uri[256]; // rtsp setup
 
-	unsigned int cseq; // rtsp sequence, unused if aggregate control available
+	//unsigned int cseq; // rtsp sequence, unused if aggregate control available
 	struct rtsp_header_session_t session;
 	struct rtsp_header_transport_t transport;
 
@@ -35,7 +35,7 @@ struct rtsp_media_t
 
 enum rtsp_state_t
 {
-	RTSP_CREATE,
+	RTSP_INIT,
 	RTSP_ANNOUNCE,
 	RTSP_DESCRIBE,
 	RTSP_SETUP,

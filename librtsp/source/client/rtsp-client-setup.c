@@ -37,15 +37,15 @@ static int rtsp_client_media_setup(struct rtsp_client_t* rtsp)
 	assert(rtsp->progress < rtsp->media_count);
 	media = rtsp_get_media(rtsp, rtsp->progress);
 
-	p = rtsp->media[rtsp->progress].session.session;
-	len = snprintf(session, sizeof(session), *p ? "Session: %s\r\n" : "", p);
+	p = rtsp->media[0].session.session;
+	len = snprintf(session, sizeof(session), (rtsp->aggregate && *p) ? "Session: %s\r\n" : "", p);
 	assert(len >= 0 && len < sizeof(session));
 
 	// TODO: multicast
 	assert(0 == media->transport.multicast);
 	len = snprintf(rtsp->req, sizeof(rtsp->req),
 			RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
-			media->uri, media->cseq++, session, media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
+			media->uri, rtsp->cseq++, session, media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
 
 	return len == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, len) ? 0 : -1;
 }

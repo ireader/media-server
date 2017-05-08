@@ -38,7 +38,7 @@ static int rtsp_client_media_pause(struct rtsp_client_t *rtsp)
 
 	media = rtsp_get_media(rtsp, rtsp->progress);
 	assert(media && media->uri && media->session.session[0]);
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, media->cseq++, media->session.session, USER_AGENT);
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
 }
@@ -70,6 +70,7 @@ int rtsp_client_pause(void* p)
 static int rtsp_client_media_pause_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
 	int code;
+	assert(0 == rtsp->aggregate);
 	assert(rtsp->progress < rtsp->media_count);
 
 	code = rtsp_get_status_code(parser);
@@ -101,6 +102,7 @@ static int rtsp_client_aggregate_pause_onreply(struct rtsp_client_t* rtsp, void*
 	code = rtsp_get_status_code(parser);
 	if (459 == code) // 459 Aggregate operation not allowed (p26)
 	{
+		rtsp->aggregate = 0;
 		return rtsp_client_media_pause(rtsp);
 	}
 	else if(200 == code)

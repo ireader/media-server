@@ -240,7 +240,7 @@ int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* content)
 	for(i = 0; i < count; i++)
 	{
 		media = rtsp_get_media(rtsp, i);
-		media->cseq = rand();
+		//media->cseq = rand();
 
 		// RTSP2326 C.1.1 Control URL
 		rtsp_get_media_uri(sdp, i, media->uri, sizeof(media->uri), rtsp->aggregate_uri);
