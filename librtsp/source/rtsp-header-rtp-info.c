@@ -14,7 +14,6 @@
 #include <assert.h>
 #include "ctypedef.h"
 #include "cstringext.h"
-#include "string-util.h"
 
 #define RTP_INFO_SPECIAL ",;\r\n"
 
@@ -25,7 +24,7 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 
 	while(p && *p)
 	{
-		p1 = string_token(p, RTP_INFO_SPECIAL);
+		p1 = strpbrk(p, RTP_INFO_SPECIAL);
 		if(0 == strncasecmp("url=", p, 4))
 		{
             size_t n = (size_t)(p1 - p - 4); // ptrdiff_t -> size_t
@@ -45,7 +44,7 @@ int rtsp_header_rtp_info(const char* field, struct rtsp_header_rtp_info_t* rtpin
 			assert(0); // unknown parameter
 		}
 
-		if('\r' == *p1 || '\n' == *p1 || '\0' == *p1 || ',' == *p1)
+		if(NULL == p1 || '\r' == *p1 || '\n' == *p1 || '\0' == *p1 || ',' == *p1)
 			break;
 		p = p1 + 1;
 	}
@@ -62,5 +61,10 @@ void rtsp_header_rtp_info_test(void)
 	assert(0 == rtsp_header_rtp_info("url=rtsp://foo.com/bar.avi/streamid=0;seq=45102", &rtp)); // rfc2326 p56
 	assert(0 == strcmp(rtp.url, "rtsp://foo.com/bar.avi/streamid=0"));
 	assert(rtp.seq == 45102);
+
+	memset(&rtp, 0, sizeof(rtp));
+	assert(0 == rtsp_header_rtp_info("url=rtsp://foo.com/bar.avi/streamid=0;seq=45102;rtptime=123456789, url=rtsp://foo.com/bar.avi/streamid=1;seq=30211", &rtp));
+	assert(0 == strcmp(rtp.url, "rtsp://foo.com/bar.avi/streamid=0"));
+	assert(rtp.seq == 45102 && rtp.rtptime == 123456789);
 }
 #endif
