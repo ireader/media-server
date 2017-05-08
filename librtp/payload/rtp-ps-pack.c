@@ -59,6 +59,8 @@ static unsigned char* alloc_packet(struct rtp_ps_packer_t *packer, uint32_t time
 
 	rtp[0] = (unsigned char)(0x80);
 	rtp[1] = (unsigned char)(packer->payload);
+	rtp[2] = (unsigned char)(packer->seq >> 8);
+	rtp[3] = (unsigned char)(packer->seq);
 
 	rtp[4] = (unsigned char)(timestamp >> 24);
 	rtp[5] = (unsigned char)(timestamp >> 16);
@@ -95,8 +97,6 @@ static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, uint64_t 
 		assert(0 == (rtp[1] & 0x80)); // don't set market
 		if(bytes <= MAX_PACKET)
 			rtp[1] |= 0x80; // set marker flag
-		rtp[2] = (unsigned char)(packer->seq >> 8);
-		rtp[3] = (unsigned char)(packer->seq);
 		++packer->seq;
 
 		len = bytes > MAX_PACKET ? MAX_PACKET : bytes;

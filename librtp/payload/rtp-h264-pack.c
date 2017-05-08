@@ -74,6 +74,8 @@ static unsigned char* alloc_packet(struct rtp_h264_packer_t *packer, uint32_t ti
 
 	rtp[0] = (unsigned char)(0x80);
 	rtp[1] = (unsigned char)(packer->payload);
+	rtp[2] = (unsigned char)(packer->seq >> 8);
+	rtp[3] = (unsigned char)(packer->seq);
 
 	rtp[4] = (unsigned char)(timestamp >> 24);
 	rtp[5] = (unsigned char)(timestamp >> 16);
@@ -125,8 +127,6 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, uint6
 			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
 			if(!rtp) return ENOMEM;
 			rtp[1] |= 0x80; // marker
-			rtp[2] = (unsigned char)(packer->seq >> 8);
-			rtp[3] = (unsigned char)(packer->seq);
 			++packer->seq;
 
 			memcpy(rtp+12, p1, nalu_size);
@@ -152,8 +152,6 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, uint6
 				rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
 				if(!rtp) return ENOMEM;
 				rtp[1] &= ~0x80; // clean marker
-				rtp[2] = (unsigned char)(packer->seq >> 8);
-				rtp[3] = (unsigned char)(packer->seq);
 				rtp[12] = fu_indicator;
 				rtp[13] = fu_header;
 				++packer->seq;
@@ -173,8 +171,6 @@ static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, uint6
 			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
 			if(!rtp) return ENOMEM;
 			rtp[1] |= 0x80; // marker
-			rtp[2] = (unsigned char)(packer->seq >> 8);
-			rtp[3] = (unsigned char)(packer->seq);
 			rtp[12] = fu_indicator;
 			rtp[13] = fu_header;
 			++packer->seq;
