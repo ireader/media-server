@@ -37,6 +37,7 @@ struct rtp_pack_t
 };
 
 struct rtp_pack_t *rtp_ps_packer();
+struct rtp_pack_t *rtp_ts_packer();
 struct rtp_pack_t *rtp_h264_packer();
 
 void rtp_pack_setsize(size_t bytes);

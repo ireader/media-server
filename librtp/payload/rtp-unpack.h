@@ -27,6 +27,7 @@ struct rtp_unpack_t
 };
 
 struct rtp_unpack_t *rtp_ps_unpacker();
+struct rtp_unpack_t *rtp_ts_unpacker();
 struct rtp_unpack_t *rtp_h264_unpacker();
 
 #ifdef __cplusplus
