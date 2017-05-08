@@ -107,7 +107,7 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 		return 0;
 
 	default:
-		printf("unknown rtmp protocol control message: %d\n", header->type);
+		printf("unknown rtmp protocol control message: %d\n", (int)header->type);
 		assert(0);
 		return 0;
 	}

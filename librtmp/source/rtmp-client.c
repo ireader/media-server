@@ -373,10 +373,12 @@ void rtmp_client_destroy(void* client)
 	size_t i;
 	struct rtmp_client_t* ctx;
 	ctx = (struct rtmp_client_t*)client;
+	assert(sizeof(ctx->rtmp.in_packets) == sizeof(ctx->rtmp.out_packets));
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{
-		if (ctx->rtmp.in_packets->payload)
-			free(ctx->rtmp.in_packets->payload);
+		assert(NULL == ctx->rtmp.out_packets[i].payload);
+		if (ctx->rtmp.in_packets[i].payload)
+			free(ctx->rtmp.in_packets[i].payload);
 	}
 
 	free(ctx);
