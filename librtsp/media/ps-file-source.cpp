@@ -32,7 +32,7 @@ PSFileSource::PSFileSource(const char *file)
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_ps_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_MPEG2PS, &s_psfunc, this);
+	m_pspacker = rtp_ps_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_MP2P, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -114,7 +114,7 @@ int PSFileSource::GetSDPMedia(std::string& sdp) const
 		"a=rtpmap:%d MP2P/90000\n";
 	
 	char media[64];
-	snprintf(media, sizeof(media), pattern, RTP_PAYLOAD_MPEG2PS, RTP_PAYLOAD_MPEG2PS);
+	snprintf(media, sizeof(media), pattern, RTP_PAYLOAD_MP2P, RTP_PAYLOAD_MP2P);
 	sdp = media;
 	return 0;
 }
