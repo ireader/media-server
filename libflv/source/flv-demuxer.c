@@ -11,8 +11,6 @@
 #define N_TAG_HEADER		11		// StreamID included
 #define N_TAG_SIZE			4		// previous tag size
 
-#define N_SPSPPS			4096
-
 struct flv_audio_tag_t
 {
 	uint8_t format; // 1-ADPCM, 2-MP3, 10-AAC, 14-MP3 8kHz
@@ -37,11 +35,8 @@ struct flv_demuxer_t
 	flv_demuxer_handler handler;
 	void* param;
 
-	uint8_t ps[N_SPSPPS]; // SPS/PPS
-	uint32_t pslen;
-
-	uint8_t* data;
-	uint32_t bytes;
+	uint8_t* ptr;
+	uint32_t capacity;
 };
 
 void* flv_demuxer_create(flv_demuxer_handler handler, void* param)
@@ -62,10 +57,10 @@ void flv_demuxer_destroy(void* demuxer)
 	struct flv_demuxer_t* flv;
 	flv = (struct flv_demuxer_t*)demuxer;
 
-	if (flv->data)
+	if (flv->ptr)
 	{
-		assert(flv->bytes > 0);
-		free(flv->data);
+		assert(flv->capacity > 0);
+		free(flv->ptr);
 	}
 
 	free(flv);
@@ -73,13 +68,13 @@ void flv_demuxer_destroy(void* demuxer)
 
 static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
 {
-	if (bytes > flv->bytes)
+	if (bytes > flv->capacity)
 	{
-		void* p = realloc(flv->data, bytes + 2 * 1024);
+		void* p = realloc(flv->ptr, bytes);
 		if (NULL == p)
 			return -1;
-		flv->data = (uint8_t*)p;
-		flv->bytes = bytes + 2 * 1024;
+		flv->ptr = (uint8_t*)p;
+		flv->capacity = bytes;
 	}
 	return 0;
 }
@@ -112,9 +107,9 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 			// AAC ES stream with ADTS header
 			assert(bytes <= 0x1FFF);
 			assert(bytes > 2 && 0xFFF0 != (((data[2] << 8) | data[3]) & 0xFFF0)); // don't have ADTS
-			mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - 2, flv->data, 7); // 13-bits
-			memmove(flv->data + 7, data + 2, bytes - 2);
-			flv->handler(flv->param, FLV_AAC, flv->data, bytes - 2 + 7, timestamp, timestamp);
+			mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - 2, flv->ptr, 7); // 13-bits
+			memmove(flv->ptr + 7, data + 2, bytes - 2);
+			flv->handler(flv->param, FLV_AAC, flv->ptr, bytes - 2 + 7, timestamp, timestamp);
 		}
 	}
 	else if (FLV_AUDIO_MP3 == flv->audio.format || FLV_AUDIO_MP3_8k == flv->audio.format)
@@ -131,8 +126,10 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	return 0;
 }
 
+size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
+	size_t n;
 	uint8_t packetType; // 0-AVC sequence header, 1-AVC NALU, 2-AVC end of sequence
 	uint32_t compositionTime; // 0
 
@@ -148,74 +145,27 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		{
 			// AVCDecoderConfigurationRecord
 			assert(bytes > 5 + 7);
-			if (bytes > 5 + 7)
-			{
-				//uint8_t version = data[5];
-				//uint8_t profile = data[6];
-				//uint8_t flags = data[7];
-				//uint8_t level = data[8];
-				//flv->video.nal = (data[9] & 0x03) + 1;
-				assert(sizeof(flv->ps) > bytes + 128);
-				if (sizeof(flv->ps) > bytes + 128)
-				{
-					mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->avc);
-					flv->pslen = mpeg4_avc_to_nalu(&flv->avc, flv->ps, sizeof(flv->ps));
-					assert(flv->pslen < sizeof(flv->ps));
-				}
-				flv->handler(flv->param, FLV_AVC_HEADER, data + 5, bytes - 5, timestamp, timestamp);
-			}
+			mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->avc);
+			flv->handler(flv->param, FLV_AVC_HEADER, data + 5, bytes - 5, timestamp, timestamp);
 		}
 		else
 		{
-			// H.264
-			uint32_t k = 0;
-			uint8_t sps_pps_flag = 0;
-			const uint8_t* p = data + 5;
-			const uint8_t* end = data + bytes;
-
-			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 + flv->pslen))
-				return ENOMEM;
-
-			assert(flv->avc.nalu <= 4);
-			while (p + flv->avc.nalu < end)
+			assert(flv->avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
+			if (flv->avc.nalu > 0 && bytes > 5) // 5 ==  bytes flv eof
 			{
-				int i;
-				uint8_t nal;
-				size_t n = 0;
-				for (i = 0; i < flv->avc.nalu; i++)
-					n = (n << 8) + p[i];
+				// H.264
+				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
+					return ENOMEM;
 
-				// fix 0x00 00 00 01 => flv nalu size
-				if (1 == n)
-					n = end - p - flv->avc.nalu;
-
-				if (p + flv->avc.nalu + n > end)
-					break; // invalid nalu size
-
-				// insert SPS/PPS before IDR frame
-				nal = p[flv->avc.nalu] & 0x1f;
-				if (H264_NAL_SPS == nal || H264_NAL_PPS == nal)
+				assert(flv->avc.nalu <= 4);
+				n = mpeg4_mp4toannexb(&flv->avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
+				if (n <= 0 || n > flv->capacity)
 				{
-					//flv->data[k++] = 0; // SPS/PPS add zero_byte(ITU H.264 B.1.2 Byte stream NAL unit semantics)
-					sps_pps_flag = 1;
+					assert(0);
+					return ENOMEM;
 				}
-				else if (H264_NAL_IDR == nal && 0 == sps_pps_flag)
-				{
-					sps_pps_flag = 1; // don't insert more than one-times
-					memcpy(flv->data + k, flv->ps, flv->pslen); //
-					k += flv->pslen;
-				}
-
-				// nalu start code
-				flv->data[k] = flv->data[k + 1] = flv->data[k + 2] = 0x00;
-				flv->data[k + 3] = 0x01;
-				memcpy(flv->data + k + 4, p + flv->avc.nalu, n);
-
-				k += n + 4;
-				p += flv->avc.nalu + n;
+				flv->handler(flv->param, FLV_AVC, flv->ptr, n, timestamp + compositionTime, timestamp);
 			}
-
-			flv->handler(flv->param, FLV_AVC, flv->data, k, timestamp + compositionTime, timestamp);
 		}
 	}
 	else
