@@ -19,11 +19,8 @@ static void rtp_ts_pack_destroy(void* pack)
 
 static int rtp_ts_pack_input(void* pack, const void* ts, size_t bytes, uint64_t time)
 {
-	size_t n;
-	n = rtp_pack_getsize();
-	rtp_pack_setsize(n / TS_PACKET_SIZE * TS_PACKET_SIZE); // must be x188
-
 	assert(0 == bytes % TS_PACKET_SIZE);
+	rtp_pack_setsize(rtp_pack_getsize() / TS_PACKET_SIZE * TS_PACKET_SIZE); // must be x188
 	return rtp_ps_packer()->input(pack, ts, bytes, time);
 }
 
