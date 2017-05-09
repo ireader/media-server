@@ -11,6 +11,7 @@
 #include "sys/system.h"
 #include "urlcodec.h"
 #include "time64.h"
+#include "StdCFile.h"
 #include "cppstringext.h"
 #include <string.h>
 #include <assert.h>
@@ -89,7 +90,7 @@ static void flv_handler(void* param, int type, const void* data, size_t bytes, u
 	}
 }
 
-static int STDCALL rtmp_server_worker(void* param)
+static int STDCALL hls_server_worker(void* param)
 {
 	int r, type;
 	time64_t clock = 0;
@@ -134,6 +135,8 @@ static int hls_server_reply(void* session, int code, const char* msg)
 	ptr = http_bundle_lock(bundle);
 	strcpy((char*)ptr, msg);
 	http_bundle_unlock(bundle, strlen(msg) + 1);
+	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 	http_server_send(session, code, bundle);
 	http_bundle_free(bundle);
 	return 0;
@@ -149,6 +152,8 @@ static int hls_server_m3u8(void* session, const std::string& path)
 	assert(0 == hls_m3u8_playlist(m3u8, 0, (char*)ptr, 4 * 1024));
 	http_bundle_unlock(bundle, strlen((char*)ptr));
 
+	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 	http_server_send(session, 200, bundle);
 	http_bundle_free(bundle);
 
@@ -171,6 +176,8 @@ static int hls_server_ts(void* session, const std::string& path, const std::stri
 			memcpy(ptr, i->data, i->size);
 			http_bundle_unlock(bundle, i->size);
 
+			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 			http_server_send(session, 200, bundle);
 			http_bundle_free(bundle);
 
@@ -192,15 +199,17 @@ static int hls_server_onhttp(void* http, void* session, const char* method, cons
 	// decode request uri
 	std::vector<std::string> paths;
 	url_decode(path, -1, uri, sizeof(uri));
+	printf("load uri: %s\n", uri);
 	Split(uri, "/", paths);
+	std::vector<std::string> names, param;
+	Split(paths.rbegin()->c_str(), "?", param);
+	assert(param.size() <= 2);
+	Split(param.begin()->c_str(), ".", names);
+	assert(2 == names.size());
 
 	n = strlen(uri);
 	if (0 == strncmp(uri, "/live/", 6) && 3 <= paths.size())
 	{
-		std::vector<std::string> names;
-		Split(paths.rbegin()->c_str(), ".", names);
-		assert(2 == names.size());
-
 		if (names[1] == "m3u8")
 		{
 			return hls_server_m3u8(session, names[0]);
@@ -219,8 +228,14 @@ static int hls_server_onhttp(void* http, void* session, const char* method, cons
 			playlist->i = 0;
 			s_playlists[names[0]] = playlist;
 
-			thread_create(&playlist->t, rtmp_server_worker, playlist);
+			thread_create(&playlist->t, hls_server_worker, playlist);
 		}
+	}
+	else if (names[1] == "xml")
+	{
+		StdCFile f(std::string(names[0] + "." + names[1]).c_str(), "r");
+		std::auto_ptr<char> p((char*)f.Read());
+		return hls_server_reply(session, 200, p.get());
 	}
 
 	return hls_server_reply(session, 404, "");

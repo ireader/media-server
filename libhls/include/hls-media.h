@@ -8,11 +8,12 @@
 extern "C" {
 #endif
 
-/// @param[in] pts ts file first pts(ms)
+
+/// @param[in] param user-defined parameter(hls_media_create)
+/// @param[in] data ts file content
+/// @param[in] byts ts file length in byte
+/// @param[in] pts/dts ts file first pts/dts(ms)
 /// @param[in] duration file duration(ms)
-/// @param[in] seq m3u8 sequence number(from 0)
-/// @param[out] name saved file name
-/// @param[in] namelen name size
 typedef void (*hls_media_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration);
 
 /// param[in] duration ts segment duration(millisecond), 0-create segment per video key frame
