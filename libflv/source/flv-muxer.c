@@ -8,7 +8,6 @@
 #include <string.h>
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
-#include "h264-util.h"
 
 #define FLV_TYPE_AUDIO 8
 #define FLV_TYPE_VIDEO 9
@@ -108,47 +107,7 @@ int flv_muxer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint3
 	return 0;
 }
 
-static void flv_h264_handler(void* param, const void* nalu, size_t bytes)
-{
-	struct mpeg4_avc_t* avc;
-	struct flv_muxer_t* flv;
-	int type = ((unsigned char*)nalu)[0] & 0x1f;
-
-	flv = (struct flv_muxer_t*)param;
-	avc = &flv->avc;
-
-	if (H264_NAL_SPS == type)
-	{
-		assert(bytes <= sizeof(avc->sps[avc->nb_sps].data));
-		avc->sps[avc->nb_sps].bytes = (uint16_t)bytes;
-		memcpy(avc->sps[avc->nb_sps].data, nalu, bytes);
-		++avc->nb_sps;
-	}
-	else if (H264_NAL_PPS == type)
-	{
-		assert(bytes <= sizeof(avc->pps[avc->nb_pps].data));
-		avc->pps[avc->nb_pps].bytes = (uint16_t)bytes;
-		memcpy(avc->pps[avc->nb_pps].data, nalu, bytes);
-		++avc->nb_pps;
-	}
-	//else if (H264_NAL_SPS_EXTENSION == type || H264_NAL_SPS_SUBSET == type)
-	//{
-	//}
-	else if (H264_NAL_IDR == type)
-	{
-		flv->keyframe = 1;
-	}
-	//	else
-	{
-		flv->ptr[flv->bytes] = (uint8_t)((bytes >> 24) & 0xFF);
-		flv->ptr[flv->bytes+1] = (uint8_t)((bytes >> 16) & 0xFF);
-		flv->ptr[flv->bytes+2] = (uint8_t)((bytes >> 8) & 0xFF);
-		flv->ptr[flv->bytes+3] = (uint8_t)((bytes >> 0) & 0xFF);
-		memcpy(flv->ptr + flv->bytes + 4, nalu, bytes);
-		flv->bytes += bytes + 4;
-	}
-}
-
+size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 int flv_muxer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int m, compositionTime;
@@ -162,22 +121,18 @@ int flv_muxer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint3
 	}
 
 	flv->bytes = 5;
-	flv->keyframe = 0;
-	flv->avc.nb_sps = 0;
-	flv->avc.nb_pps = 0;
-	h264_stream(data, bytes, flv_h264_handler, flv);
+	flv->bytes += mpeg4_annexbtomp4(&flv->avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
+	if (flv->bytes <= 5)
+		return ENOMEM;
+
+	flv->keyframe = flv->avc.chroma_format_idc; // hack
 
 	if (0 == flv->video)
 	{
 		if (flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
 			return 0;
 
-		flv->avc.profile = flv->avc.sps[0].data[1];
-		flv->avc.compatibility = flv->avc.sps[0].data[2];
-		flv->avc.level = flv->avc.sps[0].data[3];
-		flv->avc.nalu = 4;
-
-		flv->ptr[flv->bytes + 0] = ((flv->keyframe ? 1 : 2) << 4) /* FrameType */ | 7 /* AVC */;
+		flv->ptr[flv->bytes + 0] = (1 << 4) /* FrameType */ | 7 /* AVC */;
 		flv->ptr[flv->bytes + 1] = 0; // AVC sequence header
 		flv->ptr[flv->bytes + 2] = 0; // CompositionTime 0
 		flv->ptr[flv->bytes + 3] = 0;
@@ -201,8 +156,8 @@ int flv_muxer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint3
 		flv->ptr[3] = (compositionTime >> 8) & 0xFF;
 		flv->ptr[4] = compositionTime & 0xFF;
 
-		assert(flv->bytes + 5 <= (int)flv->capacity);
-		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes + 5, dts);
+		assert(flv->bytes <= (int)flv->capacity);
+		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
 }
