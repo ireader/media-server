@@ -37,7 +37,9 @@
     <ClCompile Include="source\flv-reader.c" />
     <ClCompile Include="source\flv-writer.c" />
     <ClCompile Include="source\mpeg4-aac.c" />
+    <ClCompile Include="source\mpeg4-annexbtomp4.c" />
     <ClCompile Include="source\mpeg4-avc.c" />
+    <ClCompile Include="source\mpeg4-mp4toannexb.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}</ProjectGuid>

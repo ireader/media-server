@@ -68,5 +68,11 @@
     <ClCompile Include="source\amf3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mpeg4-mp4toannexb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg4-annexbtomp4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

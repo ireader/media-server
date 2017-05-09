@@ -4,27 +4,23 @@
 #include "mpeg4-aac.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
-static char s_buffer[4 * 1024 * 1024];
+static uint8_t s_packet[2 * 1024 * 1024];
+static uint8_t s_buffer[4 * 1024 * 1024];
 static FILE *s_vfp, *s_afp;
 static struct mpeg4_avc_t s_avc;
 static struct mpeg4_aac_t s_aac;
 
-static void onread(void* /*param*/, int avtype, const void* buffer, size_t bytes, int64_t /*pts*/, int64_t /*dts*/)
+extern "C" size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
+
+static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
 	if (MOV_AVC1 == avtype)
 	{
-		static uint8_t s_nalu[] = { 0x00, 0x00, 0x00, 0x01 };
-		const uint8_t* p = (const uint8_t*)buffer;
-		while (bytes > 0)
-		{
-			fwrite(s_nalu, 1, sizeof(s_nalu), s_vfp);
-			uint32_t n = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | (p[3] << 0);
-			fwrite(p + 4, 1, n, s_vfp);
-			p += n + 4;
-			bytes -= n + 4;
-		}
+		int n = mpeg4_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
+		fwrite(s_packet, 1, n, s_vfp);
 	}
 	else if (MOV_MP4A == avtype)
 	{
