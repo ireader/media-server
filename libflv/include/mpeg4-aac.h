@@ -29,9 +29,9 @@ enum mpeg4_aac_profile
 	MPEG4_AAC_MAIN = 1,
 	MPEG4_AAC_LC,
 	MPEG4_AAC_SSR,
-	MEPG4_AAC_LTP,
-	MEPG4_AAC_SBR,
-	MEPG4_AAC_SCALABLE,
+	MPEG4_AAC_LTP,
+	MPEG4_AAC_SBR,
+	MPEG4_AAC_SCALABLE,
 };
 
 enum mpeg4_aac_frequency
