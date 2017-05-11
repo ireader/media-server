@@ -9,6 +9,7 @@
 #include "http-server.h"
 #include "sys/thread.h"
 #include "sys/system.h"
+#include "sys/path.h"
 #include "urlcodec.h"
 #include "time64.h"
 #include "StdCFile.h"
@@ -57,7 +58,7 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 	playlist->files.push_back(ts);
 
 	// remove oldest segment
-	while(playlist->files.size() > 4)
+	while(playlist->files.size() > HLS_LIVE_NUM + 1)
 	{
 		hls_ts_t ts = playlist->files.front();
 		free(ts.data);
@@ -127,6 +128,25 @@ static int STDCALL hls_server_worker(void* param)
 	return thread_destroy(playlist->t);
 }
 
+static int hls_server_reply_file(void* session, const char* file)
+{
+	static char buffer[4 * 1024 * 1024];
+	StdCFile f(file, "rb");
+	int r = f.Read(buffer, sizeof(buffer));
+
+	void* ptr;
+	void* bundle;
+	bundle = http_bundle_alloc(r);
+	ptr = http_bundle_lock(bundle);
+	memcpy(ptr, buffer, r);
+	http_bundle_unlock(bundle, r);
+	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
+	http_server_send(session, 200, bundle);
+	http_bundle_free(bundle);
+	return 0;
+}
+
 static int hls_server_reply(void* session, int code, const char* msg)
 {
 	void* ptr;
@@ -152,6 +172,7 @@ static int hls_server_m3u8(void* session, const std::string& path)
 	assert(0 == hls_m3u8_playlist(m3u8, 0, (char*)ptr, 4 * 1024));
 	http_bundle_unlock(bundle, strlen((char*)ptr));
 
+	http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
 	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 	http_server_send(session, 200, bundle);
@@ -197,14 +218,15 @@ static int hls_server_onhttp(void* http, void* session, const char* method, cons
 	const char* p;
 
 	// decode request uri
-	std::vector<std::string> paths;
-	url_decode(path, -1, uri, sizeof(uri));
-	printf("load uri: %s\n", uri);
-	Split(uri, "/", paths);
-	std::vector<std::string> names, param;
-	Split(paths.rbegin()->c_str(), "?", param);
+	printf("load uri: %s\n", path);
+	std::vector<std::string> param;
+	Split(path, "?", param);
 	assert(param.size() <= 2);
-	Split(param.begin()->c_str(), ".", names);
+	url_decode(param[0].c_str(), -1, uri, sizeof(uri));
+	std::vector<std::string> paths;
+	Split(uri, "/", paths);
+	std::vector<std::string> names;
+	Split(paths.rbegin()->c_str(), ".", names);
 	assert(2 == names.size());
 
 	n = strlen(uri);
@@ -212,30 +234,36 @@ static int hls_server_onhttp(void* http, void* session, const char* method, cons
 	{
 		if (names[1] == "m3u8")
 		{
+			if (s_playlists.find(names[0]) == s_playlists.end())
+			{
+				hls_playlist_t* playlist = new hls_playlist_t();
+				playlist->file = names[0];
+				playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
+				playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
+				playlist->i = 0;
+				s_playlists[names[0]] = playlist;
+
+				thread_create(&playlist->t, hls_server_worker, playlist);
+			}
+
 			return hls_server_m3u8(session, names[0]);
 		}
 		else if (names[1] ==  "ts")
 		{
-			assert(4 == paths.size());
-			return hls_server_ts(session, paths[2], paths[3]);
-		}
-		else if(names[1] == "flv")
-		{
-			hls_playlist_t* playlist = new hls_playlist_t();
-			playlist->file = names[0];
-			playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
-			playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
-			playlist->i = 0;
-			s_playlists[names[0]] = playlist;
-
-			thread_create(&playlist->t, hls_server_worker, playlist);
+			if (s_playlists.find(paths[2]) != s_playlists.end())
+			{
+				assert(4 == paths.size());
+				return hls_server_ts(session, paths[2], paths[3]);
+			}
 		}
 	}
-	else if (names[1] == "xml")
+	else if (0 == strncmp(uri, "/vod/", 5) && 3 <= paths.size())
 	{
-		StdCFile f(std::string(names[0] + "." + names[1]).c_str(), "r");
-		std::auto_ptr<char> p((char*)f.Read());
-		return hls_server_reply(session, 200, p.get());
+		std::string file = std::string(names[0] + "." + names[1]);
+		if (path_testfile(file.c_str()))
+		{
+			return hls_server_reply_file(session, file.c_str());
+		}
 	}
 
 	return hls_server_reply(session, 404, "");
