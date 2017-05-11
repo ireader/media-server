@@ -15,6 +15,9 @@ struct mov_ftyp_t
 	size_t brands_count;
 };
 
+// A.4 Temporal structure of the media (p148)
+// The movie, and each track, has a timescale. 
+// This defines a time axis which has a number of ticks per second
 struct mov_mvhd_t
 {
 	// FullBox
@@ -124,7 +127,7 @@ struct mov_stsd_t
 struct mov_stts_t
 {
 	uint32_t sample_count;
-	int64_t sample_delta;
+	int64_t sample_delta; // in the time-scale of the media
 };
 
 struct mov_stsc_t

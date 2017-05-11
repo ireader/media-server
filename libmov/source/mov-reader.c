@@ -86,7 +86,7 @@ static int mov_track_build(struct mov_t* mov, struct mov_track_t* track)
 		{
 			if (-1 == track->elst[i].media_time)
 			{
-				track->samples[0].dts = track->elst[i].segment_duration * 1000 / track->mdhd.timescale;
+				track->samples[0].dts = track->elst[i].segment_duration;
 				track->samples[0].pts = track->samples[0].dts;
 			}
 		}
@@ -96,7 +96,7 @@ static int mov_track_build(struct mov_t* mov, struct mov_track_t* track)
 	{
 		for (j = 0; j < stbl->stts[i].sample_count; j++, n++)
 		{
-			track->samples[n].dts = track->samples[n - 1].dts + stbl->stts[i].sample_delta * 1000 / track->mdhd.timescale;
+			track->samples[n].dts = track->samples[n - 1].dts + stbl->stts[i].sample_delta;
 			track->samples[n].pts = track->samples[n].dts;
 		}
 	}
@@ -106,7 +106,7 @@ static int mov_track_build(struct mov_t* mov, struct mov_track_t* track)
 	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
 		for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
-			track->samples[n].pts += (int64_t)((int32_t)stbl->ctts[i].sample_delta) * 1000 / track->mdhd.timescale;
+			track->samples[n].pts += stbl->ctts[i].sample_delta;
 	}
 	assert(0 == stbl->ctts_count || n == track->sample_count);
 
@@ -336,7 +336,7 @@ void mov_reader_destroy(void* p)
 	free(reader);
 }
 
-static struct mov_sample_t* mov_reader_next(struct mov_reader_t* reader)
+static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 {
 	size_t i;
 	struct mov_track_t* track = NULL;
@@ -344,34 +344,36 @@ static struct mov_sample_t* mov_reader_next(struct mov_reader_t* reader)
 
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
-		assert(reader->mov.tracks[i].sample_offset <= reader->mov.tracks[i].sample_count);
-		if (reader->mov.tracks[i].sample_offset >= reader->mov.tracks[i].sample_count)
+		track2 = &reader->mov.tracks[i];
+		assert(track2->sample_offset <= track2->sample_count);
+		if (track2->sample_offset >= track2->sample_count)
 			continue;
 
-		track2 = &reader->mov.tracks[i];
-		if (NULL == track || track->samples[track->sample_offset].dts > track2->samples[track2->sample_offset].dts)
+		//if (NULL == track || track->samples[track->sample_offset].dts > track2->samples[track2->sample_offset].dts)
+		if (NULL == track || track->samples[track->sample_offset].offset > track2->samples[track2->sample_offset].offset)
 		{
 			track = track2;
 		}
 	}
 
-	if (NULL == track)
-		return NULL;
-	return &track->samples[track->sample_offset++];// mark as read
+	return track;
 }
 
 int mov_reader_read(void* p, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
 {
+	struct mov_track_t* track;
 	struct mov_reader_t* reader;
 	struct mov_sample_t* sample;
 	reader = (struct mov_reader_t*)p;
 
-	sample = mov_reader_next(reader);
-	if (NULL == sample)
+	track = mov_reader_next(reader);
+	if (NULL == track || 0 == track->mdhd.timescale)
 	{
 		return 0; // EOF
 	}
 
+	assert(track->sample_offset < track->sample_count);
+	sample = &track->samples[track->sample_offset];
 	if (bytes < sample->bytes)
 		return ENOMEM;
 
@@ -385,7 +387,8 @@ int mov_reader_read(void* p, void* buffer, size_t bytes, mov_reader_onread onrea
 		return file_reader_error(reader->mov.fp);
 	}
 
-	onread(param, sample->stsd->type, buffer, sample->bytes, sample->pts, sample->dts);
+	track->sample_offset++; //mark as read
+	onread(param, sample->stsd->type, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
 	return 1;
 }
 
