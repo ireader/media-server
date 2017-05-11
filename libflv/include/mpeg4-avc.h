@@ -43,6 +43,10 @@ int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, u
 
 int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes);
 
+size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
+
+size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
+
 #if defined(__cplusplus)
 }
 #endif

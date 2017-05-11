@@ -5,7 +5,6 @@
 //    shall be added before NAL unit.The size of this field is defined in DecoderSpecificInfo.
 // 2. It is recommended encapsulating one NAL unit in one SL packet when it is delivered over lossy environment.
 
-#include "h264-util.h"
 #include "mpeg4-avc.h"
 #include <string.h>
 #include <assert.h>
@@ -25,6 +24,53 @@ struct mpeg4_handle_t
 	size_t bytes;
 	size_t capacity;
 };
+
+typedef void(*h264_nalu_handler)(void* param, const void* nalu, size_t bytes);
+
+static const uint8_t* h264_startcode(const uint8_t *data, size_t bytes)
+{
+	size_t i;
+	for (i = 2; i + 1 < bytes; i++)
+	{
+		if (0x01 == data[i] && 0x00 == data[i - 1] && 0x00 == data[i - 2])
+			return data + i + 1;
+	}
+
+	return NULL;
+}
+
+///@param[in] h264 H.264 byte stream format data(A set of NAL units)
+static void h264_stream(const void* h264, size_t bytes, h264_nalu_handler handler, void* param)
+{
+	ptrdiff_t n;
+	const unsigned char* p, *next, *end;
+
+	end = (const unsigned char*)h264 + bytes;
+	p = h264_startcode((const unsigned char*)h264, bytes);
+
+	while (p)
+	{
+		next = h264_startcode(p, end - p);
+		if (next)
+		{
+			n = next - p - 3;
+		}
+		else
+		{
+			n = end - p;
+		}
+
+		while (n > 0 && 0 == p[n - 1]) n--; // filter tailing zero
+
+		assert(n > 0);
+		if (n > 0)
+		{
+			handler(param, p, (size_t)n);
+		}
+
+		p = next;
+	}
+}
 
 static void h264_handler(void* param, const void* nalu, size_t bytes)
 {

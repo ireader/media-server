@@ -107,7 +107,6 @@ int flv_muxer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint3
 	return 0;
 }
 
-size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 int flv_muxer_video(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int m, compositionTime;

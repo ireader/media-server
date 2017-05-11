@@ -126,7 +126,6 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	return 0;
 }
 
-size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
 	size_t n;
