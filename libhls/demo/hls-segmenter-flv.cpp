@@ -70,5 +70,6 @@ void hls_segmenter_flv(const char* file)
 
 	flv_demuxer_destroy(demuxer);
 	flv_reader_destroy(flv);
+	hls_media_destroy(hls);
 	hls_m3u8_destroy(m3u);
 }
