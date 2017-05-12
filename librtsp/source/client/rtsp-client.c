@@ -95,3 +95,12 @@ const char* rtsp_client_get_media_encoding(void* p, int media)
 		return NULL;
 	return rtsp_get_media(rtsp, media)->avformats[0].encoding;
 }
+
+int rtsp_client_get_media_payload(void* p, int media)
+{
+	struct rtsp_client_t *rtsp;
+	rtsp = (struct rtsp_client_t*)p;
+	if (media < 0 || media >= rtsp->media_count)
+		return -1;
+	return rtsp_get_media(rtsp, media)->avformats[0].fmt;
+}
