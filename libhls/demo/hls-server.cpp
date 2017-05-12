@@ -11,8 +11,10 @@
 #include "sys/system.h"
 #include "sys/path.h"
 #include "urlcodec.h"
+#include "url.h"
 #include "time64.h"
 #include "StdCFile.h"
+#include "cstringext.h"
 #include "cppstringext.h"
 #include <string.h>
 #include <assert.h>
@@ -213,56 +215,47 @@ static int hls_server_ts(void* session, const std::string& path, const std::stri
 
 static int hls_server_onhttp(void* http, void* session, const char* method, const char* path)
 {
-	size_t n;
-	char uri[256];
-	const char* p;
-
 	// decode request uri
-	printf("load uri: %s\n", path);
-	std::vector<std::string> param;
-	Split(path, "?", param);
-	assert(param.size() <= 2);
-	url_decode(param[0].c_str(), -1, uri, sizeof(uri));
-	std::vector<std::string> paths;
-	Split(uri, "/", paths);
-	std::vector<std::string> names;
-	Split(paths.rbegin()->c_str(), ".", names);
-	assert(2 == names.size());
+	void* url = url_parse(path);
+	std::string s = url_getpath(url);
+	url_free(url);
+	path = s.c_str();
 
-	n = strlen(uri);
-	if (0 == strncmp(uri, "/live/", 6) && 3 <= paths.size())
+	if (0 == strncmp(path, "/live/", 6))
 	{
-		if (names[1] == "m3u8")
+		std::vector<std::string> paths;
+		Split(path + 6, "/", paths);
+
+		if (strendswith(path, ".m3u8") && 1 == paths.size())
 		{
-			if (s_playlists.find(names[0]) == s_playlists.end())
+			std::string app = paths[0].substr(0, paths[0].length() - 5);
+			if (s_playlists.find(app) == s_playlists.end())
 			{
 				hls_playlist_t* playlist = new hls_playlist_t();
-				playlist->file = names[0];
+				playlist->file = app;
 				playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
 				playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
 				playlist->i = 0;
-				s_playlists[names[0]] = playlist;
+				s_playlists[app] = playlist;
 
 				thread_create(&playlist->t, hls_server_worker, playlist);
 			}
 
-			return hls_server_m3u8(session, names[0]);
+			return hls_server_m3u8(session, app);
 		}
-		else if (names[1] ==  "ts")
+		else if (strendswith(path, ".ts") && 2 == paths.size())
 		{
-			if (s_playlists.find(paths[2]) != s_playlists.end())
+			if (s_playlists.find(paths[0]) != s_playlists.end())
 			{
-				assert(4 == paths.size());
-				return hls_server_ts(session, paths[2], paths[3]);
+				return hls_server_ts(session, paths[0], paths[1]);
 			}
 		}
 	}
-	else if (0 == strncmp(uri, "/vod/", 5) && 3 <= paths.size())
+	else if (0 == strncmp(path, "/vod/", 5))
 	{
-		std::string file = std::string(names[0] + "." + names[1]);
-		if (path_testfile(file.c_str()))
+		if (path_testfile(path+5))
 		{
-			return hls_server_reply_file(session, file.c_str());
+			return hls_server_reply_file(session, path + 5);
 		}
 	}
 
