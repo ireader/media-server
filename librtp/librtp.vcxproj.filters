@@ -75,6 +75,9 @@
     <ClCompile Include="payload\rtp-ts-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="source\rtp-profile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">

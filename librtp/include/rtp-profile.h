@@ -5,10 +5,11 @@
 /// RFC3551 6. Payload Type Definitions (p28)
 struct rtp_profile_t
 {
-	int pt;
-	const char* encoding;
-	int clock;
-	int channels;
+	int payload;	// 0~127, 96-127 dynamic, 35-71 unassigned, 72-76 reserved, 77-95 unassigned
+	int avtype;		// 0-unknown, 1-audio, 2-video, 3-system(audio/video)
+	int channels;	// number of channels
+	int frequency;	// clock rate
+	char name[32];  // case insensitive
 };
 
 /***
@@ -88,7 +89,10 @@ enum
 	RTP_PAYLOAD_H264		= 97, // H.264 video (MPEG-4 Part 10) (rfc6184)
 	RTP_PAYLOAD_MP2P		= 98, // MPEG-2 Program Streams video (rfc2250)
 	RTP_PAYLOAD_MP4ES		= 100, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
-
 };
+
+///@param[in] payload RTP payload type(0 ~ 127)
+///@return NULL if not exist
+const struct rtp_profile_t* rtp_profile_find(int payload);
 
 #endif /* _rtp_profile_h_ */
