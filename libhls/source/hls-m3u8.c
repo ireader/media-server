@@ -1,7 +1,7 @@
 #include "hls-m3u8.h"
 #include "hls-param.h"
-#include "ctypedef.h"
 #include "list.h"
+#include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,8 +94,11 @@ int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int d
 	seg->duration = duration;
 	seg->discontinuity = discontinuity; // EXT-X-DISCONTINUITY
 	r = snprintf(seg->name, sizeof(seg->name), "%s", name);
-	if(r <= 0 || r >= sizeof(seg->name))
+	if (r <= 0 || r >= sizeof(seg->name))
+	{
+		free(seg);
 		return ENOMEM;
+	}
 
 	list_insert_after(&seg->link, m3u8->root.prev);
 	return 0;
