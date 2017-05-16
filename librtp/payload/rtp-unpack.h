@@ -9,7 +9,7 @@ struct rtp_unpack_func_t
 {
 //	void* (*alloc)(void* param, size_t bytes);
 //	void (*free)(void* param, void *packet);
-	void (*packet)(void* param, unsigned char streamid, const void *packet, size_t bytes, uint64_t time);
+	void (*packet)(void* param, unsigned char payload, const void *packet, size_t bytes, uint64_t time);
 };
 
 struct rtp_unpack_t
