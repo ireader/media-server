@@ -54,15 +54,16 @@ static int rtmp_command_onconnect_reply(struct rtmp_result_t* result, const uint
 	char fmsver[64] = { 0 };
 	double capabilities = 0;
 	struct amf_object_item_t prop[2];
+	struct amf_object_item_t info[3]; 
+	struct amf_object_item_t items[2];
+
 	AMF_OBJECT_ITEM_VALUE(prop[0], AMF_STRING, "fmsVer", fmsver, sizeof(fmsver));
 	AMF_OBJECT_ITEM_VALUE(prop[1], AMF_NUMBER, "capabilities", &capabilities, sizeof(capabilities));
 
-	struct amf_object_item_t info[3];
 	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result->code, sizeof(result->code));
 	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result->level, sizeof(result->level));
 	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result->description, sizeof(result->description));
 
-	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "Properties", prop, sizeof(prop) / sizeof(prop[0]));
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "Information", info, sizeof(info) / sizeof(info[0]));
 
@@ -120,11 +121,12 @@ static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const u
 {
 	struct rtmp_result_t result;
 	struct amf_object_item_t info[3];
+	struct amf_object_item_t items[2];
+
 	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
 	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
 	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
 
-	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "Information", info, sizeof(info) / sizeof(info[0]));
 
@@ -144,11 +146,12 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 {
 	struct rtmp_result_t result;
 	struct amf_object_item_t info[3];
+	struct amf_object_item_t items[2];
+
 	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
 	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
 	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
 
-	struct amf_object_item_t items[2];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0); // Command object
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "information", info, sizeof(info) / sizeof(info[0])); // Information object
 
