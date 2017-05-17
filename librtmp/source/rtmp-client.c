@@ -172,7 +172,7 @@ static int rtmp_client_send_set_chunk_size(struct rtmp_client_t* ctx)
 	assert(0 == ctx->publish);
 	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
 	r = ctx->handler.send(ctx->param, ctx->payload, n);
-	return n != r ? 0 : r;
+	return n == r ? 0 : r;
 }
 
 // Window Acknowledgement Size (5)
@@ -181,7 +181,7 @@ static int rtmp_client_send_server_bandwidth(struct rtmp_client_t* ctx)
 	int n, r;
 	n = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
 	r = ctx->handler.send(ctx->param, ctx->payload, n);
-	return n != r ? 0 : r;
+	return n == r ? 0 : r;
 }
 
 static int rtmp_client_send_set_buffer_length(struct rtmp_client_t* ctx)
@@ -189,7 +189,7 @@ static int rtmp_client_send_set_buffer_length(struct rtmp_client_t* ctx)
 	int n, r;
 	n = rtmp_event_set_buffer_length(ctx->payload, sizeof(ctx->payload), ctx->stream_id, ctx->rtmp.buffer_length_ms);
 	r = ctx->handler.send(ctx->param, ctx->payload, n);
-	return n != r ? 0 : r;
+	return n == r ? 0 : r;
 }
 
 static int rtmp_client_send_get_stream_length(struct rtmp_client_t* ctx)
@@ -275,7 +275,7 @@ static int rtmp_client_onping(void* param, uint32_t seqNo)
 
 	n = rtmp_event_pong(ctx->payload, sizeof(ctx->payload), seqNo);
 	r = ctx->handler.send(ctx->param, ctx->payload, n);
-	return n != r ? 0 : r;
+	return n == r ? 0 : r;
 }
 
 static int rtmp_client_onbandwidth(void* param)
