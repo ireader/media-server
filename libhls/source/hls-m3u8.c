@@ -28,7 +28,8 @@ struct hls_segment_t
 	int64_t duration;	// segment duration (millisecond)
 	int discontinuity;	// EXT-X-DISCONTINUITY flag
 
-	char name[128];
+	char* name;
+	size_t capacity;
 };
 
 void* hls_m3u8_create(int live)
@@ -63,27 +64,54 @@ void hls_m3u8_destroy(void* p)
 	free(m3u8);
 }
 
+static struct hls_segment_t* hls_segment_alloc(int bytes)
+{
+	struct hls_segment_t* seg;
+	seg = (struct hls_segment_t*)malloc(sizeof(*seg) + bytes);
+	if (seg)
+	{
+		seg->name = (char*)(seg + 1);
+		seg->capacity = bytes;
+	}
+	return seg;
+}
+
 int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int discontinuity)
 {
 	int r;
 	struct hls_m3u8_t* m3u8;
 	struct hls_segment_t* seg;
 	m3u8 = (struct hls_m3u8_t*)p;
+	seg = NULL;
+	r = strlen(name);
 	
-	if (0 == m3u8->live || m3u8->count < (size_t)m3u8->live)
+	if(0 != m3u8->live && m3u8->count >= (size_t)m3u8->live)
 	{
-		seg = (struct hls_segment_t*)malloc(sizeof(*seg));
-		if (!seg)
-			return ENOMEM;
-		++m3u8->count;
-	}
-	else
-	{
+		assert(m3u8->count == m3u8->live);
+
 		++m3u8->seq; // update EXT-X-MEDIA-SEQUENCE
 
 		// reuse the first segment
 		seg = list_entry(m3u8->root.next, struct hls_segment_t, link);
 		list_remove(&seg->link);
+
+		// check name length
+		if (r + 1 > seg->capacity)
+		{
+			free(seg);
+			seg = NULL;	
+			--m3u8->count;
+		}
+	}
+
+	if (NULL == seg)
+	{
+		// reserve more space for reuse segment
+		seg = hls_segment_alloc(r + (m3u8->live ? 16 : 1));
+		if (!seg)
+			return ENOMEM;
+
+		++m3u8->count;
 	}
 
 	// update EXT-X-TARGETDURATION
@@ -93,12 +121,7 @@ int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int d
 	seg->pts = pts;
 	seg->duration = duration;
 	seg->discontinuity = discontinuity; // EXT-X-DISCONTINUITY
-	r = snprintf(seg->name, sizeof(seg->name), "%s", name);
-	if (r <= 0 || r >= sizeof(seg->name))
-	{
-		free(seg);
-		return ENOMEM;
-	}
+	memcpy(seg->name, name, r + 1); // copy last '\0'
 
 	list_insert_after(&seg->link, m3u8->root.prev);
 	return 0;
