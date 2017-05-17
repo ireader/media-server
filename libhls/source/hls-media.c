@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #define N_TS_PACKET 188
+#define N_TS_FILESIZE (100 * 1024 * 1024) // 100M
 
 #define VMAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -17,6 +18,7 @@ struct hls_media_t
 	uint8_t* ptr;
 	size_t bytes;
 	size_t capacity;
+	size_t maxsize; // max bytes per ts file
 
 	int64_t duration;	// user setting segment duration
 	int64_t dts_last;	// last packet dts
@@ -87,6 +89,7 @@ void* hls_media_create(int64_t duration, hls_media_handler handler, void* param)
 		return NULL;
 	}
 
+	hls->maxsize = N_TS_FILESIZE;
 	hls->dts = hls->pts = PTS_NO_VALUE;
 	hls->dts_last = PTS_NO_VALUE;
 	hls->duration = duration;
@@ -120,17 +123,37 @@ static inline int hls_media_keyframe(int avtype, const void* data, size_t bytes)
 
 int hls_media_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int force_new_segment)
 {
+	int segment;
 	int64_t duration;
 	struct hls_media_t* hls;
 	hls = (struct hls_media_t*)p;
 
 	assert(dts < hls->dts_last + hls->duration || PTS_NO_VALUE == hls->dts_last);
 
-	duration = dts - hls->dts;
-	if (0 == hls->bytes || force_new_segment 
-		|| dts + hls->duration < hls->dts_last // dts rewind
-		|| (0 == hls->duration && hls_media_keyframe(avtype, data, bytes)) // new segment per keyframe
-		|| (duration >= hls->duration && (hls->audio_only_flag || hls_media_keyframe(avtype, data, bytes))))  // IDR-frame or audio only stream
+	// PTS/DTS rewind
+	if (dts + hls->duration < hls->dts_last)
+		force_new_segment = 1;
+
+	// IDR frame
+	// 1. check segment duration
+	// 2. new segment per keyframe
+	// 3. check segment file size
+	if ((dts - hls->dts >= hls->duration || 0 == hls->duration)
+		&& (hls_media_keyframe(avtype, data, bytes) || hls->bytes >= hls->maxsize) )
+	{
+		segment = 1;
+	}
+	else if (hls->audio_only_flag && dts - hls->dts >= hls->duration)
+	{
+		// audio only file
+		segment = 1;
+	}
+	else
+	{
+		segment = 0;
+	}
+
+	if (0 == hls->bytes || segment || force_new_segment)
 	{
 		if (hls->bytes > 0)
 		{
