@@ -36,6 +36,8 @@ struct hls_playlist_t
 
 	void* hls;
 	void* m3u8;
+	int64_t pts;
+	int64_t last_pts;
 
 	int i;
 	std::list<hls_ts_t> files;
@@ -47,9 +49,17 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 {
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
 
+	int discontinue = 0;
+	if (playlist->i > 0)
+	{
+		discontinue = (playlist->last_pts + HLS_DURATION * 1000 < pts/*discontinue*/ || pts + duration + HLS_DURATION * 1000 < playlist->pts/*rewind*/) ? 1 : 0;
+	}
+	playlist->pts = pts;
+	playlist->last_pts = pts + duration;
+
 	char name[128] = { 0 };
 	snprintf(name, sizeof(name), "%s/%d.ts", playlist->file.c_str(), playlist->i++);
-	hls_m3u8_add(playlist->m3u8, name, pts, duration, 0);
+	hls_m3u8_add(playlist->m3u8, name, pts, duration, discontinue);
 
 	// add new segment
 	hls_ts_t ts;
@@ -72,19 +82,15 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 
 static void flv_handler(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	static uint32_t s_dts = 0xFFFFFFFF;
-	int discontinue = 0xFFFFFFFF != s_dts ? 0 : (dts > s_dts + HLS_DURATION / 2 ? 1 : 0);
-	s_dts = dts;
-
 	switch (type)
 	{
 	case FLV_AAC:
 	case FLV_MP3:
-		hls_media_input(param, FLV_AAC == type ? STREAM_AUDIO_AAC : STREAM_AUDIO_MP3, data, bytes, pts, dts, discontinue);
+		hls_media_input(param, FLV_AAC == type ? STREAM_AUDIO_AAC : STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 		break;
 
 	case FLV_AVC:
-		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, discontinue);
+		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 		break;
 
 	default:
@@ -96,33 +102,37 @@ static void flv_handler(void* param, int type, const void* data, size_t bytes, u
 static int STDCALL hls_server_worker(void* param)
 {
 	int r, type;
-	time64_t clock = 0;
-	uint32_t timestamp = 0;
+	time64_t clock;
+	uint32_t timestamp;
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
-
 	std::string file = playlist->file + ".flv";
-	void* flv = flv_reader_create(file.c_str());
-	void* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
 
-	static unsigned char packet[2 * 1024 * 1024];
-	while ((r = flv_reader_read(flv, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (1)
 	{
-		time64_t now = time64_now();
-		if(0 == clock)
+		void* flv = flv_reader_create(file.c_str());
+		void* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
+
+		clock = 0;
+		static unsigned char packet[2 * 1024 * 1024];
+		while ((r = flv_reader_read(flv, &type, &timestamp, packet, sizeof(packet))) > 0)
 		{
-			clock = now;
-		}
-		else
-		{
-			if(timestamp > now - clock)
-				system_sleep(timestamp - (now - clock));
+			time64_t now = time64_now();
+			if (0 == clock)
+			{
+				clock = now;
+			}
+			else
+			{
+				if (timestamp > now - clock)
+					system_sleep(timestamp - (now - clock));
+			}
+
+			assert(0 == flv_demuxer_input(demuxer, type, packet, r, timestamp));
 		}
 
-		assert(0 == flv_demuxer_input(demuxer, type, packet, r, timestamp));
+		flv_demuxer_destroy(demuxer);
+		flv_reader_destroy(flv);
 	}
-
-	flv_demuxer_destroy(demuxer);
-	flv_reader_destroy(flv);
 	hls_media_destroy(playlist->hls);
 	//hls_m3u8_destroy(playlist->m3u8);
 	//s_playlists.erase();
