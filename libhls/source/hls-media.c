@@ -124,11 +124,11 @@ int hls_media_input(void* p, int avtype, const void* data, size_t bytes, int64_t
 	struct hls_media_t* hls;
 	hls = (struct hls_media_t*)p;
 
-	assert(dts <= pts);
 	assert(dts < hls->dts_last + hls->duration || PTS_NO_VALUE == hls->dts_last);
 
 	duration = dts - hls->dts;
-	if (0 == hls->bytes || force_new_segment
+	if (0 == hls->bytes || force_new_segment 
+		|| dts < hls->dts_last // dts rewind
 		|| (0 == hls->duration && hls_media_keyframe(avtype, data, bytes)) // new segment per keyframe
 		|| (duration >= hls->duration && (hls->audio_only_flag || hls_media_keyframe(avtype, data, bytes))))  // IDR-frame or audio only stream
 	{
