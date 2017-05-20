@@ -1,9 +1,14 @@
+#include "ctypedef.h"
+#include "rtp-pack.h"
+#include "rtp-packet.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include "ctypedef.h"
-#include "rtp-pack.h"
+
+#define KHz			90 // 90000Hz
+#define FU_START	0x80
+#define FU_END	0x40
 
 #define RTP_HEADER_SIZE 12 // don't include RTP CSRC and RTP Header Extension
 //static size_t s_max_packet_size = 576 - RTP_HEADER_SIZE; // UNIX Network Programming by W. Richard Stevens
@@ -11,12 +16,9 @@ static size_t s_max_packet_size = 1434 - RTP_HEADER_SIZE; // from VLC
 
 struct rtp_h264_packer_t
 {
+	struct rtp_packet_t pkt;
 	struct rtp_pack_func_t func;
 	void* cbparam;
-	uint32_t ssrc;
-	uint32_t timestamp;
-	uint16_t seq;
-	uint8_t payload;
 };
 
 void rtp_pack_setsize(size_t bytes)
@@ -29,7 +31,7 @@ size_t rtp_pack_getsize()
 	return s_max_packet_size;
 }
 
-static void* rtp_h264_pack_create(uint32_t ssrc, unsigned short seq, uint8_t payload, struct rtp_pack_func_t *func, void* param)
+static void* rtp_h264_pack_create(uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_pack_func_t *func, void* param)
 {
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)malloc(sizeof(*packer));
@@ -38,10 +40,12 @@ static void* rtp_h264_pack_create(uint32_t ssrc, unsigned short seq, uint8_t pay
 	memset(packer, 0, sizeof(*packer));
 	memcpy(&packer->func, func, sizeof(packer->func));
 	packer->cbparam = param;
-	packer->ssrc = ssrc;
-	packer->payload = payload;
-	packer->seq = seq;
-	packer->timestamp = 0;
+
+	assert(KHz * 1000 == frequency);
+	packer->pkt.rtp.v = RTP_VERSION;
+	packer->pkt.rtp.pt = pt;
+	packer->pkt.rtp.seq = seq;
+	packer->pkt.rtp.ssrc = ssrc;
 	return packer;
 }
 
@@ -55,146 +59,139 @@ static void rtp_h264_pack_destroy(void* pack)
 	free(packer);
 }
 
-static const unsigned char* search_start_code(const unsigned char* ptr, size_t bytes)
+static void rtp_h264_pack_get_info(void* pack, unsigned short* seq, unsigned int* timestamp)
 {
-	const unsigned char *p;
-	for(p = ptr; p + 3 < ptr + bytes; p++)
-	{
-		if(0x00 == p[0] && 0x00 == p[1] && (0x01 == p[2] || (0x00==p[2] && 0x01==p[3])))
-			return p;
-	}
-	return NULL;
-}
-
-static unsigned char* alloc_packet(struct rtp_h264_packer_t *packer, uint32_t timestamp, size_t bytes)
-{
-	unsigned char *rtp;
-	rtp = (unsigned char*)packer->func.alloc(packer->cbparam, bytes+14);
-	if(!rtp) return NULL;
-
-	rtp[0] = (unsigned char)(0x80);
-	rtp[1] = (unsigned char)(packer->payload);
-	rtp[2] = (unsigned char)(packer->seq >> 8);
-	rtp[3] = (unsigned char)(packer->seq);
-
-	rtp[4] = (unsigned char)(timestamp >> 24);
-	rtp[5] = (unsigned char)(timestamp >> 16);
-	rtp[6] = (unsigned char)(timestamp >> 8);
-	rtp[7] = (unsigned char)(timestamp);
-
-	rtp[8] = (unsigned char)(packer->ssrc >> 24);
-	rtp[9] = (unsigned char)(packer->ssrc >> 16);
-	rtp[10] = (unsigned char)(packer->ssrc >> 8);
-	rtp[11] = (unsigned char)(packer->ssrc);
-
-	return rtp;
-}
-
-static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, uint64_t time)
-{
-	size_t MAX_PACKET;
-	unsigned char *rtp;
-	const unsigned char *p1, *p2;
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)pack;
+	*seq = (uint16_t)packer->pkt.rtp.seq;
+	*timestamp = packer->pkt.rtp.timestamp;
+}
 
-	packer->timestamp = (uint32_t)time * 90; // ms -> 90KHZ
-
-	MAX_PACKET = rtp_pack_getsize(); // get packet size
-
-	p1 = h264;
-	assert(p1 == search_start_code(h264, bytes));
-
-	while(bytes > 0)
+static const uint8_t* h264_nalu_find(const uint8_t* p, size_t bytes)
+{
+	size_t i;
+	for(i = 2; i + 1 < bytes; i++)
 	{
-		size_t nalu_size;
+		if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2])
+			return p + i + 1;
+	}
+	return p + bytes;
+}
 
-		p2 = search_start_code(p1+3, bytes - 3);
-		if(!p2) p2 = p1 + bytes;
-		nalu_size = p2 - p1;
-		bytes -= nalu_size;
+static int rtp_h264_pack_nalu(struct rtp_h264_packer_t *packer, const uint8_t* nalu, size_t bytes, int64_t time)
+{
+	int n;
+	uint8_t *rtp;
 
-		// filter suffix '00' bytes
-		while(0 == p1[nalu_size-1]) --nalu_size;
+	packer->pkt.payload = nalu;
+	packer->pkt.payloadlen = bytes;
+	n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
+	rtp = (uint8_t*)packer->func.alloc(packer->cbparam, n);
+	if (!rtp) return ENOMEM;
 
-		// filter H.264 start code(0x00000001)
-		nalu_size -= (0x01 == p1[2]) ? 3 : 4;
-		p1 += (0x01 == p1[2]) ? 3 : 4;
-		assert(0 < (*p1 & 0x1F) && (*p1 & 0x1F) < 24);
+	packer->pkt.rtp.m = 1; // set marker flag
+	n = rtp_packet_serialize(&packer->pkt, rtp, n);
+	if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+	{
+		assert(0);
+		return -1;
+	}
 
-		if(nalu_size < MAX_PACKET)
+	++packer->pkt.rtp.seq;
+	packer->func.packet(packer->cbparam, rtp, n, time);
+	packer->func.free(packer->cbparam, rtp);
+	return 0;
+}
+
+static int rtp_h264_pack_fu_a(struct rtp_h264_packer_t *packer, const uint8_t* nalu, size_t bytes, int64_t time, size_t MAX_PACKET)
+{
+	int n;
+	unsigned char *rtp;
+
+	// RFC6184 5.3. NAL Unit Header Usage: Table 2 (p15)
+	// RFC6184 5.8. Fragmentation Units (FUs) (p29)
+	uint8_t fu_indicator = (*nalu & 0xE0) | 28; // FU-A
+	uint8_t fu_header = *nalu & 0x1F;
+
+	nalu += 1; // skip NAL Unit Type byte
+	bytes -= 1;
+	assert(bytes > 0);
+
+	// FU-A start
+	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
+	{
+		if (bytes <= MAX_PACKET - 2)
 		{
-			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
-			if(!rtp) return ENOMEM;
-			rtp[1] |= 0x80; // marker
-			++packer->seq;
-
-			memcpy(rtp+12, p1, nalu_size);
-
-			// single NAl unit packet 
-			packer->func.packet(packer->cbparam, rtp, nalu_size+12, time);
-			packer->func.free(packer->cbparam, rtp);
+			assert(0 == (fu_header & FU_START));
+			fu_header = FU_END | (fu_header & 0x1F); // FU-A end
+			packer->pkt.payloadlen = bytes + 2/*fu_indicator + fu_header*/;
 		}
 		else
 		{
-			// RFC6184 5.3. NAL Unit Header Usage: Table 2 (p15)
-			// RFC6184 5.8. Fragmentation Units (FUs) (p29)
-			unsigned char fu_indicator = (*p1 & 0xE0) | 28; // FU-A
-			unsigned char fu_header = *p1 & 0x1F;
-
-			p1 += 1; // skip NAL Unit Type byte
-			nalu_size -= 1;
-
-			// FU-A start
-			fu_header = 0x80 | fu_header;
-			while(nalu_size > MAX_PACKET-1)
-			{
-				rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
-				if(!rtp) return ENOMEM;
-				rtp[1] &= ~0x80; // clean marker
-				rtp[12] = fu_indicator;
-				rtp[13] = fu_header;
-				++packer->seq;
-
-				memcpy(rtp+14, p1, MAX_PACKET-1);
-				//packer->callback(packer->cbparam, fu_indicator, fu_header, p1, s_max_packet_size);
-				packer->func.packet(packer->cbparam, rtp, MAX_PACKET-1+14, time);
-				packer->func.free(packer->cbparam, rtp);
-
-				nalu_size -= MAX_PACKET-1;
-				p1 += MAX_PACKET-1;
-				fu_header = 0x1F & fu_header; // FU-A fragment
-			}
-
-			// FU-A end
-			fu_header = 0x40 | (fu_header & 0x1F);
-			rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
-			if(!rtp) return ENOMEM;
-			rtp[1] |= 0x80; // marker
-			rtp[12] = fu_indicator;
-			rtp[13] = fu_header;
-			++packer->seq;
-
-			while(nalu_size > 1 && 0 == p1[nalu_size-1])
-				--nalu_size;
-
-			memcpy(rtp+14, p1, nalu_size);
-			packer->func.packet(packer->cbparam, rtp, nalu_size+14, time);
-			packer->func.free(packer->cbparam, rtp);
+			packer->pkt.payloadlen = MAX_PACKET;
 		}
 
-		p1 = p2;
+		packer->pkt.payload = nalu - 2/*fu_indicator + fu_header*/;
+		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
+		rtp = (uint8_t*)packer->func.alloc(packer->cbparam, n);
+		if (!rtp) return ENOMEM;
+
+		packer->pkt.rtp.m = (packer->pkt.payloadlen <= MAX_PACKET) ? 1 : 0; // set marker flag
+		n = rtp_packet_serialize(&packer->pkt, rtp, n);
+		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		{
+			assert(0);
+			return -1;
+		}
+
+		rtp[RTP_FIXED_HEADER + 0] = fu_indicator;
+		rtp[RTP_FIXED_HEADER + 1] = fu_header;
+		packer->func.packet(packer->cbparam, rtp, n, time);
+		packer->func.free(packer->cbparam, rtp);
+
+		bytes -= packer->pkt.payloadlen - 2;
+		nalu += packer->pkt.payloadlen - 2;
+		fu_header &= 0x1F; // FU-A fragment
 	}
 
 	return 0;
 }
 
-static void rtp_h264_pack_get_info(void* pack, unsigned short* seq, unsigned int* timestamp)
+static int rtp_h264_pack_input(void* pack, const void* h264, size_t bytes, int64_t time)
 {
+	int r = 0;
+	size_t MAX_PACKET;
+	const uint8_t *p1, *p2, *pend;
 	struct rtp_h264_packer_t *packer;
 	packer = (struct rtp_h264_packer_t *)pack;
-	*seq = packer->seq;
-	*timestamp = packer->timestamp;
+	packer->pkt.rtp.timestamp = (uint32_t)time * KHz; // ms -> 90KHZ
+
+	MAX_PACKET = rtp_pack_getsize(); // get packet size
+	pend = (const uint8_t*)h264 + bytes;
+	for(p1 = h264_nalu_find((const uint8_t*)h264, bytes); p1 < pend && 0 == r; p1 = p2)
+	{
+		size_t nalu_size;
+
+		// filter H.264 start code(0x00000001)
+		assert(0 < (*p1 & 0x1F) && (*p1 & 0x1F) < 24);
+		p2 = h264_nalu_find(p1 + 1, pend - p1 - 1);
+		nalu_size = p2 - p1;
+		
+		// filter suffix '00' bytes
+		while(0 == p1[nalu_size-1]) --nalu_size;
+
+		if(nalu_size < MAX_PACKET)
+		{
+			// single NAl unit packet 
+			r = rtp_h264_pack_nalu(packer, p1, nalu_size, time);
+		}
+		else
+		{
+			r = rtp_h264_pack_fu_a(packer, p1, nalu_size, time, MAX_PACKET);
+		}
+	}
+
+	return 0;
 }
 
 struct rtp_pack_t *rtp_h264_packer()

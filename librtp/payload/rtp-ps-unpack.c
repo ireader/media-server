@@ -48,7 +48,7 @@ static void rtp_ps_unpack_destroy(void* p)
 
 static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, uint64_t time)
 {
-	rtp_packet_t pkt;
+	struct rtp_packet_t pkt;
 	struct rtp_ps_unpack_t *unpacker;
 
 	unpacker = (struct rtp_ps_unpack_t *)p;
@@ -98,7 +98,7 @@ static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, uint64
 
 		if(unpacker->size > 0 && 0 == unpacker->flag)
 		{
-			unpacker->func.packet(unpacker->cbparam, (uint8_t)pkt.rtp.pt, unpacker->ptr, unpacker->size, time);
+			unpacker->func.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
 		}
 
 		// frame boundary
@@ -109,7 +109,7 @@ static int rtp_ps_unpack_input(void* p, const void* packet, size_t bytes, uint64
 	{
 		if(unpacker->size > 0 && 0 == unpacker->flag)
 		{
-			unpacker->func.packet(unpacker->cbparam, (uint8_t)pkt.rtp.pt, unpacker->ptr, unpacker->size, time);
+			unpacker->func.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
 		}
 
 		// frame boundary

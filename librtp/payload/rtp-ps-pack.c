@@ -6,25 +6,24 @@
 /// 2. For MPEG2 Program streams and MPEG1 system streams there are no packetization restrictions; 
 ///    these streams are treated as a packetized stream of bytes.
 
+#include "ctypedef.h"
+#include "rtp-pack.h"
+#include "rtp-packet.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include "ctypedef.h"
-#include "rtp-pack.h"
+
+#define KHz 90 // 90000Hz
 
 struct rtp_ps_packer_t
 {
-	uint32_t ssrc;
-	uint32_t timestamp;
-	uint16_t seq;
-	uint8_t payload;
-
+	struct rtp_packet_t pkt;
 	struct rtp_pack_func_t func;
 	void* cbparam;
 };
 
-static void* rtp_ps_pack_create(uint32_t ssrc, unsigned short seq, uint8_t payload, struct rtp_pack_func_t *func, void* param)
+static void* rtp_ps_pack_create(uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_pack_func_t *func, void* param)
 {
 	struct rtp_ps_packer_t *packer;
 	packer = (struct rtp_ps_packer_t *)malloc(sizeof(*packer));
@@ -33,10 +32,12 @@ static void* rtp_ps_pack_create(uint32_t ssrc, unsigned short seq, uint8_t paylo
 	memset(packer, 0, sizeof(*packer));
 	memcpy(&packer->func, func, sizeof(packer->func));
 	packer->cbparam = param;
-	packer->ssrc = ssrc;
-	packer->payload = payload;
-	packer->seq = seq;
-	packer->timestamp = 0;
+
+	assert(KHz * 1000 == frequency);
+	packer->pkt.rtp.v = RTP_VERSION;
+	packer->pkt.rtp.pt = pt;
+	packer->pkt.rtp.seq = seq;
+	packer->pkt.rtp.ssrc = ssrc;
 	return packer;
 }
 
@@ -50,72 +51,49 @@ static void rtp_ps_pack_destroy(void* pack)
 	free(packer);
 }
 
-static unsigned char* alloc_packet(struct rtp_ps_packer_t *packer, uint32_t timestamp, size_t bytes)
+static void rtp_ps_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp)
 {
-	unsigned char *rtp;
-	rtp = (unsigned char*)packer->func.alloc(packer->cbparam, bytes+14);
-	if(!rtp)
-		return NULL;
-
-	rtp[0] = (unsigned char)(0x80);
-	rtp[1] = (unsigned char)(packer->payload);
-	rtp[2] = (unsigned char)(packer->seq >> 8);
-	rtp[3] = (unsigned char)(packer->seq);
-
-	rtp[4] = (unsigned char)(timestamp >> 24);
-	rtp[5] = (unsigned char)(timestamp >> 16);
-	rtp[6] = (unsigned char)(timestamp >> 8);
-	rtp[7] = (unsigned char)(timestamp);
-
-	rtp[8] = (unsigned char)(packer->ssrc >> 24);
-	rtp[9] = (unsigned char)(packer->ssrc >> 16);
-	rtp[10] = (unsigned char)(packer->ssrc >> 8);
-	rtp[11] = (unsigned char)(packer->ssrc);
-
-	return rtp;
-}
-
-static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, uint64_t time)
-{
-	size_t MAX_PACKET;
-	const unsigned char *p;
 	struct rtp_ps_packer_t *packer;
 	packer = (struct rtp_ps_packer_t *)pack;
+	*seq = (uint16_t)packer->pkt.rtp.seq;
+	*timestamp = packer->pkt.rtp.timestamp;
+}
 
-	packer->timestamp = (uint32_t)time * 90; // ms -> 90KHZ (RFC2250 section2 p2)
+static int rtp_ps_pack_input(void* pack, const void* ps, size_t bytes, int64_t time)
+{
+	int n;
+	uint8_t *rtp;
+	const uint8_t *ptr;
+	size_t MAX_PACKET;
+	struct rtp_ps_packer_t *packer;
+	packer = (struct rtp_ps_packer_t *)pack;
+	packer->pkt.rtp.timestamp = (uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 section2 p2)
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
-
-	p = (const unsigned char *)ps;
-	while(bytes > 0)
+	for (ptr = (const uint8_t *)ps; bytes > 0; ++packer->pkt.rtp.seq)
 	{
-		size_t len;
-		unsigned char *rtp;
+		packer->pkt.payload = ptr;
+		packer->pkt.payloadlen = bytes < MAX_PACKET ? bytes : MAX_PACKET;
+		ptr += packer->pkt.payloadlen;
+		bytes -= packer->pkt.payloadlen;
 
-		rtp = alloc_packet(packer, packer->timestamp, MAX_PACKET);
-		if(!rtp) return ENOMEM;
-		assert(0 == (rtp[1] & 0x80)); // don't set market
-		if(bytes <= MAX_PACKET)
-			rtp[1] |= 0x80; // set marker flag
-		++packer->seq;
+		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
+		rtp = (uint8_t*)packer->func.alloc(packer->cbparam, n);
+		if (!rtp) return ENOMEM;
 
-		len = bytes > MAX_PACKET ? MAX_PACKET : bytes;
-		memcpy(rtp+12, p, len);
+		packer->pkt.rtp.m = (bytes <= MAX_PACKET) ? 1 : 0; // set marker flag
+		n = rtp_packet_serialize(&packer->pkt, rtp, n);
+		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		{
+			assert(0);
+			return -1;
+		}
 
-		packer->func.packet(packer->cbparam, rtp, len+12, time);
+		packer->func.packet(packer->cbparam, rtp, n, time);
 		packer->func.free(packer->cbparam, rtp);
-		p += len;
-		bytes -= len;
 	}
-	return 0;
-}
 
-static void rtp_ps_pack_get_info(void* pack, unsigned short* seq, unsigned int* timestamp)
-{
-	struct rtp_ps_packer_t *packer;
-	packer = (struct rtp_ps_packer_t *)pack;
-	*seq = packer->seq;
-	*timestamp = packer->timestamp;
+	return 0;
 }
 
 struct rtp_pack_t *rtp_ps_packer()

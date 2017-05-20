@@ -9,7 +9,9 @@ struct rtp_unpack_func_t
 {
 //	void* (*alloc)(void* param, size_t bytes);
 //	void (*free)(void* param, void *packet);
-	void (*packet)(void* param, unsigned char payload, const void *packet, size_t bytes, uint64_t time);
+
+	///@param[in] flags 1-loss data
+	void (*packet)(void* param, const void *packet, size_t bytes, int64_t time, int flags);
 };
 
 struct rtp_unpack_t
@@ -26,6 +28,7 @@ struct rtp_unpack_t
 	int (*input)(void* packer, const void* packet, size_t bytes, uint64_t time);
 };
 
+struct rtp_unpack_t *rtp_unpacker();
 struct rtp_unpack_t *rtp_ps_unpacker();
 struct rtp_unpack_t *rtp_ts_unpacker();
 struct rtp_unpack_t *rtp_h264_unpacker();

@@ -6,10 +6,10 @@
 
 #define TS_PACKET_SIZE 188
 
-static void* rtp_ts_pack_create(uint32_t ssrc, unsigned short seq, uint8_t payload, struct rtp_pack_func_t *func, void* param)
+static void* rtp_ts_pack_create(uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_pack_func_t *func, void* param)
 {
-	assert(RTP_PAYLOAD_MP2T == payload);
-	return rtp_ps_packer()->create(ssrc, seq, payload, func, param);
+	assert(RTP_PAYLOAD_MP2T == pt);
+	return rtp_ps_packer()->create(pt, seq, ssrc, frequency, func, param);
 }
 
 static void rtp_ts_pack_destroy(void* pack)
@@ -17,7 +17,7 @@ static void rtp_ts_pack_destroy(void* pack)
 	rtp_ps_packer()->destroy(pack);
 }
 
-static int rtp_ts_pack_input(void* pack, const void* ts, size_t bytes, uint64_t time)
+static int rtp_ts_pack_input(void* pack, const void* ts, size_t bytes, int64_t time)
 {
 	assert(0 == bytes % TS_PACKET_SIZE);
 	rtp_pack_setsize(rtp_pack_getsize() / TS_PACKET_SIZE * TS_PACKET_SIZE); // must be x188
