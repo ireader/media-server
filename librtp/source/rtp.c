@@ -55,7 +55,7 @@ int rtp_destroy(void* rtp)
 int rtp_onsend(void* rtp, const void* data, size_t bytes)
 {
 //	time64_t ntp;
-	rtp_packet_t pkt;
+	struct rtp_packet_t pkt;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
 
 	ctx->role = RTP_SENDER;

@@ -201,7 +201,7 @@ int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes)
 int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes)
 {
 	time64_t clock;
-	rtp_packet_t pkt;
+	struct rtp_packet_t pkt;
 	struct rtp_member *sender;
 
 	if(0 != rtp_packet_deserialize(&pkt, data, bytes))
