@@ -87,6 +87,18 @@
     <ClCompile Include="source\rtp-packet.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-mp4a-latm-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4a-latm-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4v-es-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4v-es-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
