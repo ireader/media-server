@@ -60,7 +60,7 @@ int rtp_pack_input(void* p, const void* data, size_t bytes, int64_t time)
 	struct rtp_packer_t *packer;
 
 	packer = (struct rtp_packer_t *)p;
-	packer->pkt.rtp.timestamp = (uint32_t)time * packer->frequency / 1000; // ms -> 90KHZ
+	packer->pkt.rtp.timestamp = (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
 	packer->pkt.rtp.m = 0; // marker bit alway 0
 
 	MAX_PACKET = rtp_pack_getsize(); // get packet size
@@ -81,6 +81,8 @@ int rtp_pack_input(void* p, const void* data, size_t bytes, int64_t time)
 			assert(0);
 			return -1;
 		}
+
+		packer->pkt.rtp.timestamp += packer->pkt.payloadlen * packer->frequency / 1000;
 
 		packer->func.packet(packer->cbparam, rtp, n, time);
 		packer->func.free(packer->cbparam, rtp);
