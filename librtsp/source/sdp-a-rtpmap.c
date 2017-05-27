@@ -83,5 +83,8 @@ void sdp_a_rtpmap_test(void)
 
 	assert(0 == sdp_a_rtpmap("98 L16/11025/2", &payload, encoding, &rate, parameters));
 	assert(98 == payload && 11025 == rate && 0 == strcmp(encoding, "L16") && 0==strcmp("2", parameters));
+
+	assert(0 == sdp_a_rtpmap("102 G726-16/8000", &payload, encoding, &rate, parameters));
+	assert(102 == payload && 8000 == rate && 0 == strcmp(encoding, "G726-16") && 0 == strcmp("", parameters));
 }
 #endif
