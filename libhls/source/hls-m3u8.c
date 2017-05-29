@@ -78,7 +78,7 @@ static struct hls_segment_t* hls_segment_alloc(int bytes)
 
 int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int discontinuity)
 {
-	int r;
+	size_t r;
 	struct hls_m3u8_t* m3u8;
 	struct hls_segment_t* seg;
 	m3u8 = (struct hls_m3u8_t*)p;
@@ -87,7 +87,7 @@ int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int d
 	
 	if(0 != m3u8->live && m3u8->count >= (size_t)m3u8->live)
 	{
-		assert(m3u8->count == m3u8->live);
+		assert(m3u8->count == (size_t)m3u8->live);
 
 		++m3u8->seq; // update EXT-X-MEDIA-SEQUENCE
 
