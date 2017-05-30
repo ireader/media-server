@@ -223,6 +223,7 @@ uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name
 
 
 static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n);
+static const uint8_t* amf_read_ecma_array(const uint8_t* data, const uint8_t* end);
 
 static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enum AMFDataType type, struct amf_object_item_t* item)
 {
@@ -246,10 +247,23 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	case AMF_NULL:
 		return data;
 
+	case AMF_ECMA_ARRAY:
+		return amf_read_ecma_array(data, end);
+
 	default:
 		assert(0);
 		return NULL;
 	}
+}
+
+static const uint8_t* amf_read_ecma_array(const uint8_t* data, const uint8_t* end)
+{
+	if (data + 4 > end)
+		return end;
+		
+	data += 4; // U32 associative-count
+	data = amf_read_object(data, end, NULL, 0);
+	return NULL == data ? end : data;
 }
 
 static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n)
@@ -289,6 +303,7 @@ static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, s
 			case AMF_NUMBER: data += 8; break;
 			case AMF_STRING: data += 2 + (data[0] << 8) + data[1]; break;
 			case AMF_LONG_STRING: data += 4 + (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3]; break;
+			case AMF_ECMA_ARRAY: data = amf_read_ecma_array(data, end); break;
 			default: return NULL;
 			}
 		}
