@@ -1,4 +1,5 @@
 #include "rtmp-internal.h"
+#include "rtmp-msgtypeid.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -82,8 +83,18 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 
 	// alloc memory
 	assert(packet->header.length > 0);
-	if (0 != rtmp_packet_alloc(packet, packet->header.length))
-		return NULL;
+	if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
+	{
+		packet->payload = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO==packet->header.type ? 1 : 0, packet->header.length);
+		if (NULL == packet->payload)
+			return NULL;
+		packet->capacity = packet->header.length;
+	}
+	else
+	{
+		if (0 != rtmp_packet_alloc(packet, packet->header.length))
+			return NULL;
+	}
 
 	return packet;
 }

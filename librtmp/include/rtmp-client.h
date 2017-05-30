@@ -10,11 +10,11 @@ extern "C" {
 
 struct rtmp_client_handler_t
 {
-	/// network implementation
-	/// @return >0-sent bytes, <0-error
-	int (*send)(void* param, const void* data, size_t bytes);
+	///network implementation
+	///@return >0-sent bytes, <0-error
+	int (*send)(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 
-	// VOD only
+	///VOD only
 	///@param[in] video FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
 	///@param[in] audio FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 	///@param[in] meta AMF0/AMF3
@@ -22,6 +22,13 @@ struct rtmp_client_handler_t
 	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
 	int (*onaudio)(void* param, const void* audio, size_t bytes, uint32_t timestamp);
 	int (*onmeta)(void* param, const void* meta, size_t bytes);
+
+	///VOD only
+	///user alloc video/audio memory
+	///@param[in] avtype 0-audio, 1-video
+	///@param[in] bytes video/audio buffer size in byte
+	///@return NULL-failed, other-memory pointer
+	void* (*alloc)(void* param, int avtype, size_t bytes);
 };
 
 /// setup URL and connect server(timeout???)

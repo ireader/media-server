@@ -62,7 +62,7 @@ static int rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 	n += rtmp_handshake_s1(ctx->handshake + n, (uint32_t)time(NULL));
 	n += rtmp_handshake_s2(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	assert(n == 1 + RTMP_HANDSHAKE_SIZE + RTMP_HANDSHAKE_SIZE);
-	r = ctx->handler.send(ctx->param, ctx->handshake, n);
+	r = ctx->handler.send(ctx->param, ctx->handshake, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -71,7 +71,7 @@ static int rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
-	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -80,7 +80,7 @@ static int rtmp_server_send_server_bandwidth(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_window_acknowledgement_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.window_size);
-	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -89,7 +89,7 @@ static int rtmp_server_send_client_bandwidth(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_set_peer_bandwidth(ctx->payload, sizeof(ctx->payload), ctx->rtmp.peer_bandwidth, RTMP_BANDWIDTH_LIMIT_DYNAMIC);
-	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -97,7 +97,7 @@ static int rtmp_server_send_stream_is_record(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_event_stream_is_record(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
-	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -105,7 +105,7 @@ static int rtmp_server_send_stream_begin(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_event_stream_begin(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
-	r = ctx->handler.send(ctx->param, ctx->payload, n);
+	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
 
@@ -150,7 +150,7 @@ int rtmp_server_onconnect(void* param, int r, double transaction, const struct r
 
 	if(0 == r)
 	{
-		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Successed.") - ctx->payload;
+		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Succeeded.") - ctx->payload;
 		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, n, 0);
 	}
 
@@ -330,19 +330,20 @@ int rtmp_server_onreceive_video(void* param, int r, double transaction, uint8_t 
 	return r;
 }
 
+static void* rtmp_server_alloc(void* param, int video, size_t bytes)
+{
+	struct rtmp_server_t* ctx;
+	ctx = (struct rtmp_server_t*)param;
+	return ctx->handler.alloc(ctx->param, video, bytes);
+}
+
 static int rtmp_server_send(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes)
 {
 	int r;
 	struct rtmp_server_t* ctx;
-	//static uint8_t s_payload[1024 * 2];
 	ctx = (struct rtmp_server_t*)param;
-	//memcpy(s_payload, header, headerBytes);
-	//memcpy(s_payload + headerBytes, payload, payloadBytes);
-	//r = ctx->handler.send(ctx->param, s_payload, headerBytes + payloadBytes);
-	r = ctx->handler.send(ctx->param, header, headerBytes);
-	if ((int)headerBytes == r && payloadBytes > 0)
-		r = ctx->handler.send(ctx->param, payload, payloadBytes);
-	return (r == (int)(payloadBytes > 0 ? payloadBytes : headerBytes)) ? 0 : -1;
+	r = ctx->handler.send(ctx->param, header, headerBytes, payload, payloadBytes);
+	return (r == (int)(payloadBytes + headerBytes)) ? 0 : -1;
 }
 
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler)
@@ -369,6 +370,7 @@ void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handle
 
 	ctx->rtmp.param = ctx;
 	ctx->rtmp.send = rtmp_server_send;
+	ctx->rtmp.alloc = rtmp_server_alloc;
 	ctx->rtmp.onaudio = rtmp_server_onaudio;
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
 	ctx->rtmp.onabort = rtmp_server_onabort;

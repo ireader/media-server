@@ -110,6 +110,8 @@ struct rtmp_t
 
 	void* param;
 
+	void* (*alloc)(void* param, int avtype, size_t bytes);
+
 	/// @return 0-ok, other-error
 	int (*send)(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes);
 	

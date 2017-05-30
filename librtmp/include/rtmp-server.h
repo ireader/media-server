@@ -10,28 +10,37 @@ extern "C" {
 
 struct rtmp_server_handler_t
 {
-	/// network implemention
-	/// @return >0-sent bytes, <0-error
-	int (*send)(void* param, const void* data, size_t bytes);
+	///network implementation
+	///@param[in] payload rtmp payload, could be NULL
+	///@param[in] bytes rtmp payload size in byte, could be 0
+	///@return >0-sent bytes, <0-error
+	int (*send)(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 
-	/// @return 0-ok, other-error
+	///@return 0-ok, other-error
 	//int (*oncreate_stream)(void* param, uint32_t* stream_id);
 	//int (*ondelete_stream)(void* param, uint32_t stream_id);
 
 	void (*onerror)(void* param, int code, const char* msg);
 
-	// pull(server -> client)
+	///pull(server -> client)
 	int (*onplay)(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset);
 	int (*onpause)(void* param, int pause, uint32_t ms);
 	int (*onseek)(void* param, uint32_t ms);
 
-	// push(client -> server)
+	///push(client -> server)
 	///@param[in] type: live/record/append
 	int (*onpublish)(void* param, const char* app, const char* stream, const char* type);
 	///@param[in] data FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
 	int (*onvideo)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 	///@param[in] data FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 	int (*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
+
+	///push only
+	///user alloc video/audio memory
+	///@param[in] avtype 0-audio, 1-video
+	///@param[in] bytes video/audio buffer size in byte
+	///@return NULL-failed, other-memory pointer
+	void* (*alloc)(void* param, int avtype, size_t bytes);
 };
 
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);
