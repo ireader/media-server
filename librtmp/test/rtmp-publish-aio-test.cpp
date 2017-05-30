@@ -3,14 +3,21 @@
 #include "sys/sync.hpp"
 #include "rtmp-client-transport.h"
 #include "flv-reader.h"
-#include "avpacket.h"
 #include "time64.h"
 #include <stdio.h>
 #include <assert.h>
 #include <list>
 
+struct TFLVPacket
+{
+	uint8_t* data;
+	size_t bytes;
+	uint32_t timestamp;
+	int avtype;
+};
+
 static ThreadLocker s_locker;
-static std::list<struct avpacket_t*> s_packets;
+static std::list<struct TFLVPacket*> s_packets;
 static bool s_sending = false;
 static void* s_transport;
 
@@ -19,8 +26,8 @@ static void rtmp_client_publish_send(void* transport)
 	if (!s_sending && !s_packets.empty())
 	{
 		s_sending = true;
-		avpacket_t* pkt = s_packets.front();
-		int r = rtmp_client_transport_sendpacket(transport, pkt->pic_type, pkt->data, pkt->bytes, (uint32_t)pkt->dts);
+		TFLVPacket* pkt = s_packets.front();
+		int r = rtmp_client_transport_sendpacket(transport, pkt->avtype, pkt->data, pkt->bytes, pkt->timestamp);
 		if (0 != r)
 		{
 			printf("rtmp_client_publish_send: %d/%d\n", r, socket_geterror());
@@ -42,12 +49,12 @@ static void rtmp_client_push(const char* flv, void* transport)
 			system_sleep(timestamp - s_timestamp);
 		s_timestamp = timestamp;
 
-		avpacket_t* pkt = avpacket_alloc(r);
+		TFLVPacket* pkt = (TFLVPacket*)malloc(sizeof(TFLVPacket) + r);
+		pkt->data = (uint8_t*)(pkt + 1);
 		memcpy(pkt->data, packet, r);
 		pkt->bytes = r;
-		pkt->pic_type = 8 == type ? 0 : 1;
-		pkt->pts = timestamp;
-		pkt->dts = timestamp;
+		pkt->avtype = 8 == type ? 0 : 1;
+		pkt->timestamp = timestamp;
 
 		AutoThreadLocker locker(s_locker);
 		s_packets.push_back(pkt);
@@ -66,9 +73,9 @@ static void rtmp_client_publish_onready(void*)
 static void rtmp_client_publish_onsend(void*)
 {
 	AutoThreadLocker locker(s_locker);
-	avpacket_t* pkt = s_packets.front();
+	TFLVPacket* pkt = s_packets.front();
 	s_packets.pop_front();
-	avpacket_release(pkt);
+	free(pkt);
 	s_sending = false;
 
 	rtmp_client_publish_send(s_transport);
