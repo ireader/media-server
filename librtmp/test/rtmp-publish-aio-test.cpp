@@ -18,7 +18,7 @@ struct TFLVPacket
 
 static ThreadLocker s_locker;
 static std::list<struct TFLVPacket*> s_packets;
-static bool s_sending = false;
+static bool s_sending = true;
 static void* s_transport;
 
 static void rtmp_client_publish_send(void* transport)
@@ -67,6 +67,7 @@ static void rtmp_client_push(const char* flv, void* transport)
 static void rtmp_client_publish_onready(void*)
 {
 	AutoThreadLocker locker(s_locker);
+	s_sending = false;
 	rtmp_client_publish_send(s_transport);
 }
 
@@ -83,7 +84,6 @@ static void rtmp_client_publish_onsend(void*)
 
 void rtmp_publish_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
-	socket_init();
 	static char packet[2 * 1024 * 1024];
 	snprintf(packet, sizeof(packet), "rtmp://%s/%s/%s", host, app, stream); // tcurl
 
@@ -99,5 +99,4 @@ void rtmp_publish_aio_test(const char* host, const char* app, const char* stream
 		system_sleep(1000); // wait for all data send to server
 
 	rtmp_client_transport_destroy(s_transport);
-	socket_cleanup();
 }
