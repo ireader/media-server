@@ -32,7 +32,7 @@ PSFileSource::PSFileSource(const char *file)
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_ps_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_MP2P, &s_psfunc, this);
+	m_pspacker = rtp_ps_packer()->create(RTP_PAYLOAD_MP2P, (unsigned short)ssrc, ssrc, 90000, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -190,7 +190,7 @@ void PSFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, uint64_t time)
+void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);

@@ -2,7 +2,7 @@
 #include "rtp-unpack.h"
 
 // RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
-struct rtp_pack_t *rtp_mp4v_es_unpacker()
+struct rtp_unpack_t *rtp_mp4v_es_unpacker()
 {
 	return rtp_ps_unpacker();
 }

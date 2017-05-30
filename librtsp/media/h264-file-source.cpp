@@ -21,7 +21,7 @@ H264FileSource::H264FileSource(const char *file)
 		H264FileSource::RTPFree,
 		H264FileSource::RTPPacket,
 	};
-	m_rtppacker = rtp_h264_packer()->create(ssrc, (unsigned short)ssrc, RTP_PAYLOAD_H264, &s_rtpfunc, this);
+	m_rtppacker = rtp_h264_packer()->create(RTP_PAYLOAD_H264, (unsigned short)ssrc, ssrc, 90000, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -187,7 +187,7 @@ void H264FileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, uint64_t time)
+void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
 {
 	H264FileSource *self = (H264FileSource*)param;
 	assert(self->m_packet == packet);
