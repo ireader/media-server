@@ -54,6 +54,7 @@ C -> S: Video
 #include <time.h>
 
 #define FLASHVER "LNX 9,0,124,2"
+#define RTMP_PUBLISH_CHUNK_SIZE 4000
 
 struct rtmp_client_t
 {
@@ -166,11 +167,11 @@ static int rtmp_client_send_play(struct rtmp_client_t* ctx)
 }
 
 /// 5.4.1. Set Chunk Size (1)
-static int rtmp_client_send_set_chunk_size(struct rtmp_client_t* ctx)
+static int rtmp_client_send_set_chunk_size(struct rtmp_client_t* ctx, size_t size)
 {
 	int n, r;
 	assert(0 == ctx->publish);
-	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
+	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), size);
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
 }
@@ -230,7 +231,8 @@ static int rtmp_client_oncreate_stream(void* param, double stream_id)
 	if (0 == ctx->publish)
 	{
 		r = rtmp_client_send_publish(ctx);
-		r = 0 == r ? rtmp_client_send_set_chunk_size(ctx) : r;
+		r = 0 == r ? rtmp_client_send_set_chunk_size(ctx, RTMP_PUBLISH_CHUNK_SIZE) : r;
+		if (0 == r) ctx->rtmp.out_chunk_size = RTMP_PUBLISH_CHUNK_SIZE; // update output chunk size
 	}
 	else
 	{
