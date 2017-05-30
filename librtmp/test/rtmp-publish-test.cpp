@@ -6,10 +6,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int rtmp_client_send(void* param, const void* data, size_t bytes)
+static int rtmp_client_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
-	return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
+	if (bytes > 0 && data)
+	{
+		socket_bufvec_t vec[2];
+		socket_setbufvec(vec, 0, (void*)header, len);
+		socket_setbufvec(vec, 1, (void*)data, bytes);
+		return socket_send_v_all_by_time(*socket, vec, 2, 0, 2000);
+	}
+	else
+	{
+		return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
+	}
 }
 
 static void rtmp_client_push(const char* flv, void* rtmp)
