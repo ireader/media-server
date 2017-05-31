@@ -1,5 +1,5 @@
 #include "flv-demuxer.h"
-#include "flv-utils.h"
+#include "flv-proto.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include <stdlib.h>

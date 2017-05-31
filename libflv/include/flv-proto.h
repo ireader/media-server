@@ -1,5 +1,5 @@
-#ifndef _flv_common_h_
-#define _flv_common_h_
+#ifndef _flv_proto_h_
+#define _flv_proto_h_
 
 // FLV Tag Type
 #define FLV_TYPE_AUDIO		8
@@ -18,8 +18,4 @@
 #define FLV_VIDEO_VP6		4
 #define FLV_VIDEO_AVC		7
 
-#define H264_NAL_IDR		5 // Coded slice of an IDR picture
-#define H264_NAL_SPS		7 // Sequence parameter set
-#define H264_NAL_PPS		8 // Picture parameter set
-
-#endif /* !_flv_common_h_ */
+#endif /* !_flv_proto_h_ */

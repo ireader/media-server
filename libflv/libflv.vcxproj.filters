@@ -33,13 +33,13 @@
     <ClInclude Include="include\mpeg4-avc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\flv-utils.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\amf0.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\amf3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\flv-proto.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,5 @@
 #include "flv-muxer.h"
-#include "flv-utils.h"
+#include "flv-proto.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>

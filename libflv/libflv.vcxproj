@@ -23,11 +23,11 @@
     <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\flv-demuxer.h" />
     <ClInclude Include="include\flv-muxer.h" />
+    <ClInclude Include="include\flv-proto.h" />
     <ClInclude Include="include\flv-reader.h" />
     <ClInclude Include="include\flv-writer.h" />
     <ClInclude Include="include\mpeg4-aac.h" />
     <ClInclude Include="include\mpeg4-avc.h" />
-    <ClInclude Include="source\flv-utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\amf0.c" />
