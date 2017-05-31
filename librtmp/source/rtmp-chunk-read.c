@@ -40,21 +40,6 @@ static struct rtmp_packet_t* rtmp_packet_create(struct rtmp_t* rtmp, uint32_t ci
 	return NULL;
 }
 
-static int rtmp_packet_alloc(struct rtmp_packet_t* packet, size_t bytes)
-{
-	if (packet->capacity < bytes)
-	{
-		void* p = realloc(packet->payload, bytes + 1024);
-		if (!p)
-			return ENOMEM;
-
-		packet->payload = p;
-		packet->capacity = bytes + 1024;
-	}
-
-	return 0;
-}
-
 static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_t* buffer)
 {
 	uint8_t fmt = 0;
@@ -81,29 +66,51 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	packet->header.fmt = fmt;
 	rtmp_chunk_message_header_read(buffer, &packet->header);
 
-	// alloc memory
-	assert(packet->header.length > 0);
+	return packet;
+}
+
+static int rtmp_packet_alloc(struct rtmp_t* rtmp, struct rtmp_packet_t* packet)
+{
+	void* p;
+
+	if (packet->header.length < 1 || packet->header.length > 512 * 1024 * 1024)
+	{
+		assert(0); // invalid packet
+		return E2BIG;
+	}
+
 	if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
 	{
 		if (0 == packet->bytes)
 		{
-			packet->payload = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO == packet->header.type ? 1 : 0, packet->header.length);
-			if (NULL == packet->payload)
-				return NULL;
+			p = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO == packet->header.type ? 1 : 0, packet->header.length);
+			if (NULL == p)
+				return ENOMEM;
+			packet->payload = p;
 			packet->capacity = packet->header.length;
 		}
 		else
 		{
-			assert(packet->capacity == packet->header.length);
+			if (packet->capacity != packet->header.length)
+			{
+				assert(0); // miss chunk ???
+				return ENOMEM;
+			}
 		}
 	}
 	else
 	{
-		if (0 != rtmp_packet_alloc(packet, packet->header.length))
-			return NULL;
+		if (packet->capacity < packet->header.length)
+		{
+			p = realloc(packet->payload, packet->header.length + 1024);
+			if (NULL == p)
+				return ENOMEM;
+			packet->payload = p;
+			packet->capacity = packet->header.length + 1024;
+		}
 	}
 
-	return packet;
+	return 0;
 }
 
 int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
@@ -189,6 +196,8 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 
 		case RTMP_PARSE_PAYLOAD:
 			assert(parser->pkt);
+			if (0 != rtmp_packet_alloc(rtmp, parser->pkt))
+				return ENOMEM;
 			assert(parser->pkt->bytes < parser->pkt->header.length);
 			assert(parser->pkt->capacity >= parser->pkt->header.length);
 			size = MIN(rtmp->in_chunk_size - (parser->pkt->bytes % rtmp->in_chunk_size), parser->pkt->header.length - parser->pkt->bytes);
