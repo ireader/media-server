@@ -85,10 +85,17 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	assert(packet->header.length > 0);
 	if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
 	{
-		packet->payload = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO==packet->header.type ? 1 : 0, packet->header.length);
-		if (NULL == packet->payload)
-			return NULL;
-		packet->capacity = packet->header.length;
+		if (0 == packet->bytes)
+		{
+			packet->payload = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO == packet->header.type ? 1 : 0, packet->header.length);
+			if (NULL == packet->payload)
+				return NULL;
+			packet->capacity = packet->header.length;
+		}
+		else
+		{
+			assert(packet->capacity == packet->header.length);
+		}
 	}
 	else
 	{
@@ -152,13 +159,12 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 			assert(parser->bytes <= size);
 			if (parser->bytes >= size)
 			{
+				parser->pkt = rtmp_packet_parse(rtmp, parser->buffer);
 				parser->state = RTMP_PARSE_EXTENDED_TIMESTAMP;
 			}
 			break;
 
 		case RTMP_PARSE_EXTENDED_TIMESTAMP:
-			assert(NULL == parser->pkt);
-			parser->pkt = rtmp_packet_parse(rtmp, parser->buffer);
 			if (NULL == parser->pkt) return ENOMEM;
 
 			size = s_header_size[parser->pkt->header.fmt] + parser->basic_bytes;
