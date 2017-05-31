@@ -329,10 +329,9 @@ void* rtmp_client_create(const char* appname, const char* playpath, const char* 
 	struct rtmp_client_t* ctx;
 
 	assert(appname && *appname && playpath && *playpath && handler);
-	ctx = (struct rtmp_client_t*)malloc(sizeof(struct rtmp_client_t));
+	ctx = (struct rtmp_client_t*)calloc(1, sizeof(struct rtmp_client_t));
 	if (!ctx) return NULL;
 
-	memset(ctx, 0, sizeof(struct rtmp_client_t));
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	strlcpy(ctx->stream_name, playpath, sizeof(ctx->stream_name));
 	ctx->stream_id = 0;
@@ -445,13 +444,12 @@ int rtmp_client_input(void* client, const void* data, size_t bytes)
 				p += RTMP_HANDSHAKE_SIZE - ctx->handshake_bytes;
 				ctx->handshake_state = RTMP_HANDSHAKE_2;
 				ctx->handshake_bytes = 0; // clear buffer
+
+				ctx->state = RTMP_STATE_HANDSHAKE;
 				r = rtmp_client_send_connect(ctx);
 				if (0 != r) return r;
 			}
 			break;
-
-		case RTMP_HANDSHAKE_2:
-			ctx->state = RTMP_STATE_HANDSHAKE;
 
 		default:
 			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)data, bytes);
