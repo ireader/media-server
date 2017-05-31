@@ -2,6 +2,7 @@
 #include "sys/system.h"
 #include "rtmp-client.h"
 #include "flv-reader.h"
+#include "flv-proto.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +37,11 @@ static void rtmp_client_push(const char* flv, void* rtmp)
 			system_sleep(timestamp - s_timestamp);
 		s_timestamp = timestamp;
 
-		if (8 == type)
+		if (FLV_TYPE_AUDIO == type)
 		{
 			rtmp_client_push_audio(rtmp, packet, r, timestamp);
 		}
-		else if (9 == type)
+		else if (FLV_TYPE_VIDEO == type)
 		{
 			rtmp_client_push_video(rtmp, packet, r, timestamp);
 		}

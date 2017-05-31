@@ -1,6 +1,7 @@
 #include "sockutil.h"
 #include "rtmp-client.h"
 #include "flv-writer.h"
+#include "flv-proto.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -18,27 +19,20 @@ static void* rtmp_client_alloc(void* /*param*/, int avtype, size_t bytes)
 static int rtmp_client_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
-	if (bytes > 0 && data)
-	{
-		socket_bufvec_t vec[2];
-		socket_setbufvec(vec, 0, (void*)header, len);
-		socket_setbufvec(vec, 1, (void*)data, bytes);
-		return socket_send_v_all_by_time(*socket, vec, 2, 0, 2000);
-	}
-	else
-	{
-		return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
-	}
+	socket_bufvec_t vec[2];
+	socket_setbufvec(vec, 0, (void*)header, len);
+	socket_setbufvec(vec, 1, (void*)data, bytes);
+	return socket_send_v_all_by_time(*socket, vec, bytes ? 2 : 1, 0, 2000);
 }
 
 static int rtmp_client_onaudio(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
 {
-	return flv_writer_input(s_flv, 8, data, bytes, timestamp);
+	return flv_writer_input(s_flv, FLV_TYPE_AUDIO, data, bytes, timestamp);
 }
 
 static int rtmp_client_onvideo(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
 {
-	return flv_writer_input(s_flv, 9, data, bytes, timestamp);
+	return flv_writer_input(s_flv, FLV_TYPE_VIDEO, data, bytes, timestamp);
 }
 
 static int rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*bytes*/)

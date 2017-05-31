@@ -1,6 +1,7 @@
 #include "sys/sock.h"
 #include "sys/system.h"
 #include "flv-writer.h"
+#include "flv-proto.h"
 #include "rtmp-client-transport.h"
 #include <stdio.h>
 #include <assert.h>
@@ -17,12 +18,12 @@ static void* rtmp_client_play_alloc(void* /*flv*/, int avtype, size_t bytes)
 
 static void rtmp_client_play_onvideo(void* flv, const void* video, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(flv, 9, video, bytes, timestamp);
+	flv_writer_input(flv, FLV_TYPE_VIDEO, video, bytes, timestamp);
 }
 
 static void rtmp_client_play_onaudio(void* flv, const void* audio, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(flv, 8, audio, bytes, timestamp);
+	flv_writer_input(flv, FLV_TYPE_AUDIO, audio, bytes, timestamp);
 }
 
 // rtmp_play_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");

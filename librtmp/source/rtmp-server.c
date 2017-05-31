@@ -349,11 +349,10 @@ static int rtmp_server_send(void* param, const uint8_t* header, uint32_t headerB
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler)
 {
 	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)malloc(sizeof(*ctx));
+	ctx = (struct rtmp_server_t*)calloc(1, sizeof(*ctx));
 	if (NULL == ctx)
 		return NULL;
 
-	memset(ctx, 0, sizeof(*ctx));
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	ctx->param = param;
 	ctx->stream_id = 0;

@@ -3,6 +3,7 @@
 #include "sys/sync.hpp"
 #include "rtmp-client-transport.h"
 #include "flv-reader.h"
+#include "flv-proto.h"
 #include "time64.h"
 #include <stdio.h>
 #include <assert.h>
@@ -53,7 +54,7 @@ static void rtmp_client_push(const char* flv, void* transport)
 		pkt->data = (uint8_t*)(pkt + 1);
 		memcpy(pkt->data, packet, r);
 		pkt->bytes = r;
-		pkt->avtype = 8 == type ? 0 : 1;
+		pkt->avtype = FLV_TYPE_AUDIO == type ? 0 : 1;
 		pkt->timestamp = timestamp;
 
 		AutoThreadLocker locker(s_locker);
