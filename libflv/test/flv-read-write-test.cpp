@@ -16,12 +16,15 @@ static void flv_ondemuxer(void* flv, int type, const void* data, size_t bytes, u
 	switch (type)
 	{
 	case FLV_AAC:
+		flv_muxer_aac(flv, data, bytes, pts, dts);
+		break;
+
 	case FLV_MP3:
-		flv_muxer_audio(flv, data, bytes, pts, dts);
+		flv_muxer_mp3(flv, data, bytes, pts, dts);
 		break;
 
 	case FLV_AVC:
-		flv_muxer_video(flv, data, bytes, pts, dts);
+		flv_muxer_avc(flv, data, bytes, pts, dts);
 		break;
 
 	default:

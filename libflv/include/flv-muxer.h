@@ -19,10 +19,13 @@ void* flv_muxer_create(flv_muxer_handler handler, void* param);
 void flv_muxer_destroy(void* flv);
 
 /// @param[in] data AAC ADTS stream, 0xFFF15C40011FFC...
-int flv_muxer_audio(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+int flv_muxer_aac(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+
+/// @param[in] data mp4 stream
+int flv_muxer_mp3(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
 // @param[in] data H.264 start code + H.264 NALU, 0x0000000168...
-int flv_muxer_video(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+int flv_muxer_avc(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
 #if defined(__cplusplus)
 }

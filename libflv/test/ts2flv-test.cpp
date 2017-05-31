@@ -20,11 +20,15 @@ static void ts_packet(void* muxer, int avtype, int64_t pts, int64_t dts, void* d
 
 	if (PSI_STREAM_AAC == avtype)
 	{
-		flv_muxer_audio(muxer, data, bytes, (uint32_t)(pts/90), (uint32_t)(pts / 90));
+		flv_muxer_aac(muxer, data, bytes, (uint32_t)(pts/90), (uint32_t)(pts / 90));
+	}
+	else if (PSI_STREAM_MP3 == avtype)
+	{
+		flv_muxer_mp3(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
 	}
 	else if (PSI_STREAM_H264 == avtype)
 	{
-		flv_muxer_video(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
+		flv_muxer_avc(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
 	}
 }
 
