@@ -120,12 +120,11 @@ uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, si
 	return ptr + length;
 }
 
-static const uint8_t* AMFReadInt16(const uint8_t* ptr, const uint8_t* end, uint16_t* value)
+static const uint8_t* AMFReadInt16(const uint8_t* ptr, const uint8_t* end, uint32_t* value)
 {
 	if (!ptr || end - ptr < 2) return NULL;
 
-	*value = ptr[0] << 8;
-	*value |= ptr[1];
+	*value = ((uint32_t)ptr[0] << 8) | ptr[1];
 	return ptr + 2;
 }
 
@@ -133,10 +132,7 @@ static const uint8_t* AMFReadInt32(const uint8_t* ptr, const uint8_t* end, uint3
 {
 	if (end - ptr < 4) return NULL;
 
-	*value = ptr[0] << 24;
-	*value |= ptr[1] << 16;
-	*value |= ptr[2] << 8;
-	*value |= ptr[3];
+	*value = ((uint32_t)ptr[0] << 24) | ((uint32_t)ptr[1] << 16) | ((uint32_t)ptr[2] << 8) | ptr[3];
 	return ptr + 4;
 }
 
@@ -180,9 +176,9 @@ const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongS
 { 
 	uint32_t len = 0;
 	if (0 == isLongString)
-		ptr = AMFReadInt16(ptr, end, (uint16_t*)&len);
+		ptr = AMFReadInt16(ptr, end, &len);
 	else
-		ptr = AMFReadInt32(ptr, end, (uint32_t*)&len);
+		ptr = AMFReadInt32(ptr, end, &len);
 
 	if (NULL == ptr || ptr + len > end || len + 1 > length) return NULL;
 
