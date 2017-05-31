@@ -75,7 +75,6 @@ int flv_muxer_audio(void* p, const void* data, size_t bytes, uint32_t pts, uint3
 	int n, m;
 	struct flv_muxer_t* flv;
 	flv = (struct flv_muxer_t*)p;
-	dts = (0 == dts || UINT32_MAX == dts) ? pts : dts;
 
 	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
 	{
