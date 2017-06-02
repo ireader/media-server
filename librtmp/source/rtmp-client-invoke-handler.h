@@ -111,8 +111,7 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 		return rtmp_command_oncreate_stream_reply(data, bytes, &duration);
 
 	default:
-		assert(0);
-		return -1;
+		return 0;
 	}
 }
 
