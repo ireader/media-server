@@ -214,7 +214,8 @@ static int rtmp_client_onconnect(void* param)
 	}
 	else
 	{
-		r = rtmp_client_send_server_bandwidth(ctx);
+		// send by rtmp_client_onbandwidth
+		//r = rtmp_client_send_server_bandwidth(ctx);
 	}
 
 	return 0 == r ? rtmp_client_send_create_stream(ctx) : r;
