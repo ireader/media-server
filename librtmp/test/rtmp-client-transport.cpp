@@ -248,7 +248,7 @@ static void rtmp_client_transport_onsend(void* transport, int code, size_t bytes
 
 	if (0 != code)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) send failed: %d/%d\n", t->tcurl, code, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) send failed: %d/%d\n", t->tcurl, t->stream, code, socket_geterror());
 		rtmp_client_transport_onerror(t);
 	}
 }
@@ -262,7 +262,7 @@ static void rtmp_client_transport_onrecv(void* transport, int code, size_t bytes
 	if (0 == bytes && 0 == code)
 	{
 		// socket close by peer (maybe no data)
-		app_log(LOG_ERROR, "RTMP url(%s) connection close by peer.\n", t->tcurl);
+		app_log(LOG_ERROR, "RTMP url(%s/%s) connection close by peer.\n", t->tcurl, t->stream);
 		rtmp_client_transport_onerror(t);
 		return;
 	}
@@ -291,7 +291,7 @@ static void rtmp_client_transport_onrecv(void* transport, int code, size_t bytes
 
 	if (0 != code)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) recv error: %d/%d\n", t->tcurl, code, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) recv error: %d/%d\n", t->tcurl, t->stream, code, socket_geterror());
 		rtmp_client_transport_onerror(t);
 	}
 }
@@ -319,7 +319,7 @@ static void rtmp_client_transport_onconnect(void* transport, int code)
 
 	if (0 != code)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) connect error: %d/%d\n", t->tcurl, code, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) connect error: %d/%d\n", t->tcurl, t->stream, code, socket_geterror());
 		rtmp_client_transport_onerror(t);
 	}
 }
@@ -337,7 +337,7 @@ static int rtmp_client_transport_connect(struct rtmp_client_transport_t* t)
 	t->socket = aio_socket_create(tcp, 1);
 	if (invalid_aio_socket == t->socket)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) create socket error: %d\n", t->tcurl, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) create socket error: %d\n", t->tcurl, t->stream, socket_geterror());
 		socket_close(tcp);
 		return -1;
 	}
@@ -346,7 +346,7 @@ static int rtmp_client_transport_connect(struct rtmp_client_transport_t* t)
 	socklen_t len = sizeof(ss);
 	if (0 != socket_addr_from(&ss, &len, t->host, (u_short)t->port))
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) get address error: %d\n", t->tcurl, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) get address error: %d\n", t->tcurl, t->stream, socket_geterror());
 		return -1;
 	}
 
@@ -354,7 +354,7 @@ static int rtmp_client_transport_connect(struct rtmp_client_transport_t* t)
 	int r = aio_socket_connect(t->socket, (sockaddr*)&ss, len, rtmp_client_transport_onconnect, t);
 	if (0 != r)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) connect error: %d/%d\n", t->tcurl, r, socket_geterror());
+		app_log(LOG_ERROR, "RTMP url(%s/%s) connect error: %d/%d\n", t->tcurl, t->stream, r, socket_geterror());
 		atomic_decrement32(&t->ref);
 		return -1;
 	}
@@ -432,7 +432,7 @@ int rtmp_client_transport_sendpacket(void* transport, int avtype, const void* fl
 	int r = rtmp_client_transport_avalloc(t, bytes);
 	if (0 != r)
 	{
-		app_log(LOG_ERROR, "RTMP url(%s) alloc(%d) error\n", t->tcurl, (int)bytes);
+		app_log(LOG_ERROR, "RTMP url(%s/%s) alloc(%d) error\n", t->tcurl, t->stream, (int)bytes);
 		return r;
 	}
 	t->avbytes = 0;
