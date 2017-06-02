@@ -9,7 +9,7 @@ static void rtmp_protocol_control_message_header(uint8_t* out, uint8_t id, size_
 	// 5.4. Protocol Control Messages (p18)
 	// These protocol control messages MUST have message stream ID 0 (known
 	// as the control stream) and be sent in chunk stream ID 2.
-	out[0] = 0x00 /*fmt*/ | 0x02 /*cs id*/;
+	out[0] = (0x00 << 6) /*fmt*/ | 0x02 /*cs id*/;
 
 	/* timestamp */
 	out[1] = 0x00;

@@ -12,7 +12,7 @@ static void rtmp_user_control_message_header(uint8_t* out, size_t payload)
 	// RTMP uses message type ID 4 for User Control messages
 	// User Control messages SHOULD use message stream ID 0 (known 
 	// as the control stream) and be sent in chunk stream ID 2.
-	out[0] = 0x01 /*fmt*/ | 0x02 /*cs id*/;
+	out[0] = (0x00 << 6) /*fmt*/ | 0x02 /*cs id*/;
 
 	/* timestamp */
 	out[1] = 0x00;
@@ -135,7 +135,6 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 		return 6;
 
 	default:
-		assert(0);
-		return 0;
+		return header->length;
 	}
 }
