@@ -155,6 +155,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 			return ENOMEM;
 	}
 
+	flv->avc.chroma_format_idc = 0;
 	flv->bytes = 5;
 	flv->bytes += mpeg4_annexbtomp4(&flv->avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
 	if (flv->bytes <= 5)
