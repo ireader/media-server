@@ -14,7 +14,7 @@ struct rtmp_result_t
 {
 	char code[64]; // NetStream.Play.Start
 	char level[8]; // warning/status/error
-	char description[128];
+	char description[256];
 };
 
 //static const char* s_rtmp_command_code[] = {
