@@ -59,15 +59,19 @@ static void mov_video_info(void* flv, int avtype, int /*width*/, int /*height*/,
 
 static void mov_audio_info(void* flv, int avtype, int /*channel_count*/, int /*bit_per_sample*/, int /*sample_rate*/, const void* extra, size_t bytes)
 {
-	//struct mpeg4_aac_t aac;
-	//mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &aac);
-
 	assert(MOV_MP4A == avtype);
 	s_packet[0] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 	s_packet[1] = 0; // AACPacketType: 0-AudioSpecificConfig(AAC sequence header)
-	//int n = mpeg4_aac_audio_specific_config_save(&s_aac, s_packet + 2, sizeof(s_packet) - 2);
+
+#if 1
+	struct mpeg4_aac_t aac;
+	mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &aac);
+	int n = mpeg4_aac_audio_specific_config_save(&aac, s_packet + 2, sizeof(s_packet) - 2);
+	flv_writer_input(flv, 8, s_packet, n + 2, 0);
+#else
 	memcpy(s_packet + 2, extra, bytes);
 	flv_writer_input(flv, 8, s_packet, bytes + 2, 0);
+#endif
 }
 
 void mov_2_flv_test(const char* mp4)
