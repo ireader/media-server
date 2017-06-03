@@ -103,7 +103,8 @@ uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value)
 
 uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	if (!ptr || ptr + 1 + (length < 65536 ? 2 : 4) + length > end || length > UINT32_MAX) return NULL;
+	if (!ptr || ptr + 1 + (length < 65536 ? 2 : 4) + length > end || length > UINT32_MAX)
+		return NULL;
 
 	if (length < 65536)
 	{
@@ -120,19 +121,54 @@ uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, si
 	return ptr + length;
 }
 
+uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value)
+{
+	if (ptr + length + 2 + 2 > end)
+		return NULL;
+
+	ptr = AMFWriteString16(ptr, end, name, length);
+	return ptr ? AMFWriteBoolean(ptr, end, value) : NULL;
+}
+
+uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value)
+{
+	if (ptr + length + 2 + 8 + 1 > end)
+		return NULL;
+
+	ptr = AMFWriteString16(ptr, end, name, length);
+	return ptr ? AMFWriteDouble(ptr, end, value) : NULL;
+}
+
+uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2)
+{
+	if (ptr + length + 2 + length2 + 3 > end)
+		return NULL;
+
+	ptr = AMFWriteString16(ptr, end, name, length);
+	return ptr ? AMFWriteString(ptr, end, value, length2) : NULL;
+}
+
 static const uint8_t* AMFReadInt16(const uint8_t* ptr, const uint8_t* end, uint32_t* value)
 {
-	if (!ptr || end - ptr < 2) return NULL;
+	if (!ptr || end - ptr < 2)
+		return NULL;
 
-	*value = ((uint32_t)ptr[0] << 8) | ptr[1];
+	if (value)
+	{
+		*value = ((uint32_t)ptr[0] << 8) | ptr[1];
+	}
 	return ptr + 2;
 }
 
 static const uint8_t* AMFReadInt32(const uint8_t* ptr, const uint8_t* end, uint32_t* value)
 {
-	if (end - ptr < 4) return NULL;
+	if (!ptr || end - ptr < 4)
+		return NULL;
 
-	*value = ((uint32_t)ptr[0] << 24) | ((uint32_t)ptr[1] << 16) | ((uint32_t)ptr[2] << 8) | ptr[3];
+	if (value)
+	{
+		*value = ((uint32_t)ptr[0] << 24) | ((uint32_t)ptr[1] << 16) | ((uint32_t)ptr[2] << 8) | ptr[3];
+	}
 	return ptr + 4;
 }
 
@@ -144,30 +180,39 @@ const uint8_t* AMFReadNull(const uint8_t* ptr, const uint8_t* end)
 
 const uint8_t* AMFReadBoolean(const uint8_t* ptr, const uint8_t* end, uint8_t* value)
 {
-	if (end - ptr < 1) return NULL;
-	*value = ptr[0];
+	if (!ptr || end - ptr < 1)
+		return NULL;
+
+	if (value)
+	{
+		*value = ptr[0];
+	}
 	return ptr + 1;
 }
 
 const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* value)
 {
 	uint8_t* p = (uint8_t*)value;
-	if (end - ptr < 8) return NULL;
+	if (!ptr || end - ptr < 8)
+		return NULL;
 
-	if (0x00 == *(char*)&s_double)
-	{// Little-Endian
-		*p++ = ptr[7];
-		*p++ = ptr[6];
-		*p++ = ptr[5];
-		*p++ = ptr[4];
-		*p++ = ptr[3];
-		*p++ = ptr[2];
-		*p++ = ptr[1];
-		*p++ = ptr[0];
-	}
-	else
+	if (value)
 	{
-		memcpy(&value, ptr, 8);
+		if (0x00 == *(char*)&s_double)
+		{// Little-Endian
+			*p++ = ptr[7];
+			*p++ = ptr[6];
+			*p++ = ptr[5];
+			*p++ = ptr[4];
+			*p++ = ptr[3];
+			*p++ = ptr[2];
+			*p++ = ptr[1];
+			*p++ = ptr[0];
+		}
+		else
+		{
+			memcpy(&value, ptr, 8);
+		}
 	}
 	return ptr + 8;
 }
@@ -180,41 +225,15 @@ const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongS
 	else
 		ptr = AMFReadInt32(ptr, end, &len);
 
-	if (NULL == ptr || ptr + len > end || len + 1 > length) return NULL;
+	if (!ptr || ptr + len > end)
+		return NULL;
 
-	memcpy(string, ptr, len);
-	string[len] = 0; // null-terminal string
+	if (string && length > len)
+	{
+		memcpy(string, ptr, len);
+		string[len] = 0;
+	}
 	return ptr + len;
-}
-
-uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2)
-{
-	if (ptr + length + 2 + length2 + 3 > end)
-		return NULL;
-
-	ptr = AMFWriteString16(ptr, end, name, length);
-
-	return AMFWriteString(ptr, end, value, length2);
-}
-
-uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value)
-{
-	if (ptr + length + 2 + 8 + 1 > end)
-		return NULL;
-
-	ptr = AMFWriteString16(ptr, end, name, length);
-
-	return AMFWriteDouble(ptr, end, value);
-}
-
-uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value)
-{
-	if (ptr + length + 2 + 2 > end)
-		return NULL;
-
-	ptr = AMFWriteString16(ptr, end, name, length);
-
-	return AMFWriteBoolean(ptr, end, value);
 }
 
 
@@ -226,19 +245,19 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	switch (type)
 	{
 	case AMF_BOOLEAN:
-		return AMFReadBoolean(data, end, (uint8_t*)item->value);
+		return AMFReadBoolean(data, end, (uint8_t*)(item ? item->value : NULL));
 
 	case AMF_NUMBER:
-		return AMFReadDouble(data, end, (double*)item->value);
+		return AMFReadDouble(data, end, (double*)(item ? item->value : NULL));
 
 	case AMF_STRING:
-		return AMFReadString(data, end, 0, (char*)item->value, item->size);
+		return AMFReadString(data, end, 0, (char*)(item ? item->value : NULL), item ? item->size : 0);
 
 	case AMF_LONG_STRING:
-		return AMFReadString(data, end, 1, (char*)item->value, item->size);
+		return AMFReadString(data, end, 1, (char*)(item ? item->value : NULL), item ? item->size : 0);
 
 	case AMF_OBJECT:
-		return amf_read_object(data, end, (struct amf_object_item_t*)item->value, item->size);
+		return amf_read_object(data, end, (struct amf_object_item_t*)(item ? item->value : NULL), item ? item->size : 0);
 
 	case AMF_NULL:
 		return data;
@@ -252,14 +271,12 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	}
 }
 
-static const uint8_t* amf_read_ecma_array(const uint8_t* data, const uint8_t* end)
+static const uint8_t* amf_read_ecma_array(const uint8_t* ptr, const uint8_t* end)
 {
-	if (data + 4 > end)
-		return end;
-		
-	data += 4; // U32 associative-count
-	data = amf_read_object(data, end, NULL, 0);
-	return NULL == data ? end : data;
+	if (!ptr || ptr + 4 > end)
+		return NULL;
+	ptr += 4; // U32 associative-count
+	return amf_read_object(ptr, end, NULL, 0);
 }
 
 static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n)
@@ -268,7 +285,7 @@ static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, s
 	uint32_t len;
 	size_t i;
 
-	while (data + 2 <= end)
+	while (data && data + 2 <= end)
 	{
 		len = *data++ << 8;
 		len |= *data++;
@@ -285,24 +302,8 @@ static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, s
 		}
 
 		data += len; // skip name string
-		type = *data++;
-		if (i < n)
-		{
-			data = amf_read_item(data, end, type, &items[i]);
-		}
-		else
-		{
-			// skip unknown item
-			switch (type)
-			{
-			case AMF_BOOLEAN: data += 1; break;
-			case AMF_NUMBER: data += 8; break;
-			case AMF_STRING: data += 2 + (data[0] << 8) + data[1]; break;
-			case AMF_LONG_STRING: data += 4 + (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3]; break;
-			case AMF_ECMA_ARRAY: data = amf_read_ecma_array(data, end); break;
-			default: return NULL;
-			}
-		}
+		type = *data++; // value type
+		data = amf_read_item(data, end, type, i < n ? &items[i] : NULL);
 	}
 
 	if (data && data < end && AMF_OBJECT_END == *data)
