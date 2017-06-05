@@ -42,6 +42,9 @@ enum rtsp_state_t
 	RTSP_PLAY,
 	RTSP_PAUSE,
 	RTSP_TEARDWON,
+	RTSP_OPTIONS,
+	RTSP_GET_PARAMETER,
+	RTSP_SET_PARAMETER,
 };
 
 struct rtsp_client_t
@@ -83,6 +86,9 @@ int rtsp_client_announce(struct rtsp_client_t* ctx, const char* sdp);
 int rtsp_client_setup(struct rtsp_client_t* ctx, const char* sdp);
 int rtsp_client_sdp(struct rtsp_client_t* ctx, const char* sdp);
 int rtsp_client_teardown(struct rtsp_client_t* ctx);
+int rtsp_client_options(void* rtsp, const char* commands);
+int rtsp_client_get_parameter(void* rtsp, int media, const char* parameter);
+int rtsp_client_set_parameter(void* rtsp, int media, const char* parameter);
 
 int rtsp_client_announce_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser);
@@ -90,5 +96,8 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_play_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_pause_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser);
+int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser);
+int rtsp_client_get_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
+int rtsp_client_set_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
 
 #endif /* !_rtsp_client_internal_h_ */

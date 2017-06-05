@@ -67,6 +67,9 @@ int rtsp_client_input(void* p, void* parser)
 	case RTSP_PLAY:		return rtsp_client_play_onreply(rtsp, parser);
 	case RTSP_PAUSE:	return rtsp_client_pause_onreply(rtsp, parser);
 	case RTSP_TEARDWON: return rtsp_client_teardown_onreply(rtsp, parser);
+	case RTSP_OPTIONS:	return rtsp_client_options_onreply(rtsp, parser);
+	case RTSP_GET_PARAMETER: return rtsp_client_get_parameter_onreply(rtsp, parser);
+	case RTSP_SET_PARAMETER: return rtsp_client_set_parameter_onreply(rtsp, parser);
 	default: assert(0); return -1;
 	}
 }
