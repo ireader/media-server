@@ -19,8 +19,8 @@ struct flv_muxer_t
 	flv_muxer_handler handler;
 	void* param;
 
-	uint8_t audio;
-	uint8_t video;
+	uint8_t aac_sequence_header;
+	uint8_t avc_sequence_header;
 
 	struct mpeg4_aac_t aac;
 	struct mpeg4_avc_t avc;
@@ -57,6 +57,15 @@ void flv_muxer_destroy(void* p)
 	}
 
 	free(flv);
+}
+
+int flv_muxer_reset(void* p)
+{
+	struct flv_muxer_t* flv;
+	flv = (struct flv_muxer_t*)p;
+	flv->aac_sequence_header = 0;
+	flv->avc_sequence_header = 0;
+	return 0;
 }
 
 static int flv_muxer_alloc(struct flv_muxer_t* flv, size_t bytes)
@@ -124,9 +133,9 @@ int flv_muxer_aac(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 	if (n <= 0)
 		return -1; // invalid data
 
-	if (0 == flv->audio)
+	if (0 == flv->aac_sequence_header)
 	{
-		flv->audio = 1; // once only
+		flv->aac_sequence_header = 1; // once only
 
 		flv->ptr[0] = (FLV_AUDIO_AAC << 4) /* SoundFormat */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 		flv->ptr[1] = 0; // AACPacketType: 0-AudioSpecificConfig(AAC sequence header)
@@ -163,7 +172,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 
 	flv->keyframe = flv->avc.chroma_format_idc; // hack
 
-	if (0 == flv->video)
+	if (0 == flv->avc_sequence_header)
 	{
 		if (flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
 			return 0;
@@ -177,7 +186,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 		if (m <= 0)
 			return -1; // invalid data
 
-		flv->video = 1; // once only
+		flv->avc_sequence_header = 1; // once only
 		assert(flv->bytes + m + 5 <= (int)flv->capacity);
 		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
 	}

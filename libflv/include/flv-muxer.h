@@ -15,8 +15,10 @@ extern "C" {
 typedef void(*flv_muxer_handler)(void* param, int type, const void* data, size_t bytes, uint32_t timestamp);
 
 void* flv_muxer_create(flv_muxer_handler handler, void* param);
-
 void flv_muxer_destroy(void* flv);
+
+/// re-create AAC/AVC sequence header
+int flv_muxer_reset(void* flv);
 
 /// @param[in] data AAC ADTS stream, 0xFFF15C40011FFC...
 int flv_muxer_aac(void* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
