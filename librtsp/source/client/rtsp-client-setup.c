@@ -36,6 +36,7 @@ static int rtsp_client_media_setup(struct rtsp_client_t* rtsp)
 	assert(RTSP_SETUP == rtsp->state);
 	assert(rtsp->progress < rtsp->media_count);
 	media = rtsp_get_media(rtsp, rtsp->progress);
+	if (NULL == media) return -1;
 
 	p = rtsp->media[0].session.session;
 	len = snprintf(session, sizeof(session), (rtsp->aggregate && *p) ? "Session: %s\r\n" : "", p);

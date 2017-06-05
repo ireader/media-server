@@ -60,6 +60,8 @@ static int rtsp_client_media_play(struct rtsp_client_t *rtsp)
 	assert(rtsp->progress < rtsp->media_count);
 
 	media = rtsp_get_media(rtsp, rtsp->progress);
+	if (NULL == media) return -1;
+
 	assert(media && media->uri && media->session.session[0]);
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, rtsp->range, rtsp->speed, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));

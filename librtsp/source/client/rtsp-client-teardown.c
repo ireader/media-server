@@ -26,6 +26,7 @@ static int rtsp_client_media_teardown(struct rtsp_client_t* rtsp)
 	assert(RTSP_TEARDWON == rtsp->state);
 	assert(rtsp->progress < rtsp->media_count);
 	media = rtsp_get_media(rtsp, rtsp->progress);
+	if (NULL == media) return -1;
 
 	assert(media->uri[0] && media->session.session[0]);
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, USER_AGENT);
