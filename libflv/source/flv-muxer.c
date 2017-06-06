@@ -164,7 +164,6 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 			return ENOMEM;
 	}
 
-	flv->avc.chroma_format_idc = 0;
 	flv->bytes = 5;
 	flv->bytes += mpeg4_annexbtomp4(&flv->avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
 	if (flv->bytes <= 5)
@@ -174,7 +173,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 
 	if (0 == flv->avc_sequence_header)
 	{
-		if (flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
+		if (!flv->keyframe || flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
 			return 0;
 
 		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_AVC /*CodecID*/;

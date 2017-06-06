@@ -146,6 +146,9 @@ size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes
 	h.capacity = size;
 	h.bytes = 0;
 	h.errcode = 0;
+	avc->chroma_format_idc = 0;
+	avc->nb_pps = 0;
+	avc->nb_sps = 0;
 	avc->nalu = 4;
 	h264_stream(data, bytes, h264_handler, &h);
 	return 0 == h.errcode ? h.bytes : 0;
