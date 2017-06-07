@@ -98,7 +98,7 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 			mp4->avc->compatibility = mp4->avc->sps[0].data[2];
 			mp4->avc->level = mp4->avc->sps[0].data[3];
 		}
-		return;
+		break;
 
 	case H264_NAL_PPS:
 		assert(bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data));
@@ -112,7 +112,7 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 		{
 			mp4->errcode = -1;
 		}
-		return;
+		break;
 
 	case H264_NAL_IDR:
 		mp4->avc->chroma_format_idc = 1;
