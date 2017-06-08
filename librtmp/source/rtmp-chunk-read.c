@@ -75,7 +75,7 @@ static int rtmp_packet_alloc(struct rtmp_t* rtmp, struct rtmp_packet_t* packet)
 
 	// 24-bytes length
 	assert(0 == packet->bytes);
-	assert(packet->header.length < (1 << 16));
+	assert(packet->header.length < (1 << 24));
 	if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
 	{
 		p = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO == packet->header.type ? 1 : 0, packet->header.length + 1 /*always >0*/);
