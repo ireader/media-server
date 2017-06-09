@@ -30,30 +30,28 @@ inline const char* ftimestamp(uint32_t t, char* buf)
 	return buf;
 }
 
-inline char flv_type(int type, int format)
+inline char flv_type(int type)
 {
-	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
-
-	switch (format)
+	switch (type)
 	{
-	case (FLV_AUDIO_AAC << 8): return 'A';
-	case (FLV_AUDIO_MP3 << 8): return 'M';
-	case (FLV_AUDIO_ASC << 8): return 'a';
+	case FLV_AUDIO_AAC: return 'A';
+	case FLV_AUDIO_MP3: return 'M';
+	case FLV_AUDIO_ASC: return 'a';
 	case FLV_VIDEO_H264: return 'V';
 	case FLV_VIDEO_AVCC: return 'v';
 	default: return '*';
 	}
 }
 
-static void onFLV(void* ts, int type, int format, const void* data, size_t bytes, unsigned int pts, unsigned int dts)
+static void onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned int pts, unsigned int dts, int flags)
 {
 	static char s_pts[64], s_dts[64];
 	static uint32_t v_pts = 0, v_dts = 0;
 	static uint32_t a_pts = 0, a_dts = 0;
 
-	printf("[%c] pts: %s, dts: %s, ", flv_type(type, format), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
+	printf("[%c] pts: %s, dts: %s, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
 
-	if (FLV_TYPE_AUDIO == type && FLV_AUDIO_AAC == format)
+	if (FLV_AUDIO_AAC == codec)
 	{
 		//		assert(0 == a_dts || dts >= a_dts);
 		pts = (a_pts && pts < a_pts) ? a_pts : pts;
@@ -64,11 +62,11 @@ static void onFLV(void* ts, int type, int format, const void* data, size_t bytes
 		a_pts = pts;
 		a_dts = dts;
 	}
-	if (FLV_TYPE_AUDIO == type && FLV_AUDIO_MP3 == format)
+	if (FLV_AUDIO_MP3 == codec)
 	{
 		mpeg_ts_write(ts, STREAM_AUDIO_MP3, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_TYPE_VIDEO == type && FLV_VIDEO_H264 == format)
+	else if (FLV_VIDEO_H264 == codec)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;

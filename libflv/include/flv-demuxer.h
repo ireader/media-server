@@ -10,13 +10,13 @@ extern "C" {
 
 /// Audio/Video Elementary Stream
 /// @param[in] param user-defined parameter
-/// @param[in] type 8-audio, 9-video, 18-script (see more flv-proto.h)
-/// @param[in] format audio/video format, dependent on type (see more flv-proto.h), specially, 16-AudioSpecificConfig(ISO-14496-3)/AVCDecoderConfigurationRecord(ISO-14496-15)
+/// @param[in] codec audio/video format (see more flv-proto.h)
 /// @param[in] data audio/video element data, AAC: ADTS + AAC-Frame, H.264: startcode + NALU, MP3-Raw data
 /// @param[in] bytes data length in byte
 /// @param[in] pts audio/video presentation timestamp
 /// @param[in] dts audio/video decoding timestamp
-typedef void (*flv_demuxer_handler)(void* param, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+/// @param[in] flags 1-video keyframe, other-undefined
+typedef void (*flv_demuxer_handler)(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
 
 void* flv_demuxer_create(flv_demuxer_handler handler, void* param);
 void flv_demuxer_destroy(void* flv);

@@ -12,17 +12,15 @@ static void flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uin
 	flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void flv_ondemuxer(void* flv, int type, int format, const void* data, size_t bytes, unsigned int pts, unsigned int dts)
+static void flv_ondemuxer(void* flv, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
 {
-	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
-
-	switch (format)
+	switch (codec)
 	{
-	case (FLV_AUDIO_AAC << 8):
+	case FLV_AUDIO_AAC:
 		flv_muxer_aac(flv, data, bytes, pts, dts);
 		break;
 
-	case (FLV_AUDIO_MP3 << 8):
+	case FLV_AUDIO_MP3:
 		flv_muxer_mp3(flv, data, bytes, pts, dts);
 		break;
 

@@ -11,19 +11,18 @@
 static uint8_t s_buffer[2 * 1024 * 1024];
 static int s_width, s_height;
 
-static void onFLV(void* mov, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void onFLV(void* mov, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
 	static bool s_aac_track = false;
 	static bool s_avc_track = false;
 
-	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
-	switch(format)
+	switch(codec)
 	{
-	case (FLV_AUDIO_AAC << 8):
+	case FLV_AUDIO_AAC:
 		mov_writer_write_audio(mov, data, bytes, pts, dts);
 		break;
 
-	case (FLV_AUDIO_MP3 << 8):
+	case FLV_AUDIO_MP3:
 		assert(0);
 		break;
 
@@ -39,7 +38,7 @@ static void onFLV(void* mov, int type, int format, const void* data, size_t byte
 		}
 		break;
 
-	case (FLV_AUDIO_ASC << 8):
+	case FLV_AUDIO_ASC:
 		if (!s_aac_track)
 		{
 			s_aac_track = true;

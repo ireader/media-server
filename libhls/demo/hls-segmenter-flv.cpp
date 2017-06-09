@@ -26,16 +26,15 @@ static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts,
 	fclose(fp);
 }
 
-static void flv_handler(void* param, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
-	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
-	switch (format)
+	switch (codec)
 	{
-	case (FLV_AUDIO_AAC << 8):
+	case FLV_AUDIO_AAC:
 		hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 		break;
 
-	case (FLV_AUDIO_MP3 << 8):
+	case FLV_AUDIO_MP3:
 		hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 		break;
 
