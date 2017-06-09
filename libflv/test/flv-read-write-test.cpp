@@ -16,7 +16,7 @@ static void flv_ondemuxer(void* flv, int type, int format, const void* data, siz
 {
 	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
 
-	switch (type)
+	switch (format)
 	{
 	case (FLV_AUDIO_AAC << 8):
 		flv_muxer_aac(flv, data, bytes, pts, dts);

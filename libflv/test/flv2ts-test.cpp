@@ -34,7 +34,7 @@ inline char flv_type(int type, int format)
 {
 	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
 
-	switch (type)
+	switch (format)
 	{
 	case (FLV_AUDIO_AAC << 8): return 'A';
 	case (FLV_AUDIO_MP3 << 8): return 'M';
@@ -53,8 +53,7 @@ static void onFLV(void* ts, int type, int format, const void* data, size_t bytes
 
 	printf("[%c] pts: %s, dts: %s, ", flv_type(type, format), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
 
-	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
-	if ((FLV_AUDIO_AAC << 8) == type)
+	if (FLV_TYPE_AUDIO == type && FLV_AUDIO_AAC == format)
 	{
 		//		assert(0 == a_dts || dts >= a_dts);
 		pts = (a_pts && pts < a_pts) ? a_pts : pts;
@@ -65,11 +64,11 @@ static void onFLV(void* ts, int type, int format, const void* data, size_t bytes
 		a_pts = pts;
 		a_dts = dts;
 	}
-	if ((FLV_AUDIO_MP3 << 8) == type)
+	if (FLV_TYPE_AUDIO == type && FLV_AUDIO_MP3 == format)
 	{
 		mpeg_ts_write(ts, STREAM_AUDIO_MP3, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_VIDEO_H264 == type)
+	else if (FLV_TYPE_VIDEO == type && FLV_VIDEO_H264 == format)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;

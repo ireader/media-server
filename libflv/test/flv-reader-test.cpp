@@ -24,7 +24,7 @@ inline char flv_type(int type, int format)
 {
 	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
 
-	switch (type)
+	switch (format)
 	{
 	case (FLV_AUDIO_AAC << 8): return 'A';
 	case (FLV_AUDIO_MP3 << 8): return 'M';
