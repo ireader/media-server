@@ -10,10 +10,6 @@
 #include "mpeg4-avc.h"
 #include "mp3-header.h"
 
-#define FLV_TYPE_AUDIO 8
-#define FLV_TYPE_VIDEO 9
-#define FLV_TYPE_SCRIPT 18
-
 struct flv_muxer_t
 {
 	flv_muxer_handler handler;
@@ -176,7 +172,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 		if (!flv->keyframe || flv->avc.nb_sps < 1 || flv->avc.sps[0].bytes < 4)
 			return 0;
 
-		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_AVC /*CodecID*/;
+		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
 		flv->ptr[flv->bytes + 1] = 0; // AVC sequence header
 		flv->ptr[flv->bytes + 2] = 0; // CompositionTime 0
 		flv->ptr[flv->bytes + 3] = 0;
@@ -194,7 +190,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 	if (flv->bytes > 5)
 	{
 		compositionTime = pts - dts;
-		flv->ptr[0] = ((flv->keyframe ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_AVC /*CodecID*/;
+		flv->ptr[0] = ((flv->keyframe ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
 		flv->ptr[1] = 1; // AVC NALU
 		flv->ptr[2] = (compositionTime >> 16) & 0xFF;
 		flv->ptr[3] = (compositionTime >> 8) & 0xFF;
