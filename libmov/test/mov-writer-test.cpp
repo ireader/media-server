@@ -1,6 +1,7 @@
 #include "mov-writer.h"
 #include "mov-format.h"
 #include "mpeg4-aac.h"
+#include "flv-proto.h"
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include <stdio.h>
@@ -10,32 +11,35 @@
 static uint8_t s_buffer[2 * 1024 * 1024];
 static int s_width, s_height;
 
-static void onFLV(void* mov, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void onFLV(void* mov, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (FLV_AAC == type)
+	static bool s_aac_track = false;
+	static bool s_avc_track = false;
+
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
+	switch(format)
 	{
+	case (FLV_AUDIO_AAC << 8):
 		mov_writer_write_audio(mov, data, bytes, pts, dts);
-	}
-	else if (FLV_AVC == type)
-	{
-		mov_writer_write_video(mov, data, bytes, pts, dts);
-	}
-	else if (FLV_MP3 == type)
-	{
+		break;
+
+	case (FLV_AUDIO_MP3 << 8):
 		assert(0);
-	}
-	else if (FLV_AVC_HEADER == type)
-	{
-		static bool s_avc_track = false;
+		break;
+
+	case FLV_VIDEO_H264:
+		mov_writer_write_video(mov, data, bytes, pts, dts);
+		break;
+
+	case FLV_VIDEO_AVCC:
 		if (!s_avc_track)
 		{
 			s_avc_track = true;
 			mov_writer_video_meta(mov, MOV_AVC1, s_width, s_height, data, bytes);
 		}
-	}
-	else if (FLV_AAC_HEADER == type)
-	{
-		static bool s_aac_track = false;
+		break;
+
+	case (FLV_AUDIO_ASC << 8):
 		if (!s_aac_track)
 		{
 			s_aac_track = true;
@@ -44,9 +48,9 @@ static void onFLV(void* mov, int type, const void* data, size_t bytes, uint32_t 
 			int rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
 			mov_writer_audio_meta(mov, MOV_MP4A, aac.channel_configuration, 16, rate, data, bytes);
 		}
-	}
-	else
-	{
+		break;
+
+	default:
 		// nothing to do
 		assert(0);
 	}

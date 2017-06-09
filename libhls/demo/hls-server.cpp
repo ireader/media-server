@@ -4,6 +4,7 @@
 #include "hls-m3u8.h"
 #include "hls-media.h"
 #include "hls-param.h"
+#include "flv-proto.h"
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include "http-server.h"
@@ -80,16 +81,20 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 	printf("new segment: %s\n", name);
 }
 
-static void flv_handler(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void flv_handler(void* param, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	switch (type)
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
+	switch (format)
 	{
-	case FLV_AAC:
-	case FLV_MP3:
-		hls_media_input(param, FLV_AAC == type ? STREAM_AUDIO_AAC : STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+	case (FLV_AUDIO_AAC << 8):
+		hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 		break;
 
-	case FLV_AVC:
+	case (FLV_AUDIO_MP3 << 8):
+		hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+		break;
+
+	case FLV_VIDEO_H264:
 		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 		break;
 

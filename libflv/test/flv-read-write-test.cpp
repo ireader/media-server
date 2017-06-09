@@ -2,6 +2,7 @@
 #include "flv-writer.h"
 #include "flv-demuxer.h"
 #include "flv-muxer.h"
+#include "flv-proto.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,19 +12,21 @@ static void flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uin
 	flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void flv_ondemuxer(void* flv, int type, const void* data, size_t bytes, unsigned int pts, unsigned int dts)
+static void flv_ondemuxer(void* flv, int type, int format, const void* data, size_t bytes, unsigned int pts, unsigned int dts)
 {
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
+
 	switch (type)
 	{
-	case FLV_AAC:
+	case (FLV_AUDIO_AAC << 8):
 		flv_muxer_aac(flv, data, bytes, pts, dts);
 		break;
 
-	case FLV_MP3:
+	case (FLV_AUDIO_MP3 << 8):
 		flv_muxer_mp3(flv, data, bytes, pts, dts);
 		break;
 
-	case FLV_AVC:
+	case FLV_VIDEO_H264:
 		flv_muxer_avc(flv, data, bytes, pts, dts);
 		break;
 

@@ -97,7 +97,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		if (0 == data[1])
 		{
 			mpeg4_aac_audio_specific_config_load(data + 2, bytes - 2, &flv->aac);
-			flv->handler(flv->param, FLV_AAC_HEADER, data + 2, bytes - 2, timestamp, timestamp);
+			flv->handler(flv->param, FLV_TYPE_AUDIO, FLV_AUDIO_ASC, data + 2, bytes - 2, timestamp, timestamp);
 		}
 		else
 		{
@@ -109,18 +109,17 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 			assert(bytes > 2 && 0xFFF0 != (((data[2] << 8) | data[3]) & 0xFFF0)); // don't have ADTS
 			mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - 2, flv->ptr, 7); // 13-bits
 			memmove(flv->ptr + 7, data + 2, bytes - 2);
-			flv->handler(flv->param, FLV_AAC, flv->ptr, bytes - 2 + 7, timestamp, timestamp);
+			flv->handler(flv->param, FLV_TYPE_AUDIO, FLV_AUDIO_AAC, flv->ptr, bytes - 2 + 7, timestamp, timestamp);
 		}
 	}
-	else if (FLV_AUDIO_MP3 == flv->audio.format || FLV_AUDIO_MP3_8k == flv->audio.format)
+	else if (FLV_AUDIO_MP3 == flv->audio.format || FLV_AUDIO_MP3_8K == flv->audio.format)
 	{
-		flv->handler(flv->param, flv->audio.format, data + 1, bytes - 1, timestamp, timestamp);
+		flv->handler(flv->param, FLV_TYPE_AUDIO, flv->audio.format, data + 1, bytes - 1, timestamp, timestamp);
 	}
 	else
 	{
 		// Audio frame data
-		assert(0);
-		flv->handler(flv->param, flv->audio.format, data + 1, bytes - 1, timestamp, timestamp);
+		flv->handler(flv->param, FLV_TYPE_AUDIO, flv->audio.format, data + 1, bytes - 1, timestamp, timestamp);
 	}
 
 	return 0;
@@ -135,7 +134,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	flv->video.frame = (data[0] & 0xF0) >> 4;
 	flv->video.codecid = (data[0] & 0x0F);
 
-	if (FLV_VIDEO_AVC == flv->video.codecid)
+	if (FLV_VIDEO_H264 == flv->video.codecid)
 	{
 		packetType = data[1];
 		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
@@ -145,7 +144,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 			// AVCDecoderConfigurationRecord
 			assert(bytes > 5 + 7);
 			mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->avc);
-			flv->handler(flv->param, FLV_AVC_HEADER, data + 5, bytes - 5, timestamp, timestamp);
+			flv->handler(flv->param, FLV_TYPE_VIDEO, FLV_VIDEO_AVCC, data + 5, bytes - 5, timestamp, timestamp);
 		}
 		else
 		{
@@ -163,15 +162,14 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 					assert(0);
 					return ENOMEM;
 				}
-				flv->handler(flv->param, FLV_AVC, flv->ptr, n, timestamp + compositionTime, timestamp);
+				flv->handler(flv->param, FLV_TYPE_VIDEO, FLV_VIDEO_H264, flv->ptr, n, timestamp + compositionTime, timestamp);
 			}
 		}
 	}
 	else
 	{
 		// Video frame data
-		assert(0);
-		flv->handler(flv->param, flv->video.codecid << 4, data + 1, bytes - 1, timestamp, timestamp);
+		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->video.codecid, data + 1, bytes - 1, timestamp, timestamp);
 	}
 
 	return 0;

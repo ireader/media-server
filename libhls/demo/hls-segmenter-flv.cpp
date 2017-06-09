@@ -2,6 +2,7 @@
 #include "hls-m3u8.h"
 #include "hls-media.h"
 #include "hls-param.h"
+#include "flv-proto.h"
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include <stdio.h>
@@ -9,33 +10,37 @@
 #include <string.h>
 #include <assert.h>
 
-static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, int64_t /*dts*/, int64_t duration)
+static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration)
 {
+	static int64_t s_dts = -1;
+	int discontinue = -1 != s_dts ? 0 : (dts > s_dts + HLS_DURATION / 2 ? 1 : 0);
+	s_dts = dts;
+
 	static int i = 0;
 	char name[128] = {0};
 	snprintf(name, sizeof(name), "%d.ts", i++);
-	hls_m3u8_add(m3u8, name, pts, duration, 0);
+	hls_m3u8_add(m3u8, name, pts, duration, discontinue);
 
 	FILE* fp = fopen(name, "wb");
 	fwrite(data, 1, bytes, fp);
 	fclose(fp);
 }
 
-static void flv_handler(void* param, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void flv_handler(void* param, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	static uint32_t s_dts = 0xFFFFFFFF;
-	int discontinue = 0xFFFFFFFF != s_dts ? 0 : (dts > s_dts + HLS_DURATION/2 ? 1 : 0);
-	s_dts = dts;
-
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
 	switch (type)
 	{
-	case FLV_AAC:
-	case FLV_MP3:
-		hls_media_input(param, FLV_AAC == type ? STREAM_AUDIO_AAC : STREAM_AUDIO_MP3, data, bytes, pts, dts, discontinue);
+	case (FLV_AUDIO_AAC << 8):
+		hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 		break;
 
-	case FLV_AVC:
-		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, discontinue);
+	case (FLV_AUDIO_MP3 << 8):
+		hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+		break;
+
+	case FLV_VIDEO_H264:
+		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 		break;
 
 	default:

@@ -1,5 +1,6 @@
 #include "flv-demuxer.h"
 #include "flv-reader.h"
+#include "flv-proto.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -19,28 +20,31 @@ inline size_t get_astd_length(const uint8_t* data, size_t bytes)
 	return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] >> 5) & 0x07);
 }
 
-inline char flv_type(int type)
+inline char flv_type(int type, int format)
 {
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
+
 	switch (type)
 	{
-	case FLV_AAC: return 'A';
-	case FLV_MP3: return 'M';
-	case FLV_AVC: return 'V';
-	case FLV_AAC_HEADER: return 'a';
-	case FLV_AVC_HEADER: return 'v';
+	case (FLV_AUDIO_AAC << 8): return 'A';
+	case (FLV_AUDIO_MP3 << 8): return 'M';
+	case (FLV_AUDIO_ASC << 8): return 'a';
+	case FLV_VIDEO_H264: return 'V';
+	case FLV_VIDEO_AVCC: return 'v';
 	default: return '*';
 	}
 }
 
-static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+static void onFLV(void* /*param*/, int type, int format, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	static char s_pts[64], s_dts[64];
 	static uint32_t v_pts = 0, v_dts = 0;
 	static uint32_t a_pts = 0, a_dts = 0;
 
-	printf("[%c] pts: %s, dts: %s, ", flv_type(type), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
+	printf("[%c] pts: %s, dts: %s, ", flv_type(type, format), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
 
-	if (FLV_AAC == type)
+	format = (FLV_TYPE_AUDIO == type) ? (format << 8) : format;
+	if ((FLV_AUDIO_AAC << 8) == format)
 	{
 		printf("diff: %03d/%03d", (int)(pts - a_pts), (int)(dts - a_dts));
 		a_pts = pts;
@@ -49,7 +53,7 @@ static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uin
 		assert(bytes == get_astd_length((const uint8_t*)data, bytes));
 		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_AVC == type)
+	else if (FLV_VIDEO_H264 == format)
 	{
 		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
 		v_pts = pts;
@@ -57,11 +61,11 @@ static void onFLV(void* /*param*/, int type, const void* data, size_t bytes, uin
 
 		fwrite(data, bytes, 1, h264);
 	}
-	else if (FLV_MP3 == type)
+	else if ((FLV_AUDIO_MP3 << 8) == format)
 	{
-		assert(0);
+		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_AVC_HEADER == type || FLV_AAC_HEADER == type)
+	else if ((FLV_AUDIO_ASC << 8) == format || FLV_VIDEO_AVCC == format)
 	{
 		// nothing to do
 	}
