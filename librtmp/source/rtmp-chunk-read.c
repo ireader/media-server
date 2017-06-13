@@ -105,6 +105,7 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 
 	int r;
 	size_t size, offset = 0;
+	uint32_t extended_timestamp = 0;
 	struct rtmp_parser_t* parser = &rtmp->parser;
 	struct rtmp_chunk_header_t header;
 
@@ -160,8 +161,9 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 		case RTMP_PARSE_EXTENDED_TIMESTAMP:
 			if (NULL == parser->pkt) return ENOMEM;
 
+			assert(parser->pkt->header.timestamp <= 0xFFFFFF);
 			size = s_header_size[parser->pkt->header.fmt] + parser->basic_bytes;
-			if (parser->pkt->header.timestamp >= 0xFFFFFF) size += 4; // extended timestamp
+			if (parser->pkt->header.timestamp == 0xFFFFFF) size += 4; // extended timestamp
 
 			assert(parser->bytes <= size);
 			while (parser->bytes < size && offset < bytes)
@@ -172,8 +174,11 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 			assert(parser->bytes <= size);
 			if (parser->bytes >= size)
 			{
-				// parse extended timestamp
-				rtmp_chunk_extended_timestamp_read(parser->buffer + s_header_size[parser->buffer[0] >> 6] + parser->basic_bytes, &parser->pkt->header.timestamp);
+				if (parser->pkt->header.timestamp == 0xFFFFFF)
+				{
+					// parse extended timestamp
+					rtmp_chunk_extended_timestamp_read(parser->buffer + s_header_size[parser->buffer[0] >> 6] + parser->basic_bytes, &extended_timestamp);
+				}
 
 				// first chunk
 				if (0 == parser->pkt->bytes)
@@ -181,12 +186,12 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 					// handle timestamp/delta
 					if (RTMP_CHUNK_TYPE_0 == parser->pkt->header.fmt)
 					{
-						parser->pkt->clock = parser->pkt->header.timestamp;
+						parser->pkt->clock = 0xFFFFFF == parser->pkt->header.timestamp ? extended_timestamp : parser->pkt->header.timestamp;
 						parser->pkt->delta = 0; // clear delta(use as delta)
 					}
 					else
 					{
-						parser->pkt->delta = parser->pkt->header.timestamp;
+						parser->pkt->delta = 0xFFFFFF == parser->pkt->header.timestamp ? extended_timestamp : parser->pkt->header.timestamp;
 					}
 
 					if (0 != rtmp_packet_alloc(rtmp, parser->pkt))

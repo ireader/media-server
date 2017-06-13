@@ -133,22 +133,14 @@ int rtmp_chunk_message_header_write(uint8_t* out, const struct rtmp_chunk_header
 // 5.3.1.3. Extended Timestamp (p16)
 int rtmp_chunk_extended_timestamp_read(const uint8_t* out, uint32_t* timestamp)
 {
-	if (*timestamp >= 0xFFFFFF)
-	{
-		// extended timestamp
-		be_read_uint32(out, timestamp);
-		return 4;
-	}
-	return 0;
+	// extended timestamp
+	be_read_uint32(out, timestamp);
+	return 4;
 }
 
 int rtmp_chunk_extended_timestamp_write(uint8_t* out, uint32_t timestamp)
 {
-	if (timestamp >= 0xFFFFFF)
-	{
-		// extended timestamp
-		be_write_uint32(out, timestamp);
-		return 4;
-	}
-	return 0;
+	// extended timestamp
+	be_write_uint32(out, timestamp);
+	return 4;
 }

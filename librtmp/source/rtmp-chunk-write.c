@@ -58,30 +58,24 @@ static const struct rtmp_chunk_header_t* rtmp_chunk_header_zip(struct rtmp_t* rt
 	{
 		pkt = rtmp_packet_create(rtmp, h.cid);
 		if (NULL == pkt)
-			return header; // too many chunk stream id
+			return NULL; // too many chunk stream id
+	}
 
-		h.fmt = RTMP_CHUNK_TYPE_0;
-	}
-	else if (RTMP_CHUNK_TYPE_1 == h.fmt) // RTMP_CHUNK_TYPE_1 enable compress
+	h.fmt = RTMP_CHUNK_TYPE_0;
+	if (RTMP_CHUNK_TYPE_0 != header->fmt /* enable compress */
+		&& header->cid == pkt->header.cid /* not the first packet */
+		&& header->timestamp >= pkt->clock /* timestamp wrap */
+		&& header->stream_id == pkt->header.stream_id /* message stream id */)
 	{
-		if (h.stream_id != pkt->header.stream_id)
+		h.fmt = RTMP_CHUNK_TYPE_1;
+		h.timestamp -= pkt->clock; // timestamp delta
+
+		if (header->type == pkt->header.type && header->length == pkt->header.length)
 		{
-			assert(0);
-			h.fmt = RTMP_CHUNK_TYPE_0;
+			h.fmt = RTMP_CHUNK_TYPE_2;
+			if (h.timestamp == pkt->header.timestamp)
+				h.fmt = RTMP_CHUNK_TYPE_3;
 		}
-		else
-		{
-			h.timestamp -= pkt->clock; // timestamp delta
-			if (pkt->header.type == h.type && pkt->header.length == h.length)
-			{
-				h.fmt = (h.timestamp == pkt->header.timestamp) ? RTMP_CHUNK_TYPE_3 : RTMP_CHUNK_TYPE_2;
-			}
-		}
-	}
-	else
-	{
-		// RTMP_CHUNK_TYPE_0 disable compress
-		assert(RTMP_CHUNK_TYPE_0 == h.fmt);
 	}
 
 	memcpy(&pkt->header, &h, sizeof(h));
@@ -98,13 +92,14 @@ int rtmp_chunk_write(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h, c
 
 	// compression rtmp chunk header
 	header = rtmp_chunk_header_zip(rtmp, h);
-	if (header->length >= 0xFFFFFF)
-		return -1; // invalid length
+	if (!header || header->length >= 0xFFFFFF)
+		return -EINVAL; // invalid length
 
 	payloadSize = header->length;
 	headerSize = rtmp_chunk_basic_header_write(p, header->fmt, header->cid);
 	headerSize += rtmp_chunk_message_header_write(p + headerSize, header);
-	headerSize += rtmp_chunk_extended_timestamp_write(p + headerSize, header->timestamp);
+	if(header->timestamp >= 0xFFFFFF)
+		headerSize += rtmp_chunk_extended_timestamp_write(p + headerSize, header->timestamp);
 
 	while (payloadSize > 0 && 0 == r)
 	{
@@ -117,7 +112,8 @@ int rtmp_chunk_write(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h, c
 		if (payloadSize > 0)
 		{
 			headerSize = rtmp_chunk_basic_header_write(p, RTMP_CHUNK_TYPE_3, header->cid);
-			headerSize += rtmp_chunk_extended_timestamp_write(p + headerSize, header->timestamp);
+			if (header->timestamp >= 0xFFFFFF)
+				headerSize += rtmp_chunk_extended_timestamp_write(p + headerSize, header->timestamp);
 		}
 	}
 
