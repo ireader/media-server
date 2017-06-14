@@ -6,9 +6,9 @@
 #include <assert.h>
 #include <errno.h>
 
-#define KHz			90 // 90000Hz
-#define FU_START	0x80
-#define FU_END	0x40
+#define KHz         90 // 90000Hz
+#define FU_START    0x80
+#define FU_END      0x40
 
 #define RTP_HEADER_SIZE 12 // don't include RTP CSRC and RTP Header Extension
 //static size_t s_max_packet_size = 576 - RTP_HEADER_SIZE; // UNIX Network Programming by W. Richard Stevens
@@ -136,7 +136,7 @@ static int rtp_h264_pack_fu_a(struct rtp_h264_packer_t *packer, const uint8_t* n
 		rtp = (uint8_t*)packer->func.alloc(packer->cbparam, n);
 		if (!rtp) return ENOMEM;
 
-		packer->pkt.rtp.m = (packer->pkt.payloadlen <= MAX_PACKET) ? 1 : 0; // set marker flag
+		packer->pkt.rtp.m = (FU_END & fu_header) ? 1 : 0; // set marker flag
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
 		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 		{
@@ -151,7 +151,7 @@ static int rtp_h264_pack_fu_a(struct rtp_h264_packer_t *packer, const uint8_t* n
 
 		bytes -= packer->pkt.payloadlen - 2;
 		nalu += packer->pkt.payloadlen - 2;
-		fu_header &= 0x1F; // FU-A fragment
+		fu_header &= 0x1F; // clear flags
 	}
 
 	return 0;
