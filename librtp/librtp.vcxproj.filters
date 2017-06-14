@@ -99,6 +99,12 @@
     <ClCompile Include="payload\rtp-mp4v-es-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-h265-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-h265-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
