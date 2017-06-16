@@ -66,7 +66,7 @@ void rtmp_server_publish_test(const char* flv)
 	handler.onaudio = rtmp_server_onaudio;
 
 	socket_init();
-	socket_t s = socket_tcp_listen(NULL, 1935, 10);
+	socket_t s = socket_tcp_listen(NULL, 1935, SOMAXCONN);
 	socket_t c = socket_accept(s, NULL, NULL);
 
 	s_flv = flv_writer_create(flv);
