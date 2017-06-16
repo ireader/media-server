@@ -13,10 +13,9 @@ void* rtp_create(struct rtp_event_t *handler, void* param, unsigned int ssrc, si
 {
 	struct rtp_context *ctx;
 
-	ctx = (struct rtp_context *)malloc(sizeof(*ctx));
+	ctx = (struct rtp_context *)calloc(1, sizeof(*ctx));
 	if(!ctx) return NULL;
 
-	memset(ctx, 0, sizeof(*ctx));
 	ctx->self = rtp_member_create(ssrc);
 	ctx->members = rtp_member_list_create();
 	ctx->senders = rtp_member_list_create();

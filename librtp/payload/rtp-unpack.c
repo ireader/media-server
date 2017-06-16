@@ -17,11 +17,10 @@ struct rtp_unpacker_t
 static void* rtp_unpack_create(struct rtp_payload_t *handler, void* param)
 {
 	struct rtp_unpacker_t *unpacker;
-	unpacker = (struct rtp_unpacker_t *)malloc(sizeof(*unpacker));
+	unpacker = (struct rtp_unpacker_t *)calloc(1, sizeof(*unpacker));
 	if (!unpacker)
 		return NULL;
 
-	memset(unpacker, 0, sizeof(*unpacker));
 	memcpy(&unpacker->handler, handler, sizeof(unpacker->handler));
 	unpacker->cbparam = param;
 	return unpacker;

@@ -1,6 +1,6 @@
 #include "rtp-payload.h"
 #include "rtp-profile.h"
-#include "payload/rtp-payload-internal.h"
+#include "rtp-payload-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

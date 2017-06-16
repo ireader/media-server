@@ -16,13 +16,7 @@ struct rtp_member_list
 
 void* rtp_member_list_create()
 {
-	struct rtp_member_list *p;
-	p = (struct rtp_member_list *)malloc(sizeof(struct rtp_member_list));
-	if(!p)
-		return NULL;
-
-	memset(p, 0, sizeof(struct rtp_member_list));
-	return p;
+	return (struct rtp_member_list *)calloc(1, sizeof(struct rtp_member_list));
 }
 
 void rtp_member_list_destroy(void* members)

@@ -6,11 +6,10 @@
 struct rtp_member* rtp_member_create(uint32_t ssrc)
 {
 	struct rtp_member* p;
-	p = (struct rtp_member*)malloc(sizeof(struct rtp_member));
+	p = (struct rtp_member*)calloc(1, sizeof(struct rtp_member));
 	if(!p)
 		return NULL;
 
-	memset(p, 0, sizeof(struct rtp_member));
 	p->ref = 1;
 	p->ssrc = ssrc;
 	p->jitter = 0.0;

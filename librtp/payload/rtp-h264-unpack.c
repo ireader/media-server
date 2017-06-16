@@ -27,11 +27,10 @@ struct rtp_decode_h264_t
 static void* rtp_h264_unpack_create(struct rtp_payload_t *handler, void* param)
 {
 	struct rtp_decode_h264_t *unpacker;
-	unpacker = (struct rtp_decode_h264_t *)malloc(sizeof(*unpacker));
+	unpacker = (struct rtp_decode_h264_t *)calloc(1, sizeof(*unpacker));
 	if(!unpacker)
 		return NULL;
 
-	memset(unpacker, 0, sizeof(*unpacker));
 	memcpy(&unpacker->handler, handler, sizeof(unpacker->handler));
 	unpacker->cbparam = param;
 	return unpacker;
@@ -280,12 +279,11 @@ static int rtp_h264_unpack_input(void* p, const void* packet, int bytes, int64_t
 	if(!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 1)
 		return -1;
 
-	if((uint16_t)pkt.rtp.seq != unpacker->seq+1)
+	if((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1))
 	{
 		// packet lost
 		unpacker->size = 0; // clear fu-a/b flags
 	}
-
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 
 	assert(pkt.payloadlen > 0);

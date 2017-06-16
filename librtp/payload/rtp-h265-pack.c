@@ -25,10 +25,9 @@ struct rtp_encode_h265_t
 static void* rtp_h265_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* param)
 {
 	struct rtp_encode_h265_t *packer;
-	packer = (struct rtp_encode_h265_t *)malloc(sizeof(*packer));
+	packer = (struct rtp_encode_h265_t *)calloc(1, sizeof(*packer));
 	if (!packer) return NULL;
 
-	memset(packer, 0, sizeof(*packer));
 	memcpy(&packer->handler, handler, sizeof(packer->handler));
 	packer->cbparam = param;
 	packer->size = size;
