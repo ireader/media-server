@@ -33,8 +33,8 @@ struct rtcp_msg_t
 		struct rtcp_bye_t
 		{
 			unsigned int ssrc;
-			void* reason;
-			size_t bytes; // reason length
+			const void* reason;
+			int bytes; // reason length
 		} bye;
 
 		// RTCP_MSG_APP
@@ -43,7 +43,7 @@ struct rtcp_msg_t
 			unsigned int ssrc;
 			char name[4];
 			void* data;
-			size_t bytes; // data length
+			int bytes; // data length
 		} app;
 	} u;
 };

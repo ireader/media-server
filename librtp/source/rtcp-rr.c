@@ -10,9 +10,11 @@ void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	struct rtp_member *receiver;
 
 	assert(24 == sizeof(rtcp_rb_t) && 4 == sizeof(rtcp_rr_t));
-	assert(header->length * 4 >= 4/*sizeof(rtcp_rr_t)*/ + header->rc*24/*sizeof(rtcp_rb_t)*/);
-	if(header->length * 4  < 4/*sizeof(rtcp_rr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/) // RR SSRC + Report Block
+	if (header->length * 4 < 4/*sizeof(rtcp_rr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/) // RR SSRC + Report Block
+	{
+		assert(0);
 		return;
+	}
 	ssrc = nbo_r32(ptr);
 
 	receiver = rtp_member_fetch(ctx, ssrc);

@@ -63,18 +63,6 @@
     <ClCompile Include="payload\rtp-h264-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
-    <ClCompile Include="payload\rtp-ps-pack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-ps-unpack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-ts-pack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-ts-unpack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtp-profile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,22 +75,19 @@
     <ClCompile Include="source\rtp-packet.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="payload\rtp-mp4a-latm-pack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-mp4a-latm-unpack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-mp4v-es-pack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-mp4v-es-unpack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
     <ClCompile Include="payload\rtp-h265-pack.c">
       <Filter>payload</Filter>
     </ClCompile>
     <ClCompile Include="payload\rtp-h265-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-payload.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-ts-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-ts-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
   </ItemGroup>
@@ -140,11 +125,11 @@
     <ClInclude Include="include\rtp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="payload\rtp-pack.h">
+    <ClInclude Include="payload\rtp-payload-internal.h">
       <Filter>payload</Filter>
     </ClInclude>
-    <ClInclude Include="payload\rtp-unpack.h">
-      <Filter>payload</Filter>
+    <ClInclude Include="include\rtp-payload.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

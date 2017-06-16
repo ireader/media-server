@@ -1,11 +1,12 @@
 #include "ctypedef.h"
-#include "rtp-unpack.h"
 #include "rtp-packet.h"
+#include "rtp-payload-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
 
+// rfc7798 RTP Payload Format for High Efficiency Video Coding (HEVC)
 /*
 0               1
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
@@ -25,9 +26,9 @@ NUH temporal ID plus 1 (TID) : 3 bits
 #define FU_END(v)	(v & 0x40)
 #define FU_NAL(v)	(v & 0x3F)
 
-struct rtp_h265_unpack_t
+struct rtp_decode_h265_t
 {
-	struct rtp_unpack_func_t func;
+	struct rtp_payload_t handler;
 	void* cbparam;
 
 	uint16_t seq; // rtp seq
@@ -38,23 +39,23 @@ struct rtp_h265_unpack_t
 	int using_donl_field;
 };
 
-static void* rtp_h265_unpack_create(struct rtp_unpack_func_t *func, void* param)
+static void* rtp_h265_unpack_create(struct rtp_payload_t *handler, void* param)
 {
-	struct rtp_h265_unpack_t *unpacker;
-	unpacker = (struct rtp_h265_unpack_t *)malloc(sizeof(*unpacker));
+	struct rtp_decode_h265_t *unpacker;
+	unpacker = (struct rtp_decode_h265_t *)malloc(sizeof(*unpacker));
 	if (!unpacker)
 		return NULL;
 
 	memset(unpacker, 0, sizeof(*unpacker));
-	memcpy(&unpacker->func, func, sizeof(unpacker->func));
+	memcpy(&unpacker->handler, handler, sizeof(unpacker->handler));
 	unpacker->cbparam = param;
 	return unpacker;
 }
 
 static void rtp_h265_unpack_destroy(void* p)
 {
-	struct rtp_h265_unpack_t *unpacker;
-	unpacker = (struct rtp_h265_unpack_t *)p;
+	struct rtp_decode_h265_t *unpacker;
+	unpacker = (struct rtp_decode_h265_t *)p;
 
 	if (unpacker->ptr)
 		free(unpacker->ptr);
@@ -65,10 +66,10 @@ static void rtp_h265_unpack_destroy(void* p)
 }
 
 // 4.4.2. Aggregation Packets (APs) (p25)
-static int rtp_h265_unpack_ap(struct rtp_h265_unpack_t *unpacker, const uint8_t* ptr, size_t bytes, int64_t time)
+static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t* ptr, int bytes, int64_t time)
 {
-	size_t n;
-	size_t len;
+	int n;
+	int len;
 
 	n = unpacker->using_donl_field ? 4 : 2;
 
@@ -83,7 +84,7 @@ static int rtp_h265_unpack_ap(struct rtp_h265_unpack_t *unpacker, const uint8_t*
 		}
 
 		assert(H265_TYPE(ptr[n]) >= 0 && H265_TYPE(ptr[n]) <= 40);
-		unpacker->func.packet(unpacker->cbparam, ptr + 2, len, time, 0);
+		unpacker->handler.packet(unpacker->cbparam, ptr + 2, len, time, 0);
 
 		ptr += len + 2; // next NALU
 	}
@@ -92,9 +93,9 @@ static int rtp_h265_unpack_ap(struct rtp_h265_unpack_t *unpacker, const uint8_t*
 }
 
 // 4.4.3. Fragmentation Units (p29)
-static int rtp_h265_unpack_fu(struct rtp_h265_unpack_t *unpacker, const uint8_t* ptr, size_t bytes, int64_t time)
+static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t* ptr, int bytes, int64_t time)
 {
-	size_t n;
+	int n;
 	uint8_t fuheader;
 
 	n = unpacker->using_donl_field ? 4 : 2;
@@ -127,7 +128,12 @@ static int rtp_h265_unpack_fu(struct rtp_h265_unpack_t *unpacker, const uint8_t*
 	}
 	else
 	{
-		assert(0 < unpacker->size);
+		if (0 == unpacker->size)
+		{
+			assert(0);
+			return -1; // packet lost
+		}
+		assert(unpacker->size > 0);
 	}
 
 	memmove(unpacker->ptr + unpacker->size, ptr + n + 1, bytes - n - 1);
@@ -135,22 +141,22 @@ static int rtp_h265_unpack_fu(struct rtp_h265_unpack_t *unpacker, const uint8_t*
 
 	if (FU_END(fuheader))
 	{
-		unpacker->func.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
+		unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
 		unpacker->size = 0; // reset
 	}
 
 	return 0;
 }
 
-static int rtp_h265_unpack_input(void* p, const void* packet, size_t bytes, uint64_t time)
+static int rtp_h265_unpack_input(void* p, const void* packet, int bytes, int64_t time)
 {
 	size_t n;
 	int nal, lid, tid;
 	const uint8_t* ptr;
 	struct rtp_packet_t pkt;
-	struct rtp_h265_unpack_t *unpacker;
+	struct rtp_decode_h265_t *unpacker;
 
-	unpacker = (struct rtp_h265_unpack_t *)p;
+	unpacker = (struct rtp_decode_h265_t *)p;
 	n = unpacker->using_donl_field ? 4 : 2;
 	
 	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < n)
@@ -191,16 +197,16 @@ static int rtp_h265_unpack_input(void* p, const void* packet, size_t bytes, uint
 	case 34: // picture parameter set (PPS)
 	case 39: // supplemental enhancement information (SEI)
 	default: // 4.4.1. Single NAL Unit Packets (p24)
-		unpacker->func.packet(unpacker->cbparam, ptr + n, pkt.payloadlen - n, time, 0);
+		unpacker->handler.packet(unpacker->cbparam, ptr, pkt.payloadlen, time, 0);
 		break;
 	}
 
 	return 1;
 }
 
-struct rtp_unpack_t *rtp_h265_unpacker()
+struct rtp_payload_decode_t *rtp_h265_decode()
 {
-	static struct rtp_unpack_t unpacker = {
+	static struct rtp_payload_decode_t unpacker = {
 		rtp_h265_unpack_create,
 		rtp_h265_unpack_destroy,
 		rtp_h265_unpack_input,

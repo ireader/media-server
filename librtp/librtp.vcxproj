@@ -135,15 +135,10 @@
   <ItemGroup>
     <ClCompile Include="payload\rtp-h265-pack.c" />
     <ClCompile Include="payload\rtp-h265-unpack.c" />
-    <ClCompile Include="payload\rtp-mp4a-latm-pack.c" />
-    <ClCompile Include="payload\rtp-mp4a-latm-unpack.c" />
     <ClCompile Include="payload\rtp-h264-pack.c" />
     <ClCompile Include="payload\rtp-h264-unpack.c" />
-    <ClCompile Include="payload\rtp-mp4v-es-pack.c" />
-    <ClCompile Include="payload\rtp-mp4v-es-unpack.c" />
     <ClCompile Include="payload\rtp-pack.c" />
-    <ClCompile Include="payload\rtp-ps-pack.c" />
-    <ClCompile Include="payload\rtp-ps-unpack.c" />
+    <ClCompile Include="payload\rtp-payload.c" />
     <ClCompile Include="payload\rtp-ts-pack.c" />
     <ClCompile Include="payload\rtp-ts-unpack.c" />
     <ClCompile Include="payload\rtp-unpack.c" />
@@ -171,12 +166,12 @@
     <ClInclude Include="include\rtp-member.h" />
     <ClInclude Include="include\rtp-packet.h" />
     <ClInclude Include="include\rtp-param.h" />
+    <ClInclude Include="include\rtp-payload.h" />
     <ClInclude Include="include\rtp-profile.h" />
     <ClInclude Include="include\rtp-queue.h" />
     <ClInclude Include="include\rtp-util.h" />
     <ClInclude Include="include\rtp.h" />
-    <ClInclude Include="payload\rtp-pack.h" />
-    <ClInclude Include="payload\rtp-unpack.h" />
+    <ClInclude Include="payload\rtp-payload-internal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

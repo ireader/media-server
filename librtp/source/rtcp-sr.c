@@ -14,9 +14,11 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 
 	assert(24 == sizeof(rtcp_sr_t));
 	assert(24 == sizeof(rtcp_rb_t));
-	assert(header->length * 4 >= 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/);
-	if(header->length * 4 < 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/)
+	if (header->length * 4 < 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/)
+	{
+		assert(0);
 		return;
+	}
 	ssrc = nbo_r32(ptr);
 
 	sender = rtp_sender_fetch(ctx, ssrc);

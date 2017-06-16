@@ -8,9 +8,11 @@ void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 	struct rtcp_msg_t msg;
 	struct rtp_member *member;
 
-	assert(header->length*4 >= 8);
-	if(header->length < 8) // RTCP header + SSRC + name
+	if (header->length * 4 < 8) // RTCP header + SSRC + name
+	{
+		assert(0);
 		return;
+	}
 
 	msg.type = RTCP_MSG_APP;
 	msg.u.app.ssrc = nbo_r32(ptr);
@@ -19,18 +21,9 @@ void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 	if(!member) return; // error	
 
 	memcpy(msg.u.app.name, ptr+4, 4);
-
-	if(header->length > 8)
-	{
-		msg.u.app.data = (void*)(ptr + 8);
-		msg.u.app.bytes = header->length * 4 - 8;
-	}
-	else
-	{
-		msg.u.app.data = NULL;
-		msg.u.app.bytes = 0;
-	}
-
+	msg.u.app.data = (void*)(ptr + 8);
+	msg.u.app.bytes = header->length * 4 - 8;
+	
 	ctx->handler.on_rtcp(ctx->cbparam, &msg);
 }
 

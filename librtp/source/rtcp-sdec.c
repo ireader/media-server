@@ -8,11 +8,13 @@ void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsi
 	uint32_t i;
 	uint32_t ssrc;
 	struct rtp_member *member;
-	const unsigned char *p;
+	const unsigned char *p, *end;
 
-	assert(header->length >= header->rc * 4 + 4);
 	p = ptr;
-	for(i = 0; i < header->rc; i++)
+	end = ptr + header->length * 4;
+	assert(header->length >= header->rc);
+
+	for(i = 0; i < header->rc && p + 8 /*4-ssrc + 1-PT*/ <= end; i++)
 	{
 		ssrc = nbo_r32(p);
 		member = rtp_member_fetch(ctx, ssrc);
@@ -20,12 +22,17 @@ void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsi
 			continue;
 
 		p += 4;
-		while(RTCP_SDES_END != p[0] /*PT*/)
+		while(p + 2 <= end && RTCP_SDES_END != p[0] /*PT*/)
 		{
 			rtcp_sdes_item_t item;
 			item.pt = p[0];
 			item.len = p[1];
 			item.data = (unsigned char*)(p+2);
+			if (p + 2 + item.len > end)
+			{
+				assert(0);
+				return; // error
+			}
 
 			switch(item.pt)
 			{

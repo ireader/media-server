@@ -8,16 +8,21 @@ void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 	uint32_t i;
 	struct rtcp_msg_t msg;
 
-	assert(header->length >= header->rc * 4);
-	if(header->rc < 1)
+	assert(header->length * 4 >= header->rc * 4);
+	if(header->rc < 1 || header->rc > header->length)
 		return; // A count value of zero is valid, but useless (p43)
 
 	msg.type = RTCP_MSG_BYE;
-	if(header->length * 4 >= header->rc * 4 + 4)
+	if(header->length * 4 > header->rc * 4)
 	{
-		msg.u.bye.bytes = (size_t)*(ptr + header->rc * 4);
-		msg.u.bye.reason = (void*)(ptr + header->rc * 4 + 1);
-		assert(msg.u.bye.bytes + 3 + header->rc*4 <= header->length * 4);
+		msg.u.bye.bytes = ptr[header->rc * 4];
+		msg.u.bye.reason = ptr + header->rc * 4 + 1;
+
+		if (1 + msg.u.bye.bytes + header->rc * 4 > header->length * 4)
+		{
+			assert(0);
+			return; // error
+		}
 	}
 	else
 	{
