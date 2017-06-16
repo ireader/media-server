@@ -507,7 +507,7 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	ctx->ptr = ptr;
 
 	// tcp
-	socket = socket_tcp_listen(ip, port, 128);
+	socket = socket_tcp_listen(ip, port, SOMAXCONN);
 	if(socket_invalid == socket)
 	{
 		rtsp_server_destroy(ctx);

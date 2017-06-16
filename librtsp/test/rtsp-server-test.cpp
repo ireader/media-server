@@ -355,7 +355,6 @@ extern "C" void rtsp_example()
     void *rtsp;
     struct rtsp_handler_t handler;
 
-    rtsp_server_init();
     init();
 
     handler.describe = rtsp_ondescribe;
@@ -379,7 +378,5 @@ extern "C" void rtsp_example()
 		if(0 == n)
 			system_sleep(5);
     }
-
-    rtsp_server_cleanup();
 }
 #endif

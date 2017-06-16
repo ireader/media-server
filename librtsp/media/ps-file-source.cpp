@@ -2,7 +2,7 @@
 #include "cstringext.h"
 #include "mpeg-ps.h"
 #include "rtp-profile.h"
-#include "../payload/rtp-pack.h"
+#include "rtp-payload.h"
 #include <assert.h>
 
 #define MAX_UDP_PACKET (1450-16)
@@ -27,12 +27,12 @@ PSFileSource::PSFileSource(const char *file)
 	m_ps = mpeg_ps_create(&func, this);
 	mpeg_ps_add_stream(m_ps, STREAM_VIDEO_H264, NULL, 0);
 
-	static struct rtp_pack_func_t s_psfunc = {
+	static struct rtp_payload_t s_psfunc = {
 		PSFileSource::RTPAlloc,
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_ps_packer()->create(RTP_PAYLOAD_MP2P, (unsigned short)ssrc, ssrc, 90000, &s_psfunc, this);
+	m_pspacker = rtp_payload_encode_create(RTP_PAYLOAD_MP2P, "MP2P", (uint16_t)ssrc, ssrc, 90000, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -45,7 +45,7 @@ PSFileSource::~PSFileSource()
 	if(m_rtp)
 		rtp_destroy(m_rtp);
 	if(m_pspacker)
-		rtp_ps_packer()->destroy(m_pspacker);
+		rtp_payload_encode_destroy(m_pspacker);
 	mpeg_ps_destroy(m_ps);
 }
 
@@ -121,7 +121,7 @@ int PSFileSource::GetSDPMedia(std::string& sdp) const
 
 int PSFileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
 {
-	rtp_h264_packer()->get_info(m_pspacker, &seq, &rtptime);
+	rtp_payload_encode_getinfo(m_pspacker, &seq, &rtptime);
 	pos = m_pos;
 	return 0;
 }
@@ -173,11 +173,11 @@ void PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
-	rtp_ps_packer()->input(self->m_pspacker, pes, bytes, clock);
+	rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock);
 	free(pes);
 }
 
-void* PSFileSource::RTPAlloc(void* param, size_t bytes)
+void* PSFileSource::RTPAlloc(void* param, int bytes)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(bytes <= sizeof(self->m_packet));
@@ -190,7 +190,7 @@ void PSFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PSFileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+void PSFileSource::RTPPacket(void* param, const void *packet, int bytes, int64_t /*time*/, int /*flags*/)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);

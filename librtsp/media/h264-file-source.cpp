@@ -2,7 +2,7 @@
 #include "cstringext.h"
 #include "base64.h"
 #include "rtp-profile.h"
-#include "../payload/rtp-pack.h"
+#include "rtp-payload.h"
 #include <assert.h>
 
 extern "C" int rtp_ssrc(void);
@@ -16,12 +16,12 @@ H264FileSource::H264FileSource(const char *file)
 	m_rtcp_clock = 0;
 
 	unsigned int ssrc = (unsigned int)rtp_ssrc();
-	static struct rtp_pack_func_t s_rtpfunc = {
+	static struct rtp_payload_t s_rtpfunc = {
 		H264FileSource::RTPAlloc,
 		H264FileSource::RTPFree,
 		H264FileSource::RTPPacket,
 	};
-	m_rtppacker = rtp_h264_packer()->create(RTP_PAYLOAD_H264, (unsigned short)ssrc, ssrc, 90000, &s_rtpfunc, this);
+	m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_H264, "H264", (uint16_t)ssrc, ssrc, 90000, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -35,7 +35,7 @@ H264FileSource::~H264FileSource()
 		rtp_destroy(m_rtp);
 
 	if(m_rtppacker)
-		rtp_h264_packer()->destroy(m_rtppacker);
+		rtp_payload_encode_destroy(m_rtppacker);
 }
 
 int H264FileSource::SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2])
@@ -61,7 +61,7 @@ int H264FileSource::Play()
 		size_t bytes = 0;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_h264_packer()->input(m_rtppacker, ptr, bytes, clock);
+			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock);
 			m_rtp_clock = clock;
 
 			SendRTCP();
@@ -138,7 +138,7 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
 
 int H264FileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
 {
-	rtp_h264_packer()->get_info(m_rtppacker, &seq, &rtptime);
+	rtp_payload_encode_getinfo(m_rtppacker, &seq, &rtptime);
 	pos = m_pos;
 	return 0;
 }
@@ -174,7 +174,7 @@ int H264FileSource::SendRTCP()
 	return 0;
 }
 
-void* H264FileSource::RTPAlloc(void* param, size_t bytes)
+void* H264FileSource::RTPAlloc(void* param, int bytes)
 {
 	H264FileSource *self = (H264FileSource*)param;
 	assert(bytes <= sizeof(self->m_packet));
@@ -187,7 +187,7 @@ void H264FileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void H264FileSource::RTPPacket(void* param, void *packet, size_t bytes, int64_t time)
+void H264FileSource::RTPPacket(void* param, const void *packet, int bytes, int64_t /*time*/, int /*flags*/)
 {
 	H264FileSource *self = (H264FileSource*)param;
 	assert(self->m_packet == packet);
