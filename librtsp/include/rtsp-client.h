@@ -64,7 +64,7 @@ int rtsp_client_pause(void* rtsp);
 int rtsp_client_input(void* rtsp, void* parser);
 
 int rtsp_client_media_count(void* rtsp);
-const struct rtsp_header_transport_t* rtmp_client_get_media_transport(void* rtsp, int media);
+const struct rtsp_header_transport_t* rtsp_client_get_media_transport(void* rtsp, int media);
 const char* rtsp_client_get_media_encoding(void* rtsp, int media);
 int rtsp_client_get_media_payload(void* rtsp, int media);
 

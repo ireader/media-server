@@ -81,7 +81,7 @@ int rtsp_client_media_count(void* p)
 	return rtsp->media_count;
 }
 
-const struct rtsp_header_transport_t* rtmp_client_get_media_transport(void* p, int media)
+const struct rtsp_header_transport_t* rtsp_client_get_media_transport(void* p, int media)
 {
 	struct rtsp_client_t *rtsp;
 	rtsp = (struct rtsp_client_t*)p;
