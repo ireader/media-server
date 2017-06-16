@@ -21,7 +21,7 @@ H264FileSource::H264FileSource(const char *file)
 		H264FileSource::RTPFree,
 		H264FileSource::RTPPacket,
 	};
-	m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_H264, "H264", (uint16_t)ssrc, ssrc, 90000, &s_rtpfunc, this);
+	m_rtppacker = rtp_payload_encode_create(RTP_PAYLOAD_H264, "H264", (uint16_t)ssrc, ssrc, &s_rtpfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -61,7 +61,7 @@ int H264FileSource::Play()
 		size_t bytes = 0;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock);
+			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock * 90 /*kHz*/);
 			m_rtp_clock = clock;
 
 			SendRTCP();
@@ -187,7 +187,7 @@ void H264FileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void H264FileSource::RTPPacket(void* param, const void *packet, int bytes, int64_t /*time*/, int /*flags*/)
+void H264FileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	H264FileSource *self = (H264FileSource*)param;
 	assert(self->m_packet == packet);

@@ -1,3 +1,5 @@
+// RFC3551 RTP Prole for Audio and Video Conferences with Minimal Control
+
 #include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-profile.h"
@@ -11,6 +13,7 @@ struct rtp_unpacker_t
 	struct rtp_payload_t handler;
 	void* cbparam;
 
+	int flags;
 	uint16_t seq; // RTP seq
 };
 
@@ -23,6 +26,7 @@ static void* rtp_unpack_create(struct rtp_payload_t *handler, void* param)
 
 	memcpy(&unpacker->handler, handler, sizeof(unpacker->handler));
 	unpacker->cbparam = param;
+	unpacker->flags = -1;
 	return unpacker;
 }
 
@@ -36,9 +40,8 @@ static void rtp_unpack_destroy(void* p)
 	free(unpacker);
 }
 
-static int rtp_unpack_input(void* p, const void* packet, int bytes, int64_t time)
+static int rtp_unpack_input(void* p, const void* packet, int bytes)
 {
-	int discontinue;
 	struct rtp_packet_t pkt;
 	struct rtp_unpacker_t *unpacker;
 
@@ -46,9 +49,21 @@ static int rtp_unpack_input(void* p, const void* packet, int bytes, int64_t time
 	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
 		return -1;
 
-	discontinue = (uint16_t)pkt.rtp.seq != (unpacker->seq + 1) ? 1 : 0;
-	unpacker->handler.packet(unpacker->cbparam, pkt.payload, pkt.payloadlen, time, discontinue);
+	if (-1 == unpacker->flags)
+	{
+		unpacker->flags = 0;
+		unpacker->seq = (uint16_t)(pkt.rtp.seq - 1); // disable packet lost
+	}
+
+	if ((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1))
+	{
+		unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+	}
+
+	assert(pkt.payloadlen > 0);
+	unpacker->handler.packet(unpacker->cbparam, pkt.payload, pkt.payloadlen, pkt.rtp.timestamp, unpacker->flags);
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
+	unpacker->flags = 0;
 	return 0;
 }
 

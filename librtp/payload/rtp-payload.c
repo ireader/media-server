@@ -1,5 +1,6 @@
 #include "rtp-payload.h"
 #include "rtp-profile.h"
+#include "rtp-packet.h"
 #include "rtp-payload-internal.h"
 #include <stdlib.h>
 #include <string.h>
@@ -17,11 +18,11 @@ struct rtp_payload_delegate_t
 /// @return 0-ok, <0-error
 static int rtp_payload_find(int payload, const char* encoding, struct rtp_payload_delegate_t* codec);
 
-void* rtp_payload_encode_create(int payload, const char* name, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* cbparam)
+void* rtp_payload_encode_create(int payload, const char* name, uint16_t seq, uint32_t ssrc, struct rtp_payload_t *handler, void* cbparam)
 {
 	int size;
 	struct rtp_payload_delegate_t* ctx;
-	
+
 	size = rtp_packet_getsize();
 	if (RTP_PAYLOAD_MP2T == payload)
 		size = size / TS_PACKET_SIZE * TS_PACKET_SIZE;
@@ -31,7 +32,7 @@ void* rtp_payload_encode_create(int payload, const char* name, uint16_t seq, uin
 	if (ctx)
 	{
 		if (rtp_payload_find(payload, name, ctx) < 0
-			|| NULL == (ctx->packer = ctx->encoder->create(size, (uint8_t)payload, seq, ssrc, frequency, handler, cbparam)))
+			|| NULL == (ctx->packer = ctx->encoder->create(size, (uint8_t)payload, seq, ssrc, handler, cbparam)))
 		{
 			free(ctx);
 			return NULL;
@@ -54,11 +55,11 @@ void rtp_payload_encode_getinfo(void* encoder, uint16_t* seq, uint32_t* timestam
 	ctx->encoder->get_info(ctx->packer, seq, timestamp);
 }
 
-int rtp_payload_encode_input(void* encoder, const void* data, int bytes, int64_t time)
+int rtp_payload_encode_input(void* encoder, const void* data, int bytes, uint32_t timestamp)
 {
 	struct rtp_payload_delegate_t* ctx;
 	ctx = (struct rtp_payload_delegate_t*)encoder;
-	return ctx->encoder->input(ctx->packer, data, bytes, time);
+	return ctx->encoder->input(ctx->packer, data, bytes, timestamp);
 }
 
 void* rtp_payload_decode_create(int payload, const char* name, struct rtp_payload_t *handler, void* cbparam)
@@ -84,19 +85,22 @@ void rtp_payload_decode_destroy(void* decoder)
 	ctx->decoder->destroy(ctx->packer);
 }
 
-int rtp_payload_decode_input(void* decoder, const void* packet, int bytes, int64_t time)
+int rtp_payload_decode_input(void* decoder, const void* packet, int bytes)
 {
 	struct rtp_payload_delegate_t* ctx;
 	ctx = (struct rtp_payload_delegate_t*)decoder;
-	return ctx->decoder->input(ctx->packer, packet, bytes, time);
+	return ctx->decoder->input(ctx->packer, packet, bytes);
 }
 
-//static size_t s_max_packet_size = 576 - RTP_HEADER_SIZE; // UNIX Network Programming by W. Richard Stevens
-static int s_max_packet_size = 1434 - RTP_HEADER_SIZE; // from VLC
+// Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)
+// (Also, make it a multiple of 4 bytes, just in case that matters.)
+//static int s_max_packet_size = 1456 - RTP_FIXED_HEADER; // from Live555 MultiFrameRTPSink.cpp RTP_PAYLOAD_MAX_SIZE
+//static size_t s_max_packet_size = 576 - RTP_FIXED_HEADER; // UNIX Network Programming by W. Richard Stevens
+static int s_max_packet_size = 1434 - RTP_FIXED_HEADER; // from VLC
 
 void rtp_packet_setsize(int bytes)
 {
-	s_max_packet_size = bytes;
+	s_max_packet_size = bytes < 564 ? 564 : bytes;
 }
 
 int rtp_packet_getsize()

@@ -32,7 +32,7 @@ PSFileSource::PSFileSource(const char *file)
 		PSFileSource::RTPFree,
 		PSFileSource::RTPPacket,
 	};
-	m_pspacker = rtp_payload_encode_create(RTP_PAYLOAD_MP2P, "MP2P", (uint16_t)ssrc, ssrc, 90000, &s_psfunc, this);
+	m_pspacker = rtp_payload_encode_create(RTP_PAYLOAD_MP2P, "MP2P", (uint16_t)ssrc, ssrc, &s_psfunc, this);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
@@ -173,7 +173,7 @@ void PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
-	rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock);
+	rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock * 90 /*kHz*/);
 	free(pes);
 }
 
@@ -190,7 +190,7 @@ void PSFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PSFileSource::RTPPacket(void* param, const void *packet, int bytes, int64_t /*time*/, int /*flags*/)
+void PSFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);

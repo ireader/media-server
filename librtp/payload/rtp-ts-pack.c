@@ -5,6 +5,9 @@
 /// 1. Each RTP packet will contain a timestamp derived from the sender¡¯s 90KHz clock reference
 /// 2. For MPEG2 Program streams and MPEG1 system streams there are no packetization restrictions; 
 ///    these streams are treated as a packetized stream of bytes.
+///
+/// 2.1 RTP header usage (p4)
+/// 32 bit 90K Hz timestamp representing the target transmission time for the first byte of the packet
 
 #include "ctypedef.h"
 #include "rtp-packet.h"
@@ -27,7 +30,7 @@ struct rtp_encode_ts_t
 	int size;
 };
 
-static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* cbparam)
+static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, struct rtp_payload_t *handler, void* cbparam)
 {
 	struct rtp_encode_ts_t *packer;
 	packer = (struct rtp_encode_ts_t *)calloc(1, sizeof(*packer));
@@ -38,7 +41,6 @@ static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssr
 	packer->cbparam = cbparam;
 	packer->size = size;
 
-	assert(KHz * 1000 == frequency);
 	packer->pkt.rtp.v = RTP_VERSION;
 	packer->pkt.rtp.pt = pt;
 	packer->pkt.rtp.seq = seq;
@@ -64,14 +66,14 @@ static void rtp_ts_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp)
 	*timestamp = packer->pkt.rtp.timestamp;
 }
 
-static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, int64_t time)
+static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, uint32_t timestamp)
 {
 	int n;
 	uint8_t *rtp;
 	const uint8_t *ptr;
 	struct rtp_encode_ts_t *packer;
 	packer = (struct rtp_encode_ts_t *)pack;
-	packer->pkt.rtp.timestamp = (uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 section2 p2)
+	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 section2 p2)
 
 	for (ptr = (const uint8_t *)ps; bytes > 0; ++packer->pkt.rtp.seq)
 	{
@@ -84,7 +86,9 @@ static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, int64_t time
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
 		if (!rtp) return ENOMEM;
 
-		packer->pkt.rtp.m = (bytes <= packer->size) ? 1 : 0; // set marker flag
+		// M bit: Set to 1 whenever the timestamp is discontinuous
+		//packer->pkt.rtp.m = (bytes <= packer->size) ? 1 : 0;
+		packer->pkt.rtp.m = 0;
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
 		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 		{
@@ -92,7 +96,7 @@ static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, int64_t time
 			return -1;
 		}
 
-		packer->handler.packet(packer->cbparam, rtp, n, time, 0);
+		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 	}
 

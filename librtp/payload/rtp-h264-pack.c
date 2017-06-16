@@ -1,3 +1,24 @@
+// RFC6184 RTP Payload Format for H.264 Video
+//
+// 6.2. Single NAL Unit Mode (All receivers MUST support this mode)
+//   packetization-mode media type parameter is equal to 0 or the packetization - mode is not present.
+//   Only single NAL unit packets MAY be used in this mode.
+//   STAPs, MTAPs, and FUs MUST NOT be used.
+//   The transmission order of single NAL unit packets MUST comply with the NAL unit decoding order.
+// 6.3. Non-Interleaved Mode (This mode SHOULD be supported)
+//   packetization-mode media type parameter is equal to 1.
+//   Only single NAL unit packets, STAP - As, and FU - As MAY be used in this mode.
+//   STAP-Bs, MTAPs, and FU-Bs MUST NOT be used.
+//   The transmission order of NAL units MUST comply with the NAL unit decoding order
+// 6.4. Interleaved Mode
+//   packetization-mode media type parameter is equal to 2.
+//   STAP-Bs, MTAPs, FU-As, and FU-Bs MAY be used. 
+//   STAP-As and single NAL unit packets MUST NOT be used.
+//   The transmission order of packets and NAL units is constrained as specified in Section 5.5.
+//
+// 5.1. RTP Header Usage (p10)
+// The RTP timestamp is set to the sampling timestamp of the content. A 90 kHz clock rate MUST be used.
+
 #include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"
@@ -5,8 +26,6 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-
-// RFC6184 RTP Payload Format for H.264 Video
 
 #define KHz         90 // 90000Hz
 #define FU_START    0x80
@@ -20,7 +39,7 @@ struct rtp_encode_h264_t
 	int size;
 };
 
-static void* rtp_h264_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* cbparam)
+static void* rtp_h264_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, struct rtp_payload_t *handler, void* cbparam)
 {
 	struct rtp_encode_h264_t *packer;
 	packer = (struct rtp_encode_h264_t *)calloc(1, sizeof(*packer));
@@ -30,7 +49,6 @@ static void* rtp_h264_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t s
 	packer->cbparam = cbparam;
 	packer->size = size;
 
-	assert(KHz * 1000 == frequency);
 	packer->pkt.rtp.v = RTP_VERSION;
 	packer->pkt.rtp.pt = pt;
 	packer->pkt.rtp.seq = seq;
@@ -67,7 +85,7 @@ static const uint8_t* h264_nalu_find(const uint8_t* p, size_t bytes)
 	return p + bytes;
 }
 
-static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes, int64_t time)
+static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes)
 {
 	int n;
 	uint8_t *rtp;
@@ -79,6 +97,7 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	if (!rtp) return ENOMEM;
 
 	packer->pkt.rtp.m = 1; // set marker flag
+	//packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? 1 : 0;
 	n = rtp_packet_serialize(&packer->pkt, rtp, n);
 	if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 	{
@@ -87,12 +106,12 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	}
 
 	++packer->pkt.rtp.seq;
-	packer->handler.packet(packer->cbparam, rtp, n, time, 0);
+	packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 	packer->handler.free(packer->cbparam, rtp);
 	return 0;
 }
 
-static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes, int64_t time, int MAX_PACKET)
+static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes)
 {
 	int n;
 	unsigned char *rtp;
@@ -109,7 +128,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	// FU-A start
 	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
 	{
-		if (bytes <= MAX_PACKET - 2)
+		if (bytes <= packer->size - 2)
 		{
 			assert(0 == (fu_header & FU_START));
 			fu_header = FU_END | (fu_header & 0x1F); // FU-A end
@@ -117,13 +136,13 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		}
 		else
 		{
-			packer->pkt.payloadlen = MAX_PACKET;
+			packer->pkt.payloadlen = packer->size;
 		}
 
 		packer->pkt.payload = nalu - 2/*fu_indicator + fu_header*/;
 		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-		if (!rtp) return ENOMEM;
+		if (!rtp) return -ENOMEM;
 
 		packer->pkt.rtp.m = (FU_END & fu_header) ? 1 : 0; // set marker flag
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
@@ -135,7 +154,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 
 		rtp[RTP_FIXED_HEADER + 0] = fu_indicator;
 		rtp[RTP_FIXED_HEADER + 1] = fu_header;
-		packer->handler.packet(packer->cbparam, rtp, n, time, 0);
+		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
 		bytes -= packer->pkt.payloadlen - 2;
@@ -146,13 +165,13 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	return 0;
 }
 
-static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, int64_t time)
+static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t timestamp)
 {
 	int r = 0;
 	const uint8_t *p1, *p2, *pend;
 	struct rtp_encode_h264_t *packer;
 	packer = (struct rtp_encode_h264_t *)pack;
-	packer->pkt.rtp.timestamp = (uint32_t)time * KHz; // ms -> 90KHZ
+	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
 	for(p1 = h264_nalu_find((const uint8_t*)h264, bytes); p1 < pend && 0 == r; p1 = p2)
@@ -167,14 +186,14 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, int64_t 
 		// filter suffix '00' bytes
 		while(0 == p1[nalu_size-1]) --nalu_size;
 
-		if(nalu_size < (size_t)packer->size)
+		if(nalu_size <= (size_t)packer->size)
 		{
 			// single NAl unit packet 
-			r = rtp_h264_pack_nalu(packer, p1, nalu_size, time);
+			r = rtp_h264_pack_nalu(packer, p1, nalu_size);
 		}
 		else
 		{
-			r = rtp_h264_pack_fu_a(packer, p1, nalu_size, time, packer->size);
+			r = rtp_h264_pack_fu_a(packer, p1, nalu_size);
 		}
 	}
 

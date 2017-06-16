@@ -1,3 +1,5 @@
+// RFC3551 RTP Prole for Audio and Video Conferences with Minimal Control
+
 #include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"
@@ -12,11 +14,10 @@ struct rtp_packer_t
 	void* cbparam;
 
 	struct rtp_packet_t pkt;
-	uint32_t frequency;
 	int size;
 };
 
-static void* rtp_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* param)
+static void* rtp_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, struct rtp_payload_t *handler, void* param)
 {
 	struct rtp_packer_t *packer;
 	packer = (struct rtp_packer_t *)calloc(1, sizeof(*packer));
@@ -24,7 +25,6 @@ static void* rtp_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssrc, 
 
 	memcpy(&packer->handler, handler, sizeof(packer->handler));
 	packer->cbparam = param;
-	packer->frequency = frequency;
 	packer->size = size;
 
 	packer->pkt.rtp.v = RTP_VERSION;
@@ -52,7 +52,7 @@ void rtp_pack_get_info(void* p, uint16_t* seq, uint32_t* timestamp)
 	*timestamp = packer->pkt.rtp.timestamp;
 }
 
-int rtp_pack_input(void* p, const void* data, int bytes, int64_t time)
+int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 {
 	int n;
 	uint8_t *rtp;
@@ -60,7 +60,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, int64_t time)
 	struct rtp_packer_t *packer;
 
 	packer = (struct rtp_packer_t *)p;
-	packer->pkt.rtp.timestamp = (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
+	packer->pkt.rtp.timestamp = timestamp; // (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
 	packer->pkt.rtp.m = 0; // marker bit alway 0
 
 	for(ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
@@ -81,10 +81,10 @@ int rtp_pack_input(void* p, const void* data, int bytes, int64_t time)
 			return -1;
 		}
 
-		packer->pkt.rtp.timestamp += packer->pkt.payloadlen * packer->frequency / 1000;
-
-		packer->handler.packet(packer->cbparam, rtp, n, time, 0);
+		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
+
+		//packer->pkt.rtp.timestamp += packer->pkt.payloadlen * packer->frequency / 1000;
 	}
 
 	return 0;

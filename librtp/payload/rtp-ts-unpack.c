@@ -1,3 +1,5 @@
+/// RFC2250 2. Encapsulation of MPEG System and Transport Streams (p3)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +14,7 @@ struct rtp_decode_ts_t
 	struct rtp_payload_t handler;
 	void* cbparam;
 
-	int flag; // lost packet
+	int flags; // lost packet
 	uint16_t seq; // rtp seq
 	uint32_t timestamp;
 
@@ -29,6 +31,7 @@ static void* rtp_ts_unpack_create(struct rtp_payload_t *handler, void* cbparam)
 
 	memcpy(&unpacker->handler, handler, sizeof(unpacker->handler));
 	unpacker->cbparam = cbparam;
+	unpacker->flags = -1;
 	return unpacker;
 }
 
@@ -45,87 +48,78 @@ static void rtp_ts_unpack_destroy(void* p)
 	free(unpacker);
 }
 
-static int rtp_ts_unpack_input(void* p, const void* packet, int bytes, int64_t time)
+static int rtp_ts_unpack_input(void* p, const void* packet, int bytes)
 {
 	struct rtp_packet_t pkt;
 	struct rtp_decode_ts_t *unpacker;
 
 	unpacker = (struct rtp_decode_ts_t *)p;
-	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 1)
+	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
 		return -1;
 
-	if ((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1) && 0 != unpacker->seq)
+	if (-1 == unpacker->flags)
 	{
-		// packet lost
-		unpacker->flag = 1;
-		unpacker->size = 0;
-		unpacker->seq = (uint16_t)pkt.rtp.seq;
-		printf("%s: rtp packet lost.\n", __FUNCTION__);
-		return EFAULT;
+		unpacker->flags = 0;
+		unpacker->seq = (uint16_t)(pkt.rtp.seq - 1); // disable packet lost
 	}
 
+	if ((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1))
+	{
+		unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+		unpacker->size = 0; // discard previous packets
+	}
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 
-	assert(pkt.payloadlen > 0);
-	if (unpacker->size + pkt.payloadlen > unpacker->capacity)
-	{
-		void *ptr = realloc(unpacker->ptr, unpacker->size + pkt.payloadlen + 2048);
-		if (!ptr)
-		{
-			unpacker->flag = 1;
-			unpacker->size = 0;
-			return ENOMEM;
-		}
-
-		unpacker->ptr = (uint8_t*)ptr;
-		unpacker->capacity = unpacker->size + pkt.payloadlen + 2048;
-	}
-
-	// RTP marker bit
+	// 2.1 RTP header usage(p4)
+	// M bit: Set to 1 whenever the timestamp is discontinuous. (such as 
+	// might happen when a sender switches from one data
+	// source to another).This allows the receiver and any
+	// intervening RTP mixers or translators that are synchronizing
+	// to the flow to ignore the difference between this timestamp
+	// and any previous timestamp in their clock phase detectors.
 	if (pkt.rtp.m)
 	{
-		// Set to 1 whenever the timestamp is discontinuous
-		assert(pkt.payloadlen > 0);
-		assert(1 == unpacker->flag || 0 == unpacker->size || pkt.rtp.timestamp == unpacker->timestamp);
-		if (pkt.payload && pkt.payloadlen > 0)
-		{
-			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
-			unpacker->size += pkt.payloadlen;
-		}
+		unpacker->size = 0; // discard previous packets
+		unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+		pkt.rtp.timestamp = unpacker->timestamp;
+	}
 
-		if (unpacker->size > 0 && 0 == unpacker->flag)
+	// 32 bit 90K Hz timestamp
+	if (pkt.rtp.timestamp != unpacker->timestamp)
+	{
+		if (unpacker->size > 0)
 		{
-			unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
+			// previous packet done
+			unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, unpacker->timestamp, unpacker->flags);
 		}
 
 		// frame boundary
-		unpacker->flag = 0;
 		unpacker->size = 0;
+		unpacker->flags = 0;
 	}
-	else if (pkt.rtp.timestamp != unpacker->timestamp)
+
+	// save payload
+	assert(pkt.payloadlen > 0);
+	if (pkt.payload && pkt.payloadlen > 0)
 	{
-		if (unpacker->size > 0 && 0 == unpacker->flag)
+		if (unpacker->size + pkt.payloadlen > unpacker->capacity)
 		{
-			unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, time, 0);
+			size_t size = unpacker->size + pkt.payloadlen + 160 * 188;
+			void *ptr = realloc(unpacker->ptr, size);
+			if (!ptr)
+			{
+				unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+				unpacker->size = 0;
+				return -ENOMEM;
+			}
+
+			unpacker->ptr = (uint8_t*)ptr;
+			unpacker->capacity = size;
 		}
 
-		// frame boundary
-		unpacker->flag = 0;
-		unpacker->size = 0;
-		if (pkt.payload && pkt.payloadlen > 0)
-		{
-			assert(unpacker->capacity >= unpacker->size + pkt.payloadlen);
-			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
-			unpacker->size = pkt.payloadlen;
-		}
-	}
-	else
-	{
-		if (pkt.payload && pkt.payloadlen > 0)
-		{
-			memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
-			unpacker->size += pkt.payloadlen;
-		}
+		assert(unpacker->capacity >= unpacker->size + pkt.payloadlen);
+		memcpy(unpacker->ptr + unpacker->size, pkt.payload, pkt.payloadlen);
+		unpacker->size += pkt.payloadlen;
 	}
 
 	unpacker->timestamp = pkt.rtp.timestamp;

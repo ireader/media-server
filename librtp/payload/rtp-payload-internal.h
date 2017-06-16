@@ -3,8 +3,6 @@
 
 #include "rtp-payload.h"
 
-#define RTP_HEADER_SIZE 12 // don't include RTP CSRC and RTP Header Extension
-
 struct rtp_payload_encode_t
 {
 	/// create RTP packer
@@ -15,7 +13,7 @@ struct rtp_payload_encode_t
 	/// @param[in] handler user-defined callback
 	/// @param[in] cbparam user-defined parameter
 	/// @return RTP packer
-	void* (*create)(int size, uint8_t payload, uint16_t seq, uint32_t ssrc, uint32_t frequency, struct rtp_payload_t *handler, void* cbparam);
+	void* (*create)(int size, uint8_t payload, uint16_t seq, uint32_t ssrc, struct rtp_payload_t *handler, void* cbparam);
 	/// destroy RTP Packer
 	void(*destroy)(void* packer);
 
@@ -27,7 +25,7 @@ struct rtp_payload_encode_t
 	/// @param[in] bytes stream length in bytes
 	/// @param[in] time stream UTC time
 	/// @return 0-ok, ENOMEM-alloc failed, <0-failed
-	int(*input)(void* packer, const void* data, int bytes, int64_t time);
+	int(*input)(void* packer, const void* data, int bytes, uint32_t time);
 };
 
 struct rtp_payload_decode_t
@@ -41,7 +39,7 @@ struct rtp_payload_decode_t
 	/// @param[in] bytes RTP packet length in bytes
 	/// @param[in] time stream UTC time
 	/// @return 0-ok, <0-failed
-	int (*input)(void* packer, const void* packet, int bytes, int64_t time);
+	int (*input)(void* packer, const void* packet, int bytes);
 };
 
 struct rtp_payload_encode_t *rtp_ts_encode();
