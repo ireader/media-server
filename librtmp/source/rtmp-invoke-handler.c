@@ -12,6 +12,7 @@ static int rtmp_command_onconnect(struct rtmp_t* rtmp, double transaction, const
 {
 	int r;
 	struct rtmp_connect_t connect;
+	struct amf_object_item_t items[1];
 	struct amf_object_item_t commands[7];
 	AMF_OBJECT_ITEM_VALUE(commands[0], AMF_STRING, "app", connect.app, sizeof(connect.app));
 	AMF_OBJECT_ITEM_VALUE(commands[1], AMF_STRING, "flashver", connect.flashver, sizeof(connect.flashver));
@@ -21,7 +22,6 @@ static int rtmp_command_onconnect(struct rtmp_t* rtmp, double transaction, const
 	AMF_OBJECT_ITEM_VALUE(commands[5], AMF_NUMBER, "videoCodecs", &connect.videoCodecs, 8);
 	AMF_OBJECT_ITEM_VALUE(commands[6], AMF_NUMBER, "videoFunction", &connect.videoFunction, 8);
 
-	struct amf_object_item_t items[1];
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", commands, sizeof(commands) / sizeof(commands[0]));
 
 	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
