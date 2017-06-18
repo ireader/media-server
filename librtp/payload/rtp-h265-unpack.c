@@ -1,6 +1,5 @@
 // RFC7798 RTP Payload Format for High Efficiency Video Coding (HEVC)
 
-#include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"
 #include <stdlib.h>

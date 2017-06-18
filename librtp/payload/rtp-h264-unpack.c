@@ -1,12 +1,11 @@
 // RFC6184 RTP Payload Format for H.264 Video
 
+#include "rtp-packet.h"
+#include "rtp-payload-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include "ctypedef.h"
-#include "rtp-packet.h"
-#include "rtp-payload-internal.h"
 
 #define H264_NAL(v)	(v & 0x1F)
 #define FU_START(v) (v & 0x80)

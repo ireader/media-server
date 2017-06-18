@@ -19,7 +19,6 @@
 // 5.1. RTP Header Usage (p10)
 // The RTP timestamp is set to the sampling timestamp of the content. A 90 kHz clock rate MUST be used.
 
-#include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"
 #include <stdlib.h>

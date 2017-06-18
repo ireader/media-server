@@ -3,7 +3,7 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* ptr)
+void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
 {
 	uint32_t ssrc, i;
 	rtcp_rb_t *rb;
@@ -23,7 +23,7 @@ void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	assert(receiver != ctx->self);
 	assert(receiver->rtcp_sr.ssrc == ssrc);
 	assert(receiver->rtcp_rb.ssrc == ssrc);
-	receiver->rtcp_clock = time64_now(); // last received clock, for keep-alive
+	receiver->rtcp_clock = rtpclock(); // last received clock, for keep-alive
 
 	ptr += 4;
 	// report block
@@ -43,7 +43,7 @@ void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	}
 }
 
-size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
+int rtcp_rr_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 {
 	// RFC3550 6.1 RTCP Packet Format
 	// An individual RTP participant should send only one compound RTCP packet per report interval
@@ -61,8 +61,8 @@ size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	header.rc = MIN(31, rtp_member_list_count(ctx->senders));
 	header.length = (4/*sizeof(rtcp_rr_t)*/ + header.rc*24/*sizeof(rtcp_rb_t)*/) / 4;
 
-	if(bytes < 4 + header.length*4)
-		return 4 + header.length*4;
+	if((uint32_t)bytes < 4 + header.length * 4)
+		return 4 + header.length * 4;
 
 	nbo_write_rtcp_header(ptr, &header);
 
@@ -73,7 +73,7 @@ size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	// report block
 	for(i = 0; i < header.rc; i++, ptr += 24/*sizeof(rtcp_rb_t)*/)
 	{
-		time64_t delay;
+		uint64_t delay;
 		int lost_interval;
 		int cumulative;
 		uint32_t fraction;
@@ -110,7 +110,7 @@ size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 			cumulative = 0;
 		}
 
-		delay = time64_now() - sender->rtcp_clock; // now - Last SR time
+		delay = rtpclock() - sender->rtcp_clock; // now - Last SR time
 		lsr = ((sender->rtcp_sr.ntpmsw&0xFFFF)<<16) | ((sender->rtcp_sr.ntplsw>>16) & 0xFFFF);
 		// in units of 1/65536 seconds
 		// 65536/1000000 == 1024/15625

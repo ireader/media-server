@@ -16,7 +16,6 @@
 ///           For audio, set to 1 on first packet of a "talk-spurt," 0 otherwise.
 /// 2. timestamp: 32 bit 90K Hz timestamp representing the target transmission time for the first byte of the packet
 
-#include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-profile.h"
 #include "rtp-payload-internal.h"

@@ -1,6 +1,8 @@
 #ifndef _rtp_h_
 #define _rtp_h_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,7 +56,7 @@ struct rtp_event_t
 };
 
 /// @param[in] boundwidth in byte
-void* rtp_create(struct rtp_event_t *handler, void* param, unsigned int ssrc, size_t frequence, size_t boundwidth);
+void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, int frequence, int boundwidth);
 int rtp_destroy(void* rtp);
 
 /// RTP send notify
@@ -62,43 +64,43 @@ int rtp_destroy(void* rtp);
 /// @param[in] data RTP packet(include RTP Header)
 /// @param[in] bytes RTP packet size in byte
 /// @return 0-ok, <0-error
-int rtp_onsend(void* rtp, const void* data, size_t bytes);
+int rtp_onsend(void* rtp, const void* data, int bytes);
 
 /// RTP receive notify
 /// @param[in] rtp RTP object
 /// @param[in] data RTP packet(include RTP Header)
 /// @param[in] bytes RTP packet size in byte
 /// @return 1-ok, 0-rtp packet ok, seq disorder, <0-error
-int rtp_onreceived(void* rtp, const void* data, size_t bytes);
+int rtp_onreceived(void* rtp, const void* data, int bytes);
 
 /// received RTCP packet
 /// @param[in] rtp RTP object
 /// @param[in] rtcp RTCP packet(include RTCP Header)
 /// @param[in] bytes RTCP packet size in byte
 /// @return 0-ok, <0-error
-int rtp_onreceived_rtcp(void* rtp, const void* rtcp, size_t bytes);
+int rtp_onreceived_rtcp(void* rtp, const void* rtcp, int bytes);
 
 /// create RTCP Report(SR/RR) packet
 /// @param[in] rtp RTP object
 /// @param[out] rtcp RTCP packet(include RTCP Header)
 /// @param[in] bytes RTCP packet size in byte
 /// @return 0-error, >0-rtcp package size(maybe need call more times)
-size_t rtp_rtcp_report(void* rtp, void* rtcp, size_t bytes);
+int rtp_rtcp_report(void* rtp, void* rtcp, int bytes);
 
 /// create RTCP BYE packet
 /// @param[in] rtp RTP object
 /// @param[out] rtcp RTCP packet(include RTCP Header)
 /// @param[in] bytes RTCP packet size in byte
 /// @return 0-error, >0-rtcp package size(maybe need call more times)
-size_t rtp_rtcp_bye(void* rtp, void* rtcp, size_t bytes);
+int rtp_rtcp_bye(void* rtp, void* rtcp, int bytes);
 
 /// get RTCP interval
 /// @param[in] rtp RTP object
 /// 0-ok, <0-error
 int rtp_rtcp_interval(void* rtp);
 
-const char* rtp_get_cname(void* rtp, unsigned int ssrc);
-const char* rtp_get_name(void* rtp, unsigned int ssrc);
+const char* rtp_get_cname(void* rtp, uint32_t ssrc);
+const char* rtp_get_name(void* rtp, uint32_t ssrc);
 int rtp_set_info(void* rtp, const char* cname, const char* name);
 
 #ifdef __cplusplus

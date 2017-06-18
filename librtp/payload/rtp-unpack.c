@@ -1,12 +1,12 @@
 // RFC3551 RTP Prole for Audio and Video Conferences with Minimal Control
 
-#include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-profile.h"
 #include "rtp-payload-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 struct rtp_unpacker_t
 {

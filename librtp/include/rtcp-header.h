@@ -1,6 +1,8 @@
 #ifndef _rtcp_h_
 #define _rtcp_h_
 
+#include <stdint.h>
+
 enum
 {
 	RTCP_SR		= 200,
@@ -60,9 +62,9 @@ typedef struct _rtcp_rb_t // report block
 
 typedef struct _rtcp_sdes_item_t // source description RTCP packet
 {
-	unsigned char pt; // chunk type
-	unsigned char len;
-	unsigned char *data;
+	uint8_t pt; // chunk type
+	uint8_t len;
+	uint8_t *data;
 } rtcp_sdes_item_t;
 
 #define RTCP_V(v)	((v >> 30) & 0x03) // rtcp version

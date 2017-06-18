@@ -1,6 +1,8 @@
 #ifndef _rtp_header_h_
 #define _rtp_header_h_
 
+#include <stdint.h>
+
 #define RTP_VERSION 2 // RTP version field must equal 2 (p66)
 
 typedef struct _rtp_header_t

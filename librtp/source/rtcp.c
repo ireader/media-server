@@ -1,12 +1,8 @@
-#include "cstringext.h"
 #include "rtp-internal.h"
 #include "rtp-packet.h"
-#include "time64.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-time64_t ntp2clock(time64_t ntp);
-time64_t clock2ntp(time64_t clock);
+#include <assert.h>
 
 static void rtp_seq_init(struct rtp_member *sender, uint16_t seq)
 {
@@ -179,7 +175,7 @@ static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t
 	return (header.length+1)*4;
 }
 
-int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes)
+int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes)
 {
 	int r;
 	const unsigned char* p;
@@ -205,9 +201,9 @@ int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes)
 	return 0;
 }
 
-int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes)
+int rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 {
-	time64_t clock;
+	uint64_t clock;
 	struct rtp_packet_t pkt;
 	struct rtp_member *sender;
 
@@ -219,7 +215,7 @@ int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes)
 	if(!sender)
 		return -1; // memory error
 
-	clock = time64_now();
+	clock = rtpclock();
 
 	// RFC3550 A.1 RTP Data Header Validity Checks
 	if(0 == rtp_seq_update(sender, (uint16_t)pkt.rtp.ssrc))

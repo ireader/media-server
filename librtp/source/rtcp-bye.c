@@ -3,7 +3,7 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* ptr)
+void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
 {
 	uint32_t i;
 	struct rtcp_msg_t msg;
@@ -40,7 +40,7 @@ void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsig
 	}
 }
 
-size_t rtcp_bye_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
+int rtcp_bye_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 {
 	rtcp_header_t header;
 

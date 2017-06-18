@@ -3,7 +3,7 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* ptr)
+void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
 {
 	uint32_t i;
 	uint32_t ssrc;
@@ -83,9 +83,9 @@ static size_t rtcp_sdes_append_item(unsigned char *ptr, size_t bytes, rtcp_sdes_
 	return sdes->len+2;
 }
 
-size_t rtcp_sdes_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
+int rtcp_sdes_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 {
-	size_t n;
+	int n;
 	rtcp_header_t header;
 
 	// must have CNAME

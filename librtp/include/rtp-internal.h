@@ -1,15 +1,14 @@
 #ifndef _rtp_internal_h_
 #define _rtp_internal_h_
 
-#include <stdlib.h>
-#include "time64.h"
-#include "ctypedef.h"
-#include "cstringext.h"
 #include "rtp.h"
 #include "rtp-header.h"
 #include "rtcp-header.h"
 #include "rtp-member.h"
 #include "rtp-member-list.h"
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 #define MIN(a, b)	((a) < (b) ? (a) : (b))
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
@@ -24,10 +23,10 @@ struct rtp_context
 	struct rtp_member *self;
 
 	// RTP/RTCP
-	size_t avg_rtcp_size;
-	size_t rtcp_bw;
-	size_t rtcp_cycle; // for RTCP SDES
-	size_t frequence;
+	int avg_rtcp_size;
+	int rtcp_bw;
+	int rtcp_cycle; // for RTCP SDES
+	int frequence;
 	int init;
 	int role;
 };
@@ -35,18 +34,22 @@ struct rtp_context
 struct rtp_member* rtp_sender_fetch(struct rtp_context *ctx, uint32_t ssrc);
 struct rtp_member* rtp_member_fetch(struct rtp_context *ctx, uint32_t ssrc);
 
-int rtcp_input_rtp(struct rtp_context *ctx, const void* data, size_t bytes);
-int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, size_t bytes);
+int rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes);
+int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes);
 
-size_t rtcp_rr_pack(struct rtp_context *ctx, unsigned char* data, size_t bytes);
-size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* data, size_t bytes);
-size_t rtcp_sdes_pack(struct rtp_context *ctx, unsigned char* data, size_t bytes);
-size_t rtcp_bye_pack(struct rtp_context *ctx, unsigned char* data, size_t bytes);
-size_t rtcp_app_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes, const char name[4], const void* app, size_t len);
-void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* data);
-void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* data);
-void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* data);
-void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* data);
-void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* data);
+int rtcp_rr_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
+int rtcp_sr_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
+int rtcp_sdes_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
+int rtcp_bye_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
+int rtcp_app_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes, const char name[4], const void* app, int len);
+void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+
+uint64_t rtpclock();
+uint64_t ntp2clock(uint64_t ntp);
+uint64_t clock2ntp(uint64_t clock);
 
 #endif /* !_rtp_internal_h_ */

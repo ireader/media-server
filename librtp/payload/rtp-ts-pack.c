@@ -9,7 +9,6 @@
 /// 2.1 RTP header usage (p4)
 /// 32 bit 90K Hz timestamp representing the target transmission time for the first byte of the packet
 
-#include "ctypedef.h"
 #include "rtp-packet.h"
 #include "rtp-profile.h"
 #include "rtp-payload-internal.h"

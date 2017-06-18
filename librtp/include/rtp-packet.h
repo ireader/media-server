@@ -1,7 +1,6 @@
 #ifndef _rtp_packet_h_
 #define _rtp_packet_h_
 
-#include "ctypedef.h"
 #include "rtp-header.h"
 #include "rtcp-header.h"
 #include "rtp-util.h"

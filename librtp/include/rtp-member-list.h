@@ -7,7 +7,7 @@ void* rtp_member_list_create();
 void rtp_member_list_destroy(void* members);
 
 int rtp_member_list_count(void* members);
-struct rtp_member* rtp_member_list_get(void* members, size_t index);
+struct rtp_member* rtp_member_list_get(void* members, int index);
 
 struct rtp_member* rtp_member_list_find(void* members, uint32_t ssrc);
 

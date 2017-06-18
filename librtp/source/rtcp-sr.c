@@ -3,9 +3,7 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-time64_t clock2ntp(time64_t clock);
-
-void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsigned char* ptr)
+void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
 {
 	uint32_t ssrc, i;
 	rtcp_sr_t *sr;
@@ -27,7 +25,7 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	assert(sender != ctx->self);
 	assert(sender->rtcp_sr.ssrc == ssrc);
 	assert(sender->rtcp_rb.ssrc == ssrc);
-	sender->rtcp_clock = time64_now();
+	sender->rtcp_clock = rtpclock();
 
 	// update sender information
 	sr = &sender->rtcp_sr;
@@ -55,10 +53,10 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const unsign
 	}
 }
 
-size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
+int rtcp_sr_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 {
 	uint32_t i, timestamp;
-	time64_t ntp;
+	uint64_t ntp;
 	rtcp_header_t header;
 
 	assert(24 == sizeof(rtcp_sr_t));
@@ -70,7 +68,7 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	header.rc = MIN(31, rtp_member_list_count(ctx->senders));
 	header.length = (24/*sizeof(rtcp_sr_t)*/ + header.rc*24/*sizeof(rtcp_rb_t)*/)/4; // see 6.4.1 SR: Sender Report RTCP Packet
 
-	if(bytes < (header.length+1) * 4)
+	if((uint32_t)bytes < (header.length+1) * 4)
 		return (header.length+1) * 4;
 
 	nbo_write_rtcp_header(ptr, &header);
@@ -80,7 +78,7 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	// timestamp in any adjacent data packet. Rather, it must be calculated from the corresponding
 	// NTP timestamp using the relationship between the RTP timestamp counter and real time as
 	// maintained by periodically checking the wallclock time at a sampling instant.
-	ntp = time64_now();
+	ntp = rtpclock();
 	timestamp = (uint32_t)((ntp - ctx->self->rtp_clock) * ctx->frequence / 1000) + ctx->self->rtp_timestamp;
 
 	ntp = clock2ntp(ntp);
@@ -95,7 +93,7 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 	// report block
 	for(i = 0; i < header.rc; i++, ptr += 24/*sizeof(rtcp_rb_t)*/)
 	{
-		time64_t delay;
+		uint64_t delay;
 		int lost_interval;
 		int cumulative;
 		uint32_t fraction;
@@ -132,7 +130,7 @@ size_t rtcp_sr_pack(struct rtp_context *ctx, unsigned char* ptr, size_t bytes)
 			cumulative = 0;
 		}
 
-		delay = time64_now() - sender->rtcp_clock; // now - Last SR time
+		delay = rtpclock() - sender->rtcp_clock; // now - Last SR time
 		lsr = ((sender->rtcp_sr.ntpmsw&0xFFFF)<<16) | ((sender->rtcp_sr.ntplsw>>16) & 0xFFFF);
 		// in units of 1/65536 seconds
 		// 65536/1000000 == 1024/15625

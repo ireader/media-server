@@ -1,8 +1,8 @@
-#include "cstringext.h"
 #include "sys/locker.h"
 #include "rtp-internal.h"
 #include "rtp-util.h"
 #include "rtp-queue.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -21,7 +21,7 @@ struct rtp_frame
 	unsigned char *ptr;	
 	int capacity;
 	int len;
-	time64_t clock;
+	uint64_t clock;
 };
 
 struct rtp_queue
@@ -148,7 +148,7 @@ static int rtp_queue_push(struct rtp_queue* q, struct rtp_frame* frame)
 static struct rtp_frame* rtp_queue_pop(struct rtp_queue* q)
 {
 	struct rtp_frame* frame = NULL;
-	if(q->head && (q->head->seq == q->expected || time64_now() - q->head->clock > q->threshold))
+	if(q->head && (q->head->seq == q->expected || rtpclock() - q->head->clock > q->threshold))
 	{
 		frame = q->head;
 
@@ -179,7 +179,7 @@ int rtp_queue_lock(void* queue, void** ptr, int size)
 	memset(frame, 0, sizeof(*frame));
 	frame->capacity = size;
 	frame->ptr = (unsigned char*)(frame+1);
-	frame->clock = time64_now();
+	frame->clock = rtpclock();
 
 	*ptr = frame->ptr;
 	return 0;
@@ -218,7 +218,7 @@ int rtp_queue_unlock(void* queue, void* ptr, int size)
 	frame->seq = RTP_SEQ(v);
 //	frame->timestamp = ntohl(((const unsigned int *)ptr)[1]);
 //	frame->ssrc = ntohl(((const unsigned int *)ptr)[2]);
-	frame->clock = time64_now();
+	frame->clock = rtpclock();
 	frame->len = size;
 	assert(!frame->next);
 
