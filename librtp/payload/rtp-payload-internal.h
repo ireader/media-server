@@ -3,6 +3,8 @@
 
 #include "rtp-payload.h"
 
+#define RTP_PAYLOAD_FLAG_PACKET_SYNC 0x8000
+
 struct rtp_payload_encode_t
 {
 	/// create RTP packer
@@ -34,22 +36,24 @@ struct rtp_payload_decode_t
 	void (*destroy)(void* packer);
 
 	/// RTP packet to PS/H.264 Elementary Stream
-	/// @param[in] unpacker
+	/// @param[in] decoder RTP packet unpackers
 	/// @param[in] packet RTP packet
 	/// @param[in] bytes RTP packet length in bytes
 	/// @param[in] time stream UTC time
-	/// @return 0-ok, <0-failed
-	int (*input)(void* packer, const void* packet, int bytes);
+	/// @return 1-packet handled, 0-packet discard, <0-failed
+	int (*input)(void* decoder, const void* packet, int bytes);
 };
 
 struct rtp_payload_encode_t *rtp_ts_encode();
 struct rtp_payload_encode_t *rtp_h264_encode();
 struct rtp_payload_encode_t *rtp_h265_encode();
 struct rtp_payload_encode_t *rtp_common_encode();
+struct rtp_payload_encode_t *rtp_mpeg1or2es_encode();
 
 struct rtp_payload_decode_t *rtp_ts_decode();
 struct rtp_payload_decode_t *rtp_h264_decode();
 struct rtp_payload_decode_t *rtp_h265_decode();
 struct rtp_payload_decode_t *rtp_common_decode();
+struct rtp_payload_decode_t *rtp_mpeg1or2es_decode();
 
 #endif /* !_rtp_payload_internal_h_ */

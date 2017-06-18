@@ -90,6 +90,12 @@
     <ClCompile Include="payload\rtp-ts-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-mpeg1or2es-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mpeg1or2es-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
