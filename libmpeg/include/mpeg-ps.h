@@ -25,18 +25,18 @@ enum
 struct mpeg_ps_func_t
 {
 	/// alloc new packet
-	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] param user-defined parameter(by mpeg_ps_create)
 	/// @param[in] bytes alloc memory size in byte
 	/// @return memory pointer
 	void* (*alloc)(void* param, size_t bytes);
 
 	/// free packet
-	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] param user-defined parameter(by mpeg_ps_create)
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	void (*free)(void* param, void* packet);
 
 	/// callback on PS packet done
-	/// @param[in] param use-defined parameter(by mpeg_ps_create)
+	/// @param[in] param user-defined parameter(by mpeg_ps_create)
 	/// @param[in] avtype STREAM_VIDEO_XXX/STREAM_AUDIO_XXX
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	/// @param[in] bytes packet size
@@ -61,7 +61,7 @@ int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void
 
 void* mpeg_ps_unpacker_create(struct mpeg_ps_func_t *func, void* param);
 int mpeg_ps_unpacker_destroy(void* unpacker);
-size_t mpeg_ps_unpacker_input(void* unpacker, const unsigned char* data, size_t bytes);
+size_t mpeg_ps_unpacker_input(void* unpacker, const uint8_t* data, size_t bytes);
 
 #ifdef __cplusplus
 }
