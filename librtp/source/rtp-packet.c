@@ -2,10 +2,10 @@
 #include <string.h>
 #include <assert.h>
 
-int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, size_t bytes)
+int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, int bytes)
 {
 	uint32_t i, v;
-	size_t hdrlen;
+	int hdrlen;
 	const uint8_t *ptr;
 
 	if (bytes < RTP_FIXED_HEADER) // RFC3550 5.1 RTP Fixed Header Fields(p12)
@@ -48,7 +48,7 @@ int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, size_t by
 		pkt->extension = rtpext + 4;
 		pkt->reserved = nbo_r16(rtpext);
 		pkt->extlen = nbo_r16(rtpext + 2) * 4;
-		if ((size_t)pkt->extlen + 4 > pkt->payloadlen)
+		if (pkt->extlen + 4 > pkt->payloadlen)
 		{
 			assert(0);
 			return -1;
@@ -78,10 +78,10 @@ int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, size_t by
 	return 0;
 }
 
-int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, size_t bytes)
+int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
 {
 	uint32_t i;
-	size_t hdrlen;
+	int hdrlen;
 	uint8_t* ptr;
 
 	if (RTP_VERSION != pkt->rtp.v || 0 != (pkt->extlen % 4))
