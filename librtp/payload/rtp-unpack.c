@@ -47,7 +47,7 @@ static int rtp_unpack_input(void* p, const void* packet, int bytes)
 
 	unpacker = (struct rtp_unpacker_t *)p;
 	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
-		return -1;
+		return -EINVAL;
 
 	if (-1 == unpacker->flags)
 	{
@@ -64,7 +64,7 @@ static int rtp_unpack_input(void* p, const void* packet, int bytes)
 	unpacker->handler.packet(unpacker->cbparam, pkt.payload, pkt.payloadlen, pkt.rtp.timestamp, unpacker->flags);
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 	unpacker->flags = 0;
-	return 0;
+	return 1; // packet handled
 }
 
 struct rtp_payload_decode_t *rtp_common_decode()

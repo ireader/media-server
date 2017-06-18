@@ -75,7 +75,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 		if (!rtp) return ENOMEM;
 
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
-		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 		{
 			assert(0);
 			return -1;

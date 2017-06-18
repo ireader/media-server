@@ -15,11 +15,12 @@ struct rtp_decode_ts_t
 	void* cbparam;
 
 	int flags; // lost packet
+
 	uint16_t seq; // rtp seq
 	uint32_t timestamp;
 
 	uint8_t* ptr;
-	size_t size, capacity;
+	int size, capacity;
 };
 
 static void* rtp_ts_unpack_create(struct rtp_payload_t *handler, void* cbparam)
@@ -55,18 +56,19 @@ static int rtp_ts_unpack_input(void* p, const void* packet, int bytes)
 
 	unpacker = (struct rtp_decode_ts_t *)p;
 	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
-		return -1;
+		return -EINVAL;
 
 	if (-1 == unpacker->flags)
 	{
 		unpacker->flags = 0;
 		unpacker->seq = (uint16_t)(pkt.rtp.seq - 1); // disable packet lost
+		unpacker->timestamp = pkt.rtp.timestamp + 1; // flag for new frame
 	}
 
 	if ((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1))
 	{
-		unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
-		unpacker->size = 0; // discard previous packets
+		unpacker->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST | RTP_PAYLOAD_FLAG_PACKET_SYNC;
+		unpacker->timestamp = pkt.rtp.timestamp;
 	}
 	unpacker->seq = (uint16_t)pkt.rtp.seq;
 
@@ -79,23 +81,32 @@ static int rtp_ts_unpack_input(void* p, const void* packet, int bytes)
 	// and any previous timestamp in their clock phase detectors.
 	if (pkt.rtp.m)
 	{
+		//TODO: test
 		unpacker->size = 0; // discard previous packets
-		unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+		unpacker->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST; // notify source changed
+		unpacker->flags &= ~RTP_PAYLOAD_FLAG_PACKET_SYNC; // new frame start
 		pkt.rtp.timestamp = unpacker->timestamp;
 	}
 
-	// 32 bit 90K Hz timestamp
 	if (pkt.rtp.timestamp != unpacker->timestamp)
 	{
 		if (unpacker->size > 0)
 		{
 			// previous packet done
+			assert(0 == (unpacker->flags & RTP_PAYLOAD_FLAG_PACKET_SYNC));
 			unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, unpacker->timestamp, unpacker->flags);
+			unpacker->flags &= ~RTP_PAYLOAD_FLAG_PACKET_LOST; // clear packet lost flag
 		}
 
-		// frame boundary
+		// new frame start
+		unpacker->flags &= ~RTP_PAYLOAD_FLAG_PACKET_SYNC;
 		unpacker->size = 0;
-		unpacker->flags = 0;
+	}
+	unpacker->timestamp = pkt.rtp.timestamp;
+
+	if (0 != (unpacker->flags & RTP_PAYLOAD_FLAG_PACKET_SYNC))
+	{
+		return 0; // packet discard
 	}
 
 	// save payload
@@ -108,7 +119,7 @@ static int rtp_ts_unpack_input(void* p, const void* packet, int bytes)
 			void *ptr = realloc(unpacker->ptr, size);
 			if (!ptr)
 			{
-				unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
+				unpacker->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST | RTP_PAYLOAD_FLAG_PACKET_SYNC;
 				unpacker->size = 0;
 				return -ENOMEM;
 			}
@@ -122,8 +133,7 @@ static int rtp_ts_unpack_input(void* p, const void* packet, int bytes)
 		unpacker->size += pkt.payloadlen;
 	}
 
-	unpacker->timestamp = pkt.rtp.timestamp;
-	return 0;
+	return 1; // packet handled
 }
 
 struct rtp_payload_decode_t *rtp_ts_decode()

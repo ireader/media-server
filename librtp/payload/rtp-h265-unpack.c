@@ -35,7 +35,7 @@ struct rtp_decode_h265_t
 	uint16_t seq; // rtp seq
 
 	uint8_t* ptr;
-	size_t size, capacity;
+	int size, capacity;
 
 	int flags;
 	int using_donl_field;
@@ -106,7 +106,7 @@ static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t*
 			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
 			unpacker->size = 0;
-			return -1; // error
+			return -EINVAL; // error
 		}
 
 		assert(H265_TYPE(ptr[n]) >= 0 && H265_TYPE(ptr[n]) <= 40);
@@ -117,7 +117,7 @@ static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t*
 		ptr += len + 2; // next NALU
 	}
 
-	return 0;
+	return 1; // packet handled
 }
 
 // 4.4.3. Fragmentation Units (p29)
@@ -148,7 +148,7 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 
 	n = unpacker->using_donl_field ? 4 : 2;
 	if (bytes < n + 1 /*FU header*/)
-		return -1;
+		return -EINVAL;
 
 	if (unpacker->size + bytes - n - 1 + 2 /*NALU*/ > unpacker->capacity)
 	{
@@ -181,7 +181,7 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 		{
 			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
-			return -1; // packet lost
+			return 0; // packet discard
 		}
 		assert(unpacker->size > 0);
 	}
@@ -200,12 +200,12 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 		unpacker->size = 0;
 	}
 
-	return 0;
+	return 1; // packet handled
 }
 
 static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 {
-	size_t n;
+	int n;
 	int nal, lid, tid;
 	const uint8_t* ptr;
 	struct rtp_packet_t pkt;
@@ -215,7 +215,7 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 	n = unpacker->using_donl_field ? 4 : 2;
 	
 	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < n)
-		return -1;
+		return -EINVAL;
 
 	if (-1 == unpacker->flags)
 	{
@@ -238,7 +238,7 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 	assert(0 == lid && 0 != tid);
 
 	if (nal > 50)
-		return -1; // Unsupported (HEVC) NAL type
+		return 0; // packet discard, Unsupported (HEVC) NAL type
 
 	switch (nal)
 	{
@@ -250,7 +250,7 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 
 	case 50: // TODO: 4.4.4. PACI Packets (p32)
 		assert(0);
-		break;
+		return 0; // packet discard
 
 	case 32: // video parameter set (VPS)
 	case 33: // sequence parameter set (SPS)
@@ -260,10 +260,8 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 		unpacker->handler.packet(unpacker->cbparam, ptr, pkt.payloadlen, pkt.rtp.timestamp, unpacker->flags);
 		unpacker->flags = 0;
 		unpacker->size = 0;
-		break;
+		return 1; // packet handled
 	}
-
-	return 1;
 }
 
 struct rtp_payload_decode_t *rtp_h265_decode()

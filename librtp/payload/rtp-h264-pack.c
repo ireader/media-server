@@ -99,7 +99,7 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	packer->pkt.rtp.m = 1; // set marker flag
 	//packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? 1 : 0;
 	n = rtp_packet_serialize(&packer->pkt, rtp, n);
-	if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+	if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 	{
 		assert(0);
 		return -1;
@@ -146,7 +146,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 
 		packer->pkt.rtp.m = (FU_END & fu_header) ? 1 : 0; // set marker flag
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
-		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 		{
 			assert(0);
 			return -1;

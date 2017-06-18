@@ -66,7 +66,7 @@ static void rtp_ts_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp)
 	*timestamp = packer->pkt.rtp.timestamp;
 }
 
-static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, uint32_t timestamp)
+static int rtp_ts_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
 	int n;
 	uint8_t *rtp;
@@ -75,7 +75,7 @@ static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, uint32_t tim
 	packer = (struct rtp_encode_ts_t *)pack;
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 section2 p2)
 
-	for (ptr = (const uint8_t *)ps; bytes > 0; ++packer->pkt.rtp.seq)
+	for (ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = bytes < packer->size ? bytes : packer->size;
@@ -90,7 +90,7 @@ static int rtp_ts_pack_input(void* pack, const void* ps, int bytes, uint32_t tim
 		//packer->pkt.rtp.m = (bytes <= packer->size) ? 1 : 0;
 		packer->pkt.rtp.m = 0;
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
-		if ((size_t)n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 		{
 			assert(0);
 			return -1;
