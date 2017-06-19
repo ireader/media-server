@@ -76,6 +76,7 @@ struct rtsp_client_t
 	int aggregate; // 1-aggregate control available
 	char aggregate_uri[256]; // aggregate control uri, valid if 1==aggregate
 
+	int auth_failed;
 	char usr[128];
 	char pwd[256];
 	char cnonce[32];

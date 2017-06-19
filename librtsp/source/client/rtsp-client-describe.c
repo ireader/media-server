@@ -80,7 +80,7 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 		// Unauthorized
 		const char* authenticate;
 		authenticate = rtsp_get_header_by_name(parser, "WWW-Authenticate");
-		if (authenticate)
+		if (authenticate && 0 == rtsp->auth_failed++)
 		{
 			rtsp_client_www_authenticate(rtsp, authenticate);
 			r = rtsp_client_describe(rtsp);

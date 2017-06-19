@@ -43,6 +43,7 @@ int rtsp_client_open(void* p, const char* uri, const char* sdp)
 	struct rtsp_client_t *rtsp;
 	rtsp = (struct rtsp_client_t*)p;
 
+	rtsp->auth_failed = 0;
 	strlcpy(rtsp->uri, uri, sizeof(rtsp->uri));
 	if(NULL == sdp || 0 == *sdp)
 		r = rtsp_client_describe(rtsp);
