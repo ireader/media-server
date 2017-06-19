@@ -53,7 +53,7 @@ void rtsp_header_session_test(void)
 	char id2[sizeof(session.session)+10];
 
 	assert(0 == rtsp_header_session("47112344", &session));
-	assert(0 == strcmp("47112344", session.session) && 0 == session.timeout);
+	assert(0 == strcmp("47112344", session.session) && 60000 == session.timeout);
 
 	assert(0 == rtsp_header_session("47112344;timeout=10.1", &session));
 	assert(0 == strcmp("47112344", session.session) && 10100 == session.timeout);
