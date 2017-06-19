@@ -2,6 +2,23 @@
 #include <string.h>
 #include <assert.h>
 
+// RFC3550 RTP: A Transport Protocol for Real-Time Applications
+// 5.1 RTP Fixed Header Fields (p12)
+/*
+ 0               1               2               3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|V=2|P|X|   CC  |M|     PT      |      sequence number          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           timestamp                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                synchronization source (SSRC) identifier       |
++=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+|                 contributing source (CSRC) identifiers        |
+|                               ....                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+
 int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, int bytes)
 {
 	uint32_t i, v;
