@@ -1,4 +1,4 @@
-// RFC3551 RTP Prole for Audio and Video Conferences with Minimal Control
+// RFC3551 RTP Profile for Audio and Video Conferences with Minimal Control
 
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"

@@ -96,6 +96,15 @@
     <ClCompile Include="payload\rtp-mpeg1or2es-pack.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-mp4ves-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4ves-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-payload-helper.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
@@ -136,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="include\rtp-payload.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="payload\rtp-payload-helper.h">
+      <Filter>payload</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

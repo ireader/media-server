@@ -3,8 +3,6 @@
 
 #include "rtp-payload.h"
 
-#define RTP_PAYLOAD_FLAG_PACKET_SYNC 0x8000
-
 struct rtp_payload_encode_t
 {
 	/// create RTP packer
@@ -47,12 +45,14 @@ struct rtp_payload_decode_t
 struct rtp_payload_encode_t *rtp_ts_encode();
 struct rtp_payload_encode_t *rtp_h264_encode();
 struct rtp_payload_encode_t *rtp_h265_encode();
+struct rtp_payload_encode_t *rtp_mp4ves_encode();
 struct rtp_payload_encode_t *rtp_common_encode();
 struct rtp_payload_encode_t *rtp_mpeg1or2es_encode();
 
 struct rtp_payload_decode_t *rtp_ts_decode();
 struct rtp_payload_decode_t *rtp_h264_decode();
 struct rtp_payload_decode_t *rtp_h265_decode();
+struct rtp_payload_decode_t *rtp_mp4ves_decode();
 struct rtp_payload_decode_t *rtp_common_decode();
 struct rtp_payload_decode_t *rtp_mpeg1or2es_decode();
 

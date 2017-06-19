@@ -127,20 +127,24 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 		}
 		else if (0 == strcmp(encoding, "MP2P") // MPEG-2 Program Streams video (RFC 2250)
 			|| 0 == strcmp(encoding, "MP1S") // MPEG-1 Systems Streams video (RFC 2250)
-			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
-			// 5. RTP Packetization of MPEG-4 Visual Bitstreams (p8)
-			// 7.1 Media Type Registration for MPEG-4 Audio/Visual Streams (p17)
-			|| 0 == strcmp(encoding, "MP4V-ES")
-			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
-			// 6. RTP Packetization of MPEG-4 Audio Bitstreams (p15)
-			// 7.3 Media Type Registration for MPEG-4 Audio (p21)
-			|| 0 == strcmp(encoding, "MP4A-LATM")
 			/// RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
 			/// 4.1. MIME Type Registration (p27)
 			|| 0 == strcmp(encoding, "mpeg4-generic"))
 		{
 			codec->encoder = rtp_ts_encode();
 			codec->decoder = rtp_ts_decode();
+		}
+		else if (0 == strcmp(encoding, "MP4V-ES")
+			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
+			// 6. RTP Packetization of MPEG-4 Audio Bitstreams (p15)
+			// 7.3 Media Type Registration for MPEG-4 Audio (p21)
+			|| 0 == strcmp(encoding, "MP4A-LATM"))
+		{
+			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
+			// 5. RTP Packetization of MPEG-4 Visual Bitstreams (p8)
+			// 7.1 Media Type Registration for MPEG-4 Audio/Visual Streams (p17)
+			codec->encoder = rtp_mp4ves_encode();
+			codec->decoder = rtp_mp4ves_decode();
 		}
 		else
 		{
