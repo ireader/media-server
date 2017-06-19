@@ -2,21 +2,27 @@
 #include "rtsp-client-internal.h"
 #include "rtsp-parser.h"
 #include "sdp.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-void* rtsp_client_create(const struct rtsp_client_handler_t *handler, void* param)
+void* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
 {
 	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)malloc(sizeof(*rtsp));
+	rtsp = (struct rtsp_client_t*)calloc(1, sizeof(*rtsp));
 	if(NULL == rtsp)
 		return NULL;
 
-	memset(rtsp, 0, sizeof(*rtsp));
+	snprintf(rtsp->usr, sizeof(rtsp->usr), "%s", usr ? usr : "");
+	snprintf(rtsp->pwd, sizeof(rtsp->pwd), "%s", pwd ? pwd : "");
+	snprintf(rtsp->nc, sizeof(rtsp->nc), "%08x", 1);
+	snprintf(rtsp->cnonce, sizeof(rtsp->cnonce), "%p", rtsp);
+
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
 	rtsp->state = RTSP_INIT;
 	rtsp->param = param;
 	rtsp->cseq = 1;
+
 	return rtsp;
 }
 

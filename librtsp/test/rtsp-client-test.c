@@ -103,7 +103,8 @@ void rtsp_client_test(const char* host, const char* file)
 	socket_init();
 	ctx.socket = socket_connect_host(host, 554, 2000);
 	assert(socket_invalid != ctx.socket);
-	ctx.rtsp = rtsp_client_create(&handler, &ctx);
+	//ctx.rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
+	ctx.rtsp = rtsp_client_create("username", "password", &handler, &ctx);
 	assert(ctx.rtsp);
 	assert(0 == rtsp_client_open(ctx.rtsp, packet, NULL));
 

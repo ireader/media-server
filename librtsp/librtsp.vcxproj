@@ -77,7 +77,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include;../libmpeg/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;../librtp/include;../libmpeg/include;..\..\sdk\libhttp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -137,6 +137,7 @@
     <ClCompile Include="media\ps-file-source.cpp" />
     <ClCompile Include="source\client\rtmp-client-set-parameter.c" />
     <ClCompile Include="source\client\rtsp-client-announce.c" />
+    <ClCompile Include="source\client\rtsp-client-auth.c" />
     <ClCompile Include="source\client\rtsp-client-describe.c" />
     <ClCompile Include="source\client\rtsp-client-get-parameter.c" />
     <ClCompile Include="source\client\rtsp-client-options.c" />

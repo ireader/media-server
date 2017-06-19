@@ -107,6 +107,9 @@
     <ClCompile Include="source\client\rtmp-client-set-parameter.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
+    <ClCompile Include="source\client\rtsp-client-auth.c">
+      <Filter>Source Files\client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rfc822-datetime.h">

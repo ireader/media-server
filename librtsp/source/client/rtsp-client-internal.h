@@ -2,13 +2,16 @@
 #define _rtsp_client_internal_h_
 
 #include "rtsp-client.h"
+#include "http-header-auth.h"
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
 #include "rtsp-parser.h"
 #include "cstringext.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #define USER_AGENT "RTSP client v0.1"
 #define N_MEDIA 2
@@ -56,6 +59,7 @@ struct rtsp_client_t
 	int progress;
 	unsigned int cseq; // rtsp sequence
 
+	void* sdp;
 	int media_count;
 	struct rtsp_media_t media[N_MEDIA];
 	struct rtsp_media_t *media_ptr;
@@ -63,7 +67,7 @@ struct rtsp_client_t
 	// media
 	char range[64]; // rtsp header Range
 	char speed[16]; // rtsp header speed
-	char req[1024];
+	char req[2048];
 
 	char uri[256];
 	char baseuri[256]; // Content-Base
@@ -71,6 +75,13 @@ struct rtsp_client_t
 
 	int aggregate; // 1-aggregate control available
 	char aggregate_uri[256]; // aggregate control uri, valid if 1==aggregate
+
+	char usr[128];
+	char pwd[256];
+	char cnonce[32];
+	char nc[32];
+	char authenrization[1024];
+	struct http_header_www_authenticate_t auth;
 };
 
 static inline struct rtsp_media_t* rtsp_get_media(struct rtsp_client_t *ctx, int i)
@@ -99,5 +110,8 @@ int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_get_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
 int rtsp_client_set_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
+
+int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed);
+int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, const char* uri, const char* content, int length, char* authenrization, int bytes);
 
 #endif /* !_rtsp_client_internal_h_ */

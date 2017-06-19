@@ -35,16 +35,16 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 	if(n + n2 + 1 > bytes || !uri)
 		return NULL;
 
-	offset = strlcpy(uri, base, bytes);
+	offset = snprintf(uri, bytes, "%s", base);
 
 	if( ('/' == path[0] || '\\' == path[0])
 		&& n > 0 && ('/' == uri[n-1] || '\\' == uri[n-1]) )
 	{
-		offset += strlcat(uri + offset, path+1, bytes - offset);
+		offset += snprintf(uri + offset, bytes - offset, "%s", path+1);
 	}
 	else
 	{
-		offset += strlcat(uri + offset, path, bytes - offset);
+		offset += snprintf(uri + offset, bytes - offset, "%s", path);
 	}
 
 	return uri;

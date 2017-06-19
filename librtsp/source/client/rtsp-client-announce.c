@@ -25,6 +25,7 @@ static const char* sc_format =
 		"ANNOUNCE %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
+		"%s" // Authorization: Digest xxx
 		"Content-Type: application/sdp\r\n"
 		"Content-Length: %u\r\n"
 		"\r\n"
@@ -34,7 +35,8 @@ int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp)
 {
 	int r;
 	rtsp->state = RTSP_ANNOUNCE;
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->uri, rtsp->cseq++, rtsp->media[0].session.session, (unsigned int)strlen(sdp), sdp);
+	r = rtsp_client_authenrization(rtsp, "ANNOUNCE", rtsp->uri, sdp, strlen(sdp), rtsp->authenrization, sizeof(rtsp->authenrization));
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->uri, rtsp->cseq++, rtsp->media[0].session.session, rtsp->authenrization, (unsigned int)strlen(sdp), sdp);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r == rtsp->handler.send(rtsp->param, rtsp->uri, rtsp->req, r) ? 0 : -1;
 }

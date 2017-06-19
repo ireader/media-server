@@ -32,14 +32,16 @@ struct rtsp_client_handler_t
 };
 
 /// @param[in] param user-defined parameter
-void* rtsp_client_create(const struct rtsp_client_handler_t *handler, void* param);
+/// @param[in] usr RTSP auth username(optional)
+/// @param[in] pwd RTSP auth password(optional)
+void* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param);
 
 void rtsp_client_destroy(void* rtsp);
 
 /// rtsp describe and setup
 /// @param[in] uri media resource uri
 /// @param[in] sdp resource info. it can be null, sdp will get by describe command
-/// @return 0-ok, other-error.
+/// @return 0-ok, -EACCESS-auth required, try again, other-error.
 int rtsp_client_open(void* rtsp, const char* uri, const char* sdp);
 
 /// stop and close session(TearDown)

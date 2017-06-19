@@ -15,6 +15,7 @@ static const char* sc_format =
 		"TEARDOWN %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"Session: %s\r\n"
+		"%s" // Authorization: Digest xxx
 		"User-Agent: %s\r\n"
 		"\r\n";
 
@@ -29,7 +30,8 @@ static int rtsp_client_media_teardown(struct rtsp_client_t* rtsp)
 	if (NULL == media) return -1;
 
 	assert(media->uri[0] && media->session.session[0]);
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, USER_AGENT);
+	r = rtsp_client_authenrization(rtsp, "TEARDOWN", media->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, rtsp->authenrization, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r = rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
 }

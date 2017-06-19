@@ -24,6 +24,7 @@ static const char* sc_format =
 		"GET_PARAMETER %s RTSP/1.0\r\n"
 		"CSeq: %u\r\n"
 		"%s" // Session: %s\r\n
+		"%s" // Authorization: Digest xxx
 		"User-Agent: %s\r\n"
 		"Content-Type: text/parameters\r\n"
 		"Content-Length: %u\r\n"
@@ -47,13 +48,15 @@ int rtsp_client_get_parameter(void* p, int media, const char* parameter)
 		r = snprintf(session, sizeof(session), "Session: %s\r\n", m->session.session);
 		if (r < 12 || r >= sizeof(session)) session[0] = '\0';
 
-		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, m->uri, rtsp->cseq++, session, USER_AGENT, strlen(parameter), parameter);
+		r = rtsp_client_authenrization(rtsp, "GET_PARAMETER", m->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, m->uri, rtsp->cseq++, session, rtsp->authenrization, USER_AGENT, strlen(parameter), parameter);
 		assert(r > 0 && r < sizeof(rtsp->req));
 		return r = rtsp->handler.send(rtsp->param, m->uri, rtsp->req, r) ? 0 : -1;
 	}
 	else
 	{
-		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri[0] ? rtsp->aggregate_uri : rtsp->uri, rtsp->cseq++, "", USER_AGENT, strlen(parameter), parameter);
+		r = rtsp_client_authenrization(rtsp, "GET_PARAMETER", rtsp->aggregate_uri[0] ? rtsp->aggregate_uri : rtsp->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri[0] ? rtsp->aggregate_uri : rtsp->uri, rtsp->cseq++, "", rtsp->authenrization, USER_AGENT, strlen(parameter), parameter);
 		assert(r > 0 && r < sizeof(rtsp->req));
 		return r == rtsp->handler.send(rtsp->param, rtsp->uri, rtsp->req, r) ? 0 : -1;
 	}
