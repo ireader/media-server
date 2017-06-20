@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <errno.h>
 
-static int rtp_decode_mp4ves(void* p, const void* packet, int bytes)
+static int rtp_decode_mp4v_es(void* p, const void* packet, int bytes)
 {
 	struct rtp_packet_t pkt;
 	struct rtp_payload_helper_t *helper;
@@ -22,27 +22,6 @@ static int rtp_decode_mp4ves(void* p, const void* packet, int bytes)
 	helper = (struct rtp_payload_helper_t *)p;
 	if (!helper || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
 		return -EINVAL;
-
-	//++s_i;
-	//for (pm = pkt.payload; pm < (uint8_t*)pkt.payload + pkt.payloadlen;)
-	//{
-	//	uint8_t* p1 = (uint8_t*)memchr(pm, 0xb6, (uint8_t*)pkt.payload + pkt.payloadlen - pm);
-	//	if (p1)
-	//	{
-	//		for (n = 1; n < sizeof(pp); n++)
-	//		{
-	//			if (p1[n] != pp[n])
-	//				break;
-	//		}
-	//		if (n == sizeof(pp))
-	//			break;
-	//		pm = p1 + 1;
-	//	}
-	//	else
-	//	{
-	//		break;
-	//	}
-	//}
 
 	rtp_payload_check(helper, &pkt);
 
@@ -66,12 +45,12 @@ static int rtp_decode_mp4ves(void* p, const void* packet, int bytes)
 	return helper->lost ? 0 : 1; // packet handled
 }
 
-struct rtp_payload_decode_t *rtp_mp4ves_decode()
+struct rtp_payload_decode_t *rtp_mp4v_es_decode()
 {
 	static struct rtp_payload_decode_t decode = {
 		rtp_payload_helper_create,
 		rtp_payload_helper_destroy,
-		rtp_decode_mp4ves,
+		rtp_decode_mp4v_es,
 	};
 
 	return &decode;
