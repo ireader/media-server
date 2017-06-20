@@ -97,8 +97,8 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
 	if (!rtp) return ENOMEM;
 
-	packer->pkt.rtp.m = 1; // set marker flag
-	//packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? 1 : 0;
+	//packer->pkt.rtp.m = 1; // set marker flag
+	packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? 1 : 0; // VCL only
 	n = rtp_packet_serialize(&packer->pkt, rtp, n);
 	if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 	{
