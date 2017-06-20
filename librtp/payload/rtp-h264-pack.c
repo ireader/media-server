@@ -131,33 +131,36 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		{
 			assert(0 == (fu_header & FU_START));
 			fu_header = FU_END | (fu_header & 0x1F); // FU-A end
-			packer->pkt.payloadlen = bytes + 2/*fu_indicator + fu_header*/;
+			packer->pkt.payloadlen = bytes;
 		}
 		else
 		{
 			packer->pkt.payloadlen = packer->size;
 		}
 
-		packer->pkt.payload = nalu - 2/*fu_indicator + fu_header*/;
+		packer->pkt.payload = nalu;
 		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
 		if (!rtp) return -ENOMEM;
 
 		packer->pkt.rtp.m = (FU_END & fu_header) ? 1 : 0; // set marker flag
-		n = rtp_packet_serialize(&packer->pkt, rtp, n);
-		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		n = rtp_packet_serialize_header(&packer->pkt, rtp, n);
+		if (n != RTP_FIXED_HEADER)
 		{
 			assert(0);
 			return -1;
 		}
 
-		rtp[RTP_FIXED_HEADER + 0] = fu_indicator;
-		rtp[RTP_FIXED_HEADER + 1] = fu_header;
+		/*fu_indicator + fu_header*/
+		rtp[n + 0] = fu_indicator;
+		rtp[n + 1] = fu_header;
+		memcpy(rtp + n + 2, packer->pkt.payload, packer->pkt.payloadlen);
+
 		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
-		bytes -= packer->pkt.payloadlen - 2;
-		nalu += packer->pkt.payloadlen - 2;
+		bytes -= packer->pkt.payloadlen;
+		nalu += packer->pkt.payloadlen;
 		fu_header &= 0x1F; // clear flags
 	}
 
@@ -170,6 +173,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 	const uint8_t *p1, *p2, *pend;
 	struct rtp_encode_h264_t *packer;
 	packer = (struct rtp_encode_h264_t *)pack;
+	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
