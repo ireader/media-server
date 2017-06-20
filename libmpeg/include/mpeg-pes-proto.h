@@ -3,8 +3,9 @@
 
 #include "mpeg-types.h"
 
+// ISO/IEC 13818-1:2015 (E)
 // 2.4.3.7 Semantic definition of fields in PES packet
-// Table 2-22 ¨C Stream_id assignments(p50)
+// Table 2-22 ¨C Stream_id assignments(p54)
 // In transport streams, the stream_id may be set to any valid value which correctly describes the elementary stream type as defined in Table 2-22. 
 // In transport streams, the elementary stream type is specified in the program-specific information as specified in 2.4.4
 enum EPES_STREAM_ID
@@ -24,7 +25,7 @@ enum EPES_STREAM_ID
 	PES_SID_PADDING		= 0xBE, // padding_stream
 	PES_SID_PRIVATE_2	= 0xBF, // private_stream_2
 	PES_SID_AUDIO		= 0xC0, // ISO/IEC 13818-3/11172-3/13818-7/14496-3 audio stream '110x xxxx'
-	PES_SID_VIDEO		= 0xE0, // H.262 | H.264 | ISO/IEC 13818-2/11172-2/14496-2/14496-10 video stream '1110 xxxx'
+	PES_SID_VIDEO		= 0xE0, // H.262 | H.264 | H.265 | ISO/IEC 13818-2/11172-2/14496-2/14496-10 video stream '1110 xxxx'
 	PES_SID_ECM			= 0xF0, // ECM_stream
 	PES_SID_EMM			= 0xF1, // EMM_stream
 	PES_SID_DSMCC		= 0xF2, // H.222.0 | ISO/IEC 13818-1/13818-6_DSMCC_stream

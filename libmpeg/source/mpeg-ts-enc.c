@@ -97,7 +97,8 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 	uint8_t *pes = NULL;
 	uint8_t *data = NULL;
 
-	keyframe = (PSI_STREAM_H264 == stream->avtype && find_h264_keyframe(payload, bytes));
+	keyframe = (PSI_STREAM_H264 == stream->avtype && find_h264_keyframe(payload, bytes)) || 
+				(PSI_STREAM_H265 == stream->avtype && find_h265_keyframe(payload, bytes));
 
 	while(bytes > 0)
 	{
@@ -167,6 +168,15 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 				nbo_w32(p, 0x00000001);
 				p[4] = 0x09; // AUD
 				p[5] = 0xF0; // any slice type (0xe) + rbsp stop one bit
+				p += 6;
+			}
+			else if (PSI_STREAM_H265 == stream->avtype && 0 == find_h265_access_unit_delimiter(payload, bytes))
+			{
+				// 2.17 Carriage of HEVC
+				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
+				nbo_w32(p, 0x00000001);
+				p[4] = 0x23; // 35-AUD_NUT
+				p[5] = 0x30; // B&P&I (0x2) + rbsp stop one bit
 				p += 6;
 			}
 
@@ -384,7 +394,7 @@ int mpeg_ts_add_stream(void* ts, int avtype)
 
 	// stream id
 	// Table 2-22 ¨C Stream_id assignments
-	if(PSI_STREAM_H264==avtype || PSI_STREAM_MPEG4==avtype || PSI_STREAM_MPEG2==avtype || PSI_STREAM_MPEG1==avtype || PSI_STREAM_VIDEO_VC1==avtype || PSI_STREAM_VIDEO_SVAC==avtype)
+	if(PSI_STREAM_H264==avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_MPEG4==avtype || PSI_STREAM_MPEG2==avtype || PSI_STREAM_MPEG1==avtype || PSI_STREAM_VIDEO_VC1==avtype || PSI_STREAM_VIDEO_SVAC==avtype)
 	{
 		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
 		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number

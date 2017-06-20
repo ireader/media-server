@@ -172,14 +172,26 @@ int mpeg_ps_write(void* ps, int avtype, int64_t pts, int64_t dts, const void* da
 		p = pes + pes_write_header(pts, dts, streamId, pes);
 		assert(p - pes < 64);
 
-		if(first && PSI_STREAM_H264 == avtype && 0 == find_h264_access_unit_delimiter(payload, bytes))
+		if(first)
 		{
-			// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
-			// Each AVC access unit shall contain an access unit delimiter NAL Unit
-			nbo_w32(p, 0x00000001);
-			p[4] = 0x09; // AUD
-			p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
-			p += 6;
+			if (PSI_STREAM_H264 == avtype && 0 == find_h264_access_unit_delimiter(payload, bytes))
+			{
+				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
+				// Each AVC access unit shall contain an access unit delimiter NAL Unit
+				nbo_w32(p, 0x00000001);
+				p[4] = 0x09; // AUD
+				p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
+				p += 6;
+			}
+			else if (PSI_STREAM_H265 == avtype && 0 == find_h265_access_unit_delimiter(payload, bytes))
+			{
+				// 2.17 Carriage of HEVC
+				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
+				nbo_w32(p, 0x00000001);
+				p[4] = 0x23; // 35-AUD_NUT
+				p[5] = 0x30; // B&P&I (0x2) + rbsp stop one bit
+				p += 6;
+			}
 		}
 
 		// PES_packet_length = PES-Header + Payload-Size
@@ -288,6 +300,7 @@ int mpeg_ps_add_stream(void* ps, int avtype, const void* info, size_t bytes)
 	case PSI_STREAM_MPEG2:
 	case PSI_STREAM_MPEG4:
 	case PSI_STREAM_H264:
+	case PSI_STREAM_H265:
 	case PSI_STREAM_VIDEO_VC1:
 	case PSI_STREAM_VIDEO_DIRAC:
 	case PSI_STREAM_VIDEO_SVAC:

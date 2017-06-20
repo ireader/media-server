@@ -60,7 +60,9 @@ tag		TS	PS	Identification
 52		X	X	MPEG2_stereoscopic_video_format_descriptor
 53		X	X	Stereoscopic_program_info_descriptor
 54		X	X	Stereoscopic_video_info_descriptor
-55-63	n/a n/a Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
+55      X   n/a Transport_profile_descriptor
+56      X   n/a HEVC video descriptor
+57-63	n/a n/a Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
 64-255	n/a n/a User Private
 */
 size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
