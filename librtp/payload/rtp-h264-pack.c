@@ -30,6 +30,8 @@
 #define FU_START    0x80
 #define FU_END      0x40
 
+#define N_FU_HEADER	2
+
 struct rtp_encode_h264_t
 {
 	struct rtp_packet_t pkt;
@@ -127,7 +129,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	// FU-A start
 	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
 	{
-		if (bytes <= packer->size - 2)
+		if (bytes <= packer->size - N_FU_HEADER)
 		{
 			assert(0 == (fu_header & FU_START));
 			fu_header = FU_END | (fu_header & 0x1F); // FU-A end
@@ -135,11 +137,11 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		}
 		else
 		{
-			packer->pkt.payloadlen = packer->size;
+			packer->pkt.payloadlen = packer->size - N_FU_HEADER;
 		}
 
 		packer->pkt.payload = nalu;
-		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
+		n = RTP_FIXED_HEADER + N_FU_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
 		if (!rtp) return -ENOMEM;
 
@@ -154,9 +156,9 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		/*fu_indicator + fu_header*/
 		rtp[n + 0] = fu_indicator;
 		rtp[n + 1] = fu_header;
-		memcpy(rtp + n + 2, packer->pkt.payload, packer->pkt.payloadlen);
+		memcpy(rtp + n + N_FU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 
-		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
+		packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
 		bytes -= packer->pkt.payloadlen;
@@ -173,7 +175,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 	const uint8_t *p1, *p2, *pend;
 	struct rtp_encode_h264_t *packer;
 	packer = (struct rtp_encode_h264_t *)pack;
-	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
+//	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
