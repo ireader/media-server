@@ -95,10 +95,10 @@ int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, int bytes
 	return 0;
 }
 
-int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
+int rtp_packet_serialize_header(const struct rtp_packet_t *pkt, void* data, int bytes)
 {
-	uint32_t i;
 	int hdrlen;
+	uint32_t i;
 	uint8_t* ptr;
 
 	if (RTP_VERSION != pkt->rtp.v || 0 != (pkt->extlen % 4))
@@ -109,7 +109,7 @@ int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
 
 	// RFC3550 5.1 RTP Fixed Header Fields(p12)
 	hdrlen = RTP_FIXED_HEADER + pkt->rtp.cc * 4 + (pkt->rtp.x ? 4 : 0);
-	if (bytes < hdrlen + pkt->payloadlen + pkt->extlen)
+	if (bytes < hdrlen + pkt->extlen)
 		return -1;
 
 	ptr = (uint8_t *)data;
@@ -133,6 +133,19 @@ int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
 		ptr += pkt->extlen + 4;
 	}
 
-	memcpy(ptr, pkt->payload, pkt->payloadlen);
-	return hdrlen + pkt->payloadlen + pkt->extlen;
+	return hdrlen + pkt->extlen;
+}
+
+int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
+{
+	uint32_t i;
+	int hdrlen;
+	uint8_t* ptr;
+
+	hdrlen = rtp_packet_serialize_header(pkt, data, bytes);
+	if (hdrlen < RTP_FIXED_HEADER || hdrlen + pkt->payloadlen > bytes)
+		return -1;
+
+	memcpy(((uint8_t*)data) + hdrlen, pkt->payload, pkt->payloadlen);
+	return hdrlen + pkt->payloadlen;
 }
