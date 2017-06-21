@@ -42,6 +42,8 @@ int onopen(void* param)
 {
 	int i, count;
 	uint64_t npt = 0;
+	char ip[65];
+	u_short rtspport;
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	assert(0 == rtsp_client_play(ctx->rtsp, &npt, NULL));
 	count = rtsp_client_media_count(ctx->rtsp);
@@ -61,7 +63,15 @@ int onopen(void* param)
 
 		port[0] = transport->rtp.u.server_port1;
 		port[1] = transport->rtp.u.server_port2;
-		rtp_receiver_test(ctx->rtp[i], transport->source, port, payload, encoding);
+		if (*transport->source)
+		{
+			rtp_receiver_test(ctx->rtp[i], transport->source, port, payload, encoding);
+		}
+		else
+		{
+			socket_getpeername(ctx->socket, ip, &rtspport);
+			rtp_receiver_test(ctx->rtp[i], ip, port, payload, encoding);
+		}
 	}
 	return 0;
 }
