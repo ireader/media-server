@@ -1,0 +1,2 @@
+const char* const version_version="0.7.0.$WCREV$";
+const char* const version_build="$WCNOW$";

@@ -19,7 +19,7 @@ struct rtp_payload_helper_t
 	int size, capacity;
 };
 
-struct rtp_payload_helper_t* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam);
+void* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam);
 void rtp_payload_helper_destroy(void* helper);
 
 int rtp_payload_check(struct rtp_payload_helper_t* helper, const struct rtp_packet_t* pkt);

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <errno.h>
 
-struct rtp_payload_helper_t* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam)
+void* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam)
 {
 	struct rtp_payload_helper_t *helper;
 	helper = (struct rtp_payload_helper_t *)calloc(1, sizeof(*helper));
