@@ -59,6 +59,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 	struct rtp_packer_t *packer;
 
 	packer = (struct rtp_packer_t *)p;
+	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; // (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
 	packer->pkt.rtp.m = 0; // marker bit alway 0
 

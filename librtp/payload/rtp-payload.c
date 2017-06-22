@@ -8,6 +8,10 @@
 
 #define TS_PACKET_SIZE 188
 
+#if defined(OS_WINDOWS)
+#define strcasecmp _stricmp
+#endif
+
 struct rtp_payload_delegate_t
 {
 	struct rtp_payload_encode_t* encoder;
@@ -113,38 +117,69 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 	assert(payload >= 0 && payload <= 127);
 	if (payload >= 96 && encoding)
 	{
-		if (0 == strcmp(encoding, "H264"))
+		if (0 == strcasecmp(encoding, "H264"))
 		{
 			// H.264 video (MPEG-4 Part 10) (RFC 6184)
 			codec->encoder = rtp_h264_encode();
 			codec->decoder = rtp_h264_decode();
 		}
-		else if (0 == strcmp(encoding, "H265") || 0 == strcmp(encoding, "HEVC"))
+		else if (0 == strcasecmp(encoding, "H265") || 0 == strcasecmp(encoding, "HEVC"))
 		{
 			// H.265 video (HEVC) (RFC 7798)
 			codec->encoder = rtp_h265_encode();
 			codec->decoder = rtp_h265_decode();
 		}
-		else if (0 == strcmp(encoding, "MP2P") // MPEG-2 Program Streams video (RFC 2250)
-			|| 0 == strcmp(encoding, "MP1S") // MPEG-1 Systems Streams video (RFC 2250)
-			/// RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
-			/// 4.1. MIME Type Registration (p27)
-			|| 0 == strcmp(encoding, "mpeg4-generic"))
-		{
-			codec->encoder = rtp_ts_encode();
-			codec->decoder = rtp_ts_decode();
-		}
-		else if (0 == strcmp(encoding, "MP4V-ES")
-			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
-			// 6. RTP Packetization of MPEG-4 Audio Bitstreams (p15)
-			// 7.3 Media Type Registration for MPEG-4 Audio (p21)
-			|| 0 == strcmp(encoding, "MP4A-LATM"))
+		else if (0 == strcasecmp(encoding, "MP4V-ES"))
 		{
 			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
 			// 5. RTP Packetization of MPEG-4 Visual Bitstreams (p8)
 			// 7.1 Media Type Registration for MPEG-4 Audio/Visual Streams (p17)
-			codec->encoder = rtp_mp4ves_encode();
-			codec->decoder = rtp_mp4ves_decode();
+			codec->encoder = rtp_mp4v_es_encode();
+			codec->decoder = rtp_mp4v_es_decode();
+		}
+		else if (0 == strcasecmp(encoding, "MP4A-LATM"))
+		{
+			// RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
+			// 6. RTP Packetization of MPEG-4 Audio Bitstreams (p15)
+			// 7.3 Media Type Registration for MPEG-4 Audio (p21)
+			codec->encoder = rtp_mp4a_latm_encode();
+			codec->decoder = rtp_mp4a_latm_decode();
+		}
+		else if (0 == strcasecmp(encoding, "mpeg4-generic"))
+		{
+			/// RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
+			/// 4.1. MIME Type Registration (p27)
+			codec->encoder = rtp_mpeg4_generic_encode();
+			codec->decoder = rtp_mpeg4_generic_decode();
+		}
+		else if (0 == strcasecmp(encoding, "VP8"))
+		{
+			/// RFC7741 RTP Payload Format for VP8 Video
+			/// 6.1. Media Type Definition (p21)
+			codec->encoder = rtp_vp8_encode();
+			codec->decoder = rtp_vp8_decode();
+		}
+		else if (0 == strcasecmp(encoding, "VP9"))
+		{
+			/// RTP Payload Format for VP9 Video draft-ietf-payload-vp9-03
+			/// 6.1. Media Type Definition (p15)
+			codec->encoder = rtp_vp9_encode();
+			codec->decoder = rtp_vp9_decode();
+		}
+		else if (0 == strcasecmp(encoding, "MP2P") // MPEG-2 Program Streams video (RFC 2250)
+			|| 0 == strcasecmp(encoding, "MP1S"))  // MPEG-1 Systems Streams video (RFC 2250)
+		{
+			codec->encoder = rtp_ts_encode();
+			codec->decoder = rtp_ts_decode();
+		}
+		else if (0 == strcasecmp(encoding, "opus")	// RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
+			|| 0 == strcasecmp(encoding, "G726-16") // ITU-T G.726 audio 16 kbit/s (RFC 3551)
+			|| 0 == strcasecmp(encoding, "G726-24")	// ITU-T G.726 audio 24 kbit/s (RFC 3551)
+			|| 0 == strcasecmp(encoding, "G726-32") // ITU-T G.726 audio 32 kbit/s (RFC 3551)
+			|| 0 == strcasecmp(encoding, "G726-40"))// ITU-T G.726 audio 40 kbit/s (RFC 3551)
+		{
+			codec->encoder = rtp_common_encode();
+			codec->decoder = rtp_common_decode();
 		}
 		else
 		{
@@ -156,13 +191,13 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 #if defined(_DEBUG) || defined(DEBUG)
 		const struct rtp_profile_t* profile;
 		profile = rtp_profile_find(payload);
-		assert(!profile || !encoding || !*encoding || 0 == strcmp(profile->name, encoding));
+		assert(!profile || !encoding || !*encoding || 0 == strcasecmp(profile->name, encoding));
 #endif
 
 		switch (payload)
 		{
 		case RTP_PAYLOAD_PCMU: // ITU-T G.711 PCM u-Law audio 64 kbit/s (RFC 3551)
-		case RTP_PAYLOAD_PCMA: // ITU-T G.711 PCM A-Law audio 64 kbit/s (rfc3551)
+		case RTP_PAYLOAD_PCMA: // ITU-T G.711 PCM A-Law audio 64 kbit/s (RFC 3551)
 		case RTP_PAYLOAD_G722: // ITU-T G.722 audio 64 kbit/s (RFC 3551)
 		case RTP_PAYLOAD_G729: // ITU-T G.729 and G.729a audio 8 kbit/s (RFC 3551)
 			codec->encoder = rtp_common_encode();

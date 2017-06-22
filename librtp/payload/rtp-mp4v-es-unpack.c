@@ -14,11 +14,6 @@ static int rtp_decode_mp4v_es(void* p, const void* packet, int bytes)
 	struct rtp_packet_t pkt;
 	struct rtp_payload_helper_t *helper;
 
-	int n;
-	static int s_i;
-	const uint8_t pp[] = { 0xb6, 0x15, 0x60 };
-	const uint8_t*pm;
-
 	helper = (struct rtp_payload_helper_t *)p;
 	if (!helper || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
 		return -EINVAL;

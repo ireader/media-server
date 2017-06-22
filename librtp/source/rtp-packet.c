@@ -138,9 +138,7 @@ int rtp_packet_serialize_header(const struct rtp_packet_t *pkt, void* data, int 
 
 int rtp_packet_serialize(const struct rtp_packet_t *pkt, void* data, int bytes)
 {
-	uint32_t i;
 	int hdrlen;
-	uint8_t* ptr;
 
 	hdrlen = rtp_packet_serialize_header(pkt, data, bytes);
 	if (hdrlen < RTP_FIXED_HEADER || hdrlen + pkt->payloadlen > bytes)

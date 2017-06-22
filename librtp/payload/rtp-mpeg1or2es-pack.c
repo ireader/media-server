@@ -121,7 +121,7 @@ static int rtp_mpeg2es_pack_audio(struct rtp_encode_mpeg2es_t *packer, const uin
 		if (!rtp) return -ENOMEM;
 
 		n = rtp_packet_serialize_header(&packer->pkt, rtp, n);
-		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
+		if (n != RTP_FIXED_HEADER)
 		{
 			assert(0);
 			return -1;

@@ -96,13 +96,37 @@
     <ClCompile Include="payload\rtp-mpeg1or2es-pack.c">
       <Filter>payload</Filter>
     </ClCompile>
-    <ClCompile Include="payload\rtp-mp4ves-pack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
-    <ClCompile Include="payload\rtp-mp4ves-unpack.c">
-      <Filter>payload</Filter>
-    </ClCompile>
     <ClCompile Include="payload\rtp-payload-helper.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4a-latm-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4v-es-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4v-es-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mp4a-latm-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mpeg4-generic-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-mpeg4-generic-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-vp9-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-vp9-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-vp8-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-vp8-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
   </ItemGroup>

@@ -189,8 +189,30 @@ static void rtp_packet(void* param, const void *packet, int bytes, int64_t time,
 	const uint8_t start_code[] = { 0, 0, 0, 1 };
 	struct rtp_context_t* ctx;
 	ctx = (struct rtp_context_t*)param;
-	if(0 == strcmp("H264", ctx->encoding) || 0 == strcmp("H265", ctx->encoding))
+	if (0 == strcmp("H264", ctx->encoding) || 0 == strcmp("H265", ctx->encoding))
+	{
 		fwrite(start_code, 1, 4, ctx->fp);
+	}
+	else if (0 == strcasecmp("mpeg4-generic", ctx->encoding))
+	{
+		uint8_t adts[7];
+		int len = bytes + 7;
+		uint8_t profile = 2;
+		uint8_t sampling_frequency_index = 4;
+		uint8_t channel_configuration = 2;
+		adts[0] = 0xFF; /* 12-syncword */
+		adts[1] = 0xF0 /* 12-syncword */ | (0 << 3)/*1-ID*/ | (0x00 << 2) /*2-layer*/ | 0x01 /*1-protection_absent*/;
+		adts[2] = ((profile - 1) << 6) | ((sampling_frequency_index & 0x0F) << 2) | ((channel_configuration >> 2) & 0x01);
+		adts[3] = ((channel_configuration & 0x03) << 6) | ((len >> 11) & 0x03); /*0-original_copy*/ /*0-home*/ /*0-copyright_identification_bit*/ /*0-copyright_identification_start*/
+		adts[4] = (uint8_t)(len >> 3);
+		adts[5] = ((len & 0x07) << 5) | 0x1F;
+		adts[6] = 0xFC | ((len / 1024) & 0x03);
+		fwrite(adts, 1, sizeof(adts), ctx->fp);
+	}
+	else if (0 == strcmp("MP4A-LATM", ctx->encoding))
+	{
+		// add ADTS header
+	}
 	fwrite(packet, 1, bytes, ctx->fp);
 	(void)time;
 	(void)flags;
@@ -246,6 +268,8 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	handler.free = NULL;
 	handler.packet = rtp_packet;
 	ctx->payload = rtp_payload_decode_create(payload, encoding, &handler, ctx);
+	if (NULL == ctx->payload)
+		return; // ignore
 	
 	evthandler.on_rtcp = rtp_on_rtcp;
 	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2*1024*1024);
