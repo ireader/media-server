@@ -9,6 +9,7 @@
 #libmpeg
 1. MPEG-2 PS packer/unpacker
 2. MPEG-2 TS packer/unpacker
+3. H.264/H.265/AAC/MP3
 
 #librtp
 1. RFC3550 RTP/RTCP
