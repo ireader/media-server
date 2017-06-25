@@ -3,40 +3,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <assert.h>
-#include <ctype.h>
-#include "cstringext.h"
+
+#if defined(_WIN32) || defined(_WIN64) || defined(OS_WINDOWS)
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif
 
 #define KB (1024)
 #define MB (1024*1024)
 
-#define ISSPACE(c)		((c)==' ')
-#define VMAX(a, b)		((a) > (b) ? (a) : (b))
-#define VMIN(a, b)		((a) < (b) ? (a) : (b))
+enum { SM_START_LINE = 0, SM_HEADER = 100, SM_BODY = 200, SM_DONE = 300 };
 
-enum { SM_FIRSTLINE = 0, SM_HEADER = 100, SM_BODY = 200, SM_DONE = 300 };
+struct rtsp_string_t
+{
+	size_t pos; // offset from raw data
+	size_t len;
+};
 
-struct rtsp_status_line
+struct rtsp_status_line_t
 {
 	int code;
-	size_t reason_pos; // RTSP reason
-	size_t reason_len;
+	struct rtsp_string_t reason;
 };
 
-struct rtsp_request_line
+struct rtsp_request_line_t
 {
-	char method[16];
-	size_t uri_pos; // RTSP URI
-	size_t uri_len;
+	struct rtsp_string_t method;
+	struct rtsp_string_t uri;
 };
 
-struct rtsp_header
+struct rtsp_header_t
 {
-	size_t npos, nlen; // name
-	size_t vpos, vlen; // value
+	struct rtsp_string_t name;
+	struct rtsp_string_t value;
 };
 
-struct rtsp_chunk
+struct rtsp_chunk_t
 {
 	size_t offset;
 	size_t len;
@@ -52,18 +56,19 @@ struct rtsp_context
 	int stateM;
 	size_t offset;
 
-	struct rtsp_chunk chunk;
+	struct rtsp_header_t header;
+	struct rtsp_chunk_t chunk;
 
 	// start line
 	int verminor, vermajor;
 	union
 	{
-		struct rtsp_request_line req;
-		struct rtsp_status_line reply;
-	};
+		struct rtsp_request_line_t req;
+		struct rtsp_status_line_t reply;
+	} u;
 
 	// headers
-	struct rtsp_header *headers;
+	struct rtsp_header_t *headers;
 	int header_size; // the number of http header
 	int header_capacity;
 	int content_length; // -1-don't have header, >=0-Content-Length
@@ -94,22 +99,6 @@ static inline int is_valid_token(const char* s, int len)
 	}
 
 	return p == s+len ? 1 : 0;
-}
-
-static inline void trim_right(const char* s, size_t *pos, size_t *len)
-{
-	//// left trim
-	//while(*len > 0 && ISSPACE(s[*pos]))
-	//{
-	//	--*len;
-	//	++*pos;
-	//}
-
-	// right trim
-	while(*len > 0 && ISSPACE(s[*pos + *len - 1]))
-	{
-		--*len;
-	}
 }
 
 static inline int is_server_mode(struct rtsp_context *ctx)
@@ -245,14 +234,14 @@ static int rtsp_header_handler(struct rtsp_context *ctx, size_t npos, size_t vpo
 	return 0;
 }
 
-static int rtsp_header_add(struct rtsp_context *ctx, struct rtsp_header* header)
+static int rtsp_header_add(struct rtsp_context *ctx, struct rtsp_header_t* header)
 {
 	int size;
-	struct rtsp_header *p;
+	struct rtsp_header_t *p;
 	if(ctx->header_size+1 >= ctx->header_capacity)
 	{
 		size = ctx->header_capacity < 16 ? 16 : (ctx->header_size * 3 / 2);
-		p = (struct rtsp_header*)realloc(ctx->headers, sizeof(struct rtsp_header) * size);
+		p = (struct rtsp_header_t*)realloc(ctx->headers, sizeof(struct rtsp_header_t) * size);
 		if(!p)
 			return ENOMEM;
 
@@ -260,17 +249,14 @@ static int rtsp_header_add(struct rtsp_context *ctx, struct rtsp_header* header)
 		ctx->header_capacity = size;
 	}
 
-	assert(header->npos > 0);
-	assert(header->nlen > 0);
-	assert(header->vpos > 0);
-	assert(is_valid_token(ctx->raw+header->npos, header->nlen));
-	ctx->raw[header->npos+header->nlen] = '\0';
-	ctx->raw[header->vpos+header->vlen] = '\0';
-	memmove(ctx->headers + ctx->header_size, header, sizeof(struct rtsp_header));
+	assert(header->name.pos > 0);
+	assert(header->name.len > 0);
+	assert(header->value.pos > 0);
+	assert(is_valid_token(ctx->raw + header->name.pos, header->name.len));
+	ctx->raw[header->name.pos + header->name.len] = '\0';
+	ctx->raw[header->value.pos + header->value.len] = '\0';
+	memcpy(ctx->headers + ctx->header_size, header, sizeof(struct rtsp_header_t));
 	++ctx->header_size;
-
-	// handle
-	rtsp_header_handler(ctx, header->npos, header->vpos);
 	return 0;
 }
 
@@ -279,199 +265,221 @@ static int rtsp_header_add(struct rtsp_context *ctx, struct rtsp_header* header)
 // GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1
 static int rtsp_parse_request_line(struct rtsp_context *ctx)
 {
-	enum { 
-		SM_REQUEST_METHOD = SM_FIRSTLINE, 
-		SM_REQUEST_METHOD_SP,
+	enum {
+		SM_REQUEST_START = SM_START_LINE,
+		SM_REQUEST_METHOD,
+		SM_REQUEST_SP1,
 		SM_REQUEST_URI,
-		SM_REQUEST_VERSION, 
-		SM_REQUEST_END
+		SM_REQUEST_SP2,
+		SM_REQUEST_VERSION,
+		SM_REQUEST_SP3,
+		SM_REQUEST_CR,
+		SM_REQUEST_LF,
 	};
 
-	for(; ctx->offset < ctx->raw_size; ctx->offset++)
+	char c;
+	size_t *v[6];
+	v[0] = &ctx->u.req.method.pos;
+	v[1] = &ctx->u.req.method.len;
+	v[2] = &ctx->u.req.uri.pos;
+	v[3] = &ctx->u.req.uri.len;
+	v[4] = &ctx->header.name.pos; // version
+	v[5] = &ctx->header.name.len;
+
+	for (; ctx->offset < ctx->raw_size; ++ctx->offset)
 	{
-		switch(ctx->stateM)
+		c = ctx->raw[ctx->offset];
+		switch (ctx->stateM)
 		{
+		case SM_REQUEST_START:
+		case SM_REQUEST_SP1:
+		case SM_REQUEST_SP2:
+			if (' ' != c && '\t' != c)
+			{
+				*(v[ctx->stateM - SM_REQUEST_START]) = ctx->offset;
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
+			}
+			break;
+
 		case SM_REQUEST_METHOD:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(' ' == ctx->raw[ctx->offset])
-			{
-				size_t n = VMIN(ctx->offset, sizeof(ctx->req.method) - 1);
-				assert(ctx->offset < sizeof(ctx->req.method) - 1);
-				strncpy(ctx->req.method, ctx->raw, n);
-				ctx->stateM = SM_REQUEST_METHOD_SP;
-				assert(0 == ctx->req.uri_pos);
-				assert(0 == ctx->req.uri_len);
-			}
-			break;
-
-		case SM_REQUEST_METHOD_SP:
-			if(ISSPACE(ctx->raw[ctx->offset]))
-				break; // skip SP
-
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			assert(0 == ctx->req.uri_pos);
-			assert(0 == ctx->req.uri_len);
-			ctx->req.uri_pos = ctx->offset;
-			ctx->stateM = SM_REQUEST_URI;
-			break;
-
-			// H5.1.2 Request-URI
-			// Request-URI = "*" | absoluteURI | abs_path | authority
 		case SM_REQUEST_URI:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(' ' == ctx->raw[ctx->offset])
-			{
-				assert(0 == ctx->req.uri_len);
-				ctx->req.uri_len = ctx->offset - ctx->req.uri_pos;
-				ctx->raw[ctx->req.uri_pos + ctx->req.uri_len] = '\0';
-				ctx->stateM = SM_REQUEST_VERSION;
-			}
-			else
-			{
-				// RFC3986 
-				// 2.2 Reserved Characters
-				// reserved    = gen-delims / sub-delims
-				// gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
-				// sub-delims  = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
-				// 2.3.  Unreserved Characters
-				// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
-				assert(isalnum(ctx->raw[ctx->offset]) || strchr("-._~:/?#[]@!$&'()*+,;=", ctx->raw[ctx->offset]) || '%' == ctx->raw[ctx->offset]);
-			}
-			break;
-
 		case SM_REQUEST_VERSION:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(ctx->offset + 8 > ctx->raw_size)
-				return 0; // wait for more data
-
-			if(' ' == ctx->raw[ctx->offset])
-				break; // skip SP
-
-			// HTTP/1.1
-			if(2 != sscanf(ctx->raw+ctx->offset, "RTSP/%1d.%1d",&ctx->vermajor, &ctx->verminor))
-				return -1;
-
-			assert(1 == ctx->vermajor);
-			assert(1 == ctx->verminor || 0 == ctx->verminor);
-			ctx->offset += 7; // skip
-			ctx->stateM = SM_REQUEST_END;
+			if (' ' == c || '\t' == c || '\r' == c || '\n' == c)
+			{
+				*(v[ctx->stateM - SM_REQUEST_START]) = ctx->offset - *(v[ctx->stateM - SM_REQUEST_START - 1]);
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
+			}
 			break;
 
-		case SM_REQUEST_END:
-			switch(ctx->raw[ctx->offset])
+		case SM_REQUEST_SP3:
+			switch (c)
 			{
 			case ' ':
+			case '\t':
+				break; // continue
+
 			case '\r':
+				ctx->stateM = SM_REQUEST_CR;
 				break;
+
 			case '\n':
-				++ctx->offset; // skip '\n'
-				ctx->stateM = SM_HEADER;
-				return 0;
+				ctx->stateM = SM_REQUEST_LF;
+				break;
+
 			default:
-				assert(0);
-				return -1; // invalid
+				ctx->stateM = SM_REQUEST_VERSION;
+				break;
 			}
 			break;
+
+		case SM_REQUEST_CR:
+			if ('\n' != c)
+			{
+				assert(0);
+				return -1;
+			}
+			ctx->stateM = SM_REQUEST_LF;
+			break;
+
+		case SM_REQUEST_LF:
+			// H5.1.1 Method (p24)
+			// Method = OPTIONS | GET | HEAD | POST | PUT | DELETE | TRACE | CONNECT | extension-method
+			if (ctx->u.req.method.len < 1
+				// H5.1.2 Request-URI (p24)
+				// Request-URI = "*" | absoluteURI | abs_path | authority
+				|| ctx->u.req.uri.len < 1
+				// H3.1 HTTP Version (p13)
+				// HTTP-Version = "HTTP" "/" 1*DIGIT "." 1*DIGIT
+				|| ctx->header.name.len < 8
+				|| 2 != sscanf(ctx->raw + ctx->header.name.pos, "RTSP/%d.%d", &ctx->vermajor, &ctx->verminor))
+			{
+				assert(0);
+				return -1;
+			}
+
+			ctx->raw[ctx->u.req.method.pos + ctx->u.req.method.len] = '\0';
+			ctx->raw[ctx->u.req.uri.pos + ctx->u.req.uri.len] = '\0';
+			assert(1 == ctx->vermajor || 2 == ctx->vermajor);
+			assert(1 == ctx->verminor || 0 == ctx->verminor);
+			ctx->stateM = SM_HEADER;
+			return 0;
 
 		default:
 			assert(0);
-			return -1;
+			return -1; // invalid
 		}
 	}
 
-	return 0;
+	return 0; // wait for more data
 }
 
 // H6.1 Status-Line
 // Status-Line = RTSP-Version SP Status-Code SP Reason-Phrase CRLF
 static int rtsp_parse_status_line(struct rtsp_context *ctx)
 {
-	int i;
-	enum { 
-		SM_STATUS_VERSION = SM_FIRSTLINE, 
-		SM_STATUS_CODE, 
-		SM_STATUS_CODE_SP, 
-		SM_STATUS_REASON 
+	enum {
+		SM_STATUS_START = SM_START_LINE,
+		SM_STATUS_VERSION,
+		SM_STATUS_SP1,
+		SM_STATUS_CODE,
+		SM_STATUS_SP2,
+		SM_STATUS_REASON,
+		SM_STATUS_SP3,
+		SM_STATUS_CR,
+		SM_STATUS_LF,
 	};
 
-	for(; ctx->offset < ctx->raw_size; ctx->offset++)
+	char c;
+	size_t *v[6];
+	v[0] = &ctx->header.name.pos; // version
+	v[1] = &ctx->header.name.len;
+	v[2] = &ctx->header.value.pos; // status code
+	v[3] = &ctx->header.value.len;
+	v[4] = &ctx->u.reply.reason.pos;
+	v[5] = &ctx->u.reply.reason.len;
+
+	for (; ctx->offset < ctx->raw_size; ctx->offset++)
 	{
-		switch(ctx->stateM)
+		c = ctx->raw[ctx->offset];
+		switch (ctx->stateM)
 		{
-		case SM_STATUS_VERSION:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(ctx->offset + 8 > ctx->raw_size)
-				return 0; // wait for more data
-
-			assert(0 == ctx->offset);
-			if(2 != sscanf(ctx->raw+ctx->offset, "RTSP/%1d.%1d",&ctx->vermajor, &ctx->verminor))
-				return -1;
-
-			assert(1 == ctx->vermajor);
-			assert(1 == ctx->verminor || 0 == ctx->verminor);
-			ctx->offset += 7; // skip
-			ctx->stateM = SM_STATUS_CODE;
-			break;
-
-		case SM_STATUS_CODE:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(' ' == ctx->raw[ctx->offset])
-				break; // skip SP
-
-			if('0' > ctx->raw[ctx->offset] || ctx->raw[ctx->offset] > '9')
-				return -1; // invalid
-
-			if(ctx->offset + 3 > ctx->raw_size)
-				return 0; // wait for more data
-
-			assert(0 == ctx->reply.code);
-			for(i = 0; i < 3; i++)
-				ctx->reply.code = ctx->reply.code * 10 + (ctx->raw[ctx->offset+i] - '0');
-
-			ctx->offset += 2; // skip
-			ctx->stateM = SM_STATUS_CODE_SP;
-			break;
-
-		case SM_STATUS_CODE_SP:
-			assert('\r' != ctx->raw[ctx->offset]);
-			assert('\n' != ctx->raw[ctx->offset]);
-			if(ISSPACE(ctx->raw[ctx->offset]))
-				break; // skip SP
-
-			assert(0 == ctx->reply.reason_pos);
-			assert(0 == ctx->reply.reason_len);
-			ctx->reply.reason_pos = ctx->offset;
-			ctx->stateM = SM_STATUS_REASON;
-			break;
-
-		case SM_STATUS_REASON:
-			switch(ctx->raw[ctx->offset])
+		case SM_STATUS_START:
+		case SM_STATUS_SP1:
+		case SM_STATUS_SP2:
+			if (' ' != c && '\t' != c)
 			{
-			//case '\r':
-			//	break;
+				*(v[ctx->stateM - SM_STATUS_START]) = ctx->offset;
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
+			}
+			break;
+
+		case SM_STATUS_VERSION:
+		case SM_STATUS_CODE:
+		case SM_STATUS_REASON:
+			if (' ' == c || '\t' == c || '\r' == c || '\n' == c)
+			{
+				*(v[ctx->stateM - SM_STATUS_START]) = ctx->offset - *(v[ctx->stateM - SM_STATUS_START - 1]);
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
+			}
+			break;
+
+		case SM_STATUS_SP3:
+			switch (c)
+			{
+			case ' ':
+			case '\t':
+				break; // continue
+
+			case '\r':
+				ctx->stateM = SM_STATUS_CR;
+				break;
+
 			case '\n':
-				assert('\r' == ctx->raw[ctx->offset-1]);
-				ctx->reply.reason_len = ctx->offset - 1 - ctx->reply.reason_pos;
-				trim_right(ctx->raw, &ctx->reply.reason_pos, &ctx->reply.reason_len);
-				ctx->raw[ctx->reply.reason_pos + ctx->reply.reason_len] = '\0';
-				ctx->stateM = SM_HEADER;
-				++ctx->offset; // skip \n
-				return 0;
+				ctx->stateM = SM_STATUS_LF;
+				break;
 
 			default:
+				ctx->stateM = SM_STATUS_REASON;
 				break;
 			}
 			break;
 
+		case SM_STATUS_CR:
+			if ('\n' != c)
+			{
+				assert(0);
+				return -1;
+			}
+			ctx->stateM = SM_STATUS_LF;
+			break;
+
+		case SM_STATUS_LF:
+			// H3.1 HTTP Version (p13)
+			// HTTP-Version = "HTTP" "/" 1*DIGIT "." 1*DIGIT
+			if (ctx->header.name.len < 8 || 2 != sscanf(ctx->raw + ctx->header.name.pos, "RTSP/%d.%d", &ctx->vermajor, &ctx->verminor)
+				// H6.1.1 Status Code and Reason Phrase (p26)
+				// The Status-Code element is a 3-digit integer result code
+				|| ctx->header.value.len != 3 || ctx->u.reply.reason.len < 1)
+			{
+				assert(0);
+				return -1;
+			}
+
+			ctx->raw[ctx->u.reply.reason.pos + ctx->u.reply.reason.len] = '\0';
+			ctx->raw[ctx->header.value.pos + ctx->header.value.len] = '\0';
+			ctx->u.reply.code = atoi(ctx->raw + ctx->header.value.pos);
+			assert(1 == ctx->vermajor || 2 == ctx->vermajor);
+			assert(1 == ctx->verminor || 0 == ctx->verminor);
+			ctx->stateM = SM_HEADER;
+			return 0;
+
 		default:
 			assert(0);
-			return -1;
+			return -1; // invalid
 		}
 	}
 
@@ -487,125 +495,171 @@ static int rtsp_parse_status_line(struct rtsp_context *ctx)
 //					of token, separators, and quoted-string>
 static int rtsp_parse_header_line(struct rtsp_context *ctx)
 {
-	enum { 
-		SM_HEADER_START = SM_HEADER, 
+	enum {
+		SM_HEADER_START = SM_HEADER,
 		SM_HEADER_NAME,
-		SM_HEADER_NAME_SP,
+		SM_HEADER_SP1,
 		SM_HEADER_SEPARATOR,
-		SM_HEADER_VALUE
+		SM_HEADER_SP2,
+		SM_HEADER_VALUE,
+		SM_HEADER_SP3,
+		SM_HEADER_CR,
+		SM_HEADER_LF,
 	};
 
-	int r;
-	struct rtsp_header header;
-	memset(&header, 0, sizeof(struct rtsp_header)); // init header
+	char c;
+	size_t dummy;
+	size_t *v[6];
 
-	for(; ctx->offset < ctx->raw_size; ctx->offset++)
+	v[0] = &ctx->header.name.pos;
+	v[1] = &ctx->header.name.len;
+	v[2] = &dummy;
+	v[3] = &dummy;
+	v[4] = &ctx->header.value.pos;
+	v[5] = &ctx->header.value.len;
+
+	for (; ctx->offset < ctx->raw_size; ctx->offset++)
 	{
-		switch(ctx->stateM)
+		c = ctx->raw[ctx->offset];
+		switch (ctx->stateM)
 		{
 		case SM_HEADER_START:
-			switch(ctx->raw[ctx->offset])
+			switch (c)
 			{
-			case '\r':
-				if(ctx->offset + 2 > ctx->raw_size)
-					return 0; // wait more date
-
-				++ctx->offset;
-				assert('\n' == ctx->raw[ctx->offset]);
-
-			case '\n':
-				++ctx->offset;
-				ctx->stateM = SM_BODY;
-				return 0;
-
 			case ' ':
 			case '\t':
-				assert(0); // multi-line header ?
+				// H2.2 Basic Rules (p12)
+				// HTTP/1.1 header field values can be folded onto multiple lines if the continuation line begins with a space or
+				// horizontal tab.All linear white space, including folding, has the same semantics as SP.A recipient MAY replace any
+				// linear white space with a single SP before interpreting the field value or forwarding the message downstream.
+				ctx->header.name.pos = 0; // use for multiple lines flag
+				ctx->stateM = SM_HEADER_SP2; // next state
+				break;
+
+			case '\r':
+				ctx->header.value.pos = 0; // use for header end flag
+				ctx->stateM = SM_HEADER_CR;
+				break;
+
+			case '\n':
+				ctx->header.value.pos = 0; // use for header end flag
+				ctx->stateM = SM_HEADER_LF;
 				break;
 
 			default:
-				assert(0 == header.npos);
-				assert(0 == header.nlen);
-				header.npos = ctx->offset;
-				ctx->stateM = SM_HEADER_NAME;
+				ctx->header.name.pos = ctx->offset;
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
+				break;
+			}
+			break;
+
+		case SM_HEADER_SP1:
+		case SM_HEADER_SP2:
+			if (' ' != c && '\t' != c)
+			{
+				*(v[ctx->stateM - SM_HEADER_START]) = ctx->offset;
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
 			}
 			break;
 
 		case SM_HEADER_NAME:
-			switch(ctx->raw[ctx->offset])
+		case SM_HEADER_VALUE:
+			if (' ' == c || '\t' == c || '\r' == c || '\n' == c || (':' == c && SM_HEADER_NAME == ctx->stateM))
 			{
-			case '\r':
-			case '\n':
-				assert(0);
-				return -1; // invalid
-
-			case ' ':
-				header.nlen = ctx->offset - header.npos;
-				assert(header.nlen > 0 && is_valid_token(ctx->raw+header.npos, header.nlen));
-				ctx->stateM = SM_HEADER_NAME_SP;
-				break;
-
-			case ':':
-				header.nlen = ctx->offset - header.npos;
-				assert(header.nlen > 0 && is_valid_token(ctx->raw+header.npos, header.nlen));
-				ctx->stateM = SM_HEADER_SEPARATOR;
-				break;
-			}
-			break;
-
-		case SM_HEADER_NAME_SP:
-			switch(ctx->raw[ctx->offset])
-			{
-			case ' ':
-				break; // skip SP
-
-			case ':':
-				ctx->stateM = SM_HEADER_SEPARATOR;
-				break;
-
-			default:
-				assert(0);
-				return -1;
+				*(v[ctx->stateM - SM_HEADER_START]) = ctx->offset - *(v[ctx->stateM - SM_HEADER_START - 1]);
+				ctx->stateM += 1; // next state
+				ctx->offset -= 1; // go back
 			}
 			break;
 
 		case SM_HEADER_SEPARATOR:
-			switch(ctx->raw[ctx->offset])
+			if (':' != c)
 			{
-			case '\r':
-			case '\n':
 				assert(0);
-				return -1; // invalid
+				return -1;
+			}
 
+			// accept
+			ctx->stateM += 1; // next state
+			break;
+
+		case SM_HEADER_SP3:
+			switch (c)
+			{
 			case ' ':
-				break; // skip SP
+			case '\t':
+				break; // continue
+
+			case '\r':
+				ctx->stateM = SM_HEADER_CR;
+				break;
+
+			case '\n':
+				ctx->stateM = SM_HEADER_LF;
+				break;
 
 			default:
 				ctx->stateM = SM_HEADER_VALUE;
-				header.vpos = ctx->offset;
 				break;
 			}
 			break;
 
-		case SM_HEADER_VALUE:
-			switch(ctx->raw[ctx->offset])
+		case SM_HEADER_CR:
+			if ('\n' != c)
 			{
-			case '\n':
-				assert('\r' == ctx->raw[ctx->offset-1]);
-				header.vlen = ctx->offset - 1 - header.vpos;
-				trim_right(ctx->raw, &header.vpos, &header.vlen);
-				ctx->stateM = SM_HEADER;
-
-				// add new header
-				r = rtsp_header_add(ctx, &header);
-				if(0 != r)
-					return r;
-				memset(&header, 0, sizeof(struct rtsp_header)); // reuse header
-				break;
-
-			default:
-				break;
+				assert(0);
+				return -1;
 			}
+			ctx->stateM = SM_HEADER_LF;
+			break;
+
+		case SM_HEADER_LF:
+			if (0 == ctx->header.value.pos)
+			{
+				ctx->stateM = SM_BODY;
+				return 0;
+			}
+
+			if (0 == ctx->header.name.pos)
+			{
+				// multiple lines header
+				size_t i;
+				struct rtsp_header_t* h;
+
+				if (ctx->header_size < 1)
+				{
+					assert(0);
+					return -1;
+				}
+
+				h = &ctx->headers[ctx->header_size - 1];
+				for (i = h->value.len; i < ctx->header.value.pos; i++)
+				{
+					ctx->raw[i] = ' '; // replace with SP
+				}
+				h->value.len = ctx->header.value.pos - h->value.pos + ctx->header.value.len;
+				ctx->raw[h->value.pos + h->value.len] = '\0';
+
+				rtsp_header_handler(ctx, h->name.pos, h->value.pos); // handle
+			}
+			else
+			{
+				if (ctx->header.name.len < 1)
+				{
+					assert(0);
+					return -1;
+				}
+
+				if (0 != rtsp_header_add(ctx, &ctx->header))
+					return -1;
+
+				rtsp_header_handler(ctx, ctx->header.name.pos, ctx->header.value.pos); // handle
+			}
+
+			ctx->stateM = SM_HEADER; // continue
+			ctx->offset -= 1; // go back
 			break;
 
 		default:
@@ -886,10 +940,10 @@ void rtsp_parser_clear(void* parser)
 	struct rtsp_context *ctx;
 	ctx = (struct rtsp_context*)parser;
 
-	memset(&ctx->req, 0, sizeof(ctx->req));
-	memset(&ctx->reply, 0, sizeof(ctx->reply));
-	memset(&ctx->chunk, 0, sizeof(struct rtsp_chunk));
-	ctx->stateM = SM_FIRSTLINE;
+	memset(&ctx->u.req, 0, sizeof(ctx->u.req));
+	memset(&ctx->u.reply, 0, sizeof(ctx->u.reply));
+	memset(&ctx->chunk, 0, sizeof(struct rtsp_chunk_t));
+	ctx->stateM = SM_START_LINE;
 	ctx->offset = 0;
 	ctx->raw_size = 0;
 	ctx->header_size = 0;
@@ -917,7 +971,7 @@ int rtsp_parser_input(void* parser, const void* data, int *bytes)
 		return r;
 	}
 
-	if(SM_FIRSTLINE <= ctx->stateM && ctx->stateM < SM_HEADER)
+	if(SM_START_LINE <= ctx->stateM && ctx->stateM < SM_HEADER)
 	{
 		r = is_server_mode(ctx) ? rtsp_parse_request_line(ctx) : rtsp_parse_status_line(ctx);
 	}
@@ -985,7 +1039,7 @@ int rtsp_get_status_code(void* parser)
 	ctx = (struct rtsp_context*)parser;
 	assert(ctx->stateM>=SM_BODY);
 	assert(!is_server_mode(ctx));
-	return ctx->reply.code;
+	return ctx->u.reply.code;
 }
 
 const char* rtsp_get_status_reason(void* parser)
@@ -994,7 +1048,7 @@ const char* rtsp_get_status_reason(void* parser)
 	ctx = (struct rtsp_context*)parser;
 	assert(ctx->stateM>=SM_BODY);
 	assert(!is_server_mode(ctx));
-	return ctx->raw + ctx->reply.reason_pos;
+	return ctx->raw + ctx->u.reply.reason.pos;
 }
 
 const char* rtsp_get_request_method(void* parser)
@@ -1003,7 +1057,7 @@ const char* rtsp_get_request_method(void* parser)
 	ctx = (struct rtsp_context*)parser;
 	assert(ctx->stateM>=SM_BODY);
 	assert(is_server_mode(ctx));
-	return ctx->req.method;
+	return ctx->raw + ctx->u.req.method.pos;
 }
 
 const char* rtsp_get_request_uri(void* parser)
@@ -1012,7 +1066,7 @@ const char* rtsp_get_request_uri(void* parser)
 	ctx = (struct rtsp_context*)parser;
 	assert(ctx->stateM>=SM_BODY);
 	assert(is_server_mode(ctx));
-	return ctx->raw + ctx->req.uri_pos;
+	return ctx->raw + ctx->u.req.uri.pos;
 }
 
 const void* rtsp_get_content(void* parser)
@@ -1041,8 +1095,8 @@ int rtsp_get_header(void* parser, int idx, const char** name, const char** value
 	if(idx < 0 || idx >= ctx->header_size)
 		return EINVAL;
 
-	*name = ctx->raw + ctx->headers[idx].npos;
-	*value = ctx->raw + ctx->headers[idx].vpos;
+	*name = ctx->raw + ctx->headers[idx].name.pos;
+	*value = ctx->raw + ctx->headers[idx].value.pos;
 	return 0;
 }
 
@@ -1055,8 +1109,8 @@ const char* rtsp_get_header_by_name(void* parser, const char* name)
 
 	for(i = 0; i < ctx->header_size; i++)
 	{
-		if(0 == strcasecmp(ctx->raw + ctx->headers[i].npos, name))
-			return ctx->raw + ctx->headers[i].vpos;
+		if(0 == strcasecmp(ctx->raw + ctx->headers[i].name.pos, name))
+			return ctx->raw + ctx->headers[i].value.pos;
 	}
 
 	return NULL; // not found
@@ -1071,9 +1125,9 @@ int rtsp_get_header_by_name2(void* parser, const char* name, int *value)
 
 	for(i = 0; i < ctx->header_size; i++)
 	{
-		if(0 == strcasecmp(ctx->raw + ctx->headers[i].npos, name))
+		if(0 == strcasecmp(ctx->raw + ctx->headers[i].name.pos, name))
 		{
-			*value = atoi(ctx->raw + ctx->headers[i].vpos);
+			*value = atoi(ctx->raw + ctx->headers[i].value.pos);
 			return 0;
 		}
 	}
