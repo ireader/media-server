@@ -176,7 +176,8 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			|| 0 == strcasecmp(encoding, "G726-16") // ITU-T G.726 audio 16 kbit/s (RFC 3551)
 			|| 0 == strcasecmp(encoding, "G726-24")	// ITU-T G.726 audio 24 kbit/s (RFC 3551)
 			|| 0 == strcasecmp(encoding, "G726-32") // ITU-T G.726 audio 32 kbit/s (RFC 3551)
-			|| 0 == strcasecmp(encoding, "G726-40"))// ITU-T G.726 audio 40 kbit/s (RFC 3551)
+			|| 0 == strcasecmp(encoding, "G726-40") // ITU-T G.726 audio 40 kbit/s (RFC 3551)
+			|| 0 == strcasecmp(encoding, "G7221"))  // RFC5577 RTP Payload Format for ITU-T Recommendation G.722.1
 		{
 			codec->encoder = rtp_common_encode();
 			codec->decoder = rtp_common_decode();
