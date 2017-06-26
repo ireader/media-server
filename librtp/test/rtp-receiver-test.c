@@ -10,6 +10,10 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(OS_WINDOWS)
+#define strcasecmp _stricmp
+#endif
+
 struct rtp_context_t
 {
 	FILE *fp;
@@ -216,6 +220,23 @@ static void rtp_packet(void* param, const void *packet, int bytes, int64_t time,
 	fwrite(packet, 1, bytes, ctx->fp);
 	(void)time;
 	(void)flags;
+
+	if (0 == strcmp("H264", ctx->encoding))
+	{
+		uint8_t type = *(uint8_t*)packet & 0x1f;
+		if (0 < type && type <= 5)
+		{
+			// VCL frame
+		}
+	}
+	else if (0 == strcmp("H265", ctx->encoding))
+	{
+		uint8_t type = (*(uint8_t*)packet >> 1) & 0x3f;
+		if (type <= 32)
+		{
+			// VCL frame
+		}
+	}
 }
 
 static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
