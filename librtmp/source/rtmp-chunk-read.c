@@ -45,6 +45,7 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	uint8_t fmt = 0;
 	uint32_t cid = 0;
 	struct rtmp_packet_t* packet;
+	struct rtmp_chunk_header_t header;
 	
 	// chunk base header
 	buffer += rtmp_chunk_basic_header_read(buffer, &fmt, &cid);
@@ -64,7 +65,35 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	// chunk message header
 	packet->header.cid = cid;
 	packet->header.fmt = fmt;
-	rtmp_chunk_message_header_read(buffer, &packet->header);
+	memcpy(&header, &packet->header, sizeof(header));
+	rtmp_chunk_message_header_read(buffer, &header);
+
+	if (packet->payload && packet->header.type != header.type)
+	{
+		if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
+		{
+			// don't need free
+			packet->payload = NULL;
+			packet->capacity = 0;
+			packet->bytes = 0;
+		}
+		else
+		{
+			// header type changed, should delete memory
+			if (header.type == RTMP_TYPE_VIDEO || header.type == RTMP_TYPE_AUDIO)
+			{
+				free(packet->payload);
+				packet->payload = NULL;
+				packet->capacity = 0;
+				packet->bytes = 0;
+			}
+			else
+			{
+				// do nothing
+			}
+		}
+	}
+	memcpy(&packet->header, &header, sizeof(header));
 
 	return packet;
 }

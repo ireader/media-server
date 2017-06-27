@@ -381,12 +381,21 @@ void rtmp_client_destroy(void* client)
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{
 		assert(NULL == ctx->rtmp.out_packets[i].payload);
-		if (ctx->rtmp.in_packets[i].payload 
-			&& RTMP_TYPE_VIDEO != ctx->rtmp.in_packets[i].header.type 
+		if (ctx->rtmp.in_packets[i].payload
+			&& RTMP_TYPE_VIDEO != ctx->rtmp.in_packets[i].header.type
 			&& RTMP_TYPE_AUDIO != ctx->rtmp.in_packets[i].header.type)
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			memset(ctx->rtmp.in_packets[i].payload, 0xCC, ctx->rtmp.in_packets[i].capacity);
+#endif
 			free(ctx->rtmp.in_packets[i].payload);
+			ctx->rtmp.in_packets[i].payload = NULL;
+		}
 	}
 
+#if defined(DEBUG) || defined(_DEBUG)
+	memset(ctx, 0xCC, sizeof(*ctx));
+#endif
 	free(ctx);
 }
 
