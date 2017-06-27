@@ -63,7 +63,7 @@ void rtp_payload_decode_destroy(void* decoder);
 /// @return 0-ok, <0-failed
 int rtp_payload_decode_input(void* decoder, const void* packet, int bytes);
 
-/// Set/Get rtp encode packet size(don't include rtp header)
+/// Set/Get rtp encode packet size(include rtp header)
 void rtp_packet_setsize(int bytes);
 int rtp_packet_getsize();
 

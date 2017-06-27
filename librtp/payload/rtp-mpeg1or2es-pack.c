@@ -112,7 +112,7 @@ static int rtp_mpeg2es_pack_audio(struct rtp_encode_mpeg2es_t *packer, const uin
 	for (offset = 0; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = audio;
-		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER) < packer->size ? bytes : (packer->size - N_MPEG12_HEADER);
+		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_MPEG12_HEADER - RTP_FIXED_HEADER);
 		audio += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 
@@ -183,7 +183,7 @@ static int rtp_mpeg2es_pack_slice(struct rtp_encode_mpeg2es_t *packer, const uin
 	for (begin_of_slice = 1; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = video;
-		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER) < packer->size ? bytes : (packer->size - N_MPEG12_HEADER);
+		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_MPEG12_HEADER - RTP_FIXED_HEADER);
 		video += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 
@@ -283,7 +283,7 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 		mpeg2vh.begin_of_sequence = 0;
 		mpeg2_video_header_parse(&mpeg2vh, p, pend - p);
 		
-		if (pend - p + N_MPEG12_HEADER <= packer->size)
+		if (pend - p + N_MPEG12_HEADER + RTP_FIXED_HEADER <= packer->size)
 		{
 			nalu_size = pend - p;
 			pnext = pend;
@@ -294,11 +294,11 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 			pnext = mpeg2_start_code_prefix_find(p + 4, pend);
 
 			// try to put multi-slice into together
-			while(pnext - p + N_MPEG12_HEADER < packer->size)
+			while(pnext - p + N_MPEG12_HEADER + RTP_FIXED_HEADER < packer->size)
 			{
 				const uint8_t* pnextnext;
 				pnextnext = mpeg2_start_code_prefix_find(pnext + 4, pend);
-				if (pnextnext - p + N_MPEG12_HEADER > packer->size)
+				if (pnextnext - p + N_MPEG12_HEADER + RTP_FIXED_HEADER > packer->size)
 					break;
 
 				// merge and get information

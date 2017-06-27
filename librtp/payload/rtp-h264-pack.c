@@ -129,7 +129,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	// FU-A start
 	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
 	{
-		if (bytes <= packer->size - N_FU_HEADER)
+		if (bytes + RTP_FIXED_HEADER <= packer->size - N_FU_HEADER)
 		{
 			assert(0 == (fu_header & FU_START));
 			fu_header = FU_END | (fu_header & 0x1F); // FU-A end
@@ -137,7 +137,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		}
 		else
 		{
-			packer->pkt.payloadlen = packer->size - N_FU_HEADER;
+			packer->pkt.payloadlen = packer->size - RTP_FIXED_HEADER - N_FU_HEADER;
 		}
 
 		packer->pkt.payload = nalu;
@@ -191,7 +191,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 		// filter suffix '00' bytes
 		while(0 == p1[nalu_size-1]) --nalu_size;
 
-		if(nalu_size <= (size_t)packer->size)
+		if(nalu_size + RTP_FIXED_HEADER <= (size_t)packer->size)
 		{
 			// single NAl unit packet 
 			r = rtp_h264_pack_nalu(packer, p1, nalu_size);

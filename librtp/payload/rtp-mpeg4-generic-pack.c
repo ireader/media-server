@@ -91,7 +91,7 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 		header[3] = (uint8_t)(size & 0x1f) << 3;
 
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = (bytes + N_AU_HEADER) < packer->size ? bytes : (packer->size - N_AU_HEADER);
+		packer->pkt.payloadlen = (bytes + N_AU_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_AU_HEADER - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 

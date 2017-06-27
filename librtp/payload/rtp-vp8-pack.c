@@ -71,7 +71,7 @@ static int rtp_vp8_pack_input(void* pack, const void* data, int bytes, uint32_t 
 	for (vp8_payload_descriptor[0] = 0x10 /*start of partition*/; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = (bytes + N_VP8_HEADER) < packer->size ? bytes : (packer->size - N_VP8_HEADER);
+		packer->pkt.payloadlen = (bytes + N_VP8_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_VP8_HEADER - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 

@@ -27,14 +27,10 @@ void* rtp_payload_encode_create(int payload, const char* name, uint16_t seq, uin
 	int size;
 	struct rtp_payload_delegate_t* ctx;
 
-	size = rtp_packet_getsize();
-	if (RTP_PAYLOAD_MP2T == payload)
-		size = size / TS_PACKET_SIZE * TS_PACKET_SIZE;
-	if (size < 64) return NULL;
-
 	ctx = calloc(1, sizeof(ctx));
 	if (ctx)
 	{
+		size = rtp_packet_getsize();
 		if (rtp_payload_find(payload, name, ctx) < 0
 			|| NULL == (ctx->packer = ctx->encoder->create(size, (uint8_t)payload, seq, ssrc, handler, cbparam)))
 		{
@@ -98,9 +94,9 @@ int rtp_payload_decode_input(void* decoder, const void* packet, int bytes)
 
 // Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)
 // (Also, make it a multiple of 4 bytes, just in case that matters.)
-//static int s_max_packet_size = 1456 - RTP_FIXED_HEADER; // from Live555 MultiFrameRTPSink.cpp RTP_PAYLOAD_MAX_SIZE
-//static size_t s_max_packet_size = 576 - RTP_FIXED_HEADER; // UNIX Network Programming by W. Richard Stevens
-static int s_max_packet_size = 1434 - RTP_FIXED_HEADER; // from VLC
+//static int s_max_packet_size = 1456; // from Live555 MultiFrameRTPSink.cpp RTP_PAYLOAD_MAX_SIZE
+//static size_t s_max_packet_size = 576; // UNIX Network Programming by W. Richard Stevens
+static int s_max_packet_size = 1434; // from VLC
 
 void rtp_packet_setsize(int bytes)
 {

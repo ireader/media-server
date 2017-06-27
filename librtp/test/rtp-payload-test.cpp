@@ -98,7 +98,7 @@ void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t 
 	ctx.frtp2 = fopen("out.rtp", "wb");
 	ctx.fsource2 = fopen("out.media", "wb");
 
-	rtp_packet_setsize(1444); // 1456(live555) - 12(RTP-Header)
+	rtp_packet_setsize(1456); // 1456(live555)
 
 	struct rtp_payload_t handler2;
 	handler2.alloc = rtp_alloc;

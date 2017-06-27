@@ -66,7 +66,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 	for(ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = bytes < packer->size ? bytes : packer->size;
+		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 

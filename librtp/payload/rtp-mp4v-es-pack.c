@@ -84,7 +84,7 @@ static int rtp_mp4v_es_encode_input(void* pack, const void* data, int bytes, uin
 	for (ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = bytes < packer->size ? bytes : packer->size;
+		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 

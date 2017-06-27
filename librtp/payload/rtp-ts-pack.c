@@ -35,7 +35,15 @@ static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssr
 	packer = (struct rtp_encode_ts_t *)calloc(1, sizeof(*packer));
 	if (!packer) return NULL;
 
-	assert(pt != RTP_PAYLOAD_MP2T || 0 == size % TS_PACKET_SIZE);
+	assert(pt == RTP_PAYLOAD_MP2T);
+	if (RTP_PAYLOAD_MP2T == pt)
+	{
+		size -= RTP_FIXED_HEADER;
+		size = size / TS_PACKET_SIZE * TS_PACKET_SIZE;
+		size += RTP_FIXED_HEADER;
+		if (size < 64) return NULL;
+	}
+
 	memcpy(&packer->handler, handler, sizeof(packer->handler));
 	packer->cbparam = cbparam;
 	packer->size = size;
@@ -77,7 +85,7 @@ static int rtp_ts_pack_input(void* pack, const void* data, int bytes, uint32_t t
 	for (ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = bytes < packer->size ? bytes : packer->size;
+		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 

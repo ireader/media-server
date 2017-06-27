@@ -90,7 +90,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	for (; bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
-		packer->pkt.payloadlen = (bytes + len) < packer->size ? bytes : (packer->size - len);
+		packer->pkt.payloadlen = (bytes + len + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - len - RTP_FIXED_HEADER);
 		ptr += packer->pkt.payloadlen;
 		bytes -= packer->pkt.payloadlen;
 
