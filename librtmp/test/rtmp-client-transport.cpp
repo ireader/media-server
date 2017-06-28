@@ -80,13 +80,6 @@ static void rtmp_client_transport_onsend(void* transport, int code, size_t bytes
 static void rtmp_client_transport_onrecv(void* transport, int code, size_t bytes);
 static void rtmp_client_transport_onconnect(void* transport, int code);
 
-static void* rtmp_client_transport_alloc(void* transport, int avtype, size_t bytes)
-{
-	struct rtmp_client_transport_t* t;
-	t = (struct rtmp_client_transport_t*)transport;
-	return t->handler.alloc(t->param, avtype, bytes);
-}
-
 static int rtmp_client_transport_onaudio(void* transport, const void* audio, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_client_transport_t* t;
@@ -374,7 +367,6 @@ int rtmp_client_transport_start(void* transport, int publish)
 	struct rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
 	handler.send = rtmp_client_transport_write;
-	handler.alloc = rtmp_client_transport_alloc;
 	handler.onmeta = rtmp_client_transport_onmeta;
 	handler.onaudio = rtmp_client_transport_onaudio;
 	handler.onvideo = rtmp_client_transport_onvideo;

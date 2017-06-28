@@ -7,15 +7,6 @@
 
 static void* s_flv;
 
-static void* rtmp_client_alloc(void* /*param*/, int avtype, size_t bytes)
-{
-	static uint8_t s_audio[128 * 1024];
-	static uint8_t s_video[2 * 1024 * 1024];
-	assert(avtype || sizeof(s_audio) > bytes);
-	assert(sizeof(s_video) > bytes);
-	return avtype ? s_video : s_audio;
-}
-
 static int rtmp_client_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
@@ -52,7 +43,6 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 
 	struct rtmp_client_handler_t handler;
 	handler.send = rtmp_client_send;
-	handler.alloc = rtmp_client_alloc;
 	handler.onmeta = rtmp_client_onmeta;
 	handler.onaudio = rtmp_client_onaudio;
 	handler.onvideo = rtmp_client_onvideo;

@@ -22,13 +22,6 @@ struct rtmp_client_handler_t
 	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
 	int (*onaudio)(void* param, const void* audio, size_t bytes, uint32_t timestamp);
 	int (*onmeta)(void* param, const void* meta, size_t bytes);
-
-	///VOD only
-	///user alloc video/audio memory
-	///@param[in] avtype 0-audio, 1-video
-	///@param[in] bytes video/audio buffer size in byte
-	///@return NULL-failed, other-memory pointer
-	void* (*alloc)(void* param, int avtype, size_t bytes);
 };
 
 /// setup URL and connect server(timeout???)

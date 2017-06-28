@@ -34,13 +34,6 @@ struct rtmp_server_handler_t
 	int (*onvideo)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 	///@param[in] data FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 	int (*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
-
-	///push only
-	///user alloc video/audio memory
-	///@param[in] avtype 0-audio, 1-video
-	///@param[in] bytes video/audio buffer size in byte
-	///@return NULL-failed, other-memory pointer
-	void* (*alloc)(void* param, int avtype, size_t bytes);
 };
 
 void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);

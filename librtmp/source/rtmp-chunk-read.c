@@ -45,7 +45,6 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	uint8_t fmt = 0;
 	uint32_t cid = 0;
 	struct rtmp_packet_t* packet;
-	struct rtmp_chunk_header_t header;
 	
 	// chunk base header
 	buffer += rtmp_chunk_basic_header_read(buffer, &fmt, &cid);
@@ -65,35 +64,7 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 	// chunk message header
 	packet->header.cid = cid;
 	packet->header.fmt = fmt;
-	memcpy(&header, &packet->header, sizeof(header));
-	rtmp_chunk_message_header_read(buffer, &header);
-
-	if (packet->payload && packet->header.type != header.type)
-	{
-		if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
-		{
-			// don't need free
-			packet->payload = NULL;
-			packet->capacity = 0;
-			packet->bytes = 0;
-		}
-		else
-		{
-			// header type changed, should delete memory
-			if (header.type == RTMP_TYPE_VIDEO || header.type == RTMP_TYPE_AUDIO)
-			{
-				free(packet->payload);
-				packet->payload = NULL;
-				packet->capacity = 0;
-				packet->bytes = 0;
-			}
-			else
-			{
-				// do nothing
-			}
-		}
-	}
-	memcpy(&packet->header, &header, sizeof(header));
+	rtmp_chunk_message_header_read(buffer, &packet->header);
 
 	return packet;
 }
@@ -101,28 +72,18 @@ static struct rtmp_packet_t* rtmp_packet_parse(struct rtmp_t* rtmp, const uint8_
 static int rtmp_packet_alloc(struct rtmp_t* rtmp, struct rtmp_packet_t* packet)
 {
 	void* p;
+	(void)rtmp;
 
 	// 24-bytes length
 	assert(0 == packet->bytes);
 	assert(packet->header.length < (1 << 24));
-	if (packet->header.type == RTMP_TYPE_VIDEO || packet->header.type == RTMP_TYPE_AUDIO)
+	if (packet->capacity < packet->header.length)
 	{
-		p = rtmp->alloc(rtmp->param, RTMP_TYPE_VIDEO == packet->header.type ? 1 : 0, packet->header.length + 1 /*always >0*/);
+		p = realloc(packet->payload, packet->header.length + 1024);
 		if (NULL == p)
 			return ENOMEM;
 		packet->payload = p;
-		packet->capacity = packet->header.length;
-	}
-	else
-	{
-		if (packet->capacity < packet->header.length)
-		{
-			p = realloc(packet->payload, packet->header.length + 1024);
-			if (NULL == p)
-				return ENOMEM;
-			packet->payload = p;
-			packet->capacity = packet->header.length + 1024;
-		}
+		packet->capacity = packet->header.length + 1024;
 	}
 
 	return 0;

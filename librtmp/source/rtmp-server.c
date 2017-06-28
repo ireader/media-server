@@ -330,13 +330,6 @@ int rtmp_server_onreceive_video(void* param, int r, double transaction, uint8_t 
 	return r;
 }
 
-static void* rtmp_server_alloc(void* param, int video, size_t bytes)
-{
-	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)param;
-	return ctx->handler.alloc(ctx->param, video, bytes);
-}
-
 static int rtmp_server_send(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes)
 {
 	int r;
@@ -369,7 +362,6 @@ void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handle
 
 	ctx->rtmp.param = ctx;
 	ctx->rtmp.send = rtmp_server_send;
-	ctx->rtmp.alloc = rtmp_server_alloc;
 	ctx->rtmp.onaudio = rtmp_server_onaudio;
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
 	ctx->rtmp.onabort = rtmp_server_onabort;

@@ -309,13 +309,6 @@ static int rtmp_client_onvideo(void* param, const uint8_t* data, size_t bytes, u
 	return ctx->handler.onvideo(ctx->param, data, bytes, timestamp);
 }
 
-static void* rtmp_client_alloc(void* param, int video, size_t bytes)
-{
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)param;
-	return ctx->handler.alloc(ctx->param, video, bytes);
-}
-
 static int rtmp_client_send(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes)
 {
 	int r;
@@ -348,7 +341,6 @@ void* rtmp_client_create(const char* appname, const char* playpath, const char* 
 
 	ctx->rtmp.param = ctx;
 	ctx->rtmp.send = rtmp_client_send;
-	ctx->rtmp.alloc = rtmp_client_alloc;
 	ctx->rtmp.onaudio = rtmp_client_onaudio;
 	ctx->rtmp.onvideo = rtmp_client_onvideo;
 	ctx->rtmp.onabort = rtmp_client_onabort;
