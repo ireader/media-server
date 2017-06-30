@@ -20,8 +20,6 @@ struct rtmp_server_handler_t
 	//int (*oncreate_stream)(void* param, uint32_t* stream_id);
 	//int (*ondelete_stream)(void* param, uint32_t stream_id);
 
-	void (*onerror)(void* param, int code, const char* msg);
-
 	///pull(server -> client)
 	int (*onplay)(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset);
 	int (*onpause)(void* param, int pause, uint32_t ms);
