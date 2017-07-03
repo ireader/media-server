@@ -69,6 +69,7 @@ int rtsp_client_media_count(void* rtsp);
 const struct rtsp_header_transport_t* rtsp_client_get_media_transport(void* rtsp, int media);
 const char* rtsp_client_get_media_encoding(void* rtsp, int media);
 int rtsp_client_get_media_payload(void* rtsp, int media);
+int rtsp_client_get_media_rate(void* rtsp, int media); // return 0 if unknown rate
 
 #if defined(__cplusplus)
 }

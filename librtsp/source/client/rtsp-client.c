@@ -1,6 +1,7 @@
 #include "rtsp-client.h"
 #include "rtsp-client-internal.h"
 #include "rtsp-parser.h"
+#include "rtp-profile.h"
 #include "sdp.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,4 +114,22 @@ int rtsp_client_get_media_payload(void* p, int media)
 	if (media < 0 || media >= rtsp->media_count)
 		return -1;
 	return rtsp_get_media(rtsp, media)->avformats[0].fmt;
+}
+
+int rtsp_client_get_media_rate(void* p, int media)
+{
+	int rate;
+	struct rtsp_client_t *rtsp;
+	rtsp = (struct rtsp_client_t*)p;
+	if (media < 0 || media >= rtsp->media_count)
+		return -1;
+	
+	rate = rtsp_get_media(rtsp, media)->avformats[0].rate;
+	if (0 == rate)
+	{
+		const struct rtp_profile_t* profile;
+		profile = rtp_profile_find(rtsp_get_media(rtsp, media)->avformats[0].fmt);
+		rate = profile ? profile->frequency : 0;
+	}
+	return rate;
 }
