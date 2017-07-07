@@ -2,6 +2,7 @@
 #define _mpeg_pes_dec_h_
 
 #include "mpeg-types.h"
+#include "mpeg-ps-proto.h"
 
 // ISO/IEC 13818-1:2015 (E)
 // 2.4.3.7 Semantic definition of fields in PES packet
@@ -105,7 +106,7 @@ typedef struct _pes_t
 	size_t payload_len;
 } pes_t;
 
-size_t pes_read(const uint8_t* data, size_t bytes, struct _psm_t *psm, pes_t *pes);
+size_t pes_read(const uint8_t* data, size_t bytes, psm_t *psm, pes_t *pes);
 size_t pes_write_header(int64_t pts, int64_t dts, int streamId, uint8_t* data);
 
 #endif /* !_mpeg_pes_dec_h_ */
