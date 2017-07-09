@@ -1,6 +1,7 @@
 #include "rtmp-client-transport.h"
 #include "rtmp-client.h"
 #include "aio-socket.h"
+#include "aio-rwutil.h"
 #include "cstringext.h"
 #include "sockutil.h"
 #include "app-log.h"
@@ -32,6 +33,7 @@ struct rtmp_client_transport_t
 
 	void* rtmp;
 	aio_socket_t socket;
+	struct aio_socket_rw_t send;
 	int aio_send_status; // AIO_SEND_XXX
 	bool avbuffer_write;
 	bool running;
@@ -55,30 +57,18 @@ struct rtmp_client_transport_t
 	struct rtmp_client_transport_handler_t handler;
 };
 
-class rtmp_client_transport_release
-{
-	struct rtmp_client_transport_t* t;
-
-public:
-	rtmp_client_transport_release(struct rtmp_client_transport_t* t) 
-	{
-		this->t = t;
-	}
-
-	~rtmp_client_transport_release() 
-	{
-		if (0 == atomic_decrement32(&t->ref))
-		{
-			delete t;
-		}
-	}
-};
-
 static int rtmp_client_transport_send(struct rtmp_client_transport_t* t);
 static int rtmp_client_transport_recv(struct rtmp_client_transport_t* t);
 static void rtmp_client_transport_onsend(void* transport, int code, size_t bytes);
 static void rtmp_client_transport_onrecv(void* transport, int code, size_t bytes);
 static void rtmp_client_transport_onconnect(void* transport, int code);
+
+static void rtmp_client_transport_ondestroy(void* param)
+{
+	struct rtmp_client_transport_t* t;
+	t = (struct rtmp_client_transport_t*)param;
+	delete t;
+}
 
 static int rtmp_client_transport_onaudio(void* transport, const void* audio, size_t bytes, uint32_t timestamp)
 {
@@ -148,7 +138,6 @@ void* rtmp_client_transport_create(const char* host, int port, const char* app, 
 
 	memcpy(&t->handler, handler, sizeof(t->handler));
 	t->param = param;
-	t->ref = 1;
 	return t;
 }
 
@@ -157,7 +146,6 @@ void rtmp_client_transport_destroy(void* transport)
 	struct rtmp_client_transport_t* t;
 	t = (struct rtmp_client_transport_t*)transport;
 	rtmp_client_transport_stop(t);
-	rtmp_client_transport_release release(t);
 }
 
 static int rtmp_client_transport_send(struct rtmp_client_transport_t* t)
@@ -172,21 +160,13 @@ static int rtmp_client_transport_send(struct rtmp_client_transport_t* t)
 	size_t bytes = t->sbytes > 0 ? t->sbytes : t->avbytes;
 	t->aio_send_status = t->sbytes > 0 ? AIO_SEND_PROTOCOL : AIO_SEND_AVMEDIA;
 
-	atomic_increment32(&t->ref);
-	int r = aio_socket_send(t->socket, buffer, bytes, rtmp_client_transport_onsend, t);
-	if (0 != r) atomic_decrement32(&t->ref);
-	assert(t->ref > 0);
-	return r;
+	return aio_socket_send_all(&t->send, t->socket, buffer, bytes, rtmp_client_transport_onsend, t);
 }
 
 static int rtmp_client_transport_recv(struct rtmp_client_transport_t* t)
 {
 	assert(t->running);
-	atomic_increment32(&t->ref);
-	int r = aio_socket_recv(t->socket, t->rbuffer, sizeof(t->rbuffer), rtmp_client_transport_onrecv, t);
-	if (0 != r) atomic_decrement32(&t->ref);
-	assert(t->ref > 0);
-	return r;
+	return aio_socket_recv(t->socket, t->rbuffer, sizeof(t->rbuffer), rtmp_client_transport_onrecv, t);
 }
 
 static void rtmp_client_transport_onerror(struct rtmp_client_transport_t* t)
@@ -201,7 +181,6 @@ static void rtmp_client_transport_onsend(void* transport, int code, size_t bytes
 {
 	struct rtmp_client_transport_t* t;
 	t = (struct rtmp_client_transport_t*)transport;
-	rtmp_client_transport_release release(t);
 
 	{
 		AutoThreadLocker locker(t->locker);
@@ -250,7 +229,6 @@ static void rtmp_client_transport_onrecv(void* transport, int code, size_t bytes
 {
 	struct rtmp_client_transport_t* t;
 	t = (struct rtmp_client_transport_t*)transport;
-	rtmp_client_transport_release release(t);
 
 	if (0 == bytes && 0 == code)
 	{
@@ -293,7 +271,6 @@ static void rtmp_client_transport_onconnect(void* transport, int code)
 {
 	struct rtmp_client_transport_t* t;
 	t = (struct rtmp_client_transport_t*)transport;
-	rtmp_client_transport_release release(t);
 
 	{
 		AutoThreadLocker locke(t->locker);
@@ -386,18 +363,20 @@ int rtmp_client_transport_stop(void* transport)
 	t->onready = false;
 	t->running = false;
 
-	if (invalid_aio_socket != t->socket)
-	{
-		aio_socket_destroy(t->socket);
-		t->socket = invalid_aio_socket;
-		t->aio_send_status = AIO_SEND_IDLE;
-	}
-
 	if (NULL != t->rtmp)
 	{
 		rtmp_client_destroy(t->rtmp);
 		t->rtmp = NULL;
 	}
+
+	if (invalid_aio_socket != t->socket)
+	{
+		t->aio_send_status = AIO_SEND_IDLE;
+		aio_socket_destroy(t->socket, rtmp_client_transport_ondestroy, t);
+		//t->socket = invalid_aio_socket;
+		//t->aio_send_status = AIO_SEND_IDLE;
+	}
+
 	return 0;
 }
 

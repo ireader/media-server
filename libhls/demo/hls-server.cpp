@@ -1,4 +1,5 @@
 #include "aio-socket.h"
+#include "aio-tcp-transport.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "hls-m3u8.h"
@@ -279,16 +280,17 @@ static int hls_server_onhttp(void* http, void* session, const char* method, cons
 void hls_server_test(const char* ip, int port)
 {
 	aio_socket_init(1);
-	http_server_init();
+	aio_tcp_transport_init();
 	void* http = http_server_create(ip, port);
 	http_server_set_handler(http, hls_server_onhttp, http);
 
 	// http process
-	while(aio_socket_process(1000) >= 0)
+	while(aio_socket_process(10000) >= 0)
 	{
+		aio_tcp_transport_recycle();
 	}
 
 	http_server_destroy(http);
-	http_server_cleanup();
+	aio_tcp_transport_clean();
 	aio_socket_clean();
 }

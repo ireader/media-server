@@ -31,7 +31,6 @@ static int rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*by
 	return 0;
 }
 
-// rtmp_play_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
 void rtmp_play_test(const char* host, const char* app, const char* stream, const char* flv)
 {
 	static char packet[8 * 1024 * 1024];
