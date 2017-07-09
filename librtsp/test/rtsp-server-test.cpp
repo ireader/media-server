@@ -6,22 +6,21 @@
 #include "sys/sync.hpp"
 #include "ctypedef.h"
 #include "aio-socket.h"
-#include "thread-pool.h"
+#include "aio-tcp-transport.h"
 #include "rtsp-server.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
 #include "rtp-socket.h"
 #include "ps-file-source.h"
 #include "h264-file-source.h"
-#include "url.h"
+#include "uri-parse.h"
+#include "urlcodec.h"
 #include "path.h"
 #include <map>
 #include <memory>
 
-#define PS_VOD
+//#define PS_VOD
 
-static int s_running;
-static thread_pool_t s_pool;
 static const char* s_workdir = "e:";
 
 static ThreadLocker s_locker;
@@ -43,46 +42,16 @@ struct TFileDescription
 };
 static std::map<std::string, TFileDescription> s_describes;
 
-static void worker(void* param)
-{
-    do
-    {
-        aio_socket_process(2*60*1000);    
-    } while(*(int*)param);
-}
-
-static int init()
-{
-    int cpu = (int)system_getcpucount();
-    s_pool = thread_pool_create(cpu, 1, 64);
-    aio_socket_init(cpu);
-    
-    s_running = 1;
-    while(cpu-- > 0)
-    {
-        thread_pool_push(s_pool, worker, &s_running); // start worker
-    }
-    
-    return 0;
-}
-
-static int cleanup()
-{
-    s_running = 0;
-    thread_pool_destroy(s_pool);
-    aio_socket_clean();
-    return 0;
-}
-
 static int rtsp_uri_parse(const char* uri, std::string& path)
 {
-	void* parser = NULL;
-	parser = url_parse(uri);
-	if(!parser)
+	char path1[256];
+	struct uri_t* r = uri_parse(uri, strlen(uri));
+	if(!r)
 		return -1;
 
-	path.assign(url_getpath(parser));
-	url_free(parser);
+	url_decode(r->path, strlen(r->path), path1, sizeof(path1));
+	path = path1;
+	uri_free(r);
 	return 0;
 }
 
@@ -355,7 +324,8 @@ extern "C" void rtsp_example()
     void *rtsp;
     struct rtsp_handler_t handler;
 
-    init();
+	aio_socket_init(1);
+	aio_tcp_transport_init();
 
     handler.describe = rtsp_ondescribe;
     handler.setup = rtsp_onsetup;
@@ -364,19 +334,21 @@ extern "C" void rtsp_example()
     handler.teardown = rtsp_onteardown;
     rtsp = rtsp_server_create(NULL, 554, &handler, NULL);
 
-    while(1)
+    while(aio_socket_process(5) >= 0)
     {
-		int n = 0;
 		TSessions::iterator it;
 		for(it = s_sessions.begin(); it != s_sessions.end(); ++it)
 		{
 			rtsp_session_t &session = it->second;
 			if(1 == session.status)
-				n += session.media->Play();
+				session.media->Play();
 		}
 
-		if(0 == n)
-			system_sleep(5);
+		aio_tcp_transport_recycle();
     }
+
+	rtsp_server_destroy(rtsp);
+	aio_tcp_transport_clean();
+	aio_socket_clean();
 }
 #endif

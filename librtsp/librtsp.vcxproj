@@ -155,11 +155,19 @@
     <ClCompile Include="source\rtsp-header-transport.c" />
     <ClCompile Include="source\rtsp-parser.c" />
     <ClCompile Include="source\rtsp-reason.c" />
-    <ClCompile Include="source\rtsp-transport-tcp.c" />
-    <ClCompile Include="source\rtsp-transport-udp.c" />
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
     <ClCompile Include="source\sdp.c" />
+    <ClCompile Include="source\server\rtsp-server-describe.c" />
+    <ClCompile Include="source\server\rtsp-server-handler.c" />
+    <ClCompile Include="source\server\rtsp-server-listen.c" />
+    <ClCompile Include="source\server\rtsp-server-options.c" />
+    <ClCompile Include="source\server\rtsp-server-pause.c" />
+    <ClCompile Include="source\server\rtsp-server-play.c" />
+    <ClCompile Include="source\server\rtsp-server-setup.c" />
+    <ClCompile Include="source\server\rtsp-server-tcp.c" />
+    <ClCompile Include="source\server\rtsp-server-teardown.c" />
+    <ClCompile Include="source\server\rtsp-server-udp.c" />
     <ClCompile Include="source\server\rtsp-server.c" />
   </ItemGroup>
   <ItemGroup>
@@ -174,7 +182,6 @@
     <ClInclude Include="include\rtsp-parser.h" />
     <ClInclude Include="include\rtsp-reason.h" />
     <ClInclude Include="include\rtsp-server.h" />
-    <ClInclude Include="include\rtsp-transport.h" />
     <ClInclude Include="include\sdp-a-fmtp.h" />
     <ClInclude Include="include\sdp-a-rtpmap.h" />
     <ClInclude Include="include\sdp.h" />

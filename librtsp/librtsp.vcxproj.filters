@@ -83,12 +83,6 @@
     <ClCompile Include="source\server\rtsp-server.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtsp-transport-tcp.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtsp-transport-udp.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="media\h264-file-reader.cpp">
       <Filter>media</Filter>
     </ClCompile>
@@ -109,6 +103,36 @@
     </ClCompile>
     <ClCompile Include="source\client\rtsp-client-auth.c">
       <Filter>Source Files\client</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-listen.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-handler.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-tcp.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-udp.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-options.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-describe.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-setup.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-teardown.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-play.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-pause.c">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -140,9 +164,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtsp-server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rtsp-transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sdp-a-fmtp.h">
