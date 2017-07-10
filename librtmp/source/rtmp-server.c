@@ -216,7 +216,7 @@ int rtmp_server_onpublish(void* param, int r, double transaction, const char* st
 				return r;
 		}
 
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.DeleteStream.Suceess", "NetStream.DeleteStream.Failed");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName");
 	}
 
 	return r;
