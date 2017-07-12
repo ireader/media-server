@@ -18,7 +18,7 @@ struct rtsp_server_t
 	void* tcp; // tcp listen
 
 	void (*onrecv)(struct rtsp_session_t* session);
-	void (*onsend)(struct rtsp_session_t* session, int code);
+	void (*onsend)(struct rtsp_session_t* session, int code, size_t bytes);
 };
 
 struct rtsp_session_t

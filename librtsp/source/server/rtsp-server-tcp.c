@@ -46,11 +46,11 @@ static void rtsp_transport_tcp_onrecv(void* param, void* transport, const void* 
 	} while (remain > 0 && r >= 0);
 }
 
-static void rtsp_transport_tcp_onsend(void* param, void* transport, int code)
+static void rtsp_transport_tcp_onsend(void* param, void* transport, int code, size_t bytes)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
-	session->server->onsend(session, code);
+	session->server->onsend(session, code, bytes);
 	assert(session->transport == transport);
 	(void)transport;
 }

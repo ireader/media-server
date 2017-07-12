@@ -6,10 +6,11 @@
 #include <string.h>
 #include <assert.h>
 
-static void rtsp_server_onsend(struct rtsp_session_t* session, int code)
+static void rtsp_server_onsend(struct rtsp_session_t* session, int code, size_t bytes)
 {
 	(void)session;
 	(void)code;
+	(void)bytes;
 }
 
 void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* param)

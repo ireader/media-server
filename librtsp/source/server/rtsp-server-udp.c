@@ -158,7 +158,7 @@ static void rtsp_transport_udp_onsend(void* param, int code, size_t bytes)
 {
 	struct rtsp_session_t* session;
 	session = (struct rtsp_session_t*)param;
-	session->server->onsend(session, code);
+	session->server->onsend(session, code, bytes);
 	rtsp_udp_session_destroy(session);
 	(void)bytes;
 }
