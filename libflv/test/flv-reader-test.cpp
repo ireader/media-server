@@ -33,7 +33,7 @@ inline char flv_type(int type)
 	}
 }
 
-static void onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
+static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
 	static char s_pts[64], s_dts[64];
 	static uint32_t v_pts = 0, v_dts = 0;
@@ -73,6 +73,7 @@ static void onFLV(void* /*param*/, int codec, const void* data, size_t bytes, ui
 	}
 
 	printf("\n");
+	return 0;
 }
 
 // flv_reader_test("53340.flv");

@@ -16,7 +16,8 @@ extern "C" {
 /// @param[in] pts audio/video presentation timestamp
 /// @param[in] dts audio/video decoding timestamp
 /// @param[in] flags 1-video keyframe, other-undefined
-typedef void (*flv_demuxer_handler)(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
+/// @return 0-ok, other-error
+typedef int (*flv_demuxer_handler)(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags);
 
 void* flv_demuxer_create(flv_demuxer_handler handler, void* param);
 void flv_demuxer_destroy(void* flv);

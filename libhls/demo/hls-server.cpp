@@ -82,25 +82,22 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 	printf("new segment: %s\n", name);
 }
 
-static void flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
+static int flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
-		break;
+		return hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 
 	case FLV_AUDIO_MP3:
-		hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
-		break;
+		return hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
-		hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
-		break;
+		return hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 
 	default:
 		// nothing to do
-		break;
+		return 0;
 	}
 }
 

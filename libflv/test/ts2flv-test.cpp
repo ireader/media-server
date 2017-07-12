@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-static void on_flv_packet(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
+static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(flv, type, data, bytes, timestamp);
+	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
 static void ts_packet(void* muxer, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)

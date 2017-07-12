@@ -12,7 +12,8 @@ extern "C" {
 ///Audio: FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 ///@param[in] data FLV Audio/Video Data(don't include FLV Tag Header)
 ///@param[in] type 8-audio, 9-video
-typedef void(*flv_muxer_handler)(void* param, int type, const void* data, size_t bytes, uint32_t timestamp);
+///@return 0-ok, other-error
+typedef int (*flv_muxer_handler)(void* param, int type, const void* data, size_t bytes, uint32_t timestamp);
 
 void* flv_muxer_create(flv_muxer_handler handler, void* param);
 void flv_muxer_destroy(void* flv);

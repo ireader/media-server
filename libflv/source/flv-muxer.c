@@ -108,13 +108,12 @@ int flv_muxer_mp3(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 
 	flv->ptr[0] = (FLV_AUDIO_MP3 /*<< 4*/) /* SoundFormat */ | (hz << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | ch /* Stereo sound */;
 	memcpy(flv->ptr + 1, data, bytes); // MP3
-	flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
-	return 0;
+	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
 }
 
 int flv_muxer_aac(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	int n, m;
+	int r, n, m;
 	struct flv_muxer_t* flv;
 	flv = (struct flv_muxer_t*)p;
 
@@ -137,19 +136,20 @@ int flv_muxer_aac(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 		flv->ptr[1] = 0; // AACPacketType: 0-AudioSpecificConfig(AAC sequence header)
 		m = mpeg4_aac_audio_specific_config_save(&flv->aac, flv->ptr + 2, flv->capacity - 2);
 		assert(m + 2 <= (int)flv->capacity);
-		flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + 2, dts);
+		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + 2, dts);
+		if (0 != r) return r;
 	}
 
 	flv->ptr[0] = (FLV_AUDIO_AAC /*<< 4*/) /* SoundFormat */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 	flv->ptr[1] = 1; // AACPacketType: 1-AAC raw
 	memcpy(flv->ptr + 2, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
 	assert(bytes - n + 2 <= (int)flv->capacity);
-	flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
-	return 0;
+	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
 }
 
 int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
+	int r;
 	int m, compositionTime;
 	struct flv_muxer_t* flv;
 	flv = (struct flv_muxer_t*)p;
@@ -183,7 +183,8 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 
 		flv->avc_sequence_header = 1; // once only
 		assert(flv->bytes + m + 5 <= (int)flv->capacity);
-		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
+		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
+		if (0 != r) return r;
 	}
 
 	// has video frame
@@ -197,7 +198,7 @@ int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 		flv->ptr[4] = compositionTime & 0xFF;
 
 		assert(flv->bytes <= (int)flv->capacity);
-		flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
+		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
 }

@@ -43,7 +43,7 @@ inline char flv_type(int type)
 	}
 }
 
-static void onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned int pts, unsigned int dts, int flags)
+static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned int pts, unsigned int dts, int flags)
 {
 	static char s_pts[64], s_dts[64];
 	static uint32_t v_pts = 0, v_dts = 0;
@@ -82,6 +82,7 @@ static void onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned 
 	}
 
 	printf("\n");
+	return 0;
 }
 
 void flv2ts_test(const char* inputFLV, const char* outputTS)

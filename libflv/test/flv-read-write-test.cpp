@@ -7,12 +7,12 @@
 #include <string.h>
 #include <stdio.h>
 
-static void flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
+static int flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(flv, type, data, bytes, timestamp);
+	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void flv_ondemuxer(void* flv, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
+static int flv_ondemuxer(void* flv, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
 {
 	switch (codec)
 	{
@@ -31,6 +31,7 @@ static void flv_ondemuxer(void* flv, int codec, const void* data, size_t bytes, 
 	default:
 		break;
 	}
+	return 0;
 }
 
 void flv_read_write_test(const char* flv)
