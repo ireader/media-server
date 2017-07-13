@@ -458,7 +458,7 @@ int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes)
 
 		case RTMP_HANDSHAKE_2:
 		default:
-			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)data, bytes);
+			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}
 

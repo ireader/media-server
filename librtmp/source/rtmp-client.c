@@ -454,7 +454,7 @@ int rtmp_client_input(void* client, const void* data, size_t bytes)
 			break;
 
 		default:
-			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)data, bytes);
+			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}
 

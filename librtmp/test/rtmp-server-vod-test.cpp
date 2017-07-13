@@ -46,17 +46,10 @@ static int STDCALL rtmp_server_worker(void* param)
 static int rtmp_server_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
 	socket_t* socket = (socket_t*)param;
-	if (bytes > 0 && data)
-	{
-		socket_bufvec_t vec[2];
-		socket_setbufvec(vec, 0, (void*)header, len);
-		socket_setbufvec(vec, 1, (void*)data, bytes);
-		return socket_send_v_all_by_time(*socket, vec, 2, 0, 2000);
-	}
-	else
-	{
-		return socket_send_all_by_time(*socket, data, bytes, 0, 2000);
-	}
+	socket_bufvec_t vec[2];
+	socket_setbufvec(vec, 0, (void*)header, len);
+	socket_setbufvec(vec, 1, (void*)data, bytes);
+	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 2000);
 }
 
 static int rtmp_server_onplay(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset)
