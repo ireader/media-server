@@ -15,14 +15,22 @@ static int STDCALL rtmp_server_worker(void* param)
 	int r, type;
 	uint32_t timestamp;
 	static uint32_t s_timestamp = 0;
+	static uint64_t s_clock = 0;
 	void* f = flv_reader_create(s_file);
 
-	static unsigned char packet[2 * 1024 * 1024];
+	static unsigned char packet[8 * 1024 * 1024];
 	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 	{
-		if (timestamp > s_timestamp)
-			system_sleep(timestamp - s_timestamp);
-		s_timestamp = timestamp;
+		assert(r < sizeof(packet));
+		uint64_t clock = system_clock();
+		if (0 == s_clock)
+		{
+			s_clock = clock;
+			s_timestamp = timestamp;
+		}
+
+		if (timestamp - s_timestamp > clock - s_clock)
+			system_sleep(timestamp - s_timestamp - (clock - s_clock));
 
 		if (8 == type)
 		{
@@ -96,7 +104,7 @@ void rtmp_server_vod_test(const char* flv)
 	s_file = flv;
 	s_rtmp = rtmp_server_create(&c, &handler);
 
-	static unsigned char packet[8 * 1024 * 1024];
+	static unsigned char packet[2 * 1024 * 1024];
 	while ((r = socket_recv(c, packet, sizeof(packet), 0)) > 0)
 	{
 		r = rtmp_server_input(s_rtmp, packet, r);
