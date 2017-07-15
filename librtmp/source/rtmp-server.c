@@ -13,8 +13,9 @@
 #include <assert.h>
 #include <time.h>
 
-#define RTMP_FMSVER			"FMS/3,0,1,123"
-#define RTMP_CAPABILITIES	31
+#define RTMP_FMSVER				"FMS/3,0,1,123"
+#define RTMP_CAPABILITIES		31
+#define RTMP_OUTPUT_CHUNK_SIZE	4000
 
 struct rtmp_server_t
 {
@@ -70,8 +71,9 @@ static int rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 static int rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
 {
 	int n, r;
-	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), ctx->rtmp.out_chunk_size);
+	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), RTMP_OUTPUT_CHUNK_SIZE);
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
+	ctx->rtmp.out_chunk_size = RTMP_OUTPUT_CHUNK_SIZE;
 	return n == r ? 0 : r;
 }
 
