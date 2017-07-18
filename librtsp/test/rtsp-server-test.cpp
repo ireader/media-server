@@ -1,6 +1,7 @@
 #if defined(_DEBUG) || defined(DEBUG)
 #include "cstringext.h"
 #include "sys/sock.h"
+#include "sys/thread.h"
 #include "sys/system.h"
 #include "sys/path.h"
 #include "sys/sync.hpp"
@@ -319,6 +320,14 @@ static void rtsp_onteardown(void* /*ptr*/, void* rtsp, const char* /*uri*/, cons
 	rtsp_server_reply_teardown(rtsp, 200);
 }
 
+static int STDCALL rtsp_worker(void* /*param*/)
+{
+	while (aio_socket_process(200) >= 0 || errno == EINTR) // ignore epoll EINTR
+	{
+	}
+	return 0;
+}
+
 extern "C" void rtsp_example()
 {
     void *rtsp;
@@ -334,9 +343,21 @@ extern "C" void rtsp_example()
     handler.teardown = rtsp_onteardown;
     rtsp = rtsp_server_create(NULL, 554, &handler, NULL);
 
-    while(aio_socket_process(5) >= 0)
+	// create worker thread
+	pthread_t thread;
+	for (int i = 0; i < 10; i++)
+	{
+		thread_create(&thread, rtsp_worker, NULL);
+		thread_detach(thread);
+	}
+
+	// test only
+    while(1)
     {
+		system_sleep(5);
+
 		TSessions::iterator it;
+		AutoThreadLocker locker(s_locker);
 		for(it = s_sessions.begin(); it != s_sessions.end(); ++it)
 		{
 			rtsp_session_t &session = it->second;
