@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-static void rtsp_transport_tcp_ondestroy(void* param, void* transport)
+static void rtsp_transport_tcp_ondestroy(void* param)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
@@ -20,16 +20,14 @@ static void rtsp_transport_tcp_ondestroy(void* param, void* transport)
 	memset(session, 0xCC, sizeof(*session));
 #endif
 	free(session);
-	(void)transport;
 }
 
-static void rtsp_transport_tcp_onrecv(void* param, void* transport, const void* data, size_t bytes)
+static void rtsp_transport_tcp_onrecv(void* param, const void* data, size_t bytes)
 {
 	int r;
 	int remain;
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
-	session->transport = transport;
 
 	remain = (int)bytes;
 	do
@@ -46,13 +44,11 @@ static void rtsp_transport_tcp_onrecv(void* param, void* transport, const void* 
 	} while (remain > 0 && r >= 0);
 }
 
-static void rtsp_transport_tcp_onsend(void* param, void* transport, int code, size_t bytes)
+static void rtsp_transport_tcp_onsend(void* param, int code, size_t bytes)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
 	session->server->onsend(session, code, bytes);
-	assert(session->transport == transport);
-	(void)transport;
 }
 
 static int rtsp_transport_tcp_send(void* transport, const void* data, size_t bytes)
@@ -74,7 +70,6 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	struct rtsp_session_t *session;
 	struct aio_tcp_transport_handler_t handler;
 
-	handler.oncreate = NULL; // don't need
 	handler.ondestroy = rtsp_transport_tcp_ondestroy;
 	handler.onrecv = rtsp_transport_tcp_onrecv;
 	handler.onsend = rtsp_transport_tcp_onsend;
@@ -89,9 +84,9 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	session->server = (struct rtsp_server_t *)param;
 	session->sendv = rtsp_transport_tcp_sendv;
 	session->send = rtsp_transport_tcp_send;
-	session->transport = NULL;
+	session->transport = aio_tcp_transport_create(socket, &handler, session);
 
-	if (0 != aio_tcp_transport_create(socket, &handler, session))
+	if (NULL == session->transport)
 	{
 		free(session);
 		return -1;
