@@ -32,7 +32,7 @@ struct hls_segment_t
 	size_t capacity;
 };
 
-void* hls_m3u8_create(int live)
+struct hls_m3u8_t* hls_m3u8_create(int live)
 {
 	struct hls_m3u8_t* m3u8;
 	m3u8 = (struct hls_m3u8_t*)malloc(sizeof(*m3u8));
@@ -48,19 +48,15 @@ void* hls_m3u8_create(int live)
 	return m3u8;
 }
 
-void hls_m3u8_destroy(void* p)
+void hls_m3u8_destroy(struct hls_m3u8_t* m3u8)
 {
-	struct hls_m3u8_t* m3u8;
 	struct list_head* l, *n;
 	struct hls_segment_t* seg;
-	m3u8 = (struct hls_m3u8_t*)p;
-
 	list_for_each_safe(l, n, &m3u8->root)
 	{
 		seg = list_entry(l, struct hls_segment_t, link);
 		free(seg);
 	}
-
 	free(m3u8);
 }
 
@@ -76,12 +72,10 @@ static struct hls_segment_t* hls_segment_alloc(int bytes)
 	return seg;
 }
 
-int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int discontinuity)
+int hls_m3u8_add(struct hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t duration, int discontinuity)
 {
 	size_t r;
-	struct hls_m3u8_t* m3u8;
 	struct hls_segment_t* seg;
-	m3u8 = (struct hls_m3u8_t*)p;
 	seg = NULL;
 	r = strlen(name);
 	
@@ -127,19 +121,17 @@ int hls_m3u8_add(void* p, const char* name, int64_t pts, int64_t duration, int d
 	return 0;
 }
 
-size_t hls_m3u8_count(void* m3u8)
+size_t hls_m3u8_count(struct hls_m3u8_t* m3u8)
 {
-	return ((struct hls_m3u8_t*)m3u8)->count;
+	return m3u8->count;
 }
 
-int hls_m3u8_playlist(void* p, int eof, char* playlist, size_t bytes)
+int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t bytes)
 {
 	int r;
 	size_t n;
 	struct list_head* link;
-	struct hls_m3u8_t* m3u8;
 	struct hls_segment_t* seg;
-	m3u8 = (struct hls_m3u8_t*)p;
 
 	r = snprintf(playlist, bytes,
 		"#EXTM3U\n" // MUST

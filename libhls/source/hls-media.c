@@ -74,7 +74,7 @@ static void* hls_ts_create(struct hls_media_t* hls)
 	return mpeg_ts_create(&handler, hls);
 }
 
-void* hls_media_create(int64_t duration, hls_media_handler handler, void* param)
+struct hls_media_t* hls_media_create(int64_t duration, hls_media_handler handler, void* param)
 {
 	struct hls_media_t* hls;
 	hls = (struct hls_media_t*)malloc(sizeof(*hls));
@@ -98,11 +98,8 @@ void* hls_media_create(int64_t duration, hls_media_handler handler, void* param)
 	return hls;
 }
 
-void hls_media_destroy(void* p)
+void hls_media_destroy(struct hls_media_t* hls)
 {
-	struct hls_media_t* hls;
-	hls = (struct hls_media_t*)p;
-
 	if (hls->ts)
 		mpeg_ts_destroy(hls->ts);
 
@@ -121,12 +118,10 @@ static inline int hls_media_keyframe(int avtype, const void* data, size_t bytes)
 	return STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes);  // IDR-frame or audio only stream
 }
 
-int hls_media_input(void* p, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int force_new_segment)
+int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int force_new_segment)
 {
 	int segment;
 	int64_t duration;
-	struct hls_media_t* hls;
-	hls = (struct hls_media_t*)p;
 
 	assert(dts < hls->dts_last + hls->duration || PTS_NO_VALUE == hls->dts_last);
 

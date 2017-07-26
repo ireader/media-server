@@ -19,7 +19,7 @@ static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts,
 	static int i = 0;
 	char name[128] = {0};
 	snprintf(name, sizeof(name), "%d.ts", i++);
-	hls_m3u8_add(m3u8, name, pts, duration, discontinue);
+	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, discontinue);
 
 	FILE* fp = fopen(name, "wb");
 	fwrite(data, 1, bytes, fp);
@@ -28,16 +28,18 @@ static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts,
 
 static int flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
+	hls_media_t* hls = (hls_media_t*)param;
+
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		return hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 
 	case FLV_AUDIO_MP3:
-		return hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
-		return hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 
 	default:
 		// nothing to do
@@ -47,8 +49,8 @@ static int flv_handler(void* param, int codec, const void* data, size_t bytes, u
 
 void hls_segmenter_flv(const char* file)
 {
-	void* m3u = hls_m3u8_create(0);
-	void* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
+	hls_m3u8_t* m3u = hls_m3u8_create(0);
+	hls_media_t* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
 	void* flv = flv_reader_create(file);
 	void* demuxer = flv_demuxer_create(flv_handler, hls);
 

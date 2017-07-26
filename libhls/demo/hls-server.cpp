@@ -36,8 +36,8 @@ struct hls_playlist_t
 	pthread_t t;
 	std::string file;
 
-	void* hls;
-	void* m3u8;
+	hls_media_t* hls;
+	hls_m3u8_t* m3u8;
 	int64_t pts;
 	int64_t last_pts;
 
@@ -84,16 +84,18 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 
 static int flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
+	hls_media_t* hls = (hls_media_t*)param;
+
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		return hls_media_input(param, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
 
 	case FLV_AUDIO_MP3:
-		return hls_media_input(param, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
-		return hls_media_input(param, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
 
 	default:
 		// nothing to do
@@ -178,7 +180,7 @@ static int hls_server_reply(void* session, int code, const char* msg)
 
 static int hls_server_m3u8(void* session, const std::string& path)
 {
-	void* m3u8 = s_playlists.find(path)->second->m3u8;
+	hls_m3u8_t* m3u8 = s_playlists.find(path)->second->m3u8;
 	assert(m3u8);
 
 	void* bundle = http_bundle_alloc(4 * 1024);

@@ -65,7 +65,7 @@ static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts,
 	static int i = 0;
 	char name[128] = { 0 };
 	snprintf(name, sizeof(name), "%d.ts", i++);
-	hls_m3u8_add(m3u8, name, pts, duration, 0);
+	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, 0);
 
 	FILE* fp = fopen(name, "wb");
 	fwrite(data, 1, bytes, fp);
@@ -81,8 +81,8 @@ void mp4_to_ts_test(const char* mp4)
 	//av_init_packet(&pkt);
 
 	AVFormatContext* ic = ffmpeg_open(mp4);
-	void* m3u = hls_m3u8_create(0);
-	void* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
+	hls_m3u8_t* m3u = hls_m3u8_create(0);
+	hls_media_t* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
 
 	struct mpeg4_avc_t avc;
 	struct mpeg4_aac_t aac;
