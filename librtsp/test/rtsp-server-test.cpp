@@ -7,7 +7,7 @@
 #include "sys/sync.hpp"
 #include "ctypedef.h"
 #include "aio-socket.h"
-#include "aio-tcp-transport.h"
+#include "aio-timeout.h"
 #include "rtsp-server.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
@@ -334,7 +334,6 @@ extern "C" void rtsp_example()
     struct rtsp_handler_t handler;
 
 	aio_socket_init(1);
-	aio_tcp_transport_init();
 
     handler.describe = rtsp_ondescribe;
     handler.setup = rtsp_onsetup;
@@ -365,11 +364,10 @@ extern "C" void rtsp_example()
 				session.media->Play();
 		}
 
-		aio_tcp_transport_recycle();
+		aio_timeout_process();
     }
 
 	rtsp_server_destroy(rtsp);
-	aio_tcp_transport_clean();
 	aio_socket_clean();
 }
 #endif
