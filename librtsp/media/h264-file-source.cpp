@@ -62,7 +62,7 @@ int H264FileSource::Play()
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
 			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock * 90 /*kHz*/);
-			m_rtp_clock = clock;
+			m_rtp_clock += 40;
 
 			SendRTCP();
 			return 1;
@@ -75,12 +75,14 @@ int H264FileSource::Play()
 int H264FileSource::Pause()
 {
 	m_status = 2;
+	m_rtp_clock = 0;
 	return 0;
 }
 
 int H264FileSource::Seek(int64_t pos)
 {
 	m_pos = pos;
+	m_rtp_clock = 0;
 	return m_reader.Seek(m_pos);
 }
 

@@ -75,7 +75,7 @@ int PSFileSource::Play()
 			if(0 == m_ps_clock)
 				m_ps_clock = clock;
 			mpeg_ps_write(m_ps, STREAM_VIDEO_H264, (clock-m_ps_clock)*90, (clock-m_ps_clock)*90, ptr, bytes);
-			m_rtp_clock = clock;
+			m_rtp_clock += 40;
 
 			SendRTCP();
 			return 1;
@@ -88,11 +88,13 @@ int PSFileSource::Play()
 int PSFileSource::Pause()
 {
 	m_status = 2;
+	m_rtp_clock = 0;
 	return 0;
 }
 
 int PSFileSource::Seek(int64_t pos)
 {
+	m_rtp_clock = 0;
 	return m_reader.Seek(pos);
 }
 
