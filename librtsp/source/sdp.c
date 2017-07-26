@@ -152,7 +152,7 @@ struct sdp_media
 	struct sdp_encryption k;
 };
 
-struct sdp_context
+struct sdp_t
 {
 	char *raw; // raw source string
 	size_t offset; // parse offset
@@ -205,21 +205,21 @@ struct sdp_context
 	} m;
 };
 
-static inline void sdp_skip_space(struct sdp_context* sdp)
+static inline void sdp_skip_space(struct sdp_t* sdp)
 {
 	char c = sdp->raw[sdp->offset];
 	while(' ' == c || '\t' == c) 
 		c = sdp->raw[++sdp->offset];
 }
 
-static inline size_t sdp_token_word(struct sdp_context* sdp, const char* escape)
+static inline size_t sdp_token_word(struct sdp_t* sdp, const char* escape)
 {
 	size_t n = sdp->offset;
 	sdp->offset += strcspn(sdp->raw + sdp->offset, escape);
 	return sdp->offset - n;
 }
 
-static inline int sdp_token_crlf(struct sdp_context* sdp)
+static inline int sdp_token_crlf(struct sdp_t* sdp)
 {
 	if('\r' == sdp->raw[sdp->offset])
 		++sdp->offset;
@@ -253,7 +253,7 @@ static inline void trim_right(const char* s, size_t *len)
 	}
 }
 
-static inline struct sdp_timing* sdp_get_timing(struct sdp_context* sdp, size_t idx)
+static inline struct sdp_timing* sdp_get_timing(struct sdp_t* sdp, size_t idx)
 {
 	if(idx >= sdp->t.count)
 		return NULL;
@@ -261,7 +261,7 @@ static inline struct sdp_timing* sdp_get_timing(struct sdp_context* sdp, size_t 
 	return idx >= N_TIMING ? &sdp->t.ptr[idx - N_TIMING] : &sdp->t.times[idx];
 }
 
-static inline struct sdp_media* sdp_get_media(struct sdp_context* sdp, size_t idx)
+static inline struct sdp_media* sdp_get_media(struct sdp_t* sdp, size_t idx)
 {
 	if(idx >= sdp->m.count)
 		return NULL;
@@ -270,7 +270,7 @@ static inline struct sdp_media* sdp_get_media(struct sdp_context* sdp, size_t id
 }
 
 // RFC4566 5.1
-static int sdp_parse_version(struct sdp_context* sdp)
+static int sdp_parse_version(struct sdp_t* sdp)
 {
 	char c;
 	assert(sdp);
@@ -297,7 +297,7 @@ static int sdp_parse_version(struct sdp_context* sdp)
 // <sess-version> is a version number for this session description
 // <nettype> IN
 // <addrtype> IP4/IP6
-static int sdp_parse_origin(struct sdp_context* sdp)
+static int sdp_parse_origin(struct sdp_t* sdp)
 {
 	size_t n[6];
 	struct sdp_origin *o;
@@ -348,7 +348,7 @@ static int sdp_parse_origin(struct sdp_context* sdp)
 // RFC4566 5.3
 // s=<session name>
 // There MUST be one and only one "s=" field per session description. can be empty
-static int sdp_parse_session(struct sdp_context* sdp)
+static int sdp_parse_session(struct sdp_t* sdp)
 {
 	size_t n = 0;
 
@@ -367,7 +367,7 @@ static int sdp_parse_session(struct sdp_context* sdp)
 // There MUST be at most one session-level "i=" field per session description,
 // and at most one "i=" field per media.
 // default UTF-8
-static int sdp_parse_information(struct sdp_context* sdp)
+static int sdp_parse_information(struct sdp_t* sdp)
 {
 	size_t n = 0;
 	char **i;
@@ -395,7 +395,7 @@ static int sdp_parse_information(struct sdp_context* sdp)
 // u=<uri>
 // This field is OPTIONAL, but if it is present it MUST be
 // specified before the first media field. 
-static int sdp_parse_uri(struct sdp_context* sdp)
+static int sdp_parse_uri(struct sdp_t* sdp)
 {
 	size_t n = 0;
 
@@ -421,7 +421,7 @@ static int sdp_parse_uri(struct sdp_context* sdp)
 // p=+1 617 555-6011
 // e=j.doe@example.com (Jane Doe)
 // e=Jane Doe <j.doe@example.com>
-static int sdp_parse_email(struct sdp_context* sdp)
+static int sdp_parse_email(struct sdp_t* sdp)
 {
 	size_t n = 0;
 	struct sdp_email *e;
@@ -458,7 +458,7 @@ static int sdp_parse_email(struct sdp_context* sdp)
 	return 0;
 }
 
-static int sdp_parse_phone(struct sdp_context* sdp)
+static int sdp_parse_phone(struct sdp_t* sdp)
 {
 	size_t n = 0;
 	struct sdp_phone *p;
@@ -505,7 +505,7 @@ static int sdp_parse_phone(struct sdp_context* sdp)
 // c=IN IP6 FF15::101/3
 // The slash notation for multiple addresses described above MUST NOT be
 // used for IP unicast addresses
-static int sdp_parse_connection(struct sdp_context* sdp)
+static int sdp_parse_connection(struct sdp_t* sdp)
 {
 	size_t n[3];
 	struct sdp_media *m;
@@ -575,7 +575,7 @@ static int sdp_parse_connection(struct sdp_context* sdp)
 // bandwidth: kilobits per second by default
 // A prefix "X-" is defined for <bwtype> names.
 // b=X-YZ:128
-static int sdp_parse_bandwidth(struct sdp_context* sdp)
+static int sdp_parse_bandwidth(struct sdp_t* sdp)
 {
 	size_t n[2];
 	struct bandwidths *bs;
@@ -646,7 +646,7 @@ static int sdp_parse_bandwidth(struct sdp_context* sdp)
 //    since 1900 [13]. To convert these values to UNIX time, subtract decimal 2208988800.
 // 2. If the <stop-time> is set to zero, then the session is not bounded, though it will not become active 
 //    until after the <start-time>. If the <start-time> is also zero, the session is regarded as permanent.
-static int sdp_parse_timing(struct sdp_context* sdp)
+static int sdp_parse_timing(struct sdp_t* sdp)
 {
 	size_t n[2];
 	struct sdp_timing *t;
@@ -724,7 +724,7 @@ static int sdp_append_timing_repeat_offset(struct sdp_repeat *r, char* offset)
 // t=3034423619 3042462419
 // r=604800 3600 0 90000
 // r=7d 1h 0 25h
-static int sdp_parse_repeat(struct sdp_context* sdp)
+static int sdp_parse_repeat(struct sdp_t* sdp)
 {
 	int ret;
 	size_t n[3];
@@ -804,7 +804,7 @@ static int sdp_parse_repeat(struct sdp_context* sdp)
 // RFC4566 5.11
 // z=<adjustment time> <offset> <adjustment time> <offset> ....
 // z=2882844526 -1h 2898848070 0
-static int sdp_parse_timezone(struct sdp_context* sdp)
+static int sdp_parse_timezone(struct sdp_t* sdp)
 {
 	int n[2];
 	char *time, *offset;
@@ -867,7 +867,7 @@ static int sdp_parse_timezone(struct sdp_context* sdp)
 // k=prompt
 // A key field is permitted before the first media entry (in which case
 // it applies to all media in the session), or for each media entry as required.
-static int sdp_parse_encryption(struct sdp_context* sdp)
+static int sdp_parse_encryption(struct sdp_t* sdp)
 {
 	size_t n[2];
 	struct sdp_encryption *k;
@@ -925,7 +925,7 @@ static int sdp_parse_encryption(struct sdp_context* sdp)
 // a=framerate:<frame rate>
 // a=quality:<quality>
 // a=fmtp:<format> <format specific parameters>
-static int sdp_parse_attribute(struct sdp_context* sdp)
+static int sdp_parse_attribute(struct sdp_t* sdp)
 {
 	size_t n[2];
 	struct attributes *as;
@@ -1019,7 +1019,7 @@ static int sdp_append_media_format(struct sdp_media *m, char* fmt)
 // m=video 49170/2 RTP/AVP 31
 // c=IN IP4 224.2.1.1/127/2
 // m=video 49170/2 RTP/AVP 31
-static int sdp_parse_media(struct sdp_context* sdp)
+static int sdp_parse_media(struct sdp_t* sdp)
 {
 	int ret;
 	size_t n[4];
@@ -1097,22 +1097,20 @@ static int sdp_parse_media(struct sdp_context* sdp)
 
 static void* sdp_create(void)
 {
-	struct sdp_context *sdp;
-	sdp = (struct sdp_context*)malloc(sizeof(struct sdp_context));
+	struct sdp_t *sdp;
+	sdp = (struct sdp_t*)malloc(sizeof(struct sdp_t));
 	if( !sdp )
 		return NULL;
 
-	memset(sdp, 0, sizeof(struct sdp_context));
+	memset(sdp, 0, sizeof(struct sdp_t));
 	return sdp;
 }
 
-void sdp_destroy(void* p)
+void sdp_destroy(struct sdp_t* sdp)
 {
 	size_t i;
 	struct sdp_media *m;
 	struct sdp_timing *t;
-	struct sdp_context *sdp;
-	sdp = (struct sdp_context*)p;
 
 	if(sdp->e.count > N_EMAIL)
 		free(sdp->e.ptr);
@@ -1161,14 +1159,14 @@ void sdp_destroy(void* p)
 	free(sdp);
 }
 
-void* sdp_parse(const char* s)
+struct sdp_t* sdp_parse(const char* s)
 {
 	int r;
 	char c;
-	struct sdp_context *sdp;
+	struct sdp_t *sdp;
 
 	assert(s);
-	sdp = (struct sdp_context*)sdp_create();
+	sdp = (struct sdp_t*)sdp_create();
 	if(!sdp)
 		return NULL;
 
@@ -1267,136 +1265,109 @@ parse_failed:
 	return NULL;
 }
 
-int sdp_version_get(void* sdp)
+int sdp_version_get(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->v;
+	return sdp->v;
 }
 
-//void sdp_version_set(void* sdp, int version)
+//void sdp_version_set(struct sdp_t* sdp, int version)
 //{
-//	struct sdp_context *ctx;
-//	ctx = (struct sdp_context*)sdp;
-//	ctx->v = version;
+//	struct sdp_t *sdp;
+//	sdp = (struct sdp_t*)sdp;
+//	sdp->v = version;
 //}
 
-int sdp_origin_get(void* sdp, const char **username, const char** session, const char** version, const char** network, const char** addrtype, const char** address)
+int sdp_origin_get(struct sdp_t* sdp, const char **username, const char** session, const char** version, const char** network, const char** addrtype, const char** address)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(ctx->o.username && ctx->o.session && ctx->o.session_version 
-		&& ctx->o.c.network && ctx->o.c.addrtype && ctx->o.c.address)
+	if(sdp->o.username && sdp->o.session && sdp->o.session_version 
+		&& sdp->o.c.network && sdp->o.c.addrtype && sdp->o.c.address)
 	{
-		*username = ctx->o.username;
-		*session = ctx->o.session;
-		*version = ctx->o.session_version;
-		*network = ctx->o.c.network;
-		*addrtype = ctx->o.c.addrtype;
-		*address = ctx->o.c.address;
+		*username = sdp->o.username;
+		*session = sdp->o.session;
+		*version = sdp->o.session_version;
+		*network = sdp->o.c.network;
+		*addrtype = sdp->o.c.addrtype;
+		*address = sdp->o.c.address;
 		return 0;
 	}
 	return -1;
 }
 
-int sdp_origin_get_network(void* sdp)
+int sdp_origin_get_network(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(0 == strcasecmp("IN", ctx->o.c.network))
+	if(0 == strcasecmp("IN", sdp->o.c.network))
 		return SDP_C_NETWORK_IN;
 	return SDP_C_NETWORK_UNKNOWN;
 }
 
-int sdp_origin_get_addrtype(void* sdp)
+int sdp_origin_get_addrtype(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(0 == strcasecmp("IP4", ctx->o.c.addrtype))
+	if(0 == strcasecmp("IP4", sdp->o.c.addrtype))
 		return SDP_C_ADDRESS_IP4;
-	if(0 == strcasecmp("IP6", ctx->o.c.addrtype))
+	if(0 == strcasecmp("IP6", sdp->o.c.addrtype))
 		return SDP_C_ADDRESS_IP6;
 	return SDP_C_ADDRESS_UNKNOWN;
 }
 
-const char* sdp_session_get_name(void* sdp)
+const char* sdp_session_get_name(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->s;
+	return sdp->s;
 }
 
-const char* sdp_session_get_information(void* sdp)
+const char* sdp_session_get_information(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->i;
+	return sdp->i;
 }
 
-const char* sdp_uri_get(void* sdp)
+const char* sdp_uri_get(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->u;
+	return sdp->u;
 }
 
-int sdp_email_count(void* sdp)
+int sdp_email_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->e.count;
+	return sdp->e.count;
 }
 
-const char* sdp_email_get(void* sdp, int idx)
+const char* sdp_email_get(struct sdp_t* sdp, int idx)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if((size_t)idx >= ctx->e.count || idx < 0)
+	if((size_t)idx >= sdp->e.count || idx < 0)
 		return NULL;
 
-	return idx < N_EMAIL ? ctx->e.emails[idx].email : ctx->e.ptr[idx - N_EMAIL].email;
+	return idx < N_EMAIL ? sdp->e.emails[idx].email : sdp->e.ptr[idx - N_EMAIL].email;
 }
 
-int sdp_phone_count(void* sdp)
+int sdp_phone_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->p.count;
+	return sdp->p.count;
 }
 
-const char* sdp_phone_get(void* sdp, int idx)
+const char* sdp_phone_get(struct sdp_t* sdp, int idx)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if((size_t)idx >= ctx->p.count || idx < 0)
+	if((size_t)idx >= sdp->p.count || idx < 0)
 		return NULL;
 
-	return idx < N_PHONE ? ctx->p.phones[idx].phone : ctx->p.ptr[idx - N_PHONE].phone;
+	return idx < N_PHONE ? sdp->p.phones[idx].phone : sdp->p.ptr[idx - N_PHONE].phone;
 }
 
-int sdp_connection_get(void* sdp, const char** network, const char** addrtype, const char** address)
+int sdp_connection_get(struct sdp_t* sdp, const char** network, const char** addrtype, const char** address)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(ctx->c.network && ctx->c.addrtype && ctx->c.address)
+	if(sdp->c.network && sdp->c.addrtype && sdp->c.address)
 	{
-		*network = ctx->c.network;
-		*addrtype = ctx->c.addrtype;
-		*address = ctx->c.address;
+		*network = sdp->c.network;
+		*addrtype = sdp->c.addrtype;
+		*address = sdp->c.address;
 		return 0;
 	}
 	return -1;
 }
 
-int sdp_connection_get_address(void* sdp, char* ip, int bytes)
+int sdp_connection_get_address(struct sdp_t* sdp, char* ip, int bytes)
 {
 	const char* p;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-
-	if(ctx->c.address && bytes > 0)
+	if(sdp->c.address && bytes > 0)
 	{
-		p = ctx->c.address;
+		p = sdp->c.address;
 		while(*p && '/' != *p && bytes > 1)
 		{
 			*ip++ = *p;
@@ -1412,84 +1383,66 @@ int sdp_connection_get_address(void* sdp, char* ip, int bytes)
 	return -1;
 }
 
-int sdp_connection_get_network(void* sdp)
+int sdp_connection_get_network(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(0 == strcasecmp("IN", ctx->c.network))
+	if(0 == strcasecmp("IN", sdp->c.network))
 		return SDP_C_NETWORK_IN;
 	return SDP_C_NETWORK_UNKNOWN;
 }
 
-int sdp_connection_get_addrtype(void* sdp)
+int sdp_connection_get_addrtype(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(0 == strcasecmp("IP4", ctx->c.addrtype))
+	if(0 == strcasecmp("IP4", sdp->c.addrtype))
 		return SDP_C_ADDRESS_IP4;
-	if(0 == strcasecmp("IP6", ctx->c.addrtype))
+	if(0 == strcasecmp("IP6", sdp->c.addrtype))
 		return SDP_C_ADDRESS_IP6;
 	return SDP_C_ADDRESS_UNKNOWN;
 }
 
-int sdp_bandwidth_count(void* sdp)
+int sdp_bandwidth_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->b.count;
+	return sdp->b.count;
 }
 
-const char* sdp_bandwidth_get_type(void* sdp, int idx)
+const char* sdp_bandwidth_get_type(struct sdp_t* sdp, int idx)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(idx >= (int)ctx->b.count || idx < 0)
+	if(idx >= (int)sdp->b.count || idx < 0)
 		return NULL;
-	return idx < N_BANDWIDTH ? ctx->b.bandwidths[idx].bwtype : ctx->b.ptr[idx - N_BANDWIDTH].bwtype;
+	return idx < N_BANDWIDTH ? sdp->b.bandwidths[idx].bwtype : sdp->b.ptr[idx - N_BANDWIDTH].bwtype;
 }
 
-int sdp_bandwidth_get_value(void* sdp, int idx)
+int sdp_bandwidth_get_value(struct sdp_t* sdp, int idx)
 {
 	const char* b;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	if(idx >= (int)ctx->b.count || idx < 0)
+	if(idx >= (int)sdp->b.count || idx < 0)
 		return -1;
 
-	b = idx < N_BANDWIDTH ? ctx->b.bandwidths[idx].bandwidth : ctx->b.ptr[idx - N_BANDWIDTH].bandwidth;
+	b = idx < N_BANDWIDTH ? sdp->b.bandwidths[idx].bandwidth : sdp->b.ptr[idx - N_BANDWIDTH].bandwidth;
 	return atoi(b);
 }
 
-int sdp_timing_count(void* sdp)
+int sdp_timing_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->t.count;
+	return sdp->t.count;
 }
 
-int sdp_media_count(void* sdp)
+int sdp_media_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->m.count;
+	return sdp->m.count;
 }
 
-const char* sdp_media_type(void* sdp, int media)
+const char* sdp_media_type(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	return m ? m->media : NULL;
 }
 
-int sdp_media_port(void* sdp, int media, int *port, int* num)
+int sdp_media_port(struct sdp_t* sdp, int media, int *port, int* num)
 {
 	const char* p;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	if(m && port)
 	{
 		p = strchr(m->port, '/');
@@ -1500,12 +1453,10 @@ int sdp_media_port(void* sdp, int media, int *port, int* num)
 	return -1;
 }
 
-const char* sdp_media_proto(void* sdp, int media)
+const char* sdp_media_proto(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	return m ? m->proto : NULL;
 }
 
@@ -1537,13 +1488,11 @@ static inline int sdp_media_format_value(const char* format)
 	//	return atoi(format);
 }
 
-int sdp_media_formats(void* sdp, int media, int *formats, int count)
+int sdp_media_formats(struct sdp_t* sdp, int media, int *formats, int count)
 {
 	size_t i;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	if(!m)
 		return -1;
 
@@ -1558,18 +1507,17 @@ int sdp_media_formats(void* sdp, int media, int *formats, int count)
 	return (int)m->fmt.count;
 }
 
-int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes)
+int sdp_media_get_connection_address(struct sdp_t* sdp, int media, char* ip, int bytes)
 {
 	const char* p;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
 	struct sdp_connection *conn;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+
+	m = sdp_get_media(sdp, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
-		conn = &ctx->c;
+		conn = &sdp->c;
 
 	if(conn->address && bytes > 0)
 	{
@@ -1589,17 +1537,16 @@ int sdp_media_get_connection_address(void* sdp, int media, char* ip, int bytes)
 	return -1;
 }
 
-int sdp_media_get_connection_network(void* sdp, int media)
+int sdp_media_get_connection_network(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
 	struct sdp_connection *conn;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+
+	m = sdp_get_media(sdp, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
-		conn = &ctx->c;
+		conn = &sdp->c;
 
 	if(conn->network)
 	{
@@ -1609,17 +1556,16 @@ int sdp_media_get_connection_network(void* sdp, int media)
 	return SDP_C_NETWORK_UNKNOWN;
 }
 
-int sdp_media_get_connection_addrtype(void* sdp, int media)
+int sdp_media_get_connection_addrtype(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
 	struct sdp_connection *conn;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+
+	m = sdp_get_media(sdp, media);
 	if(m && m->c.count > 0)
 		conn = &m->c.connections[0];
 	else
-		conn = &ctx->c;
+		conn = &sdp->c;
 
 	if(conn->addrtype)
 	{
@@ -1631,14 +1577,13 @@ int sdp_media_get_connection_addrtype(void* sdp, int media)
 	return SDP_C_ADDRESS_UNKNOWN;
 }
 
-const char* sdp_media_attribute_find(void* sdp, int media, const char* name)
+const char* sdp_media_attribute_find(struct sdp_t* sdp, int media, const char* name)
 {
 	size_t i;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+
+	m = sdp_get_media(sdp, media);
 	for(i = 0; name && m && i < m->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
@@ -1653,14 +1598,13 @@ const char* sdp_media_attribute_find(void* sdp, int media, const char* name)
 	return NULL;
 }
 
-int sdp_media_attribute_list(void* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+int sdp_media_attribute_list(struct sdp_t* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
 {
 	size_t i;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+
+	m = sdp_get_media(sdp, media);
 	for(i = 0; m && i < m->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
@@ -1675,23 +1619,19 @@ int sdp_media_attribute_list(void* sdp, int media, const char* name, void (*onat
 	return 0;
 }
 
-int sdp_media_bandwidth_count(void* sdp, int media)
+int sdp_media_bandwidth_count(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	if(!m)
 		return 0;
 	return m->b.count;
 }
 
-const char* sdp_media_bandwidth_get_type(void* sdp, int media, int idx)
+const char* sdp_media_bandwidth_get_type(struct sdp_t* sdp, int media, int idx)
 {
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	if(!m)
 		return NULL;
 
@@ -1700,13 +1640,11 @@ const char* sdp_media_bandwidth_get_type(void* sdp, int media, int idx)
 	return idx < N_BANDWIDTH ? m->b.bandwidths[idx].bwtype : m->b.ptr[idx - N_BANDWIDTH].bwtype;
 }
 
-int sdp_media_bandwidth_get_value(void* sdp, int media, int idx)
+int sdp_media_bandwidth_get_value(struct sdp_t* sdp, int media, int idx)
 {
 	const char* b;
 	struct sdp_media *m;
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	m = sdp_get_media(ctx, media);
+	m = sdp_get_media(sdp, media);
 	if(!m)
 		return -1;
 
@@ -1717,43 +1655,37 @@ int sdp_media_bandwidth_get_value(void* sdp, int media, int idx)
 	return atoi(b);
 }
 
-int sdp_attribute_count(void* sdp)
+int sdp_attribute_count(struct sdp_t* sdp)
 {
-	struct sdp_context *ctx;
-	ctx = (struct sdp_context*)sdp;
-	return ctx->a.count;
+	return sdp->a.count;
 }
 
-int sdp_attribute_get(void* sdp, int idx, const char** name, const char** value)
+int sdp_attribute_get(struct sdp_t* sdp, int idx, const char** name, const char** value)
 {
-	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
-	ctx = (struct sdp_context*)sdp;
-	if(idx < 0 || (size_t)idx > ctx->a.count)
+	if(idx < 0 || (size_t)idx > sdp->a.count)
 		return -1; // not found
 
 	if(idx < N_ATTRIBUTE)
-		attr = ctx->a.attrs + idx;
+		attr = sdp->a.attrs + idx;
 	else
-		attr = ctx->a.ptr + idx - N_ATTRIBUTE;
+		attr = sdp->a.ptr + idx - N_ATTRIBUTE;
 
 	*name = attr->name;
 	*value = attr->value;
 	return 0;
 }
 
-const char* sdp_attribute_find(void* sdp, const char* name)
+const char* sdp_attribute_find(struct sdp_t* sdp, const char* name)
 {
 	size_t i;
-	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
-	ctx = (struct sdp_context*)sdp;
-	for(i = 0; name && i < ctx->a.count; i++)
+	for(i = 0; name && i < sdp->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
-			attr = ctx->a.attrs + i;
+			attr = sdp->a.attrs + i;
 		else
-			attr = ctx->a.ptr + i - N_ATTRIBUTE;
+			attr = sdp->a.ptr + i - N_ATTRIBUTE;
 
 		if(attr->name && 0==strcmp(attr->name, name))
 			return attr->value;
@@ -1762,18 +1694,16 @@ const char* sdp_attribute_find(void* sdp, const char* name)
 	return NULL;
 }
 
-int sdp_attribute_list(void* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+int sdp_attribute_list(struct sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
 {
 	size_t i;
-	struct sdp_context *ctx;
 	struct sdp_attribute *attr;
-	ctx = (struct sdp_context*)sdp;
-	for(i = 0; i < ctx->a.count; i++)
+	for(i = 0; i < sdp->a.count; i++)
 	{
 		if(i < N_ATTRIBUTE)
-			attr = ctx->a.attrs + i;
+			attr = sdp->a.attrs + i;
 		else
-			attr = ctx->a.ptr + i - N_ATTRIBUTE;
+			attr = sdp->a.ptr + i - N_ATTRIBUTE;
 
 		if( !name || (attr->name && 0==strcmp(attr->name, name)) )
 			onattr(param, attr->name, attr->value);
