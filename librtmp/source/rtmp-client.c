@@ -318,7 +318,7 @@ static int rtmp_client_send(void* param, const uint8_t* header, uint32_t headerB
 	return (r == (int)(payloadBytes + headerBytes)) ? 0 : -1;
 }
 
-void* rtmp_client_create(const char* appname, const char* playpath, const char* tcurl, void* param, const struct rtmp_client_handler_t* handler)
+struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpath, const char* tcurl, void* param, const struct rtmp_client_handler_t* handler)
 {
 	struct rtmp_client_t* ctx;
 
@@ -364,7 +364,7 @@ void* rtmp_client_create(const char* appname, const char* playpath, const char* 
 	return ctx;
 }
 
-void rtmp_client_destroy(void* client)
+void rtmp_client_destroy(struct rtmp_client_t* ctx)
 {
 	size_t i;
 	struct rtmp_client_t* ctx;
@@ -391,12 +391,10 @@ void rtmp_client_destroy(void* client)
 	free(ctx);
 }
 
-int rtmp_client_input(void* client, const void* data, size_t bytes)
+int rtmp_client_input(struct rtmp_client_t* ctx, const void* data, size_t bytes)
 {
 	int r;
 	const uint8_t* p;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
 
 	p = data;
 	while (bytes > 0)
@@ -461,11 +459,9 @@ int rtmp_client_input(void* client, const void* data, size_t bytes)
 	return 0; // need more data
 }
 
-int rtmp_client_start(void* client, int publish)
+int rtmp_client_start(struct rtmp_client_t* ctx, int publish)
 {
 	int n;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
 	ctx->publish = publish;
 
 	// handshake C0/C1
@@ -476,12 +472,9 @@ int rtmp_client_start(void* client, int publish)
 	return n == ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0) ? 0 : -1;
 }
 
-int rtmp_client_stop(void* client)
+int rtmp_client_stop(struct rtmp_client_t* ctx)
 {
 	int r = 0;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
-
 	if (0 == ctx->publish)
 	{
 		r = rtmp_client_send_fcunpublish(ctx);
@@ -490,12 +483,10 @@ int rtmp_client_stop(void* client)
 	return 0 == r ? rtmp_client_send_delete_stream(ctx) : r;
 }
 
-int rtmp_client_pause(void* client, int pause)
+int rtmp_client_pause(struct rtmp_client_t* ctx, int pause)
 {
 	int r, i;
 	uint32_t timestamp = 0;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
 
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{
@@ -509,28 +500,21 @@ int rtmp_client_pause(void* client, int pause)
 	return rtmp_client_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 }
 
-int rtmp_client_seek(void* client, double timestamp)
+int rtmp_client_seek(struct rtmp_client_t* ctx, double timestamp)
 {
 	int r;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
-
 	r = rtmp_netstream_seek(ctx->payload, sizeof(ctx->payload), 0, timestamp) - ctx->payload;
 	return rtmp_client_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 }
 
-int rtmp_client_getstate(void* client)
+int rtmp_client_getstate(struct rtmp_client_t* ctx)
 {
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
 	return ctx->state;
 }
 
-int rtmp_client_push_video(void* client, const void* video, size_t bytes, uint32_t timestamp)
+int rtmp_client_push_video(struct rtmp_client_t* ctx, const void* video, size_t bytes, uint32_t timestamp)
 {
-	struct rtmp_client_t* ctx;
 	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_client_t*)client;
 
 	assert(0 != ctx->stream_id);
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
@@ -543,11 +527,9 @@ int rtmp_client_push_video(void* client, const void* video, size_t bytes, uint32
 	return rtmp_chunk_write(&ctx->rtmp, &header, (const uint8_t*)video);
 }
 
-int rtmp_client_push_audio(void* client, const void* audio, size_t bytes, uint32_t timestamp)
+int rtmp_client_push_audio(struct rtmp_client_t* ctx, const void* audio, size_t bytes, uint32_t timestamp)
 {
-	struct rtmp_client_t* ctx;
 	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_client_t*)client;
 
 	assert(0 != ctx->stream_id);
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header

@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+typedef struct rtmp_server_t rtmp_server_t;
+
 struct rtmp_server_handler_t
 {
 	///network implementation
@@ -38,23 +40,23 @@ struct rtmp_server_handler_t
 	int(*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 };
 
-void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);
+rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);
 
-void rtmp_server_destroy(void* rtmp);
+void rtmp_server_destroy(rtmp_server_t* rtmp);
 
-int rtmp_server_getstate(void* rtmp);
+int rtmp_server_getstate(rtmp_server_t* rtmp);
 
 /// @param[in] rtmp rtmp_server_create instance
 /// @param[in] data rtmp chunk stream data
 /// @param[in] bytes data length
 /// @return 0-ok, other-error
-int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes);
+int rtmp_server_input(rtmp_server_t* rtmp, const uint8_t* data, size_t bytes);
 
 /// send audio/video data(VOD only)
 /// @param[in] rtmp rtmp_server_create instance
-int rtmp_server_send_audio(void* rtmp, const void* data, size_t bytes, uint32_t timestamp);
-int rtmp_server_send_video(void* rtmp, const void* data, size_t bytes, uint32_t timestamp);
-int rtmp_server_send_metadata(void* rtmp, const void* data, size_t bytes);
+int rtmp_server_send_audio(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
+int rtmp_server_send_video(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
+int rtmp_server_send_metadata(rtmp_server_t* rtmp, const void* data, size_t bytes);
 
 #ifdef __cplusplus
 }

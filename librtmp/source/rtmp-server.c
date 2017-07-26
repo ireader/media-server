@@ -341,7 +341,7 @@ static int rtmp_server_send(void* param, const uint8_t* header, uint32_t headerB
 	return (r == (int)(payloadBytes + headerBytes)) ? 0 : -1;
 }
 
-void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler)
+struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)calloc(1, sizeof(*ctx));
@@ -380,11 +380,9 @@ void* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handle
 	return ctx;
 }
 
-void rtmp_server_destroy(void* rtmp)
+void rtmp_server_destroy(struct rtmp_server_t* ctx)
 {
 	size_t i;
-	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)rtmp;
 	assert(sizeof(ctx->rtmp.in_packets) == sizeof(ctx->rtmp.out_packets));
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{
@@ -396,20 +394,16 @@ void rtmp_server_destroy(void* rtmp)
 	free(ctx);
 }
 
-int rtmp_server_getstate(void* p)
+int rtmp_server_getstate(struct rtmp_server_t* ctx)
 {
-	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)p;
 	return ctx->handshake_state;
 }
 
-int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes)
+int rtmp_server_input(struct rtmp_server_t* ctx, const uint8_t* data, size_t bytes)
 {
 	int r;
 	size_t n;
 	const uint8_t* p;
-	struct rtmp_server_t* ctx;
-	ctx = (struct rtmp_server_t*)rtmp;
 
 	p = data;
 	while (bytes > 0)
@@ -467,11 +461,9 @@ int rtmp_server_input(void* rtmp, const uint8_t* data, size_t bytes)
 	return 0;
 }
 
-int rtmp_server_send_audio(void* rtmp, const void* data, size_t bytes, uint32_t timestamp)
+int rtmp_server_send_audio(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
-	struct rtmp_server_t* ctx;
 	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_server_t*)rtmp;
 	if (0 == ctx->receiveAudio)
 		return 0; // client don't want receive audio
 
@@ -485,11 +477,9 @@ int rtmp_server_send_audio(void* rtmp, const void* data, size_t bytes, uint32_t 
 	return rtmp_chunk_write(&ctx->rtmp, &header, (const uint8_t*)data);
 }
 
-int rtmp_server_send_video(void* rtmp, const void* data, size_t bytes, uint32_t timestamp)
+int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
-	struct rtmp_server_t* ctx;
 	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_server_t*)rtmp;
 	if (0 == ctx->receiveVideo)
 		return 0; // client don't want receive video
 
@@ -503,11 +493,9 @@ int rtmp_server_send_video(void* rtmp, const void* data, size_t bytes, uint32_t 
 	return rtmp_chunk_write(&ctx->rtmp, &header, (const uint8_t*)data);
 }
 
-int rtmp_server_send_metadata(void* rtmp, const void* data, size_t bytes)
+int rtmp_server_send_metadata(struct rtmp_server_t* ctx, const void* data, size_t bytes)
 {
-	struct rtmp_server_t* ctx;
 	struct rtmp_chunk_header_t header;
-	ctx = (struct rtmp_server_t*)rtmp;
 
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_INVOKE;
