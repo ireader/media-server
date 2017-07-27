@@ -7,7 +7,7 @@
 #include <assert.h>
 
 static pthread_t t;
-static void* s_rtmp;
+static rtmp_server_t* s_rtmp;
 static const char* s_file;
 
 static int STDCALL rtmp_server_worker(void* param)

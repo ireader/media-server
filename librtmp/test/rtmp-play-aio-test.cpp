@@ -2,51 +2,60 @@
 #include "sys/system.h"
 #include "flv-writer.h"
 #include "flv-proto.h"
-#include "rtmp-client-transport.h"
+#include "aio-connect.h"
+#include "aio-rtmp-client.h"
 #include <stdio.h>
 #include <assert.h>
-#include "time64.h"
 
-static void* rtmp_client_play_alloc(void* /*flv*/, int avtype, size_t bytes)
+static struct
 {
-	static uint8_t audio[128 * 1024];
-	static uint8_t video[2 * 1024 * 1024];
-	assert(avtype || sizeof(audio) > bytes);
-	assert(sizeof(video) >= bytes);
-	return avtype ? video : audio;
+	char tcurl[4 * 1024];
+	const char* app;
+	const char* stream;
+	aio_rtmp_client_t* rtmp;
+} s_param;
+
+static int rtmp_client_play_onvideo(void* flv, const void* video, size_t bytes, uint32_t timestamp)
+{
+	return flv_writer_input(flv, FLV_TYPE_VIDEO, video, bytes, timestamp);
 }
 
-static void rtmp_client_play_onvideo(void* flv, const void* video, size_t bytes, uint32_t timestamp)
+static int rtmp_client_play_onaudio(void* flv, const void* audio, size_t bytes, uint32_t timestamp)
 {
-	flv_writer_input(flv, FLV_TYPE_VIDEO, video, bytes, timestamp);
+	return flv_writer_input(flv, FLV_TYPE_AUDIO, audio, bytes, timestamp);
 }
 
-static void rtmp_client_play_onaudio(void* flv, const void* audio, size_t bytes, uint32_t timestamp)
+static void rtmp_onconnect(void* flv, aio_socket_t aio, int code)
 {
-	flv_writer_input(flv, FLV_TYPE_AUDIO, audio, bytes, timestamp);
+	assert(0 == code);
+
+	struct aio_rtmp_client_handler_t handler;
+	memset(&handler, 0, sizeof(handler));
+	handler.onaudio = rtmp_client_play_onaudio;
+	handler.onvideo = rtmp_client_play_onvideo;
+	
+	s_param.rtmp = aio_rtmp_client_create(aio, s_param.app, s_param.stream, s_param.tcurl, &handler, flv);
+	assert(0 == aio_rtmp_client_start(s_param.rtmp, 1));
 }
 
 // rtmp_play_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
 void rtmp_play_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
-	static char packet[8 * 1024 * 1024];
-	snprintf(packet, sizeof(packet), "rtmp://%s/%s/%s", host, app, stream); // tcurl
+	s_param.app = app;
+	s_param.stream = stream;
+	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s/%s", host, app, stream); // tcurl
 	
-	struct rtmp_client_transport_handler_t handler;
-	handler.alloc = rtmp_client_play_alloc;
-	handler.onaudio = rtmp_client_play_onaudio; 
-	handler.onvideo = rtmp_client_play_onvideo;
-	
+	aio_socket_init(1);
 	void* flv = flv_writer_create(file);
-	void* transport = rtmp_client_transport_create(host, 1935, app, stream, packet, &handler, flv);
-	rtmp_client_transport_start(transport, 1);
-
-	time64_t clock = time64_now();
-	while (clock + 2 * 60 * 1000 > time64_now())
+	aio_connect(host, 1935, 3000, rtmp_onconnect, flv);
+		
+	uint64_t clock = system_clock();
+	while (clock + 2 * 60 * 1000 > system_clock())
 	{
-		system_sleep(1000);
+		aio_socket_process(1000);
 	}
 
-	rtmp_client_transport_destroy(transport);
+	aio_rtmp_client_destroy(s_param.rtmp);
 	flv_writer_destroy(flv);
+	aio_socket_clean();
 }

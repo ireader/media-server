@@ -28,30 +28,30 @@ struct rtmp_client_handler_t
 
 /// setup URL and connect server(timeout???)
 rtmp_client_t* rtmp_client_create(const char* appname, const char* playpath, const char* tcurl, void* param, const struct rtmp_client_handler_t* handler);
-void rtmp_client_destroy(rtmp_client_t* client);
+void rtmp_client_destroy(rtmp_client_t* rtmp);
 
 ///@return 0-ok, other-error
-int rtmp_client_input(rtmp_client_t* client, const void* data, size_t bytes);
+int rtmp_client_input(rtmp_client_t* rtmp, const void* data, size_t bytes);
 
 ///@param[in] publish, 0-Publish(push stream to server), 1-LIVE/VOD(pull from server), 2-LIVE only, 3-VOD only
 ///@return 0-ok, other-error
-int rtmp_client_start(rtmp_client_t* client, int publish);
-int rtmp_client_stop(rtmp_client_t* client);
-int rtmp_client_pause(rtmp_client_t* client, int pause); // VOD only
-int rtmp_client_seek(rtmp_client_t* client, double timestamp); // VOD only
+int rtmp_client_start(rtmp_client_t* rtmp, int publish);
+int rtmp_client_stop(rtmp_client_t* rtmp);
+int rtmp_client_pause(rtmp_client_t* rtmp, int pause); // VOD only
+int rtmp_client_seek(rtmp_client_t* rtmp, double timestamp); // VOD only
 
 ///@return RTMP_STATE_START(4): push video/audio
-int rtmp_client_getstate(rtmp_client_t* client);
+int rtmp_client_getstate(rtmp_client_t* rtmp);
 
 ///@param[in] data FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
 ///@param[in] bytes: video data length in bytes
 ///@return 0-ok, other-error
-int rtmp_client_push_video(rtmp_client_t* client, const void* video, size_t bytes, uint32_t timestamp);
+int rtmp_client_push_video(rtmp_client_t* rtmp, const void* video, size_t bytes, uint32_t timestamp);
 
 ///@param[in] data FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 ///@param[in] bytes: audio data length in bytes
 ///@return 0-ok, other-error
-int rtmp_client_push_audio(rtmp_client_t* client, const void* audio, size_t bytes, uint32_t timestamp);
+int rtmp_client_push_audio(rtmp_client_t* rtmp, const void* audio, size_t bytes, uint32_t timestamp);
 
 #if defined(__cplusplus)
 }

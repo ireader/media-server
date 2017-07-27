@@ -45,7 +45,7 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 	handler.onmeta = rtmp_client_onmeta;
 	handler.onaudio = rtmp_client_onaudio;
 	handler.onvideo = rtmp_client_onvideo;
-	void* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
+	rtmp_client_t* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
 	s_flv = flv_writer_create(flv);
 
 	int r = rtmp_client_start(rtmp, 1);

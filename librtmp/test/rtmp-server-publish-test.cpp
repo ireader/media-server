@@ -56,7 +56,7 @@ void rtmp_server_publish_test(const char* flv)
 	socket_t c = socket_accept(s, &ss, &n);
 
 	s_flv = flv_writer_create(flv);
-	void* rtmp = rtmp_server_create(&c, &handler);
+	rtmp_server_t* rtmp = rtmp_server_create(&c, &handler);
 
 	static unsigned char packet[8 * 1024 * 1024];
 	while ((r = socket_recv(c, packet, sizeof(packet), 0)) > 0)

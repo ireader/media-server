@@ -367,8 +367,6 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 void rtmp_client_destroy(struct rtmp_client_t* ctx)
 {
 	size_t i;
-	struct rtmp_client_t* ctx;
-	ctx = (struct rtmp_client_t*)client;
 	assert(sizeof(ctx->rtmp.in_packets) == sizeof(ctx->rtmp.out_packets));
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{

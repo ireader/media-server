@@ -16,7 +16,7 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 2000);
 }
 
-static void rtmp_client_push(const char* flv, void* rtmp)
+static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 {
 	int r, type;
 	uint32_t timestamp;
@@ -60,7 +60,7 @@ void rtmp_publish_test(const char* host, const char* app, const char* stream, co
 	socket_t socket = socket_connect_host(host, 1935, 2000);
 	socket_setnonblock(socket, 0);
 
-	void* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
+	rtmp_client_t* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
 	int r = rtmp_client_start(rtmp, 0);
 
 	while (4 != rtmp_client_getstate(rtmp) && (r = socket_recv(socket, packet, sizeof(packet), 0)) > 0)
