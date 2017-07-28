@@ -134,7 +134,7 @@ static void aio_rtmp_transport_onrecv(void* param, const void* data, size_t byte
 	}
 
 	if (0 != r)
-		aio_rtmp_client_stop(client->aio);
+		aio_rtmp_transport_stop(client->aio);
 }
 
 static void aio_rtmp_transport_ondestroy(void* param)
