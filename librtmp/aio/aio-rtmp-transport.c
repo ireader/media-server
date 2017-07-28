@@ -67,6 +67,9 @@ static void aio_rtmp_ondestroy(void* param)
 	struct aio_rtmp_transport_t* t;
 	t = (struct aio_rtmp_transport_t*)param;
 
+	if(t->handler.ondestroy)
+		t->handler.ondestroy(t->param);
+
 	list_for_each_safe(p, n, &t->root)
 	{
 		c = list_entry(p, struct aio_rtmp_chunk_t, node);
