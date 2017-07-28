@@ -37,7 +37,6 @@ struct aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* a
 		memcpy(&c->handler, handler, sizeof(c->handler));
 		c->param = param;
 		
-		memset(&h2, 0, sizeof(h2));
 		h2.send = rtmp_client_send;
 		h2.onmeta = rtmp_client_onmeta;
 		h2.onaudio = rtmp_client_onaudio;
@@ -134,8 +133,8 @@ static void aio_rtmp_transport_onrecv(void* param, const void* data, size_t byte
 			client->handler.onready(client->param);
 	}
 
-	if (0 != r && client->handler.onsend)
-		client->handler.onsend(client->param, r, 0);
+	if (0 != r)
+		aio_rtmp_client_stop(client->aio);
 }
 
 static void aio_rtmp_transport_ondestroy(void* param)

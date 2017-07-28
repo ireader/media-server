@@ -61,7 +61,7 @@ struct aio_rtmp_server_t* aio_rtmp_server_create(const char* ip, int port, struc
 		return NULL;
 	}
 
-	ctx = (struct aio_rtmp_server_t*)calloc(1, sizeof(*ctx));
+	ctx = (struct aio_rtmp_server_t*)malloc(sizeof(*ctx));
 	ctx->param = param;
 	memcpy(&ctx->handle, handler, sizeof(ctx->handle));
 	ctx->listen = aio_accept_start(socket, aio_rtmp_server_onaccept, ctx);
@@ -116,7 +116,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 	socket_setnonblock(socket, 1);
 	socket_setnondelay(socket, 1);
 
-	session = (struct aio_rtmp_session_t*)malloc(sizeof(*session) + 4 * 1024);
+	session = (struct aio_rtmp_session_t*)malloc(sizeof(*session));
 	if (session)
 	{
 		session->usr = NULL;
@@ -171,16 +171,15 @@ static void rtmp_session_onrecv(void* param, const void* data, size_t bytes)
 	session = (struct aio_rtmp_session_t*)param;
 
 	r = rtmp_server_input(session->rtmp, data, bytes);
-
-	if (0 != r && session->server->handle.onsend)
-		session->server->handle.onsend(session->usr, r, 0);
+	if (0 != r)
+		aio_rtmp_transport_stop(session->aio);
 }
 
 static void rtmp_session_onsend(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
-	if (session->server->handle.onsend)
+	if (session->server->handle.onsend && session->usr)
 		session->server->handle.onsend(session->usr, code, bytes);
 }
 
