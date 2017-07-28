@@ -34,12 +34,10 @@ void rtsp_server_describe(struct rtsp_session_t *session, const char* uri)
 	//	"\r\n", 
 	//	seq, date, sdplen);
 }
-void rtsp_server_reply_describe(void* rtsp, int code, const char* sdp)
+void rtsp_server_reply_describe(struct rtsp_session_t *session, int code, const char* sdp)
 {
 	int len;
 	rfc822_datetime_t datetime;
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)rtsp;
 
 	if (200 != code)
 	{

@@ -13,7 +13,7 @@ static void rtsp_server_onsend(struct rtsp_session_t* session, int code, size_t 
 	(void)bytes;
 }
 
-void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* param)
+struct rtsp_server_t* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* param)
 {
 	struct rtsp_server_t* server;
 
@@ -36,11 +36,8 @@ void* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handle
 	return server;
 }
 
-int rtsp_server_destroy(void* server)
+int rtsp_server_destroy(struct rtsp_server_t* ctx)
 {
-	struct rtsp_server_t* ctx;
-	ctx = (struct rtsp_server_t*)server;
-
 	if (ctx->tcp)
 	{
 		rtsp_server_unlisten(ctx->tcp);
@@ -57,17 +54,13 @@ int rtsp_server_destroy(void* server)
 	return 0;
 }
 
-const char* rtsp_server_get_header(void* rtsp, const char* name)
+const char* rtsp_server_get_header(struct rtsp_session_t *session, const char* name)
 {
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t*)rtsp;
 	return rtsp_get_header_by_name(session->parser, name);
 }
 
-int rtsp_server_get_client(void* rtsp, char ip[65], unsigned short *port)
+int rtsp_server_get_client(struct rtsp_session_t *session, char ip[65], unsigned short *port)
 {
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t*)rtsp;
 	if (NULL == ip || NULL == port)
 		return -1;
 	return socket_addr_to((struct sockaddr*)&session->addr, session->addrlen, ip, port);

@@ -30,7 +30,7 @@ void* rtsp_transport_udp_create(const char* ip, int port, void* param)
 	if (t)
 	{
 		t->ref = 1;
-		t->size = 2 * 1024; // 2k
+		t->size = 4 * 1024; // 2k
 		t->running = 1;
 		t->param = param;
 
@@ -60,7 +60,7 @@ void rtsp_transport_udp_destroy(void* transport)
 static struct rtsp_session_t* rtsp_udp_session_create(struct rtsp_udp_transport_t* t)
 {
 	struct rtsp_session_t* session;
-	session = (struct rtsp_session_t*)malloc(sizeof(*session) + t->size);
+	session = (struct rtsp_session_t*)malloc(sizeof(*session) + t->size /*udp recv buffer*/);
 	if (session)
 	{
 		atomic_increment32(&t->ref);

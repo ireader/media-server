@@ -212,7 +212,7 @@ int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* content)
 	int i, j, n, count;
 	int formats[N_MEDIA_FORMAT];
 	struct rtsp_media_t* media;
-	void* sdp;
+	sdp_t* sdp;
 
 	sdp = sdp_parse(content);
 	if (!sdp)

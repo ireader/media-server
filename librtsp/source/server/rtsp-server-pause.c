@@ -39,9 +39,7 @@ void rtsp_server_pause(struct rtsp_session_t* session, const char* uri)
 	ctx->handler.pause(ctx->param, session, uri, xsession.session, -1L == npt ? NULL : &npt);
 }
 
-void rtsp_server_reply_pause(void* rtsp, int code)
+void rtsp_server_reply_pause(struct rtsp_session_t *session, int code)
 {
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)rtsp;
 	rtsp_server_reply(session, code);
 }

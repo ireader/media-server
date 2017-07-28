@@ -20,12 +20,11 @@ static const char* sc_format =
 		"User-Agent: %s\r\n"
 		"\r\n";
 
-int rtsp_client_options(void* p, const char* commands)
+int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands)
 {
 	int r = 0;
 	char require[128];
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
+
 	rtsp->state = RTSP_OPTIONS;
 
 	if (commands && commands[0])

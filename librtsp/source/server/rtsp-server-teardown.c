@@ -18,9 +18,7 @@ void rtsp_server_teardown(struct rtsp_session_t *session, const char* uri)
 	ctx->handler.teardown(ctx->param, session, uri, xsession.session);
 }
 
-void rtsp_server_reply_teardown(void* rtsp, int code)
+void rtsp_server_reply_teardown(struct rtsp_session_t *session, int code)
 {
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)rtsp;
 	rtsp_server_reply(session, code);
 }

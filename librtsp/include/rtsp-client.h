@@ -1,13 +1,15 @@
 #ifndef _rtsp_client_h_
 #define _rtsp_client_h_
 
+#include "rtsp-header-transport.h"
 #include <stdint.h>
 #include <stddef.h>
-#include "rtsp-header-transport.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+typedef struct rtsp_client_t rtsp_client_t;
 
 // seq=232433;rtptime=972948234
 struct rtsp_rtp_info_t
@@ -34,20 +36,20 @@ struct rtsp_client_handler_t
 /// @param[in] param user-defined parameter
 /// @param[in] usr RTSP auth username(optional)
 /// @param[in] pwd RTSP auth password(optional)
-void* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param);
+rtsp_client_t* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param);
 
-void rtsp_client_destroy(void* rtsp);
+void rtsp_client_destroy(rtsp_client_t* rtsp);
 
 /// rtsp describe and setup
 /// @param[in] uri media resource uri
 /// @param[in] sdp resource info. it can be null, sdp will get by describe command
 /// @return 0-ok, -EACCESS-auth required, try again, other-error.
-int rtsp_client_open(void* rtsp, const char* uri, const char* sdp);
+int rtsp_client_open(rtsp_client_t* rtsp, const char* uri, const char* sdp);
 
 /// stop and close session(TearDown)
 /// call onclose on done
 /// @return 0-ok, other-error.
-int rtsp_client_close(void* rtsp);
+int rtsp_client_close(rtsp_client_t* rtsp);
 
 /// play session(PLAY)
 /// call onplay on done
@@ -55,21 +57,21 @@ int rtsp_client_close(void* rtsp);
 /// @param[in] speed PLAY scale+speed parameter [optional, NULL is acceptable]
 /// @return 0-ok, other-error.
 /// Notice: if npt and speed is null, resume play only
-int rtsp_client_play(void* rtsp, const uint64_t *npt, const float *speed);
+int rtsp_client_play(rtsp_client_t* rtsp, const uint64_t *npt, const float *speed);
 
 /// pause session(PAUSE)
 /// call onpause on done
 /// @return 0-ok, other-error.
 /// use rtsp_client_play(rtsp, NULL, NULL) to resume play
-int rtsp_client_pause(void* rtsp);
+int rtsp_client_pause(rtsp_client_t* rtsp);
 
-int rtsp_client_input(void* rtsp, void* parser);
+int rtsp_client_input(rtsp_client_t* rtsp, void* parser);
 
-int rtsp_client_media_count(void* rtsp);
-const struct rtsp_header_transport_t* rtsp_client_get_media_transport(void* rtsp, int media);
-const char* rtsp_client_get_media_encoding(void* rtsp, int media);
-int rtsp_client_get_media_payload(void* rtsp, int media);
-int rtsp_client_get_media_rate(void* rtsp, int media); // return 0 if unknown rate
+int rtsp_client_media_count(rtsp_client_t* rtsp);
+const struct rtsp_header_transport_t* rtsp_client_get_media_transport(rtsp_client_t* rtsp, int media);
+const char* rtsp_client_get_media_encoding(rtsp_client_t* rtsp, int media);
+int rtsp_client_get_media_payload(rtsp_client_t* rtsp, int media);
+int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media); // return 0 if unknown rate
 
 #if defined(__cplusplus)
 }

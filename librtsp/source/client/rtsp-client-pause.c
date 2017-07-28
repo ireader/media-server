@@ -47,12 +47,9 @@ static int rtsp_client_media_pause(struct rtsp_client_t *rtsp)
 	return r == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
 }
 
-int rtsp_client_pause(void* p)
+int rtsp_client_pause(struct rtsp_client_t *rtsp)
 {
 	int r;
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	assert(RTSP_SETUP == rtsp->state || RTSP_PLAY == rtsp->state || RTSP_PAUSE == rtsp->state);
 	rtsp->state = RTSP_PAUSE;
 	rtsp->progress = 0;

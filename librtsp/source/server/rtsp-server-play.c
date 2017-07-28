@@ -36,14 +36,12 @@ void rtsp_server_play(struct rtsp_session_t *session, const char* uri)
 	ctx->handler.play(ctx->param, session, uri, xsession.session, -1L == npt ? NULL : &npt, pscale ? &scale : NULL);
 }
 
-void rtsp_server_reply_play(void* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
+void rtsp_server_reply_play(struct rtsp_session_t *session, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
 {
 	int len;
 	char range[64] = { 0 };
 	char rtpinfo[256] = { 0 };
 	rfc822_datetime_t datetime;
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)rtsp;
 
 	if (200 != code)
 	{

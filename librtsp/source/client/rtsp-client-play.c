@@ -70,12 +70,9 @@ static int rtsp_client_media_play(struct rtsp_client_t *rtsp)
 	return r == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
 }
 
-int rtsp_client_play(void* p, const uint64_t *npt, const float *speed)
+int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *speed)
 {
 	int r;
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	assert(RTSP_SETUP == rtsp->state || RTSP_PLAY == rtsp->state || RTSP_PAUSE == rtsp->state);
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;

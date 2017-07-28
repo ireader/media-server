@@ -51,12 +51,10 @@ void rtsp_server_setup(struct rtsp_session_t* session, const char* uri)
 	}
 }
 
-void rtsp_server_reply_setup(void* rtsp, int code, const char* sessionid, const char* transport)
+void rtsp_server_reply_setup(struct rtsp_session_t *session, int code, const char* sessionid, const char* transport)
 {
 	int len;
 	rfc822_datetime_t datetime;
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)rtsp;
 
 	if (200 != code)
 	{

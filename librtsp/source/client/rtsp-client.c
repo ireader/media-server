@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
+struct rtsp_client_t* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
 {
 	struct rtsp_client_t *rtsp;
 	rtsp = (struct rtsp_client_t*)calloc(1, sizeof(*rtsp));
@@ -27,23 +27,17 @@ void* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_cli
 	return rtsp;
 }
 
-void rtsp_client_destroy(void* p)
+void rtsp_client_destroy(struct rtsp_client_t *rtsp)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	if(rtsp->media_ptr)
 		free(rtsp->media_ptr);
 
 	free(rtsp);
 }
 
-int rtsp_client_open(void* p, const char* uri, const char* sdp)
+int rtsp_client_open(struct rtsp_client_t *rtsp, const char* uri, const char* sdp)
 {
 	int r;
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	rtsp->auth_failed = 0;
 	strlcpy(rtsp->uri, uri, sizeof(rtsp->uri));
 	if(NULL == sdp || 0 == *sdp)
@@ -53,20 +47,14 @@ int rtsp_client_open(void* p, const char* uri, const char* sdp)
 	return r;
 }
 
-int rtsp_client_close(void* p)
+int rtsp_client_close(struct rtsp_client_t *rtsp)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	assert(RTSP_TEARDWON != rtsp->state);
 	return rtsp_client_teardown(rtsp);
 }
 
-int rtsp_client_input(void* p, void* parser)
+int rtsp_client_input(struct rtsp_client_t *rtsp, void* parser)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-
 	switch (rtsp->state)
 	{
 	case RTSP_ANNOUNCE:	return rtsp_client_announce_onreply(rtsp, parser);
@@ -82,45 +70,35 @@ int rtsp_client_input(void* p, void* parser)
 	}
 }
 
-int rtsp_client_media_count(void* p)
+int rtsp_client_media_count(struct rtsp_client_t *rtsp)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
 	return rtsp->media_count;
 }
 
-const struct rtsp_header_transport_t* rtsp_client_get_media_transport(void* p, int media)
+const struct rtsp_header_transport_t* rtsp_client_get_media_transport(struct rtsp_client_t *rtsp, int media)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
 	if(media < 0 || media >= rtsp->media_count)
 		return NULL;
 	return &rtsp_get_media(rtsp, media)->transport;
 }
 
-const char* rtsp_client_get_media_encoding(void* p, int media)
+const char* rtsp_client_get_media_encoding(struct rtsp_client_t *rtsp, int media)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
 	if (media < 0 || media >= rtsp->media_count)
 		return NULL;
 	return rtsp_get_media(rtsp, media)->avformats[0].encoding;
 }
 
-int rtsp_client_get_media_payload(void* p, int media)
+int rtsp_client_get_media_payload(struct rtsp_client_t *rtsp, int media)
 {
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
 	if (media < 0 || media >= rtsp->media_count)
 		return -1;
 	return rtsp_get_media(rtsp, media)->avformats[0].fmt;
 }
 
-int rtsp_client_get_media_rate(void* p, int media)
+int rtsp_client_get_media_rate(struct rtsp_client_t *rtsp, int media)
 {
 	int rate;
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
 	if (media < 0 || media >= rtsp->media_count)
 		return -1;
 	

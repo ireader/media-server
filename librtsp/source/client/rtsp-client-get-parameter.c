@@ -31,15 +31,13 @@ static const char* sc_format =
 		"\r\n"
 		"%s";
 
-int rtsp_client_get_parameter(void* p, int media, const char* parameter)
+int rtsp_client_get_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter)
 {
 	int r;
 	char session[128];
 	struct rtsp_media_t* m;
-	struct rtsp_client_t *rtsp;
-	rtsp = (struct rtsp_client_t*)p;
-	rtsp->state = RTSP_GET_PARAMETER;
 
+	rtsp->state = RTSP_GET_PARAMETER;
 	parameter = parameter ? parameter : "";
 
 	m = rtsp_get_media(rtsp, media);

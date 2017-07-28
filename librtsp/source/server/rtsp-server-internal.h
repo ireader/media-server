@@ -2,6 +2,8 @@
 #define _rtsp_server_internal_h_
 
 #include "sys/sock.h"
+#include "sys/locker.h"
+#include "sys/atomic.h"
 #include "rtsp-server.h"
 #include "rtsp-parser.h"
 
@@ -23,11 +25,14 @@ struct rtsp_server_t
 
 struct rtsp_session_t
 {
+	int32_t ref;
+	locker_t locker;
+
+	rtsp_parser_t* parser; // rtsp parser
 	struct rtsp_server_t *server;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
 	
-	void* parser; // rtsp parser
 	unsigned int cseq;
 	char reply[MAX_UDP_PACKAGE];
 

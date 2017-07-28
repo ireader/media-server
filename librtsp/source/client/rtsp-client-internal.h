@@ -93,14 +93,14 @@ static inline struct rtsp_media_t* rtsp_get_media(struct rtsp_client_t *ctx, int
 	return i < N_MEDIA ? (ctx->media + i) : (ctx->media_ptr + i - N_MEDIA);
 }
 
-int rtsp_client_describe(struct rtsp_client_t* ctx);
-int rtsp_client_announce(struct rtsp_client_t* ctx, const char* sdp);
-int rtsp_client_setup(struct rtsp_client_t* ctx, const char* sdp);
-int rtsp_client_sdp(struct rtsp_client_t* ctx, const char* sdp);
-int rtsp_client_teardown(struct rtsp_client_t* ctx);
-int rtsp_client_options(void* rtsp, const char* commands);
-int rtsp_client_get_parameter(void* rtsp, int media, const char* parameter);
-int rtsp_client_set_parameter(void* rtsp, int media, const char* parameter);
+int rtsp_client_describe(struct rtsp_client_t* rtsp);
+int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp);
+int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp);
+int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* sdp);
+int rtsp_client_teardown(struct rtsp_client_t* rtsp);
+int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands);
+int rtsp_client_get_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
+int rtsp_client_set_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
 
 int rtsp_client_announce_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser);
@@ -109,8 +109,8 @@ int rtsp_client_play_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_pause_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser);
-int rtsp_client_get_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
-int rtsp_client_set_parameter_onreply(struct rtsp_client_t* ctx, void* parser);
+int rtsp_client_get_parameter_onreply(struct rtsp_client_t* rtsp, void* parser);
+int rtsp_client_set_parameter_onreply(struct rtsp_client_t* rtsp, void* parser);
 
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed);
 int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, const char* uri, const char* content, int length, char* authenrization, int bytes);
