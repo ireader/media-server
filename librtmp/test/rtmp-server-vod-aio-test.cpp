@@ -73,7 +73,7 @@ static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, int /*code*/, siz
 {
 }
 
-static void aio_rtmp_server_onclose(aio_rtmp_userptr_t* /*ptr*/)
+static void aio_rtmp_server_onclose(aio_rtmp_userptr_t /*ptr*/)
 {
 	// close thread
 }
