@@ -256,6 +256,6 @@ int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h
 		}
 	}
 
-	printf("unknown command: %s\n", command);
+	//printf("unknown command: %s\n", command);
 	return 0; // not found
 }

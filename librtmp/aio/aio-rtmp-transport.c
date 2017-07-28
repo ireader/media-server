@@ -127,18 +127,17 @@ struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, stru
 	t = (struct aio_rtmp_transport_t*)calloc(1, sizeof(*t));
 	if (!t) return NULL;
 
-	t->aio = aio_tcp_transport_create2(socket, &h, t);
-	if (NULL == t->aio)
-	{
-		free(t);
-		return NULL;
-	}
-
 	LIST_INIT_HEAD(&t->root);
 	locker_create(&t->locker);
 	memcpy(&t->handler, handler, sizeof(t->handler));
 	t->param = param;
+	t->aio = aio_tcp_transport_create2(socket, &h, t);
 	return t;
+}
+
+int aio_rtmp_transport_start(struct aio_rtmp_transport_t* t)
+{
+	return aio_tcp_transport_start(t->aio);
 }
 
 int aio_rtmp_transport_stop(struct aio_rtmp_transport_t* t)

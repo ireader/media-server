@@ -34,7 +34,8 @@ struct aio_rtmp_handler_t
 /// @return NULL-failed, other-transport
 aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, struct aio_rtmp_handler_t* handler, void* param);
 
-/// stop rtmp recv/send
+/// start/stop rtmp recv/send (CALL one-time only)
+int aio_rtmp_transport_start(aio_rtmp_transport_t* transport);
 int aio_rtmp_transport_stop(aio_rtmp_transport_t* transport);
 
 int aio_rtmp_transport_send(aio_rtmp_transport_t* transport, const void* header, size_t len, const void* payload, size_t bytes);

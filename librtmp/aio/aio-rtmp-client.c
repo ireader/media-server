@@ -59,6 +59,8 @@ void aio_rtmp_client_destroy(struct aio_rtmp_client_t* client)
 
 int aio_rtmp_client_start(struct aio_rtmp_client_t* client, int publish)
 {
+	aio_rtmp_transport_start(client->aio);
+
 	client->publish = publish;
 	return rtmp_client_start(client->rtmp, publish);
 }

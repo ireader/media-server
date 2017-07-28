@@ -136,6 +136,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		aiohandler.onsend = rtmp_session_onsend;
 		aiohandler.ondestroy = rtmp_session_ondestroy;
 		session->aio = aio_rtmp_transport_create(aio_socket_create(socket, 1), &aiohandler, session);
+		aio_rtmp_transport_start(session->aio);
 	}
 }
 
