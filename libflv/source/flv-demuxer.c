@@ -104,7 +104,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		else
 		{
 			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7))
-				return ENOMEM;
+				return -ENOMEM;
 
 			// AAC ES stream with ADTS header
 			assert(bytes <= 0x1FFF);
@@ -146,24 +146,33 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 			mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->avc);
 			return flv->handler(flv->param, FLV_VIDEO_AVCC, data + 5, bytes - 5, timestamp, timestamp, 0);
 		}
-		else
+		else if(1 == packetType)
 		{
 			assert(flv->avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
 			if (flv->avc.nalu > 0 && bytes > 5) // 5 ==  bytes flv eof
 			{
 				// H.264
 				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
-					return ENOMEM;
+					return -ENOMEM;
 
 				assert(flv->avc.nalu <= 4);
 				n = mpeg4_mp4toannexb(&flv->avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
 				if (n <= 0 || n > flv->capacity)
 				{
 					assert(0);
-					return ENOMEM;
+					return -ENOMEM;
 				}
 				return flv->handler(flv->param, FLV_VIDEO_H264, flv->ptr, n, timestamp + compositionTime, timestamp, (FLV_VIDEO_KEY_FRAME == flv->video.frame) ? 1 : 0);
 			}
+			return -EINVAL;
+		}
+		else if (2 == packetType)
+		{
+			return 0; // AVC end of sequence (lower level NALU sequence ender is not required or supported)
+		}
+		else
+		{
+			assert(0);
 			return -EINVAL;
 		}
 	}
