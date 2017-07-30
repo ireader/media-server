@@ -153,8 +153,7 @@ static void rtmp_session_ondestroy(void* param)
 {
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
-	session->aio = NULL;
-
+	
 	// notify session stop
 	if(session->server->handle.onclose && session->usr)
 		session->server->handle.onclose(session->usr);
@@ -166,6 +165,7 @@ static void rtmp_session_ondestroy(void* param)
 	}
 
 	locker_destroy(&session->locker);
+	session->aio = NULL;
 
 #if defined(DEBUG) || defined(_DEBUG)
 	memset(session, 0xCC, sizeof(*session));
