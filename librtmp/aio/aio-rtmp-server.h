@@ -43,7 +43,9 @@ int aio_rtmp_server_destroy(aio_rtmp_server_t* server);
 /// @param[in] session oncreate session parameter
 int aio_rtmp_server_send_audio(aio_rtmp_session_t* session, const void* flv, size_t bytes, uint32_t timestamp);
 int aio_rtmp_server_send_video(aio_rtmp_session_t* session, const void* flv, size_t bytes, uint32_t timestamp);
+
 size_t aio_rtmp_server_get_unsend(aio_rtmp_session_t* session);
+int aio_rtmp_server_get_addr(aio_rtmp_session_t* session, char ip[65], unsigned short* port);
 
 #ifdef __cplusplus
 }

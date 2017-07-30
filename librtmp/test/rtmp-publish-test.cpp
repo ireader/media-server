@@ -50,7 +50,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 void rtmp_publish_test(const char* host, const char* app, const char* stream, const char* flv)
 {
 	static char packet[2 * 1024 * 1024];
-	snprintf(packet, sizeof(packet), "rtmp://%s/%s/%s", host, app, stream); // tcurl
+	snprintf(packet, sizeof(packet), "rtmp://%s/%s", host, app); // tcurl
 
 	struct rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));

@@ -135,7 +135,7 @@ static int rtmp_server_onvideo(void* param, const uint8_t* data, size_t bytes, u
 
 // 7.2.1.1. connect (p29)
 // _result/_error
-int rtmp_server_onconnect(void* param, int r, double transaction, const struct rtmp_connect_t* connect)
+static int rtmp_server_onconnect(void* param, int r, double transaction, const struct rtmp_connect_t* connect)
 {
 	int n;
 	struct rtmp_server_t* ctx;
@@ -161,7 +161,7 @@ int rtmp_server_onconnect(void* param, int r, double transaction, const struct r
 
 // 7.2.1.3. createStream (p36)
 // _result/_error
-int rtmp_server_oncreate_stream(void* param, int r, double transaction)
+static int rtmp_server_oncreate_stream(void* param, int r, double transaction)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -182,7 +182,7 @@ int rtmp_server_oncreate_stream(void* param, int r, double transaction)
 
 // 7.2.2.3. deleteStream (p43)
 // The server does not send any response
-int rtmp_server_ondelete_stream(void* param, int r, double transaction, double stream_id)
+static int rtmp_server_ondelete_stream(void* param, int r, double transaction, double stream_id)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -199,7 +199,7 @@ int rtmp_server_ondelete_stream(void* param, int r, double transaction, double s
 
 // 7.2.2.6. publish (p45)
 // The server responds with the onStatus command
-int rtmp_server_onpublish(void* param, int r, double transaction, const char* stream_name, const char* stream_type)
+static int rtmp_server_onpublish(void* param, int r, double transaction, const char* stream_name, const char* stream_type)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -226,7 +226,7 @@ int rtmp_server_onpublish(void* param, int r, double transaction, const char* st
 
 // 7.2.2.1. play (p38)
 // reply onStatus NetStream.Play.Start & NetStream.Play.Reset
-int rtmp_server_onplay(void* param, int r, double transaction, const char* stream_name, double start, double duration, uint8_t reset)
+static int rtmp_server_onplay(void* param, int r, double transaction, const char* stream_name, double start, double duration, uint8_t reset)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -262,7 +262,7 @@ int rtmp_server_onplay(void* param, int r, double transaction, const char* strea
 // 7.2.2.8. pause (p47)
 // sucessful: NetStream.Pause.Notify/NetStream.Unpause.Notify
 // failure: _error message
-int rtmp_server_onpause(void* param, int r, double transaction, uint8_t pause, double milliSeconds)
+static int rtmp_server_onpause(void* param, int r, double transaction, uint8_t pause, double milliSeconds)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -279,7 +279,7 @@ int rtmp_server_onpause(void* param, int r, double transaction, uint8_t pause, d
 // 7.2.2.7. seek (p46)
 // successful : NetStream.Seek.Notify
 // failure:  _error message
-int rtmp_server_onseek(void* param, int r, double transaction, double milliSeconds)
+static int rtmp_server_onseek(void* param, int r, double transaction, double milliSeconds)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -296,7 +296,7 @@ int rtmp_server_onseek(void* param, int r, double transaction, double milliSecon
 // 7.2.2.4. receiveAudio (p44)
 // false: The server does not send any response,
 // true: server responds with status messages NetStream.Seek.Notify and NetStream.Play.Start
-int rtmp_server_onreceive_audio(void* param, int r, double transaction, uint8_t audio)
+static int rtmp_server_onreceive_audio(void* param, int r, double transaction, uint8_t audio)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
@@ -314,7 +314,7 @@ int rtmp_server_onreceive_audio(void* param, int r, double transaction, uint8_t 
 	return r;
 }
 
-int rtmp_server_onreceive_video(void* param, int r, double transaction, uint8_t video)
+static int rtmp_server_onreceive_video(void* param, int r, double transaction, uint8_t video)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;

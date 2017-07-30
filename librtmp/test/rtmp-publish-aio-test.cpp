@@ -93,7 +93,7 @@ void rtmp_publish_aio_test(const char* host, const char* app, const char* stream
 	s_param.file = file;
 	s_param.app = app;
 	s_param.stream = stream;
-	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s/%s", host, app, stream); // tcurl
+	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s", host, app); // tcurl
 
 	aio_socket_init(1);
 	aio_connect(host, 1935, 3000, rtmp_onconnect, NULL);

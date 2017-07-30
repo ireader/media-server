@@ -38,12 +38,11 @@ static void rtmp_onconnect(void* flv, aio_socket_t aio, int code)
 	assert(0 == aio_rtmp_client_start(s_param.rtmp, 1));
 }
 
-// rtmp_play_test("rtmp://strtmpplay.cdn.suicam.com/carousel/51632");
 void rtmp_play_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
 	s_param.app = app;
 	s_param.stream = stream;
-	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s/%s", host, app, stream); // tcurl
+	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s", host, app); // tcurl
 	
 	aio_socket_init(1);
 	void* flv = flv_writer_create(file);

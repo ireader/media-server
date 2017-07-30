@@ -20,7 +20,9 @@ struct aio_rtmp_server_t
 struct aio_rtmp_session_t
 {
 	locker_t locker;
-
+	socklen_t salen;
+	struct sockaddr_storage sa;
+	
 	aio_rtmp_transport_t* aio; // aio rtmp transport
 	aio_rtmp_userptr_t usr; // user-defined parameter(return by oncreate)
 	rtmp_server_t* rtmp; // create by rtmp_server_create
@@ -99,9 +101,14 @@ int aio_rtmp_server_send_video(struct aio_rtmp_session_t* session, const void* d
 	return rtmp_server_send_video(session->rtmp, data, bytes, timestamp);
 }
 
-size_t aio_rtmp_server_get_unsend(aio_rtmp_session_t* session)
+size_t aio_rtmp_server_get_unsend(struct aio_rtmp_session_t* session)
 {
 	return aio_rtmp_transport_get_unsend(session->aio);
+}
+
+int aio_rtmp_server_get_addr(struct aio_rtmp_session_t* session, char ip[65], unsigned short* port)
+{
+	return socket_addr_to((struct sockaddr*)&session->sa, session->salen, ip, port);
 }
 
 static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, const struct sockaddr* sa, socklen_t salen)
@@ -122,6 +129,8 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		session->usr = NULL;
 		session->server = server;
 		locker_create(&session->locker);
+		session->salen = salen < sizeof(session->sa) ? salen : sizeof(session->sa);
+		memcpy(&session->sa, sa, session->salen);
 
 		handler.send = rtmp_handler_send;
 		handler.onplay = rtmp_handler_onplay;
