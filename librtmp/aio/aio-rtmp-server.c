@@ -118,7 +118,12 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 	struct aio_rtmp_handler_t aiohandler;
 	struct rtmp_server_handler_t handler;
 	server = (struct aio_rtmp_server_t*)param;
-	if (0 != code) return; (void)sa; (void)salen;
+
+	if (0 != code)
+	{
+		printf("aio_rtmp_server_onaccept code: %d\n", code);
+		return;
+	}
 
 	socket_setnonblock(socket, 1);
 	socket_setnondelay(socket, 1);
