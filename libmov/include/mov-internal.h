@@ -97,15 +97,14 @@ struct mov_stbl_t
 
 struct mov_sample_t
 {
+	int flags; // MOV_AV_FLAG_KEYFREAME
 	int64_t pts;
 	int64_t dts;
 
-	uint64_t offset;
+	uint64_t offset; // is a 32 or 64 bit integer that gives the offset of the start of a chunk into its containing media file.
 	size_t bytes;
 
 	struct mov_stsd_t* stsd;
-
-	int flags;
 
 	// only for write
 	union
@@ -114,7 +113,7 @@ struct mov_sample_t
 		struct
 		{
 			uint32_t count;
-			int32_t duration;
+			uint32_t duration;
 		} stts;
 	} u;
 };
@@ -139,7 +138,12 @@ struct mov_track_t
 
 	struct mov_sample_t* samples;
 	size_t sample_count;
-	size_t sample_offset;
+	size_t sample_offset; // sample_capacity
+
+	int64_t start_dts;
+	int64_t start_cts;
+	int64_t end_pts;
+	uint64_t offset; // write offset
 };
 
 struct mov_t
@@ -175,7 +179,8 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
-int mov_read_avcC(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -183,17 +188,22 @@ size_t mov_write_mdhd(const struct mov_t* mov);
 size_t mov_write_tkhd(const struct mov_t* mov);
 size_t mov_write_hdlr(const struct mov_t* mov);
 size_t mov_write_minf(const struct mov_t* mov);
+size_t mov_write_dinf(const struct mov_t* mov);
 size_t mov_write_elst(const struct mov_t* mov);
 size_t mov_write_stsd(const struct mov_t* mov);
 size_t mov_write_stts(const struct mov_t* mov, uint32_t count);
 size_t mov_write_ctts(const struct mov_t* mov, uint32_t count);
-size_t mov_write_stsc(const struct mov_t* mov, uint32_t count);
 size_t mov_write_stco(const struct mov_t* mov, uint32_t count);
+size_t mov_write_stss(const struct mov_t* mov);
+size_t mov_write_stsc(const struct mov_t* mov);
 size_t mov_write_stsz(const struct mov_t* mov);
 size_t mov_write_stbl(const struct mov_t* mov);
-size_t mov_write_avcC(const struct mov_t* mov);
 size_t mov_write_esds(const struct mov_t* mov);
+size_t mov_write_avcc(const struct mov_t* mov);
+size_t mov_write_hvcc(const struct mov_t* mov);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
+
+size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
 
 #endif /* !_mov_internal_h_ */

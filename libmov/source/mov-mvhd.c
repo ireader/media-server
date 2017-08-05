@@ -78,6 +78,8 @@ int mov_read_mvhd(struct mov_t* mov, const struct mov_box_t* box)
 	file_reader_rb32(mov->fp); /* current time */
 #endif
 	mvhd->next_track_ID = file_reader_rb32(mov->fp);
+
+	(void)box;
 	return 0;
 }
 

@@ -78,7 +78,7 @@ void mov_2_flv_test(const char* mp4)
 {
 	snprintf((char*)s_packet, sizeof(s_packet), "%s.flv", mp4);
 
-	void* mov = mov_reader_create(mp4);
+	mov_reader_t* mov = mov_reader_create(mp4);
 	void* flv = flv_writer_create((char*)s_packet);
 
 	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, flv);

@@ -35,6 +35,7 @@
     <ClCompile Include="source\mov-elst.c" />
     <ClCompile Include="source\mov-ftyp.c" />
     <ClCompile Include="source\mov-hdlr.c" />
+    <ClCompile Include="source\mov-hvcc.c" />
     <ClCompile Include="source\mov-minf.c" />
     <ClCompile Include="source\mov-stco.c" />
     <ClCompile Include="source\mov-stsc.c" />
@@ -107,7 +108,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

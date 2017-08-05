@@ -1,4 +1,5 @@
 #include "file-reader.h"
+#include "file-writer.h"
 #include "mov-internal.h"
 #include <errno.h>
 #include <stdlib.h>
@@ -41,10 +42,68 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 		track->elst[i].media_rate_fraction = (int16_t)file_reader_rb16(mov->fp);
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
 size_t mov_write_elst(const struct mov_t* mov)
 {
-	return 0;
+	size_t size;
+	int64_t time;
+	int64_t delay;
+	uint8_t version;
+	uint64_t offset;
+	const struct mov_track_t* track = mov->track;
+
+	version = 0;
+	if (track->tkhd.duration > UINT32_MAX)
+		version = 1;
+
+	time = track->samples[0].pts - track->samples[0].dts;
+	delay = track->samples[0].pts * mov->mvhd.timescale / track->mdhd.timescale;
+	if (delay > UINT32_MAX)
+		version = 1;
+
+	time = time < 0 ? 0 : time;
+	size = 12/* full box */ + 4/* entry count */ + (delay > 0 ? 2 : 1) * (version ? 20 : 12);
+
+	offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, size); /* size */
+	file_writer_write(mov->fp, "elst", 4);
+	file_writer_w8(mov->fp, version); /* version */
+	file_writer_wb24(mov->fp, 0); /* flags */
+	file_writer_wb32(mov->fp, delay > 0 ? 2 : 1); /* entry count */
+
+	if (delay > 0)
+	{
+		if (1 == version)
+		{
+			file_writer_wb64(mov->fp, (uint64_t)delay); /* segment_duration */
+			file_writer_wb64(mov->fp, (uint64_t)-1); /* media_time */
+		}
+		else
+		{
+			file_writer_wb32(mov->fp, (uint32_t)delay);
+			file_writer_wb32(mov->fp, (uint32_t)-1);
+		}
+
+		file_writer_wb16(mov->fp, 1); /* media_rate_integer */
+		file_writer_wb16(mov->fp, 0); /* media_rate_fraction */
+	}
+
+	/* duration */
+	if (version == 1) 
+	{
+		file_writer_wb64(mov->fp, track->tkhd.duration);
+		file_writer_wb64(mov->fp, time);
+	}
+	else 
+	{
+		file_writer_wb32(mov->fp, (uint32_t)track->tkhd.duration);
+		file_writer_wb32(mov->fp, (uint32_t)time);
+	}
+	file_writer_wb16(mov->fp, 1); /* media_rate_integer */
+	file_writer_wb16(mov->fp, 0); /* media_rate_fraction */
+
+	return size;
 }

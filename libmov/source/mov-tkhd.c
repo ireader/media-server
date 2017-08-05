@@ -70,6 +70,8 @@ int mov_read_tkhd(struct mov_t* mov, const struct mov_box_t* box)
 		tkhd->matrix[i] = file_reader_rb32(mov->fp);
 	tkhd->width = file_reader_rb32(mov->fp);
 	tkhd->height = file_reader_rb32(mov->fp);
+
+	(void)box;
 	return 0;
 }
 
@@ -110,17 +112,8 @@ size_t mov_write_tkhd(const struct mov_t* mov)
 	file_writer_wb32(mov->fp, 0); /* w */
 	file_writer_wb32(mov->fp, 0);
 	file_writer_wb32(mov->fp, 0x40000000);
-	
-	//if(AVSTREAM_VIDEO == track->stream_type)
-	{
-		file_writer_wb32(mov->fp, tkhd->width /*track->av.video.width * 0x10000U*/); /* width */
-		file_writer_wb32(mov->fp, tkhd->height/*track->av.video.height * 0x10000U*/); /* height */
-	}
-	//else
-	//{
-	//	file_writer_wb32(mov->fp, 0);
-	//	file_writer_wb32(mov->fp, 0);
-	//}
 
+	file_writer_wb32(mov->fp, tkhd->width /*track->av.video.width * 0x10000U*/); /* width */
+	file_writer_wb32(mov->fp, tkhd->height/*track->av.video.height * 0x10000U*/); /* height */
 	return 92;
 }

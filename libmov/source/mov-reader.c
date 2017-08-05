@@ -47,7 +47,7 @@ static struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_
 	return NULL;
 }
 
-static int mov_track_build(struct mov_t* mov, struct mov_track_t* track)
+static int mov_track_build(struct mov_track_t* track)
 {
 	size_t i, j, k;
 	uint64_t n = 0, chunk_offset;
@@ -132,7 +132,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 	r = mov_reader_box(mov, box);
 	if (0 == r)
 	{
-		mov_track_build(mov, mov->track);
+		mov_track_build(mov->track);
 	}
 
 	return r;
@@ -152,6 +152,8 @@ static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 		/*uint32_t vern = */file_reader_rb32(mov->fp); /* version + flags */
 		file_reader_skip(mov->fp, size-12);
 	}
+
+	(void)box;
 	return 0;
 }
 
@@ -201,7 +203,8 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
 	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
-	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcC }, // ISO/IEC 14496-15:2010(E) avcC
+	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
+	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2010(E) hvcC
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ 0, 0, NULL } // last
 };
@@ -286,14 +289,13 @@ struct mov_reader_t
 	int64_t dts;
 };
 
-void* mov_reader_create(const char* file)
+struct mov_reader_t* mov_reader_create(const char* file)
 {
 	struct mov_reader_t* reader;
-	reader = (struct mov_reader_t*)malloc(sizeof(*reader));
+	reader = (struct mov_reader_t*)calloc(1, sizeof(*reader));
 	if (NULL == reader)
 		return NULL;
 
-	memset(reader, 0, sizeof(*reader));
 	// ISO/IEC 14496-12:2012(E) 4.3.1 Definition (p17)
 	// Files with no file-type box should be read as if they contained an FTYP box 
 	// with Major_brand='mp41', minor_version=0, and the single compatible brand 'mp41'.
@@ -315,11 +317,9 @@ void* mov_reader_create(const char* file)
 
 #define FREE(p) do { if(p) free(p); } while(0)
 
-void mov_reader_destroy(void* p)
+void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	size_t i;
-	struct mov_reader_t* reader;
-	reader = (struct mov_reader_t*)p;
 	file_reader_destroy(&reader->mov.fp);
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
@@ -359,12 +359,10 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 	return track;
 }
 
-int mov_reader_read(void* p, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
+int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
 {
 	struct mov_track_t* track;
-	struct mov_reader_t* reader;
 	struct mov_sample_t* sample;
-	reader = (struct mov_reader_t*)p;
 
 	track = mov_reader_next(reader);
 	if (NULL == track || 0 == track->mdhd.timescale)
@@ -392,13 +390,11 @@ int mov_reader_read(void* p, void* buffer, size_t bytes, mov_reader_onread onrea
 	return 1;
 }
 
-int mov_reader_getinfo(void* p, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param)
+int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param)
 {
 	size_t i, j;
 	struct mov_stsd_t* stsd;
 	struct mov_track_t* track;
-	struct mov_reader_t* reader;
-	reader = (struct mov_reader_t*)p;
 
 	for (i = 0; i < reader->mov.track_count; i++)
 	{

@@ -56,7 +56,7 @@ void mov_reader_test(const char* mp4)
 	s_vfp = fopen("v.h264", "wb");
 	s_afp = fopen("a.aac", "wb");
 
-	void* mov = mov_reader_create(mp4);
+	mov_reader_t* mov = mov_reader_create(mp4);
 
 	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, NULL);
 

@@ -41,34 +41,49 @@ int mov_read_stsc(struct mov_t* mov, const struct mov_box_t* box)
 		stbl->stsc[i].sample_description_index = file_reader_rb32(mov->fp);
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
-size_t mov_write_stsc(const struct mov_t* mov, uint32_t count)
+size_t mov_write_stsc(const struct mov_t* mov)
 {
-	size_t size, i, j = 0;
+	uint64_t offset;
+	uint64_t offset2;
+	size_t size, i, j;
+	const struct mov_sample_t* chunk;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
-	size = 12/* full box */ + 4/* entry count */ + count * 12/* entry */;
+	size = 12/* full box */ + 4/* entry count */;
 
-	file_writer_wb32(mov->fp, size); /* size */
+	offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
 	file_writer_write(mov->fp, "stsc", 4);
 	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, count); /* entry count */
+	file_writer_wb32(mov->fp, 0); /* entry count */
 
-	for (i = 0; i < track->sample_count; i++)
+	chunk = NULL;
+	for (i = 0, j = 0; i < track->sample_count; i++)
 	{
 		sample = &track->samples[i];
-		if (0 == sample->u.stsc.first_chunk)
+		if (0 == sample->u.stsc.first_chunk || 
+			(chunk && chunk->u.stsc.samples_per_chunk == sample->u.stsc.samples_per_chunk 
+				&& chunk->u.stsc.sample_description_index == sample->u.stsc.sample_description_index))
 			continue;
 
 		++j;
+		chunk = sample;
 		file_writer_wb32(mov->fp, sample->u.stsc.first_chunk);
 		file_writer_wb32(mov->fp, sample->u.stsc.samples_per_chunk);
 		file_writer_wb32(mov->fp, sample->u.stsc.sample_description_index);
 	}
 
-	assert(j == count);
+	size += j * 12/* entry */;
+	offset2 = file_writer_tell(mov->fp);
+	file_writer_seek(mov->fp, offset);
+	file_writer_wb32(mov->fp, size); /* size */
+	file_writer_seek(mov->fp, offset + 12);
+	file_writer_wb32(mov->fp, j); /* entry count */
+	file_writer_seek(mov->fp, offset2);
 	return size;
 }

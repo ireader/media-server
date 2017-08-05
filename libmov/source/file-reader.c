@@ -5,6 +5,14 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#define fseek64 _fseeki64
+#define ftell64 _ftelli64
+#else
+#define fseek64 fseek
+#define ftell64 ftell
+#endif
+
 #define FILE_CAPACITY (2*1024)
 
 struct file_t
@@ -57,30 +65,19 @@ int file_reader_error(void* file)
 	return f->error;
 }
 
-int file_reader_seek(void* file, uint64_t bytes)
+int file_reader_seek(void* file, uint64_t offset)
 {
-	int origin = SEEK_SET;
 	struct file_t* f = (struct file_t*)file;
-
-	for (origin = SEEK_SET; bytes > INT32_MAX && 0 == f->error; bytes -= INT32_MAX)
-	{
-		f->error = fseek(f->fp, INT32_MAX, origin);
-		origin = SEEK_CUR;
-	}
-
-	if (bytes > 0)
-	{
-		f->error = fseek(f->fp, bytes, origin);
-	}
+	f->error = fseek64(f->fp, offset, SEEK_SET);
 	f->bytes = f->offset = 0; // clear buffer offset/size
 	return f->error;
 }
 
 uint64_t file_reader_tell(void* file)
 {
-	long n;
+	int64_t n;
 	struct file_t* f = (struct file_t*)file;
-	n = ftell(f->fp);
+	n = ftell64(f->fp);
 	if (f->offset < f->bytes)
 		n -= f->bytes - f->offset;
 	return n;
@@ -92,12 +89,7 @@ int file_reader_skip(void* file, uint64_t bytes)
 	f->offset += bytes;
 	if (f->offset > f->bytes)
 	{
-		while (f->offset - f->bytes > INT32_MAX)
-		{
-			f->error = fseek(f->fp, INT32_MAX, SEEK_CUR);
-			f->offset -= INT32_MAX;
-		}
-		f->error = fseek(f->fp, f->offset - f->bytes, SEEK_CUR);
+		f->error = fseek64(f->fp, f->offset - f->bytes, SEEK_CUR);
 		f->bytes = f->offset = 0; // clear buffer offset/size
 	}
 	return f->error;
@@ -111,7 +103,7 @@ size_t file_reader_read(void* file, void* buffer, size_t bytes)
 	// copy from memory
 	if(bytes > r && f->offset < f->bytes) 
 	{
-		r = bytes <= (f->bytes - f->offset) ? bytes : (f->bytes - f->offset);
+		r = bytes <= (f->bytes - f->offset) ? bytes : (size_t)(f->bytes - f->offset);
 		memcpy(buffer, f->ptr + f->offset, r);
 		f->offset += r;
 	}
@@ -134,8 +126,8 @@ size_t file_reader_read(void* file, void* buffer, size_t bytes)
 			}
 
 			f->offset = f->bytes >= n ? n : f->bytes;
-			memcpy((uint8_t*)buffer + r, f->ptr, f->offset);
-			r += f->offset;
+			memcpy((uint8_t*)buffer + r, f->ptr, (size_t)f->offset);
+			r += (size_t)f->offset;
 		}
 	}
 

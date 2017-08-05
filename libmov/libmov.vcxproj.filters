@@ -98,5 +98,8 @@
     <ClCompile Include="source\mov-avc1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mov-hvcc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

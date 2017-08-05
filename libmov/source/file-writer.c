@@ -1,10 +1,19 @@
 #include "file-writer.h"
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
 #define FILE_CACHE (2*1024)
+
+#if defined(_WIN32) || defined(_WIN64)
+#define fseek64 _fseeki64
+#define ftell64 _ftelli64
+#else
+#define fseek64 fseek
+#define ftell64 ftell
+#endif
 
 struct wfile_t
 {
@@ -25,7 +34,7 @@ void* file_writer_create(const char* file)
 	memset(f, 0, sizeof(*f));
 	f->ptr = (uint8_t*)(f + 1);
 	f->bytes = 0;
-	f->fp = fopen(file, "wb");
+	f->fp = fopen(file, "wb+");
 	if (NULL == f->fp)
 	{
 		file_writer_destroy(&f);
@@ -64,6 +73,46 @@ void file_writer_destroy(void** file)
 	*file = NULL;
 }
 
+int file_writer_move(void* file, uint64_t to, uint64_t from, size_t bytes)
+{
+	uint8_t* ptr;
+	uint64_t i, j;
+	void* buffer[2];
+	struct wfile_t* f = (struct wfile_t*)file;
+	file_writer_flush(f);
+
+	assert(bytes < INT32_MAX);
+	ptr = malloc((size_t)(bytes * 2));
+	if (NULL == ptr)
+		return -ENOMEM;
+	buffer[0] = ptr;
+	buffer[1] = ptr + bytes;
+
+	fseek64(f->fp, from, SEEK_SET);
+	if (bytes != fread(buffer[0], 1, bytes, f->fp))
+		return -1;
+
+	j = 1;
+	fseek64(f->fp, to, SEEK_SET);
+	for(i = to; i < from; i += bytes)
+	{
+		fseek64(f->fp, i, SEEK_SET);
+		if (bytes != fread(buffer[j], 1, bytes, f->fp))
+		{
+			assert(0);
+			return -1;
+		}
+
+		j ^= 1;
+		fseek64(f->fp, i, SEEK_SET);
+		fwrite(buffer[j], 1, bytes, f->fp);
+	}
+
+	fwrite(buffer[j], 1, bytes - (size_t)(i - from), f->fp);
+	free(ptr);
+	return 0;
+}
+
 /// @return 0-ok/eof, other-error
 int file_writer_error(void* file)
 {
@@ -75,14 +124,14 @@ int file_writer_seek(void* file, uint64_t offset)
 {
 	struct wfile_t* f = (struct wfile_t*)file;
 	file_writer_flush(f);
-	return fseek(f->fp, offset, SEEK_SET);
+	return fseek64(f->fp, offset, SEEK_SET);
 }
 
 uint64_t file_writer_tell(void* file)
 {
-	long n;
+	int64_t n;
 	struct wfile_t* f = (struct wfile_t*)file;
-	n = ftell(f->fp);
+	n = ftell64(f->fp);
 	if(-1L == n)
 	{
 		f->error = errno;

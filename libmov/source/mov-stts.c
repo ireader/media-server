@@ -30,6 +30,7 @@ int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box)
 		stbl->stts[i].sample_delta = file_reader_rb32(mov->fp);
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
@@ -63,6 +64,7 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 			stbl->ctts[i].sample_delta = sample_offset;
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 

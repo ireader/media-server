@@ -36,6 +36,7 @@ int mov_read_stsz(struct mov_t* mov, const struct mov_box_t* box)
 			track->samples[i].bytes = sample_size;
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
@@ -92,6 +93,7 @@ int mov_read_stz2(struct mov_t* mov, const struct mov_box_t* box)
 		assert(0);
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
@@ -99,7 +101,6 @@ size_t mov_write_stsz(const struct mov_t* mov)
 {
 	size_t size, i;
 	const struct mov_track_t* track = mov->track;
-	const struct mov_stbl_t* stbl = &mov->track->stbl;
 
 	for(i = 1; i < track->sample_count; i++)
 	{

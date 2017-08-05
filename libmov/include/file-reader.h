@@ -17,7 +17,7 @@ extern "C" {
 	/// @return 0-if error or end-of-file, other-if don't return bytes, check error with file_reader_error
 	size_t file_reader_read(void* file, void* buffer, size_t bytes);
 
-	int file_reader_seek(void* file, uint64_t bytes);
+	int file_reader_seek(void* file, uint64_t offset);
 	uint64_t file_reader_tell(void* file);
 
 	int file_reader_skip(void* file, uint64_t bytes);

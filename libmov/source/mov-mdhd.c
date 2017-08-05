@@ -54,6 +54,8 @@ int mov_read_mdhd(struct mov_t* mov, const struct mov_box_t* box)
 	val = file_reader_rb32(mov->fp);
 	mdhd->language = (val >> 16) & 0x7FFF;
 	mdhd->pre_defined = val & 0xFFFF;
+
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 

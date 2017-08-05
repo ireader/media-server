@@ -202,6 +202,7 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		}
 	}
 
+	(void)box;
 	return file_reader_error(mov->fp);
 }
 
@@ -257,8 +258,11 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	file_writer_wb16(mov->fp, 0xffff); /* Reserved */
 
 	if(MOV_AVC1 == stsd->type)
-		size += mov_write_avcC(mov);
-	//size += mov_write_mp4v(mov);
+		size += mov_write_avcc(mov);
+	else if(MOV_MP4V == stsd->type)
+		size += mov_write_esds(mov);
+	else if (MOV_HEVC == stsd->type)
+		size += mov_write_hvcc(mov);
 
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;

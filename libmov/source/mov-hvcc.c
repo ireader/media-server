@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box)
+int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box)
 {
 	struct mov_track_t* track = mov->track;
 	if (track->extra_data_size < box->size)
@@ -20,11 +20,11 @@ int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box)
 	return file_reader_error(mov->fp);
 }
 
-size_t mov_write_avcc(const struct mov_t* mov)
+size_t mov_write_hvcc(const struct mov_t* mov)
 {
 	const struct mov_track_t* track = mov->track;
 	file_writer_wb32(mov->fp, track->extra_data_size + 8); /* size */
-	file_writer_write(mov->fp, "avcC", 4);
+	file_writer_write(mov->fp, "hvcC", 4);
 	if (track->extra_data_size > 0)
 		file_writer_write(mov->fp, track->extra_data, track->extra_data_size);
 	return track->extra_data_size + 8;
