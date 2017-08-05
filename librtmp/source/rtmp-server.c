@@ -15,7 +15,7 @@
 
 #define RTMP_FMSVER				"FMS/3,0,1,123"
 #define RTMP_CAPABILITIES		31
-#define RTMP_OUTPUT_CHUNK_SIZE	4000
+#define RTMP_OUTPUT_CHUNK_SIZE	4096
 
 struct rtmp_server_t
 {
@@ -49,9 +49,9 @@ static int rtmp_server_send_control(struct rtmp_t* rtmp, const uint8_t* payload,
 	return rtmp_chunk_write(rtmp, &header, payload);
 }
 
-static int rtmp_server_send_onstatus(struct rtmp_server_t* ctx, double transaction, int r, const char* success, const char* fail)
+static int rtmp_server_send_onstatus(struct rtmp_server_t* ctx, double transaction, int r, const char* success, const char* fail, const char* description)
 {
-	r = rtmp_netstream_onstatus(ctx->payload, sizeof(ctx->payload), transaction, 0==r ? RTMP_LEVEL_STATUS : RTMP_LEVEL_ERROR, 0==r ? success : fail, "") - ctx->payload;
+	r = rtmp_netstream_onstatus(ctx->payload, sizeof(ctx->payload), transaction, 0==r ? RTMP_LEVEL_STATUS : RTMP_LEVEL_ERROR, 0==r ? success : fail, description) - ctx->payload;
 	return rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 }
 
@@ -109,6 +109,22 @@ static int rtmp_server_send_stream_begin(struct rtmp_server_t* ctx)
 	n = rtmp_event_stream_begin(ctx->payload, sizeof(ctx->payload), ctx->stream_id);
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
+}
+
+static int rtmp_server_rtmp_sample_access(struct rtmp_server_t* ctx)
+{
+	int n;
+	struct rtmp_chunk_header_t header;
+	
+	n = rtmp_netstream_rtmpsampleaccess(ctx->payload, sizeof(ctx->payload)) - ctx->payload;
+
+	header.fmt = RTMP_CHUNK_TYPE_0; // disable compact header
+	header.cid = RTMP_CHANNEL_INVOKE;
+	header.timestamp = 0;
+	header.length = n;
+	header.type = RTMP_TYPE_DATA;
+	header.stream_id = ctx->stream_id;
+	return rtmp_chunk_write(&ctx->rtmp, &header, ctx->payload);
 }
 
 static void rtmp_server_onabort(void* param, uint32_t chunk_stream_id)
@@ -192,7 +208,7 @@ static int rtmp_server_ondelete_stream(void* param, int r, double transaction, d
 	{
 		stream_id = ctx->stream_id = 0; // clear stream id
 		//r = ctx->handler.ondelete_stream(ctx->param, (uint32_t)stream_id);
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.DeleteStream.Suceess", "NetStream.DeleteStream.Failed");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.DeleteStream.Suceess", "NetStream.DeleteStream.Failed", "");
 	}
 
 	return r;
@@ -219,7 +235,7 @@ static int rtmp_server_onpublish(void* param, int r, double transaction, const c
 				return r;
 		}
 
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName", "");
 	}
 
 	return r;
@@ -240,21 +256,20 @@ static int rtmp_server_onplay(void* param, int r, double transaction, const char
 			strlcpy(ctx->stream_name, stream_name, sizeof(ctx->stream_name));
 			strlcpy(ctx->stream_type, -1==start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD, sizeof(ctx->stream_type));
 
-			// SetChunkSize
-			r = rtmp_server_send_set_chunk_size(ctx);
-			// User Control (StreamIsRecorded)
-			r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
 			// User Control (StreamBegin)
 			r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;
 
 			// NetStream.Play.Reset
-			if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed") : r;
+			if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed", "") : r;
 
 			if(0 != r)
 				return r;
 		}
 
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
+		// User Control (StreamIsRecorded)
+		r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
+		r = 0 == r ? rtmp_server_rtmp_sample_access(ctx) : r;
 	}
 
 	return r;
@@ -271,7 +286,7 @@ static int rtmp_server_onpause(void* param, int r, double transaction, uint8_t p
 	if (0 == r)
 	{
 		r = ctx->handler.onpause(ctx->param, pause, (uint32_t)milliSeconds);
-		r = rtmp_server_send_onstatus(ctx, transaction, r, pause ? "NetStream.Pause.Notify" : "NetStream.Unpause.Notify", "NetStream.Pause.Failed");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, pause ? "NetStream.Pause.Notify" : "NetStream.Unpause.Notify", "NetStream.Pause.Failed", "");
 	}
 
 	return r;
@@ -288,7 +303,7 @@ static int rtmp_server_onseek(void* param, int r, double transaction, double mil
 	if (0 == r)
 	{
 		r = ctx->handler.onseek(ctx->param, (uint32_t)milliSeconds);
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed");
+		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed", "");
 	}
 
 	return r;
@@ -307,8 +322,8 @@ static int rtmp_server_onreceive_audio(void* param, int r, double transaction, u
 		ctx->receiveAudio = audio;
 		if (audio)
 		{
-			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed");
-			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed");
+			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed", "");
+			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "");
 		}
 	}
 
@@ -325,8 +340,8 @@ static int rtmp_server_onreceive_video(void* param, int r, double transaction, u
 		ctx->receiveVideo = video;
 		if (video)
 		{
-			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed");
-			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed");
+			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Seek.Notify", "NetStream.Seek.Failed", "");
+			r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "");
 		}
 	}
 
@@ -359,8 +374,8 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.parser.state = RTMP_PARSE_INIT;
 	ctx->rtmp.in_chunk_size = RTMP_CHUNK_SIZE;
 	ctx->rtmp.out_chunk_size = RTMP_CHUNK_SIZE;
-	ctx->rtmp.window_size = 2500000;
-	ctx->rtmp.peer_bandwidth = 2500000;
+	ctx->rtmp.window_size = 5000000;
+	ctx->rtmp.peer_bandwidth = 5000000;
 	ctx->rtmp.buffer_length_ms = 30000;
 
 	ctx->rtmp.param = ctx;
