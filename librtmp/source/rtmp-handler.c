@@ -17,6 +17,12 @@ int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const 
 {
 	switch (header->type)
 	{
+	case RTMP_TYPE_FLEX_MESSAGE:
+		// filter AMF3 0x00
+		payload += 1;
+		header->length -= 1;
+		return rtmp_invoke_handler(rtmp, header, payload);
+
 	case RTMP_TYPE_INVOKE:
 		return rtmp_invoke_handler(rtmp, header, payload);
 
@@ -52,7 +58,6 @@ int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const 
 		break;
 
 	default:
-		// handshake
 		assert(0);
 		printf("%s: unknown rtmp header type: %d\n", __FUNCTION__, (int)header->type);
 		break;
