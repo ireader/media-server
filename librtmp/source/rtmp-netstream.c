@@ -200,3 +200,14 @@ uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, double transactionI
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
+
+uint8_t* rtmp_netstream_rtmpsampleaccess(uint8_t* out, size_t bytes)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "|RtmpSampleAccess";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteBoolean(out, end, 1);
+	out = AMFWriteBoolean(out, end, 1);
+	return out;
+}

@@ -23,4 +23,6 @@ uint8_t* rtmp_netstream_fcunsubscribe(uint8_t* out, size_t bytes, double transac
 
 uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, double transactionId, const char* level, const char* code, const char* description);
 
+uint8_t* rtmp_netstream_rtmpsampleaccess(uint8_t* out, size_t bytes);
+
 #endif /* !_rtmp_netstream_h_ */
