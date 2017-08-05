@@ -56,6 +56,7 @@ struct rtmp_connect_t
 	double audioCodecs; // double default: 4071
 	double videoCodecs; // double default: 252
 	double videoFunction; // double default: 1
+	double encoding;
 	char pageUrl[256]; // http://host/sample.html
 };
 
@@ -63,7 +64,7 @@ uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transacti
 uint8_t* rtmp_netconnection_create_stream(uint8_t* out, size_t bytes, double transactionId);
 uint8_t* rtmp_netconnection_get_stream_length(uint8_t* out, size_t bytes, double transactionId, const char* stream_name);
 
-uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, double transactionId, const char* fmsver, double capabilities, const char* code, const char* level, const char* description);
+uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, double transactionId, const char* fmsver, double capabilities, const char* code, const char* level, const char* description, double encoding);
 uint8_t* rtmp_netconnection_create_stream_reply(uint8_t* out, size_t bytes, double transactionId, double stream_id);
 uint8_t* rtmp_netconnection_get_stream_length_reply(uint8_t* out, size_t bytes, double transactionId, double duration);
 
