@@ -47,6 +47,7 @@
     <ClCompile Include="source\mov-stsz.c" />
     <ClCompile Include="source\mov-stsd.c" />
     <ClCompile Include="source\mov-stts.c" />
+    <ClCompile Include="source\mov-tag.c" />
     <ClCompile Include="source\mov-tkhd.c" />
     <ClCompile Include="source\mov-writer.c" />
   </ItemGroup>

@@ -423,7 +423,7 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* buffer,
 	return file_writer_error(mov->fp);
 }
 
-int mov_writer_add_audio(struct mov_writer_t* writer, uint32_t avtype, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
+int mov_writer_add_audio(struct mov_writer_t* writer, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
 {
 	void* ptr = NULL;
 	struct mov_t* mov;
@@ -451,12 +451,13 @@ int mov_writer_add_audio(struct mov_writer_t* writer, uint32_t avtype, int chann
 
 	stsd = &track->stsd[0];
 	stsd->data_reference_index = 1;
-	stsd->type = avtype;
+	stsd->object_type_indication = object;
+	stsd->stream_type = MP4_STREAM_AUDIO;
 	stsd->u.audio.channelcount = (uint16_t)channel_count;
 	stsd->u.audio.samplesize = (uint16_t)bits_per_sample;
-	stsd->u.audio.samplerate = sample_rate;
+	stsd->u.audio.samplerate = sample_rate << 16;
 
-	track->codec_id = avtype;
+	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_AUDIO;
 	track->stsd_count = 1;
 	track->start_dts = INT64_MIN;
@@ -482,7 +483,7 @@ int mov_writer_add_audio(struct mov_writer_t* writer, uint32_t avtype, int chann
 	return mov->track_count++;
 }
 
-int mov_writer_add_video(struct mov_writer_t* writer, uint32_t avtype, int width, int height, const void* extra_data, size_t extra_data_size)
+int mov_writer_add_video(struct mov_writer_t* writer, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size)
 {
 	void* ptr = NULL;
 	struct mov_t* mov;
@@ -510,7 +511,8 @@ int mov_writer_add_video(struct mov_writer_t* writer, uint32_t avtype, int width
 
 	stsd = &track->stsd[0];
 	stsd->data_reference_index = 1;
-	stsd->type = avtype;
+	stsd->object_type_indication = object;
+	stsd->stream_type = MP4_STREAM_VISUAL;
 	stsd->u.visual.width = (uint16_t)width;
 	stsd->u.visual.height = (uint16_t)height;
 	stsd->u.visual.depth = 0x0018;
@@ -518,7 +520,7 @@ int mov_writer_add_video(struct mov_writer_t* writer, uint32_t avtype, int width
 	stsd->u.visual.horizresolution = 0x00480000;
 	stsd->u.visual.vertresolution = 0x00480000;
 
-	track->codec_id = avtype;
+	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_VIDEO;
 	track->stsd_count = 1;
 	track->start_dts = INT64_MIN;

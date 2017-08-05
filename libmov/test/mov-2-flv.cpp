@@ -16,13 +16,13 @@ static uint8_t s_packet[2 * 1024 * 1024];
 static uint8_t s_buffer[4 * 1024 * 1024];
 static struct mpeg4_avc_t s_avc;
 
-static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void onread(void* flv, uint8_t object, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
-	if (MOV_AVC1 == avtype)
+	if (MOV_OBJECT_H264 == object)
 	{
 		printf("[V] pts: %08lld, dts: %08lld\n", pts, dts);
 		int compositionTime = (int)(pts - dts);
-		assert(MOV_AVC1 == avtype);
+		assert(MOV_OBJECT_H264 == object);
 		s_packet[0] = (1 << 4) /* FrameType */ | 7 /* AVC */;
 		s_packet[1] = 1; // AVC NALU
 		s_packet[2] = (compositionTime >> 16) & 0xFF;
@@ -31,7 +31,7 @@ static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int6
 		memcpy(s_packet + 5, buffer, bytes);
 		flv_writer_input(flv, 9, s_packet, bytes + 5, (uint32_t)dts);
 	}
-	else if (MOV_MP4A == avtype)
+	else if (MOV_OBJECT_AAC == object)
 	{
 		printf("[A] pts: %08lld, dts: %08lld\n", pts, dts);
 		s_packet[0] = (10 << 4) /* AAC */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
@@ -45,9 +45,9 @@ static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int6
 	}
 }
 
-static void mov_video_info(void* flv, int avtype, int /*width*/, int /*height*/, const void* extra, size_t bytes)
+static void mov_video_info(void* flv, uint8_t object, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
-	assert(MOV_AVC1 == avtype);
+	assert(MOV_OBJECT_H264 == object);
 	s_packet[0] = (1 << 4) /* FrameType */ | 7 /* AVC */;
 	s_packet[1] = 0; // AVC sequence header
 	s_packet[2] = 0; // CompositionTime 0
@@ -57,9 +57,9 @@ static void mov_video_info(void* flv, int avtype, int /*width*/, int /*height*/,
 	flv_writer_input(flv, 9, s_packet, bytes + 5, 0);
 }
 
-static void mov_audio_info(void* flv, int avtype, int /*channel_count*/, int /*bit_per_sample*/, int /*sample_rate*/, const void* extra, size_t bytes)
+static void mov_audio_info(void* flv, uint8_t object, int /*channel_count*/, int /*bit_per_sample*/, int /*sample_rate*/, const void* extra, size_t bytes)
 {
-	assert(MOV_MP4A == avtype);
+	assert(MOV_OBJECT_AAC == object);
 	s_packet[0] = (10 << 4) /* AAC */ | (3 << 2) /* SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 	s_packet[1] = 0; // AACPacketType: 0-AudioSpecificConfig(AAC sequence header)
 

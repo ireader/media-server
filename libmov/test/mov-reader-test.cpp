@@ -15,14 +15,14 @@ static struct mpeg4_aac_t s_aac;
 
 extern "C" size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 
-static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void onread(void* flv, uint8_t object, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
-	if (MOV_AVC1 == avtype)
+	if (MOV_OBJECT_H264 == object)
 	{
 		int n = mpeg4_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
-	else if (MOV_MP4A == avtype)
+	else if (MOV_OBJECT_AAC == object)
 	{
 		uint8_t adts[32];
 		int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
@@ -35,7 +35,7 @@ static void onread(void* flv, int avtype, const void* buffer, size_t bytes, int6
 	}
 }
 
-static void mov_video_info(void* /*param*/, int /*avtype*/, int /*width*/, int /*height*/, const void* extra, size_t bytes)
+static void mov_video_info(void* /*param*/, uint8_t /*object*/, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
 	mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc);
 
@@ -44,7 +44,7 @@ static void mov_video_info(void* /*param*/, int /*avtype*/, int /*width*/, int /
 	fwrite(s_buffer, 1, n, s_vfp);
 }
 
-static void mov_audio_info(void* /*param*/, int /*avtype*/, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* /*extra*/, size_t /*bytes*/)
+static void mov_audio_info(void* /*param*/, uint8_t /*object*/, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* /*extra*/, size_t /*bytes*/)
 {
 	s_aac.profile = MPEG4_AAC_LC;
 	s_aac.channel_configuration = channel_count;

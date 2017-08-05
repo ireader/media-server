@@ -85,10 +85,9 @@ struct mov_mdhd_t
 
 struct mov_stsd_t
 {
-	uint32_t type;
 	uint16_t data_reference_index; // ref [stsc] sample_description_index
-	//uint8_t object_type_indication; // MP4_MEDIA_XXX
-	//uint8_t stream_type; // MP4_STREAM_XXX
+	uint8_t object_type_indication; // H.264/AAC MOV_OBJECT_XXX (DecoderConfigDescriptor)
+	uint8_t stream_type; // MP4_STREAM_XXX
 
 	union
 	{

@@ -48,7 +48,9 @@ static int mov_read_audio(struct mov_t* mov, struct mov_stsd_t* stsd)
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	stsd->type = box.type;
+	stsd->object_type_indication = mov_tag_to_object(box.type);
+	stsd->stream_type = MP4_STREAM_AUDIO;
+	mov->track->tag = box.type;
 
 #if 1
 	// const unsigned int(32)[2] reserved = 0;
@@ -112,7 +114,9 @@ static int mov_read_video(struct mov_t* mov, struct mov_stsd_t* stsd)
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	stsd->type = box.type;
+	stsd->object_type_indication = mov_tag_to_object(box.type);
+	stsd->stream_type = MP4_STREAM_VISUAL; 
+	mov->track->tag = box.type;
 #if 1
 	 //unsigned int(16) pre_defined = 0; 
 	 //const unsigned int(16) reserved = 0;
@@ -232,7 +236,7 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	offset = file_writer_tell(mov->fp);
 	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_wb32(mov->fp, stsd->type); // "h264"
+	file_writer_wb32(mov->fp, mov->track->tag); // "h264"
 
 	file_writer_wb32(mov->fp, 0); /* Reserved */
 	file_writer_wb16(mov->fp, 0); /* Reserved */
@@ -257,11 +261,11 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	file_writer_wb16(mov->fp, 0x18); /* Reserved */
 	file_writer_wb16(mov->fp, 0xffff); /* Reserved */
 
-	if(MOV_AVC1 == stsd->type)
+	if(MOV_OBJECT_H264 == stsd->object_type_indication)
 		size += mov_write_avcc(mov);
-	else if(MOV_MP4V == stsd->type)
+	else if(MOV_OBJECT_MP4V == stsd->object_type_indication)
 		size += mov_write_esds(mov);
-	else if (MOV_HEVC == stsd->type)
+	else if (MOV_OBJECT_HEVC == stsd->object_type_indication)
 		size += mov_write_hvcc(mov);
 
 	mov_write_size(mov->fp, offset, size); /* update size */
@@ -277,7 +281,7 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	offset = file_writer_tell(mov->fp);
 	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_wb32(mov->fp, stsd->type); // "aac "
+	file_writer_wb32(mov->fp, mov->track->tag); // "aac "
 
 	file_writer_wb32(mov->fp, 0); /* Reserved */
 	file_writer_wb16(mov->fp, 0); /* Reserved */
@@ -296,7 +300,7 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	file_writer_wb32(mov->fp, stsd->u.audio.samplerate); /* samplerate */
 
-	if(MOV_MP4A == stsd->type)
+	if(MOV_OBJECT_AAC == stsd->object_type_indication)
 		size += mov_write_esds(mov);
 
 	mov_write_size(mov->fp, offset, size); /* update size */

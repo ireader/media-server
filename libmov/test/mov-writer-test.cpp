@@ -32,7 +32,7 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 	case FLV_VIDEO_AVCC:
 		if (-1 == s_avc_track)
 		{
-			 s_avc_track = mov_writer_add_video(mov, MOV_AVC1, s_width, s_height, data, bytes);
+			 s_avc_track = mov_writer_add_video(mov, MOV_OBJECT_H264, s_width, s_height, data, bytes);
 		}
 		break;
 
@@ -42,7 +42,7 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 			struct mpeg4_aac_t aac;
 			mpeg4_aac_audio_specific_config_load((const uint8_t*)data, bytes, &aac);
 			int rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
-			s_aac_track = mov_writer_add_audio(mov, MOV_MP4A, aac.channel_configuration, 16, rate, data, bytes);
+			s_aac_track = mov_writer_add_audio(mov, MOV_OBJECT_AAC, aac.channel_configuration, 16, rate, data, bytes);
 		}
 		break;
 

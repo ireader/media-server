@@ -14,11 +14,11 @@ typedef struct mov_writer_t mov_writer_t;
 mov_writer_t* mov_writer_create(const char* file, int flags);
 void mov_writer_destroy(mov_writer_t* mov);
 
-// MOV_AVC1/MOV_MP4A
+/// @param[in] object MPEG-4 systems ObjectTypeIndication such as: MOV_OBJECT_H264, see more @mov-format.h
 /// @param[in] extra_data AudioSpecificConfig/AVCDecoderConfigurationRecord
 /// @return >=0-track, <0-error
-int mov_writer_add_audio(mov_writer_t* mov, uint32_t avtype, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
-int mov_writer_add_video(mov_writer_t* mov, uint32_t avtype, int width, int height, const void* extra_data, size_t extra_data_size);
+int mov_writer_add_audio(mov_writer_t* mov, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
+int mov_writer_add_video(mov_writer_t* mov, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig
