@@ -14,7 +14,7 @@ static int STDCALL aio_rtmp_server_worker(void* param)
 {
 	int r, type;
 	uint32_t timestamp;
-	uint64_t clock0 = system_clock();
+	uint64_t clock0 = system_clock() - 3000; // send more data, open fast
 	aio_rtmp_session_t* session = (aio_rtmp_session_t*)param;
 	void* f = flv_reader_create(s_file);
 

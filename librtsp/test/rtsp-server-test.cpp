@@ -56,7 +56,7 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 	return 0;
 }
 
-static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
+static void rtsp_ondescribe(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri)
 {
     static const char* pattern =
         "v=0\n"
@@ -101,7 +101,7 @@ static void rtsp_ondescribe(void* /*ptr*/, void* rtsp, const char* uri)
     rtsp_server_reply_describe(rtsp, 200, sdp);
 }
 
-static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num)
+static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num)
 {
 	std::string filename;
 	char rtsp_transport[128];
@@ -223,7 +223,7 @@ static void rtsp_onsetup(void* /*ptr*/, void* rtsp, const char* uri, const char*
     rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
 }
 
-static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
+static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
@@ -274,7 +274,7 @@ static void rtsp_onplay(void* /*ptr*/, void* rtsp, const char* uri, const char* 
     //rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
 }
 
-static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
+static void rtsp_onpause(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
@@ -299,7 +299,7 @@ static void rtsp_onpause(void* /*ptr*/, void* rtsp, const char* /*uri*/, const c
     rtsp_server_reply_pause(rtsp, 200);
 }
 
-static void rtsp_onteardown(void* /*ptr*/, void* rtsp, const char* /*uri*/, const char* session)
+static void rtsp_onteardown(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*/, const char* session)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::const_iterator it;
@@ -330,7 +330,7 @@ static int STDCALL rtsp_worker(void* /*param*/)
 
 extern "C" void rtsp_example()
 {
-    void *rtsp;
+	rtsp_server_t *rtsp;
     struct rtsp_handler_t handler;
 
 	aio_socket_init(1);

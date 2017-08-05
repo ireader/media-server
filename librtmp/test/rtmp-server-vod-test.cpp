@@ -14,8 +14,7 @@ static int STDCALL rtmp_server_worker(void* param)
 {
 	int r, type;
 	uint32_t timestamp;
-	static uint32_t s_timestamp = 0;
-	static uint64_t s_clock = 0;
+	static uint64_t clock0 = system_clock() - 3000; // send more data, open fast
 	void* f = flv_reader_create(s_file);
 
 	static unsigned char packet[8 * 1024 * 1024];
@@ -23,14 +22,8 @@ static int STDCALL rtmp_server_worker(void* param)
 	{
 		assert(r < sizeof(packet));
 		uint64_t clock = system_clock();
-		if (0 == s_clock)
-		{
-			s_clock = clock;
-			s_timestamp = timestamp;
-		}
-
-		if (timestamp - s_timestamp > clock - s_clock)
-			system_sleep(timestamp - s_timestamp - (clock - s_clock));
+		if (clock0 + timestamp > clock)
+			system_sleep(clock0 + timestamp - clock);
 
 		if (8 == type)
 		{
