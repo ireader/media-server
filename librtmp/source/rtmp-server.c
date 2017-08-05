@@ -140,6 +140,7 @@ static int rtmp_server_onconnect(void* param, int r, double transaction, const s
 	int n;
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
+	assert((double)RTMP_ENCODING_AMF_0 == connect->encoding || (double)RTMP_ENCODING_AMF_3 == connect->encoding);
 
 	if (0 == r)
 	{
@@ -152,7 +153,7 @@ static int rtmp_server_onconnect(void* param, int r, double transaction, const s
 
 	if(0 == r)
 	{
-		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Succeeded.") - ctx->payload;
+		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Succeeded.", connect->encoding) - ctx->payload;
 		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, n, 0);
 	}
 
@@ -174,7 +175,7 @@ static int rtmp_server_oncreate_stream(void* param, int r, double transaction)
 			r = rtmp_netconnection_create_stream_reply(ctx->payload, sizeof(ctx->payload), transaction, ctx->stream_id) - ctx->payload;
 		else
 			r = rtmp_netconnection_error(ctx->payload, sizeof(ctx->payload), transaction, "NetConnection.CreateStream.Failed", RTMP_LEVEL_ERROR, "createStream failed.") - ctx->payload;
-		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
+		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, 0/*ctx->stream_id*/); // must be 0
 	}
 
 	return r;
