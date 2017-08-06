@@ -45,6 +45,9 @@
     <ClInclude Include="include\mp3-header.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\flv-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mp3-header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\flv-parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

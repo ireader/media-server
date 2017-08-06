@@ -23,6 +23,7 @@
     <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\flv-demuxer.h" />
     <ClInclude Include="include\flv-muxer.h" />
+    <ClInclude Include="include\flv-parser.h" />
     <ClInclude Include="include\flv-proto.h" />
     <ClInclude Include="include\flv-reader.h" />
     <ClInclude Include="include\flv-writer.h" />
@@ -35,6 +36,7 @@
     <ClCompile Include="source\amf3.c" />
     <ClCompile Include="source\flv-demuxer.c" />
     <ClCompile Include="source\flv-muxer.c" />
+    <ClCompile Include="source\flv-parser.c" />
     <ClCompile Include="source\flv-reader.c" />
     <ClCompile Include="source\flv-writer.c" />
     <ClCompile Include="source\mp3-header.c" />
@@ -101,7 +103,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -129,7 +131,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
