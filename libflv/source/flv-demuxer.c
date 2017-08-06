@@ -129,7 +129,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 {
 	size_t n;
 	uint8_t packetType; // 0-AVC sequence header, 1-AVC NALU, 2-AVC end of sequence
-	uint32_t compositionTime; // 0
+	int32_t compositionTime; // 0
 
 	flv->video.frame = (data[0] & 0xF0) >> 4;
 	flv->video.codecid = (data[0] & 0x0F);
@@ -138,6 +138,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	{
 		packetType = data[1];
 		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
+		//if (compositionTime >= (1 << 23)) compositionTime -= (1 << 24);
+		compositionTime = (compositionTime + 0xFF800000) ^ 0xFF800000; // signed 24-integer
 
 		if (0 == packetType)
 		{
