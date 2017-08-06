@@ -41,7 +41,7 @@ struct flv_demuxer_t
 	uint32_t capacity;
 };
 
-void* flv_demuxer_create(flv_demuxer_handler handler, void* param)
+struct flv_demuxer_t* flv_demuxer_create(flv_demuxer_handler handler, void* param)
 {
 	struct flv_demuxer_t* flv;
 	flv = (struct flv_demuxer_t*)malloc(sizeof(struct flv_demuxer_t));
@@ -54,11 +54,8 @@ void* flv_demuxer_create(flv_demuxer_handler handler, void* param)
 	return flv;
 }
 
-void flv_demuxer_destroy(void* demuxer)
+void flv_demuxer_destroy(struct flv_demuxer_t* flv)
 {
-	struct flv_demuxer_t* flv;
-	flv = (struct flv_demuxer_t*)demuxer;
-
 	if (flv->ptr)
 	{
 		assert(flv->capacity > 0);
@@ -193,11 +190,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 //	return 0;
 //}
 
-int flv_demuxer_input(void* p, int type, const void* data, size_t bytes, uint32_t timestamp)
+int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
-	struct flv_demuxer_t* flv;
-	flv = (struct flv_demuxer_t*)p;
-
 	switch (type)
 	{
 	case FLV_TYPE_AUDIO:

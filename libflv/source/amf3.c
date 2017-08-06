@@ -6,13 +6,13 @@ static double s_double = 1.0; // 3ff0 0000 0000 0000
 
 const uint8_t* AMF3ReadNull(const uint8_t* ptr, const uint8_t* end)
 {
-	assert(ptr && end);
+	(void)end;
 	return ptr;
 }
 
 const uint8_t* AMF3ReadBoolean(const uint8_t* ptr, const uint8_t* end)
 {
-	assert(ptr && end);
+	(void)end;
 	return ptr;
 }
 

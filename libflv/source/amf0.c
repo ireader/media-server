@@ -7,7 +7,7 @@ static double s_double = 1.0; // 3ff0 0000 0000 0000
 
 static uint8_t* AMFWriteInt16(uint8_t* ptr, const uint8_t* end, uint16_t value)
 {
-	assert(end - ptr >= 2);
+	if (end - ptr < 2) return NULL;
 	ptr[0] = value >> 8;
 	ptr[1] = value & 0xFF;
 	return ptr + 2;
@@ -15,7 +15,7 @@ static uint8_t* AMFWriteInt16(uint8_t* ptr, const uint8_t* end, uint16_t value)
 
 static uint8_t* AMFWriteInt32(uint8_t* ptr, const uint8_t* end, uint32_t value)
 {
-	assert(end - ptr >= 4);
+	if (end - ptr < 4) return NULL;
 	ptr[0] = (uint8_t)(value >> 24);
 	ptr[1] = (uint8_t)(value >> 16);
 	ptr[2] = (uint8_t)(value >> 8);
@@ -25,7 +25,7 @@ static uint8_t* AMFWriteInt32(uint8_t* ptr, const uint8_t* end, uint32_t value)
 
 static uint8_t* AMFWriteString16(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	assert(ptr + 2 + length <= end);
+	if (ptr + 2 + length > end) return NULL;
 	ptr = AMFWriteInt16(ptr, end, (uint16_t)length);
 	memcpy(ptr, string, length);
 	return ptr + length;
@@ -33,7 +33,7 @@ static uint8_t* AMFWriteString16(uint8_t* ptr, const uint8_t* end, const char* s
 
 static uint8_t* AMFWriteString32(uint8_t* ptr, const uint8_t* end, const char* string, size_t length)
 {
-	assert(ptr + 4 + length <= end);
+	if (ptr + 4 + length > end) return NULL;
 	ptr = AMFWriteInt32(ptr, end, (uint32_t)length);
 	memcpy(ptr, string, length);
 	return ptr + length;
@@ -174,7 +174,7 @@ static const uint8_t* AMFReadInt32(const uint8_t* ptr, const uint8_t* end, uint3
 
 const uint8_t* AMFReadNull(const uint8_t* ptr, const uint8_t* end)
 {
-	assert(ptr && end);
+	(void)end;
 	return ptr;
 }
 

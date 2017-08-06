@@ -27,24 +27,20 @@ struct flv_muxer_t
 	size_t capacity;
 };
 
-void* flv_muxer_create(flv_muxer_handler handler, void* param)
+struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
 {
 	struct flv_muxer_t* flv;
-	flv = (struct flv_muxer_t*)malloc(sizeof(*flv));
+	flv = (struct flv_muxer_t*)calloc(1, sizeof(struct flv_muxer_t));
 	if (NULL == flv)
 		return NULL;
 
-	memset(flv, 0, sizeof(*flv));
 	flv->handler = handler;
 	flv->param = param;
 	return flv;
 }
 
-void flv_muxer_destroy(void* p)
+void flv_muxer_destroy(struct flv_muxer_t* flv)
 {
-	struct flv_muxer_t* flv;
-	flv = (struct flv_muxer_t*)p;
-
 	if (flv->ptr)
 	{
 		assert(flv->capacity > 0);
@@ -55,10 +51,8 @@ void flv_muxer_destroy(void* p)
 	free(flv);
 }
 
-int flv_muxer_reset(void* p)
+int flv_muxer_reset(struct flv_muxer_t* flv)
 {
-	struct flv_muxer_t* flv;
-	flv = (struct flv_muxer_t*)p;
 	flv->aac_sequence_header = 0;
 	flv->avc_sequence_header = 0;
 	return 0;
@@ -76,12 +70,11 @@ static int flv_muxer_alloc(struct flv_muxer_t* flv, size_t bytes)
 	return 0;
 }
 
-int flv_muxer_mp3(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	uint8_t ch, hz;
-	struct flv_muxer_t* flv;
 	struct mp3_header_t mp3;
-	flv = (struct flv_muxer_t*)p;
+	(void)pts;
 
 	if (0 == mp3_header_load(&mp3, data, bytes))
 	{
@@ -111,11 +104,10 @@ int flv_muxer_mp3(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
 }
 
-int flv_muxer_aac(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r, n, m;
-	struct flv_muxer_t* flv;
-	flv = (struct flv_muxer_t*)p;
+	(void)pts;
 
 	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
 	{
@@ -147,12 +139,10 @@ int flv_muxer_aac(void* p, const void* data, size_t bytes, uint32_t pts, uint32_
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
 }
 
-int flv_muxer_avc(void* p, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r;
 	int m, compositionTime;
-	struct flv_muxer_t* flv;
-	flv = (struct flv_muxer_t*)p;
 
 	if (flv->capacity < bytes + 2048/*AVCDecoderConfigurationRecord*/)
 	{
