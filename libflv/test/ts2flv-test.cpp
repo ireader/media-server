@@ -10,7 +10,7 @@ static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, ui
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void ts_packet(void* muxer, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
 {
 	static int64_t s_pts = 0;
 	if (0 == s_pts)
@@ -18,6 +18,7 @@ static void ts_packet(void* muxer, int avtype, int64_t pts, int64_t dts, void* d
 	pts -= s_pts;
 	dts -= s_pts;
 
+	flv_muxer_t* muxer = (flv_muxer_t*)param;
 	if (PSI_STREAM_AAC == avtype)
 	{
 		flv_muxer_aac(muxer, data, bytes, (uint32_t)(pts/90), (uint32_t)(pts / 90));
@@ -35,7 +36,7 @@ static void ts_packet(void* muxer, int avtype, int64_t pts, int64_t dts, void* d
 void ts2flv_test(const char* inputTS, const char* outputFLV)
 {
 	void* f = flv_writer_create(outputFLV);
-	void* m = flv_muxer_create(on_flv_packet, f);
+	flv_muxer_t* m = flv_muxer_create(on_flv_packet, f);
 
 	unsigned char ptr[188];
 	FILE* fp = fopen(inputTS, "rb");

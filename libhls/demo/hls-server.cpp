@@ -114,7 +114,7 @@ static int STDCALL hls_server_worker(void* param)
 	while (1)
 	{
 		void* flv = flv_reader_create(file.c_str());
-		void* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
+		flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
 
 		clock = 0;
 		static unsigned char packet[2 * 1024 * 1024];

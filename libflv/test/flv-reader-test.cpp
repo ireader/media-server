@@ -83,7 +83,7 @@ void flv_reader_test(const char* file)
 	h264 = fopen("video.h264", "wb");
 
 	void* reader = flv_reader_create(file);
-	void* flv = flv_demuxer_create(onFLV, NULL);
+	flv_demuxer_t* flv = flv_demuxer_create(onFLV, NULL);
 
 	int type, r = 0;
 	uint32_t timestamp;

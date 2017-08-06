@@ -3,7 +3,7 @@
 #include "mpeg4-aac.h"
 #include "flv-proto.h"
 #include "flv-reader.h"
-#include "flv-demuxer.h"
+#include "flv-parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -61,17 +61,17 @@ void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	uint32_t timestamp;
 	void* flv = flv_reader_create(inflv);
 	mov_writer_t* mov = mov_writer_create(outmp4, MOV_FLAG_FASTSTART);
-	void* demuxer = flv_demuxer_create(onFLV, mov);
+	flv_parser_t* parser = flv_parser_create(onFLV, mov);
 
 	s_width = w;
 	s_height = h;
 	while ((r = flv_reader_read(flv, &type, &timestamp, s_buffer, sizeof(s_buffer))) > 0)
 	{
-		r = flv_demuxer_input(demuxer, type, s_buffer, r, timestamp);
+		r = flv_parser_input(parser, type, s_buffer, r, timestamp);
 		assert(r >= 0);
 	}
 
 	mov_writer_destroy(mov);
 	flv_reader_destroy(flv);
-	flv_demuxer_destroy(demuxer);
+	flv_parser_destroy(parser);
 }

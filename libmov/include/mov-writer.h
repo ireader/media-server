@@ -22,7 +22,7 @@ int mov_writer_add_video(mov_writer_t* mov, uint8_t object, int width, int heigh
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig
-/// H.264 NALU, don't include 0x00000001
+/// H.264 MP4 format, replace start code(0x00000001) with NALU size
 /// @param[in] track return by mov_writer_add_audio/mov_writer_add_video
 /// @param[in] data audio/video frame
 /// @param[in] bytes buffer size

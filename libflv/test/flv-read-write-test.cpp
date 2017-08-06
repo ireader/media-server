@@ -12,20 +12,21 @@ static int flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uint
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static int flv_ondemuxer(void* flv, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
+static int flv_ondemuxer(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
 {
+	flv_muxer_t* muxer = (flv_muxer_t*)param;
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		flv_muxer_aac(flv, data, bytes, pts, dts);
+		flv_muxer_aac(muxer, data, bytes, pts, dts);
 		break;
 
 	case FLV_AUDIO_MP3:
-		flv_muxer_mp3(flv, data, bytes, pts, dts);
+		flv_muxer_mp3(muxer, data, bytes, pts, dts);
 		break;
 
 	case FLV_VIDEO_H264:
-		flv_muxer_avc(flv, data, bytes, pts, dts);
+		flv_muxer_avc(muxer, data, bytes, pts, dts);
 		break;
 
 	default:
@@ -41,8 +42,8 @@ void flv_read_write_test(const char* flv)
 
 	void* r = flv_reader_create(flv);
 	void* w = flv_writer_create(packet);
-	void* e = flv_muxer_create(flv_onmuxer, w);
-	void* d = flv_demuxer_create(flv_ondemuxer, e);
+	flv_muxer_t* e = flv_muxer_create(flv_onmuxer, w);
+	flv_demuxer_t* d = flv_demuxer_create(flv_ondemuxer, e);
 
 	int ret, tag;
 	uint32_t timestamp;

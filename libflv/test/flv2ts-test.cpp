@@ -95,7 +95,7 @@ void flv2ts_test(const char* inputFLV, const char* outputTS)
 	FILE* fp = fopen(outputTS, "wb");
 	void* ts = mpeg_ts_create(&tshandler, fp);
 	void* reader = flv_reader_create(inputFLV);
-	void* flv = flv_demuxer_create(onFLV, ts);
+	flv_demuxer_t* flv = flv_demuxer_create(onFLV, ts);
 
 	int type, r = 0;
 	uint32_t timestamp;

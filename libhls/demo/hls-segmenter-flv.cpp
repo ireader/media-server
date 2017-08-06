@@ -52,7 +52,7 @@ void hls_segmenter_flv(const char* file)
 	hls_m3u8_t* m3u = hls_m3u8_create(0);
 	hls_media_t* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
 	void* flv = flv_reader_create(file);
-	void* demuxer = flv_demuxer_create(flv_handler, hls);
+	flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, hls);
 
 	int r, type;
 	uint32_t timestamp;
