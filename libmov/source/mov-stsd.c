@@ -281,7 +281,7 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	offset = file_writer_tell(mov->fp);
 	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_wb32(mov->fp, mov->track->tag); // "aac "
+	file_writer_wb32(mov->fp, mov->track->tag); // "mp4a"
 
 	file_writer_wb32(mov->fp, 0); /* Reserved */
 	file_writer_wb16(mov->fp, 0); /* Reserved */

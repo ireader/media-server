@@ -386,7 +386,7 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	}
 
 	track->sample_offset++; //mark as read
-	onread(param, sample->stsd->object_type_indication, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
+	onread(param, track->tkhd.track_ID, sample->stsd->object_type_indication, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
 	return 1;
 }
 
@@ -405,11 +405,11 @@ int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, 
 			switch (track->handler_type)
 			{
 			case MOV_VIDEO:
-				onvideo(param, stsd->object_type_indication, stsd->u.visual.width, stsd->u.visual.height, track->extra_data, track->extra_data_size);
+				onvideo(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.visual.width, stsd->u.visual.height, track->extra_data, track->extra_data_size);
 				break;
 
 			case MOV_AUDIO:
-				onaudio(param, stsd->object_type_indication, stsd->u.audio.channelcount, stsd->u.audio.samplesize, stsd->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
+				onaudio(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.audio.channelcount, stsd->u.audio.samplesize, stsd->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
 				break;
 
 			default:
