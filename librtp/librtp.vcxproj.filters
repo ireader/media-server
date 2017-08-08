@@ -45,9 +45,6 @@
     <ClCompile Include="source\rtp-member.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtp-queue.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtp-ssrc.c">
       <Filter>Source Files</Filter>
     </ClCompile>

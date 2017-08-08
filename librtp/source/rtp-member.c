@@ -1,8 +1,8 @@
 #include "rtp-member.h"
-#include "sys/atomic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 struct rtp_member* rtp_member_create(uint32_t ssrc)
 {
@@ -22,12 +22,12 @@ struct rtp_member* rtp_member_create(uint32_t ssrc)
 
 void rtp_member_addref(struct rtp_member *member)
 {
-	atomic_increment32(&member->ref);
+	++member->ref;
 }
 
 void rtp_member_release(struct rtp_member *member)
 {
-	if(0 == atomic_decrement32(&member->ref))
+	if(0 == --member->ref)
 	{
 		size_t i;
 		for(i = 0; i < sizeof(member->sdes)/sizeof(member->sdes[0]); i++)
