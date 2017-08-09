@@ -10,6 +10,11 @@
 
 #define MOV_NULL MOV_TAG(0, 0, 0, 0)
 
+struct mov_reader_t
+{
+	struct mov_t mov;
+};
+
 struct mov_parse_t
 {
 	uint32_t type;
@@ -30,13 +35,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 	return file_reader_skip(mov->fp, box->size);
 }
 
-// 8.2.1.1 Movie Box (p29)
-static int mov_read_moov(struct mov_t* mov, const struct mov_box_t* box)
-{
-	return mov_reader_box(mov, box);
-}
-
-static struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index)
+struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index)
 {
 	size_t i;
 	for (i = 0; i < track->stsd_count; i++)
@@ -53,10 +52,10 @@ static int mov_track_build(struct mov_track_t* track)
 	uint64_t n = 0, chunk_offset;
 	struct mov_stbl_t* stbl = &track->stbl;
 
-	assert(stbl->stsc_count > 0 && stbl->stco_count > 0);
-	assert(NULL != track->samples && track->sample_count > 0);
+	//assert(stbl->stsc_count > 0 && stbl->stco_count > 0);
+	//assert(NULL != track->samples && track->sample_count > 0);
 	if (NULL == track->samples || track->sample_count < 1 || stbl->stsc_count < 1)
-		return -1;
+		return 0;
 
 	// sample offset
 	stbl->stsc[stbl->stsc_count].first_chunk = stbl->stco_count + 1; // fill stco count
@@ -77,21 +76,19 @@ static int mov_track_build(struct mov_track_t* track)
 	}
 	assert(n == track->sample_count);
 
-	// sample dts
+	// edit list
 	track->samples[0].dts = 0;
 	track->samples[0].pts = 0;
-	if (track->elst_count > 0)
+	for (i = 0; i < track->elst_count; i++)
 	{
-		for (i = 0; i < track->elst_count; i++)
+		if (-1 == track->elst[i].media_time)
 		{
-			if (-1 == track->elst[i].media_time)
-			{
-				track->samples[0].dts = track->elst[i].segment_duration;
-				track->samples[0].pts = track->samples[0].dts;
-			}
+			track->samples[0].dts = track->elst[i].segment_duration;
+			track->samples[0].pts = track->samples[0].dts;
 		}
 	}
 
+	// sample dts
 	for (i = 0, n = 1; i < stbl->stts_count; i++)
 	{
 		for (j = 0; j < stbl->stts[i].sample_count; j++, n++)
@@ -110,6 +107,23 @@ static int mov_track_build(struct mov_track_t* track)
 	}
 	assert(0 == stbl->ctts_count || n == track->sample_count);
 
+	return 0;
+}
+
+static int mov_fragment_build(struct mov_track_t* track)
+{
+	size_t i, j;
+	for (i = 0; i < track->elst_count; i++)
+	{
+		if (-1 != track->elst[i].media_time)
+			continue;
+		
+		for (j = 0; j < track->sample_count; j++)
+		{
+			track->samples[j].dts += track->elst[i].segment_duration;
+			track->samples[j].pts += track->elst[i].segment_duration;
+		}
+	}
 	return 0;
 }
 
@@ -168,44 +182,113 @@ static int mov_read_uuid(struct mov_t* mov, const struct mov_box_t* box)
 	return 0;
 }
 
+static int mov_read_moof(struct mov_t* mov, const struct mov_box_t* box)
+{
+	mov->moof_offset = file_reader_tell(mov->fp) - 8 /*box size */;
+	return mov_reader_box(mov, box);
+}
+
+static int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box)
+{
+	unsigned int version;
+	uint64_t fragment_duration;
+	version = file_reader_r8(mov->fp); /* version */
+	file_reader_rb24(mov->fp); /* flags */
+
+	if (1 == version)
+		fragment_duration = file_reader_rb64(mov->fp); /* fragment_duration*/
+	else
+		fragment_duration = file_reader_rb32(mov->fp); /* fragment_duration*/
+
+	(void)box;
+	assert(fragment_duration <= mov->mvhd.duration);
+	return file_reader_error(mov->fp);
+}
+
+static int mov_read_mfhd(struct mov_t* mov, const struct mov_box_t* box)
+{
+	(void)box;
+	file_reader_rb32(mov->fp); /* version & flags */
+	file_reader_rb32(mov->fp); /* sequence_number */
+	return file_reader_error(mov->fp);
+}
+
+// 8.8.12 Track fragment decode time (p76)
+static int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box)
+{
+	unsigned int version;
+	version = file_reader_r8(mov->fp); /* version */
+	file_reader_rb24(mov->fp); /* flags */
+	if (1 == version)
+		mov->track->trex.dts = file_reader_rb64(mov->fp); /* baseMediaDecodeTime */
+	else
+		mov->track->trex.dts = file_reader_rb32(mov->fp); /* baseMediaDecodeTime */
+	return file_reader_error(mov->fp); (void)box;
+}
+
+// 8.8.11 Movie Fragment Random Access Offset Box (p75)
+static int mov_read_mfro(struct mov_t* mov, const struct mov_box_t* box)
+{
+	uint32_t size;
+	(void)box;
+	file_reader_rb32(mov->fp); /* version & flags */
+	size = file_reader_rb32(mov->fp); /* size */
+	return file_reader_error(mov->fp);
+}
+
 static int mov_read_default(struct mov_t* mov, const struct mov_box_t* box)
 {
 	return mov_reader_box(mov, box);
 }
 
 static struct mov_parse_t s_mov_parse_table[] = {
-	{ MOV_TAG('f', 't', 'y', 'p'), MOV_ROOT, mov_read_ftyp },
-	{ MOV_TAG('m', 'd', 'a', 't'), MOV_ROOT, mov_read_mdat },
-	{ MOV_TAG('f', 'r', 'e', 'e'), MOV_NULL, mov_read_free },
-	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
-	{ MOV_TAG('m', 'o', 'o', 'v'), MOV_ROOT, mov_read_moov },
-	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
-	{ MOV_TAG('t', 'r', 'a', 'k'), MOV_MOOV, mov_read_trak },
-	{ MOV_TAG('t', 'k', 'h', 'd'), MOV_TRAK, mov_read_tkhd },
-	{ MOV_TAG('e', 'd', 't', 's'), MOV_TRAK, mov_read_default },
-	{ MOV_TAG('e', 'l', 's', 't'), MOV_EDTS, mov_read_elst },
-	{ MOV_TAG('m', 'd', 'i', 'a'), MOV_TRAK, mov_read_default },
-	{ MOV_TAG('m', 'd', 'h', 'd'), MOV_MDIA, mov_read_mdhd },
-	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr },
-	{ MOV_TAG('m', 'i', 'n', 'f'), MOV_MDIA, mov_read_default },
-	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
-	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
+	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
+	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
+	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },
 	{ MOV_TAG('d', 'i', 'n', 'f'), MOV_MINF, mov_read_default },
 	{ MOV_TAG('d', 'r', 'e', 'f'), MOV_DINF, mov_read_dref },
-	{ MOV_TAG('s', 't', 'b', 'l'), MOV_MINF, mov_read_default },
-	{ MOV_TAG('s', 't', 's', 'd'), MOV_STBL, mov_read_stsd },
-	{ MOV_TAG('s', 't', 't', 's'), MOV_STBL, mov_read_stts },
-	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },
-	{ MOV_TAG('s', 't', 's', 'c'), MOV_STBL, mov_read_stsc },
-	{ MOV_TAG('s', 't', 's', 'z'), MOV_STBL, mov_read_stsz },
-	{ MOV_TAG('s', 't', 'z', '2'), MOV_STBL, mov_read_stz2 },
-	{ MOV_TAG('s', 't', 's', 's'), MOV_STBL, mov_read_stss },
-	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
-	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
+	{ MOV_TAG('e', 'd', 't', 's'), MOV_TRAK, mov_read_default },
+	{ MOV_TAG('e', 'l', 's', 't'), MOV_EDTS, mov_read_elst },
 	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
-	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
+	{ MOV_TAG('f', 'r', 'e', 'e'), MOV_NULL, mov_read_free },
+	{ MOV_TAG('f', 't', 'y', 'p'), MOV_ROOT, mov_read_ftyp },
+	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr },
 	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2010(E) hvcC
+	{ MOV_TAG('l', 'e', 'v', 'a'), MOV_MVEX, mov_read_leva },
+	{ MOV_TAG('m', 'd', 'a', 't'), MOV_ROOT, mov_read_mdat },
+	{ MOV_TAG('m', 'd', 'h', 'd'), MOV_MDIA, mov_read_mdhd },
+	{ MOV_TAG('m', 'd', 'i', 'a'), MOV_TRAK, mov_read_default },
+	{ MOV_TAG('m', 'e', 'h', 'd'), MOV_MVEX, mov_read_mehd },
+	{ MOV_TAG('m', 'f', 'h', 'd'), MOV_MOOF, mov_read_mfhd },
+	{ MOV_TAG('m', 'f', 'r', 'a'), MOV_ROOT, mov_read_default },
+	{ MOV_TAG('m', 'f', 'r', 'o'), MOV_MFRA, mov_read_mfro },
+	{ MOV_TAG('m', 'i', 'n', 'f'), MOV_MDIA, mov_read_default },
+	{ MOV_TAG('m', 'o', 'o', 'v'), MOV_ROOT, mov_read_default },
+	{ MOV_TAG('m', 'o', 'o', 'f'), MOV_ROOT, mov_read_moof },
+	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
+	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
+	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
+	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
+	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
+	{ MOV_TAG('s', 't', 'b', 'l'), MOV_MINF, mov_read_default },
+	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
+	{ MOV_TAG('s', 't', 's', 'c'), MOV_STBL, mov_read_stsc },
+	{ MOV_TAG('s', 't', 's', 'd'), MOV_STBL, mov_read_stsd },
+	{ MOV_TAG('s', 't', 's', 's'), MOV_STBL, mov_read_stss },
+	{ MOV_TAG('s', 't', 's', 'z'), MOV_STBL, mov_read_stsz },
+	{ MOV_TAG('s', 't', 't', 's'), MOV_STBL, mov_read_stts },
+	{ MOV_TAG('s', 't', 'z', '2'), MOV_STBL, mov_read_stz2 },
+	{ MOV_TAG('t', 'f', 'd', 't'), MOV_TRAF, mov_read_tfdt },
+	{ MOV_TAG('t', 'f', 'h', 'd'), MOV_TRAF, mov_read_tfhd },
+	{ MOV_TAG('t', 'f', 'r', 'a'), MOV_MFRA, mov_read_tfra },
+	{ MOV_TAG('t', 'k', 'h', 'd'), MOV_TRAK, mov_read_tkhd },
+	{ MOV_TAG('t', 'r', 'a', 'k'), MOV_MOOV, mov_read_trak },
+	{ MOV_TAG('t', 'r', 'e', 'x'), MOV_MVEX, mov_read_trex },
+	{ MOV_TAG('t', 'r', 'a', 'f'), MOV_MOOF, mov_read_default },
+	{ MOV_TAG('t', 'r', 'u', 'n'), MOV_TRAF, mov_read_trun },
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
+	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
+
 	{ 0, 0, NULL } // last
 };
 
@@ -264,9 +347,13 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		}
 		else
 		{
-			uint64_t pos = file_reader_tell(mov->fp);
-			parse(mov, &box);
-			uint64_t pos2 = file_reader_tell(mov->fp);
+			int r;
+			uint64_t pos, pos2;
+			pos = file_reader_tell(mov->fp);
+			r = parse(mov, &box);
+			assert(0 == r);
+			if (0 != r) return r;
+			pos2 = file_reader_tell(mov->fp);
 			assert(pos2 - pos == box.size);
 			file_reader_skip(mov->fp, box.size - (pos2 - pos));
 		}
@@ -277,17 +364,24 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 static int mov_reader_init(struct mov_t* mov)
 {
+	int r;
+	size_t i;
 	struct mov_box_t box;
+	struct mov_track_t* track;
+
 	box.type = MOV_ROOT;
 	box.size = UINT64_MAX;
-	return mov_reader_box(mov, &box);
+	r = mov_reader_box(mov, &box);
+	if (0 != r) return r;
+	
+	for (i = 0; i < mov->track_count; i++)
+	{
+		track = mov->tracks + i;
+		mov_fragment_build(track);
+		track->sample_offset = 0; // reset
+	}
+	return 0;
 }
-
-struct mov_reader_t
-{
-	struct mov_t mov;
-	int64_t dts;
-};
 
 struct mov_reader_t* mov_reader_create(const char* file)
 {
@@ -310,8 +404,6 @@ struct mov_reader_t* mov_reader_create(const char* file)
 		mov_reader_destroy(reader);
 		return NULL;
 	}
-
-	reader->dts = INT64_MAX;
 	return reader;
 }
 

@@ -15,6 +15,10 @@
 #define MOV_MINF MOV_TAG('m', 'i', 'n', 'f')
 #define MOV_DINF MOV_TAG('d', 'i', 'n', 'f')
 #define MOV_STBL MOV_TAG('s', 't', 'b', 'l')
+#define MOV_MVEX MOV_TAG('m', 'v', 'e', 'x')
+#define MOV_MOOF MOV_TAG('m', 'o', 'o', 'f')
+#define MOV_TRAF MOV_TAG('t', 'r', 'a', 'f')
+#define MOV_MFRA MOV_TAG('m', 'f', 'r', 'a')
 
 #define MOV_VIDEO MOV_TAG('v', 'i', 'd', 'e')
 #define MOV_AUDIO MOV_TAG('s', 'o', 'u', 'n')
@@ -103,6 +107,7 @@ struct mov_track_t
 {
 	uint32_t tag; // MOV_H264/MOV_MP4A
 	uint32_t handler_type; // MOV_VIDEO/MOV_AUDIO
+	const char* handler_descr; // VideoHandler/SoundHandler/SubtitleHandler
 	uint8_t* extra_data; // H.264 sps/pps
 	size_t extra_data_size;
 
@@ -116,6 +121,10 @@ struct mov_track_t
 	size_t elst_count;
 
 	struct mov_stbl_t stbl;
+
+	// 8.8 Movie Fragments
+	struct mov_trex_t trex;
+	struct mov_tfhd_t tfhd;
 
 	struct mov_sample_t* samples;
 	size_t sample_count;
@@ -134,7 +143,9 @@ struct mov_t
 	struct mov_ftyp_t ftyp;
 	struct mov_mvhd_t mvhd;
 
+	int flags;
 	int header;
+	uint64_t moof_offset;
 
 	struct mov_track_t* track; // current stream
 	struct mov_track_t* tracks;
@@ -162,6 +173,12 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -182,10 +199,16 @@ size_t mov_write_stbl(const struct mov_t* mov);
 size_t mov_write_esds(const struct mov_t* mov);
 size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
+size_t mov_write_trex(const struct mov_t* mov);
+size_t mov_write_tfhd(const struct mov_t* mov);
+size_t mov_write_trun(const struct mov_t* mov);
+size_t mov_write_tfra(const struct mov_t* mov);
+size_t mov_write_mfro(const struct mov_t* mov);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 
 size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
+struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index);
 
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);

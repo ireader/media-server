@@ -144,4 +144,26 @@ struct mov_elst_t
 	int16_t media_rate_fraction;
 };
 
+struct mov_trex_t
+{
+//	uint32_t track_ID;
+	uint32_t default_sample_description_index;
+	uint32_t default_sample_duration;
+	uint32_t default_sample_size;
+	uint32_t default_sample_flags;
+
+	uint64_t dts; // tfdt baseMediaDecodeTime 
+};
+
+struct mov_tfhd_t
+{
+	uint32_t flags;
+//	uint32_t track_ID;
+	uint64_t base_data_offset;
+	uint32_t sample_description_index;
+	uint32_t default_sample_duration;
+	uint32_t default_sample_size;
+	uint32_t default_sample_flags;
+};
+
 #endif /* !_mov_atom_h_ */
