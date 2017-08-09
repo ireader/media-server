@@ -195,7 +195,7 @@ unsigned int file_reader_rb16(void* file)
 unsigned int file_reader_rb24(void* file)
 {
 	unsigned int val;
-	val = file_reader_rb16(file) << 16;
+	val = file_reader_rb16(file) << 8;
 	val |= file_reader_r8(file);
 	return val;
 }
