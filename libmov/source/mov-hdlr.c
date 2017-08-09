@@ -1,6 +1,7 @@
 #include "file-reader.h"
 #include "file-writer.h"
 #include "mov-internal.h"
+#include <string.h>
 #include <assert.h>
 
 // 8.4.3 Handler Reference Box (p36)
@@ -28,7 +29,7 @@ size_t mov_write_hdlr(const struct mov_t* mov)
 {
 	const struct mov_track_t* track = mov->track;
 
-	file_writer_wb32(mov->fp, 33); /* size */
+	file_writer_wb32(mov->fp, 33 + strlen(track->handler_descr)); /* size */
 	file_writer_write(mov->fp, "hdlr", 4);
 	file_writer_wb32(mov->fp, 0); /* Version & flags */
 
@@ -39,7 +40,6 @@ size_t mov_write_hdlr(const struct mov_t* mov)
 	file_writer_wb32(mov->fp, 0); /* reserved */
 	file_writer_wb32(mov->fp, 0); /* reserved */
 
-	file_writer_w8(mov->fp, 0); /* name */
-	return 33;
+	file_writer_write(mov->fp, track->handler_descr, strlen(track->handler_descr)+1); /* name */
+	return 33 + strlen(track->handler_descr);
 }
-
