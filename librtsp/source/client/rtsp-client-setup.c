@@ -59,6 +59,9 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
 	int i, r;
 	struct rtsp_media_t *media;
 
+	if (NULL == sdp || 0 == *sdp)
+		return -1;
+
 	r = rtsp_client_sdp(rtsp, sdp);
 	if (0 != r)
 		return r;
@@ -115,8 +118,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 
 		if (rtsp->media_count == ++rtsp->progress)
 		{
-			rtsp->handler.onopen(rtsp->param);
-			return 0;
+			return rtsp->handler.onsetup(rtsp->param);
 		}
 		else
 		{

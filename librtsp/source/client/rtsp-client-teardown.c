@@ -55,8 +55,7 @@ int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
 	
 	if (rtsp->media_count == ++rtsp->progress)
 	{
-		rtsp->handler.onclose(rtsp->param);
-		return 0;
+		return rtsp->handler.onteardown(rtsp->param);
 	}
 	else
 	{

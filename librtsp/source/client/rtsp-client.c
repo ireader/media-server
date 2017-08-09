@@ -7,53 +7,47 @@
 #include <stdlib.h>
 #include <assert.h>
 
-struct rtsp_client_t* rtsp_client_create(const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
+struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
 {
 	struct rtsp_client_t *rtsp;
 	rtsp = (struct rtsp_client_t*)calloc(1, sizeof(*rtsp));
 	if(NULL == rtsp)
 		return NULL;
 
+	snprintf(rtsp->uri, sizeof(rtsp->uri), "%s", uri);
 	snprintf(rtsp->usr, sizeof(rtsp->usr), "%s", usr ? usr : "");
 	snprintf(rtsp->pwd, sizeof(rtsp->pwd), "%s", pwd ? pwd : "");
 	snprintf(rtsp->nc, sizeof(rtsp->nc), "%08x", 1);
 	snprintf(rtsp->cnonce, sizeof(rtsp->cnonce), "%p", rtsp);
 
+	rtsp->parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
 	rtsp->state = RTSP_INIT;
 	rtsp->param = param;
 	rtsp->cseq = 1;
+	rtsp->auth_failed = 0;
 
 	return rtsp;
 }
 
 void rtsp_client_destroy(struct rtsp_client_t *rtsp)
 {
-	if(rtsp->media_ptr)
+	if (rtsp->parser)
+	{
+		rtsp_parser_destroy(rtsp->parser);
+		rtsp->parser = NULL;
+	}
+
+	if (rtsp->media_ptr)
+	{
 		free(rtsp->media_ptr);
+		rtsp->media_ptr = NULL;
+	}
 
 	free(rtsp);
 }
 
-int rtsp_client_open(struct rtsp_client_t *rtsp, const char* uri, const char* sdp)
-{
-	int r;
-	rtsp->auth_failed = 0;
-	strlcpy(rtsp->uri, uri, sizeof(rtsp->uri));
-	if(NULL == sdp || 0 == *sdp)
-		r = rtsp_client_describe(rtsp);
-	else
-		r = rtsp_client_setup(rtsp, sdp);
-	return r;
-}
-
-int rtsp_client_close(struct rtsp_client_t *rtsp)
-{
-	assert(RTSP_TEARDWON != rtsp->state);
-	return rtsp_client_teardown(rtsp);
-}
-
-int rtsp_client_input(struct rtsp_client_t *rtsp, void* parser)
+static int rtsp_client_handle(struct rtsp_client_t* rtsp, rtsp_parser_t* parser)
 {
 	switch (rtsp->state)
 	{
@@ -68,6 +62,37 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, void* parser)
 	case RTSP_SET_PARAMETER: return rtsp_client_set_parameter_onreply(rtsp, parser);
 	default: assert(0); return -1;
 	}
+}
+
+int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes)
+{
+	int r, remain;
+
+	remain = (int)bytes;
+	do
+	{
+		if (*(char*)data == '$')
+		{
+			// TODO: rtsp over tcp
+			assert(0);
+		}
+
+		r = rtsp_parser_input(rtsp->parser, (const char*)data + (bytes - remain), &remain);
+		assert(r <= 1); // 1-need more data
+		if (0 == r)
+		{
+			r = rtsp_client_handle(rtsp, rtsp->parser);
+			rtsp_parser_clear(rtsp->parser); // reset parser
+		}
+	} while (remain > 0 && r >= 0);
+
+	assert(r <= 1);
+	return r >= 0 ? 0 : r;
+}
+
+const char* rtsp_client_get_header(struct rtsp_client_t* rtsp, const char* name)
+{
+	return rtsp_get_header_by_name(rtsp->parser, name);
 }
 
 int rtsp_client_media_count(struct rtsp_client_t *rtsp)

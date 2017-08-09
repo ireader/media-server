@@ -68,12 +68,15 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 		contentLocation = rtsp_get_header_by_name(parser, "Content-Location");
 
 		if (contentBase)
-			strlcpy(rtsp->baseuri, contentBase, sizeof(rtsp->baseuri));
+			snprintf(rtsp->baseuri, sizeof(rtsp->baseuri), "%s", contentBase);
 		if (contentLocation)
-			strlcpy(rtsp->location, contentLocation, sizeof(rtsp->location));
+			snprintf(rtsp->location, sizeof(rtsp->location), "%s", contentLocation);
 
+		rtsp->auth_failed = 0;
 		if (!contentType || 0 == strcasecmp("application/sdp", contentType))
-			r = rtsp_client_setup(rtsp, content);
+		{
+			r = rtsp->handler.ondescribe(rtsp->param, (const char*)content);
+		}
 	}
 	else if (401 == code)
 	{

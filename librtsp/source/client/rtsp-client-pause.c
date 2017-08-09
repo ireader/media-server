@@ -81,8 +81,7 @@ static int rtsp_client_media_pause_onreply(struct rtsp_client_t* rtsp, void* par
 	{
 		if (rtsp->media_count == ++rtsp->progress)
 		{
-			rtsp->handler.onpause(rtsp->param);
-			return 0;
+			return rtsp->handler.onpause(rtsp->param);
 		}
 		else
 		{
@@ -109,8 +108,7 @@ static int rtsp_client_aggregate_pause_onreply(struct rtsp_client_t* rtsp, void*
 	}
 	else if(200 == code)
 	{
-		rtsp->handler.onpause(rtsp->param);
-		return 0;
+		return rtsp->handler.onpause(rtsp->param);
 	}
 
 	return -1;

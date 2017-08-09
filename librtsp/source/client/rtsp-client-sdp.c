@@ -66,7 +66,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 	control = sdp_attribute_find(sdp, "control");
 	if(!control || 0==*control || '*' == *control)
 		control = "";
-	strlcpy(uri, control, bytes);
+	snprintf(uri, bytes, "%s", control);
 
 	if(!isAbsoluteURL(uri) && baseuri && *baseuri)
 	{
@@ -75,7 +75,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), baseuri, uri);
 			baseuri = path;
 		}
-		strlcpy(uri, baseuri, bytes);	
+		snprintf(uri, bytes, "%s", baseuri);
 	}
 
 	if(!isAbsoluteURL(uri) && location && *location)
@@ -85,7 +85,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), location, uri);
 			location = path;
 		}
-		strlcpy(uri, location, bytes);
+		snprintf(uri, bytes, "%s", location);
 	}
 
 	if(!isAbsoluteURL(uri) && requri && *requri)
@@ -95,7 +95,7 @@ static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* 
 			uri_join(path, sizeof(path), requri, uri);
 			requri = path;
 		}
-		strlcpy(uri, requri, bytes);
+		snprintf(uri, bytes, "%s", requri);
 	}
 
 	return 0;
@@ -112,7 +112,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 	control = sdp_media_attribute_find(sdp, media, "control");
 	if(!control || 0==*control || '*' == *control)
 		control = "";
-	strlcpy(uri, control, bytes-1);
+	snprintf(uri, bytes, "%s", control);
 
 	if(!isAbsoluteURL(uri) && sessionuri && *sessionuri)
 	{
@@ -121,7 +121,7 @@ static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, con
 			uri_join(path, sizeof(path), sessionuri, uri);
 			sessionuri = path;
 		}
-		strlcpy(uri, sessionuri, bytes);
+		snprintf(uri, bytes, "%s", sessionuri);
 	}
 
 	return 0;
@@ -156,7 +156,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 					if(media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
-						strlcpy(media->avformats[i].encoding, encoding, sizeof(media->avformats[i].encoding));
+						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
 						break;
 					}
 				}
@@ -176,7 +176,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 						sdp_a_fmtp_h264(value, &payload, &h264);
 						if(h264.flags & SDP_A_FMTP_H264_SPROP_PARAMETER_SETS)
 						{
-							strlcpy(media->avformats[i].spspps, h264.sprop_parameter_sets, sizeof(media->avformats[i].spspps));
+							snprintf(media->avformats[i].spspps, sizeof(media->avformats[i].spspps), "%s", h264.sprop_parameter_sets);
 						}
 					}
 					else if(0 == strcmp("mpeg4-generic", media->avformats[i].encoding))

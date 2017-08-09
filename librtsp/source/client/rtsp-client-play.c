@@ -97,7 +97,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 
 static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
-	int i;
+	int i, r;
 	uint64_t npt0 = (uint64_t)(-1);
 	uint64_t npt1 = (uint64_t)(-1);
 	double scale = 0.0f;
@@ -140,13 +140,13 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 		prtpinfo = pnext ? pnext + 1 : pnext;
 	}
 
-	rtsp->handler.onplay(rtsp->param, rtsp->progress, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, rtpInfo, i);
+	r = rtsp->handler.onplay(rtsp->param, rtsp->progress, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, rtpInfo, i);
 
-	if(0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
+	if(0 == r && 0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
 	{
 		return rtsp_client_media_play(rtsp);
 	}
-	return 0;
+	return r;
 }
 
 // aggregate control reply

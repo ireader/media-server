@@ -2,7 +2,6 @@
 
 #include "sockutil.h"
 #include "rtsp-client.h"
-#include "rtsp-parser.h"
 #include <assert.h>
 #include <stdlib.h>
 #include "rtp-socket.h"
@@ -38,7 +37,13 @@ static int rtpport(void* param, unsigned short *rtp)
 	return 0;
 }
 
-int onopen(void* param)
+static int ondescribe(void* param, const char* sdp)
+{
+	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
+	return rtsp_client_setup(ctx->rtsp, sdp);
+}
+
+static int onsetup(void* param)
 {
 	int i, count;
 	uint64_t npt = 0;
@@ -73,27 +78,28 @@ int onopen(void* param)
 			rtp_receiver_test(ctx->rtp[i], ip, port, payload, encoding);
 		}
 	}
+
 	return 0;
 }
 
-int onclose(void* param)
+static int onteardown(void* param)
 {
 	return 0;
 }
 
-int onplay(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count)
+static int onplay(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count)
 {
 	return 0;
 }
 
-int onpause(void* param)
+static int onpause(void* param)
 {
 	return 0;
 }
 
 void rtsp_client_test(const char* host, const char* file)
 {
-	int r, n, ret;
+	int r;
 	void* parser;
 	struct rtsp_client_test_t ctx;
 	struct rtsp_client_handler_t handler;
@@ -102,43 +108,31 @@ void rtsp_client_test(const char* host, const char* file)
 	memset(&ctx, 0, sizeof(ctx));
 	handler.send = rtsp_client_send;
 	handler.rtpport = rtpport;
-	handler.onopen = onopen;
+	handler.ondescribe = ondescribe;
+	handler.onsetup = onsetup;
 	handler.onplay = onplay;
 	handler.onpause = onpause;
-	handler.onclose = onclose;
+	handler.onteardown = onteardown;
 
-	parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
 	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
 	socket_init();
 	ctx.socket = socket_connect_host(host, 554, 2000);
 	assert(socket_invalid != ctx.socket);
 	//ctx.rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
-	ctx.rtsp = rtsp_client_create("username", "password", &handler, &ctx);
+	ctx.rtsp = rtsp_client_create(packet, "username1", "password1", &handler, &ctx);
 	assert(ctx.rtsp);
-	assert(0 == rtsp_client_open(ctx.rtsp, packet, NULL));
+	assert(0 == rtsp_client_describe(ctx.rtsp));
 
 	socket_setnonblock(ctx.socket, 0);
 	r = socket_recv(ctx.socket, packet, sizeof(packet), 0);
 	while(r > 0)
 	{
-		n = r;
-		ret = rtsp_parser_input(parser, packet, &r);
-		assert(0 == ret || 1 == ret);
-		while (0 == ret)
-		{
-			assert(0 == rtsp_client_input(ctx.rtsp, parser));
-
-			// next round
-			rtsp_parser_clear(parser);
-			ret = rtsp_parser_input(parser, packet + (n - r), &r);
-			assert(0 == ret || 1 == ret);
-		}
-
+		assert(0 == rtsp_client_input(ctx.rtsp, packet, r));
 		r = socket_recv(ctx.socket, packet, sizeof(packet), 0);
 	}
 
-	assert(0 == rtsp_client_close(ctx.rtsp));
+	assert(0 == rtsp_client_teardown(ctx.rtsp));
 	rtsp_client_destroy(ctx.rtsp);
 	socket_close(ctx.socket);
 	socket_cleanup();

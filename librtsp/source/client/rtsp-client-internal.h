@@ -6,12 +6,17 @@
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
 #include "rtsp-parser.h"
-#include "cstringext.h"
+#include "sdp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+
+#if defined(OS_WINDOWS)
+#define strcasecmp	_stricmp
+#define PRIu64		"I64u"
+#endif
 
 #define USER_AGENT "RTSP client v0.1"
 #define N_MEDIA 2
@@ -55,11 +60,12 @@ struct rtsp_client_t
 	struct rtsp_client_handler_t handler;
 	void* param;
 
+	rtsp_parser_t* parser;
 	enum rtsp_state_t state;
 	int progress;
 	unsigned int cseq; // rtsp sequence
 
-	void* sdp;
+	sdp_t* sdp;
 	int media_count;
 	struct rtsp_media_t media[N_MEDIA];
 	struct rtsp_media_t *media_ptr;
@@ -93,11 +99,11 @@ static inline struct rtsp_media_t* rtsp_get_media(struct rtsp_client_t *ctx, int
 	return i < N_MEDIA ? (ctx->media + i) : (ctx->media_ptr + i - N_MEDIA);
 }
 
-int rtsp_client_describe(struct rtsp_client_t* rtsp);
-int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp);
-int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp);
+//int rtsp_client_describe(struct rtsp_client_t* rtsp);
+//int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp);
+//int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp);
+//int rtsp_client_teardown(struct rtsp_client_t* rtsp);
 int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* sdp);
-int rtsp_client_teardown(struct rtsp_client_t* rtsp);
 int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands);
 int rtsp_client_get_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
 int rtsp_client_set_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
