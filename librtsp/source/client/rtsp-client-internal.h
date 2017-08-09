@@ -7,15 +7,15 @@
 #include "rtsp-header-transport.h"
 #include "rtsp-parser.h"
 #include "sdp.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <errno.h>
+#include <inttypes.h>
 
 #if defined(OS_WINDOWS)
 #define strcasecmp	_stricmp
-#define PRIu64		"I64u"
 #endif
 
 #define USER_AGENT "RTSP client v0.1"

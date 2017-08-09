@@ -185,7 +185,7 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 		md5_response(response, A1, A2, rtsp->auth.nonce, rtsp->nc, rtsp->cnonce, rtsp->auth.qop);
 
 		//n = snprintf(buffer, sizeof(buffer), ", algorithm=MD5");
-		n = snprintf(buffer, sizeof(buffer), ""); // default MD5
+		n = snprintf(buffer, sizeof(buffer), "%s", ""); // default MD5
 		if (n + 1 < sizeof(buffer) && rtsp->auth.opaque[0])
 			n += snprintf(buffer + n, sizeof(buffer) - n, ", opaque=\"%s\", ", rtsp->auth.opaque);
 		if (n + 1 < sizeof(buffer) && rtsp->auth.qop[0])

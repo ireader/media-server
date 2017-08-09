@@ -14,13 +14,12 @@ INCLUDES = . \
 					./include \
 					$(ROOT)/include \
 					$(ROOT)/libhttp/include \
-					../librtp/include \
-					../libmpeg/include
+					../librtp/include
 
 #-------------------------------Source-------------------------------
 #
 #--------------------------------------------------------------------
-SOURCE_PATHS = source client media
+SOURCE_PATHS = source source/client source/server
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 

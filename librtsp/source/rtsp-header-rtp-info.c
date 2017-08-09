@@ -15,10 +15,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #if defined(_WIN32) || defined(_WIN64) || defined(OS_WINDOWS)
 #define strncasecmp	_strnicmp
-#define PRIu64 "I64u"
 #endif
 
 #define RTP_INFO_SPECIAL ",;\r\n"

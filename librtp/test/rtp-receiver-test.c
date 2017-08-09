@@ -188,7 +188,7 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 }
 #endif
 
-static void rtp_packet(void* param, const void *packet, int bytes, int64_t time, int flags)
+static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time, int flags)
 {
 	const uint8_t start_code[] = { 0, 0, 0, 1 };
 	struct rtp_context_t* ctx;

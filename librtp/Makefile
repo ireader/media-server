@@ -10,9 +10,7 @@ OUTFILE = librtp.a
 #
 # INCLUDES = $(addprefix -I,$(INCLUDES)) # add -I prefix
 #--------------------------------------------------------------------
-INCLUDES = . \
-					./include \
-					$(ROOT)/include 
+INCLUDES = . ./include
 
 #-------------------------------Source-------------------------------
 #
