@@ -1,86 +1,62 @@
 #include "rtsp-server-internal.h"
 
-#if defined(OS_WINDOWS) || defined(_WIN32) || defined(_WIN64)
-#define strcasecmp _stricmp
-#endif
-
-void rtsp_server_handle(struct rtsp_session_t *session)
+int rtsp_server_handle(struct rtsp_server_t *rtsp)
 {
 	int major, minor;
 	const char* uri;
 	const char* method;
 
-	rtsp_get_version(session->parser, &major, &minor);
+	rtsp_get_version(rtsp->parser, &major, &minor);
 	if (1 != major && 0 != minor)
 	{
 		//505 RTSP Version Not Supported
-		rtsp_server_reply(session, 505);
-		return;
+		return rtsp_server_reply(rtsp, 505);
 	}
 
-	if (0 != rtsp_get_header_by_name2(session->parser, "CSeq", (int*)&session->cseq))
+	if (0 != rtsp_get_header_by_name2(rtsp->parser, "CSeq", (int*)&rtsp->cseq))
 	{
 		// 400 Bad Request
-		rtsp_server_reply(session, 400);
-		return;
+		return rtsp_server_reply(rtsp, 400);
 	}
 
-	uri = rtsp_get_request_uri(session->parser);
-	method = rtsp_get_request_method(session->parser);
+	uri = rtsp_get_request_uri(rtsp->parser);
+	method = rtsp_get_request_method(rtsp->parser);
 
 	switch (*method)
 	{
 	case 'o':
 	case 'O':
 		if (0 == strcasecmp("OPTIONS", method))
-		{
-			rtsp_server_options(session, uri);
-			return;
-		}
+			return rtsp_server_options(rtsp, uri);
 		break;
 
 	case 'd':
 	case 'D':
 		if (0 == strcasecmp("DESCRIBE", method))
-		{
-			rtsp_server_describe(session, uri);
-			return;
-		}
+			return rtsp_server_describe(rtsp, uri);
 		break;
 
 	case 's':
 	case 'S':
 		if (0 == strcasecmp("SETUP", method))
-		{
-			rtsp_server_setup(session, uri);
-			return;
-		}
+			return rtsp_server_setup(rtsp, uri);
 		break;
 
 	case 'p':
 	case 'P':
 		if (0 == strcasecmp("PLAY", method))
-		{
-			rtsp_server_play(session, uri);
-			return;
-		}
+			return rtsp_server_play(rtsp, uri);
 		else if (0 == strcasecmp("PAUSE", method))
-		{
-			rtsp_server_pause(session, uri);
-			return;
-		}
+			return rtsp_server_pause(rtsp, uri);
 		break;
 
 	case 't':
 	case 'T':
 		if (0 == strcasecmp("TEARDOWN", method))
-		{
-			rtsp_server_teardown(session, uri);
-			return;
-		}
+			return rtsp_server_teardown(rtsp, uri);
 		break;
 	}
 
 	// 501 Not implemented
-	rtsp_server_reply(session, 501);
+	return rtsp_server_reply(rtsp, 501);
 }

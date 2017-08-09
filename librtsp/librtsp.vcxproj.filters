@@ -9,24 +9,15 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="util">
-      <UniqueIdentifier>{359f7f50-5e95-48ae-a691-c4df0e952611}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\client">
       <UniqueIdentifier>{4afe1d4d-f89d-4ca7-87d4-357e995b6119}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{5e4f0a51-fa58-49c9-be18-b5361fd74c1c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="media">
-      <UniqueIdentifier>{0b5cf867-60b7-4eb7-9f69-723e5673082b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\rfc822-datetime.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rtp-socket.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rtsp-header-range.c">
@@ -80,18 +71,6 @@
     <ClCompile Include="source\client\rtsp-client-teardown.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
-    <ClCompile Include="source\server\rtsp-server.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="media\h264-file-reader.cpp">
-      <Filter>media</Filter>
-    </ClCompile>
-    <ClCompile Include="media\h264-file-source.cpp">
-      <Filter>media</Filter>
-    </ClCompile>
-    <ClCompile Include="media\ps-file-source.cpp">
-      <Filter>media</Filter>
-    </ClCompile>
     <ClCompile Include="source\client\rtsp-client-options.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
@@ -101,19 +80,7 @@
     <ClCompile Include="source\client\rtmp-client-set-parameter.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
-    <ClCompile Include="source\client\rtsp-client-auth.c">
-      <Filter>Source Files\client</Filter>
-    </ClCompile>
-    <ClCompile Include="source\server\rtsp-server-listen.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="source\server\rtsp-server-handler.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="source\server\rtsp-server-tcp.c">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
-    <ClCompile Include="source\server\rtsp-server-udp.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
     <ClCompile Include="source\server\rtsp-server-options.c">
@@ -133,6 +100,12 @@
     </ClCompile>
     <ClCompile Include="source\server\rtsp-server-pause.c">
       <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\client\rtsp-client-auth.c">
+      <Filter>Source Files\client</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -183,15 +156,6 @@
     </ClInclude>
     <ClInclude Include="include\rtsp-client.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="media\h264-file-reader.h">
-      <Filter>media</Filter>
-    </ClInclude>
-    <ClInclude Include="media\h264-file-source.h">
-      <Filter>media</Filter>
-    </ClInclude>
-    <ClInclude Include="media\ps-file-source.h">
-      <Filter>media</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

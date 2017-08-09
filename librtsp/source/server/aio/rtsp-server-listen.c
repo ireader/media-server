@@ -1,12 +1,16 @@
-#include "sockutil.h"
+#include "rtsp-server-aio.h"
 #include "aio-accept.h"
-#include "rtsp-server-internal.h"
+#include "sockutil.h"
+
+static struct rtsp_handler_t s_handler;
+
+int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct rtsp_handler_t* handler, void* param);
 
 static void rtsp_server_onaccept(void* param, int code, socket_t socket, const struct sockaddr* addr, socklen_t addrlen)
 {
 	if (0 == code)
 	{
-		rtsp_transport_tcp_create(socket, addr, addrlen, param);
+		rtsp_transport_tcp_create(socket, addr, addrlen, &s_handler, param);
 	}
 	else
 	{
@@ -14,7 +18,7 @@ static void rtsp_server_onaccept(void* param, int code, socket_t socket, const s
 	}
 }
 
-void* rtsp_server_listen(const char* ip, int port, void* param)
+void* rtsp_server_listen(const char* ip, int port, struct rtsp_handler_t* handler, void* param)
 {
 	void* aio;
 	socket_t socket;
@@ -27,6 +31,7 @@ void* rtsp_server_listen(const char* ip, int port, void* param)
 		return NULL;
 	}
 
+	memcpy(&s_handler, handler, sizeof(s_handler));
 	aio = aio_accept_start(socket, rtsp_server_onaccept, param);
 	if (NULL == aio)
 	{

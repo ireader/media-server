@@ -3,24 +3,22 @@
 #include "rtsp-header-range.h"
 #include "rfc822-datetime.h"
 
-void rtsp_server_play(struct rtsp_session_t *session, const char* uri)
+int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri)
 {
 	int64_t npt = -1L;
 	double scale = 0.0f;
 	const char *pscale, *prange, *psession;
 	struct rtsp_header_range_t range;
-	struct rtsp_header_session_t xsession;
-	struct rtsp_server_t* ctx = session->server;
+	struct rtsp_header_session_t session;
 
-	pscale = rtsp_get_header_by_name(session->parser, "scale");
-	prange = rtsp_get_header_by_name(session->parser, "range");
-	psession = rtsp_get_header_by_name(session->parser, "Session");
+	pscale = rtsp_get_header_by_name(rtsp->parser, "scale");
+	prange = rtsp_get_header_by_name(rtsp->parser, "range");
+	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
 
-	if (!psession || 0 != rtsp_header_session(psession, &xsession))
+	if (!psession || 0 != rtsp_header_session(psession, &session))
 	{
 		// 454 (Session Not Found)
-		rtsp_server_reply(session, 454);
-		return;
+		return rtsp_server_reply(rtsp, 454);
 	}
 
 	if (pscale)
@@ -33,10 +31,10 @@ void rtsp_server_play(struct rtsp_session_t *session, const char* uri)
 		npt = range.from;
 	}
 
-	ctx->handler.play(ctx->param, session, uri, xsession.session, -1L == npt ? NULL : &npt, pscale ? &scale : NULL);
+	return rtsp->handler.onplay(rtsp->param, rtsp, uri, session.session, -1L == npt ? NULL : &npt, pscale ? &scale : NULL);
 }
 
-void rtsp_server_reply_play(struct rtsp_session_t *session, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
+int rtsp_server_reply_play(struct rtsp_server_t *rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
 {
 	int len;
 	char range[64] = { 0 };
@@ -44,10 +42,7 @@ void rtsp_server_reply_play(struct rtsp_session_t *session, int code, const int6
 	rfc822_datetime_t datetime;
 
 	if (200 != code)
-	{
-		rtsp_server_reply(session, code);
-		return;
-	}
+		return rtsp_server_reply(rtsp, code);
 
 	if (rtp)
 	{
@@ -64,14 +59,14 @@ void rtsp_server_reply_play(struct rtsp_session_t *session, int code, const int6
 
 	rfc822_datetime_format(time(NULL), datetime);
 	// smpte=0:10:22-;time=19970123T153600Z
-	len = snprintf(session->reply, sizeof(session->reply),
+	len = snprintf(rtsp->reply, sizeof(rtsp->reply),
 		"RTSP/1.0 200 OK\r\n"
 		"CSeq: %u\r\n"
 		"Date: %s\r\n"
 		"%s" // Range
 		"%s" // RTP-Info
 		"\r\n",
-		session->cseq, datetime, range, rtpinfo);
+		rtsp->cseq, datetime, range, rtpinfo);
 
-	session->send(session, session->reply, len);
+	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
 }

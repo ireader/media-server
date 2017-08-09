@@ -8,12 +8,13 @@
 #include "ctypedef.h"
 #include "aio-socket.h"
 #include "aio-timeout.h"
-#include "rtsp-server.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
 #include "rtp-socket.h"
-#include "ps-file-source.h"
-#include "h264-file-source.h"
+#include "rtsp-server.h"
+#include "media/ps-file-source.h"
+#include "media/h264-file-source.h"
+#include "rtsp-server-aio.h"
 #include "uri-parse.h"
 #include "urlcodec.h"
 #include "path.h"
@@ -26,14 +27,14 @@ static const char* s_workdir = "e:";
 
 static ThreadLocker s_locker;
 
-struct rtsp_session_t
+struct rtsp_media_t
 {
 	std::shared_ptr<IMediaSource> media;
 	socket_t socket[2];
 	unsigned short port[2];
 	int status; // setup-init, 1-play, 2-pause
 };
-typedef std::map<std::string, rtsp_session_t> TSessions;
+typedef std::map<std::string, rtsp_media_t> TSessions;
 static TSessions s_sessions;
 
 struct TFileDescription
@@ -56,7 +57,7 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 	return 0;
 }
 
-static void rtsp_ondescribe(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri)
+static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 {
     static const char* pattern =
         "v=0\n"
@@ -98,10 +99,10 @@ static void rtsp_ondescribe(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri
     int offset = snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
 	offset += strlcat(sdp + offset, it->second.sdpmedia.c_str(), sizeof(sdp) - offset);
 
-    rtsp_server_reply_describe(rtsp, 200, sdp);
+    return rtsp_server_reply_describe(rtsp, 200, sdp);
 }
 
-static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num)
+static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num)
 {
 	std::string filename;
 	char rtsp_transport[128];
@@ -115,7 +116,7 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
 		}
 		else
 		{
@@ -123,9 +124,8 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 			assert(0);
 
 			// 459 Aggregate Operation Not Allowed
-			rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
+			return rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
 		}
-		return;
 	}
 	else
 	{
@@ -135,7 +135,7 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 		if('\\' == *filename.rbegin() || '/' == *filename.rbegin())
 			filename.erase(filename.end()-1);
 
-		rtsp_session_t item;
+		rtsp_media_t item;
 		memset(&item, 0, sizeof(item));
 #if defined(PS_VOD)
 		item.media.reset(new PSFileSource(filename.c_str()));
@@ -170,8 +170,7 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 	if(!transport)
 	{
 		// 461 Unsupported Transport
-		rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
-		return;
+		return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
 	}
 
 	if(transport->multicast)
@@ -186,14 +185,13 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 		// unicast
 		assert(transport->rtp.u.client_port1 && transport->rtp.u.client_port2);
 
-		rtsp_session_t &item = it->second;
+		rtsp_media_t &item = it->second;
 		if(0 != rtp_socket_create(NULL, item.socket, item.port))
 		{
 			// log
 
 			// 500 Internal Server Error
-			rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
-			return;
+			return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
 		}
 
 		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
@@ -202,8 +200,7 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
 			item.port[0], item.port[1]);
 
-		char ipaddr[SOCKET_ADDRLEN] = { 0 };
-		const char *ip = ipaddr;
+		const char *ip = NULL;
 		if(transport->destination[0])
 		{
 			ip = transport->destination;
@@ -212,18 +209,17 @@ static void rtsp_onsetup(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, c
 		}
 		else
 		{
-			unsigned short port = 0;
-			rtsp_server_get_client(rtsp, ipaddr, &port);
+			ip = rtsp_server_get_client(rtsp, NULL);
 		}
 
 		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
 		item.media->SetRTPSocket(ip, item.socket, port);
 	}
 
-    rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
+    return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
 }
 
-static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
+static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
@@ -233,8 +229,7 @@ static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, co
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-			return;
+			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
 		}
 
 		source = it->second.media;
@@ -242,8 +237,7 @@ static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, co
 	if(npt && 0 != source->Seek(*npt))
 	{
 		// 457 Invalid Range
-		rtsp_server_reply_setup(rtsp, 457, NULL, NULL);
-		return;
+		return rtsp_server_reply_setup(rtsp, 457, NULL, NULL);
 	}
 
 	if(scale && 0 != source->SetSpeed(*scale))
@@ -252,8 +246,7 @@ static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, co
 		assert(scale > 0);
 
 		// 406 Not Acceptable
-		rtsp_server_reply_setup(rtsp, 406, NULL, NULL);
-		return;
+		return rtsp_server_reply_setup(rtsp, 406, NULL, NULL);
 	}
 
 	// RFC 2326 12.33 RTP-Info (p55)
@@ -270,11 +263,11 @@ static void rtsp_onplay(void* /*ptr*/, rtsp_session_t* rtsp, const char* uri, co
 	snprintf(rtpinfo, sizeof(rtpinfo), "url=%s;seq=%hu;rtptime=%u", uri, seq, rtptime);
 
 	it->second.status = 1;
-	rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
-    //rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
+	return rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
+    //return rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
 }
 
-static void rtsp_onpause(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
+static int rtsp_onpause(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
@@ -284,8 +277,7 @@ static void rtsp_onpause(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-			return;
+			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
 		}
 
 		source = it->second.media;
@@ -296,10 +288,10 @@ static void rtsp_onpause(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*
 
 	// 457 Invalid Range
 
-    rtsp_server_reply_pause(rtsp, 200);
+    return rtsp_server_reply_pause(rtsp, 200);
 }
 
-static void rtsp_onteardown(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*uri*/, const char* session)
+static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/, const char* session)
 {
 	std::shared_ptr<IMediaSource> source;
 	TSessions::const_iterator it;
@@ -309,15 +301,14 @@ static void rtsp_onteardown(void* /*ptr*/, rtsp_session_t* rtsp, const char* /*u
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
-			return;
+			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
 		}
 
 		source = it->second.media;
 		s_sessions.erase(it);
 	}
 
-	rtsp_server_reply_teardown(rtsp, 200);
+	return rtsp_server_reply_teardown(rtsp, 200);
 }
 
 static int STDCALL rtsp_worker(void* /*param*/)
@@ -330,22 +321,23 @@ static int STDCALL rtsp_worker(void* /*param*/)
 
 extern "C" void rtsp_example()
 {
-	rtsp_server_t *rtsp;
-    struct rtsp_handler_t handler;
-
 	aio_socket_init(1);
 
-    handler.describe = rtsp_ondescribe;
-    handler.setup = rtsp_onsetup;
-    handler.play = rtsp_onplay;
-    handler.pause = rtsp_onpause;
-    handler.teardown = rtsp_onteardown;
-    rtsp = rtsp_server_create(NULL, 554, &handler, NULL);
+	struct rtsp_handler_t handler;
+	handler.ondescribe = rtsp_ondescribe;
+    handler.onsetup = rtsp_onsetup;
+    handler.onplay = rtsp_onplay;
+    handler.onpause = rtsp_onpause;
+    handler.onteardown = rtsp_onteardown;
+    
+	void* tcp = rtsp_server_listen(NULL, 554, &handler, NULL);
+	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL);
+	assert(tcp && udp);
 
 	// create worker thread
-	pthread_t thread;
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1; i++)
 	{
+		pthread_t thread;
 		thread_create(&thread, rtsp_worker, NULL);
 		thread_detach(thread);
 	}
@@ -359,7 +351,7 @@ extern "C" void rtsp_example()
 		AutoThreadLocker locker(s_locker);
 		for(it = s_sessions.begin(); it != s_sessions.end(); ++it)
 		{
-			rtsp_session_t &session = it->second;
+			rtsp_media_t &session = it->second;
 			if(1 == session.status)
 				session.media->Play();
 		}
@@ -367,7 +359,8 @@ extern "C" void rtsp_example()
 		aio_timeout_process();
     }
 
-	rtsp_server_destroy(rtsp);
 	aio_socket_clean();
+	rtsp_server_unlisten(tcp);
+	rtsp_transport_udp_destroy(udp);
 }
 #endif

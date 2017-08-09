@@ -55,10 +55,13 @@ int H264FileSource::Play()
 	m_status = 1;
 
 	time64_t clock = time64_now();
-	if(0 == m_rtp_clock || m_rtp_clock + 40 < clock)
+	if (0 == m_rtp_clock)
+		m_rtp_clock = clock;
+
+	if(m_rtp_clock + 40 < clock)
 	{
-		void* ptr = NULL;
-		size_t bytes = 0;
+		size_t bytes;
+		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
 			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock * 90 /*kHz*/);
@@ -109,15 +112,15 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
     char base64[512] = {0};
     std::string parameters;
 
-    const std::list<H264FileReader::sps_t>& sps = m_reader.GetParameterSets();
-    std::list<H264FileReader::sps_t>::const_iterator it;
+    const std::list<std::pair<const uint8_t*, size_t> >& sps = m_reader.GetParameterSets();
+    std::list<std::pair<const uint8_t*, size_t> >::const_iterator it;
     for(it = sps.begin(); it != sps.end(); ++it)
     {
         if(parameters.empty())
         {
             snprintf(base64, sizeof(base64), pattern, 
 				RTP_PAYLOAD_H264, RTP_PAYLOAD_H264,RTP_PAYLOAD_H264, 
-				(unsigned int)(*it)[1], (unsigned int)(*it)[2], (unsigned int)(*it)[3]);
+				(unsigned int)(it->first[1]), (unsigned int)(it->first[2]), (unsigned int)(it->first[3]));
             sdp = base64;
         }
         else
@@ -125,9 +128,9 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
             parameters += ',';
         }
 
-        size_t bytes = it->size();
+        size_t bytes = it->second;
         assert((bytes+2)/3*4 + bytes/57 + 1 < sizeof(base64));
-        bytes = base64_encode(base64, &(*it)[0], bytes);
+        bytes = base64_encode(base64, it->first, bytes);
 		base64[bytes] = '\0';
         assert(strlen(base64) > 0);
         parameters += base64;

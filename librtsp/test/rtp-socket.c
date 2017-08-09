@@ -1,9 +1,8 @@
-#include "cstringext.h"
 #include "rtp-socket.h"
-#include "ctypedef.h"
 #include "sockutil.h"
 #include "sys/atomic.h"
 #include <assert.h>
+#include <stdio.h>
 #include <time.h>
 
 static unsigned short s_base_port = 30000;
@@ -87,12 +86,12 @@ void rtp_socket_get_port_range(unsigned short *base, unsigned short *num)
 void rtp_socket_set_multicast_range(const char* multicast, unsigned int num)
 {
 	memset(s_multicast_ip, 0, sizeof(s_multicast_ip));
-	strlcpy(s_multicast_ip, multicast, sizeof(s_multicast_ip));
+	snprintf(s_multicast_ip, sizeof(s_multicast_ip), "%s", multicast);
 	s_multicast_num = num;
 }
 
 void rtp_socket_get_multicast_range(char multicast[SOCKET_ADDRLEN], unsigned int *num)
 {
-	strlcpy(multicast, s_multicast_ip, SOCKET_ADDRLEN);
+	snprintf(multicast, SOCKET_ADDRLEN, "%s", s_multicast_ip);
 	*num = s_multicast_num;
 }

@@ -6,78 +6,83 @@
 #include <string.h>
 #include <assert.h>
 
-static void rtsp_server_onsend(struct rtsp_session_t* session, int code, size_t bytes)
+struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port, struct rtsp_handler_t* handler, void* ptr, void* ptr2)
 {
-	(void)session;
-	(void)code;
-	(void)bytes;
+	struct rtsp_server_t* rtsp;
+
+	rtsp = (struct rtsp_server_t *)malloc(sizeof(struct rtsp_server_t));
+	if (NULL == rtsp) return NULL;
+
+	snprintf(rtsp->ip, sizeof(rtsp->ip), "%s", ip);
+	rtsp->port = port;
+	rtsp->param = ptr;
+	rtsp->sendparam = ptr2;
+	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
+	rtsp->parser = rtsp_parser_create(RTSP_PARSER_SERVER);
+	return rtsp;
 }
 
-struct rtsp_server_t* rtsp_server_create(const char* ip, int port, struct rtsp_handler_t* handler, void* param)
+int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 {
-	struct rtsp_server_t* server;
-
-	server = (struct rtsp_server_t *)calloc(1, sizeof(struct rtsp_server_t));
-	if(!server) return NULL;
-
-	server->onrecv = rtsp_server_handle;
-	server->onsend = rtsp_server_onsend;
-	server->param = param;
-	memcpy(&server->handler, handler, sizeof(server->handler));
-
-	server->tcp = rtsp_server_listen(ip, port, server);
-	server->udp = rtsp_transport_udp_create(ip, port, server);
-	if(!server->udp || !server->tcp)
+	if (rtsp->parser)
 	{
-		rtsp_server_destroy(server);
-		return NULL;
+		rtsp_parser_destroy(rtsp->parser);
+		rtsp->parser = NULL;
 	}
 
-	return server;
-}
-
-int rtsp_server_destroy(struct rtsp_server_t* ctx)
-{
-	if (ctx->tcp)
-	{
-		rtsp_server_unlisten(ctx->tcp);
-		ctx->tcp = NULL;
-	}
-
-	if (ctx->udp)
-	{
-		rtsp_transport_udp_destroy(ctx->udp);
-		ctx->udp = NULL;
-	}
-
-	free(ctx); // TODO: error
+	free(rtsp);
 	return 0;
 }
 
-const char* rtsp_server_get_header(struct rtsp_session_t *session, const char* name)
+int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t bytes)
 {
-	return rtsp_get_header_by_name(session->parser, name);
+	int r, remain;
+
+	remain = (int)bytes;
+	do
+	{
+		if (*(char*)data == '$')
+		{
+			// TODO: rtsp over tcp
+			assert(0);
+		}
+
+		r = rtsp_parser_input(rtsp->parser, (const char*)data + (bytes - remain), &remain);
+		assert(r <= 1); // 1-need more data
+		if (0 == r)
+		{
+			r = rtsp_server_handle(rtsp);
+			rtsp_parser_clear(rtsp->parser); // reset parser
+		}
+	} while (remain > 0 && r >= 0);
+
+	assert(r <= 1);
+	return r >= 0 ? 0 : r;
 }
 
-int rtsp_server_get_client(struct rtsp_session_t *session, char ip[65], unsigned short *port)
+const char* rtsp_server_get_header(struct rtsp_server_t *rtsp, const char* name)
 {
-	if (NULL == ip || NULL == port)
-		return -1;
-	return socket_addr_to((struct sockaddr*)&session->addr, session->addrlen, ip, port);
+	return rtsp_get_header_by_name(rtsp->parser, name);
 }
 
-int rtsp_server_reply(struct rtsp_session_t *session, int code)
+const char* rtsp_server_get_client(rtsp_server_t* rtsp, unsigned short* port)
+{
+	if (port) *port = rtsp->port;
+	return rtsp->ip;
+}
+
+int rtsp_server_reply(struct rtsp_server_t *rtsp, int code)
 {
 	int len;
 	rfc822_datetime_t datetime;
 	rfc822_datetime_format(time(NULL), datetime);
 
-	len = snprintf(session->reply, sizeof(session->reply),
+	len = snprintf(rtsp->reply, sizeof(rtsp->reply),
 		"RTSP/1.0 %d %s\r\n"
 		"CSeq: %u\r\n"
 		"Date: %s\r\n"
 		"\r\n",
-		code, rtsp_reason_phrase(code), session->cseq, datetime);
+		code, rtsp_reason_phrase(code), rtsp->cseq, datetime);
 
-	return session->send(session, session->reply, len);
+	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
 }

@@ -6,22 +6,20 @@
 // 1. A PAUSE request discards all queued PLAY requests. However, the pause
 //	  point in the media stream MUST be maintained. A subsequent PLAY
 //	  request without Range header resumes from the pause point.
-void rtsp_server_pause(struct rtsp_session_t* session, const char* uri)
+int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 {
 	int64_t npt = -1L;
 	const char *prange, *psession;
 	struct rtsp_header_range_t range;
-	struct rtsp_header_session_t xsession;
-	struct rtsp_server_t* ctx = session->server;
+	struct rtsp_header_session_t session;
 
-	prange = rtsp_get_header_by_name(session->parser, "range");
-	psession = rtsp_get_header_by_name(session->parser, "Session");
+	prange = rtsp_get_header_by_name(rtsp->parser, "range");
+	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
 
-	if (!psession || 0 != rtsp_header_session(psession, &xsession))
+	if (!psession || 0 != rtsp_header_session(psession, &session))
 	{
 		// 454 Session Not Found
-		rtsp_server_reply(session, 454);
-		return;
+		return rtsp_server_reply(rtsp, 454);
 	}
 
 	if (prange && 0 == rtsp_header_range(prange, &range))
@@ -36,10 +34,10 @@ void rtsp_server_pause(struct rtsp_session_t* session, const char* uri)
 		//return;
 	}
 
-	ctx->handler.pause(ctx->param, session, uri, xsession.session, -1L == npt ? NULL : &npt);
+	return rtsp->handler.onpause(rtsp->param, rtsp, uri, session.session, -1L == npt ? NULL : &npt);
 }
 
-void rtsp_server_reply_pause(struct rtsp_session_t *session, int code)
+int rtsp_server_reply_pause(struct rtsp_server_t *rtsp, int code)
 {
-	rtsp_server_reply(session, code);
+	return rtsp_server_reply(rtsp, code);
 }

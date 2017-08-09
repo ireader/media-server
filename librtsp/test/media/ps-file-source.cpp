@@ -68,8 +68,8 @@ int PSFileSource::Play()
 	time64_t clock = time64_now();
 	if(0 == m_rtp_clock || m_rtp_clock + 40 < clock)
 	{
-		void* ptr = NULL;
-		size_t bytes = 0;
+		size_t bytes;
+		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
 			if(0 == m_ps_clock)

@@ -77,7 +77,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;../librtp/include;../libmpeg/include;..\..\sdk\libhttp\include;..\..\sdk\libaio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include;../libmpeg/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -106,7 +106,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include;../libmpeg/include;..\..\sdk\libaio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBRTSP_EXPORTS;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -120,7 +120,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;include;client;./media;..\..\sdk\include;..\..\sdk\libhttp\include;../librtp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -132,9 +132,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="media\h264-file-reader.cpp" />
-    <ClCompile Include="media\h264-file-source.cpp" />
-    <ClCompile Include="media\ps-file-source.cpp" />
     <ClCompile Include="source\client\rtmp-client-set-parameter.c" />
     <ClCompile Include="source\client\rtsp-client-announce.c" />
     <ClCompile Include="source\client\rtsp-client-auth.c" />
@@ -148,7 +145,6 @@
     <ClCompile Include="source\client\rtsp-client-teardown.c" />
     <ClCompile Include="source\client\rtsp-client.c" />
     <ClCompile Include="source\rfc822-datetime.c" />
-    <ClCompile Include="source\rtp-socket.c" />
     <ClCompile Include="source\rtsp-header-range.c" />
     <ClCompile Include="source\rtsp-header-rtp-info.c" />
     <ClCompile Include="source\rtsp-header-session.c" />
@@ -160,14 +156,11 @@
     <ClCompile Include="source\sdp.c" />
     <ClCompile Include="source\server\rtsp-server-describe.c" />
     <ClCompile Include="source\server\rtsp-server-handler.c" />
-    <ClCompile Include="source\server\rtsp-server-listen.c" />
     <ClCompile Include="source\server\rtsp-server-options.c" />
     <ClCompile Include="source\server\rtsp-server-pause.c" />
     <ClCompile Include="source\server\rtsp-server-play.c" />
     <ClCompile Include="source\server\rtsp-server-setup.c" />
-    <ClCompile Include="source\server\rtsp-server-tcp.c" />
     <ClCompile Include="source\server\rtsp-server-teardown.c" />
-    <ClCompile Include="source\server\rtsp-server-udp.c" />
     <ClCompile Include="source\server\rtsp-server.c" />
   </ItemGroup>
   <ItemGroup>
@@ -185,9 +178,6 @@
     <ClInclude Include="include\sdp-a-fmtp.h" />
     <ClInclude Include="include\sdp-a-rtpmap.h" />
     <ClInclude Include="include\sdp.h" />
-    <ClInclude Include="media\h264-file-reader.h" />
-    <ClInclude Include="media\h264-file-source.h" />
-    <ClInclude Include="media\ps-file-source.h" />
     <ClInclude Include="source\client\rtsp-client-internal.h" />
     <ClInclude Include="source\server\rtsp-server-internal.h" />
   </ItemGroup>
