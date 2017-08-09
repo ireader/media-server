@@ -1,7 +1,7 @@
 #ifndef _rtsp_header_range_h_
 #define _rtsp_header_range_h_
 
-#include "ctypedef.h"
+#include <stdint.h>
 
 enum ERTSP_RANGE_TIME { 
 	RTSP_RANGE_SMPTE = 1, // relative to the start of the clip 

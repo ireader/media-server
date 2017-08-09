@@ -20,8 +20,10 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
-#include "cstringext.h"
-#include "string-util.h"
+
+#if defined(_WIN32) || defined(_WIN64) || defined(OS_WINDOWS)
+#define strncasecmp	_strnicmp
+#endif
 
 struct time_smpte_t
 {
@@ -63,6 +65,28 @@ static uint64_t utc_mktime(const struct tm *t)
               )*24 + t->tm_hour /* now have hours */
              )*60 + t->tm_min /* now have minutes */
             )*60 + t->tm_sec; /* finally seconds */
+}
+
+static inline const char* string_token_int(const char* str, int *value)
+{
+	*value = 0;
+	while ('0' <= *str && *str <= '9')
+	{
+		*value = (*value * 10) + (*str - '0');
+		++str;
+	}
+	return str;
+}
+
+static inline const char* string_token_int64(const char* str, int64_t *value)
+{
+	*value = 0;
+	while ('0' <= *str && *str <= '9')
+	{
+		*value = (*value * 10) + (*str - '0');
+		++str;
+	}
+	return str;
 }
 
 // smpte-time = 1*2DIGIT ":" 1*2DIGIT ":" 1*2DIGIT [ ":" 1*2DIGIT ][ "." 1*2DIGIT ]
@@ -151,7 +175,7 @@ static const char* rtsp_header_range_npt_time(const char* str, uint64_t *seconds
 	int v1, v2;
 
 	assert(str);
-	p = string_token(str, "-\r\n");
+	p = strpbrk(str, "-\r\n");
 	if(!str || (p-str==3 && 0==strncasecmp(str, "now", 3)))
 	{
 		*seconds = 0; // now

@@ -36,11 +36,15 @@
 //    number with the next lower (even) number to use as the base of the port pair.
 
 #include "rtsp-header-transport.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "ctypedef.h"
-#include "cstringext.h"
+
+#if defined(_WIN32) || defined(_WIN64) || defined(OS_WINDOWS)
+#define strcasecmp _stricmp
+#define strncasecmp	_strnicmp
+#endif
 
 #define TRANSPORT_SPECIAL ",;\r\n"
 

@@ -1,7 +1,7 @@
 #ifndef _rtsp_header_rtp_info_h_
 #define _rtsp_header_rtp_info_h_
 
-#include "ctypedef.h"
+#include <stdint.h>
 
 struct rtsp_header_rtp_info_t
 {
