@@ -150,9 +150,7 @@ struct mov_trex_t
 	uint32_t default_sample_description_index;
 	uint32_t default_sample_duration;
 	uint32_t default_sample_size;
-	uint32_t default_sample_flags;
-
-	uint64_t dts; // tfdt baseMediaDecodeTime 
+	uint32_t default_sample_flags; 
 };
 
 struct mov_tfhd_t

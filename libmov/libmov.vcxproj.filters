@@ -24,9 +24,6 @@
     <ClInclude Include="include\mov-writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\mov-internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mov-box.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -37,6 +34,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mov-format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mov-internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

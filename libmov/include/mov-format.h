@@ -23,7 +23,9 @@
 #define MOV_OBJECT_OPUS		0xAD // Opus audio
 
 /// MOV flags
-#define MOV_FLAG_FASTSTART 0x00000001
+#define MOV_FLAG_FASTSTART	0x00000001
+#define MOV_FLAG_FRAGMENT	0x00000002
+#define MOV_FLAG_DASH		0x00000004
 
 /// MOV av stream flag
 #define MOV_AV_FLAG_KEYFREAME 0x0001

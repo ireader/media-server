@@ -35,38 +35,38 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 	return file_reader_skip(mov->fp, box->size);
 }
 
-struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index)
-{
-	size_t i;
-	for (i = 0; i < track->stsd_count; i++)
-	{
-		if (track->stsd[i].data_reference_index == sample_description_index)
-			return &track->stsd[i];
-	}
-	return NULL;
-}
+//static struct mov_stsd_t* mov_track_stsd_find(struct mov_track_t* track, uint32_t sample_description_index)
+//{
+//	size_t i;
+//	for (i = 0; i < track->stsd_count; i++)
+//	{
+//		if (track->stsd[i].data_reference_index == sample_description_index)
+//			return &track->stsd[i];
+//	}
+//	return NULL;
+//}
 
 static int mov_track_build(struct mov_track_t* track)
 {
 	size_t i, j, k;
-	uint64_t n = 0, chunk_offset;
+	uint64_t n, chunk_offset;
 	struct mov_stbl_t* stbl = &track->stbl;
 
-	//assert(stbl->stsc_count > 0 && stbl->stco_count > 0);
-	//assert(NULL != track->samples && track->sample_count > 0);
-	if (NULL == track->samples || track->sample_count < 1 || stbl->stsc_count < 1)
+	if (track->sample_count < 1)
 		return 0;
-
+	
 	// sample offset
+	assert(stbl->stsc_count > 0 && stbl->stco_count > 0);
 	stbl->stsc[stbl->stsc_count].first_chunk = stbl->stco_count + 1; // fill stco count
-	for (i = 0, n = 0; i < stbl->stsc_count && stbl->stsc[i].first_chunk <= stbl->stco_count; i++)
+	for (i = 0, n = 0; i < stbl->stsc_count; i++)
 	{
+		assert(stbl->stsc[i].first_chunk <= stbl->stco_count);
 		for (j = stbl->stsc[i].first_chunk; j < stbl->stsc[i + 1].first_chunk; j++)
 		{
-			chunk_offset = stbl->stco[j-1];
+			chunk_offset = stbl->stco[j-1]; // chunk start from 1
 			for (k = 0; k < stbl->stsc[i].samples_per_chunk; k++, n++)
 			{
-				track->samples[n].stsd = mov_track_dref_find(track, stbl->stsc[i].sample_description_index);
+				track->samples[n].sample_description_index = stbl->stsc[i].sample_description_index;
 				track->samples[n].offset = chunk_offset;
 				chunk_offset += track->samples[n].bytes;
 				assert(track->samples[n].bytes > 0);
@@ -220,9 +220,9 @@ static int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box)
 	version = file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
 	if (1 == version)
-		mov->track->trex.dts = file_reader_rb64(mov->fp); /* baseMediaDecodeTime */
+		mov->track->end_dts = file_reader_rb64(mov->fp); /* baseMediaDecodeTime */
 	else
-		mov->track->trex.dts = file_reader_rb32(mov->fp); /* baseMediaDecodeTime */
+		mov->track->end_dts = file_reader_rb32(mov->fp); /* baseMediaDecodeTime */
 	return file_reader_error(mov->fp); (void)box;
 }
 
@@ -478,7 +478,7 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	}
 
 	track->sample_offset++; //mark as read
-	onread(param, track->tkhd.track_ID, sample->stsd->object_type_indication, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
+	onread(param, track->tkhd.track_ID, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
 	return 1;
 }
 
@@ -491,7 +491,7 @@ int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, 
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
 		track = &reader->mov.tracks[i];
-		for (j = 0; j < track->stsd_count; j++)
+		for (j = 0; j < track->stsd_count && j < 1 /* only the first */; j++)
 		{
 			stsd = &track->stsd[j];
 			switch (track->handler_type)

@@ -24,9 +24,9 @@
     <ClInclude Include="include\mov-atom.h" />
     <ClInclude Include="include\mov-box.h" />
     <ClInclude Include="include\mov-format.h" />
-    <ClInclude Include="include\mov-internal.h" />
     <ClInclude Include="include\mov-reader.h" />
     <ClInclude Include="include\mov-writer.h" />
+    <ClInclude Include="source\mov-internal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\file-reader.c" />

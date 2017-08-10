@@ -60,7 +60,7 @@ void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	int r, type;
 	uint32_t timestamp;
 	void* flv = flv_reader_create(inflv);
-	mov_writer_t* mov = mov_writer_create(outmp4, MOV_FLAG_FASTSTART);
+	mov_writer_t* mov = mov_writer_create(outmp4, MOV_FLAG_FRAGMENT);
 	flv_parser_t* parser = flv_parser_create(onFLV, mov);
 
 	s_width = w;

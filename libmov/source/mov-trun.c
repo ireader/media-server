@@ -84,13 +84,13 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 
 		sample[i].offset = data_offset;
 		sample[i].bytes = sample_size;
-		sample[i].flags = (sample_flags & (MOV_TREX_FLAG_SAMPLE_IS_NO_SYNC_SAMPLE | 0x01000000)) ? 0 : MOV_AV_FLAG_KEYFREAME;
-		sample[i].stsd = mov_track_dref_find(track, track->tfhd.sample_description_index);
-		sample[i].dts = track->trex.dts;
+		sample[i].dts = track->end_dts;
 		sample[i].pts = sample[i].dts + sample_composition_time_offset;
+		sample[i].flags = (sample_flags & (MOV_TREX_FLAG_SAMPLE_IS_NO_SYNC_SAMPLE | 0x01000000)) ? 0 : MOV_AV_FLAG_KEYFREAME;
+		sample[i].sample_description_index = track->tfhd.sample_description_index;
 
 		data_offset += sample_size;
-		track->trex.dts += sample_duration;
+		track->end_dts += sample_duration;
 	}
 	track->sample_count += sample_count;
 

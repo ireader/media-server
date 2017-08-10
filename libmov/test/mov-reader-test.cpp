@@ -12,17 +12,19 @@ static uint8_t s_buffer[4 * 1024 * 1024];
 static FILE *s_vfp, *s_afp;
 static struct mpeg4_avc_t s_avc;
 static struct mpeg4_aac_t s_aac;
+static uint32_t s_aac_track;
+static uint32_t s_avc_track;
 
 extern "C" size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
 
-static void onread(void* flv, uint32_t /*track*/, uint8_t object, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
 {
-	if (MOV_OBJECT_H264 == object)
+	if (s_avc_track == track)
 	{
 		int n = mpeg4_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
-	else if (MOV_OBJECT_AAC == object)
+	else if (s_aac_track == track)
 	{
 		uint8_t adts[32];
 		int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
@@ -35,8 +37,10 @@ static void onread(void* flv, uint32_t /*track*/, uint8_t object, const void* bu
 	}
 }
 
-static void mov_video_info(void* /*param*/, uint32_t /*track*/, uint8_t /*object*/, int /*width*/, int /*height*/, const void* extra, size_t bytes)
+static void mov_video_info(void* /*param*/, uint32_t track, uint8_t object, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
+	s_avc_track = track;
+	assert(MOV_OBJECT_H264 == object);
 	mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc);
 
 	// write sps/pps
@@ -44,8 +48,10 @@ static void mov_video_info(void* /*param*/, uint32_t /*track*/, uint8_t /*object
 	fwrite(s_buffer, 1, n, s_vfp);
 }
 
-static void mov_audio_info(void* /*param*/, uint32_t /*track*/, uint8_t /*object*/, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* /*extra*/, size_t /*bytes*/)
+static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* /*extra*/, size_t /*bytes*/)
 {
+	s_aac_track = track;
+	assert(MOV_OBJECT_AAC == object);
 	s_aac.profile = MPEG4_AAC_LC;
 	s_aac.channel_configuration = channel_count;
 	s_aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);

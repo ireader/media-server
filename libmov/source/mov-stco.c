@@ -63,7 +63,7 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 {
 	int co64;
-	size_t size, i, j = 0;
+	size_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -79,17 +79,15 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 	for (i = 0; i < track->sample_count; i++)
 	{
 		sample = track->samples + i;
-		if(0 == sample->u.stsc.first_chunk)
+		if(0 == sample->first_chunk)
 			continue;
 
-		++j;
 		if(0 == co64)
 			file_writer_wb32(mov->fp, (uint32_t)(sample->offset + track->offset));
 		else
 			file_writer_wb64(mov->fp, sample->offset + track->offset);
 	}
 
-	assert(j == count);
 	return size;
 }
 
@@ -110,7 +108,7 @@ size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset)
 	for (i = 0, j = 0; i < track->sample_count; i++)
 	{
 		sample = track->samples + i;
-		if (0 != sample->u.stsc.first_chunk)
+		if (0 != sample->first_chunk)
 			j++;
 	}
 

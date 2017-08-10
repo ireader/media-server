@@ -12,33 +12,31 @@ struct mov_writer_t
 	struct mov_t mov;
 	size_t mdat_size;
 	uint64_t mdat_offset;
-	int flags;
 };
 
 static uint32_t mov_build_chunk(struct mov_track_t* track)
 {
-	size_t bytes = 0, i;
+	size_t i;
+	size_t bytes = 0;
 	uint32_t count = 0;
-	struct mov_stsd_t* stsd = NULL;
 	struct mov_sample_t* sample = NULL;
 
 	assert(track->stsd_count > 0);
-	stsd = &track->stsd[0];
 	for(i = 0; i < track->sample_count; i++)
 	{
-		if(NULL != sample && sample->offset + bytes == track->samples[i].offset 
-			&& sample->u.stsc.sample_description_index == stsd->data_reference_index)
+		if(NULL != sample 
+			&& sample->offset + bytes == track->samples[i].offset 
+			&& sample->sample_description_index == track->samples[i].sample_description_index)
 		{
-			track->samples[i].u.stsc.first_chunk = 0; // mark invalid value
+			track->samples[i].first_chunk = 0; // mark invalid value
 			bytes += track->samples[i].bytes;
-			++sample->u.stsc.samples_per_chunk;
+			++sample->samples_per_chunk;
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.stsc.first_chunk = ++count;
-			sample->u.stsc.samples_per_chunk = 1;
-			sample->u.stsc.sample_description_index = stsd->data_reference_index;
+			sample->first_chunk = ++count; // chunk start from 1
+			sample->samples_per_chunk = 1;
 			bytes = sample->bytes;
 		}
 	}
@@ -46,32 +44,26 @@ static uint32_t mov_build_chunk(struct mov_track_t* track)
 	return count;
 }
 
-static int32_t mov_sample_duration(const struct mov_track_t* track, size_t idx)
-{
-	uint64_t next_dts;
-	next_dts = idx + 1 < track->sample_count ? track->samples[idx + 1].dts : track->samples[idx].dts;
-	return (int32_t)(next_dts - track->samples[idx].dts);
-}
-
 static uint32_t mov_build_stts(struct mov_track_t* track)
 {
 	size_t i;
-	uint32_t duration, count = 0;
+	uint32_t delta, count = 0;
 	struct mov_sample_t* sample = NULL;
 
 	for (i = 0; i < track->sample_count; i++)
 	{
-		duration = mov_sample_duration(track, i);
-		if (NULL != sample && duration == sample->u.stts.duration)
+		delta = (uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : 0);
+		if (NULL != sample && delta == sample->samples_per_chunk)
 		{
-			track->samples[i].u.stts.count = 0;
-			++sample->u.stts.count; // compress
+			track->samples[i].first_chunk = 0;
+			assert(sample->first_chunk > 0);
+			++sample->first_chunk; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.stts.count = 1;
-			sample->u.stts.duration = duration;
+			sample->first_chunk = 1;
+			sample->samples_per_chunk = delta;
 			++count;
 		}
 	}
@@ -81,22 +73,24 @@ static uint32_t mov_build_stts(struct mov_track_t* track)
 static uint32_t mov_build_ctts(struct mov_track_t* track)
 {
 	size_t i;
+	int32_t delta;
 	uint32_t count = 0;
-	struct mov_sample_t* sample =NULL;
+	struct mov_sample_t* sample = NULL;
 
 	for (i = 0; i < track->sample_count; i++)
 	{
-		int32_t diff = (int32_t)(track->samples[i].pts - track->samples[i].dts);
-		if (i > 0 && diff == (int32_t)sample->u.stts.duration)
+		delta = (int32_t)(track->samples[i].pts - track->samples[i].dts);
+		if (i > 0 && delta == (int32_t)sample->first_chunk)
 		{
-			track->samples[i].u.stts.count = 0;
-			++sample->u.stts.count; // compress
+			track->samples[i].first_chunk = 0;
+			assert(sample->first_chunk > 0);
+			++sample->first_chunk; // compress
 		}
 		else
 		{
 			sample = &track->samples[i];
-			sample->u.stts.count = 1;
-			sample->u.stts.duration = (int32_t)(sample->pts - sample->dts);
+			sample->first_chunk = 1;
+			sample->samples_per_chunk = delta;
 			++count;
 		}
 	}
@@ -143,7 +137,7 @@ size_t mov_write_stbl(const struct mov_t* mov)
 	if(track->tkhd.width > 0 && track->tkhd.height > 0)
 		size += mov_write_stss(mov); // video only
 	count = mov_build_ctts(track);
-	if (track->sample_count > 0 && (count > 1 || track->samples[0].u.stts.duration != 0))
+	if (track->sample_count > 0 && (count > 1 || track->samples[0].samples_per_chunk != 0))
 		size += mov_write_ctts(mov, count);
 
 	count = mov_build_chunk(track);
@@ -223,6 +217,28 @@ static size_t mov_write_trak(const struct mov_t* mov)
 	return size;
 }
 
+static size_t mov_write_mvex(struct mov_t* mov)
+{
+	size_t size, i;
+	uint64_t offset;
+
+	size = 8 /* Box */;
+	offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
+	file_writer_write(mov->fp, "mvex", 4);
+
+	//size += mov_write_mehd(mov);
+	for (i = 0; i < mov->track_count; i++)
+	{
+		mov->track = mov->tracks + i;
+		size += mov_write_trex(mov);
+	}
+	//size += mov_write_leva(mov);
+
+	mov_write_size(mov->fp, offset, size); /* update size */
+	return size;
+}
+
 static size_t mov_write_moov(struct mov_t* mov)
 {
 	size_t size, i;
@@ -237,13 +253,15 @@ static size_t mov_write_moov(struct mov_t* mov)
 //	size += mov_write_iods(mov);
 	for(i = 0; i < mov->track_count; i++)
 	{
-		mov->track = &mov->tracks[i];
-		if (mov->track->sample_count < 1)
+		mov->track = mov->tracks + i;
+		if (mov->track->sample_count < 1 && 0 == (mov->flags & MOV_FLAG_FRAGMENT))
 			continue;
 		size += mov_write_trak(mov);
 	}
 	
-//  size += mov_write_mvex(mov);
+	if(mov->flags & MOV_FLAG_FRAGMENT)
+		size += mov_write_mvex(mov);
+
 //  size += mov_write_udta(mov);
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;
@@ -279,8 +297,11 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 	if (NULL == writer)
 		return NULL;
 
-	writer->flags = flags;
+	if (flags & MOV_FLAG_DASH)
+		flags |= MOV_FLAG_FRAGMENT;
+
 	mov = &writer->mov;
+	mov->flags = flags;
 	mov->fp = file_writer_create(file);
 	if (NULL == mov->fp || 0 != mov_writer_init(mov))
 	{
@@ -288,18 +309,27 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 		return NULL;
 	}
 
-	mov_write_ftyp(mov);
-
-	// mdat
-	writer->mdat_offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "mdat", 4);
-
 	mov->mvhd.next_track_ID = 1;
 	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
 	mov->mvhd.modification_time = mov->mvhd.creation_time;
 	mov->mvhd.timescale = 1000;
 	mov->mvhd.duration = 0; // placeholder
+
+	mov_write_ftyp(mov);
+
+	if (mov->flags & MOV_FLAG_FRAGMENT)
+	{
+		// empty moov
+		mov_write_moov(mov);
+	}
+	else
+	{
+		// mdat
+		writer->mdat_offset = file_writer_tell(mov->fp);
+		file_writer_wb32(mov->fp, 0); /* size */
+		file_writer_write(mov->fp, "mdat", 4);
+	}
+
 	return writer;
 }
 
@@ -328,47 +358,47 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 			mov->mvhd.duration = track->tkhd.duration; // maximum track duration
 	}
 
-	// write moov box
-	offset = file_writer_tell(mov->fp);
-	mov_write_moov(mov);
-	offset2 = file_writer_tell(mov->fp);
-
-	if (MOV_FLAG_FASTSTART & writer->flags)
+	if (0 == (mov->flags & MOV_FLAG_FRAGMENT))
 	{
-		// check stco -> co64
-		uint64_t co64 = 0;
-		for (i = 0; i < mov->track_count; i++)
-		{
-			co64 += mov_stco_size(&mov->tracks[i], offset2 - offset);
-		}
-
-		if (co64)
-		{
-			uint64_t sz;
-			do
-			{
-				sz = co64;
-				co64 = 0;
-				for (i = 0; i < mov->track_count; i++)
-				{
-					co64 += mov_stco_size(&mov->tracks[i], offset2 - offset + sz);
-				}
-			} while (sz != co64);
-		}
-
-		// rewrite moov
-		for (i = 0; i < mov->track_count; i++)
-			mov->tracks[i].offset += (offset2 - offset) + co64;
-
-		file_writer_seek(mov->fp, offset);
+		// write moov box
+		offset = file_writer_tell(mov->fp);
 		mov_write_moov(mov);
-		assert(file_writer_tell(mov->fp) == offset2 + co64);
 		offset2 = file_writer_tell(mov->fp);
-	}
 
-	if (MOV_FLAG_FASTSTART & writer->flags)
-	{
-		file_writer_move(mov->fp, writer->mdat_offset, offset, (size_t)(offset2 - offset));
+		if (MOV_FLAG_FASTSTART & mov->flags)
+		{
+			// check stco -> co64
+			uint64_t co64 = 0;
+			for (i = 0; i < mov->track_count; i++)
+			{
+				co64 += mov_stco_size(&mov->tracks[i], offset2 - offset);
+			}
+
+			if (co64)
+			{
+				uint64_t sz;
+				do
+				{
+					sz = co64;
+					co64 = 0;
+					for (i = 0; i < mov->track_count; i++)
+					{
+						co64 += mov_stco_size(&mov->tracks[i], offset2 - offset + sz);
+					}
+				} while (sz != co64);
+			}
+
+			// rewrite moov
+			for (i = 0; i < mov->track_count; i++)
+				mov->tracks[i].offset += (offset2 - offset) + co64;
+
+			file_writer_seek(mov->fp, offset);
+			mov_write_moov(mov);
+			assert(file_writer_tell(mov->fp) == offset2 + co64);
+			offset2 = file_writer_tell(mov->fp);
+
+			file_writer_move(mov->fp, writer->mdat_offset, offset, (size_t)(offset2 - offset));
+		}
 	}
 
 	file_writer_destroy(&writer->mov.fp);
@@ -381,6 +411,15 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		if (track->stsd) free(track->stsd);
 	}
 	free(writer);
+}
+
+static int mov_write_frame(struct mov_writer_t* writer, const void* buffer, size_t bytes)
+{
+	if (bytes != file_writer_write(writer->mov.fp, buffer, bytes))
+		return -1; // file write error
+
+	writer->mdat_size += bytes; // update media data size
+	return file_writer_error(writer->mov.fp);
 }
 
 int mov_writer_write(struct mov_writer_t* writer, int track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
@@ -405,7 +444,7 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* buffer,
 	dts = dts * mov->track->mdhd.timescale / 1000;
 
 	sample = &mov->track->samples[mov->track->sample_count++];
-	sample->offset = file_writer_tell(mov->fp);
+	sample->offset = mov->track->offset; //file_writer_tell(mov->fp);
 	sample->bytes = bytes;
 	sample->flags = flags;
 	sample->pts = pts;
@@ -415,6 +454,8 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* buffer,
 		mov->track->start_dts = dts;
 	if (INT64_MIN == mov->track->start_cts)
 		mov->track->start_cts = pts - dts;
+	if (INT64_MIN == mov->track->end_dts)
+		mov->track->end_dts = dts;
 
 	if (bytes != file_writer_write(mov->fp, buffer, bytes))
 		return -1; // file write error
@@ -459,10 +500,11 @@ int mov_writer_add_audio(struct mov_writer_t* writer, uint8_t object, int channe
 
 	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_AUDIO;
+	track->handler_descr = "SoundHandler";
 	track->stsd_count = 1;
 	track->start_dts = INT64_MIN;
 	track->start_cts = INT64_MIN;
-	track->end_pts = INT64_MIN;
+	track->end_dts = 0;
 	track->offset = 0;
 
 	track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
@@ -522,10 +564,11 @@ int mov_writer_add_video(struct mov_writer_t* writer, uint8_t object, int width,
 
 	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_VIDEO;
+	track->handler_descr = "VideoHandler";
 	track->stsd_count = 1;
 	track->start_dts = INT64_MIN;
 	track->start_cts = INT64_MIN;
-	track->end_pts = INT64_MIN;
+	track->end_dts = 0;
 	track->offset = 0;
 
 	track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
@@ -539,7 +582,7 @@ int mov_writer_add_video(struct mov_writer_t* writer, uint8_t object, int width,
 
 	track->mdhd.creation_time = mov->mvhd.creation_time;
 	track->mdhd.modification_time = mov->mvhd.modification_time;
-	track->mdhd.timescale = mov->mvhd.timescale;
+	track->mdhd.timescale = 16000; //mov->mvhd.timescale
 	track->mdhd.language = 0x55c4;
 	track->mdhd.duration = 0; // placeholder
 

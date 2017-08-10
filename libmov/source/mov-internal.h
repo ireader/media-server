@@ -89,18 +89,9 @@ struct mov_sample_t
 	uint64_t offset; // is a 32 or 64 bit integer that gives the offset of the start of a chunk into its containing media file.
 	size_t bytes;
 
-	struct mov_stsd_t* stsd;
-
-	// only for write
-	union
-	{
-		struct mov_stsc_t stsc;
-		struct
-		{
-			uint32_t count;
-			uint32_t duration;
-		} stts;
-	} u;
+	uint32_t sample_description_index;
+	uint32_t samples_per_chunk; // write only
+	uint32_t first_chunk; // write only
 };
 
 struct mov_track_t
@@ -113,26 +104,25 @@ struct mov_track_t
 
 	struct mov_tkhd_t tkhd;
 	struct mov_mdhd_t mdhd;
-
-	struct mov_stsd_t* stsd;
-	size_t stsd_count;
-
-	struct mov_elst_t* elst;
-	size_t elst_count;
-
 	struct mov_stbl_t stbl;
 
 	// 8.8 Movie Fragments
 	struct mov_trex_t trex;
 	struct mov_tfhd_t tfhd;
 
+	struct mov_stsd_t* stsd;
+	size_t stsd_count;
+
+	struct mov_elst_t* elst;
+	size_t elst_count;
+	
 	struct mov_sample_t* samples;
 	size_t sample_count;
 	size_t sample_offset; // sample_capacity
 
 	int64_t start_dts;
 	int64_t start_cts;
-	int64_t end_pts;
+	uint64_t end_dts; // tfdt baseMediaDecodeTime
 	uint64_t offset; // write offset
 };
 
@@ -145,7 +135,7 @@ struct mov_t
 
 	int flags;
 	int header;
-	uint64_t moof_offset;
+	uint64_t moof_offset; // last moof offset(from file begin)
 
 	struct mov_track_t* track; // current stream
 	struct mov_track_t* tracks;
@@ -208,7 +198,6 @@ size_t mov_write_mfro(const struct mov_t* mov);
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 
 size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
-struct mov_stsd_t* mov_track_dref_find(struct mov_track_t* track, uint32_t sample_description_index);
 
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);
