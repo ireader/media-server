@@ -6,24 +6,6 @@
 #include <list>
 #include <string.h>
 
-struct mpeg_ts_test_t
-{
-	struct audio
-	{
-		std::auto_ptr<char> data;
-		size_t bytes;
-		int64_t pts;
-		int64_t dts;
-		audio(std::auto_ptr<char>& ptr, size_t bytes, int64_t pts, int64_t dts)
-			:data(ptr), bytes(bytes), pts(pts), dts(dts)
-		{
-		}
-	};
-
-	std::list<audio> audios;
-	void* ts;
-};
-
 static void* ts_alloc(void* /*param*/, size_t bytes)
 {
 	static char s_buffer[188];
@@ -41,38 +23,22 @@ static void ts_write(void* param, const void* packet, size_t bytes)
 	fwrite(packet, bytes, 1, (FILE*)param);
 }
 
-extern  "C" size_t mpeg_ts_h264(void* h264, size_t bytes);
-
-static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+inline const char* ts_type(int type)
 {
-	struct mpeg_ts_test_t* ctx = (struct mpeg_ts_test_t*)param;
-	char s_char[] = { ' ', 'A', 'V', 'a', 'v' };
-	printf("[%c] pts: %08lu, dts: %08lu\n", s_char[avtype], (unsigned long)pts, (unsigned long)dts);
-
-	if (PSI_STREAM_AAC == avtype)
+	switch (type)
 	{
-		std::auto_ptr<char> ptr(new char[bytes]);
-		memcpy(ptr.get(), data, bytes);
-		ctx->audios.push_back(mpeg_ts_test_t::audio(ptr, bytes, pts, dts));
+	case PSI_STREAM_MP3: return "MP3";
+	case PSI_STREAM_AAC: return "AAC";
+	case PSI_STREAM_H264: return "H264";
+	default: return "*";
 	}
-	else if (PSI_STREAM_H264 == avtype)
-	{
-		while (!ctx->audios.empty())
-		{
-			const mpeg_ts_test_t::audio& audio = ctx->audios.front();
-			if (audio.dts > dts)
-				break;
+}
 
-			mpeg_ts_write(ctx->ts, PSI_STREAM_AAC, audio.pts, audio.dts, audio.data.get(), audio.bytes);
-			ctx->audios.pop_front();
-		}
+static void ts_packet(void* ts, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+{
+	printf("[%s] pts: %08lu, dts: %08lu\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts);
 
-		mpeg_ts_write(ctx->ts, avtype, pts, dts, data, bytes);
-	}
-	else
-	{
-		assert(0);
-	}
+	mpeg_ts_write(ts, avtype, pts, dts, data, bytes);
 }
 
 static void mpeg_ts_file(const char* file, void* ts)
@@ -86,21 +52,19 @@ static void mpeg_ts_file(const char* file, void* ts)
 	fclose(fp);
 }
 
-//mpeg_ts_test("test/apple.ts", "test/fileSequence0.ts")
+//mpeg_ts_test("test/fileSequence0.ts", "test/apple.ts")
 void mpeg_ts_test(const char* input, const char* output)
 {
-	struct mpeg_ts_test_t ctx;
-
 	struct mpeg_ts_func_t tshandler;
 	tshandler.alloc = ts_alloc;
 	tshandler.write = ts_write;
 	tshandler.free = ts_free;
 	
 	FILE* fp = fopen(output, "wb");
-	ctx.ts = mpeg_ts_create(&tshandler, fp);
+	void* ts = mpeg_ts_create(&tshandler, fp);
 
-	mpeg_ts_file(input, &ctx);
+	mpeg_ts_file(input, ts);
 	
-	mpeg_ts_destroy(ctx.ts);
+	mpeg_ts_destroy(ts);
 	fclose(fp);
 }
