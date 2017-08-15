@@ -223,6 +223,6 @@ void file_writer_wb32(void* file, uint32_t value)
 
 void file_writer_wb64(void* file, uint64_t value)
 {
-	file_writer_wl32(file, (uint32_t)((value >> 32) & 0xFFFFFFFF));
-	file_writer_wl32(file, (uint32_t)value);	
+	file_writer_wb32(file, (uint32_t)((value >> 32) & 0xFFFFFFFF));
+	file_writer_wb32(file, (uint32_t)value);	
 }
