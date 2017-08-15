@@ -27,41 +27,21 @@ int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box)
 	return 0;
 }
 
-size_t mov_write_minf(const struct mov_t* mov)
+size_t mov_write_vmhd(const struct mov_t* mov)
 {
-	size_t size;
-	uint64_t offset;
-	const struct mov_track_t* track = mov->track;
+	file_writer_wb32(mov->fp, 20); /* size (always 0x14) */
+	file_writer_write(mov->fp, "vmhd", 4);
+	file_writer_wb32(mov->fp, 0x01); /* version & flags */
+	file_writer_wb64(mov->fp, 0); /* reserved (graphics mode = copy) */
+	return 20;
+}
 
-	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "minf", 4);
-
-	if (MOV_VIDEO == track->handler_type)
-	{
-		file_writer_wb32(mov->fp, 20); /* size (always 0x14) */
-		file_writer_write(mov->fp, "vmhd", 4);
-		file_writer_wb32(mov->fp, 0x01); /* version & flags */
-		file_writer_wb64(mov->fp, 0); /* reserved (graphics mode = copy) */
-		size += 20;
-	}
-	else if (MOV_AUDIO == track->handler_type)
-	{
-		file_writer_wb32(mov->fp, 16); /* size */
-		file_writer_write(mov->fp, "smhd", 4);
-		file_writer_wb32(mov->fp, 0); /* version & flags */
-		file_writer_wb16(mov->fp, 0); /* reserved (balance, normally = 0) */
-		file_writer_wb16(mov->fp, 0); /* reserved */
-		size += 16;
-	}
-	else
-	{
-		assert(0);
-	}
-
-	size += mov_write_dinf(mov);
-	size += mov_write_stbl(mov);
-	mov_write_size(mov->fp, offset, size); /* update size */
-	return size;
+size_t mov_write_smhd(const struct mov_t* mov)
+{
+	file_writer_wb32(mov->fp, 16); /* size */
+	file_writer_write(mov->fp, "smhd", 4);
+	file_writer_wb32(mov->fp, 0); /* version & flags */
+	file_writer_wb16(mov->fp, 0); /* reserved (balance, normally = 0) */
+	file_writer_wb16(mov->fp, 0); /* reserved */
+	return 16;
 }

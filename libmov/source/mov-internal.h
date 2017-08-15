@@ -60,7 +60,31 @@ enum
 	MOV_BRAND_MP41 = MOV_TAG('m', 'p', '4', '1'), // ISO/IEC 14496-1:2001 MP4 File Format v1
 	MOV_BRAND_MP42 = MOV_TAG('m', 'p', '4', '2'), // ISO/IEC 14496-14:2003 MP4 File Format v2
 	MOV_BRAND_MOV  = MOV_TAG('q', 't', ' ', ' '), // Apple Quick-Time File Format
+	MOV_BRAND_DASH = MOV_TAG('d', 'a', 's', 'h'), // MPEG-DASH
 };
+
+#define MOV_TREX_FLAG_IS_LEADING_MASK					0x0C000000
+#define MOV_TREX_FLAG_SAMPLE_DEPENDS_ON_MASK			0x03000000
+#define MOV_TREX_FLAG_SAMPLE_IS_DEPENDED_ON_MASK		0x00C00000
+#define MOV_TREX_FLAG_SAMPLE_HAS_REDUNDANCY_MASK		0x00300000
+#define MOV_TREX_FLAG_SAMPLE_PADDING_VALUE_MASK			0x000E0000
+#define MOV_TREX_FLAG_SAMPLE_IS_NO_SYNC_SAMPLE			0x00010000
+#define MOV_TREX_FLAG_SAMPLE_DEGRADATION_PRIORITY_MASK	0x0000FFFF
+
+#define MOV_TFHD_FLAG_BASE_DATA_OFFSET					0x00000001
+#define MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX			0x00000002
+#define MOV_TFHD_FLAG_DEFAULT_DURATION					0x00000008
+#define MOV_TFHD_FLAG_DEFAULT_SIZE						0x00000010
+#define MOV_TFHD_FLAG_DEFAULT_FLAGS						0x00000020
+#define MOV_TFHD_FLAG_DURATION_IS_EMPTY					0x00010000
+#define MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF				0x00020000
+
+#define MOV_TRUN_FLAG_DATA_OFFSET_PRESENT						0x0001
+#define MOV_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT				0x0004
+#define MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT					0x0100
+#define MOV_TRUN_FLAG_SAMPLE_SIZE_PRESENT						0x0200
+#define MOV_TRUN_FLAG_SAMPLE_FLAGS_PRESENT						0x0400
+#define MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT	0x0800
 
 struct mov_stbl_t
 {
@@ -86,6 +110,7 @@ struct mov_sample_t
 	int64_t pts;
 	int64_t dts;
 
+	void* data;
 	uint64_t offset; // is a 32 or 64 bit integer that gives the offset of the start of a chunk into its containing media file.
 	size_t bytes;
 
@@ -122,8 +147,8 @@ struct mov_track_t
 
 	int64_t start_dts;
 	int64_t start_cts;
-	uint64_t end_dts; // tfdt baseMediaDecodeTime
-	uint64_t offset; // write offset
+	int64_t end_dts; // tfdt baseMediaDecodeTime
+	uint64_t offset; // write only
 };
 
 struct mov_t
@@ -175,8 +200,10 @@ size_t mov_write_mvhd(const struct mov_t* mov);
 size_t mov_write_mdhd(const struct mov_t* mov);
 size_t mov_write_tkhd(const struct mov_t* mov);
 size_t mov_write_hdlr(const struct mov_t* mov);
-size_t mov_write_minf(const struct mov_t* mov);
+size_t mov_write_vmhd(const struct mov_t* mov);
+size_t mov_write_smhd(const struct mov_t* mov);
 size_t mov_write_dinf(const struct mov_t* mov);
+size_t mov_write_dref(const struct mov_t* mov);
 size_t mov_write_elst(const struct mov_t* mov);
 size_t mov_write_stsd(const struct mov_t* mov);
 size_t mov_write_stts(const struct mov_t* mov, uint32_t count);
@@ -185,13 +212,12 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count);
 size_t mov_write_stss(const struct mov_t* mov);
 size_t mov_write_stsc(const struct mov_t* mov);
 size_t mov_write_stsz(const struct mov_t* mov);
-size_t mov_write_stbl(const struct mov_t* mov);
 size_t mov_write_esds(const struct mov_t* mov);
 size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);
-size_t mov_write_trun(const struct mov_t* mov);
+size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first);
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_mfro(const struct mov_t* mov);
 

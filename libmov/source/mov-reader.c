@@ -147,6 +147,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 	if (0 == r)
 	{
 		mov_track_build(mov->track);
+		mov->track->end_dts = mov->track->sample_count ? mov->track->samples[mov->track->sample_count - 1].dts : 0;
 	}
 
 	return r;

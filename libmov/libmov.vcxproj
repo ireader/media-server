@@ -24,6 +24,7 @@
     <ClInclude Include="include\mov-atom.h" />
     <ClInclude Include="include\mov-box.h" />
     <ClInclude Include="include\mov-format.h" />
+    <ClInclude Include="include\fmp4-writer.h" />
     <ClInclude Include="include\mov-reader.h" />
     <ClInclude Include="include\mov-writer.h" />
     <ClInclude Include="source\mov-internal.h" />
@@ -32,7 +33,9 @@
     <ClCompile Include="source\file-reader.c" />
     <ClCompile Include="source\file-writer.c" />
     <ClCompile Include="source\mov-avc1.c" />
+    <ClCompile Include="source\mov-dinf.c" />
     <ClCompile Include="source\mov-elst.c" />
+    <ClCompile Include="source\fmp4-writer.c" />
     <ClCompile Include="source\mov-ftyp.c" />
     <ClCompile Include="source\mov-hdlr.c" />
     <ClCompile Include="source\mov-hvcc.c" />

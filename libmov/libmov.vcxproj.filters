@@ -39,6 +39,9 @@
     <ClInclude Include="source\mov-internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\fmp4-writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\file-reader.c">
@@ -120,6 +123,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-tfra.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\fmp4-writer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-dinf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
