@@ -77,6 +77,15 @@ static size_t fmp4_write_traf(struct mov_t* mov)
 	file_writer_write(mov->fp, "traf", 4);
 
 	mov->track->tfhd.flags = MOV_TFHD_FLAG_BASE_DATA_OFFSET | MOV_TFHD_FLAG_DEFAULT_FLAGS;
+	// ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
+	// The ¡®moof¡¯ boxes shall use movie-fragment relative addressing for media data that 
+	// does not use external data references, the flag ¡®default-base-is-moof¡¯ shall be set, 
+	// and data-offset shall be used, i.e. base-data-offset-present shall not be used.
+	if (mov->flags & MOV_FLAG_SEGMENT)
+	{
+		mov->track->tfhd.flags &= ~MOV_TFHD_FLAG_BASE_DATA_OFFSET;
+		mov->track->tfhd.flags |= MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF;
+	}
 	mov->track->tfhd.base_data_offset = mov->moof_offset;
 	mov->track->tfhd.sample_description_index = 1; // not set
 	mov->track->tfhd.default_sample_duration = 0; // not set
@@ -86,6 +95,8 @@ static size_t fmp4_write_traf(struct mov_t* mov)
 		mov->track->tfhd.flags |= MOV_TFHD_FLAG_DURATION_IS_EMPTY;
 
 	size += mov_write_tfhd(mov);
+	// ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
+	// Each ¡®traf¡¯ box shall contain a ¡®tfdt¡¯ box.
 	size += fmp4_write_tfdt(mov);
 
 	mov->track->offset = file_writer_tell(mov->fp) + 16; // trun data offset
@@ -255,9 +266,50 @@ static size_t fmp4_write_moov(struct mov_t* mov)
 	return size;
 }
 
+static size_t fmp4_write_sidx(struct mov_t* mov)
+{
+	size_t i;
+	uint32_t duration;
+	uint64_t earliest_presentation_time;
+	struct mov_track_t* track;
+
+	for (i = 0; i < mov->track_count; i++)
+	{
+		track = mov->tracks + i;
+		if (track->sample_count > 0)
+		{
+			earliest_presentation_time = track->samples[0].pts;
+			duration = (uint32_t)(track->samples[track->sample_count - 1].dts - track->samples[0].dts);
+		}
+		else
+		{
+			earliest_presentation_time = 0;
+			duration = 0;
+		}
+
+		file_writer_wb32(mov->fp, 52); /* size */
+		file_writer_write(mov->fp, "sidx", 4);
+		file_writer_w8(mov->fp, 1); /* version */
+		file_writer_wb24(mov->fp, 0); /* flags */
+
+		file_writer_wb32(mov->fp, track->tkhd.track_ID); /* reference_ID */
+		file_writer_wb32(mov->fp, track->mdhd.timescale); /* timescale */
+		file_writer_wb64(mov->fp, earliest_presentation_time); /* earliest_presentation_time */
+		file_writer_wb64(mov->fp, 52 * (mov->track_count - i - 1)); /* first_offset */
+		file_writer_wb16(mov->fp, 0); /* reserved */
+		file_writer_wb16(mov->fp, 1); /* reference_count */
+
+		file_writer_wb32(mov->fp, 0); /* reference_type & referenced_size */
+		file_writer_wb32(mov->fp, duration); /* subsegment_duration */
+		file_writer_wb32(mov->fp, (1U/*starts_with_SAP*/ << 31) | (1 /*SAP_type*/ << 24) | 0 /*SAP_delta_time*/);
+	}
+
+	return 52 * mov->track_count;
+}
+
 static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 {
-	size_t i, j;
+	size_t i, j, refsize;
 	uint64_t offset;
 	struct mov_t* mov;
 	struct mov_sample_t* sample;
@@ -273,9 +325,19 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 		writer->has_moov = 1;
 	}
 
+	if (mov->flags & MOV_FLAG_SEGMENT)
+	{
+		// ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
+		// Each Media Segment may contain one or more ¡®sidx¡¯ boxes. 
+		// If present, the first ¡®sidx¡¯ box shall be placed before any ¡®moof¡¯ box 
+		// and the first Segment Index box shall document the entire Segment.
+		fmp4_write_sidx(mov);
+	}
+
 	// moof
 	mov->moof_offset = file_writer_tell(mov->fp);
-	fmp4_write_moof(mov, ++writer->fragment_id); // start from 1
+	refsize = fmp4_write_moof(mov, ++writer->fragment_id); // start from 1
+	refsize += writer->mdat_size + 8/*mdat box*/;
 
 	// mdat
 	writer->mdat_offset = file_writer_tell(mov->fp);
@@ -284,7 +346,13 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-		mov_write_size(mov->fp, mov->track->offset, (uint32_t)(file_writer_tell(mov->fp) - mov->moof_offset)); // hack: write trun data offset
+
+		// hack: write sidx referenced_size
+		if (mov->flags & MOV_FLAG_SEGMENT)
+			mov_write_size(mov->fp, mov->moof_offset - 52 * (mov->track_count-i) + 40, (0 << 31) | (refsize & 0x7fffffff));
+
+		// hack: write trun data offset
+		mov_write_size(mov->fp, mov->track->offset, (uint32_t)(file_writer_tell(mov->fp) - mov->moof_offset));
 
 		for (j = 0; j < mov->track->sample_count; j++)
 		{
@@ -339,7 +407,16 @@ struct fmp4_writer_t* fmp4_writer_create(const char* file, int flags)
 	mov->mvhd.timescale = 1000;
 	mov->mvhd.duration = 0; // placeholder
 
-	mov_write_ftyp(mov);
+	if (flags & MOV_FLAG_SEGMENT)
+	{
+		mov_write_styp(mov);
+		writer->has_moov = 1; // don't write moov
+	}
+	else
+	{
+		mov_write_ftyp(mov);
+	}
+
 	return writer;
 }
 
@@ -352,6 +429,13 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 
 	// flush fragment
 	fmp4_write_fragment(writer);
+
+	// write empty moov box
+	if (0 == writer->has_moov)
+	{
+		fmp4_write_moov(mov);
+		writer->has_moov = 1;
+	}
 
 	file_writer_destroy(&writer->mov.fp);
 
@@ -452,7 +536,7 @@ int fmp4_writer_add_audio(struct fmp4_writer_t* writer, uint8_t object, int chan
 	stsd->stream_type = MP4_STREAM_AUDIO;
 	stsd->u.audio.channelcount = (uint16_t)channel_count;
 	stsd->u.audio.samplesize = (uint16_t)bits_per_sample;
-	stsd->u.audio.samplerate = sample_rate << 16;
+	stsd->u.audio.samplerate = (sample_rate > 56635 ? 0 : sample_rate) << 16;
 
 	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_AUDIO;

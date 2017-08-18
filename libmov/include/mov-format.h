@@ -24,8 +24,7 @@
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001
-#define MOV_FLAG_FRAGMENT	0x00000002
-#define MOV_FLAG_DASH		0x00000004
+#define MOV_FLAG_SEGMENT	0x00000002 // fmp4_writer only
 
 /// MOV av stream flag
 #define MOV_AV_FLAG_KEYFREAME 0x0001

@@ -220,6 +220,7 @@ size_t mov_write_tfhd(const struct mov_t* mov);
 size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first);
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_mfro(const struct mov_t* mov);
+size_t mov_write_styp(const struct mov_t* mov);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 

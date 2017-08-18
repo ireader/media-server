@@ -10,7 +10,7 @@ extern "C" {
 
 typedef struct fmp4_writer_t fmp4_writer_t;
 
-/// @param[in] flags mov flags, such as: MOV_FLAG_FASTSTART, see more @mov-format.h
+/// @param[in] flags mov flags, such as: MOV_FLAG_SEGMENT, see more @mov-format.h
 fmp4_writer_t* fmp4_writer_create(const char* file, int flags);
 void fmp4_writer_destroy(fmp4_writer_t* fmp4);
 

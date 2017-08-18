@@ -231,7 +231,7 @@ static size_t mov_write_moov(struct mov_t* mov)
 	for(i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-		if (mov->track->sample_count < 1 && 0 == (mov->flags & MOV_FLAG_FRAGMENT))
+		if (mov->track->sample_count < 1)
 			continue;
 		size += mov_write_trak(mov);
 	}
@@ -270,9 +270,6 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 	writer = (struct mov_writer_t*)calloc(1, sizeof(struct mov_writer_t));
 	if (NULL == writer)
 		return NULL;
-
-	if (flags & MOV_FLAG_DASH)
-		flags |= MOV_FLAG_FRAGMENT;
 
 	mov = &writer->mov;
 	mov->flags = flags;
@@ -317,8 +314,9 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 			continue;
 
 		// pts in ms
-		track->mdhd.duration = track->samples[track->sample_count - 1].dts; //*track->mdhd.timescale / 1000
-		track->tkhd.duration = track->samples[track->sample_count - 1].dts * mov->mvhd.timescale / track->mdhd.timescale;
+		track->mdhd.duration = track->samples[track->sample_count - 1].dts - track->samples[0].dts;
+		//track->mdhd.duration = track->mdhd.duration * track->mdhd.timescale / 1000;
+		track->tkhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
 		if (track->tkhd.duration > mov->mvhd.duration)
 			mov->mvhd.duration = track->tkhd.duration; // maximum track duration
 	}
@@ -451,7 +449,7 @@ int mov_writer_add_audio(struct mov_writer_t* writer, uint8_t object, int channe
 	stsd->stream_type = MP4_STREAM_AUDIO;
 	stsd->u.audio.channelcount = (uint16_t)channel_count;
 	stsd->u.audio.samplesize = (uint16_t)bits_per_sample;
-	stsd->u.audio.samplerate = sample_rate << 16;
+	stsd->u.audio.samplerate = (sample_rate > 56635 ? 0 : sample_rate) << 16;
 
 	track->tag = mov_object_to_tag(object);
 	track->handler_type = MOV_AUDIO;
