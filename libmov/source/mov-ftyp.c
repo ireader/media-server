@@ -37,3 +37,20 @@ size_t mov_write_ftyp(const struct mov_t* mov)
 
 	return size;
 }
+
+size_t mov_write_styp(const struct mov_t* mov)
+{
+	size_t size, i;
+
+	size = 8/* box */ + 8/* item */ + mov->ftyp.brands_count * 4 /* compatible brands */;
+
+	file_writer_wb32(mov->fp, size); /* size */
+	file_writer_write(mov->fp, "styp", 4);
+	file_writer_wb32(mov->fp, mov->ftyp.major_brand);
+	file_writer_wb32(mov->fp, mov->ftyp.minor_version);
+
+	for (i = 0; i < mov->ftyp.brands_count; i++)
+		file_writer_wb32(mov->fp, mov->ftyp.compatible_brands[i]);
+
+	return size;
+}
