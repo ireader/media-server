@@ -126,13 +126,13 @@ static int mp3_find_bitrate(const int* arr, int bitrate)
 
 int mp3_set_bitrate(struct mp3_header_t* mp3, int bitrate)
 {
+	int r;
 	if (mp3->layer < 1 || mp3->layer > 3)
 	{
 		assert(0);
 		return -1;
 	}
 
-	int r;
 	switch (mp3->version)
 	{
 	case MP3_MPEG1:
