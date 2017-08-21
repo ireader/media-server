@@ -262,6 +262,9 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	case AMF_NULL:
 		return data;
 
+	case AMF_UNDEFINED:
+		return data;
+
 	case AMF_ECMA_ARRAY:
 		return amf_read_ecma_array(data, end);
 
