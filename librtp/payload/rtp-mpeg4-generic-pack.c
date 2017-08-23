@@ -85,6 +85,8 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 
 	for (size = bytes; bytes > 0; ++packer->pkt.rtp.seq)
 	{
+		// 3.3.6. High Bit-rate AAC
+		// SDP fmtp: sizeLength=13; indexLength=3; indexDeltaLength = 3;
 		header[0] = 0;
 		header[1] = 16; // 16-bits AU headers-lenght
 		header[2] = (uint8_t)(size >> 5);
