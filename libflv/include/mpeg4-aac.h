@@ -68,6 +68,9 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 /// @return >=0-stream mux config length, <0-error
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
 
+/// get AAC profile level indication value
+int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac);
+
 /// MPEG4_AAC_96000 => 96000
 /// @return -1-error, other-frequency value
 int mpeg4_aac_audio_frequency_to(enum mpeg4_aac_frequency index);

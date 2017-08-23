@@ -122,6 +122,38 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	return 6;
 }
 
+// ISO/IEC 14496-3:2009(E)  Table 1.14 ¨C audioProfileLevelIndication values (p51)
+int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
+{
+	int frequency;
+
+	// profile: MPEG4_AAC_LC only
+	// TODO:
+
+	// Table 1.10 ¨C Levels for the AAC Profile (p49)
+	// Table 1.14 ¨C audioProfileLevelIndication values (p51)
+	frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	if (frequency <=24000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 0x28; // AAC Profile, Level 1
+	}
+	else if (frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 0x29; // AAC Profile, Level 2
+		else if (aac->channel_configuration <= 5)
+			return 0x2A; // AAC Profile, Level 4
+	}
+	else if (frequency <= 96000)
+	{
+		if (aac->channel_configuration <= 5)
+			return 0x2B; // AAC Profile, Level 5
+	}
+
+	return 0x2B;
+}
+
 #define ARRAYOF(arr) sizeof(arr)/sizeof(arr[0])
 
 static const int s_frequency[] = { 96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350 };
