@@ -60,10 +60,13 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 /// @return >=0-adts header length, <0-error
 int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 
-/// @return >=0-adts header length, <0-error
+/// @return >=0-audio specific config length, <0-error
 int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
-/// @return >=0-adts header length, <0-error
+/// @return >=0-audio specific config length, <0-error
 int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
+
+/// @return >=0-stream mux config length, <0-error
+int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
 
 /// MPEG4_AAC_96000 => 96000
 /// @return -1-error, other-frequency value

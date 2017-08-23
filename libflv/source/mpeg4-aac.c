@@ -103,6 +103,25 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 	return 2;
 }
 
+// ISO/IEC 14496-3:2009(E) Table 1.42 ¨C Syntax of StreamMuxConfig() (p83)
+int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
+{
+	if (bytes < 6) return -1;
+
+	assert(aac->profile > 0 && aac->profile < 31);
+	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
+	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+	data[0] = 0x40; // 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
+	//data[1] = 0x00 | ((aac->profile >> 4) & 0x01); // 0-numProgram(4), 0-numLayer(3)
+	//data[2] = ((aac->profile & 0x0F) << 4) | (aac->sampling_frequency_index & 0x0F);
+	data[1] = 0x00;
+	data[2] = 0x20 | (aac->sampling_frequency_index & 0x0F); // AAC_LC profile
+	data[3] = ((aac->channel_configuration & 0x0F) << 4) | 0; // 0-GASpecificConfig(3), 0-frameLengthType(1)
+	data[4] = 0x3F; // 0-frameLengthType(2), 111111-latmBufferFullness(6)
+	data[5] = 0xC0; // 11-latmBufferFullness(2), 0-otherDataPresent, 0-crcCheckPresent
+	return 6;
+}
+
 #define ARRAYOF(arr) sizeof(arr)/sizeof(arr[0])
 
 static const int s_frequency[] = { 96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350 };
