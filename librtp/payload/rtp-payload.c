@@ -27,7 +27,7 @@ void* rtp_payload_encode_create(int payload, const char* name, uint16_t seq, uin
 	int size;
 	struct rtp_payload_delegate_t* ctx;
 
-	ctx = calloc(1, sizeof(ctx));
+	ctx = calloc(1, sizeof(*ctx));
 	if (ctx)
 	{
 		size = rtp_packet_getsize();
@@ -65,7 +65,7 @@ int rtp_payload_encode_input(void* encoder, const void* data, int bytes, uint32_
 void* rtp_payload_decode_create(int payload, const char* name, struct rtp_payload_t *handler, void* cbparam)
 {
 	struct rtp_payload_delegate_t* ctx;
-	ctx = calloc(1, sizeof(ctx));
+	ctx = calloc(1, sizeof(*ctx));
 	if (ctx)
 	{
 		if (rtp_payload_find(payload, name, ctx) < 0
