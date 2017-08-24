@@ -26,8 +26,8 @@ public:
 	virtual int SetSpeed(double speed);
 	virtual int GetDuration(int64_t& duration) const;
 	virtual int GetSDPMedia(std::string& sdp) const;
-	virtual int GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const;
-	virtual int SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2]);
+	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const;
+	virtual int SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2]);
 
 private:
 	static void OnRTCPEvent(void* param, const struct rtcp_msg_t* msg);

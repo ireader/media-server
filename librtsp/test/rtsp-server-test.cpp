@@ -14,14 +14,14 @@
 #include "rtsp-server.h"
 #include "media/ps-file-source.h"
 #include "media/h264-file-source.h"
+#include "media/mp4-file-source.h"
 #include "rtsp-server-aio.h"
 #include "uri-parse.h"
 #include "urlcodec.h"
 #include "path.h"
 #include <map>
 #include <memory>
-
-//#define PS_VOD
+#include "cpm/shared_ptr.h"
 
 static const char* s_workdir = "e:";
 
@@ -59,17 +59,17 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 
 static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 {
-    static const char* pattern =
-        "v=0\n"
-        "o=- %llu %llu IN IP4 %s\n"
-        "s=%s\n"
-        "c=IN IP4 0.0.0.0\n"
-        "t=0 0\n"
-		"a=range:npt=0-%f\n"
-        "a=recvonly\n";
+	static const char* pattern =
+		"v=0\n"
+		"o=- %llu %llu IN IP4 %s\n"
+		"s=%s\n"
+		"c=IN IP4 0.0.0.0\n"
+		"t=0 0\n"
+		"a=range:npt=0-%.1f\n"
+		"a=recvonly\n"
+		"a=control:*\n"; // aggregate control
 
-    char sdp[512];
-	std::string filename;
+    std::string filename;
 	std::map<std::string, TFileDescription>::const_iterator it;
 
 	rtsp_uri_parse(uri, filename);
@@ -84,11 +84,9 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			// unlock
 			TFileDescription describe;
 			std::shared_ptr<IMediaSource> source;
-#if defined(PS_VOD)
-			source.reset(new PSFileSource(filename.c_str()));
-#else
-			source.reset(new H264FileSource(filename.c_str()));
-#endif
+//			source.reset(new PSFileSource(filename.c_str()));
+//			source.reset(new H264FileSource(filename.c_str()));
+			source.reset(new MP4FileSource(filename.c_str()));
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
 
@@ -96,10 +94,13 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			it = s_describes.insert(std::make_pair(filename, describe)).first;
 		}
 	}
-    int offset = snprintf(sdp, sizeof(sdp), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
-	offset += strlcat(sdp + offset, it->second.sdpmedia.c_str(), sizeof(sdp) - offset);
-
-    return rtsp_server_reply_describe(rtsp, 200, sdp);
+    
+	char buffer[1024];
+	int offset = snprintf(buffer, sizeof(buffer), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
+	assert(offset > 0 && offset + 1 < sizeof(buffer));
+	std::string sdp = buffer;
+	sdp += it->second.sdpmedia;
+    return rtsp_server_reply_describe(rtsp, 200, sdp.c_str());
 }
 
 static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* session, const struct rtsp_header_transport_t transports[], size_t num)
@@ -107,6 +108,15 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	std::string filename;
 	char rtsp_transport[128];
 	const struct rtsp_header_transport_t *transport = NULL;
+
+	rtsp_uri_parse(uri, filename);
+	assert(strstartswith(filename.c_str(), "/live/"));
+	filename = path::join(s_workdir, filename.c_str() + 6);
+	if ('\\' == *filename.rbegin() || '/' == *filename.rbegin())
+		filename.erase(filename.end() - 1);
+	const char* basename = path_basename(filename.c_str());
+	if (NULL == strchr(basename, '.')) // filter track1
+		filename.erase(basename - filename.c_str() - 1, std::string::npos);
 
 	TSessions::iterator it;
 	if(session)
@@ -120,28 +130,21 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		}
 		else
 		{
-			// TODO:
-			assert(0);
-
-			// 459 Aggregate Operation Not Allowed
-			return rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
+			// don't support aggregate control
+			if (0)
+			{
+				// 459 Aggregate Operation Not Allowed
+				return rtsp_server_reply_setup(rtsp, 459, NULL, NULL);
+			}
 		}
 	}
 	else
 	{
-		rtsp_uri_parse(uri, filename);
-		assert(strstartswith(filename.c_str(), "/live/"));
-		filename = path::join(s_workdir, filename.c_str()+6);
-		if('\\' == *filename.rbegin() || '/' == *filename.rbegin())
-			filename.erase(filename.end()-1);
-
 		rtsp_media_t item;
 		memset(&item, 0, sizeof(item));
-#if defined(PS_VOD)
-		item.media.reset(new PSFileSource(filename.c_str()));
-#else
-		item.media.reset(new H264FileSource(filename.c_str()));
-#endif
+//		item.media.reset(new PSFileSource(filename.c_str()));
+//		item.media.reset(new H264FileSource(filename.c_str()));
+		item.media.reset(new MP4FileSource(filename.c_str()));
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
@@ -213,7 +216,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		}
 
 		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
-		item.media->SetRTPSocket(ip, item.socket, port);
+		item.media->SetRTPSocket(path_basename(uri), ip, item.socket, port);
 	}
 
     return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
@@ -252,15 +255,8 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	// RFC 2326 12.33 RTP-Info (p55)
 	// 1. Indicates the RTP timestamp corresponding to the time value in the Range response header.
 	// 2. A mapping from RTP timestamps to NTP timestamps (wall clock) is available via RTCP.
-	int64_t tnow = 0;
-	unsigned short seq = 0;
-	unsigned int rtptime = 0;
-
-	source->GetRTPInfo(tnow, seq, rtptime);
-
-	char rtpinfo[128] = {0};
-	// url=rtsp://video.example.com/twister/video;seq=12312232;rtptime=78712811
-	snprintf(rtpinfo, sizeof(rtpinfo), "url=%s;seq=%hu;rtptime=%u", uri, seq, rtptime);
+	char rtpinfo[512] = { 0 };
+	source->GetRTPInfo(uri, rtpinfo, sizeof(rtpinfo));
 
 	it->second.status = 1;
 	return rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
@@ -294,10 +290,10 @@ static int rtsp_onpause(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/,
 static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/, const char* session)
 {
 	std::shared_ptr<IMediaSource> source;
-	TSessions::const_iterator it;
+	TSessions::iterator it;
 	{
 		AutoThreadLocker locker(s_locker);
-		it = s_sessions.find(session ? "" : session);
+		it = s_sessions.find(session ? session : "");
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found

@@ -38,7 +38,7 @@ H264FileSource::~H264FileSource()
 		rtp_payload_encode_destroy(m_rtppacker);
 }
 
-int H264FileSource::SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2])
+int H264FileSource::SetRTPSocket(const char* /*track*/, const char* ip, socket_t socket[2], unsigned short port[2])
 {
 	int r1 = socket_addr_from(&m_addr[0], &m_addrlen[0], ip, port[0]);
 	int r2 = socket_addr_from(&m_addr[1], &m_addrlen[1], ip, port[1]);
@@ -141,10 +141,14 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
     return sps.empty() ? -1 : 0;
 }
 
-int H264FileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
+int H264FileSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const
 {
-	rtp_payload_encode_getinfo(m_rtppacker, &seq, &rtptime);
-	pos = m_pos;
+	uint16_t seq;
+	uint32_t timestamp;
+	rtp_payload_encode_getinfo(m_rtppacker, &seq, &timestamp);
+
+	// url=rtsp://video.example.com/twister/video;seq=12312232;rtptime=78712811
+	snprintf(rtpinfo, bytes, "url=%s;seq=%hu;rtptime=%u", uri, seq, timestamp);
 	return 0;
 }
 

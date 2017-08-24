@@ -15,8 +15,8 @@ struct IMediaSource
 	virtual int SetSpeed(double speed) = 0;
 	virtual int GetDuration(int64_t& duration) const = 0;
     virtual int GetSDPMedia(std::string& sdp) const = 0;
-	virtual int GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const = 0;
-	virtual int SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2]) = 0;
+	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const = 0;
+	virtual int SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2]) = 0;
 };
 
 #endif /* !_media_source_h_ */

@@ -49,7 +49,7 @@ PSFileSource::~PSFileSource()
 	mpeg_ps_destroy(m_ps);
 }
 
-int PSFileSource::SetRTPSocket(const char* ip, socket_t socket[2], unsigned short port[2])
+int PSFileSource::SetRTPSocket(const char* /*track*/, const char* ip, socket_t socket[2], unsigned short port[2])
 {
 	int r1 = socket_addr_from(&m_addr[0], &m_addrlen[0], ip, port[0]);
 	int r2 = socket_addr_from(&m_addr[1], &m_addrlen[1], ip, port[1]);
@@ -121,10 +121,14 @@ int PSFileSource::GetSDPMedia(std::string& sdp) const
 	return 0;
 }
 
-int PSFileSource::GetRTPInfo(int64_t &pos, unsigned short &seq, unsigned int &rtptime) const
+int PSFileSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const
 {
-	rtp_payload_encode_getinfo(m_pspacker, &seq, &rtptime);
-	pos = m_pos;
+	uint16_t seq;
+	uint32_t timestamp;
+	rtp_payload_encode_getinfo(m_pspacker, &seq, &timestamp);
+
+	// url=rtsp://video.example.com/twister/video;seq=12312232;rtptime=78712811
+	snprintf(rtpinfo, bytes, "url=%s;seq=%hu;rtptime=%u", uri, seq, timestamp);
 	return 0;
 }
 
