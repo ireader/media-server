@@ -169,6 +169,10 @@ void rtp_payload_test()
 	//binary_diff("E:\\video\\rtp\\live555-test.aac.rtp", "out.rtp");
 	//binary_diff("E:\\video\\rtp\\live555-test.aac", "out.media");
 
+	//rtp_payload_test(96, "MP4A-LATM", 3647, 345042127, "E:\\video\\rtp\\720p.96.MP4A-LATM.rtp", "E:\\video\\rtp\\720p.96.MP4A-LATM");
+	//binary_diff("E:\\video\\rtp\\720p.96.MP4A-LATM.rtp", "out.rtp");
+	//binary_diff("E:\\video\\rtp\\720p.96.MP4A-LATM", "out.media");
+
 	//rtp_payload_test(96, "VP8", 2948, 1447139175, "E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8.rtp", "E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8");
 	//binary_diff("E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8.rtp", "out.rtp");
 	//binary_diff("E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8", "out.media");
