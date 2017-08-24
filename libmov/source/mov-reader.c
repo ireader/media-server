@@ -426,6 +426,7 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 		FREE(reader->mov.tracks[i].stbl.stts);
 		FREE(reader->mov.tracks[i].stbl.ctts);
 	}
+	FREE(reader->mov.tracks);
 	free(reader);
 }
 
@@ -483,6 +484,57 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	return 1;
 }
 
+int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
+{
+	size_t i, j;
+	int64_t pts;
+	struct mov_track_t* track;
+	struct mov_sample_t* sample;
+
+	for (i = 0; i < reader->mov.track_count; i++)
+	{
+		track = &reader->mov.tracks[i];
+		if (track->stbl.stss_count > 0)
+		{
+			// TODO: qsearch
+			for (j = 0; j < track->stbl.stss_count; j++)
+			{
+				if (track->stbl.stss[j] < 1 || track->stbl.stss[j] > track->sample_count)
+				{
+					// start from 1
+					assert(0);
+					break;
+				}
+
+				sample = &track->samples[track->stbl.stss[j] - 1];
+				pts = sample->pts * 1000 / track->mdhd.timescale;
+				if (*timestamp < pts)
+				{
+					track->sample_offset = track->stbl.stss[j] - 1;
+					if (track->sample_offset > 0)
+						track->sample_offset -= 1;
+					sample = &track->samples[track->sample_offset];
+					*timestamp = pts; // FIXME
+
+					// change other track offset
+					for (j = 1; j < reader->mov.track_count; j++)
+					{
+						track = &reader->mov.tracks[(i + j) % reader->mov.track_count];
+						for (track->sample_offset = 0; track->sample_offset < track->sample_count; ++track->sample_offset)
+						{
+							if (track->samples[track->sample_offset].offset > sample->offset)
+								break;
+						}
+					}
+					return 0;
+				}
+			}
+		}
+	}
+
+	return -1;
+}
+
 int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param)
 {
 	size_t i, j;
@@ -511,4 +563,9 @@ int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, 
 		}	
 	}
 	return 0;
+}
+
+uint64_t mov_reader_getduration(struct mov_reader_t* reader)
+{
+	return reader->mov.mvhd.duration * 1000 / reader->mov.mvhd.timescale;
 }
