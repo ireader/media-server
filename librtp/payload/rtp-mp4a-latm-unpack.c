@@ -43,7 +43,10 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 			{
 				len += *ptr;
 				if (255 != *ptr)
+				{
+					++ptr;
 					break;
+				}
 			}
 
 			if (ptr + len > pend)
