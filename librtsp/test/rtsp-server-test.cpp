@@ -259,8 +259,7 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	source->GetRTPInfo(uri, rtpinfo, sizeof(rtpinfo));
 
 	it->second.status = 1;
-	return rtsp_server_reply_play(rtsp, 200, NULL, NULL, rtpinfo);
-    //return rtsp_server_reply_play(rtsp, 200, &tnow, NULL, rtpinfo);
+    return rtsp_server_reply_play(rtsp, 200, npt, NULL, rtpinfo);
 }
 
 static int rtsp_onpause(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/, const char* session, const int64_t* /*npt*/)

@@ -26,6 +26,7 @@ private:
 	static void OnRTCPEvent(void* param, const struct rtcp_msg_t* msg);
 	void OnRTCPEvent(const struct rtcp_msg_t* msg);
 	int SendRTCP(struct media_t* m, uint64_t clock);
+	int SendBye();
 
 	static void* RTPAlloc(void* param, int bytes);
 	static void RTPFree(void* param, void *packet);
@@ -59,9 +60,11 @@ private:
 	struct media_t
 	{
 		void* rtp;
+		int64_t dts; // last frame dts
+		uint64_t timestamp; // rtp timestamp
 		uint64_t rtcp_clock;
 
-		unsigned int ssrc;
+		uint32_t ssrc;
 		int bandwidth;
 		int frequency;
 		char name[64];
