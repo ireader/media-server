@@ -523,7 +523,12 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 						for (track->sample_offset = 0; track->sample_offset < track->sample_count; ++track->sample_offset)
 						{
 							if (track->samples[track->sample_offset].offset > sample->offset)
+							{
+								pts = track->samples[track->sample_offset].pts * 1000 / track->mdhd.timescale;
+								if (pts < *timestamp)
+									*timestamp = pts; // mimimum timestamp
 								break;
+							}
 						}
 					}
 					return 0;
