@@ -52,9 +52,9 @@ int rtsp_server_reply_play(struct rtsp_server_t *rtsp, int code, const int64_t *
 	if (nptstart)
 	{
 		if (nptend)
-			len = snprintf(range, sizeof(range), "Range: %.3f-%.3f\r\n", (float)(*nptstart / 1000.0f), (float)(*nptend / 1000.0f));
+			len = snprintf(range, sizeof(range), "Range: npt=%.3f-%.3f\r\n", (float)(*nptstart / 1000.0f), (float)(*nptend / 1000.0f));
 		else
-			len = snprintf(range, sizeof(range), "Range: %.3f-\r\n", (float)(*nptstart / 1000.0f));
+			len = snprintf(range, sizeof(range), "Range: npt=%.3f-\r\n", (float)(*nptstart / 1000.0f));
 	}
 
 	rfc822_datetime_format(time(NULL), datetime);
