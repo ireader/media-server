@@ -2,8 +2,6 @@
 #define _rtp_packet_h_
 
 #include "rtp-header.h"
-#include "rtcp-header.h"
-#include "rtp-util.h"
 
 #define RTP_FIXED_HEADER 12
 

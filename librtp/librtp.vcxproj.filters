@@ -126,6 +126,9 @@
     <ClCompile Include="payload\rtp-vp8-unpack.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="source\rtp-queue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">

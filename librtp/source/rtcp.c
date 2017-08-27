@@ -1,5 +1,6 @@
 #include "rtp-internal.h"
 #include "rtp-packet.h"
+#include "rtp-util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

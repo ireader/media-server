@@ -1,4 +1,5 @@
 #include "rtp-packet.h"
+#include "rtp-util.h"
 #include <string.h>
 #include <assert.h>
 

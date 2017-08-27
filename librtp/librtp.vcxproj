@@ -166,6 +166,7 @@
     <ClCompile Include="source\rtp-member.c" />
     <ClCompile Include="source\rtp-packet.c" />
     <ClCompile Include="source\rtp-profile.c" />
+    <ClCompile Include="source\rtp-queue.c" />
     <ClCompile Include="source\rtp-ssrc.c" />
     <ClCompile Include="source\rtp-time.c" />
     <ClCompile Include="source\rtp.c" />

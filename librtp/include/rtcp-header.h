@@ -1,5 +1,5 @@
-#ifndef _rtcp_h_
-#define _rtcp_h_
+#ifndef _rtcp_header_h_ 
+#define _rtcp_header_h_
 
 #include <stdint.h>
 
@@ -73,4 +73,4 @@ typedef struct _rtcp_sdes_item_t // source description RTCP packet
 #define RTCP_PT(v)	((v >> 16) & 0xFF) // rtcp packet type
 #define RTCP_LEN(v)	(v & 0xFFFF) // rtcp packet length
 
-#endif /* !_rtcp_h_ */
+#endif /* !_rtcp_header_h_ */
