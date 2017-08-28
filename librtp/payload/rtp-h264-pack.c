@@ -75,15 +75,14 @@ static void rtp_h264_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestam
 	*timestamp = packer->pkt.rtp.timestamp;
 }
 
-static const uint8_t* h264_nalu_find(const uint8_t* p, size_t bytes)
+static const uint8_t* h264_nalu_find(const uint8_t* p, const uint8_t* end)
 {
-	size_t i;
-	for(i = 2; i + 1 < bytes; i++)
+	for(p += 2; p + 1 < end; p++)
 	{
-		if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2])
-			return p + i + 1;
+		if (0x01 == *p && 0x00 == *(p - 1) && 0x00 == *(p - 2))
+			return p + 1;
 	}
-	return p + bytes;
+	return end;
 }
 
 static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes)
@@ -179,16 +178,17 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
-	for(p1 = h264_nalu_find((const uint8_t*)h264, bytes); p1 < pend && 0 == r; p1 = p2)
+	for(p1 = h264_nalu_find((const uint8_t*)h264, pend); p1 < pend && 0 == r; p1 = p2)
 	{
 		size_t nalu_size;
 
 		// filter H.264 start code(0x00000001)
 		assert(0 < (*p1 & 0x1F) && (*p1 & 0x1F) < 24);
-		p2 = h264_nalu_find(p1 + 1, pend - p1 - 1);
+		p2 = h264_nalu_find(p1 + 1, pend);
 		nalu_size = p2 - p1;
 		
 		// filter suffix '00' bytes
+		if (p2 != pend) --nalu_size;
 		while(0 == p1[nalu_size-1]) --nalu_size;
 
 		if(nalu_size + RTP_FIXED_HEADER <= (size_t)packer->size)
