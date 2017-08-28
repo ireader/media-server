@@ -134,12 +134,12 @@ SEND_PACKET:
 					p += n + 4;
 				}
 
-				printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
 			}
 			else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
 			{
 				// add ADTS header
-				printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+				//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
 			}
 			else
 			{
@@ -184,6 +184,7 @@ int MP4FileSource::Seek(int64_t pos)
 
 	m_dts = pos;
 	m_clock = 0;
+	m_frame.bytes = 0; // clear buffered frame
 	return mov_reader_seek(m_reader, &m_dts);
 }
 
@@ -328,11 +329,15 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		if (1)
 		{
 			// RFC 6416
+			// In the presence of SBR, the sampling rates for the core encoder/
+			// decoder and the SBR tool are different in most cases. Therefore,
+			// this parameter SHALL NOT be considered as the definitive sampling rate.
 			static const char* pattern =
 				"m=audio 0 RTP/AVP %d\n"
 				"a=rtpmap:%d MP4A-LATM/%d/%d\n"
 				"a=fmtp:%d profile-level-id=%d;object=%d;cpresent=0;config=";
 
+			sample_rate = 90000;
 			n = snprintf((char*)self->m_frame.buffer, sizeof(self->m_frame.buffer), pattern,
 				RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP4A, sample_rate, channel_count, 
 				RTP_PAYLOAD_MP4A, mpeg4_aac_profile_level(&aac), aac.profile);
@@ -355,6 +360,9 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 			// a=rtpmap:<payload type> <encoding name>/<clock rate>[/<encoding parameters > ]
 			// For audio streams, <encoding parameters> specifies the number of audio channels
 			// streamType: AudioStream
+			// When using SDP, the clock rate of the RTP time stamp MUST be expressed using the "rtpmap" attribute. 
+			// If an MPEG-4 audio stream is transported, the rate SHOULD be set to the same value as the sampling rate of the audio stream. 
+			// If an MPEG-4 video stream transported, it is RECOMMENDED that the rate be set to 90 kHz.
 			static const char* pattern =
 				"m=audio 0 RTP/AVP %d\n"
 				"a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
