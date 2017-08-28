@@ -30,23 +30,18 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 	size_t n, n2, offset;
 
 	assert(uri && base && path);
-	n = strlen(base);
-	n2 = strlen(path);
-	if(n + n2 + 1 > bytes || !uri)
+	n = strlen(base ? base : "");
+	n2 = strlen(path ? path : "");
+	if(n < 1 || n2 < 1 || n + n2 + 2 > bytes || !uri)
 		return NULL;
 
 	offset = snprintf(uri, bytes, "%s", base);
 
-	if( ('/' == path[0] || '\\' == path[0])
-		&& n > 0 && ('/' == uri[n-1] || '\\' == uri[n-1]) )
-	{
-		offset += snprintf(uri + offset, bytes - offset, "%s", path+1);
-	}
-	else
-	{
-		offset += snprintf(uri + offset, bytes - offset, "%s", path);
-	}
-
+	if ('/' == path[0] || '\\' == path[0])
+		path += 1;
+	if ('/' == uri[offset - 1] || '\\' == uri[offset - 1])
+		offset -= 1;
+	offset += snprintf(uri + offset, bytes - offset, "/%s", path);
 	return uri;
 }
 
