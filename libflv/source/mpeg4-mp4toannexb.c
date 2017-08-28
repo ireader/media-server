@@ -11,6 +11,16 @@
 #define H264_NAL_SPS		7 // Sequence parameter set
 #define H264_NAL_PPS		8 // Picture parameter set
 
+static size_t h264_sps_pps_size(const struct mpeg4_avc_t* avc)
+{
+	size_t i, n = 0;
+	for (i = 0; i < avc->nb_sps; i++)
+		n += avc->sps[i].bytes + 4;
+	for (i = 0; i < avc->nb_pps; i++)
+		n += avc->pps[i].bytes + 4;
+	return n;
+}
+
 size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size)
 {
 	int i, n;
@@ -53,7 +63,13 @@ size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t
 			if (0 == sps_pps_flag)
 			{
 				sps_pps_flag = 1; // don't insert more than one-times
-				i = mpeg4_avc_to_nalu(avc, dst, size - (dst - (uint8_t*)out));
+				if (dst != out)
+				{
+					// write sps/pps at first
+					i = h264_sps_pps_size(avc);
+					memmove((uint8_t*)out + i, out, dst - (uint8_t*)out);
+				}
+				i = mpeg4_avc_to_nalu(avc, out, size);
 				if (i <= 0)
 					return 0;
 				dst += i;
