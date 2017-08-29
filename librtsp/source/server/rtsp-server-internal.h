@@ -3,6 +3,7 @@
 
 #include "rtsp-server.h"
 #include "rtsp-parser.h"
+#include "rtsp-header-session.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ struct rtsp_server_t
 	void *param, *sendparam;
 
 	rtsp_parser_t* parser;
+	struct rtsp_header_session_t session;
 
 	unsigned int cseq;
 	char reply[MAX_UDP_PACKAGE];
@@ -36,5 +38,6 @@ int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_pause(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_teardown(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_reply(struct rtsp_server_t *rtsp, int code);
+int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header);
 
 #endif /* !_rtsp_server_internal_h_ */

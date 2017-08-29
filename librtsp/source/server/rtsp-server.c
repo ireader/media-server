@@ -73,16 +73,23 @@ const char* rtsp_server_get_client(rtsp_server_t* rtsp, unsigned short* port)
 
 int rtsp_server_reply(struct rtsp_server_t *rtsp, int code)
 {
+	return rtsp_server_reply2(rtsp, code, "");
+}
+
+int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header)
+{
 	int len;
 	rfc822_datetime_t datetime;
 	rfc822_datetime_format(time(NULL), datetime);
 
+	// smpte=0:10:22-;time=19970123T153600Z
 	len = snprintf(rtsp->reply, sizeof(rtsp->reply),
 		"RTSP/1.0 %d %s\r\n"
 		"CSeq: %u\r\n"
 		"Date: %s\r\n"
+		"%s"
 		"\r\n",
-		code, rtsp_reason_phrase(code), rtsp->cseq, datetime);
+		code, rtsp_reason_phrase(code), rtsp->cseq, datetime, header ? header : "");
 
 	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
 }

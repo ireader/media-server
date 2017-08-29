@@ -1,5 +1,4 @@
 #include "rtsp-server-internal.h"
-#include "rtsp-header-session.h"
 #include "rtsp-header-range.h"
 
 // RFC2326 10.6 PAUSE (p36)
@@ -11,12 +10,12 @@ int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 	int64_t npt = -1L;
 	const char *prange, *psession;
 	struct rtsp_header_range_t range;
-	struct rtsp_header_session_t session;
 
 	prange = rtsp_get_header_by_name(rtsp->parser, "range");
 	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
 
-	if (!psession || 0 != rtsp_header_session(psession, &session))
+	rtsp->session.session[0] = 0; // clear session value
+	if (!psession || 0 != rtsp_header_session(psession, &rtsp->session))
 	{
 		// 454 Session Not Found
 		return rtsp_server_reply(rtsp, 454);
@@ -30,14 +29,17 @@ int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 		assert(range.to_value == RTSP_RANGE_TIME_NOVALUE);
 
 		// 457 Invalid Range
-		//rtsp_server_reply(req, 457);
+		//rtsp_server_reply(req, 457, NULL);
 		//return;
 	}
 
-	return rtsp->handler.onpause(rtsp->param, rtsp, uri, session.session, -1L == npt ? NULL : &npt);
+	return rtsp->handler.onpause(rtsp->param, rtsp, uri, rtsp->session.session, -1L == npt ? NULL : &npt);
 }
 
 int rtsp_server_reply_pause(struct rtsp_server_t *rtsp, int code)
 {
-	return rtsp_server_reply(rtsp, code);
+	char header[256] = { 0 };
+	if(rtsp->session.session[0])
+		snprintf(header, sizeof(header), "Session: %s\r\n", rtsp->session.session);
+	return rtsp_server_reply2(rtsp, code, header);
 }

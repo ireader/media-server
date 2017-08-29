@@ -52,22 +52,9 @@ int rtsp_server_setup(struct rtsp_server_t* rtsp, const char* uri)
 int rtsp_server_reply_setup(struct rtsp_server_t *rtsp, int code, const char* sessionid, const char* transport)
 {
 	int len;
-	rfc822_datetime_t datetime;
-
-	if (200 != code)
-		return rtsp_server_reply(rtsp, code);
-
-	rfc822_datetime_format(time(NULL), datetime);
+	char header[1024];
 
 	// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
-	len = snprintf(rtsp->reply, sizeof(rtsp->reply),
-		"RTSP/1.0 200 OK\r\n"
-		"CSeq: %u\r\n"
-		"Date: %s\r\n"
-		"Session: %s\r\n"
-		"Transport: %s\r\n"
-		"\r\n",
-		rtsp->cseq, datetime, sessionid, transport);
-
-	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
+	len = snprintf(header, sizeof(header), "Transport: %s\r\nSession: %s\r\n", transport ? transport : "", sessionid ? sessionid : "");
+	return rtsp_server_reply2(rtsp, code, header);
 }
