@@ -23,6 +23,10 @@
 #include <memory>
 #include "cpm/shared_ptr.h"
 
+#if defined(_HAVE_FFMPEG_)
+#include "media/ffmpeg-file-source.h"
+#endif
+
 static const char* s_workdir = "e:";
 
 static ThreadLocker s_locker;
@@ -86,7 +90,11 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			std::shared_ptr<IMediaSource> source;
 //			source.reset(new PSFileSource(filename.c_str()));
 //			source.reset(new H264FileSource(filename.c_str()));
+#if defined(_HAVE_FFMPEG_)
+			source.reset(new FFFileSource(filename.c_str()));
+#else
 			source.reset(new MP4FileSource(filename.c_str()));
+#endif
 			source->GetDuration(describe.duration);
 			source->GetSDPMedia(describe.sdpmedia);
 
@@ -144,7 +152,11 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		memset(&item, 0, sizeof(item));
 //		item.media.reset(new PSFileSource(filename.c_str()));
 //		item.media.reset(new H264FileSource(filename.c_str()));
+#if defined(_HAVE_FFMPEG_)
+		item.media.reset(new FFFileSource(filename.c_str()));
+#else
 		item.media.reset(new MP4FileSource(filename.c_str()));
+#endif
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
@@ -232,7 +244,16 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return rtsp_server_reply_play(rtsp, 454, NULL, NULL, NULL);
+		}
+		else
+		{
+			// uri with track
+			if (0)
+			{
+				// 460 Only aggregate operation allowed
+				return rtsp_server_reply_play(rtsp, 460, NULL, NULL, NULL);
+			}
 		}
 
 		source = it->second.media;
@@ -240,7 +261,7 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	if(npt && 0 != source->Seek(*npt))
 	{
 		// 457 Invalid Range
-		return rtsp_server_reply_setup(rtsp, 457, NULL, NULL);
+		return rtsp_server_reply_play(rtsp, 457, NULL, NULL, NULL);
 	}
 
 	if(scale && 0 != source->SetSpeed(*scale))
@@ -249,7 +270,7 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 		assert(scale > 0);
 
 		// 406 Not Acceptable
-		return rtsp_server_reply_setup(rtsp, 406, NULL, NULL);
+		return rtsp_server_reply_play(rtsp, 406, NULL, NULL, NULL);
 	}
 
 	// RFC 2326 12.33 RTP-Info (p55)
@@ -272,7 +293,16 @@ static int rtsp_onpause(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/,
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return rtsp_server_reply_pause(rtsp, 454);
+		}
+		else
+		{
+			// uri with track
+			if (0)
+			{
+				// 460 Only aggregate operation allowed
+				return rtsp_server_reply_pause(rtsp, 460);
+			}
 		}
 
 		source = it->second.media;
@@ -296,7 +326,7 @@ static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri
 		if(it == s_sessions.end())
 		{
 			// 454 Session Not Found
-			return rtsp_server_reply_setup(rtsp, 454, NULL, NULL);
+			return rtsp_server_reply_teardown(rtsp, 454);
 		}
 
 		source = it->second.media;
