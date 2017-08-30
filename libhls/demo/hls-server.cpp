@@ -9,13 +9,10 @@
 #include "flv-reader.h"
 #include "flv-demuxer.h"
 #include "http-server.h"
+#include "http-route.h"
 #include "sys/thread.h"
 #include "sys/system.h"
 #include "sys/path.h"
-#include "urlcodec.h"
-#include "url.h"
-#include "time64.h"
-#include "StdCFile.h"
 #include "cstringext.h"
 #include "cppstringext.h"
 #include <string.h>
@@ -23,6 +20,8 @@
 #include <map>
 #include <list>
 #include <string>
+
+extern "C" int http_list_dir(http_session_t* session, const char* path);
 
 struct hls_ts_t
 {
@@ -74,8 +73,7 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 	// remove oldest segment
 	while(playlist->files.size() > HLS_LIVE_NUM + 1)
 	{
-		hls_ts_t ts = playlist->files.front();
-		free(ts.data);
+		free(playlist->files.front().data);
 		playlist->files.pop_front();
 	}
 
@@ -106,7 +104,7 @@ static int flv_handler(void* param, int codec, const void* data, size_t bytes, u
 static int STDCALL hls_server_worker(void* param)
 {
 	int r, type;
-	time64_t clock;
+	uint64_t clock;
 	uint32_t timestamp;
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
 	std::string file = playlist->file + ".flv";
@@ -120,7 +118,7 @@ static int STDCALL hls_server_worker(void* param)
 		static unsigned char packet[2 * 1024 * 1024];
 		while ((r = flv_reader_read(flv, &type, &timestamp, packet, sizeof(packet))) > 0)
 		{
-			time64_t now = time64_now();
+			uint64_t now = system_clock();
 			if (0 == clock)
 			{
 				clock = now;
@@ -144,61 +142,23 @@ static int STDCALL hls_server_worker(void* param)
 	return thread_destroy(playlist->t);
 }
 
-static int hls_server_reply_file(void* session, const char* file)
+static int hls_server_m3u8(http_session_t* session, const std::string& path)
 {
-	static char buffer[4 * 1024 * 1024];
-	StdCFile f(file, "rb");
-	int r = f.Read(buffer, sizeof(buffer));
-
-	void* ptr;
-	void* bundle;
-	bundle = http_bundle_alloc(r);
-	ptr = http_bundle_lock(bundle);
-	memcpy(ptr, buffer, r);
-	http_bundle_unlock(bundle, r);
-	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-	http_server_send(session, 200, bundle);
-	http_bundle_free(bundle);
-	return 0;
-}
-
-static int hls_server_reply(void* session, int code, const char* msg)
-{
-	void* ptr;
-	void* bundle;
-	bundle = http_bundle_alloc(strlen(msg) + 1);
-	ptr = http_bundle_lock(bundle);
-	strcpy((char*)ptr, msg);
-	http_bundle_unlock(bundle, strlen(msg) + 1);
-	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-	http_server_send(session, code, bundle);
-	http_bundle_free(bundle);
-	return 0;
-}
-
-static int hls_server_m3u8(void* session, const std::string& path)
-{
+	char playlist[8 * 1024];
 	hls_m3u8_t* m3u8 = s_playlists.find(path)->second->m3u8;
 	assert(m3u8);
-
-	void* bundle = http_bundle_alloc(4 * 1024);
-	void* ptr = http_bundle_lock(bundle);
-	assert(0 == hls_m3u8_playlist(m3u8, 0, (char*)ptr, 4 * 1024));
-	http_bundle_unlock(bundle, strlen((char*)ptr));
-
+	assert(0 == hls_m3u8_playlist(m3u8, 0, playlist, sizeof(playlist)));
+	
 	http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
 	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-	http_server_send(session, 200, bundle);
-	http_bundle_free(bundle);
+	http_server_reply(session, 200, playlist, strlen(playlist));
 
 	printf("load %s.m3u8 file\n", path.c_str());
 	return 0;
 }
 
-static int hls_server_ts(void* session, const std::string& path, const std::string& ts)
+static int hls_server_ts(http_session_t* session, const std::string& path, const std::string& ts)
 {
 	hls_playlist_t* playlist = s_playlists.find(path)->second;
 	assert(playlist);
@@ -208,79 +168,75 @@ static int hls_server_ts(void* session, const std::string& path, const std::stri
 	{
 		if(i->name == file)
 		{
-			void* bundle = http_bundle_alloc(i->size);
-			void* ptr = http_bundle_lock(bundle);
-			memcpy(ptr, i->data, i->size);
-			http_bundle_unlock(bundle, i->size);
-
 			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-			http_server_send(session, 200, bundle);
-			http_bundle_free(bundle);
-
+			http_server_reply(session, 200, i->data, i->size);
 			printf("load file %s\n", file.c_str());
 			return 0;
 		}
 	}
 
 	printf("load ts file(%s) failed\n", file.c_str());
-	return hls_server_reply(session, 404, "");
+	return http_server_send(session, 404, "", 0, NULL, NULL);
 }
 
-static int hls_server_onhttp(void* http, void* session, const char* method, const char* path)
+static int hls_server_onlive(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
 {
-	// decode request uri
-	void* url = url_parse(path);
-	std::string s = url_getpath(url);
-	url_free(url);
-	path = s.c_str();
+	std::vector<std::string> paths;
+	Split(path + 6 /* /live/ */, "/", paths);
 
-	if (0 == strncmp(path, "/live/", 6))
+	if (strendswith(path, ".m3u8") && 1 == paths.size())
 	{
-		std::vector<std::string> paths;
-		Split(path + 6, "/", paths);
-
-		if (strendswith(path, ".m3u8") && 1 == paths.size())
+		std::string app = paths[0].substr(0, paths[0].length() - 5);
+		if (s_playlists.find(app) == s_playlists.end())
 		{
-			std::string app = paths[0].substr(0, paths[0].length() - 5);
-			if (s_playlists.find(app) == s_playlists.end())
-			{
-				hls_playlist_t* playlist = new hls_playlist_t();
-				playlist->file = app;
-				playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
-				playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
-				playlist->i = 0;
-				s_playlists[app] = playlist;
+			hls_playlist_t* playlist = new hls_playlist_t();
+			playlist->file = app;
+			playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
+			playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
+			playlist->i = 0;
+			s_playlists[app] = playlist;
 
-				thread_create(&playlist->t, hls_server_worker, playlist);
-			}
+			thread_create(&playlist->t, hls_server_worker, playlist);
+		}
 
-			return hls_server_m3u8(session, app);
-		}
-		else if (strendswith(path, ".ts") && 2 == paths.size())
-		{
-			if (s_playlists.find(paths[0]) != s_playlists.end())
-			{
-				return hls_server_ts(session, paths[0], paths[1]);
-			}
-		}
+		return hls_server_m3u8(session, app);
 	}
-	else if (0 == strncmp(path, "/vod/", 5))
+	else if (strendswith(path, ".ts") && 2 == paths.size())
 	{
-		if (path_testfile(path+5))
+		if (s_playlists.find(paths[0]) != s_playlists.end())
 		{
-			return hls_server_reply_file(session, path + 5);
+			return hls_server_ts(session, paths[0], paths[1]);
 		}
 	}
 
-	return hls_server_reply(session, 404, "");
+	return http_server_send(session, 404, "", 0, NULL, NULL);
+}
+
+static int hls_server_onvod(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
+{
+	std::string fullpath = "e:\\video\\";
+	fullpath += path + 5 /* /vod/ */;
+
+	if (path_testdir(fullpath.c_str()))
+	{
+		return http_list_dir(session, fullpath.c_str());
+	}
+	else if (path_testfile(fullpath.c_str()))
+	{
+		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL, NULL);
+	}
+
+	return http_server_send(session, 404, "", 0, NULL, NULL);
 }
 
 void hls_server_test(const char* ip, int port)
 {
 	aio_socket_init(1);
-	void* http = http_server_create(ip, port);
-	http_server_set_handler(http, hls_server_onhttp, http);
+	http_server_t* http = http_server_create(ip, port);
+	http_server_set_handler(http, http_server_route, http);
+	http_server_addroute("/live/", hls_server_onlive);
+	http_server_addroute("/vod/", hls_server_onvod);
 
 	// http process
 	while(aio_socket_process(10000) >= 0)
