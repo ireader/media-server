@@ -15,7 +15,9 @@
 
 #define N_TRACK 8
 #define N_NAME 128
-#define N_COUNT 3
+#define N_COUNT 5
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 struct dash_segment_t
 {
@@ -30,7 +32,9 @@ struct dash_adaptation_set_t
 	fmp4_writer_t* fmp4;
 	int64_t dts;
 	int64_t dts_last;
-	int track;
+	int64_t bytes;
+	int bitrate;
+	int track; // MP4 track id
 	
 	int seq;
 	int id;
@@ -43,7 +47,6 @@ struct dash_adaptation_set_t
 			int width;
 			int height;
 			int frame_rate;
-			int bitrate;
 			struct
 			{
 				uint8_t profile;
@@ -54,10 +57,10 @@ struct dash_adaptation_set_t
 
 		struct
 		{
+			uint8_t profile; // AAC profile
 			int channel;
 			int sample_bit;
 			int sample_rate;
-			int bitrate;
 		} audio;
 	} u;
 
@@ -70,6 +73,8 @@ struct dash_mpd_t
 	int flags;
 	char* name;
 	time_t time;
+	int64_t duration;
+	int64_t max_segment_duration;
 
 	struct dash_mpd_notify_t notify;
 	void* param;
@@ -81,7 +86,7 @@ struct dash_mpd_t
 static int dash_adaptation_set_open(struct dash_mpd_t* mpd, struct dash_adaptation_set_t* track)
 {
 	char name[N_NAME + 16];
-	snprintf(name, sizeof(name), "%s-%d-%" PRId64 ".mp4", mpd->name, track->id, track->dts);
+	snprintf(name, sizeof(name), "%s-%d-%" PRId64 ".m4s", mpd->name, track->id, track->dts);
 
 	track->fmp4 = fmp4_writer_create(name, MOV_FLAG_SEGMENT);
 	if (NULL == track->fmp4)
@@ -115,7 +120,7 @@ static int dash_adaptation_set_close(struct dash_mpd_t* mpd, struct dash_adaptat
 		fmp4_writer_destroy(track->fmp4);
 		track->fmp4 = NULL;
 
-		len = snprintf(name, sizeof(name), "%s-%d-%d.mp4", mpd->name, track->id, track->seq);
+		len = snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, track->id, track->seq);
 		seg = (struct dash_segment_t*)malloc(sizeof(*seg) + len + 1);
 		seg->name = (char*)(seg + 1);
 		seg->timestamp = track->dts;
@@ -193,17 +198,17 @@ int dash_mpd_add_video_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int
 	LIST_INIT_HEAD(&track->root);
 	track->id = mpd->count;
 	track->object = object;
+	track->bitrate = 0;
 	track->u.video.width = width;
 	track->u.video.height = height;
 	track->u.video.frame_rate = 25;
-	track->u.video.bitrate = 0;
 	assert(((const uint8_t*)extra_data)[0] == 1); // configurationVersion
 	track->u.video.avc.profile = ((const uint8_t*)extra_data)[1];
 	track->u.video.avc.compatibility = ((const uint8_t*)extra_data)[2];
 	track->u.video.avc.level = ((const uint8_t*)extra_data)[3];
 
 	assert(MOV_OBJECT_H264 == object);
-	snprintf(name, sizeof(name), "%s-%d-init.mp4", mpd->name, track->id);
+	snprintf(name, sizeof(name), "%s-%d-init.m4s", mpd->name, track->id);
 	fmp4 = fmp4_writer_create(name, 0);
 	if (fmp4)
 	{
@@ -229,13 +234,16 @@ int dash_mpd_add_audio_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int
 	LIST_INIT_HEAD(&track->root);
 	track->id = mpd->count;
 	track->object = object;
+	track->bitrate = 0;
 	track->u.audio.channel = channel_count;
 	track->u.audio.sample_bit = bits_per_sample;
 	track->u.audio.sample_rate = sample_rate;
-	track->u.audio.bitrate = 0;
+	track->u.audio.profile = ((const uint8_t*)extra_data)[0] >> 3;
+	if(31 == track->u.audio.profile)
+		track->u.audio.profile = 32 + (((((const uint8_t*)extra_data)[0] & 0x07) << 3) | ((((const uint8_t*)extra_data)[1] >> 5) & 0x07));
 
 	assert(MOV_OBJECT_AAC == object);
-	snprintf(name, sizeof(name), "%s-%d-init.mp4", mpd->name, track->id);
+	snprintf(name, sizeof(name), "%s-%d-init.m4s", mpd->name, track->id);
 	fmp4 = fmp4_writer_create(name, 0);
 	if (fmp4)
 	{
@@ -261,9 +269,13 @@ int dash_mpd_input(struct dash_mpd_t* mpd, int adapation, const void* data, size
 	if (NULL == data || 0 == bytes // flash fragment
 		|| (MOV_OBJECT_H264 == track->object && (MOV_AV_FLAG_KEYFREAME & flags)))
 	{
+		mpd->max_segment_duration = MAX(track->dts_last - track->dts, mpd->max_segment_duration);
+		mpd->duration += mpd->max_segment_duration;
+
 		for (i = 0; i < mpd->count; i++)
 		{
 			dash_adaptation_set_close(mpd, &mpd->tracks[i]);
+			mpd->tracks[i].bitrate = MAX(mpd->tracks[i].bitrate, (int)(mpd->tracks[i].bytes * 1000 / (track->dts_last - track->dts) * 8));
 		}
 
 		// FIXME: check count(first time only)
@@ -278,11 +290,13 @@ int dash_mpd_input(struct dash_mpd_t* mpd, int adapation, const void* data, size
 	if (NULL == track->fmp4)
 	{
 		track->dts = dts;
+		track->bytes = 0;
 		r = dash_adaptation_set_open(mpd, track);
 	}
 
+	track->bytes += bytes;
 	track->dts_last = dts;
-	return 0 == r ? fmp4_writer_write(track->fmp4, track->id, data, bytes, pts, dts, flags) : r;
+	return 0 == r ? fmp4_writer_write(track->fmp4, track->track, data, bytes, pts, dts, flags) : r;
 }
 
 // ISO/IEC 23009-1:2014(E) 5.4 Media Presentation Description updates (p67)
@@ -293,7 +307,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 {
 	// ISO/IEC 23009-1:2014(E)
 	// G.2 Example for ISO Base media file format Live profile (141)
-	static const char* s_mpd_live =
+	static const char* s_mpd_dynamic =
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		"<MPD\n"
 		"    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
@@ -321,16 +335,16 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		"    profiles=\"urn:mpeg:dash:profile:isoff-on-demand:2011\">\n";
 
 	static const char* s_video =
-		"    <AdaptationSet id=\"1\" mimeType=\"video/mp4\" segmentAlignment=\"true\">\n"
-		"      <Representation id=\"H264\" codecs=\"avc1.%02x%02x%02x\" width=\"%d\" height=\"%d\" frameRate=\"%d\" startWithSAP=\"1\" bandwidth=\"%d\">\n"
-		"        <SegmentTemplate timescale=\"1000\" media=\"%s-%d-$Time$.mp4\" initialization=\"%s-%d-init.mp4\">\n"
+		"    <AdaptationSet contentType=\"video\" segmentAlignment=\"true\" bitstreamSwitching=\"true\">\n"
+		"      <Representation id=\"H264\" mimeType=\"video/mp4\" codecs=\"avc1.%02x%02x%02x\" width=\"%d\" height=\"%d\" frameRate=\"%d\" startWithSAP=\"1\" bandwidth=\"%d\">\n"
+		"        <SegmentTemplate timescale=\"1000\" media=\"%s-%d-$Time$.m4s\" initialization=\"%s-%d-init.m4s\">\n"
 		"          <SegmentTimeline>\n";
 
 	static const char* s_audio =
-		"    <AdaptationSet id=\"2\" mimeType=\"audio/mp4\" segmentAlignment=\"true\">\n"
-		"      <AudioChannelConfiguration  schemeIdUri=\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\" value=\"1\"/>\n"
-		"      <Representation id=\"AAC\" codecs=\"mp4a.40.5\" audioSamplingRate=\"%d\" startWithSAP=\"1\" bandwidth=\"%d\">\n"
-		"        <SegmentTemplate timescale=\"1000\" media=\"%s-%d-$Time$.mp4\" initialization=\"%s-%d-init.mp4\">\n"
+		"    <AdaptationSet contentType=\"audio\" segmentAlignment=\"true\" bitstreamSwitching=\"true\">\n"
+		"      <Representation id=\"AAC\" mimeType=\"audio/mp4\" codecs=\"mp4a.40.%u\" audioSamplingRate=\"%d\" startWithSAP=\"1\" bandwidth=\"%d\">\n"
+		"		 <AudioChannelConfiguration schemeIdUri=\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\" value=\"%d\"/>\n"
+		"        <SegmentTemplate timescale=\"1000\" media=\"%s-%d-$Time$.m4s\" initialization=\"%s-%d-init.m4s\">\n"
 		"          <SegmentTimeline>\n";
 
 	static const char* s_footer =
@@ -344,31 +358,36 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 	struct tm* t;
 	char publishTime[32];
 	char availabilityStartTime[32];
-	unsigned int minimumUpdatePeriod = 4;
+	unsigned int minimumUpdatePeriod;
+	unsigned int timeShiftBufferDepth;
 	struct dash_adaptation_set_t* track;
 	struct dash_segment_t *seg;
 	struct list_head *link;
 
-	t = gmtime(&mpd->time);
-	snprintf(availabilityStartTime, sizeof(availabilityStartTime), "%4d-%02d-%02dT%02d:%02d:%02d", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
-	
 	now = time(NULL);
-	t = gmtime(&now);
-	snprintf(publishTime, sizeof(publishTime), "%4d-%02d-%02dT%02d:%02d:%02d", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+	strftime(availabilityStartTime, sizeof(availabilityStartTime), "%Y-%m-%dT%H:%M:%S", gmtime(&mpd->time));
+	strftime(publishTime, sizeof(publishTime), "%Y-%m-%dT%H:%M:%S", gmtime(&now));
 	
-	/*
-	* timeShiftBufferDepth formula:
-	*     2 * minBufferTime + max_fragment_length + 1
-	*/
-	n = snprintf(playlist, bytes, s_mpd_live, minimumUpdatePeriod, minimumUpdatePeriod * 3 + 1, availabilityStartTime, minimumUpdatePeriod, publishTime);
-	n += snprintf(playlist + n, bytes - n, "  <Period start=\"PT0S\" id=\"dash\">\n");
+	minimumUpdatePeriod = (unsigned int)MAX(mpd->max_segment_duration / 1000, 1);
+
+	if (mpd->flags == DASH_DYNAMIC)
+	{
+		timeShiftBufferDepth = minimumUpdatePeriod * N_COUNT + 1;
+		n = snprintf(playlist, bytes, s_mpd_dynamic, minimumUpdatePeriod, timeShiftBufferDepth, availabilityStartTime, minimumUpdatePeriod, publishTime);
+		n += snprintf(playlist + n, bytes - n, "  <Period start=\"PT0S\" id=\"dash\">\n");
+	}
+	else
+	{
+		n = snprintf(playlist, bytes, s_mpd_static, (unsigned int)(mpd->duration / 1000), minimumUpdatePeriod);
+		n += snprintf(playlist + n, bytes - n, "  <Period start=\"PT0S\" id=\"dash\">\n");
+	}
 
 	for (i = 0; i < mpd->count; i++)
 	{
 		track = &mpd->tracks[i];
 		if (MOV_OBJECT_H264 == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_video, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->u.video.bitrate, mpd->name, track->id, mpd->name, track->id);
+			n += snprintf(playlist + n, bytes - n, s_video, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, mpd->name, track->id, mpd->name, track->id);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
@@ -378,7 +397,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		}
 		else if (MOV_OBJECT_AAC == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_audio, track->u.audio.sample_rate, track->u.audio.bitrate, mpd->name, track->id, mpd->name, track->id);
+			n += snprintf(playlist + n, bytes - n, s_audio, (unsigned int)track->u.audio.profile, track->u.audio.sample_rate, track->bitrate, track->u.audio.channel, mpd->name, track->id, mpd->name, track->id);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
