@@ -39,6 +39,7 @@ struct hls_playlist_t
 	hls_m3u8_t* m3u8;
 	int64_t pts;
 	int64_t last_pts;
+	uint8_t packet[2 * 1024 * 1024];
 
 	int i;
 	std::list<hls_ts_t> files;
@@ -115,8 +116,7 @@ static int STDCALL hls_server_worker(void* param)
 		flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
 
 		clock = 0;
-		static unsigned char packet[2 * 1024 * 1024];
-		while ((r = flv_reader_read(flv, &type, &timestamp, packet, sizeof(packet))) > 0)
+		while ((r = flv_reader_read(flv, &type, &timestamp, playlist->packet, sizeof(playlist->packet))) > 0)
 		{
 			uint64_t now = system_clock();
 			if (0 == clock)
@@ -129,7 +129,7 @@ static int STDCALL hls_server_worker(void* param)
 					system_sleep(timestamp - (now - clock));
 			}
 
-			assert(0 == flv_demuxer_input(demuxer, type, packet, r, timestamp));
+			assert(0 == flv_demuxer_input(demuxer, type, playlist->packet, r, timestamp));
 		}
 
 		flv_demuxer_destroy(demuxer);
@@ -224,7 +224,8 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	}
 	else if (path_testfile(fullpath.c_str()))
 	{
-		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL, NULL);
+		//http_server_set_header(session, "Transfer-Encoding", "chunked");
+		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 
 	return http_server_send(session, 404, "", 0, NULL, NULL);
