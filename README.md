@@ -27,6 +27,10 @@
 1. HLS Media: TS segmenter
 2. HLS M3U8: generate m3u8 file
 
+# libdash
+1. MPEG-DASH static(vod)
+2. MPEG-DASH dynamic(live)
+
 # libhttp(https://github.com/ireader/sdk)
 1. HTTP Server(base AIO)
 2. HTTP Client
