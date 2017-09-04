@@ -279,10 +279,13 @@ static int rtp_queue_packet(rtp_queue_t* q, uint16_t seq)
 {
 	struct rtp_packet_t* pkt;
 	pkt = (struct rtp_packet_t*)malloc(sizeof(*pkt));
-	memset(pkt, 0, sizeof(*pkt));
-	pkt->rtp.seq = seq;
-	if (0 == rtp_queue_write(q, pkt))
-		free(pkt);
+	if (pkt)
+	{
+		memset(pkt, 0, sizeof(*pkt));
+		pkt->rtp.seq = seq;
+		if (0 == rtp_queue_write(q, pkt))
+			free(pkt);
+	}
 	return 0;
 }
 

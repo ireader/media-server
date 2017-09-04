@@ -95,18 +95,18 @@ int rtp_rtcp_report(void* rtp, void* data, int bytes)
 	if(RTP_SENDER == ctx->role)
 	{
 		// send RTP in 2T
-		n = rtcp_sr_pack(ctx, (unsigned char*)data, bytes);
+		n = rtcp_sr_pack(ctx, (uint8_t*)data, bytes);
 	}
 	else
 	{
 		assert(RTP_RECEIVER == ctx->role);
-		n = rtcp_rr_pack(ctx, (unsigned char*)data, bytes);
+		n = rtcp_rr_pack(ctx, (uint8_t*)data, bytes);
 	}
 
 	// compound RTCP Packet
 	if(n < bytes)
 	{
-		n += rtcp_sdes_pack(ctx, (unsigned char*)data+n, bytes-n);
+		n += rtcp_sdes_pack(ctx, (uint8_t*)data+n, bytes-n);
 	}
 
 	ctx->init = 0;
@@ -116,7 +116,7 @@ int rtp_rtcp_report(void* rtp, void* data, int bytes)
 int rtp_rtcp_bye(void* rtp, void* data, int bytes)
 {
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
-	return rtcp_bye_pack(ctx, (unsigned char*)data, bytes);
+	return rtcp_bye_pack(ctx, (uint8_t*)data, bytes);
 }
 
 int rtp_rtcp_interval(void* rtp)
@@ -152,7 +152,7 @@ const char* rtp_get_name(void* rtp, uint32_t ssrc)
 int rtp_set_info(void* rtp, const char* cname, const char* name)
 {
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
-	rtp_member_setvalue(ctx->self, RTCP_SDES_CNAME, (const unsigned char*)cname, strlen(cname));
-	rtp_member_setvalue(ctx->self, RTCP_SDES_NAME, (const unsigned char*)name, strlen(name));
+	rtp_member_setvalue(ctx->self, RTCP_SDES_CNAME, (const uint8_t*)cname, strlen(cname));
+	rtp_member_setvalue(ctx->self, RTCP_SDES_NAME, (const uint8_t*)name, strlen(name));
 	return 0;
 }
