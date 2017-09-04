@@ -15,9 +15,6 @@ struct dash_mpd_notify_t
 	int (*onupdate)(void* param);
 };
 
-//////////////////////////////////////////////////////////////////////////
-/// TEST only, don't use it
-//////////////////////////////////////////////////////////////////////////
 dash_mpd_t* dash_mpd_create(const char* name, int flags, struct dash_mpd_notify_t* notify, void* param);
 void dash_mpd_destroy(dash_mpd_t* mpd);
 

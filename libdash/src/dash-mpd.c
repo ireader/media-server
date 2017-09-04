@@ -365,8 +365,8 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 	struct list_head *link;
 
 	now = time(NULL);
-	strftime(availabilityStartTime, sizeof(availabilityStartTime), "%Y-%m-%dT%H:%M:%S", gmtime(&mpd->time));
-	strftime(publishTime, sizeof(publishTime), "%Y-%m-%dT%H:%M:%S", gmtime(&now));
+	strftime(availabilityStartTime, sizeof(availabilityStartTime), "%Y-%m-%dT%H:%M:%SZ", gmtime(&mpd->time));
+	strftime(publishTime, sizeof(publishTime), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
 	
 	minimumUpdatePeriod = (unsigned int)MAX(mpd->max_segment_duration / 1000, 1);
 
