@@ -344,7 +344,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 
 			uint8_t config[6];
 			int r = mpeg4_aac_stream_mux_config_save(&aac, config, sizeof(config));
-			static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+			static const char* hex = "0123456789abcdef";
 			for (int i = 0; i < r; i++)
 			{
 				self->m_frame.buffer[n++] = hex[config[i] >> 4];

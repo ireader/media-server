@@ -17,9 +17,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\rfc822-datetime.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtsp-header-range.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,9 +106,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\rfc822-datetime.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\media-source.h">
       <Filter>Header Files</Filter>
     </ClInclude>

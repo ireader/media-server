@@ -144,7 +144,6 @@
     <ClCompile Include="source\client\rtsp-client-setup.c" />
     <ClCompile Include="source\client\rtsp-client-teardown.c" />
     <ClCompile Include="source\client\rtsp-client.c" />
-    <ClCompile Include="source\rfc822-datetime.c" />
     <ClCompile Include="source\rtsp-header-range.c" />
     <ClCompile Include="source\rtsp-header-rtp-info.c" />
     <ClCompile Include="source\rtsp-header-session.c" />
@@ -165,7 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\media-source.h" />
-    <ClInclude Include="include\rfc822-datetime.h" />
     <ClInclude Include="include\rtp-socket.h" />
     <ClInclude Include="include\rtsp-client.h" />
     <ClInclude Include="include\rtsp-header-range.h" />

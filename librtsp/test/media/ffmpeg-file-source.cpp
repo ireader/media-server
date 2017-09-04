@@ -227,12 +227,12 @@ SEND_PACKET:
 					p += n + 4;
 				}
 
-				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
 			}
 			else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
 			{
 				// add ADTS header
-				//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+				//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
 			}
 			else
 			{
@@ -273,6 +273,7 @@ int FFFileSource::Seek(int64_t pos)
 		if (-1 != m_media[i].dts_first)
 			m_media[i].timestamp += m_media[i].dts_last - m_media[i].dts_first + 1;
 		m_media[i].dts_first = -1;
+		//SendRTCP(&m_media[i], system_clock());
 	}
 
 	m_dts = -1;
@@ -442,7 +443,7 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 
 			uint8_t config[6];
 			int r = mpeg4_aac_stream_mux_config_save(&aac, config, sizeof(config));
-			static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+			static const char* hex = "0123456789abcdef";
 			for (int i = 0; i < r; i++)
 			{
 				buffer[n++] = hex[config[i] >> 4];
