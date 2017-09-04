@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmov", "libmov\libmov.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libflv", "libflv\libflv.vcxproj", "{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdash", "libdash\libdash.vcxproj", "{A5DA231F-6146-43B5-8BBE-891F7E552357}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -73,6 +75,14 @@ Global
 		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|Win32.Build.0 = Release|Win32
 		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x64.ActiveCfg = Release|x64
 		{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}.Release|x64.Build.0 = Release|x64
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Debug|Win32.Build.0 = Debug|Win32
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Debug|x64.ActiveCfg = Debug|x64
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Debug|x64.Build.0 = Debug|x64
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|Win32.ActiveCfg = Release|Win32
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|Win32.Build.0 = Release|Win32
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|x64.ActiveCfg = Release|x64
+		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
