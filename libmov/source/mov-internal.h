@@ -61,6 +61,8 @@ enum
 	MOV_BRAND_MP42 = MOV_TAG('m', 'p', '4', '2'), // ISO/IEC 14496-14:2003 MP4 File Format v2
 	MOV_BRAND_MOV  = MOV_TAG('q', 't', ' ', ' '), // Apple Quick-Time File Format
 	MOV_BRAND_DASH = MOV_TAG('d', 'a', 's', 'h'), // MPEG-DASH
+	MOV_BRAND_MSDH = MOV_TAG('m', 's', 'd', 'h'), // MPEG-DASH
+	MOV_BRAND_MSIX = MOV_TAG('m', 's', 'i', 'x'), // MPEG-DASH
 };
 
 #define MOV_TREX_FLAG_IS_LEADING_MASK					0x0C000000
