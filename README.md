@@ -18,18 +18,23 @@
 3. RTP with MPEG-2 PS/TS
 
 # librtsp
-1. RFC 2326 RTSP client/server
-2. RTSP text parser
+1. RFC 2326 RTSP client
+2. RFC 2326 RTSP Server
+2. RTSP parser
 3. RFC 4566 SDP parser
-4. RFC 822 datetime parser
 
 # libhls
 1. HLS Media: TS segmenter
 2. HLS M3U8: generate m3u8 file
 
 # libdash
-1. MPEG-DASH static(vod)
-2. MPEG-DASH dynamic(live)
+1. ISO/IEC 23009-1 MPEG-DASH static(vod)
+2. ISO/IEC 23009-1 MPEG-DASH dynamic(live)
+
+# libmov
+1. MP4 File reader/writer
+2. MP4 faststart(moov box before mdat)
+3. fragment MP4 File writer
 
 # libhttp(https://github.com/ireader/sdk)
 1. HTTP Server(base AIO)
