@@ -40,3 +40,8 @@
 1. HTTP Server(base AIO)
 2. HTTP Client
 3. HTTP Cookie
+
+### Make
+1. make clean && make
+2. make RELEASE=1 (make release library, default debug)
+3. make PLATFORM=arm-hisiv100nptl-linux (cross compile)
