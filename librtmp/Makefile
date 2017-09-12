@@ -1,5 +1,3 @@
-ROOT:=../../sdk
-
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
 #--------------------------------------------------------------------
@@ -44,8 +42,9 @@ STATIC_LIBS =
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
 DEFINES = NO_CRYPTO
+#DEFINES += _OPENSSL_
 
-include $(ROOT)/gcc.mk
+include ../gcc.mk
 
 GCC_VER_GTE44 := $(shell echo `gcc -dumpversion | cut -f1-2 -d.` \< 4.4 | bc )
 ifeq ($(GCC_VER_GTE44),1)

@@ -1,6 +1,3 @@
-ROOT:=../../sdk
-H264:=../../avcodec/h264
-
 #--------------------------------Output------------------------------
 # OUTTYPE: 0-exe, 1-dll, 2-static
 #--------------------------------------------------------------------
@@ -11,10 +8,7 @@ OUTFILE = libflv.a
 #
 # INCLUDES = $(addprefix -I,$(INCLUDES)) # add -I prefix
 #--------------------------------------------------------------------
-INCLUDES = . \
-					./include \
-					$(H264)/include \
-					$(ROOT)/include
+INCLUDES = . ./include
 
 #-------------------------------Source-------------------------------
 #
@@ -47,7 +41,7 @@ STATIC_LIBS =
 #--------------------------------------------------------------------
 DEFINES =
 
-include $(ROOT)/gcc.mk
+include ../gcc.mk
 
 GCC_VER_GTE44 := $(shell echo `gcc -dumpversion | cut -f1-2 -d.` \< 4.4 | bc )
 ifeq ($(GCC_VER_GTE44),1)
