@@ -8,10 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#if defined(_WIN32) || defined(_WIN64) || defined(OS_WINDOWS)
-	#define PRId64 "I64d"
-#endif
+#include <inttypes.h>
 
 #define N_TRACK 8
 #define N_NAME 128
@@ -355,7 +352,6 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 
 	size_t i, n;
 	time_t now;
-	struct tm* t;
 	char publishTime[32];
 	char availabilityStartTime[32];
 	unsigned int minimumUpdatePeriod;
