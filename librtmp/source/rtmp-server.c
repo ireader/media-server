@@ -161,7 +161,7 @@ static int rtmp_server_onconnect(void* param, int r, double transaction, const s
 	if (0 == r)
 	{
 		assert(1 == (int)transaction);
-		strlcpy(ctx->app, connect->app, sizeof(ctx->app));
+		snprintf(ctx->app, sizeof(ctx->app), "%s", connect->app);
 		r = rtmp_server_send_server_bandwidth(ctx);
 		r = 0 == r ? rtmp_server_send_client_bandwidth(ctx) : r;
 		r = 0 == r ? rtmp_server_send_set_chunk_size(ctx) : r;
@@ -226,8 +226,8 @@ static int rtmp_server_onpublish(void* param, int r, double transaction, const c
 		r = ctx->handler.onpublish(ctx->param, ctx->app, stream_name, stream_type);
 		if (0 == r)
 		{
-			strlcpy(ctx->stream_name, stream_name, sizeof(ctx->stream_name));
-			strlcpy(ctx->stream_type, stream_type, sizeof(ctx->stream_type));
+			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
+			snprintf(ctx->stream_type, sizeof(ctx->stream_type), "%s", stream_type);
 
 			// User Control (StreamBegin)
 			r = rtmp_server_send_stream_begin(ctx);
@@ -253,8 +253,8 @@ static int rtmp_server_onplay(void* param, int r, double transaction, const char
 		r = ctx->handler.onplay(ctx->param, ctx->app, stream_name, start, duration, reset);
 		if (0 == r)
 		{
-			strlcpy(ctx->stream_name, stream_name, sizeof(ctx->stream_name));
-			strlcpy(ctx->stream_type, -1==start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD, sizeof(ctx->stream_type));
+			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
+			snprintf(ctx->stream_type, sizeof(ctx->stream_type), "%s", -1==start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD);
 
 			// User Control (StreamBegin)
 			r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;

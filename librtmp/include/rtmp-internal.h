@@ -5,8 +5,6 @@
 #include "rtmp-netconnection.h"
 #include "rtmp-netstream.h"
 
-#define strlcpy(t, s, n) snprintf(t, n, "%s", s);
-
 #define N_CHUNK_STREAM	8 // maximum chunk stream count
 #define N_STREAM_NAME	256
 

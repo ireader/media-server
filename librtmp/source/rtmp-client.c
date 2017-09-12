@@ -327,7 +327,7 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	if (!ctx) return NULL;
 
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
-	strlcpy(ctx->stream_name, playpath, sizeof(ctx->stream_name));
+	snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", playpath);
 	ctx->stream_id = 0;
 	ctx->param = param;
 	ctx->state = RTMP_STATE_UNINIT;
@@ -350,11 +350,11 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->rtmp.u.client.onping = rtmp_client_onping;
 	ctx->rtmp.u.client.onbandwidth = rtmp_client_onbandwidth;
 
-	strlcpy(ctx->connect.app, appname, sizeof(ctx->connect.app));
-	if (tcurl) strlcpy(ctx->connect.tcUrl, tcurl, sizeof(ctx->connect.tcUrl));
-	//strlcpy(ctx->connect.swfUrl, tcurl ? tcurl : url, sizeof(ctx->connect.swfUrl));
-	//strlcpy(ctx->connect.pageUrl, tcurl ? tcurl : url, sizeof(ctx->connect.pageUrl));
-	strlcpy(ctx->connect.flashver, FLASHVER, sizeof(ctx->connect.flashver));
+	snprintf(ctx->connect.app, sizeof(ctx->connect.app), "%s", appname);
+	if (tcurl) snprintf(ctx->connect.tcUrl, sizeof(ctx->connect.tcUrl), "%s", tcurl);
+	//snprintf(ctx->connect.swfUrl, sizeof(ctx->connect.swfUrl), "%s", tcurl ? tcurl : url);
+	//snprintf(ctx->connect.pageUrl, sizeof(ctx->connect.pageUrl), "%s", tcurl ? tcurl : url);
+	snprintf(ctx->connect.flashver, sizeof(ctx->connect.flashver), "%s", FLASHVER);
 	ctx->connect.fpad = 0;
 	ctx->connect.capabilities = 15;
 	ctx->connect.audioCodecs = 3191; //SUPPORT_SND_AAC;
