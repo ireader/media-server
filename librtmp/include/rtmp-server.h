@@ -54,6 +54,7 @@ int rtmp_server_input(rtmp_server_t* rtmp, const uint8_t* data, size_t bytes);
 
 /// send audio/video data(VOD only)
 /// @param[in] rtmp rtmp_server_create instance
+/// @return 0-ok, other-error
 int rtmp_server_send_audio(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 int rtmp_server_send_video(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 int rtmp_server_send_metadata(rtmp_server_t* rtmp, const void* data, size_t bytes);

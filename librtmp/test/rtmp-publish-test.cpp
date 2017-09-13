@@ -32,15 +32,22 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 
 		if (FLV_TYPE_AUDIO == type)
 		{
-			rtmp_client_push_audio(rtmp, packet, r, timestamp);
+			r = rtmp_client_push_audio(rtmp, packet, r, timestamp);
 		}
 		else if (FLV_TYPE_VIDEO == type)
 		{
-			rtmp_client_push_video(rtmp, packet, r, timestamp);
+			r = rtmp_client_push_video(rtmp, packet, r, timestamp);
 		}
 		else
 		{
 			assert(0);
+			r = 0;
+		}
+
+		if (0 != r)
+		{
+			assert(0);
+			break; // send failed
 		}
 	}
 

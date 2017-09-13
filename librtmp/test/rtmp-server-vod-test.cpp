@@ -14,7 +14,7 @@ static int STDCALL rtmp_server_worker(void* param)
 {
 	int r, type;
 	uint32_t timestamp;
-	static uint64_t clock0 = system_clock() - 3000; // send more data, open fast
+	static uint64_t clock0 = system_clock() - 200; // send more data, open fast
 	void* f = flv_reader_create(s_file);
 
 	static unsigned char packet[8 * 1024 * 1024];
@@ -27,15 +27,22 @@ static int STDCALL rtmp_server_worker(void* param)
 
 		if (8 == type)
 		{
-			rtmp_server_send_audio(s_rtmp, packet, r, timestamp);
+			r = rtmp_server_send_audio(s_rtmp, packet, r, timestamp);
 		}
 		else if (9 == type)
 		{
-			rtmp_server_send_video(s_rtmp, packet, r, timestamp);
+			r = rtmp_server_send_video(s_rtmp, packet, r, timestamp);
 		}
 		else
 		{
 			assert(0);
+			r = 0;
+		}
+
+		if (0 != r)
+		{
+			assert(0);
+			break; // send failed
 		}
 	}
 
@@ -50,7 +57,7 @@ static int rtmp_server_send(void* param, const void* header, size_t len, const v
 	socket_bufvec_t vec[2];
 	socket_setbufvec(vec, 0, (void*)header, len);
 	socket_setbufvec(vec, 1, (void*)data, bytes);
-	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 2000);
+	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 20000);
 }
 
 static int rtmp_server_onplay(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset)
