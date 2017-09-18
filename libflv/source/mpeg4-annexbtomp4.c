@@ -81,7 +81,8 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 	{
 	case H264_NAL_SPS:
 		assert(bytes <= sizeof(mp4->avc->sps[mp4->avc->nb_sps].data));
-		if (bytes <= sizeof(mp4->avc->sps[mp4->avc->nb_sps].data))
+		if (bytes <= sizeof(mp4->avc->sps[mp4->avc->nb_sps].data)
+			&& mp4->avc->nb_sps < sizeof(mp4->avc->sps) / sizeof(mp4->avc->sps[0]))
 		{
 			mp4->avc->sps[mp4->avc->nb_sps].bytes = (uint16_t)bytes;
 			memcpy(mp4->avc->sps[mp4->avc->nb_sps].data, nalu, bytes);
@@ -102,7 +103,8 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 
 	case H264_NAL_PPS:
 		assert(bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data));
-		if (bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data))
+		if (bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data)
+			&& mp4->avc->nb_pps < sizeof(mp4->avc->pps) / sizeof(mp4->avc->pps[0]))
 		{
 			mp4->avc->pps[mp4->avc->nb_pps].bytes = (uint16_t)bytes;
 			memcpy(mp4->avc->pps[mp4->avc->nb_pps].data, nalu, bytes);
