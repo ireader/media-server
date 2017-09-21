@@ -252,6 +252,7 @@ int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes,
 		flv->ptr[flv->bytes + 8] = (uint8_t)((bytes >> 0) & 0xFF);
 		memcpy(flv->ptr + 5 + flv->bytes + 4, nalu, bytes);
 		flv->bytes += bytes + 4;
+		flv->keyframe = type == 5;
 	}
 
 	if (type < 1 || type > 5)
