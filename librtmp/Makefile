@@ -33,7 +33,8 @@ else
 LIBPATHS +=
 endif
 
-LIBS =
+LIBS = 
+#LIBS += ssl crypto
 
 STATIC_LIBS =
 
@@ -41,7 +42,7 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = NO_CRYPTO
+DEFINES = 
 #DEFINES += _OPENSSL_
 
 include ../gcc.mk
