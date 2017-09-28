@@ -104,6 +104,9 @@
     <ClCompile Include="source\client\rtsp-client-auth.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
+    <ClCompile Include="source\client\rtp-over-rtsp.c">
+      <Filter>Source Files\client</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\media-source.h">

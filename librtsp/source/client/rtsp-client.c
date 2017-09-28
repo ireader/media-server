@@ -14,11 +14,11 @@ struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const
 	if(NULL == rtsp)
 		return NULL;
 
-	snprintf(rtsp->uri, sizeof(rtsp->uri), "%s", uri);
-	snprintf(rtsp->usr, sizeof(rtsp->usr), "%s", usr ? usr : "");
-	snprintf(rtsp->pwd, sizeof(rtsp->pwd), "%s", pwd ? pwd : "");
-	snprintf(rtsp->nc, sizeof(rtsp->nc), "%08x", 1);
-	snprintf(rtsp->cnonce, sizeof(rtsp->cnonce), "%p", rtsp);
+	snprintf(rtsp->uri, sizeof(rtsp->uri) - 1, "%s", uri);
+	snprintf(rtsp->usr, sizeof(rtsp->usr) - 1, "%s", usr ? usr : "");
+	snprintf(rtsp->pwd, sizeof(rtsp->pwd) - 1, "%s", pwd ? pwd : "");
+	snprintf(rtsp->nc, sizeof(rtsp->nc) - 1, "%08x", 1);
+	snprintf(rtsp->cnonce, sizeof(rtsp->cnonce) - 1, "%p", rtsp);
 
 	rtsp->parser = rtsp_parser_create(RTSP_PARSER_CLIENT);
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
@@ -44,6 +44,14 @@ void rtsp_client_destroy(struct rtsp_client_t *rtsp)
 		rtsp->media_ptr = NULL;
 	}
 
+	if (rtsp->rtp.data)
+	{
+		assert(rtsp->rtp.capacity > 0);
+		free(rtsp->rtp.data);
+		rtsp->rtp.data = NULL;
+		rtsp->rtp.capacity = 0;
+	}
+
 	free(rtsp);
 }
 
@@ -67,24 +75,32 @@ static int rtsp_client_handle(struct rtsp_client_t* rtsp, rtsp_parser_t* parser)
 int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes)
 {
 	int r, remain;
+	const uint8_t* p, *end;
 
-	remain = (int)bytes;
+	r = 0;
+	p = (const uint8_t*)data;
+	end = p + bytes;
+
 	do
 	{
-		if (*(char*)data == '$')
+		if (*p == '$' || 0 != rtsp->rtp.state)
 		{
-			// TODO: rtsp over tcp
-			assert(0);
+			p = rtp_over_rtsp(rtsp, p, end);
 		}
-
-		r = rtsp_parser_input(rtsp->parser, (const char*)data + (bytes - remain), &remain);
-		assert(r <= 1); // 1-need more data
-		if (0 == r)
+		else
 		{
-			r = rtsp_client_handle(rtsp, rtsp->parser);
-			rtsp_parser_clear(rtsp->parser); // reset parser
+			remain = (int)(end - p);
+			r = rtsp_parser_input(rtsp->parser, p, &remain);
+			assert(r <= 1); // 1-need more data
+			if (0 == r)
+			{
+				r = rtsp_client_handle(rtsp, rtsp->parser);
+				rtsp_parser_clear(rtsp->parser); // reset parser
+				assert((size_t)remain < bytes);
+				p = end - remain;
+			}
 		}
-	} while (remain > 0 && r >= 0);
+	} while (p < end && r >= 0);
 
 	assert(r <= 1);
 	return r >= 0 ? 0 : r;

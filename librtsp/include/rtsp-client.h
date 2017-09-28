@@ -37,6 +37,8 @@ struct rtsp_client_handler_t
 	int (*onplay)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
 	int (*onpause)(void* param);
 	int (*onteardown)(void* param);
+
+	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
 };
 
 /// @param[in] param user-defined parameter

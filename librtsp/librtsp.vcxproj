@@ -133,6 +133,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\client\rtmp-client-set-parameter.c" />
+    <ClCompile Include="source\client\rtp-over-rtsp.c" />
     <ClCompile Include="source\client\rtsp-client-announce.c" />
     <ClCompile Include="source\client\rtsp-client-auth.c" />
     <ClCompile Include="source\client\rtsp-client-describe.c" />
