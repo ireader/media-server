@@ -49,6 +49,8 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 		return -1; // invalid packet
 	}
 
+	// 3.3.6. High Bit-rate AAC
+	// SDP fmtp: sizeLength=13; indexLength=3; indexDeltaLength=3;
 	au_size = 2; // only AU-size
 	au_numbers = au_header_length / au_size;
 	assert(0 == au_header_length % au_size);
@@ -57,8 +59,8 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 
 	for (i = 0; i < au_numbers; i++)
 	{
-		size = (ptr[0] << 8) | ptr[1];
-		size = (size + 7) / 8; // bit -> byte
+		size = (ptr[0] << 8) | (ptr[1] & 0xF8);
+		size = size >> 3; // bit -> byte
 		if (pau + size > pend)
 		{
 			assert(0);
