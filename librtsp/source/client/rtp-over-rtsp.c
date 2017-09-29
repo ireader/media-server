@@ -51,12 +51,12 @@ const uint8_t* rtp_over_rtsp(struct rtsp_client_t *rtsp, const uint8_t* data, co
 			break;
 
 		case rtp_length_1:
-			rtsp->rtp.length = *data;
+			rtsp->rtp.length = *data << 8;
 			rtsp->rtp.state = rtp_length_2;
 			break;
 
 		case rtp_length_2:
-			rtsp->rtp.length = (rtsp->rtp.length << 8) | *data;
+			rtsp->rtp.length |= *data;
 			rtsp->rtp.state = rtp_data;
 			break;
 
