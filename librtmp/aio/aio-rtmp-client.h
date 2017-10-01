@@ -13,8 +13,8 @@ typedef struct aio_rtmp_client_t aio_rtmp_client_t;
 
 struct aio_rtmp_client_handler_t
 {
-	/// aio transport close
-	void (*onclose)(void* param);
+	/// aio transport recv/send error
+	void (*onerror)(void* param, int code);
 
 	// play only
 	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
@@ -22,7 +22,7 @@ struct aio_rtmp_client_handler_t
 
 	// publish only
 	void (*onready)(void* param);
-	void (*onsend)(void* param, int code, size_t bytes);
+	void (*onsend)(void* param, size_t bytes);
 };
 
 aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* app, const char* stream, const char* tcurl, struct aio_rtmp_client_handler_t* handler, void* param);

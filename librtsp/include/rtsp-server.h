@@ -73,8 +73,10 @@ int rtsp_server_destroy(rtsp_server_t* server);
 
 /// client request
 /// @param[in] parser rtsp parser
-/// @return 0-ok, other-error
-int rtsp_server_input(rtsp_server_t* rtsp, const void* data, size_t bytes);
+/// @param[in] data rtsp request
+/// @param[inout] bytes input data length, output remain length
+/// @return 0-ok, 1-need more data, other-error
+int rtsp_server_input(rtsp_server_t* rtsp, const void* data, size_t* bytes);
 
 /// RTSP DESCRIBE reply
 /// @param[in] rtsp request handle

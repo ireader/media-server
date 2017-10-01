@@ -22,7 +22,7 @@ static int aio_rtmp_server_onaudio(aio_rtmp_userptr_t flv, const void* data, siz
 	return flv_writer_input(flv, 8, data, bytes, timestamp);
 }
 
-static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, int /*code*/, size_t /*bytes*/)
+static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, size_t /*bytes*/)
 {
 }
 

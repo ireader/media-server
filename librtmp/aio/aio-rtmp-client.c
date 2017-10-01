@@ -20,7 +20,7 @@ struct aio_rtmp_client_t
 
 static void aio_rtmp_transport_ondestroy(void* param);
 static void aio_rtmp_transport_onsend(void* param, int code, size_t bytes);
-static void aio_rtmp_transport_onrecv(void* param, const void* data, size_t bytes);
+static void aio_rtmp_transport_onrecv(void* param, int code, const void* data, size_t bytes);
 static int rtmp_client_send(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 static int rtmp_client_onaudio(void* param, const void* audio, size_t bytes, uint32_t timestamp);
 static int rtmp_client_onvideo(void* param, const void* video, size_t bytes, uint32_t timestamp);
@@ -53,7 +53,7 @@ struct aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* a
 
 void aio_rtmp_client_destroy(struct aio_rtmp_client_t* client)
 {
-	aio_rtmp_transport_stop(client->aio);
+	aio_rtmp_transport_destroy(client->aio);
 }
 
 int aio_rtmp_client_start(struct aio_rtmp_client_t* client, int publish)
@@ -115,33 +115,40 @@ static void aio_rtmp_transport_onsend(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_client_t* client;
 	client = (struct aio_rtmp_client_t*)param;
-	if (client->handler.onsend)
-		client->handler.onsend(client->param, code, bytes);
+	if (0 == code)
+	{
+		if (client->handler.onsend)
+			client->handler.onsend(client->param, bytes);
+	}
+	else
+	{
+		client->handler.onerror(client->param, code);
+	}
 }
 
-static void aio_rtmp_transport_onrecv(void* param, const void* data, size_t bytes)
+static void aio_rtmp_transport_onrecv(void* param, int code, const void* data, size_t bytes)
 {
-	int r;
 	struct aio_rtmp_client_t* client;
 	client = (struct aio_rtmp_client_t*)param;
 
-	r = rtmp_client_input(client->rtmp, data, bytes);
-	if (0 == client->publish && 0 == client->ready && 4/*RTMP_STATE_START*/ == rtmp_client_getstate(client->rtmp))
+	if (0 == code)
 	{
-		client->ready = 1;
-		if (client->handler.onready)
-			client->handler.onready(client->param);
+		code = rtmp_client_input(client->rtmp, data, bytes);
+		if (0 == client->publish && 0 == client->ready && 4/*RTMP_STATE_START*/ == rtmp_client_getstate(client->rtmp))
+		{
+			client->ready = 1;
+			if (client->handler.onready)
+				client->handler.onready(client->param);
+		}
 	}
 
-	if (0 != r)
-		aio_rtmp_transport_stop(client->aio);
+	if (0 != code)
+		client->handler.onerror(client->param, code);
 }
 
 static void aio_rtmp_transport_ondestroy(void* param)
 {
 	struct aio_rtmp_client_t* client;
 	client = (struct aio_rtmp_client_t*)param;
-	if (client->handler.onclose)
-		client->handler.onclose(client->param);
 	free(client);
 }

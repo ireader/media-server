@@ -23,6 +23,7 @@ struct aio_rtmp_transport_t
 	int vecsize;
 	socket_bufvec_t vec[VEC];
 	aio_tcp_transport_t* aio;
+	char buffer[2 * 1024];
 
 	locker_t locker;
 	int count; // list size
@@ -57,7 +58,7 @@ static int aio_rtmp_send(struct aio_rtmp_transport_t* t)
 	assert(t->vecsize > 0);
 	locker_unlock(&t->locker);
 
-	return aio_tcp_transport_sendv(t->aio, t->vec, t->vecsize);
+	return aio_tcp_transport_send_v(t->aio, t->vec, t->vecsize);
 }
 
 static void aio_rtmp_ondestroy(void* param)
@@ -81,11 +82,18 @@ static void aio_rtmp_ondestroy(void* param)
 	free(t);
 }
 
-static void aio_rtmp_onrecv(void* param, const void* data, size_t bytes)
+static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_transport_t* t;
 	t = (struct aio_rtmp_transport_t*)param;
-	t->handler.onrecv(t->param, data, bytes);
+	t->handler.onrecv(t->param, code, t->buffer, bytes);
+
+	if (0 == code)
+	{
+		code = aio_tcp_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
+		if (0 != code)
+			t->handler.onrecv(t->param, code, t->buffer, 0);
+	}
 }
 
 static void aio_rtmp_onsend(void* param, int code, size_t bytes)
@@ -97,7 +105,7 @@ static void aio_rtmp_onsend(void* param, int code, size_t bytes)
 	if (0 == code)
 	{
 		locker_lock(&t->locker);
-		for(assert(t->vecsize > 0); t->vecsize > 0; --t->vecsize)
+		for (assert(t->vecsize > 0); t->vecsize > 0; --t->vecsize)
 		{
 			assert(!list_empty(&t->root));
 			c = list_entry(t->root.next, struct aio_rtmp_chunk_t, node);
@@ -109,14 +117,16 @@ static void aio_rtmp_onsend(void* param, int code, size_t bytes)
 		locker_unlock(&t->locker);
 	}
 
-	if (t->handler.onsend)
-		t->handler.onsend(t->param, code, t->bytes); // callback
+	t->handler.onsend(t->param, code, t->bytes); // callback
 
 	if (0 == code)
 		code = aio_rtmp_send(t); // send next
 
 	if (0 != code)
+	{
 		t->code = code;
+		t->handler.onsend(t->param, code, 0);
+	}
 }
 
 struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, struct aio_rtmp_handler_t* handler, void* param)
@@ -127,25 +137,29 @@ struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, stru
 	h.onrecv = aio_rtmp_onrecv;
 	h.onsend = aio_rtmp_onsend;
 
-	t = (struct aio_rtmp_transport_t*)calloc(1, sizeof(*t));
+	t = (struct aio_rtmp_transport_t*)malloc(sizeof(*t));
 	if (!t) return NULL;
 
 	LIST_INIT_HEAD(&t->root);
 	locker_create(&t->locker);
 	memcpy(&t->handler, handler, sizeof(t->handler));
 	t->param = param;
+	t->code = 0;
+	t->count = 0;
+	t->bytes = 0;
+	t->vecsize = 0;
 	t->aio = aio_tcp_transport_create2(socket, &h, t);
 	return t;
 }
 
-int aio_rtmp_transport_start(struct aio_rtmp_transport_t* t)
+int aio_rtmp_transport_destroy(struct aio_rtmp_transport_t* t)
 {
-	return aio_tcp_transport_start(t->aio);
+	return aio_tcp_transport_destroy(t->aio);
 }
 
-int aio_rtmp_transport_stop(struct aio_rtmp_transport_t* t)
+int aio_rtmp_transport_start(struct aio_rtmp_transport_t* t)
 {
-	return aio_tcp_transport_stop(t->aio);
+	return aio_tcp_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
 }
 
 int aio_rtmp_transport_send(struct aio_rtmp_transport_t* t, const void* header, size_t len, const void* payload, size_t bytes)

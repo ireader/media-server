@@ -141,6 +141,7 @@ static void rtsp_transport_udp_onrecv(void* param, int code, size_t bytes, const
 
 	if (0 == code && bytes > 0)
 	{
+		size_t remain = bytes;
 		rtsp_transport_udp_recv(transport); //  recv more
 
 		socket_addr_to(addr, addrlen, ip, &port);
@@ -148,7 +149,7 @@ static void rtsp_transport_udp_onrecv(void* param, int code, size_t bytes, const
 		session->addrlen = addrlen < sizeof(session->addr) ? addrlen : sizeof(session->addr);
 		memcpy(&session->addr, addr, session->addrlen); // save client ip/port
 		session->rtsp = rtsp_server_create(ip, port, &session->transport->handler, session->transport->param, session);
-		code = rtsp_server_input(session->rtsp, session + 1, bytes);
+		code = rtsp_server_input(session->rtsp, session + 1, &remain);
 	}
 
 	if (0 != code || bytes < 1)

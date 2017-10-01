@@ -12,6 +12,7 @@
 
 static struct
 {
+	int code; // rtmp error code
 	const char* file;
 	char tcurl[4 * 1024];
 	const char* app;
@@ -27,7 +28,7 @@ static int STDCALL rtmp_client_push(void* flv)
 	void* f = flv_reader_create((const char*)flv);
 
 	static char packet[2 * 1024 * 1024];
-	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (0 == s_param.code && (r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 	{
 		uint64_t clock = system_clock();
 		if(clock0 + timestamp > clock)
@@ -51,12 +52,14 @@ static int STDCALL rtmp_client_push(void* flv)
 		}
 	}
 
+	aio_rtmp_client_destroy(s_param.rtmp);
 	flv_reader_destroy(f);
 	s_param.file = NULL;
+	s_param.rtmp = NULL;
 	return 0;
 }
 
-static void rtmp_client_publish_onsend(void*, int, size_t)
+static void rtmp_client_publish_onsend(void*, size_t)
 {
 }
 
@@ -67,11 +70,10 @@ static void rtmp_client_publish_onready(void*)
 	thread_detach(thread);
 }
 
-static void rtmp_client_publish_onclose(void*)
+static void rtmp_client_publish_onerror(void* /*param*/, int code)
 {
-	aio_rtmp_client_destroy(s_param.rtmp);
-	aio_socket_clean();
-	s_param.rtmp = NULL;
+	// exit publish thread
+	s_param.code = code;
 }
 
 static void rtmp_onconnect(void*, aio_socket_t aio, int code)
@@ -80,10 +82,11 @@ static void rtmp_onconnect(void*, aio_socket_t aio, int code)
 
 	struct aio_rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
-	handler.onclose = rtmp_client_publish_onclose;
+	handler.onerror = rtmp_client_publish_onerror;
 	handler.onready = rtmp_client_publish_onready;
 	handler.onsend = rtmp_client_publish_onsend;
 
+	s_param.code = 0;
 	s_param.rtmp = aio_rtmp_client_create(aio, s_param.app, s_param.stream, s_param.tcurl, &handler, NULL);
 	assert(0 == aio_rtmp_client_start(s_param.rtmp, 0));
 }
@@ -101,4 +104,6 @@ void rtmp_publish_aio_test(const char* host, const char* app, const char* stream
 	while (aio_socket_process(5000) > 0)
 	{
 	}
+
+	aio_socket_clean();
 }

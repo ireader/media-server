@@ -33,7 +33,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 
 static void rtmp_session_ondestroy(void* param);
 static void rtmp_session_onsend(void* param, int code, size_t bytes);
-static void rtmp_session_onrecv(void* param, const void* data, size_t bytes);
+static void rtmp_session_onrecv(void* param, int code, const void* data, size_t bytes);
 
 static int rtmp_handler_send(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 static int rtmp_handler_onpublish(void* param, const char* app, const char* stream, const char* type);
@@ -178,23 +178,30 @@ static void rtmp_session_ondestroy(void* param)
 	free(session);
 }
 
-static void rtmp_session_onrecv(void* param, const void* data, size_t bytes)
+static void rtmp_session_onrecv(void* param, int code, const void* data, size_t bytes)
 {
-	int r;
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
 
-	r = rtmp_server_input(session->rtmp, data, bytes);
-	if (0 != r)
-		aio_rtmp_transport_stop(session->aio);
+	if(0 == code)
+		code = rtmp_server_input(session->rtmp, data, bytes);
+	if (0 != code)
+		aio_rtmp_transport_destroy(session->aio);
 }
 
 static void rtmp_session_onsend(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
-	if (session->server->handle.onsend && session->usr)
-		session->server->handle.onsend(session->usr, code, bytes);
+	if (0 == code)
+	{
+		if (session->server->handle.onsend && session->usr)
+			session->server->handle.onsend(session->usr, bytes);
+	}
+	else
+	{
+		aio_rtmp_transport_destroy(session->aio);
+	}
 }
 
 static int rtmp_handler_send(void* param, const void* header, size_t len, const void* payload, size_t bytes)

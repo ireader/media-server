@@ -9,11 +9,17 @@
 
 static struct
 {
+	int code;
 	char tcurl[4 * 1024];
 	const char* app;
 	const char* stream;
 	aio_rtmp_client_t* rtmp;
 } s_param;
+
+static void rtmp_client_play_onerror(void* /*flv*/, int code)
+{
+	s_param.code = code;
+}
 
 static int rtmp_client_play_onvideo(void* flv, const void* video, size_t bytes, uint32_t timestamp)
 {
@@ -31,6 +37,7 @@ static void rtmp_onconnect(void* flv, aio_socket_t aio, int code)
 
 	struct aio_rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
+	handler.onerror = rtmp_client_play_onerror;
 	handler.onaudio = rtmp_client_play_onaudio;
 	handler.onvideo = rtmp_client_play_onvideo;
 	
@@ -40,6 +47,7 @@ static void rtmp_onconnect(void* flv, aio_socket_t aio, int code)
 
 void rtmp_play_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
+	s_param.code = 0;
 	s_param.app = app;
 	s_param.stream = stream;
 	snprintf(s_param.tcurl, sizeof(s_param.tcurl), "rtmp://%s/%s", host, app); // tcurl
@@ -48,8 +56,8 @@ void rtmp_play_aio_test(const char* host, const char* app, const char* stream, c
 	void* flv = flv_writer_create(file);
 	aio_connect(host, 1935, 3000, rtmp_onconnect, flv);
 		
-	uint64_t clock = system_clock();
-	while (clock + 2 * 60 * 1000 > system_clock())
+//	uint64_t clock = system_clock();
+	while (0 == s_param.code)
 	{
 		aio_socket_process(1000);
 	}

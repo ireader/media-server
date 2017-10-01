@@ -34,30 +34,21 @@ int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 	return 0;
 }
 
-int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t bytes)
+int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t* bytes)
 {
 	int r, remain;
 
-	remain = (int)bytes;
-	do
+	remain = (int)*bytes;
+	r = rtsp_parser_input(rtsp->parser, data, &remain);
+	assert(r <= 1); // 1-need more data
+	if (0 == r)
 	{
-		if (*(char*)data == '$')
-		{
-			// TODO: rtsp over tcp
-			assert(0);
-		}
+		r = rtsp_server_handle(rtsp);
+		rtsp_parser_clear(rtsp->parser); // reset parser
+	}
 
-		r = rtsp_parser_input(rtsp->parser, (const char*)data + (bytes - remain), &remain);
-		assert(r <= 1); // 1-need more data
-		if (0 == r)
-		{
-			r = rtsp_server_handle(rtsp);
-			rtsp_parser_clear(rtsp->parser); // reset parser
-		}
-	} while (remain > 0 && r >= 0);
-
-	assert(r <= 1);
-	return r >= 0 ? 0 : r;
+	*bytes = remain;
+	return r;
 }
 
 const char* rtsp_server_get_header(struct rtsp_server_t *rtsp, const char* name)

@@ -34,7 +34,7 @@ struct aio_rtmp_server_handler_t
 	int (*onseek)(aio_rtmp_userptr_t ptr, uint32_t ms);
 
 	/// aio_rtmp_server_send_audio/aio_rtmp_server_send_video callback
-	void (*onsend)(aio_rtmp_userptr_t ptr, int code, size_t bytes);
+	void (*onsend)(aio_rtmp_userptr_t ptr, size_t bytes);
 };
 
 aio_rtmp_server_t* aio_rtmp_server_create(const char* ip, int port, struct aio_rtmp_server_handler_t* handler, void* param);

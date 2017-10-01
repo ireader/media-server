@@ -33,8 +33,15 @@ static int rtpport(void* param, unsigned short *rtp)
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	assert(0 == rtp_socket_create(NULL, ctx->rtp[ctx->media], ctx->port[ctx->media]));
 	*rtp = ctx->port[ctx->media][0];
+	*rtp = 0; // tcp
 	++ctx->media;
 	return 0;
+}
+
+static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes)
+{
+	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
+	rtp_receiver_tcp_input(channel, data, bytes);
 }
 
 static int ondescribe(void* param, const char* sdp)
@@ -61,21 +68,32 @@ static int onsetup(void* param)
 		transport = rtsp_client_get_media_transport(ctx->rtsp, i);
 		encoding = rtsp_client_get_media_encoding(ctx->rtsp, i);
 		payload = rtsp_client_get_media_payload(ctx->rtsp, i);
-		assert(RTSP_TRANSPORT_RTP_UDP == transport->transport); // udp only
-		assert(0 == transport->multicast); // unicast only
-		assert(transport->rtp.u.client_port1 == ctx->port[i][0]);
-		assert(transport->rtp.u.client_port2 == ctx->port[i][1]);
-
-		port[0] = transport->rtp.u.server_port1;
-		port[1] = transport->rtp.u.server_port2;
-		if (*transport->source)
+		if (RTSP_TRANSPORT_RTP_UDP == transport->transport)
 		{
-			rtp_receiver_test(ctx->rtp[i], transport->source, port, payload, encoding);
+			//assert(RTSP_TRANSPORT_RTP_UDP == transport->transport); // udp only
+			assert(0 == transport->multicast); // unicast only
+			assert(transport->rtp.u.client_port1 == ctx->port[i][0]);
+			assert(transport->rtp.u.client_port2 == ctx->port[i][1]);
+
+			port[0] = transport->rtp.u.server_port1;
+			port[1] = transport->rtp.u.server_port2;
+			if (*transport->source)
+			{
+				rtp_receiver_test(ctx->rtp[i], transport->source, port, payload, encoding);
+			}
+			else
+			{
+				socket_getpeername(ctx->socket, ip, &rtspport);
+				rtp_receiver_test(ctx->rtp[i], ip, port, payload, encoding);
+			}
+		}
+		else if (RTSP_TRANSPORT_RTP_TCP == transport->transport)
+		{
+			rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 		}
 		else
 		{
-			socket_getpeername(ctx->socket, ip, &rtspport);
-			rtp_receiver_test(ctx->rtp[i], ip, port, payload, encoding);
+			assert(0); // TODO
 		}
 	}
 
@@ -113,6 +131,7 @@ void rtsp_client_test(const char* host, const char* file)
 	handler.onplay = onplay;
 	handler.onpause = onpause;
 	handler.onteardown = onteardown;
+	handler.onrtp = onrtp;
 
 	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
