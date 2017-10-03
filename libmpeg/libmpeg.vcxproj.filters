@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="util">
-      <UniqueIdentifier>{1c03cf69-0211-4644-94d3-a82e98ec16e8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\mpeg-element-descriptor.c">
@@ -50,9 +47,6 @@
     </ClCompile>
     <ClCompile Include="source\mpeg-util.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdk\source\crc32.c">
-      <Filter>util</Filter>
     </ClCompile>
     <ClCompile Include="source\mpeg-ts-h264.c">
       <Filter>Source Files</Filter>

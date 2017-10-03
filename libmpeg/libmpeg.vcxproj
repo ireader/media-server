@@ -133,7 +133,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sdk\source\crc32.c" />
     <ClCompile Include="source\mpeg-element-descriptor.c" />
     <ClCompile Include="source\mpeg-pat.c" />
     <ClCompile Include="source\mpeg-pes.c" />
