@@ -31,7 +31,7 @@ static int rtmp_client_play_onaudio(void* flv, const void* audio, size_t bytes, 
 	return flv_writer_input(flv, FLV_TYPE_AUDIO, audio, bytes, timestamp);
 }
 
-static void rtmp_onconnect(void* flv, aio_socket_t aio, int code)
+static void rtmp_onconnect(void* flv, int code, aio_socket_t aio)
 {
 	assert(0 == code);
 

@@ -76,7 +76,7 @@ static void rtmp_client_publish_onerror(void* /*param*/, int code)
 	s_param.code = code;
 }
 
-static void rtmp_onconnect(void*, aio_socket_t aio, int code)
+static void rtmp_onconnect(void*, int code, aio_socket_t aio)
 {
 	assert(0 == code);
 
