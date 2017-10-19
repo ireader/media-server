@@ -43,7 +43,11 @@ STATIC_LIBS =
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
 DEFINES = 
+#DEFINES += _FLASH_HANDSHAKE_
 #DEFINES += _OPENSSL_
+
+#define openssl or add sdk/source/digest/sha.c, sha1.c, sha224-256.c, sha384-512.c, hmac.c
+#INCLUDES += ../../sdk/include
 
 include ../gcc.mk
 

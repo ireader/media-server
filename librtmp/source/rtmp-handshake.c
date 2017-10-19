@@ -5,9 +5,15 @@
 #include <assert.h>
 #include <math.h>
 
+#if defined(_FLASH_HANDSHAKE_)
+
 #if defined(_OPENSSL_)
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
+#else
+#include "sha.h"
+#define SHA256_DIGEST_LENGTH SHA256HashSize
+#endif
 
 // nginx-rtmp-module / ngx_rtmp_handshake.c
 
@@ -40,6 +46,7 @@ static const uint8_t rtmp_client_version[] = {
 	0x0C, 0x00, 0x0D, 0x0E
 };
 
+#if defined(_OPENSSL_)
 static int rtmp_handshake_make_digest(const uint8_t* key, size_t len, const uint8_t* ptr, size_t ptrlen, const uint8_t* digest, uint8_t* dst)
 {
 	static HMAC_CTX        *hmac;
@@ -71,6 +78,26 @@ static int rtmp_handshake_make_digest(const uint8_t* key, size_t len, const uint
 	assert(digestlen == SHA256_DIGEST_LENGTH);
 	return 0;
 }
+#else
+static int rtmp_handshake_make_digest(const uint8_t* key, size_t len, const uint8_t* ptr, size_t ptrlen, const uint8_t* digest, uint8_t* dst)
+{
+	HMACContext hmac;
+	hmacReset(&hmac, SHA256, key, len);
+	if (digest)
+	{
+		assert(digest + SHA256_DIGEST_LENGTH <= ptr + ptrlen);
+		hmacInput(&hmac, ptr, digest - ptr);
+		if (digest + SHA256_DIGEST_LENGTH < ptr + ptrlen)
+			hmacInput(&hmac, digest + SHA256_DIGEST_LENGTH, ptrlen - (digest - ptr) - SHA256_DIGEST_LENGTH);
+	}
+	else
+	{
+		hmacInput(&hmac, ptr, ptrlen);
+	}
+	hmacResult(&hmac, dst);
+	return 0;
+}
+#endif
 
 /*
 // http://blog.csdn.net/win_lin/article/details/13006803
@@ -172,7 +199,7 @@ int rtmp_handshake_c0(uint8_t* c0, int version)
 int rtmp_handshake_c1(uint8_t* c1, uint32_t timestamp)
 {
 	be_write_uint32(c1, timestamp);
-#if defined(_OPENSSL_)
+#if defined(_FLASH_HANDSHAKE_)
 	memcpy(c1 + 4, rtmp_client_version, 4);
 	rtmp_handshake_random(c1 + 8, timestamp);
 	rtmp_handshake_create_challenge(c1, rtmp_client_key, 30);
@@ -185,7 +212,7 @@ int rtmp_handshake_c1(uint8_t* c1, uint32_t timestamp)
 
 int rtmp_handshake_c2(uint8_t* c2, uint32_t timestamp, const uint8_t* s1, size_t bytes)
 {
-#if defined(_OPENSSL_)
+#if defined(_FLASH_HANDSHAKE_)
 	uint8_t digest[SHA256_DIGEST_LENGTH];
 	assert(RTMP_HANDSHAKE_SIZE == bytes);
 	if (1 == rtmp_handshake_parse_challenge(s1, rtmp_server_key, 36, digest))
@@ -217,7 +244,7 @@ int rtmp_handshake_s0(uint8_t* s0, int version)
 int rtmp_handshake_s1(uint8_t* s1, uint32_t timestamp)
 {
 	be_write_uint32(s1, timestamp);
-#if defined(_OPENSSL_)
+#if defined(_FLASH_HANDSHAKE_)
 	memcpy(s1 + 4, rtmp_server_version, 4);
 	rtmp_handshake_random(s1 + 8, timestamp);
 	rtmp_handshake_create_challenge(s1, rtmp_server_key, 36);
@@ -230,7 +257,7 @@ int rtmp_handshake_s1(uint8_t* s1, uint32_t timestamp)
 
 int rtmp_handshake_s2(uint8_t* s2, uint32_t timestamp, const uint8_t* c1, size_t bytes)
 {
-#if defined(_OPENSSL_)
+#if defined(_FLASH_HANDSHAKE_)
 	uint8_t digest[SHA256_DIGEST_LENGTH];
 	assert(RTMP_HANDSHAKE_SIZE == bytes);
 	if (1 == rtmp_handshake_parse_challenge(c1, rtmp_client_key, 30, digest))
