@@ -5,16 +5,17 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(_FLASH_HANDSHAKE_)
-
 #if defined(_OPENSSL_)
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
-#else
+#define _FLASH_HANDSHAKE_
+#elif defined(_IETF_HMAC_)
 #include "sha.h"
 #define SHA256_DIGEST_LENGTH SHA256HashSize
+#define _FLASH_HANDSHAKE_
 #endif
 
+#if defined(_FLASH_HANDSHAKE_)
 // nginx-rtmp-module / ngx_rtmp_handshake.c
 
 static const uint8_t rtmp_server_key[] = {
