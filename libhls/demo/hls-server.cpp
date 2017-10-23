@@ -14,11 +14,11 @@
 #include "sys/system.h"
 #include "sys/path.h"
 #include "cstringext.h"
-#include "cppstringext.h"
 #include <string.h>
 #include <assert.h>
 #include <map>
 #include <list>
+#include <vector>
 #include <string>
 
 extern "C" int http_list_dir(http_session_t* session, const char* path);
@@ -182,12 +182,10 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
 
 static int hls_server_onlive(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
 {
-	std::vector<std::string> paths;
-	Split(path + 6 /* /live/ */, "/", paths);
-
-	if (strendswith(path, ".m3u8") && 1 == paths.size())
+	path = path + 6;
+	if (strendswith(path, ".m3u8"))
 	{
-		std::string app = paths[0].substr(0, paths[0].length() - 5);
+		std::string app(path, strlen(path) - 5);
 		if (s_playlists.find(app) == s_playlists.end())
 		{
 			hls_playlist_t* playlist = new hls_playlist_t();
@@ -202,11 +200,13 @@ static int hls_server_onlive(void* /*http*/, http_session_t* session, const char
 
 		return hls_server_m3u8(session, app);
 	}
-	else if (strendswith(path, ".ts") && 2 == paths.size())
+	else if (strendswith(path, ".ts"))
 	{
-		if (s_playlists.find(paths[0]) != s_playlists.end())
+		const char* ts = strchr(path, '/');
+		std::string app(path, ts ? ts - path : strlen(path));
+		if (ts && s_playlists.find(app) != s_playlists.end())
 		{
-			return hls_server_ts(session, paths[0], paths[1]);
+			return hls_server_ts(session, app, ts + 1);
 		}
 	}
 
