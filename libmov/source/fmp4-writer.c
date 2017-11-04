@@ -307,6 +307,51 @@ static size_t fmp4_write_sidx(struct mov_t* mov)
 	return 52 * mov->track_count;
 }
 
+static int fmp4_write_mfra(struct mov_t* mov)
+{
+	size_t i;
+	uint64_t mfra_offset;
+	uint64_t mfro_offset;
+
+	// mfra
+	mfra_offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
+	file_writer_write(mov->fp, "mfra", 4);
+
+	// tfra
+	for (i = 0; i < mov->track_count; i++)
+	{
+		mov->track = mov->tracks + i;
+		mov_write_tfra(mov);
+	}
+
+	// mfro
+	mfro_offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 16); /* size */
+	file_writer_write(mov->fp, "mfro", 4);
+	file_writer_wb32(mov->fp, 0); /* version & flags */
+	file_writer_wb32(mov->fp, (uint32_t)(mfro_offset - mfra_offset + 16));
+
+	mov_write_size(mov->fp, mfra_offset, (size_t)(mfro_offset - mfra_offset + 16));
+	return (int)(mfro_offset - mfra_offset + 16);
+}
+
+static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uint64_t offset)
+{
+	if (track->frag_count >= track->frag_capacity)
+	{
+		void* p = realloc(track->frags, sizeof(struct mov_fragment_t) * (track->frag_capacity + 64));
+		if (!p) return ENOMEM;
+		track->frags = p;
+		track->frag_capacity += 64;
+	}
+
+	track->frags[track->frag_count].time = time;
+	track->frags[track->frag_count].offset = offset;
+	++track->frag_count;
+	return 0;
+}
+
 static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 {
 	size_t i, j, refsize;
@@ -346,6 +391,8 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
+		if(mov->track->sample_count > 0)
+			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].pts + mov->track->samples[0].dts, mov->moof_offset);
 
 		// hack: write sidx referenced_size
 		if (mov->flags & MOV_FLAG_SEGMENT)
@@ -449,6 +496,9 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 		writer->has_moov = 1;
 	}
 
+	// write mfra
+	fmp4_write_mfra(mov);
+
 	file_writer_destroy(&writer->mov.fp);
 
 	for (i = 0; i < mov->track_count; i++)
@@ -456,6 +506,7 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 		track = &mov->tracks[i];
 		if (track->extra_data) free(track->extra_data);
 		if (track->samples) free(track->samples);
+		if (track->frags) free(track->frags);
 		if (track->stsd) free(track->stsd);
 	}
 	free(writer);

@@ -121,6 +121,12 @@ struct mov_sample_t
 	uint32_t first_chunk; // write only
 };
 
+struct mov_fragment_t
+{
+	uint64_t time;
+	uint64_t offset; // moof offset
+};
+
 struct mov_track_t
 {
 	uint32_t tag; // MOV_H264/MOV_MP4A
@@ -136,6 +142,8 @@ struct mov_track_t
 	// 8.8 Movie Fragments
 	struct mov_trex_t trex;
 	struct mov_tfhd_t tfhd;
+	struct mov_fragment_t* frags;
+	size_t frag_count, frag_capacity;
 
 	struct mov_stsd_t* stsd;
 	size_t stsd_count;
@@ -221,8 +229,9 @@ size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);
 size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first);
 size_t mov_write_tfra(const struct mov_t* mov);
-size_t mov_write_mfro(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
+
+struct mov_track_t* mov_track_find(const struct mov_t* mov, uint32_t track);
 
 void mov_write_size(void* fp, uint64_t offset, size_t size);
 

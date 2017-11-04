@@ -7,21 +7,13 @@
 int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	uint32_t flags;
-	uint32_t i, track_ID;
+	uint32_t track_ID;
 
 	file_reader_r8(mov->fp); /* version */
 	flags = file_reader_rb24(mov->fp); /* flags */
 	track_ID = file_reader_rb32(mov->fp); /* track_ID */
 	
-	mov->track = NULL;
-	for (i = 0; i < mov->track_count; i++)
-	{
-		if (mov->tracks[i].tkhd.track_ID == track_ID)
-		{
-			mov->track = mov->tracks + i;
-			break;
-		}
-	}
+	mov->track = mov_track_find(mov, track_ID);
 	if (NULL == mov->track)
 		return -1;
 

@@ -3,24 +3,27 @@
 #include "mov-internal.h"
 #include <assert.h>
 
+struct mov_track_t* mov_track_find(const struct mov_t* mov, uint32_t track)
+{
+	size_t i;
+	for (i = 0; i < mov->track_count; i++)
+	{
+		if (mov->tracks[i].tkhd.track_ID == track)
+			return mov->tracks + i;
+	}
+	return NULL;
+}
+
 // 8.8.3 Track Extends Box (p69)
 int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box)
 {
-	uint32_t i, track_ID;
+	uint32_t track_ID;
 	struct mov_track_t* track;
 
 	file_reader_rb32(mov->fp); /* version & flags */
 	track_ID = file_reader_rb32(mov->fp); /* track_ID */
 
-	track = NULL; 
-	for (i = 0; i < mov->track_count; i++)
-	{
-		if (mov->tracks[i].tkhd.track_ID == track_ID)
-		{
-			track = mov->tracks + i;
-			break;
-		}
-	}
+	track = mov_track_find(mov, track_ID);
 	if (NULL == track)
 		return -1;
 
