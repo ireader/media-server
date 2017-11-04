@@ -223,7 +223,7 @@ size_t hevc_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, size_t byte
 	hevc->general_profile_compatibility_flags = 0xffffffff;
 	hevc->general_constraint_indicator_flags = 0xffffffffffULL;
 	hevc->min_spatial_segmentation_idc = 0;
-	hevc->chromaFormat = 0;
+	hevc->chromaFormat = 1; // 4:2:0
 	hevc->bitDepthLumaMinus8 = 0;
 	hevc->bitDepthChromaMinus8 = 0;
 	hevc->avgFrameRate = 0;
