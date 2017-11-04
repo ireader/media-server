@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+// extra_data: ISO/IEC 14496-15-2017 AVCDecoderConfigurationRecord
+
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box)
 {
 	struct mov_track_t* track = mov->track;
