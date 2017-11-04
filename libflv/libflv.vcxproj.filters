@@ -48,6 +48,9 @@
     <ClInclude Include="include\flv-parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mpeg4-hevc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">
@@ -84,6 +87,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\flv-parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg4-hevc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hevc-mp4toannexb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hevc-annexbtomp4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

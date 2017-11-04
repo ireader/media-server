@@ -30,6 +30,7 @@
     <ClInclude Include="include\mp3-header.h" />
     <ClInclude Include="include\mpeg4-aac.h" />
     <ClInclude Include="include\mpeg4-avc.h" />
+    <ClInclude Include="include\mpeg4-hevc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\amf0.c" />
@@ -39,10 +40,13 @@
     <ClCompile Include="source\flv-parser.c" />
     <ClCompile Include="source\flv-reader.c" />
     <ClCompile Include="source\flv-writer.c" />
+    <ClCompile Include="source\hevc-annexbtomp4.c" />
+    <ClCompile Include="source\hevc-mp4toannexb.c" />
     <ClCompile Include="source\mp3-header.c" />
     <ClCompile Include="source\mpeg4-aac.c" />
     <ClCompile Include="source\mpeg4-annexbtomp4.c" />
     <ClCompile Include="source\mpeg4-avc.c" />
+    <ClCompile Include="source\mpeg4-hevc.c" />
     <ClCompile Include="source\mpeg4-mp4toannexb.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
