@@ -110,6 +110,34 @@ static int mov_track_build(struct mov_track_t* track)
 	return 0;
 }
 
+static int mov_index_build(struct mov_track_t* track)
+{
+	void* p;
+	size_t i, j;
+	struct mov_stbl_t* stbl = &track->stbl;
+
+	if (stbl->stss_count > 0 || MOV_VIDEO != track->handler_type)
+		return 0;
+
+	for (i = 0; i < track->sample_count; i++)
+	{
+		if (track->samples[i].flags & MOV_AV_FLAG_KEYFREAME)
+			++stbl->stss_count;
+	}
+
+	p = realloc(stbl->stss, sizeof(stbl->stss[0]) * stbl->stss_count);
+	if (!p) return ENOMEM;
+	stbl->stss = p;
+
+	for (j = i = 0; i < track->sample_count; i++)
+	{
+		if (track->samples[i].flags & MOV_AV_FLAG_KEYFREAME)
+			stbl->stss[j++] = i; // uint32_t sample_number
+	}
+	assert(j == stbl->stss_count);
+	return 0;
+}
+
 static int mov_fragment_build(struct mov_track_t* track)
 {
 	size_t i, j;
@@ -390,6 +418,7 @@ static int mov_reader_init(struct mov_t* mov)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		track = mov->tracks + i;
+		mov_index_build(track);
 		mov_fragment_build(track);
 		track->sample_offset = 0; // reset
 	}
