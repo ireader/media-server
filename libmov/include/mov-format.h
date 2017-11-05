@@ -21,6 +21,8 @@
 #define MOV_OBJECT_JPEG2000	0x6E // Visual ISO/IEC 15444-1 (JPEG 2000)
 #define MOV_OBJECT_G719		0xA8 // ITU G.719 Audio
 #define MOV_OBJECT_OPUS		0xAD // Opus audio
+#define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
+#define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001

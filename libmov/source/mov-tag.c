@@ -8,6 +8,8 @@ uint32_t mov_object_to_tag(uint8_t object)
 	case MOV_OBJECT_HEVC:	return MOV_HEVC;
 	case MOV_OBJECT_MP4V:	return MOV_MP4V;
 	case MOV_OBJECT_AAC:	return MOV_MP4A;
+	case MOV_OBJECT_G711a:	return MOV_TAG('a', 'l', 'a', 'w');
+	case MOV_OBJECT_G711u:	return MOV_TAG('u', 'l', 'a', 'w');
 	default: return 0;
 	}
 }
@@ -22,6 +24,8 @@ uint8_t mov_tag_to_object(uint32_t tag)
 	case MOV_HEVC: return MOV_OBJECT_HEVC;  // HEVCSampleEntry (ISO/IEC 14496-15:2013)
 	case MOV_MP4V: return MOV_OBJECT_MP4V;
 	case MOV_MP4A: return MOV_OBJECT_AAC;
+	case MOV_TAG('a', 'l', 'a', 'w'): return MOV_OBJECT_G711a;
+	case MOV_TAG('u', 'l', 'a', 'w'): return MOV_OBJECT_G711u;
 	default: return 0;
 	}
 }
