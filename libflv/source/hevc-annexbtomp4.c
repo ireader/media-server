@@ -65,7 +65,7 @@ static void hevc_stream(const uint8_t* hevc, size_t bytes, hevc_nalu_handler han
 	}
 }
 
-static size_t hevc_rbsp_sodb(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
+static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
 {
 	size_t i, j;
 	for (j = i = 0; i < bytes; i++)
@@ -144,7 +144,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 		}
 
 		sodb = mp4->hevc->nalu[mp4->hevc->numOfArrays].data;
-		sodb_bytes = hevc_rbsp_sodb(nalu, bytes, sodb);
+		sodb_bytes = hevc_rbsp_decode(nalu, bytes, sodb);
 
 		if (nal_type == H265_VPS)
 		{
