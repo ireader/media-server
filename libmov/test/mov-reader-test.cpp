@@ -77,12 +77,16 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 void mov_reader_test(const char* mp4)
 {
 	mov_reader_t* mov = mov_reader_create(mp4);
+	uint64_t duration = mov_reader_getduration(mov);
 
 	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, NULL);
 
 	while (mov_reader_read(mov, s_buffer, sizeof(s_buffer), onread, NULL) > 0)
 	{
 	}
+
+	duration /= 2;
+	mov_reader_seek(mov, (int64_t*)&duration);
 
 	mov_reader_destroy(mov);
 	if(s_vfp) fclose(s_vfp);
