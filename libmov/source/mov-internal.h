@@ -20,15 +20,21 @@
 #define MOV_TRAF MOV_TAG('t', 'r', 'a', 'f')
 #define MOV_MFRA MOV_TAG('m', 'f', 'r', 'a')
 
-#define MOV_VIDEO MOV_TAG('v', 'i', 'd', 'e')
-#define MOV_AUDIO MOV_TAG('s', 'o', 'u', 'n')
-#define MOV_HINT  MOV_TAG('h', 'i', 'n', 't')
-#define MOV_META  MOV_TAG('m', 'e', 't', 'a')
+#define MOV_VIDEO	MOV_TAG('v', 'i', 'd', 'e') // ISO/IEC 14496-12:2015(E) 12.1 Video media (p169)
+#define MOV_AUDIO	MOV_TAG('s', 'o', 'u', 'n') // ISO/IEC 14496-12:2015(E) 12.2 Audio media (p173)
+#define MOV_META	MOV_TAG('m', 'e', 't', 'a') // ISO/IEC 14496-12:2015(E) 12.3 Metadata media (p181)
+#define MOV_HINT	MOV_TAG('h', 'i', 'n', 't') // ISO/IEC 14496-12:2015(E) 12.4 Hint media (p183)
+#define MOV_TEXT	MOV_TAG('t', 'e', 'x', 't') // ISO/IEC 14496-12:2015(E) 12.5 Text media (p184)
+#define MOV_SUBT	MOV_TAG('s', 'u', 'b', 't') // ISO/IEC 14496-12:2015(E) 12.6 Subtitle media (p185)
+#define MOV_FONT	MOV_TAG('f', 'd', 's', 'm') // ISO/IEC 14496-12:2015(E) 12.7 Font media (p186)
 
-#define MOV_H264 MOV_TAG('a', 'v', 'c', '1') // H.264
-#define MOV_HEVC MOV_TAG('h', 'e', 'v', '1') // H.265
+// https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
+// Video encoding requirements 1.10: Use ¡®avc1¡¯, ¡®hvc1¡¯, or ¡®dvh1¡¯ rather than ¡®avc3¡¯, ¡®hev1¡¯, or ¡®dvhe¡¯
+#define MOV_H264 MOV_TAG('a', 'v', 'c', '1') // H.264 ISO/IEC 14496-15:2010(E) 5.3.4 AVC Video Stream Definition (18)
+#define MOV_HEVC MOV_TAG('h', 'v', 'c', '1') // H.265
 #define MOV_MP4V MOV_TAG('m', 'p', '4', 'v') // MPEG-4 Video
 #define MOV_MP4A MOV_TAG('m', 'p', '4', 'a') // AAC
+#define MOV_MP4S MOV_TAG('m', 'p', '4', 's') // ISO/IEC 14496-14:2003(E) 5.6 Sample Description Boxes (p14)
 
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor
 // Table 6 - streamType Values (p51)
@@ -109,7 +115,7 @@ struct mov_stbl_t
 struct mov_sample_t
 {
 	int flags; // MOV_AV_FLAG_KEYFREAME
-	int64_t pts;
+	int64_t pts; // track mdhd timescale
 	int64_t dts;
 
 	void* data;
