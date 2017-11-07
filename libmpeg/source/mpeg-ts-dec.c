@@ -205,9 +205,10 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void
 								{
 									assert(0 == tsctx.pes[k].len || tsctx.pes[k].payload_len == tsctx.pes[k].len - tsctx.pes[k].PES_header_data_length - 3);
 									// TODO: filter 0x09 AUD
-									if ((PSI_STREAM_H264 == tsctx.pes[k].avtype && tsctx.pes[k].payload[4] == 0x09 && 0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3])
-										|| (PSI_STREAM_H265 == tsctx.pes[k].avtype && tsctx.pes[k].payload[4] == 0x23 && 0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3]))
+									if (PSI_STREAM_H264 == tsctx.pes[k].avtype && tsctx.pes[k].payload[4] == 0x09 && 0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3])
 										handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload + 6, tsctx.pes[k].payload_len - 6);
+									else if(PSI_STREAM_H265 == tsctx.pes[k].avtype && ((tsctx.pes[k].payload[4] >> 1) & 0x3f) == 0x23 && 0x00 == tsctx.pes[k].payload[0] && 0x00 == tsctx.pes[k].payload[1] && 0x00 == tsctx.pes[k].payload[2] && 0x01 == tsctx.pes[k].payload[3])
+										handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload + 7, tsctx.pes[k].payload_len - 7);
 									else
 										handler(param, tsctx.pes[k].avtype, tsctx.pes[k].pts, tsctx.pes[k].dts, tsctx.pes[k].payload, tsctx.pes[k].payload_len);
 

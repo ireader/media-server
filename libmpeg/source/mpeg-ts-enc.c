@@ -175,9 +175,10 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, pes_t *stream, const uint8
 				// 2.17 Carriage of HEVC
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
 				nbo_w32(p, 0x00000001);
-				p[4] = 0x23; // 35-AUD_NUT
-				p[5] = 0x30; // B&P&I (0x2) + rbsp stop one bit
-				p += 6;
+				p[4] = 0x46; // 35-AUD_NUT
+				p[5] = 01;
+				p[6] = 0x50; // B&P&I (0x2) + rbsp stop one bit
+				p += 7;
 			}
 
 			// PES_packet_length = PES-Header + Payload-Size
