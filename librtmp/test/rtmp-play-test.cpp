@@ -31,6 +31,8 @@ static int rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*by
 	return 0;
 }
 
+// rtmp://live.alivecdn.com/live/hello?key=xxxxxx
+// rtmp_publish_aio_test("live.alivecdn.com", "live", "hello?key=xxxxxx", save-to-local-flv-file-name)
 void rtmp_play_test(const char* host, const char* app, const char* stream, const char* flv)
 {
 	static char packet[8 * 1024 * 1024];
@@ -41,6 +43,7 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 	socket_setnonblock(socket, 0);
 
 	struct rtmp_client_handler_t handler;
+	memset(&handler, 0, sizeof(handler));
 	handler.send = rtmp_client_send;
 	handler.onmeta = rtmp_client_onmeta;
 	handler.onaudio = rtmp_client_onaudio;

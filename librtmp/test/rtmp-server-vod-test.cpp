@@ -1,6 +1,7 @@
 #include "sockutil.h"
 #include "rtmp-server.h"
 #include "flv-reader.h"
+#include "flv-proto.h"
 #include "sys/thread.h"
 #include "sys/system.h"
 #include <string.h>
@@ -25,24 +26,24 @@ static int STDCALL rtmp_server_worker(void* param)
 		if (clock0 + timestamp > clock)
 			system_sleep(clock0 + timestamp - clock);
 
-		if (8 == type)
+		if (FLV_TYPE_AUDIO == type)
 		{
 			r = rtmp_server_send_audio(s_rtmp, packet, r, timestamp);
 		}
-		else if (9 == type)
+		else if (FLV_TYPE_VIDEO == type)
 		{
 			r = rtmp_server_send_video(s_rtmp, packet, r, timestamp);
 		}
 		else
 		{
-			assert(0);
+			//assert(0);
 			r = 0;
 		}
 
 		if (0 != r)
 		{
 			assert(0);
-			break; // send failed
+			break; // TODO: handle send failed
 		}
 	}
 

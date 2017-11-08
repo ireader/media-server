@@ -48,15 +48,22 @@ static int STDCALL aio_rtmp_server_worker(void* param)
 
 		if (FLV_TYPE_AUDIO == type)
 		{
-			aio_rtmp_server_send_audio(vod->session, packet, r, timestamp);
+			r = aio_rtmp_server_send_audio(vod->session, packet, r, timestamp);
 		}
 		else if (FLV_TYPE_VIDEO == type)
 		{
-			aio_rtmp_server_send_video(vod->session, packet, r, timestamp);
+			r = aio_rtmp_server_send_video(vod->session, packet, r, timestamp);
 		}
 		else
 		{
+			//assert(0);
+			r = 0;
+		}
+
+		if (0 != r)
+		{
 			assert(0);
+			break; // TODO: handle send failed
 		}
 	}
 

@@ -40,15 +40,22 @@ static int STDCALL rtmp_client_push(void* flv)
 		switch (type)
 		{
 		case FLV_TYPE_AUDIO:
-			aio_rtmp_client_send_audio(s_param.rtmp, packet, r, timestamp);
+			r = aio_rtmp_client_send_audio(s_param.rtmp, packet, r, timestamp);
 			break;
 
 		case FLV_TYPE_VIDEO:
-			aio_rtmp_client_send_video(s_param.rtmp, packet, r, timestamp);
+			r = aio_rtmp_client_send_video(s_param.rtmp, packet, r, timestamp);
 			break;
 
 		default:
+			r = 0;
 			break;
+		}
+
+		if (0 != r)
+		{
+			assert(0);
+			break; // TODO: handle send failed
 		}
 	}
 
@@ -91,6 +98,8 @@ static void rtmp_onconnect(void*, int code, aio_socket_t aio)
 	assert(0 == aio_rtmp_client_start(s_param.rtmp, 0));
 }
 
+// rtmp://video-center.alivecdn.com/live/hello?vhost=your.domain
+// rtmp_publish_aio_test("video-center.alivecdn.com", "live", "hello?vhost=your.domain", local-flv-file-name)
 void rtmp_publish_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
 	s_param.file = file;

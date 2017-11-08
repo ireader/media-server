@@ -40,20 +40,22 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 		}
 		else
 		{
-			assert(0);
+//			assert(FLV_TYPE_SCRIPT == type);
 			r = 0;
 		}
 
 		if (0 != r)
 		{
 			assert(0);
-			break; // send failed
+			break; // TODO: handle send failed
 		}
 	}
 
 	flv_reader_destroy(f);
 }
 
+// rtmp://video-center.alivecdn.com/live/hello?vhost=your.domain
+// rtmp_publish_test("video-center.alivecdn.com", "live", "hello?vhost=your.domain", local-flv-file-name)
 void rtmp_publish_test(const char* host, const char* app, const char* stream, const char* flv)
 {
 	static char packet[2 * 1024 * 1024];

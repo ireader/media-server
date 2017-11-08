@@ -26,7 +26,12 @@ struct rtmp_client_handler_t
 	int (*onmeta)(void* param, const void* meta, size_t bytes);
 };
 
-/// setup URL and connect server(timeout???)
+/// URL: rtmp://host/app/playpath (TCURL: rtmp://host/app)
+/// e.g.: rtmp://live.alivecdn.com/live/hello
+/// rtmp_client_create("live", "hello", "rtmp://live.alivecdn.com/live", param, handler)
+/// @param[in] appname rtmp app name
+/// @param[in] playpath rtmp playpath
+/// @param[in] tcurl rtmp url (only host and app name)
 rtmp_client_t* rtmp_client_create(const char* appname, const char* playpath, const char* tcurl, void* param, const struct rtmp_client_handler_t* handler);
 void rtmp_client_destroy(rtmp_client_t* rtmp);
 

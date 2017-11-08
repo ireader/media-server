@@ -45,6 +45,8 @@ static void rtmp_onconnect(void* flv, int code, aio_socket_t aio)
 	assert(0 == aio_rtmp_client_start(s_param.rtmp, 1));
 }
 
+// rtmp://live.alivecdn.com/live/hello?key=xxxxxx
+// rtmp_play_aio_test("live.alivecdn.com", "live", "hello?key=xxxxxx", save-to-local-flv-file-name)
 void rtmp_play_aio_test(const char* host, const char* app, const char* stream, const char* file)
 {
 	s_param.code = 0;
