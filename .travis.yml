@@ -1,3 +1,7 @@
 language: c
 install: true
+before_script:
+ - wget https://github.com/ireader/sdk/archive/master.zip -O /tmp/sdk.zip
+ - unzip /tmp/sdk.zip
+ - mv sdk-master ireader/sdk
 script: make
