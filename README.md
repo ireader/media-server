@@ -1,3 +1,5 @@
+* Build status: [![Build Status](https://travis-ci.org/ireader/media-server.svg?branch=master)](https://travis-ci.org/ireader/media-server)
+ 
 # libflv
 1. Adobe FLV muxer/demuxer
 2. MPEG-4 AVCDecoderConfigurationRecord/AudioSpecificConfig
