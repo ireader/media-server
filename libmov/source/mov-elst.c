@@ -9,11 +9,11 @@
 int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 {
 	uint32_t i, entry_count;
-	uint32_t version, flags;
+	uint32_t version;
 	struct mov_track_t* track = mov->track;
 
 	version = file_reader_r8(mov->fp); /* version */
-	flags = file_reader_rb24(mov->fp); /* flags */
+	file_reader_rb24(mov->fp); /* flags */
 	entry_count = file_reader_rb32(mov->fp);
 
 	assert(0 == track->elst_count && NULL == track->elst);
@@ -52,7 +52,6 @@ size_t mov_write_elst(const struct mov_t* mov)
 	int64_t time;
 	int64_t delay;
 	uint8_t version;
-	uint64_t offset;
 	const struct mov_track_t* track = mov->track;
 
 	version = 0;
@@ -67,7 +66,6 @@ size_t mov_write_elst(const struct mov_t* mov)
 	time = time < 0 ? 0 : time;
 	size = 12/* full box */ + 4/* entry count */ + (delay > 0 ? 2 : 1) * (version ? 20 : 12);
 
-	offset = file_writer_tell(mov->fp);
 	file_writer_wb32(mov->fp, size); /* size */
 	file_writer_write(mov->fp, "elst", 4);
 	file_writer_w8(mov->fp, version); /* version */

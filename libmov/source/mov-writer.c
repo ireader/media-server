@@ -361,7 +361,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		file_writer_move(mov->fp, writer->mdat_offset, offset, (size_t)(offset2 - offset));
 	}
 
-	file_writer_destroy(&writer->mov.fp);
+	file_writer_destroy(writer->mov.fp);
 
 	for (i = 0; i < mov->track_count; i++)
 	{

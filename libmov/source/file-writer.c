@@ -37,7 +37,7 @@ void* file_writer_create(const char* file)
 	f->fp = fopen(file, "wb+");
 	if (NULL == f->fp)
 	{
-		file_writer_destroy(&f);
+		file_writer_destroy(f);
 		return NULL;
 	}
 
@@ -56,13 +56,13 @@ static void file_writer_flush(struct wfile_t* f)
 	}
 }
 
-void file_writer_destroy(void** file)
+void file_writer_destroy(void* file)
 {
 	struct wfile_t* f;
-	if(NULL == file || NULL == *file)
+	if(NULL == file)
 		return;
 
-	f = *(struct wfile_t**)file;
+	f = (struct wfile_t*)file;
 	if (f->fp)
 	{
 		file_writer_flush(f);
@@ -70,7 +70,6 @@ void file_writer_destroy(void** file)
 	}
 
 	free(f);
-	*file = NULL;
 }
 
 int file_writer_move(void* file, uint64_t to, uint64_t from, size_t bytes)

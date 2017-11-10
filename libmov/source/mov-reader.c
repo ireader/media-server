@@ -465,7 +465,7 @@ struct mov_reader_t* mov_reader_create(const char* file)
 void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	size_t i;
-	file_reader_destroy(&reader->mov.fp);
+	file_reader_destroy(reader->mov.fp);
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
 		FREE(reader->mov.tracks[i].extra_data);

@@ -39,24 +39,23 @@ void* file_reader_create(const char* file)
 	f->fp = fopen(file, "rb");
 	if (NULL == f->fp)
 	{
-		file_reader_destroy(&f);
+		file_reader_destroy(f);
 		return NULL;
 	}
 
 	return f;
 }
 
-void file_reader_destroy(void** file)
+void file_reader_destroy(void* file)
 {
 	struct file_t* f;
-	if(NULL == file || NULL == *file)
+	if(NULL == file)
 		return;
 
-	f = *(struct file_t**)file;
+	f = (struct file_t*)file;
 	if(f->fp)
 		fclose(f->fp);
 	free(f);
-	*file = NULL;
 }
 
 int file_reader_error(void* file)

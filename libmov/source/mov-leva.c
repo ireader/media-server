@@ -8,13 +8,12 @@ int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box)
 {
 	unsigned int i, level_count;
 	unsigned int assignment_type;
-	uint32_t track_id;
 
 	file_reader_rb32(mov->fp); /* version & flags */
 	level_count = file_reader_r8(mov->fp); /* level_count */
 	for (i = 0; i < level_count; i++)
 	{
-		track_id = file_reader_rb32(mov->fp); /* track_id */
+		file_reader_rb32(mov->fp); /* track_id */
 		assignment_type = file_reader_r8(mov->fp); /* padding_flag & assignment_type */
 		assignment_type &= 0x7F; // 7-bits
 

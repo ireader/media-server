@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 void* file_writer_create(const char* file);
-void file_writer_destroy(void** file);
+void file_writer_destroy(void* file);
 
 /// @return 0-ok/eof, other-error
 int file_writer_error(void* file);

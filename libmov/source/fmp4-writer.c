@@ -133,28 +133,10 @@ static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment)
 	return size;
 }
 
-static int fmp4_write_edts(const struct mov_t* mov)
-{
-	size_t size;
-	uint64_t offset;
-
-	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "edts", 4);
-
-	size += mov_write_elst(mov);
-
-	mov_write_size(mov->fp, offset, size); /* update size */
-	return size;
-}
-
 static size_t fmp4_write_stbl(const struct mov_t* mov)
 {
 	size_t size;
 	uint64_t offset;
-	struct mov_track_t* track;
-	track = (struct mov_track_t*)mov->track;
 
 	size = 8 /* Box */;
 	offset = file_writer_tell(mov->fp);
@@ -499,7 +481,7 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 	// write mfra
 	fmp4_write_mfra(mov);
 
-	file_writer_destroy(&writer->mov.fp);
+	file_writer_destroy(writer->mov.fp);
 
 	for (i = 0; i < mov->track_count; i++)
 	{
