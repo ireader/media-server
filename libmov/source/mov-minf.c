@@ -7,7 +7,7 @@ int mov_read_vmhd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
-	/*uint16_t graphicsmode = */(uint16_t)file_reader_rb16(mov->fp);
+	file_reader_rb16(mov->fp); /* graphicsmode */
 	// template unsigned int(16)[3] opcolor = {0, 0, 0};
 	file_reader_skip(mov->fp, 6);
 
@@ -19,7 +19,7 @@ int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
-	/*uint16_t balance = */(uint16_t)file_reader_rb16(mov->fp);
+	file_reader_rb16(mov->fp); /* balance */
 	//const unsigned int(16) reserved = 0;
 	file_reader_skip(mov->fp, 2);
 

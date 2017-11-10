@@ -272,10 +272,9 @@ static int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box)
 // 8.8.11 Movie Fragment Random Access Offset Box (p75)
 static int mov_read_mfro(struct mov_t* mov, const struct mov_box_t* box)
 {
-	uint32_t size;
 	(void)box;
 	file_reader_rb32(mov->fp); /* version & flags */
-	size = file_reader_rb32(mov->fp); /* size */
+	file_reader_rb32(mov->fp); /* size */
 	return file_reader_error(mov->fp);
 }
 

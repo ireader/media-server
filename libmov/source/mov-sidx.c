@@ -8,9 +8,6 @@ int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box)
 {
 	unsigned int version;
 	unsigned int i, reference_count;
-	struct mov_track_t* track;
-
-	track = mov->track;
 
 	version = file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */

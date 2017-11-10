@@ -86,7 +86,7 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first)
 {
 	uint32_t delta;
 	uint64_t offset;
-	size_t size, i, j;
+	size_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -111,7 +111,7 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first)
 		size += 4;;
 	}
 
-	for (i = 0, j = 0; i < track->sample_count; i++)
+	for (i = 0; i < track->sample_count; i++)
 	{
 		sample = track->samples + i;
 		if (flags & MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
