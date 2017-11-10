@@ -56,5 +56,10 @@ int rtsp_server_reply_setup(struct rtsp_server_t *rtsp, int code, const char* se
 
 	// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
 	len = snprintf(header, sizeof(header), "Transport: %s\r\nSession: %s\r\n", transport ? transport : "", sessionid ? sessionid : "");
+	if (len < 0 || len == sizeof(header))
+	{
+		assert(0); // transport or sessionid too long
+		return -1;
+	}
 	return rtsp_server_reply2(rtsp, code, header);
 }

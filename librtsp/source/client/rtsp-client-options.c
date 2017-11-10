@@ -47,6 +47,7 @@ int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser)
 	if (200 == code)
 	{
 		methods = rtsp_get_header_by_name(parser, "Public");
+		(void)methods; // TODO: check support methods
 		return 0; // next step
 	}
 	else

@@ -70,6 +70,7 @@ int rtsp_client_get_parameter_onreply(struct rtsp_client_t* rtsp, void* parser)
 	if (200 == code)
 	{
 		content = rtsp_get_content(parser);
+		(void)content; // TODO: callback(content)
 		return 0; // next step
 	}
 	else
