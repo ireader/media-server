@@ -118,6 +118,7 @@ static int rtsp_rawdata(struct rtsp_parser_t *rtsp, const void* data, int bytes)
 
 	if(rtsp->raw_capacity - rtsp->raw_size < (size_t)bytes + 1)
 	{
+		if (rtsp->raw_capacity + bytes > 64 * MB) return E2BIG; // too big rtsp packet
 		capacity = (rtsp->raw_capacity > 4*MB) ? 50*MB : (rtsp->raw_capacity > 16*KB ? 2*MB : 8*KB);
 		capacity = (bytes + 1) > capacity ? (bytes + 1) : capacity;
 		p = realloc(rtsp->raw, rtsp->raw_capacity + capacity);
