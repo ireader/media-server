@@ -109,12 +109,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\media-source.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rtp-socket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\rtsp-header-range.h">
       <Filter>Header Files</Filter>
     </ClInclude>

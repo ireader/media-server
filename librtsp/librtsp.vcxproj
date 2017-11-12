@@ -164,8 +164,6 @@
     <ClCompile Include="source\server\rtsp-server.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\media-source.h" />
-    <ClInclude Include="include\rtp-socket.h" />
     <ClInclude Include="include\rtsp-client.h" />
     <ClInclude Include="include\rtsp-header-range.h" />
     <ClInclude Include="include\rtsp-header-rtp-info.h" />
