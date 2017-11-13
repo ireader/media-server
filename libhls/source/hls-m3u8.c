@@ -60,7 +60,7 @@ void hls_m3u8_destroy(struct hls_m3u8_t* m3u8)
 	free(m3u8);
 }
 
-static struct hls_segment_t* hls_segment_alloc(int bytes)
+static struct hls_segment_t* hls_segment_alloc(size_t bytes)
 {
 	struct hls_segment_t* seg;
 	seg = (struct hls_segment_t*)malloc(sizeof(*seg) + bytes);

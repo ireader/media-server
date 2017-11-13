@@ -165,7 +165,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 	w32(data + 2, hevc->general_profile_compatibility_flags);
 
 	// general_constraint_indicator_flags
-	w32(data + 6, hevc->general_constraint_indicator_flags >> 16);
+	w32(data + 6, (uint32_t)(hevc->general_constraint_indicator_flags >> 16));
 	w16(data + 10, (uint16_t)hevc->general_constraint_indicator_flags);
 	
 	// general_level_idc
