@@ -15,14 +15,14 @@ fmp4_writer_t* fmp4_writer_create(const char* file, int flags);
 void fmp4_writer_destroy(fmp4_writer_t* fmp4);
 
 /// @param[in] object MPEG-4 systems ObjectTypeIndication such as: MOV_OBJECT_H264, see more @mov-format.h
-/// @param[in] extra_data AudioSpecificConfig/AVCDecoderConfigurationRecord
+/// @param[in] extra_data AudioSpecificConfig/AVCDecoderConfigurationRecord/HEVCDecoderConfigurationRecord
 /// @return >=0-track, <0-error
 int fmp4_writer_add_audio(fmp4_writer_t* fmp4, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 int fmp4_writer_add_video(fmp4_writer_t* fmp4, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig
-/// H.264 MP4 format, replace start code(0x00000001) with NALU size
+/// H.264/H.265 MP4 format, replace start code(0x00000001) with NALU size
 /// @param[in] track return by mov_writer_add_audio/mov_writer_add_video
 /// @param[in] data audio/video frame
 /// @param[in] bytes buffer size
