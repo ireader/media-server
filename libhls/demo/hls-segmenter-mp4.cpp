@@ -1,3 +1,5 @@
+#if defined(_HAVE_FFMPEG_)
+
 extern "C" 
 {
 #include "libavformat/avformat.h"
@@ -135,3 +137,4 @@ void mp4_to_ts_test(const char* mp4)
 	hls_media_destroy(hls);
 	hls_m3u8_destroy(m3u);
 }
+#endif
