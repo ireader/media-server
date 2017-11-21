@@ -185,7 +185,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	case 21: // CRA_NUT
 	case 22: // RSV_IRAP_VCL22
 	case 23: // RSV_IRAP_VCL23
-		mp4->hevc->constantFrameRate = 0x04; // key frame
+		mp4->hevc->constantFrameRate = 0x04; // irap frame
 		break;
 
 	default:
