@@ -1,5 +1,5 @@
+#include "aio-worker.h"
 #include "aio-socket.h"
-#include "aio-timeout.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "hls-m3u8.h"
@@ -20,6 +20,8 @@
 #include <list>
 #include <vector>
 #include <string>
+
+#define CWD "./"
 
 extern "C" int http_list_dir(http_session_t* session, const char* path);
 
@@ -163,8 +165,9 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
 	hls_playlist_t* playlist = s_playlists.find(path)->second;
 	assert(playlist);
 
+	std::list<hls_ts_t>::iterator i;
 	std::string file = path + '/' + ts;
-	for(auto i = playlist->files.begin(); i != playlist->files.end(); ++i)
+	for(i = playlist->files.begin(); i != playlist->files.end(); ++i)
 	{
 		if(i->name == file)
 		{
@@ -215,7 +218,7 @@ static int hls_server_onlive(void* /*http*/, http_session_t* session, const char
 
 static int hls_server_onvod(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
 {
-	std::string fullpath = "e:\\video\\";
+	std::string fullpath = CWD;
 	fullpath += path + 5 /* /vod/ */;
 
 	if (path_testdir(fullpath.c_str()))
@@ -233,7 +236,7 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 
 void hls_server_test(const char* ip, int port)
 {
-	aio_socket_init(1);
+	aio_worker_init(1);
 	http_server_t* http = http_server_create(ip, port);
 	http_server_set_handler(http, http_server_route, http);
 	http_server_addroute("/live/", hls_server_onlive);
@@ -242,9 +245,16 @@ void hls_server_test(const char* ip, int port)
 	// http process
 	while(aio_socket_process(10000) >= 0)
 	{
-		aio_timeout_process();
 	}
 
 	http_server_destroy(http);
-	aio_socket_clean();
+	aio_worker_clean(1);
 }
+
+#if defined(_HLS_SERVER_TEST_)
+int main(int argc, char* argv[])
+{
+	hls_server_test(NULL, 80);
+	return 0;
+}
+#endif
