@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-// extra_data: ISO/IEC 14496-15-2017 AVCDecoderConfigurationRecord
+// extra_data: ISO/IEC 14496-15:2017 HEVCDecoderConfigurationRecord
 
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box)
 {
