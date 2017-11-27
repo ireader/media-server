@@ -66,6 +66,8 @@ static int flv_parser_audio(struct flv_parser_t* flv, const uint8_t* data, size_
 		// these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
 		//assert(3 == flv->audio.bitrate && 1 == flv->audio.channel);
 
+		if (bytes < 4) return -EINVAL;
+
 		if (0 == data[1])
 		{
 			return flv->handler(flv->param, FLV_AUDIO_ASC, data + 2, bytes - 2, timestamp, timestamp, 0);

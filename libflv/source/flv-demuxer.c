@@ -93,6 +93,8 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		// these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
 		//assert(3 == flv->audio.bitrate && 1 == flv->audio.channel);
 
+		if (bytes < 4) return -EINVAL;
+
 		if (0 == data[1])
 		{
 			mpeg4_aac_audio_specific_config_load(data + 2, bytes - 2, &flv->aac);
