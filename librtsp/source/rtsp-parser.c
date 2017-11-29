@@ -1013,7 +1013,12 @@ int rtsp_parser_input(struct rtsp_parser_t *rtsp, const void* data, int *bytes)
 	if(r < 0)
 		return r;
 
-	*bytes = rtsp->raw_size - rtsp->offset - ((rtsp->content_length >= 0) ? rtsp->content_length : 0);
+	*bytes = 0;
+	if (SM_DONE == rtsp->stateM)
+	{
+		assert(rtsp->content_length < 0 || rtsp->raw_size - rtsp->offset >= (size_t)rtsp->content_length);
+		*bytes = rtsp->raw_size - rtsp->offset - ((rtsp->content_length >= 0) ? rtsp->content_length : 0);
+	}
 	return rtsp->stateM == SM_DONE ? INPUT_DONE : INPUT_NEEDMORE;
 }
 
