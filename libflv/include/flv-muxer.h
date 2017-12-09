@@ -35,6 +35,23 @@ int flv_muxer_avc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t p
 /// @param[in] nalu H.264 NAL unit, don't include start code, 0x68...
 int flv_muxer_h264_nalu(flv_muxer_t* muxer, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts);
 
+struct flv_metadata_t
+{
+	int audiocodecid;
+	double audiodatarate; // kbps
+	int audiosamplerate;
+	int audiosamplesize;
+	int stereo;
+
+	int videocodecid;
+	double videodatarate; // kbps
+	double framerate; // fps
+	int width;
+	int height;
+};
+
+int flv_muxer_metadata(flv_muxer_t* muxer, const struct flv_metadata_t* metadata);
+
 #if defined(__cplusplus)
 }
 #endif

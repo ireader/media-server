@@ -1,5 +1,6 @@
 #include "flv-muxer.h"
 #include "flv-proto.h"
+#include "amf0.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -9,6 +10,8 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mp3-header.h"
+
+#define FLV_MUXER "libflv"
 
 struct flv_muxer_t
 {
@@ -263,4 +266,59 @@ int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes,
 	r = flv_muxer_h264(flv, pts, dts);
 	flv->bytes = 0;
 	return r;
+}
+
+int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
+{
+	uint8_t* ptr, *end;
+	uint32_t count;
+
+	if (!metadata) return -1;
+
+	count = (metadata->audiocodecid ? 5 : 0) + (metadata->videocodecid ? 5 : 0) + 1;
+	if (flv->capacity < 1024)
+	{
+		if (0 != flv_muxer_alloc(flv, 1024))
+			return ENOMEM;
+	}
+
+	ptr = flv->ptr;
+	end = flv->ptr + flv->capacity;
+	count = (metadata->audiocodecid ? 5 : 0) + (metadata->videocodecid ? 5 : 0) + 1;
+
+	// ScriptTagBody
+
+	// name
+	ptr = AMFWriteString(ptr, end, "onMetaData", 10);
+
+	// value: SCRIPTDATAECMAARRAY
+	ptr[0] = AMF_ECMA_ARRAY;
+	ptr[1] = (uint8_t)((count >> 24) & 0xFF);;
+	ptr[2] = (uint8_t)((count >> 16) & 0xFF);;
+	ptr[3] = (uint8_t)((count >> 8) & 0xFF);
+	ptr[4] = (uint8_t)(count & 0xFF);
+	ptr += 5;
+
+	if (metadata->audiocodecid)
+	{
+		ptr = AMFWriteNamedDouble(ptr, end, "audiocodecid", 12, metadata->audiocodecid);
+		ptr = AMFWriteNamedDouble(ptr, end, "audiodatarate", 13, metadata->audiodatarate);
+		ptr = AMFWriteNamedDouble(ptr, end, "audiosamplerate", 15, metadata->audiosamplerate);
+		ptr = AMFWriteNamedDouble(ptr, end, "audiosamplesize", 15, metadata->audiosamplesize);
+		ptr = AMFWriteNamedBoolean(ptr, end, "stereo", 6, (uint8_t)metadata->stereo);
+	}
+
+	if (metadata->videocodecid)
+	{
+		ptr = AMFWriteNamedDouble(ptr, end, "videocodecid", 12, metadata->videocodecid);
+		ptr = AMFWriteNamedDouble(ptr, end, "videodatarate", 13, metadata->videodatarate);
+		ptr = AMFWriteNamedDouble(ptr, end, "framerate", 9, metadata->framerate);
+		ptr = AMFWriteNamedDouble(ptr, end, "height", 6, metadata->height);
+		ptr = AMFWriteNamedDouble(ptr, end, "width", 5, metadata->width);
+	}
+
+	ptr = AMFWriteNamedString(ptr, end, "encoder", 7, FLV_MUXER, strlen(FLV_MUXER));
+	ptr = AMFWriteObjectEnd(ptr, end);
+
+	return flv->handler(flv->param, FLV_TYPE_SCRIPT, flv->ptr, ptr - flv->ptr, 0);
 }
