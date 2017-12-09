@@ -238,7 +238,7 @@ const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongS
 
 
 static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n);
-static const uint8_t* amf_read_ecma_array(const uint8_t* data, const uint8_t* end);
+static const uint8_t* amf_read_ecma_array(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n);
 
 static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enum AMFDataType type, struct amf_object_item_t* item)
 {
@@ -266,7 +266,7 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 		return data;
 
 	case AMF_ECMA_ARRAY:
-		return amf_read_ecma_array(data, end);
+		return amf_read_ecma_array(data, end, (struct amf_object_item_t*)(item ? item->value : NULL), item ? item->size : 0);
 
 	default:
 		assert(0);
@@ -274,12 +274,12 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	}
 }
 
-static const uint8_t* amf_read_ecma_array(const uint8_t* ptr, const uint8_t* end)
+static const uint8_t* amf_read_ecma_array(const uint8_t* ptr, const uint8_t* end, struct amf_object_item_t* items, size_t n)
 {
 	if (!ptr || ptr + 4 > end)
 		return NULL;
 	ptr += 4; // U32 associative-count
-	return amf_read_object(ptr, end, NULL, 0);
+	return amf_read_object(ptr, end, items, n);
 }
 
 static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, struct amf_object_item_t* items, size_t n)
@@ -321,7 +321,7 @@ const uint8_t* amf_read_items(const uint8_t* data, const uint8_t* end, struct am
 	for (i = 0; i < count && data && data < end; i++)
 	{
 		type = *data++;
-		if (type != items[i].type && !(AMF_OBJECT == items[i].type && AMF_NULL == type))
+		if (type != items[i].type && !((AMF_OBJECT == items[i].type || AMF_ECMA_ARRAY == items[i].type) && AMF_NULL == type))
 			return NULL;
 
 		data = amf_read_item(data, end, type, &items[i]);
