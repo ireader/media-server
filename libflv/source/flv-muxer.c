@@ -227,7 +227,7 @@ int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes,
 	case 8:
 		// FIXME: check pps/sps id
 		if (bytes > sizeof(flv->avc.pps[0].data)
-			|| flv->avc.nb_pps >= sizeof(flv->avc.pps) / sizeof(flv->avc.pps[0]))
+			|| (int)flv->avc.nb_pps >= sizeof(flv->avc.pps) / sizeof(flv->avc.pps[0]))
 		{
 			assert(0);
 			return -1;
