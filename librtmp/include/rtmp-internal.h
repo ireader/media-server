@@ -114,6 +114,7 @@ struct rtmp_t
 	
 	int (*onaudio)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
 	int (*onvideo)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
+	int (*onscript)(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp);
 
 	void (*onabort)(void* param, uint32_t chunk_stream_id);
 

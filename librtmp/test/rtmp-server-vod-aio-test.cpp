@@ -54,6 +54,10 @@ static int STDCALL aio_rtmp_server_worker(void* param)
 		{
 			r = aio_rtmp_server_send_video(vod->session, packet, r, timestamp);
 		}
+		else if (FLV_TYPE_SCRIPT == type)
+		{
+			r = aio_rtmp_server_send_script(vod->session, packet, r, timestamp);
+		}
 		else
 		{
 			//assert(0);

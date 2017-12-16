@@ -6,6 +6,9 @@
 #include <string.h>
 #include <assert.h>
 
+#define TIMEOUT_RECV 5000
+#define TIMEOUT_SEND 5000
+
 struct aio_rtmp_client_t
 {
 	int ready;
@@ -24,7 +27,7 @@ static void aio_rtmp_transport_onrecv(void* param, int code, const void* data, s
 static int rtmp_client_send(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 static int rtmp_client_onaudio(void* param, const void* audio, size_t bytes, uint32_t timestamp);
 static int rtmp_client_onvideo(void* param, const void* video, size_t bytes, uint32_t timestamp);
-static int rtmp_client_onmeta(void* param, const void* meta, size_t bytes);
+static int rtmp_client_onscript(void* param, const void* script, size_t bytes, uint32_t timestamp);
 
 struct aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* app, const char* stream, const char* tcurl, struct aio_rtmp_client_handler_t* handler, void* param)
 {
@@ -38,15 +41,17 @@ struct aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* a
 		c->param = param;
 		
 		h2.send = rtmp_client_send;
-		h2.onmeta = rtmp_client_onmeta;
 		h2.onaudio = rtmp_client_onaudio;
 		h2.onvideo = rtmp_client_onvideo;
+		h2.onscript = rtmp_client_onscript;
 		c->rtmp = rtmp_client_create(app, stream, tcurl, c, &h2);
 
 		h.onrecv = aio_rtmp_transport_onrecv;
 		h.onsend = aio_rtmp_transport_onsend;
 		h.ondestroy = aio_rtmp_transport_ondestroy;
 		c->aio = aio_rtmp_transport_create(aio, &h, c);
+
+		aio_rtmp_transport_set_timeout(c->aio, TIMEOUT_RECV, TIMEOUT_SEND);
 	}
 	return c;
 }
@@ -79,6 +84,11 @@ int aio_rtmp_client_send_video(struct aio_rtmp_client_t* client, const void* flv
 	return rtmp_client_push_video(client->rtmp, flv, bytes, timestamp);
 }
 
+int aio_rtmp_client_send_script(struct aio_rtmp_client_t* client, const void* flv, size_t bytes, uint32_t timestamp)
+{
+	return rtmp_client_push_script(client->rtmp, flv, bytes, timestamp);
+}
+
 size_t aio_rtmp_client_get_unsend(aio_rtmp_client_t* client)
 {
 	return aio_rtmp_transport_get_unsend(client->aio);
@@ -105,10 +115,11 @@ static int rtmp_client_onvideo(void* param, const void* video, size_t bytes, uin
 	return client->handler.onvideo(client->param, video, bytes, timestamp);
 }
 
-static int rtmp_client_onmeta(void* param, const void* meta, size_t bytes)
+static int rtmp_client_onscript(void* param, const void* script, size_t bytes, uint32_t timestamp)
 {
-	(void)param; (void)meta; (void)bytes;
-	return 0; // ignore
+	struct aio_rtmp_client_t* client;
+	client = (struct aio_rtmp_client_t*)param;
+	return client->handler.onscript(client->param, script, bytes, timestamp);
 }
 
 static void aio_rtmp_transport_onsend(void* param, int code, size_t bytes)
@@ -139,6 +150,9 @@ static void aio_rtmp_transport_onrecv(void* param, int code, const void* data, s
 			client->ready = 1;
 			if (client->handler.onready)
 				client->handler.onready(client->param);
+
+			// disable recv timeout
+			aio_rtmp_transport_set_timeout(client->aio, 0, TIMEOUT_SEND);
 		}
 	}
 

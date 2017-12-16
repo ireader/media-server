@@ -19,11 +19,11 @@ struct rtmp_client_handler_t
 	///VOD only
 	///@param[in] video FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
 	///@param[in] audio FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
-	///@param[in] meta AMF0/AMF3
+	///@param[in] script AMF0/AMF3
 	///@return 0-ok, other-error
 	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
 	int (*onaudio)(void* param, const void* audio, size_t bytes, uint32_t timestamp);
-	int (*onmeta)(void* param, const void* meta, size_t bytes);
+	int (*onscript)(void* param, const void* script, size_t bytes, uint32_t timestamp);
 };
 
 /// URL: rtmp://host/app/playpath (TCURL: rtmp://host/app)
@@ -57,6 +57,9 @@ int rtmp_client_push_video(rtmp_client_t* rtmp, const void* video, size_t bytes,
 ///@param[in] bytes: audio data length in bytes
 ///@return 0-ok, other-error
 int rtmp_client_push_audio(rtmp_client_t* rtmp, const void* audio, size_t bytes, uint32_t timestamp);
+
+///@param[in] data FLV onMetaData
+int rtmp_client_push_script(struct rtmp_client_t* ctx, const void* data, size_t bytes, uint32_t timestamp);
 
 #if defined(__cplusplus)
 }

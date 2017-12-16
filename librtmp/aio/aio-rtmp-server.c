@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define TIMEOUT_RECV 20000
+#define TIMEOUT_SEND 20000
+
 struct aio_rtmp_server_t
 {
 	void* listen; // listen aio socket
@@ -37,6 +40,7 @@ static void rtmp_session_onrecv(void* param, int code, const void* data, size_t 
 
 static int rtmp_handler_send(void* param, const void* header, size_t len, const void* payload, size_t bytes);
 static int rtmp_handler_onpublish(void* param, const char* app, const char* stream, const char* type);
+static int rtmp_handler_onscript(void* param, const void* data, size_t bytes, uint32_t timestamp);
 static int rtmp_handler_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp);
 static int rtmp_handler_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp);
 static int rtmp_handler_onplay(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset);
@@ -101,6 +105,11 @@ int aio_rtmp_server_send_video(struct aio_rtmp_session_t* session, const void* d
 	return rtmp_server_send_video(session->rtmp, data, bytes, timestamp);
 }
 
+int aio_rtmp_server_send_script(struct aio_rtmp_session_t* session, const void* data, size_t bytes, uint32_t timestamp)
+{
+	return rtmp_server_send_script(session->rtmp, data, bytes, timestamp);
+}
+
 size_t aio_rtmp_server_get_unsend(struct aio_rtmp_session_t* session)
 {
 	return aio_rtmp_transport_get_unsend(session->aio);
@@ -143,6 +152,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		handler.onpause = rtmp_handler_onpause;
 		handler.onaudio = rtmp_handler_onaudio;
 		handler.onvideo = rtmp_handler_onvideo;
+		handler.onscript = rtmp_handler_onscript;
 		handler.onpublish = rtmp_handler_onpublish;
 		session->rtmp = rtmp_server_create(session, &handler);
 
@@ -150,6 +160,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		aiohandler.onsend = rtmp_session_onsend;
 		aiohandler.ondestroy = rtmp_session_ondestroy;
 		session->aio = aio_rtmp_transport_create(aio_socket_create(socket, 1), &aiohandler, session);
+		aio_rtmp_transport_set_timeout(session->aio, TIMEOUT_RECV, TIMEOUT_SEND);
 		aio_rtmp_transport_start(session->aio);
 	}
 }
@@ -216,6 +227,7 @@ static int rtmp_handler_onplay(void* param, const char* app, const char* stream,
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
 	session->usr = session->server->handle.onplay(session->server->param, session, app, stream, start, duration, reset);
+	aio_rtmp_transport_set_timeout(session->aio, 0, TIMEOUT_SEND); // disable recv timeout
 	return session->usr ? 0 : -1;
 }
 
@@ -243,6 +255,15 @@ static int rtmp_handler_onpublish(void* param, const char* app, const char* stre
 	session = (struct aio_rtmp_session_t*)param;
 	session->usr = session->server->handle.onpublish(session->server->param, session, app, stream, type);
 	return session->usr ? 0 : -1;
+}
+
+static int rtmp_handler_onscript(void* param, const void* data, size_t bytes, uint32_t timestamp)
+{
+	struct aio_rtmp_session_t* session;
+	session = (struct aio_rtmp_session_t*)param;
+	if (session->server->handle.onscript && session->usr)
+		return session->server->handle.onscript(session->usr, data, bytes, timestamp);
+	return -1;
 }
 
 static int rtmp_handler_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp)

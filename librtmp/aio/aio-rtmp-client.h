@@ -17,8 +17,9 @@ struct aio_rtmp_client_handler_t
 	void (*onerror)(void* param, int code);
 
 	// play only
-	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
 	int (*onaudio)(void* param, const void* audio, size_t bytes, uint32_t timestamp);
+	int (*onvideo)(void* param, const void* video, size_t bytes, uint32_t timestamp);
+	int (*onscript)(void* param, const void* script, size_t bytes, uint32_t timestamp);
 
 	// publish only
 	void (*onready)(void* param);
@@ -36,6 +37,7 @@ int aio_rtmp_client_stop(aio_rtmp_client_t* client);
 
 int aio_rtmp_client_send_audio(aio_rtmp_client_t* client, const void* flv, size_t bytes, uint32_t timestamp);
 int aio_rtmp_client_send_video(aio_rtmp_client_t* client, const void* flv, size_t bytes, uint32_t timestamp);
+int aio_rtmp_client_send_script(aio_rtmp_client_t* client, const void* flv, size_t bytes, uint32_t timestamp);
 size_t aio_rtmp_client_get_unsend(aio_rtmp_client_t* client);
 
 #ifdef __cplusplus

@@ -13,14 +13,15 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 	socket_bufvec_t vec[2];
 	socket_setbufvec(vec, 0, (void*)header, len);
 	socket_setbufvec(vec, 1, (void*)data, bytes);
-	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 2000);
+	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 5000);
 }
 
 static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 {
 	int r, type;
 	uint32_t timestamp;
-	static uint32_t s_timestamp = 0;
+	uint32_t s_timestamp = 0;
+	
 	void* f = flv_reader_create(flv);
 
 	static char packet[2 * 1024 * 1024];
@@ -38,10 +39,14 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 		{
 			r = rtmp_client_push_video(rtmp, packet, r, timestamp);
 		}
+		else if(FLV_TYPE_SCRIPT == type)
+		{
+			r = rtmp_client_push_script(rtmp, packet, r, timestamp);
+		}
 		else
 		{
-//			assert(FLV_TYPE_SCRIPT == type);
-			r = 0;
+			assert(0);
+			r = 0; // ignore
 		}
 
 		if (0 != r)

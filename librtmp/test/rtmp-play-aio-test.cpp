@@ -31,6 +31,11 @@ static int rtmp_client_play_onaudio(void* flv, const void* audio, size_t bytes, 
 	return flv_writer_input(flv, FLV_TYPE_AUDIO, audio, bytes, timestamp);
 }
 
+static int rtmp_client_play_onscript(void* flv, const void* script, size_t bytes, uint32_t timestamp)
+{
+	return flv_writer_input(flv, FLV_TYPE_SCRIPT, script, bytes, timestamp);
+}
+
 static void rtmp_onconnect(void* flv, int code, aio_socket_t aio)
 {
 	assert(0 == code);
@@ -40,6 +45,7 @@ static void rtmp_onconnect(void* flv, int code, aio_socket_t aio)
 	handler.onerror = rtmp_client_play_onerror;
 	handler.onaudio = rtmp_client_play_onaudio;
 	handler.onvideo = rtmp_client_play_onvideo;
+	handler.onscript = rtmp_client_play_onscript;
 	
 	s_param.rtmp = aio_rtmp_client_create(aio, s_param.app, s_param.stream, s_param.tcurl, &handler, flv);
 	assert(0 == aio_rtmp_client_start(s_param.rtmp, 1));

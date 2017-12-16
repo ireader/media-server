@@ -1,6 +1,7 @@
 #include "sockutil.h"
 #include "rtmp-server.h"
 #include "flv-writer.h"
+#include "flv-proto.h"
 #include "sys/thread.h"
 #include "sys/system.h"
 #include <string.h>
@@ -23,14 +24,19 @@ static int rtmp_server_onpublish(void* param, const char* app, const char* strea
 	return 0;
 }
 
+static int rtmp_server_onscript(void* param, const void* script, size_t bytes, uint32_t timestamp)
+{
+	return flv_writer_input(s_flv, FLV_TYPE_SCRIPT, script, bytes, timestamp);
+}
+
 static int rtmp_server_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp)
 {
-	return flv_writer_input(s_flv, 9, data, bytes, timestamp);
+	return flv_writer_input(s_flv, FLV_TYPE_VIDEO, data, bytes, timestamp);
 }
 
 static int rtmp_server_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp)
 {
-	return flv_writer_input(s_flv, 8, data, bytes, timestamp);
+	return flv_writer_input(s_flv, FLV_TYPE_AUDIO, data, bytes, timestamp);
 }
 
 void rtmp_server_publish_test(const char* flv)
@@ -45,9 +51,10 @@ void rtmp_server_publish_test(const char* flv)
 	//handler.onpause = rtmp_server_onpause;
 	//handler.onseek = rtmp_server_onseek;
 	handler.onpublish = rtmp_server_onpublish;
+	handler.onscript = rtmp_server_onscript;
 	handler.onvideo = rtmp_server_onvideo;
 	handler.onaudio = rtmp_server_onaudio;
-
+	
 	socket_init();
 
 	socklen_t n;

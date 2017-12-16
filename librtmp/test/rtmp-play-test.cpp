@@ -26,7 +26,7 @@ static int rtmp_client_onvideo(void* /*param*/, const void* data, size_t bytes, 
 	return flv_writer_input(s_flv, FLV_TYPE_VIDEO, data, bytes, timestamp);
 }
 
-static int rtmp_client_onmeta(void* /*param*/, const void* /*data*/, size_t /*bytes*/)
+static int rtmp_client_onscript(void* /*param*/, const void* /*data*/, size_t /*bytes*/, uint32_t /*timestamp*/)
 {
 	return 0;
 }
@@ -45,9 +45,9 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 	struct rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
 	handler.send = rtmp_client_send;
-	handler.onmeta = rtmp_client_onmeta;
 	handler.onaudio = rtmp_client_onaudio;
 	handler.onvideo = rtmp_client_onvideo;
+	handler.onscript = rtmp_client_onscript;
 	rtmp_client_t* rtmp = rtmp_client_create(app, stream, packet/*tcurl*/, &socket, &handler);
 	s_flv = flv_writer_create(flv);
 

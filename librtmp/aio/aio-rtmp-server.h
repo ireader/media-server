@@ -26,6 +26,8 @@ struct aio_rtmp_server_handler_t
 	int (*onvideo)(aio_rtmp_userptr_t ptr, const void* data, size_t bytes, uint32_t timestamp);
 	///@param[in] data FLV AudioTagHeader + AACAUDIODATA: AudioSpecificConfig(14496-3) / Raw AAC frame data in UI8
 	int (*onaudio)(aio_rtmp_userptr_t ptr, const void* data, size_t bytes, uint32_t timestamp);
+	///@param[in] data AMF0/AMF3 script
+	int (*onscript)(aio_rtmp_userptr_t ptr, const void* data, size_t bytes, uint32_t timestamp);
 
 	///pull(server -> client)
 	///@return user-defined pointer, for onpause/onseek/onsend first parameter
@@ -43,6 +45,7 @@ int aio_rtmp_server_destroy(aio_rtmp_server_t* server);
 /// @param[in] session oncreate session parameter
 int aio_rtmp_server_send_audio(aio_rtmp_session_t* session, const void* flv, size_t bytes, uint32_t timestamp);
 int aio_rtmp_server_send_video(aio_rtmp_session_t* session, const void* flv, size_t bytes, uint32_t timestamp);
+int aio_rtmp_server_send_script(aio_rtmp_session_t* session, const void* flv, size_t bytes, uint32_t timestamp);
 
 size_t aio_rtmp_server_get_unsend(aio_rtmp_session_t* session);
 int aio_rtmp_server_get_addr(aio_rtmp_session_t* session, char ip[65], unsigned short* port);

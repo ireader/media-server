@@ -3,6 +3,7 @@
 #include "sys/system.h"
 #include "sys/sync.hpp"
 #include "aio-connect.h"
+#include "aio-timeout.h"
 #include "aio-rtmp-client.h"
 #include "flv-reader.h"
 #include "flv-proto.h"
@@ -45,6 +46,10 @@ static int STDCALL rtmp_client_push(void* flv)
 
 		case FLV_TYPE_VIDEO:
 			r = aio_rtmp_client_send_video(s_param.rtmp, packet, r, timestamp);
+			break;
+
+		case FLV_TYPE_SCRIPT:
+			r = aio_rtmp_client_send_script(s_param.rtmp, packet, r, timestamp);
 			break;
 
 		default:
@@ -112,6 +117,7 @@ void rtmp_publish_aio_test(const char* host, const char* app, const char* stream
 
 	while (aio_socket_process(5000) > 0)
 	{
+		aio_timeout_process();
 	}
 
 	aio_socket_clean();

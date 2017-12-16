@@ -149,6 +149,13 @@ static int rtmp_server_onvideo(void* param, const uint8_t* data, size_t bytes, u
 	return ctx->handler.onvideo(ctx->param, data, bytes, timestamp);
 }
 
+static int rtmp_server_onscript(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
+{
+	struct rtmp_server_t* ctx;
+	ctx = (struct rtmp_server_t*)param;
+	return ctx->handler.onscript(ctx->param, data, bytes, timestamp);
+}
+
 // 7.2.1.1. connect (p29)
 // _result/_error
 static int rtmp_server_onconnect(void* param, int r, double transaction, const struct rtmp_connect_t* connect)
@@ -383,6 +390,7 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.onaudio = rtmp_server_onaudio;
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
 	ctx->rtmp.onabort = rtmp_server_onabort;
+	ctx->rtmp.onscript = rtmp_server_onscript;
 	ctx->rtmp.u.server.onconnect = rtmp_server_onconnect;
 	ctx->rtmp.u.server.oncreate_stream = rtmp_server_oncreate_stream;
 	ctx->rtmp.u.server.ondelete_stream = rtmp_server_ondelete_stream;
@@ -509,13 +517,13 @@ int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t b
 	return rtmp_chunk_write(&ctx->rtmp, &header, (const uint8_t*)data);
 }
 
-int rtmp_server_send_metadata(struct rtmp_server_t* ctx, const void* data, size_t bytes)
+int rtmp_server_send_script(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
 
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_INVOKE;
-	header.timestamp = 0;
+	header.timestamp = timestamp;
 	header.length = (uint32_t)bytes;
 	header.type = RTMP_TYPE_DATA;
 	header.stream_id = ctx->stream_id;

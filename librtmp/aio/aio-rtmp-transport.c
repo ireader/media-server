@@ -190,3 +190,8 @@ size_t aio_rtmp_transport_get_unsend(struct aio_rtmp_transport_t* t)
 {
 	return t->bytes;
 }
+
+void aio_rtmp_transport_set_timeout(struct aio_rtmp_transport_t* t, int recv, int send)
+{
+	aio_tcp_transport_set_timeout(t->aio, recv, send);
+}

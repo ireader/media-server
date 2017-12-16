@@ -34,9 +34,13 @@ static int STDCALL rtmp_server_worker(void* param)
 		{
 			r = rtmp_server_send_video(s_rtmp, packet, r, timestamp);
 		}
+		else if (FLV_TYPE_SCRIPT == type)
+		{
+			r = rtmp_server_send_script(s_rtmp, packet, r, timestamp);
+		}
 		else
 		{
-			//assert(0);
+			assert(0);
 			r = 0;
 		}
 
