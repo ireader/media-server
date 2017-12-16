@@ -33,7 +33,7 @@ static int rtpport(void* param, unsigned short *rtp)
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	assert(0 == rtp_socket_create(NULL, ctx->rtp[ctx->media], ctx->port[ctx->media]));
 	*rtp = ctx->port[ctx->media][0];
-	*rtp = 0; // tcp
+//	*rtp = 0; // tcp
 	++ctx->media;
 	return 0;
 }
@@ -41,7 +41,7 @@ static int rtpport(void* param, unsigned short *rtp)
 static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
-	rtp_receiver_tcp_input(channel, data, bytes);
+//	rtp_receiver_tcp_input(channel, data, bytes);
 }
 
 static int ondescribe(void* param, const char* sdp)
@@ -89,7 +89,7 @@ static int onsetup(void* param)
 		}
 		else if (RTSP_TRANSPORT_RTP_TCP == transport->transport)
 		{
-			rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
+	//		rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 		}
 		else
 		{

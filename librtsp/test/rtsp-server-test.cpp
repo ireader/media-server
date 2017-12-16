@@ -70,6 +70,7 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 		"c=IN IP4 0.0.0.0\n"
 		"t=0 0\n"
 		"a=range:npt=0-%.1f\n"
+//		"a=range:npt=now-\n" // live
 		"a=recvonly\n"
 		"a=control:*\n"; // aggregate control
 

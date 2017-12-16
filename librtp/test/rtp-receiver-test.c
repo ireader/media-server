@@ -309,3 +309,45 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	if (0 == thread_create(&t, rtp_worker, ctx))
 		thread_detach(t);
 }
+
+static struct rtp_context_t* ctx;
+void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char* encoding)
+{
+	//struct rtp_context_t* ctx;
+	struct rtp_event_t evthandler;
+	struct rtp_payload_t handler;
+	const struct rtp_profile_t* profile;
+
+	ctx = malloc(sizeof(*ctx));
+	snprintf(ctx->rtp_buffer, sizeof(ctx->rtp_buffer), "tcp.%d.%s", payload, encoding);
+	snprintf(ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer), "tcp.%d.%s.rtp", payload, encoding);
+	ctx->fp = fopen(ctx->rtp_buffer, "wb");
+
+	profile = rtp_profile_find(payload);
+
+	handler.alloc = NULL;
+	handler.free = NULL;
+	handler.packet = rtp_packet;
+	ctx->payload = rtp_payload_decode_create(payload, encoding, &handler, ctx);
+	if (NULL == ctx->payload)
+		return NULL; // ignore
+
+	evthandler.on_rtcp = rtp_on_rtcp;
+	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2 * 1024 * 1024);
+
+	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
+	return ctx;
+}
+
+void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes)
+{
+	if (0 == channel)
+	{
+		rtp_payload_decode_input(ctx->payload, data, bytes);
+		rtp_onreceived(ctx->rtp, data, bytes);
+	}
+	else
+	{
+		rtp_onreceived_rtcp(ctx->rtp, data, bytes);
+	}
+}
