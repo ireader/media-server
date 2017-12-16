@@ -200,9 +200,14 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		{
 			mov_read_meta_sample_entry(mov, &track->stsd[i]);
 		}
+		else if (MOV_CLCP == track->handler_type)
+		{
+			mov_read_meta_sample_entry(mov, &track->stsd[i]);
+		}
 		else
 		{
-			assert(0);
+			assert(0); // ignore
+			mov_read_meta_sample_entry(mov, &track->stsd[i]);
 		}
 	}
 
