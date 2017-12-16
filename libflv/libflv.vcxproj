@@ -35,6 +35,7 @@
   <ItemGroup>
     <ClCompile Include="source\amf0.c" />
     <ClCompile Include="source\amf3.c" />
+    <ClCompile Include="source\flv-demuxer-script.c" />
     <ClCompile Include="source\flv-demuxer.c" />
     <ClCompile Include="source\flv-muxer.c" />
     <ClCompile Include="source\flv-parser.c" />

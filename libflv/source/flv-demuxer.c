@@ -2,6 +2,7 @@
 #include "flv-proto.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
+#include "mpeg4-hevc.h"
 #include "amf0.h"
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,11 @@ struct flv_demuxer_t
 	struct flv_audio_tag_t audio;
 	struct flv_video_tag_t video;
 	struct mpeg4_aac_t aac;
-	struct mpeg4_avc_t avc;
+	union
+	{
+		struct mpeg4_avc_t avc;
+		struct mpeg4_hevc_t hevc;
+	} v;
 
 	flv_demuxer_handler handler;
 	void* param;
@@ -145,26 +150,69 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		{
 			// AVCDecoderConfigurationRecord
 			assert(bytes > 5 + 7);
-			mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->avc);
+			mpeg4_avc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->v.avc);
 			return flv->handler(flv->param, FLV_VIDEO_AVCC, data + 5, bytes - 5, timestamp, timestamp, 0);
 		}
 		else if(1 == packetType)
 		{
-			assert(flv->avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
-			if (flv->avc.nalu > 0 && bytes > 5) // 5 ==  bytes flv eof
+			assert(flv->v.avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
+			if (flv->v.avc.nalu > 0 && bytes > 5) // 5 ==  bytes flv eof
 			{
 				// H.264
 				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
 					return -ENOMEM;
 
-				assert(flv->avc.nalu <= 4);
-				n = mpeg4_mp4toannexb(&flv->avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
+				assert(flv->v.avc.nalu <= 4);
+				n = mpeg4_mp4toannexb(&flv->v.avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
 				if (n <= 0 || n > flv->capacity)
 				{
 					assert(0);
 					return -ENOMEM;
 				}
 				return flv->handler(flv->param, FLV_VIDEO_H264, flv->ptr, n, timestamp + compositionTime, timestamp, (FLV_VIDEO_KEY_FRAME == flv->video.frame) ? 1 : 0);
+			}
+			return -EINVAL;
+		}
+		else if (2 == packetType)
+		{
+			return 0; // AVC end of sequence (lower level NALU sequence ender is not required or supported)
+		}
+		else
+		{
+			assert(0);
+			return -EINVAL;
+		}
+	}
+	else if (FLV_VIDEO_H265 == flv->video.codecid)
+	{
+		packetType = data[1];
+		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
+		//if (compositionTime >= (1 << 23)) compositionTime -= (1 << 24);
+		compositionTime = (compositionTime + 0xFF800000) ^ 0xFF800000; // signed 24-integer
+
+		if (0 == packetType)
+		{
+			// AVCDecoderConfigurationRecord
+			assert(bytes > 5 + 7);
+			mpeg4_hevc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->v.hevc);
+			return flv->handler(flv->param, FLV_VIDEO_HVCC, data + 5, bytes - 5, timestamp, timestamp, 0);
+		}
+		else if (1 == packetType)
+		{
+			assert(flv->v.hevc.numOfArrays > 0); // parse HEVCDecoderConfigurationRecord failed
+			if (flv->v.hevc.numOfArrays > 0 && bytes > 5) // 5 ==  bytes flv eof
+			{
+				// H.265
+				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
+					return -ENOMEM;
+
+				n = hevc_mp4toannexb(&flv->v.hevc, data + 5, bytes - 5, flv->ptr, flv->capacity);
+				if (n <= 0 || n > flv->capacity)
+				{
+					assert(0);
+					return -ENOMEM;
+				}
+				return flv->handler(flv->param, FLV_VIDEO_H265, flv->ptr, n, timestamp + compositionTime, timestamp, (FLV_VIDEO_KEY_FRAME == flv->video.frame) ? 1 : 0);
 			}
 			return -EINVAL;
 		}
@@ -185,68 +233,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	}
 }
 
-// http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
-// metadata keyframes/filepositions
-static int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes)
-{
-	const uint8_t* end;
-	char buffer[64] = { 0 };
-	double audiocodecid = 0;
-	double audiodatarate = 0;
-	double audiodelay = 0;
-	double audiosamplerate = 0;
-	double audiosamplesize = 0;
-	double videocodecid = 0;
-	double videodatarate = 0;
-	double framerate = 0;
-	double height = 0;
-	double width = 0;
-	double duration = 0;
-	double filesize = 0;
-	int canSeekToEnd = 0;
-	int stereo = 0;
-	struct amf_object_item_t prop[15];
-	struct amf_object_item_t items[1];
-
-#define AMF_OBJECT_ITEM_VALUE(v, amf_type, amf_name, amf_value, amf_size) { v.type=amf_type; v.name=amf_name; v.value=amf_value; v.size=amf_size; }
-	AMF_OBJECT_ITEM_VALUE(prop[0], AMF_NUMBER, "audiocodecid", &audiocodecid, sizeof(audiocodecid));
-	AMF_OBJECT_ITEM_VALUE(prop[1], AMF_NUMBER, "audiodatarate", &audiodatarate, sizeof(audiodatarate));
-	AMF_OBJECT_ITEM_VALUE(prop[2], AMF_NUMBER, "audiodelay", &audiodelay, sizeof(audiodelay));
-	AMF_OBJECT_ITEM_VALUE(prop[3], AMF_NUMBER, "audiosamplerate", &audiosamplerate, sizeof(audiosamplerate));
-	AMF_OBJECT_ITEM_VALUE(prop[4], AMF_NUMBER, "audiosamplesize", &audiosamplesize, sizeof(audiosamplesize));
-	AMF_OBJECT_ITEM_VALUE(prop[5], AMF_BOOLEAN, "stereo", &stereo, sizeof(stereo));
-
-	AMF_OBJECT_ITEM_VALUE(prop[6], AMF_BOOLEAN, "canSeekToEnd", &canSeekToEnd, sizeof(canSeekToEnd));
-	AMF_OBJECT_ITEM_VALUE(prop[7], AMF_STRING, "creationdate", buffer, sizeof(buffer));
-	AMF_OBJECT_ITEM_VALUE(prop[8], AMF_NUMBER, "duration", &duration, sizeof(duration));
-	AMF_OBJECT_ITEM_VALUE(prop[9], AMF_NUMBER, "filesize", &filesize, sizeof(filesize));
-	
-	AMF_OBJECT_ITEM_VALUE(prop[10], AMF_NUMBER, "videocodecid", &videocodecid, sizeof(videocodecid));
-	AMF_OBJECT_ITEM_VALUE(prop[11], AMF_NUMBER, "videodatarate", &videodatarate, sizeof(videodatarate));
-	AMF_OBJECT_ITEM_VALUE(prop[12], AMF_NUMBER, "framerate", &framerate, sizeof(framerate));
-	AMF_OBJECT_ITEM_VALUE(prop[13], AMF_NUMBER, "height", &height, sizeof(height));
-	AMF_OBJECT_ITEM_VALUE(prop[14], AMF_NUMBER, "width", &width, sizeof(width));
-
-	AMF_OBJECT_ITEM_VALUE(items[0], AMF_ECMA_ARRAY, "onMetaData", prop, sizeof(prop) / sizeof(prop[0]));
-#undef AMF_OBJECT_ITEM_VALUE
-
-	end = data + bytes;
-	if (AMF_STRING != data[0] || NULL == (data = AMFReadString(data + 1, end, 0, buffer, sizeof(buffer) - 1)))
-	{
-		assert(0);
-		return -1;
-	}
-
-	// onTextData/onCaption/onCaptionInfo/onCuePoint
-	if (0 != strcmp(buffer, "onMetaData"))
-		return 0; // skip
-
-	return amf_read_items(data, end, items, sizeof(items) / sizeof(items[0])) ? 0 : EINVAL;
-
-	// FLV I-index
-	//return 0;
-}
-
+int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes);
 int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
 	switch (type)
@@ -258,7 +245,8 @@ int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, siz
 		return flv_demuxer_video(flv, data, bytes, timestamp);
 
 	case FLV_TYPE_SCRIPT:
-		return flv_demuxer_script(flv, data, bytes);
+		//return flv_demuxer_script(flv, data, bytes);
+		return 0;
 		
 	default:
 		assert(0);

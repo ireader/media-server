@@ -31,6 +31,10 @@ static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* d
 	{
 		flv_muxer_avc(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
 	}
+	else if (PSI_STREAM_H265 == avtype)
+	{
+		flv_muxer_hevc(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
+	}
 }
 
 void ts2flv_test(const char* inputTS, const char* outputFLV)

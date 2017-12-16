@@ -98,5 +98,8 @@
     <ClCompile Include="source\hevc-annexbtomp4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\flv-demuxer-script.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -39,6 +39,8 @@ inline char flv_type(int type)
 	case FLV_AUDIO_ASC: return 'a';
 	case FLV_VIDEO_H264: return 'V';
 	case FLV_VIDEO_AVCC: return 'v';
+	case FLV_VIDEO_H265: return 'H';
+	case FLV_VIDEO_HVCC: return 'h';
 	default: return '*';
 	}
 }
@@ -66,11 +68,11 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 	{
 		mpeg_ts_write(ts, STREAM_AUDIO_MP3, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_VIDEO_H264 == codec)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;
-		mpeg_ts_write(ts, STREAM_VIDEO_H264, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, FLV_VIDEO_H264 == codec ? STREAM_VIDEO_H264 : STREAM_VIDEO_H265, pts * 90, dts * 90, data, bytes);
 
 		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
 		v_pts = pts;
