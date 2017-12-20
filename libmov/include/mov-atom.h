@@ -126,7 +126,7 @@ struct mov_stsd_t
 struct mov_stts_t
 {
 	uint32_t sample_count;
-	int64_t sample_delta; // in the time-scale of the media
+	uint32_t sample_delta; // in the time-scale of the media
 };
 
 struct mov_stsc_t

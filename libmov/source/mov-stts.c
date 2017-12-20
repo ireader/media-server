@@ -38,7 +38,7 @@ int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box)
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 {
 	unsigned int version;
-	uint32_t i, entry_count, sample_offset;
+	uint32_t i, entry_count;
 	struct mov_stbl_t* stbl = &mov->track->stbl;
 
 	version = file_reader_r8(mov->fp); /* version */
@@ -57,11 +57,7 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 	for (i = 0; i < entry_count; i++)
 	{
 		stbl->ctts[i].sample_count = file_reader_rb32(mov->fp);
-		sample_offset = file_reader_rb32(mov->fp); // uint32_t sample_offset
-		if (1 == version)
-			stbl->ctts[i].sample_delta = (int32_t)sample_offset;
-		else
-			stbl->ctts[i].sample_delta = sample_offset;
+		stbl->ctts[i].sample_delta = file_reader_rb32(mov->fp); // parse at int32_t
 	}
 
 	(void)box;

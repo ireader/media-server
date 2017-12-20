@@ -106,7 +106,7 @@ static int mov_track_build(struct mov_track_t* track)
 	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
 		for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
-			track->samples[n].pts += stbl->ctts[i].sample_delta;
+			track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta; // always as int, fixed mp4box delta version error
 	}
 	assert(0 == stbl->ctts_count || n == track->sample_count);
 
