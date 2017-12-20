@@ -52,7 +52,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 		assert(bytes == get_astd_length((const uint8_t*)data, bytes));
 		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
 	{
 		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
 		v_pts = pts;
