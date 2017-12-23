@@ -37,11 +37,10 @@ int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box)
 // 8.6.1.3 Composition Time to Sample Box (p47)
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 {
-	unsigned int version;
 	uint32_t i, entry_count;
 	struct mov_stbl_t* stbl = &mov->track->stbl;
 
-	version = file_reader_r8(mov->fp); /* version */
+	file_reader_r8(mov->fp); /* version */
 	file_reader_rb24(mov->fp); /* flags */
 	entry_count = file_reader_rb32(mov->fp);
 
@@ -58,6 +57,36 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 	{
 		stbl->ctts[i].sample_count = file_reader_rb32(mov->fp);
 		stbl->ctts[i].sample_delta = file_reader_rb32(mov->fp); // parse at int32_t
+	}
+
+	(void)box;
+	return file_reader_error(mov->fp);
+}
+
+// 8.6.1.4 Composition to Decode Box (p53)
+int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box)
+{
+	uint8_t version;
+//	struct mov_stbl_t* stbl = &mov->track->stbl;
+
+	version = (uint8_t)file_reader_r8(mov->fp); /* version */
+	file_reader_rb24(mov->fp); /* flags */
+
+	if (0 == version)
+	{
+		(int32_t)file_reader_rb32(mov->fp); /* compositionToDTSShift */
+		(int32_t)file_reader_rb32(mov->fp); /* leastDecodeToDisplayDelta */
+		(int32_t)file_reader_rb32(mov->fp); /* greatestDecodeToDisplayDelta */
+		(int32_t)file_reader_rb32(mov->fp); /* compositionStartTime */
+		(int32_t)file_reader_rb32(mov->fp); /* compositionEndTime */
+	}
+	else
+	{
+		(int64_t)file_reader_rb64(mov->fp);
+		(int64_t)file_reader_rb64(mov->fp);
+		(int64_t)file_reader_rb64(mov->fp);
+		(int64_t)file_reader_rb64(mov->fp);
+		(int64_t)file_reader_rb64(mov->fp);
 	}
 
 	(void)box;

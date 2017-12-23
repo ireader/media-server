@@ -202,6 +202,7 @@ int mov_read_stsc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);

@@ -52,6 +52,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_track_build(struct mov_track_t* track)
 {
 	size_t i, j, k;
+	uint32_t dts_shift;
 	uint64_t n, chunk_offset;
 	struct mov_stbl_t* stbl = &track->stbl;
 
@@ -102,11 +103,21 @@ static int mov_track_build(struct mov_track_t* track)
 	}
 	assert(n - 1 == track->sample_count);
 
+	// make sure pts >= dts
+	dts_shift = 0;
+	for (i = 0, n = 0; i < stbl->ctts_count; i++)
+	{
+		if ((int32_t)stbl->ctts[i].sample_delta < 0 
+			&& (int32_t)stbl->ctts[i].sample_delta != -1 // see more cslg box
+			&& dts_shift < (uint32_t)(-(int32_t)stbl->ctts[i].sample_delta))
+			dts_shift = -(int32_t)stbl->ctts[i].sample_delta;
+	}
+
 	// sample cts/pts
 	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
 		for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
-			track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta; // always as int, fixed mp4box delta version error
+			track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta + dts_shift; // always as int, fixed mp4box delta version error
 	}
 	assert(0 == stbl->ctts_count || n == track->sample_count);
 
@@ -288,6 +299,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
 	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },
+	{ MOV_TAG('c', 's', 'l', 'g'), MOV_STBL, mov_read_cslg },
 	{ MOV_TAG('d', 'i', 'n', 'f'), MOV_MINF, mov_read_default },
 	{ MOV_TAG('d', 'r', 'e', 'f'), MOV_DINF, mov_read_dref },
 	{ MOV_TAG('e', 'd', 't', 's'), MOV_TRAK, mov_read_default },
