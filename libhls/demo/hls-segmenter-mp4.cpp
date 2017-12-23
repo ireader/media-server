@@ -4,12 +4,12 @@ extern "C"
 {
 #include "libavformat/avformat.h"
 }
+#include "hls-fmp4.h"
 #include "hls-m3u8.h"
-#include "hls-media.h"
 #include "hls-param.h"
-#include "mpeg4-avc.h"
-#include "mpeg4-aac.h"
+#include "mov-format.h"
 #include "mpeg-ps.h"
+#include <assert.h>
 
 static char s_packet[2 * 1024 * 1024];
 
@@ -62,19 +62,21 @@ static AVFormatContext* ffmpeg_open(const char* url)
 	return ic;
 }
 
-static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, int64_t /*dts*/, int64_t duration)
+static char name[128] = { 0 };
+static int hls_segment_open(void* /*m3u8*/, char* file, size_t bytes)
 {
 	static int i = 0;
-	char name[128] = { 0 };
-	snprintf(name, sizeof(name), "%d.ts", i++);
-	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, 0);
-
-	FILE* fp = fopen(name, "wb");
-	fwrite(data, 1, bytes, fp);
-	fclose(fp);
+	snprintf(name, sizeof(name), "hls/%d.mp4", i++);
+	snprintf(file, bytes, "%s", name);
+	return 0;
 }
 
-void mp4_to_ts_test(const char* mp4)
+static int hls_segment_close(void* m3u8, int64_t pts, int64_t /*dts*/, int64_t duration)
+{
+	return hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, 0);
+}
+
+void hls_segmenter_fmp4_test(const char* file)
 {
 	ffmpeg_init();
 
@@ -82,23 +84,27 @@ void mp4_to_ts_test(const char* mp4)
 	memset(&pkt, 0, sizeof(pkt));
 	//av_init_packet(&pkt);
 
-	AVFormatContext* ic = ffmpeg_open(mp4);
-	hls_m3u8_t* m3u = hls_m3u8_create(0);
-	hls_media_t* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
+	struct hls_fmp4_handler_t handler = {
+		hls_segment_open,
+		hls_segment_close,
+	};
 
-	struct mpeg4_avc_t avc;
-	struct mpeg4_aac_t aac;
-	for (int i = 0; i < ic->nb_streams; i++)
+	AVFormatContext* ic = ffmpeg_open(file);
+	hls_m3u8_t* m3u = hls_m3u8_create(0);
+	hls_fmp4_t* hls = hls_fmp4_create(HLS_DURATION * 1000, &handler, m3u);
+
+	int track_aac = -1;
+	int track_264 = -1;
+	int track_265 = -1;
+	for (unsigned int i = 0; i < ic->nb_streams; i++)
 	{
 		AVStream* st = ic->streams[i];
-		if (AVMEDIA_TYPE_VIDEO == st->codecpar->codec_type)
-		{
-			mpeg4_avc_decoder_configuration_record_load(st->codecpar->extradata, st->codecpar->extradata_size, &avc);
-		}
-		else if (AVMEDIA_TYPE_AUDIO == st->codecpar->codec_type)
-		{
-			mpeg4_aac_audio_specific_config_load(st->codecpar->extradata, st->codecpar->extradata_size, &aac);
-		}
+		if (AV_CODEC_ID_AAC == st->codecpar->codec_id)
+			track_aac = hls_fmp4_add_audio(hls, MOV_OBJECT_AAC, st->codecpar->channels, st->codecpar->bits_per_coded_sample, st->codecpar->sample_rate, st->codecpar->extradata, st->codecpar->extradata_size);
+		else if (AV_CODEC_ID_H264 == st->codecpar->codec_id)
+			track_264 = hls_fmp4_add_video(hls, MOV_OBJECT_H264, st->codecpar->width, st->codecpar->height, st->codecpar->extradata, st->codecpar->extradata_size);
+		else if(AV_CODEC_ID_H265 == st->codecpar->codec_id)
+			track_265 = hls_fmp4_add_video(hls, MOV_OBJECT_HEVC, st->codecpar->width, st->codecpar->height, st->codecpar->extradata, st->codecpar->extradata_size);
 	}
 
 	int r = av_read_frame(ic, &pkt);
@@ -107,18 +113,24 @@ void mp4_to_ts_test(const char* mp4)
 		AVStream* st = ic->streams[pkt.stream_index];
 		int64_t pts = (int64_t)(pkt.pts * av_q2d(st->time_base) * 1000);
 		int64_t dts = (int64_t)(pkt.dts * av_q2d(st->time_base) * 1000);
-		if (AVMEDIA_TYPE_VIDEO == st->codecpar->codec_type)
-		{
-			//printf("[V] pts: %08lld, dts: %08lld\n", pts, dts);
-			r = mpeg4_mp4toannexb(&avc, pkt.data, pkt.size, s_packet, sizeof(s_packet));
-			hls_media_input(hls, STREAM_VIDEO_H264, s_packet, r, pts, dts, 0);
-		}
-		else if (AVMEDIA_TYPE_AUDIO == st->codecpar->codec_type)
+		if (AV_CODEC_ID_AAC == st->codecpar->codec_id)
 		{
 			//printf("[A] pts: %08lld, dts: %08lld\n", pts, dts);
-			r = mpeg4_aac_adts_save(&aac, pkt.size, (uint8_t*)s_packet, sizeof(s_packet));
-			memcpy(s_packet + r, pkt.data, pkt.size);
-			hls_media_input(hls, STREAM_AUDIO_AAC, s_packet, r + pkt.size, pts, dts, 0);
+			hls_fmp4_input(hls, track_aac, pkt.data, pkt.size, pts, dts, 0);
+		}
+		else if (AV_CODEC_ID_H264 == st->codecpar->codec_id)
+		{
+			//printf("[V] pts: %08lld, dts: %08lld\n", pts, dts);
+			hls_fmp4_input(hls, track_264, pkt.data, pkt.size, pts, dts, (pkt.flags & AV_PKT_FLAG_KEY) ? MOV_AV_FLAG_KEYFREAME : 0);
+		}
+		else if (AV_CODEC_ID_H265 == st->codecpar->codec_id)
+		{
+			//printf("[V] pts: %08lld, dts: %08lld\n", pts, dts);
+			hls_fmp4_input(hls, track_265, pkt.data, pkt.size, pts, dts, (pkt.flags & AV_PKT_FLAG_KEY) ? MOV_AV_FLAG_KEYFREAME : 0);
+		}
+		else
+		{
+			assert(0);
 		}
 
 		//av_packet_unref(&pkt);
@@ -126,15 +138,15 @@ void mp4_to_ts_test(const char* mp4)
 	}
 
 	// write m3u8 file
-	hls_media_input(hls, 0, NULL, 0, 0, 0, 1);
+	hls_fmp4_input(hls, 0, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, s_packet, sizeof(s_packet));
-	FILE* fp = fopen("playlist.m3u8", "wb");
+	FILE* fp = fopen("hls/playlist.m3u8", "wb");
 	fwrite(s_packet, 1, strlen(s_packet), fp);
 	fclose(fp);
 
 	avformat_close_input(&ic);
 	avformat_free_context(ic);
-	hls_media_destroy(hls);
 	hls_m3u8_destroy(m3u);
+	hls_fmp4_destroy(hls);
 }
 #endif
