@@ -1,6 +1,5 @@
 #include "hls-media.h"
 #include "hls-param.h"
-#include "hls-h264.h"
 #include "mpeg-ts.h"
 #include "mpeg-ps.h"
 #include <stdlib.h>
@@ -112,24 +111,17 @@ void hls_media_destroy(struct hls_media_t* hls)
 	free(hls);
 }
 
-static inline int hls_media_keyframe(int avtype, const void* data, size_t bytes)
-{
-	// IDR-frame or audio only stream
-
-	// TODO: check sps/pps???
-	return (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes))
-		|| (STREAM_VIDEO_H265 == avtype && h265_irap((const uint8_t*)data, bytes));
-}
-
-int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int force_new_segment)
+int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	int segment;
+	int force_new_segment;
 	int64_t duration;
 
 	assert(dts < hls->dts_last + hls->duration || PTS_NO_VALUE == hls->dts_last);
 
 	// PTS/DTS rewind
-	if (dts + hls->duration < hls->dts_last)
+	force_new_segment = 0;
+	if (dts + hls->duration < hls->dts_last || NULL == data || 0 == bytes)
 		force_new_segment = 1;
 
 	// IDR frame
@@ -137,7 +129,7 @@ int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_
 	// 2. new segment per keyframe
 	// 3. check segment file size
 	if ((dts - hls->dts >= hls->duration || 0 == hls->duration)
-		&& (hls_media_keyframe(avtype, data, bytes) || hls->bytes >= hls->maxsize) )
+		&& (HLS_FLAGS_KEYFRAME & flags || hls->bytes >= hls->maxsize) )
 	{
 		segment = 1;
 	}

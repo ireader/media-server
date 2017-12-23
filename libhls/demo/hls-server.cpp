@@ -96,7 +96,10 @@ static int flv_handler(void* param, int codec, const void* data, size_t bytes, u
 		return hls_media_input(hls, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
-		return hls_media_input(hls, STREAM_VIDEO_H264, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, STREAM_VIDEO_H264, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
+
+	case FLV_VIDEO_H265:
+		return hls_media_input(hls, STREAM_VIDEO_H265, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
 
 	default:
 		// nothing to do
@@ -228,6 +231,10 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	else if (path_testfile(fullpath.c_str()))
 	{
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
+		if(std::string::npos != fullpath.find(".m3u8"))
+			http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
+		else if (std::string::npos != fullpath.find(".mp4"))
+			http_server_set_header(session, "content-type", "video/mp4");
 		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 
