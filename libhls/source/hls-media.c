@@ -114,8 +114,11 @@ void hls_media_destroy(struct hls_media_t* hls)
 
 static inline int hls_media_keyframe(int avtype, const void* data, size_t bytes)
 {
+	// IDR-frame or audio only stream
+
 	// TODO: check sps/pps???
-	return STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes);  // IDR-frame or audio only stream
+	return (STREAM_VIDEO_H264 == avtype && h264_idr((const uint8_t*)data, bytes))
+		|| (STREAM_VIDEO_H265 == avtype && h265_irap((const uint8_t*)data, bytes));
 }
 
 int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int force_new_segment)
@@ -166,7 +169,7 @@ int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_
 		hls->audio_only_flag = 1;
 	}
 
-	if (STREAM_VIDEO_H264 == avtype && hls->audio_only_flag)
+	if (hls->audio_only_flag && (STREAM_VIDEO_H264 == avtype || STREAM_VIDEO_H265 == avtype))
 		hls->audio_only_flag = 0; // clear audio only flag
 
 	hls->dts_last = dts;
