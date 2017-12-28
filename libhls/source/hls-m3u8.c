@@ -158,7 +158,7 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 		if (seg->discontinuity)
 			n += snprintf(playlist + n, bytes - n, "#EXT-X-DISCONTINUITY\n");
 		if(bytes > n)
-			n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f\n%s\n", seg->duration / 1000.0, seg->name);
+			n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
 	}
 
 	if (eof && bytes > n + 15)
