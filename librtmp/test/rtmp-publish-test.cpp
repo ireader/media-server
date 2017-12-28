@@ -21,42 +21,54 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 	int r, type;
 	uint32_t timestamp;
 	uint32_t s_timestamp = 0;
+	uint32_t diff = 0;
+	uint64_t clock;
 	
-	void* f = flv_reader_create(flv);
-
 	static char packet[2 * 1024 * 1024];
-	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (1)
 	{
-		if(timestamp > s_timestamp)
-			system_sleep(timestamp - s_timestamp);
-		s_timestamp = timestamp;
+		void* f = flv_reader_create(flv);
 
-		if (FLV_TYPE_AUDIO == type)
+		clock = system_clock(); // timestamp start from 0
+		while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 		{
-			r = rtmp_client_push_audio(rtmp, packet, r, timestamp);
-		}
-		else if (FLV_TYPE_VIDEO == type)
-		{
-			r = rtmp_client_push_video(rtmp, packet, r, timestamp);
-		}
-		else if(FLV_TYPE_SCRIPT == type)
-		{
-			r = rtmp_client_push_script(rtmp, packet, r, timestamp);
-		}
-		else
-		{
-			assert(0);
-			r = 0; // ignore
+			uint64_t t = system_clock();
+			if (clock + timestamp > t)
+				system_sleep(clock + timestamp - t);
+			
+			timestamp += diff;
+			s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
+
+			if (FLV_TYPE_AUDIO == type)
+			{
+				r = rtmp_client_push_audio(rtmp, packet, r, timestamp);
+			}
+			else if (FLV_TYPE_VIDEO == type)
+			{
+				printf("timestamp: %u, s_timestamp: %u\n", timestamp, s_timestamp);
+				r = rtmp_client_push_video(rtmp, packet, r, timestamp);
+			}
+			else if (FLV_TYPE_SCRIPT == type)
+			{
+				r = rtmp_client_push_script(rtmp, packet, r, timestamp);
+			}
+			else
+			{
+				assert(0);
+				r = 0; // ignore
+			}
+
+			if (0 != r)
+			{
+				assert(0);
+				break; // TODO: handle send failed
+			}
 		}
 
-		if (0 != r)
-		{
-			assert(0);
-			break; // TODO: handle send failed
-		}
+		flv_reader_destroy(f);
+
+		diff = s_timestamp + 30;
 	}
-
-	flv_reader_destroy(f);
 }
 
 // rtmp://video-center.alivecdn.com/live/hello?vhost=your.domain
