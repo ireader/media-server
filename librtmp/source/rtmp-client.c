@@ -309,11 +309,11 @@ static int rtmp_client_onvideo(void* param, const uint8_t* data, size_t bytes, u
 	return ctx->handler.onvideo(ctx->param, data, bytes, timestamp);
 }
 
-static int rtmp_client_onscript(void* param, const void* meta, size_t bytes, uint32_t timestamp)
+static int rtmp_client_onscript(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_client_t* ctx;
 	ctx = (struct rtmp_client_t*)param;
-	return ctx->handler.onscript(ctx->param, meta, bytes, timestamp);
+	return ctx->handler.onscript(ctx->param, data, bytes, timestamp);
 }
 
 static int rtmp_client_send(void* param, const uint8_t* header, uint32_t headerBytes, const uint8_t* payload, uint32_t payloadBytes)
@@ -368,6 +368,7 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->connect.audioCodecs = 3191; //SUPPORT_SND_AAC;
 	ctx->connect.videoCodecs = 252; // SUPPORT_VID_H264;
 	ctx->connect.videoFunction = SUPPORT_VID_CLIENT_SEEK;
+	ctx->connect.encoding = RTMP_ENCODING_AMF_0;
 
 	return ctx;
 }

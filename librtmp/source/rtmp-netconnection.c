@@ -22,7 +22,7 @@ uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transacti
 	out = AMFWriteNamedDouble(out, end, "audioCodecs", 11, connect->audioCodecs);
 	out = AMFWriteNamedDouble(out, end, "videoCodecs", 11, connect->videoCodecs);
 	out = AMFWriteNamedDouble(out, end, "videoFunction", 13, connect->videoFunction);
-	//out = AMFWriteNamedDouble(out, end, "objectEncoding", 14, RTMP_ENCODING_AMF_0);
+	out = AMFWriteNamedDouble(out, end, "objectEncoding", 14, connect->encoding);
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
