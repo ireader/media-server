@@ -2,7 +2,9 @@
 #include "aio-tcp-transport.h"
 #include "sys/sock.h"
 #include "sys/locker.h"
+#include "sys/system.h"
 #include "list.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -19,6 +21,7 @@ struct aio_rtmp_chunk_t
 struct aio_rtmp_transport_t
 {
 	int code;
+	uint64_t wclock; // last write done clock
 
 	int vecsize;
 	socket_bufvec_t vec[VEC];
@@ -82,11 +85,18 @@ static void aio_rtmp_ondestroy(void* param)
 	free(t);
 }
 
+static int aio_rtmp_transport_check_write_timeout(struct aio_rtmp_transport_t* t);
 static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_transport_t* t;
 	t = (struct aio_rtmp_transport_t*)param;
-	t->handler.onrecv(t->param, code, t->buffer, bytes);
+	
+	// if we have active send connection, recv timeout maybe normal case
+	// e.g. RTMP play session
+	if (ETIMEDOUT == code && aio_rtmp_transport_check_write_timeout(t))
+		code = 0; // send active, so try recv more
+	else
+		t->handler.onrecv(t->param, code, t->buffer, bytes);
 
 	if (0 == code)
 	{
@@ -104,6 +114,8 @@ static void aio_rtmp_onsend(void* param, int code, size_t bytes)
 	
 	if (0 == code)
 	{
+		t->wclock = system_clock(); // update send clock(for check timeout)
+
 		locker_lock(&t->locker);
 		for (assert(t->vecsize > 0); t->vecsize > 0; --t->vecsize)
 		{
@@ -194,4 +206,11 @@ size_t aio_rtmp_transport_get_unsend(struct aio_rtmp_transport_t* t)
 void aio_rtmp_transport_set_timeout(struct aio_rtmp_transport_t* t, int recv, int send)
 {
 	aio_tcp_transport_set_timeout(t->aio, recv, send);
+}
+
+static int aio_rtmp_transport_check_write_timeout(struct aio_rtmp_transport_t* t)
+{
+	int recv, send;
+	aio_tcp_transport_get_timeout(t->aio, &recv, &send);
+	return t->wclock + recv > system_clock() ? 0 : 1;
 }

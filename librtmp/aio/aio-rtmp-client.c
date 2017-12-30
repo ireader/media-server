@@ -150,9 +150,6 @@ static void aio_rtmp_transport_onrecv(void* param, int code, const void* data, s
 			client->ready = 1;
 			if (client->handler.onready)
 				client->handler.onready(client->param);
-
-			// disable recv timeout
-			aio_rtmp_transport_set_timeout(client->aio, 0, TIMEOUT_SEND);
 		}
 	}
 

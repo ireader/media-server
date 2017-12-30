@@ -227,7 +227,6 @@ static int rtmp_handler_onplay(void* param, const char* app, const char* stream,
 	struct aio_rtmp_session_t* session;
 	session = (struct aio_rtmp_session_t*)param;
 	session->usr = session->server->handle.onplay(session->server->param, session, app, stream, start, duration, reset);
-	aio_rtmp_transport_set_timeout(session->aio, 0, TIMEOUT_SEND); // disable recv timeout
 	return session->usr ? 0 : -1;
 }
 
