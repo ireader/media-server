@@ -1,98 +1,75 @@
-#include "rtsp-server.h"
-#include "aio-rwutil.h"
-#include "sys/locker.h"
+#include "rtsp-server-aio.h"
+#include "aio-tcp-transport.h"
+#include "sys/sock.h"
 #include "sys/atomic.h"
-#include "sockutil.h"
-#include "aio-recv.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
+
+#define TIMEOUT_RECV 20000
+#define TIMEOUT_SEND 10000
 
 struct rtsp_session_t
 {
-	int32_t ref;
-	locker_t locker;
+	uint64_t wclock; // last sent clock(for check recv timeout)
+	aio_tcp_transport_t* aio;
 	char buffer[1024];
 
 	struct rtsp_server_t *rtsp;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
-	aio_socket_t socket;
-	
-	int rtimeout;
-	int wtimeout;
-	struct aio_recv_t recv;
-	struct aio_socket_rw_t send;
+
+	void (*onerror)();
+	void* param;
 };
-
-static int rtsp_session_recv(struct rtsp_session_t *session);
-static int rtsp_session_destroy(struct rtsp_session_t *session);
-
-static void rtsp_session_release(struct rtsp_session_t *session)
-{
-	if (0 == atomic_decrement32(&session->ref))
-	{
-		assert(NULL == session->socket);
-		
-		if (session->rtsp)
-		{
-			rtsp_server_destroy(session->rtsp);
-			session->rtsp = NULL;
-		}
-
-		locker_destroy(&session->locker);
-#if defined(_DEBUG) || defined(DEBUG)
-		memset(session, 0xCC, sizeof(*session));
-#endif
-		free(session);
-	}
-}
 
 static void rtsp_session_ondestroy(void* param)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
-	assert(invalid_aio_socket == session->socket);
-	rtsp_session_release(session);
+
+	// user call rtsp_server_destroy
+	if (session->rtsp)
+	{
+		rtsp_server_destroy(session->rtsp);
+		session->rtsp = NULL;
+	}
+
+#if defined(_DEBUG) || defined(DEBUG)
+	memset(session, 0xCC, sizeof(*session));
+#endif
+	free(session);
 }
 
 static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 {
-	int r;
 	size_t remain;
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
 
 	if (0 == code)
 	{
-		// call
-		// user must reply(send/send_vec/send_file) in handle
-		atomic_increment32(&session->ref);
-
 		remain = bytes;
-		r = rtsp_server_input(session->rtsp, session->buffer, &remain);
-		assert(0 == remain); // FIXED ME: input multi-request
-		if (1 == r)
+		code = rtsp_server_input(session->rtsp, session->buffer, &remain);
+		if (0 == code)
+		{
+			// TODO: pipeline remain data
+			assert(bytes > remain);
+			assert(0 == remain);
+		}
+		
+		if (code >= 0)
 		{
 			// need more data
-			atomic_decrement32(&session->ref);
+			code = aio_tcp_transport_recv(session->aio, session->buffer, sizeof(session->buffer));
 		}
-		else
-		{
-			code = r;
-		}
-	}
-
-	if (0 == code)
-	{
-		// recv more data
-		code = rtsp_session_recv(session);
 	}
 
 	// error or peer closed
-	if (0 != code)
+	if (0 != code || 0 == bytes)
 	{
-		code = rtsp_session_destroy(session);
+		session->onerror(session->param, session->rtsp, code ? code : ECONNRESET);
 	}
 }
 
@@ -102,70 +79,66 @@ static void rtsp_session_onsend(void* param, int code, size_t bytes)
 	session = (struct rtsp_session_t *)param;
 //	session->server->onsend(session, code, bytes);
 	if (0 != code)
-		code = rtsp_session_destroy(session);
-	rtsp_session_release(session);
+		session->onerror(session->param, session->rtsp, code);
 	(void)bytes;
-}
-
-static int rtsp_session_destroy(struct rtsp_session_t *session)
-{
-	aio_socket_t socket;
-	locker_lock(&session->locker);
-	socket = session->socket;
-	session->socket = invalid_aio_socket;
-	locker_unlock(&session->locker);
-	
-	if (invalid_aio_socket == socket)
-		return 0;
-	return aio_socket_destroy(socket, rtsp_session_ondestroy, session);
-}
-
-static int rtsp_session_recv(struct rtsp_session_t *session)
-{
-	int r = -1;
-	locker_lock(&session->locker);
-	if (invalid_aio_socket != session->socket)
-		r = aio_recv(&session->recv, session->rtimeout, session->socket, session->buffer, sizeof(session->buffer), rtsp_session_onrecv, session);
-	locker_unlock(&session->locker);
-	return r;
 }
 
 static int rtsp_session_send(void* ptr, const void* data, size_t bytes)
 {
-	int r = -1;
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)ptr;
-	locker_lock(&session->locker);
-	if(invalid_aio_socket != session->socket)
-		r = aio_socket_send_all(&session->send, session->wtimeout, session->socket, data, bytes, rtsp_session_onsend, session);
-	locker_unlock(&session->locker);
-
-	if (0 != r) rtsp_session_release(session);
-	return r;
+	return aio_tcp_transport_send(session->aio, data, bytes);
 }
 
-int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct rtsp_handler_t* handler, void* param)
+static int rtsp_session_close(void* ptr)
+{
+	struct rtsp_session_t *session;
+	session = (struct rtsp_session_t *)ptr;
+	session->rtsp = NULL; // user call rtsp_server_destroy
+	return aio_tcp_transport_destroy(session->aio);
+}
+
+int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct aio_rtsp_handler_t* handler, void* param)
 {
 	char ip[65];
 	unsigned short port;
 	struct rtsp_session_t *session;
 	struct rtsp_handler_t rtsphandler;
+	struct aio_tcp_transport_handler_t h;
 
-	memcpy(&rtsphandler, handler, sizeof(rtsphandler));
+	memset(&h, 0, sizeof(h));
+	h.ondestroy = rtsp_session_ondestroy;
+	h.onrecv = rtsp_session_onrecv;
+	h.onsend = rtsp_session_onsend;
+
+	memcpy(&rtsphandler, &handler->base, sizeof(rtsphandler));
+	rtsphandler.close = rtsp_session_close;
 	rtsphandler.send = rtsp_session_send;
 
 	session = (struct rtsp_session_t*)malloc(sizeof(*session));
 	if (!session) return -1;
 
-	session->ref = 1;
-	session->rtimeout = 20000;
-	session->wtimeout = 20000;
-	locker_create(&session->locker);
 	socket_addr_to(addr, addrlen, ip, &port);
 	assert(addrlen <= sizeof(session->addr));
 	session->addrlen = addrlen < sizeof(session->addr) ? addrlen : sizeof(session->addr);
 	memcpy(&session->addr, addr, session->addrlen); // save client ip/port
-	session->socket = aio_socket_create(socket, 1);
+
+	session->param = param;
+	session->onerror = handler->onerror;
+	session->aio = aio_tcp_transport_create(socket, &h, session);
 	session->rtsp = rtsp_server_create(ip, port, &rtsphandler, param, session); // reuse-able, don't need create in every link
-	return aio_recv(&session->recv, session->rtimeout, session->socket, session->buffer, sizeof(session->buffer), rtsp_session_onrecv, session);
+	if (!session->rtsp || !session->aio)
+	{
+		rtsp_session_ondestroy(session);
+		return -1;
+	}
+	
+	aio_tcp_transport_set_timeout(session->aio, TIMEOUT_RECV, TIMEOUT_SEND);
+	if (0 != aio_tcp_transport_recv(session->aio, session->buffer, sizeof(session->buffer)))
+	{
+		rtsp_session_ondestroy(session);
+		return -1;
+	}
+
+	return 0;
 }

@@ -24,6 +24,9 @@ struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port,
 
 int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 {
+	if (rtsp->handler.close)
+		rtsp->handler.close(rtsp->sendparam);
+
 	if (rtsp->parser)
 	{
 		rtsp_parser_destroy(rtsp->parser);

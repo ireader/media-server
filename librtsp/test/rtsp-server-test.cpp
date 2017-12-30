@@ -1,13 +1,11 @@
 #if defined(_DEBUG) || defined(DEBUG)
 #include "cstringext.h"
 #include "sys/sock.h"
-#include "sys/thread.h"
 #include "sys/system.h"
 #include "sys/path.h"
 #include "sys/sync.hpp"
+#include "aio-worker.h"
 #include "ctypedef.h"
-#include "aio-socket.h"
-#include "aio-timeout.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
 #include "rtp-socket.h"
@@ -337,36 +335,26 @@ static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri
 	return rtsp_server_reply_teardown(rtsp, 200);
 }
 
-static int STDCALL rtsp_worker(void* /*param*/)
+static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int /*code*/)
 {
-	while (aio_socket_process(200) >= 0 || errno == EINTR) // ignore epoll EINTR
-	{
-	}
-	return 0;
+	rtsp_server_destroy(rtsp);
 }
 
+#define N_AIO_THREAD 1
 extern "C" void rtsp_example()
 {
-	aio_socket_init(1);
+	aio_worker_init(N_AIO_THREAD);
 
-	struct rtsp_handler_t handler;
-	handler.ondescribe = rtsp_ondescribe;
-    handler.onsetup = rtsp_onsetup;
-    handler.onplay = rtsp_onplay;
-    handler.onpause = rtsp_onpause;
-    handler.onteardown = rtsp_onteardown;
+	struct aio_rtsp_handler_t handler;
+	handler.base.ondescribe = rtsp_ondescribe;
+    handler.base.onsetup = rtsp_onsetup;
+    handler.base.onplay = rtsp_onplay;
+    handler.base.onpause = rtsp_onpause;
+    handler.base.onteardown = rtsp_onteardown;
+	handler.onerror = rtsp_onerror;
     
-	void* tcp = rtsp_server_listen(NULL, 554, &handler, NULL);
-	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL);
-	assert(tcp && udp);
-
-	// create worker thread
-	for (int i = 0; i < 1; i++)
-	{
-		pthread_t thread;
-		thread_create(&thread, rtsp_worker, NULL);
-		thread_detach(thread);
-	}
+	void* tcp = rtsp_server_listen(NULL, 554, &handler, NULL); assert(tcp);
+//	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL); assert(udp);
 
 	// test only
     while(1)
@@ -381,12 +369,10 @@ extern "C" void rtsp_example()
 			if(1 == session.status)
 				session.media->Play();
 		}
-
-		aio_timeout_process();
     }
 
-	aio_socket_clean();
+	aio_worker_clean(N_AIO_THREAD);
 	rtsp_server_unlisten(tcp);
-	rtsp_transport_udp_destroy(udp);
+//	rtsp_transport_udp_destroy(udp);
 }
 #endif

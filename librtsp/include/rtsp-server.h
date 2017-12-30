@@ -13,6 +13,10 @@ typedef struct rtsp_server_t rtsp_server_t;
 
 struct rtsp_handler_t
 {
+	/// rtsp_server_destroy will call this function
+	/// @param[in] ptr2 user-defined parameter
+	int (*close)(void* ptr2);
+
 	/// Network send
 	/// @param[in] ptr2 user-defined parameter
 	/// @param[in] data send data
