@@ -274,7 +274,7 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 	mov = &writer->mov;
 	mov->flags = flags;
 	mov->fp = file_writer_create(file);
-	if (NULL == mov->fp || 0 != mov_writer_init(mov))
+	if (NULL == mov->fp)
 	{
 		mov_writer_destroy(writer);
 		return NULL;
@@ -286,6 +286,7 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 	mov->mvhd.timescale = 1000;
 	mov->mvhd.duration = 0; // placeholder
 
+	mov_writer_init(mov);
 	mov_write_ftyp(mov);
 
 	// mdat
