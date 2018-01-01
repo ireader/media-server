@@ -85,7 +85,7 @@ static void mov_video_info(void* flv, uint32_t track, uint8_t object, int /*widt
 	flv_writer_input(flv, 9, s_packet, bytes + 5, 0);
 }
 
-static void mov_audio_info(void* flv, uint32_t track, uint8_t object, int /*channel_count*/, int /*bit_per_sample*/, int /*sample_rate*/, const void* extra, size_t bytes)
+static void mov_audio_info(void* flv, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
 	s_aac_track = track;
 	assert(MOV_OBJECT_AAC == object);
@@ -94,6 +94,11 @@ static void mov_audio_info(void* flv, uint32_t track, uint8_t object, int /*chan
 
 #if 1
 	struct mpeg4_aac_t aac;
+	memset(&aac, 0, sizeof(aac));
+	aac.profile = MPEG4_AAC_LC;
+	aac.channel_configuration = channel_count;
+	aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
+
 	mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &aac);
 	int n = mpeg4_aac_audio_specific_config_save(&aac, s_packet + 2, sizeof(s_packet) - 2);
 	flv_writer_input(flv, 8, s_packet, n + 2, 0);
