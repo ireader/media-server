@@ -13,11 +13,14 @@
 struct hls_m3u8_t
 {
 	int live;
+	int version;
 	int64_t seq; // m3u8 sequence number (base 0)
 	int64_t duration;// target duration
 
 	size_t count;
 	struct list_head root;
+
+	char* ext_x_map;
 };
 
 struct hls_segment_t
@@ -32,14 +35,15 @@ struct hls_segment_t
 	size_t capacity;
 };
 
-struct hls_m3u8_t* hls_m3u8_create(int live)
+struct hls_m3u8_t* hls_m3u8_create(int live, int version)
 {
 	struct hls_m3u8_t* m3u8;
-	m3u8 = (struct hls_m3u8_t*)malloc(sizeof(*m3u8));
+	m3u8 = (struct hls_m3u8_t*)calloc(1, sizeof(*m3u8));
 	if (NULL == m3u8)
 		return NULL;
 
 	assert(0 == live || live >= HLS_LIVE_NUM);
+	m3u8->version = version;
 	m3u8->live = live;
 	m3u8->seq = 0;
 	m3u8->count = 0;
@@ -57,6 +61,9 @@ void hls_m3u8_destroy(struct hls_m3u8_t* m3u8)
 		seg = list_entry(l, struct hls_segment_t, link);
 		free(seg);
 	}
+
+	if (m3u8->ext_x_map)
+		free(m3u8->ext_x_map);
 	free(m3u8);
 }
 
@@ -121,6 +128,14 @@ int hls_m3u8_add(struct hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t
 	return 0;
 }
 
+int hls_m3u8_set_x_map(hls_m3u8_t* m3u8, const char* name)
+{
+	if (m3u8->ext_x_map)
+		free(m3u8->ext_x_map);
+	m3u8->ext_x_map = name ? strdup(name) : NULL;
+	return m3u8->ext_x_map ? 0 : ENOMEM;
+}
+
 size_t hls_m3u8_count(struct hls_m3u8_t* m3u8)
 {
 	return m3u8->count;
@@ -135,17 +150,22 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 
 	r = snprintf(playlist, bytes,
 		"#EXTM3U\n" // MUST
-		"#EXT-X-VERSION:3\n" // Optional
+		"#EXT-X-VERSION:%d\n" // Optional
 		"#EXT-X-TARGETDURATION:%" PRId64 "\n" // MUST, decimal-integer, in seconds
 		"#EXT-X-MEDIA-SEQUENCE:%" PRId64 "\n"
 		"%s"  // #EXT-X-PLAYLIST-TYPE:VOD
 		"%s", // #EXT-X-ALLOW-CACHE:YES
+		m3u8->version,
 		(m3u8->duration + 999) / 1000,
 		m3u8->seq,
 		m3u8->live ? "" : "#EXT-X-PLAYLIST-TYPE:VOD\n",
 		m3u8->live ? "" : "#EXT-X-ALLOW-CACHE:YES\n");
 	if (r <= 0 || (size_t)r >= bytes)
 		return ENOMEM;
+
+	// #EXT-X-MAP:URI="main.mp4",BYTERANGE="1206@0"
+	if (m3u8->ext_x_map)
+		r += snprintf(playlist + r, bytes - r, "#EXT-X-MAP:URI=\"%s\",\n", m3u8->ext_x_map);
 
 	n = r;
 	list_for_each(link, &m3u8->root)

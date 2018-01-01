@@ -11,8 +11,12 @@ extern "C" {
 typedef struct hls_m3u8_t hls_m3u8_t;
 
 ///@param[in] live 1-live streaming, 0-vod
-hls_m3u8_t* hls_m3u8_create(int live);
+///@param[in] version m3u8 version 3-TS, 7-MP4
+hls_m3u8_t* hls_m3u8_create(int live, int version);
 void hls_m3u8_destroy(hls_m3u8_t* m3u8);
+
+/// EXT-X-MAP
+int hls_m3u8_set_x_map(hls_m3u8_t* m3u8, const char* name);
 
 ///@param[in] pts present timestamp (millisecond)
 ///@param[in] duration segment duration (millisecond)
