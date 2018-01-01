@@ -31,10 +31,9 @@ struct dash_adaptation_set_t
 	int64_t dts_last;
 	int64_t bytes;
 	int bitrate;
-	int track; // MP4 track id
+	int id; // MP4 track id
 	
 	int seq;
-	int id;
 	uint8_t object;
 
 	union
@@ -83,26 +82,8 @@ struct dash_mpd_t
 static int dash_adaptation_set_open(struct dash_mpd_t* mpd, struct dash_adaptation_set_t* track)
 {
 	char name[N_NAME + 16];
-	snprintf(name, sizeof(name), "%s-%d-%" PRId64 ".m4s", mpd->name, track->id, track->dts);
-
-	track->fmp4 = fmp4_writer_create(name, MOV_FLAG_SEGMENT);
-	if (NULL == track->fmp4)
-		return -1; // error create mp4 file
-
-	if (MOV_OBJECT_H264 == track->object)
-	{
-		track->track = fmp4_writer_add_video(track->fmp4, track->object, track->u.video.width, track->u.video.height, NULL, 0);
-	}
-	else if (MOV_OBJECT_AAC == track->object)
-	{
-		track->track = fmp4_writer_add_audio(track->fmp4, track->object, track->u.audio.channel, track->u.audio.sample_bit, track->u.audio.sample_rate, NULL, 0);
-	}
-	else
-	{
-		assert(0);
-	}
-
-	return 0;
+	snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, track->id, ++track->seq);
+	return fmp4_writer_new_segment(track->fmp4, name);
 }
 
 static int dash_adaptation_set_close(struct dash_mpd_t* mpd, struct dash_adaptation_set_t* track)
@@ -112,29 +93,23 @@ static int dash_adaptation_set_close(struct dash_mpd_t* mpd, struct dash_adaptat
 	struct list_head *link;
 	struct dash_segment_t* seg;
 
-	if (track->fmp4)
+	len = snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, track->id, track->seq);
+	seg = (struct dash_segment_t*)malloc(sizeof(*seg) + len + 1);
+	seg->name = (char*)(seg + 1);
+	seg->timestamp = track->dts;
+	seg->duration = track->dts_last - track->dts;
+	memcpy(seg->name, name, len + 1);
+
+	list_insert_after(&seg->link, track->root.prev);
+
+	track->count += 1;
+	if (DASH_DYNAMIC == mpd->flags && track->count > N_COUNT)
 	{
-		fmp4_writer_destroy(track->fmp4);
-		track->fmp4 = NULL;
-
-		len = snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, track->id, track->seq);
-		seg = (struct dash_segment_t*)malloc(sizeof(*seg) + len + 1);
-		seg->name = (char*)(seg + 1);
-		seg->timestamp = track->dts;
-		seg->duration = track->dts_last - track->dts;
-		memcpy(seg->name, name, len + 1);
-
-		list_insert_after(&seg->link, track->root.prev);
-		track->seq += 1;
-
-		track->count += 1;
-		if (DASH_DYNAMIC == mpd->flags && track->count > N_COUNT)
-		{
-			link = track->root.next;
-			list_remove(link);
-			seg = list_entry(link, struct dash_segment_t, link);
-			free(seg);
-		}
+		link = track->root.next;
+		list_remove(link);
+		seg = list_entry(link, struct dash_segment_t, link);
+		free(seg);
+		--track->count;
 	}
 	return 0;
 }
@@ -186,14 +161,13 @@ void dash_mpd_destroy(struct dash_mpd_t* mpd)
 int dash_mpd_add_video_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size)
 {
 	char name[N_NAME + 16];
-	fmp4_writer_t* fmp4;
 	struct dash_adaptation_set_t* track;
-	if (mpd->count + 1 >= N_TRACK)
+	if (mpd->count + 1 >= N_TRACK || extra_data_size < 4)
 		return -1;
 
-	track = &mpd->tracks[mpd->count++];
+	assert(MOV_OBJECT_H264 == object);
+	track = &mpd->tracks[mpd->count];
 	LIST_INIT_HEAD(&track->root);
-	track->id = mpd->count;
 	track->object = object;
 	track->bitrate = 0;
 	track->u.video.width = width;
@@ -204,32 +178,29 @@ int dash_mpd_add_video_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int
 	track->u.video.avc.compatibility = ((const uint8_t*)extra_data)[2];
 	track->u.video.avc.level = ((const uint8_t*)extra_data)[3];
 
-	assert(MOV_OBJECT_H264 == object);
-	snprintf(name, sizeof(name), "%s-%d-init.m4s", mpd->name, track->id);
-	fmp4 = fmp4_writer_create(name, 0);
-	if (fmp4)
-	{
-		fmp4_writer_add_video(fmp4, object, width, height, extra_data, extra_data_size);
-		fmp4_writer_destroy(fmp4); // save init segment file
-	}
-	else
-	{
-		--mpd->count;
-	}
-	return fmp4 ? track->id : -1;
+	track->seq = 1;
+	snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, mpd->count, track->seq);
+	track->fmp4 = fmp4_writer_create(name, MOV_FLAG_SEGMENT);
+	if (!track->fmp4)
+		return -1;
+	track->id = fmp4_writer_add_video(track->fmp4, object, width, height, extra_data, extra_data_size);
+	
+	// save init segment file
+	snprintf(name, sizeof(name), "%s-%d-init.m4s", mpd->name, mpd->count);
+	fmp4_writer_init_segment(track->fmp4, name);
+	return mpd->count++;
 }
 
 int dash_mpd_add_audio_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
 {
 	char name[N_NAME + 16];
-	fmp4_writer_t* fmp4;
 	struct dash_adaptation_set_t* track;
-	if (mpd->count + 1 >= N_TRACK)
+	if (mpd->count + 1 >= N_TRACK || extra_data_size < 2)
 		return -1;
 
-	track = &mpd->tracks[mpd->count++];
+	assert(MOV_OBJECT_AAC == object);
+	track = &mpd->tracks[mpd->count];
 	LIST_INIT_HEAD(&track->root);
-	track->id = mpd->count;
 	track->object = object;
 	track->bitrate = 0;
 	track->u.audio.channel = channel_count;
@@ -239,19 +210,17 @@ int dash_mpd_add_audio_adapation_set(struct dash_mpd_t* mpd, uint8_t object, int
 	if(31 == track->u.audio.profile)
 		track->u.audio.profile = 32 + (((((const uint8_t*)extra_data)[0] & 0x07) << 3) | ((((const uint8_t*)extra_data)[1] >> 5) & 0x07));
 
-	assert(MOV_OBJECT_AAC == object);
+	track->seq = 1;
+	snprintf(name, sizeof(name), "%s-%d-%d.m4s", mpd->name, mpd->count, track->seq);
+	track->fmp4 = fmp4_writer_create(name, MOV_FLAG_SEGMENT);
+	if (!track->fmp4)
+		return -1;
+	track->id = fmp4_writer_add_audio(track->fmp4, object, channel_count, bits_per_sample, sample_rate, extra_data, extra_data_size);
+
+	// save init segment file
 	snprintf(name, sizeof(name), "%s-%d-init.m4s", mpd->name, track->id);
-	fmp4 = fmp4_writer_create(name, 0);
-	if (fmp4)
-	{
-		fmp4_writer_add_audio(fmp4, object, channel_count, bits_per_sample, sample_rate, extra_data, extra_data_size);
-		fmp4_writer_destroy(fmp4); // save init segment file
-	}
-	else
-	{
-		--mpd->count;
-	}
-	return fmp4 ? track->id : -1;
+	fmp4_writer_init_segment(track->fmp4, name);
+	return mpd->count++;
 }
 
 int dash_mpd_input(struct dash_mpd_t* mpd, int adapation, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
@@ -259,20 +228,24 @@ int dash_mpd_input(struct dash_mpd_t* mpd, int adapation, const void* data, size
 	int r;
 	size_t i;
 	struct dash_adaptation_set_t* track;
-	if (adapation > N_TRACK || adapation < 1)
+	if (adapation > N_TRACK || adapation < 0)
 		return -1;
 
-	track = &mpd->tracks[adapation - 1];
-	if (NULL == data || 0 == bytes // flash fragment
+	track = &mpd->tracks[adapation];
+	if (INT64_MIN == track->dts_last || NULL == data || 0 == bytes // flash fragment
 		|| (MOV_OBJECT_H264 == track->object && (MOV_AV_FLAG_KEYFREAME & flags)))
 	{
 		mpd->max_segment_duration = MAX(track->dts_last - track->dts, mpd->max_segment_duration);
 		mpd->duration += mpd->max_segment_duration;
 
-		for (i = 0; i < mpd->count; i++)
+		for (i = 0; i < INT64_MIN != track->dts_last && mpd->count; i++)
 		{
 			dash_adaptation_set_close(mpd, &mpd->tracks[i]);
 			mpd->tracks[i].bitrate = MAX(mpd->tracks[i].bitrate, (int)(mpd->tracks[i].bytes * 1000 / (track->dts_last - track->dts) * 8));
+
+			track->dts = dts;
+			track->bytes = 0;
+			r = dash_adaptation_set_open(mpd, track);
 		}
 
 		// FIXME: check count(first time only)
@@ -283,17 +256,9 @@ int dash_mpd_input(struct dash_mpd_t* mpd, int adapation, const void* data, size
 	if (NULL == data || 0 == bytes)
 		return 0;
 
-	r = 0;
-	if (NULL == track->fmp4)
-	{
-		track->dts = dts;
-		track->bytes = 0;
-		r = dash_adaptation_set_open(mpd, track);
-	}
-
 	track->bytes += bytes;
 	track->dts_last = dts;
-	return 0 == r ? fmp4_writer_write(track->fmp4, track->track, data, bytes, pts, dts, flags) : r;
+	return fmp4_writer_write(track->fmp4, track->id, data, bytes, pts, dts, flags);
 }
 
 // ISO/IEC 23009-1:2014(E) 5.4 Media Presentation Description updates (p67)
@@ -383,7 +348,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		track = &mpd->tracks[i];
 		if (MOV_OBJECT_H264 == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_video, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, mpd->name, track->id, mpd->name, track->id);
+			n += snprintf(playlist + n, bytes - n, s_video, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, mpd->name, i, mpd->name, i);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
@@ -393,7 +358,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		}
 		else if (MOV_OBJECT_AAC == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_audio, (unsigned int)track->u.audio.profile, track->u.audio.sample_rate, track->bitrate, track->u.audio.channel, mpd->name, track->id, mpd->name, track->id);
+			n += snprintf(playlist + n, bytes - n, s_audio, (unsigned int)track->u.audio.profile, track->u.audio.sample_rate, track->bitrate, track->u.audio.channel, mpd->name, i, mpd->name, i);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
