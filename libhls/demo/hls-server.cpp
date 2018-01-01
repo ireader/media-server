@@ -196,7 +196,7 @@ static int hls_server_onlive(void* /*http*/, http_session_t* session, const char
 		{
 			hls_playlist_t* playlist = new hls_playlist_t();
 			playlist->file = app;
-			playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM);
+			playlist->m3u8 = hls_m3u8_create(HLS_LIVE_NUM, 3);
 			playlist->hls = hls_media_create(HLS_DURATION * 1000, hls_handler, playlist);
 			playlist->i = 0;
 			s_playlists[app] = playlist;

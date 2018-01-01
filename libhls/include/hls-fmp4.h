@@ -42,6 +42,8 @@ int hls_fmp4_add_video(hls_fmp4_t* hls, uint8_t object, int width, int height, c
 /// @return 0-ok, other-error
 int hls_fmp4_input(hls_fmp4_t* hls, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
+int hls_fmp4_init_segment(hls_fmp4_t* hls, const char* file);
+
 #ifdef __cplusplus
 }
 #endif

@@ -66,7 +66,7 @@ static char name[128] = { 0 };
 static int hls_segment_open(void* /*m3u8*/, char* file, size_t bytes)
 {
 	static int i = 0;
-	snprintf(name, sizeof(name), "hls/%d.mp4", i++);
+	snprintf(name, sizeof(name), "hls/%d.mp4", ++i);
 	snprintf(file, bytes, "%s", name);
 	return 0;
 }
@@ -90,7 +90,7 @@ void hls_segmenter_fmp4_test(const char* file)
 	};
 
 	AVFormatContext* ic = ffmpeg_open(file);
-	hls_m3u8_t* m3u = hls_m3u8_create(0);
+	hls_m3u8_t* m3u = hls_m3u8_create(0, 7);
 	hls_fmp4_t* hls = hls_fmp4_create(HLS_DURATION * 1000, &handler, m3u);
 
 	int track_aac = -1;
@@ -106,6 +106,9 @@ void hls_segmenter_fmp4_test(const char* file)
 		else if(AV_CODEC_ID_H265 == st->codecpar->codec_id)
 			track_265 = hls_fmp4_add_video(hls, MOV_OBJECT_HEVC, st->codecpar->width, st->codecpar->height, st->codecpar->extradata, st->codecpar->extradata_size);
 	}
+
+	hls_fmp4_init_segment(hls, "hls/0.mp4");
+	hls_m3u8_set_x_map(m3u, "hls/0.mp4");
 
 	int r = av_read_frame(ic, &pkt);
 	while (0 == r)
@@ -140,7 +143,7 @@ void hls_segmenter_fmp4_test(const char* file)
 	// write m3u8 file
 	hls_fmp4_input(hls, 0, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, s_packet, sizeof(s_packet));
-	FILE* fp = fopen("hls/playlist.m3u8", "wb");
+	FILE* fp = fopen("playlist.m3u8", "wb");
 	fwrite(s_packet, 1, strlen(s_packet), fp);
 	fclose(fp);
 

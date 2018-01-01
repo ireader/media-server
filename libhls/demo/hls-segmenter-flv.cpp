@@ -52,7 +52,7 @@ static int flv_handler(void* param, int codec, const void* data, size_t bytes, u
 
 void hls_segmenter_flv(const char* file)
 {
-	hls_m3u8_t* m3u = hls_m3u8_create(0);
+	hls_m3u8_t* m3u = hls_m3u8_create(0, 3);
 	hls_media_t* hls = hls_media_create(HLS_DURATION * 1000, hls_handler, m3u);
 	void* flv = flv_reader_create(file);
 	flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, hls);
