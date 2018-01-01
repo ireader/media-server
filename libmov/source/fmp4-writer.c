@@ -11,13 +11,14 @@ struct fmp4_writer_t
 {
 	struct mov_t mov;
 	size_t mdat_size;
-	uint64_t mdat_offset;
-
 	int has_moov;
+
+	uint32_t frag_interleave;
 	uint32_t fragment_id; // start from 1
-	uint64_t fragment_duration;
-	size_t fragment_size;
+	uint32_t sn; // sample sn
 };
+
+static int fmp4_writer_save(fmp4_writer_t* writer);
 
 static size_t fmp4_write_mvex(struct mov_t* mov)
 {
@@ -67,7 +68,7 @@ static size_t fmp4_write_tfdt(struct mov_t* mov)
 
 static size_t fmp4_write_traf(struct mov_t* mov)
 {
-	size_t size;
+	size_t i, size;
 	uint64_t offset;
 	uint32_t flags, first;
 
@@ -104,7 +105,16 @@ static size_t fmp4_write_traf(struct mov_t* mov)
 	flags |= MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT | MOV_TRUN_FLAG_SAMPLE_SIZE_PRESENT;
 	flags |= MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT;
 	first = 0x02000000;
-	size += mov_write_trun(mov, flags, first);
+
+	// cluster trun
+	for (i = 0; i < mov->track->sample_count; i += mov->track->samples[i].samples_per_chunk)
+	{
+		assert(mov->track->samples[i].samples_per_chunk > 0);
+//		assert(i == mov->track->samples[i].first_chunk);
+//		assert(i + mov->track->samples[i].samples_per_chunk <= mov->track->sample_count);
+		mov->track->samples[i].offset = file_writer_tell(mov->fp) + 16; // trun data offset
+		size += mov_write_trun(mov, flags, first, i, mov->track->samples[i].samples_per_chunk);
+	}
 
 	mov_write_size(mov->fp, offset, size); /* update size */
 	return size;
@@ -334,20 +344,46 @@ static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uin
 	return 0;
 }
 
+static int fmp4_writer_cluster(struct fmp4_writer_t* writer, struct mov_track_t* track, int flags)
+{
+	size_t i;
+	struct mov_sample_t* cluster;
+	cluster = track->samples + track->offset;
+
+	assert(track->offset <= track->sample_count);
+	if ((cluster->samples_per_chunk >= writer->frag_interleave && cluster->first_chunk + cluster->samples_per_chunk + 1 != writer->sn)
+		|| (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME)))
+	{
+		// all track switch to new chunk(cluster)
+		for (i = 0; i < writer->mov.track_count; i++)
+			writer->mov.tracks[i].offset = writer->mov.tracks[i].sample_count;
+		track->samples[track->offset].samples_per_chunk = 1;
+		return 1;
+	}
+	else
+	{
+		cluster->samples_per_chunk += 1;
+		return 0;
+	}
+}
+
 static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 {
-	size_t i, j, refsize;
+	size_t i, j, n;
+	size_t refsize;
 	uint64_t offset;
+	uint64_t mdat_offset;
 	struct mov_t* mov;
-	struct mov_sample_t* sample;
+	struct mov_sample_t* cluster;
 	mov = &writer->mov;
 
-	if (writer->mdat_size < 1)
+	assert(mov->fp);
+	if (writer->mdat_size < 1 || !mov->fp)
 		return 0; // empty
 
-	if (0 == writer->has_moov)
+	// write moov
+	if (!writer->has_moov && 0 == (mov->flags & MOV_FLAG_SEGMENT))
 	{
-		// write empty moov box
 		fmp4_write_moov(mov);
 		writer->has_moov = 1;
 	}
@@ -366,34 +402,68 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	refsize = fmp4_write_moof(mov, ++writer->fragment_id); // start from 1
 	refsize += writer->mdat_size + 8/*mdat box*/;
 
-	// mdat
-	writer->mdat_offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "mdat", 4);
+	// add mfra entry
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-		if(mov->track->sample_count > 0)
-			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].pts + mov->track->samples[0].dts, mov->moof_offset);
+		if (mov->track->sample_count > 0)
+			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].dts, mov->moof_offset);
 
 		// hack: write sidx referenced_size
 		if (mov->flags & MOV_FLAG_SEGMENT)
-			mov_write_size(mov->fp, mov->moof_offset - 52 * (mov->track_count-i) + 40, (0 << 31) | (refsize & 0x7fffffff));
+			mov_write_size(mov->fp, mov->moof_offset - 52 * (mov->track_count - i) + 40, (0 << 31) | (refsize & 0x7fffffff));
 
-		// hack: write trun data offset
-		mov_write_size(mov->fp, mov->track->offset, (uint32_t)(file_writer_tell(mov->fp) - mov->moof_offset));
-
-		for (j = 0; j < mov->track->sample_count; j++)
-		{
-			sample = mov->track->samples + j;
-			file_writer_write(mov->fp, sample->data, sample->bytes);
-			free(sample->data);
-		}
-		mov->track->sample_count = 0; // clear track samples(don't free samples memory)
+		mov->track->offset = 0; // reset
 	}
+
+	// mdat
+	mdat_offset = file_writer_tell(mov->fp);
+	file_writer_wb32(mov->fp, 0); /* size */
+	file_writer_write(mov->fp, "mdat", 4);
+
+	// interleave write cluster
+	do
+	{
+		n = 0;
+		for (i = 0; i < mov->track_count; i++)
+		{
+			mov->track = mov->tracks + i;
+			assert(mov->track->offset <= mov->track->sample_count);
+			if (mov->track->offset >= mov->track->sample_count)
+				continue;
+
+			cluster = mov->track->samples + mov->track->offset;
+			assert(mov->track->offset + cluster->samples_per_chunk <= mov->track->sample_count);
+			assert(cluster->samples_per_chunk > 0);
+
+			// hack: write trun data offset
+			mov_write_size(mov->fp, cluster->offset, (uint32_t)(file_writer_tell(mov->fp) - mov->moof_offset));
+
+			for(j = (size_t)mov->track->offset; j < (size_t)mov->track->offset + cluster->samples_per_chunk; j++)
+			{
+				file_writer_write(mov->fp, mov->track->samples[j].data, mov->track->samples[j].bytes);
+				free(mov->track->samples[j].data); // free av packet memory
+			}
+
+			mov->track->offset += cluster->samples_per_chunk;
+			n++;
+		}
+	} while (n > 0);
+
 	offset = file_writer_tell(mov->fp);
-	mov_write_size(mov->fp, writer->mdat_offset, (uint32_t)(offset - writer->mdat_offset));
-	return 0;
+	mov_write_size(mov->fp, mdat_offset, (uint32_t)(offset - mdat_offset));
+
+	for (i = 0; i < mov->track_count; i++)
+	{
+		mov->tracks[i].sample_count = 0; // clear track samples(don't free samples memory)
+		mov->tracks[i].start_dts = INT64_MIN;
+		mov->tracks[i].start_cts = INT64_MIN;
+		mov->tracks[i].end_dts = 0;
+		mov->tracks[i].offset = 0;
+	}
+	writer->mdat_size = 0;
+
+	return file_writer_error(mov->fp);
 }
 
 static int fmp4_writer_init(struct mov_t* mov)
@@ -402,9 +472,11 @@ static int fmp4_writer_init(struct mov_t* mov)
 	{
 		mov->ftyp.major_brand = MOV_BRAND_MSDH;
 		mov->ftyp.minor_version = 0;
-		mov->ftyp.brands_count = 2;
-		mov->ftyp.compatible_brands[0] = MOV_BRAND_MSDH;
-		mov->ftyp.compatible_brands[1] = MOV_BRAND_MSIX;
+		mov->ftyp.brands_count = 4;
+		mov->ftyp.compatible_brands[0] = MOV_BRAND_ISOM;
+		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
+		mov->ftyp.compatible_brands[2] = MOV_BRAND_MSDH;
+		mov->ftyp.compatible_brands[3] = MOV_BRAND_MSIX;
 		mov->header = 0;
 	}
 	else
@@ -429,63 +501,42 @@ struct fmp4_writer_t* fmp4_writer_create(const char* file, int flags)
 	if (NULL == writer)
 		return NULL;
 
-	writer->has_moov = 0;
-	writer->fragment_duration = 0; // per key frame
-	writer->fragment_size = 0; // bytes
+	writer->frag_interleave = 5;
 
 	mov = &writer->mov;
 	mov->flags = flags;
-	mov->fp = file_writer_create(file);
-	if (NULL == mov->fp || 0 != fmp4_writer_init(mov))
-	{
-		fmp4_writer_destroy(writer);
-		return NULL;
-	}
-
 	mov->mvhd.next_track_ID = 1;
 	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
 	mov->mvhd.modification_time = mov->mvhd.creation_time;
 	mov->mvhd.timescale = 1000;
 	mov->mvhd.duration = 0; // placeholder
+	fmp4_writer_init(mov);
 
-	if (flags & MOV_FLAG_SEGMENT)
+	if (0 != fmp4_writer_new_segment(writer, file))
 	{
-		mov_write_styp(mov);
-		writer->has_moov = 1; // don't write moov
+		free(writer);
+		return NULL;
 	}
-	else
-	{
-		mov_write_ftyp(mov);
-	}
-
 	return writer;
 }
 
 void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 {
-	size_t i;
+	size_t i, j;
 	struct mov_t* mov;
 	struct mov_track_t* track;
 	mov = &writer->mov;
 
-	// flush fragment
-	fmp4_write_fragment(writer);
-
-	// write empty moov box
-	if (0 == writer->has_moov)
-	{
-		fmp4_write_moov(mov);
-		writer->has_moov = 1;
-	}
-
-	// write mfra
-	fmp4_write_mfra(mov);
-
-	file_writer_destroy(writer->mov.fp);
+	fmp4_writer_save(writer);
 
 	for (i = 0; i < mov->track_count; i++)
 	{
 		track = &mov->tracks[i];
+		for (j = 0; j < track->sample_count; j++)
+		{
+			if (track->samples[j].data)
+				free(track->samples[j].data);
+		}
 		if (track->extra_data) free(track->extra_data);
 		if (track->samples) free(track->samples);
 		if (track->frags) free(track->frags);
@@ -503,14 +554,8 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 		return -ENOENT;
 
 	track = &writer->mov.tracks[idx];
-
-	if ( ((0 == writer->fragment_duration && MOV_VIDEO == track->handler_type && (MOV_AV_FLAG_KEYFREAME & flags))
-//			|| (writer->fragment_duration && writer->fragment_duration < mov_get_duration(duration))
-			|| (writer->fragment_size && writer->fragment_size < writer->mdat_size)))
-	{
-		fmp4_write_fragment(writer);
-		writer->mdat_size = 0;
-	}
+	if (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME))
+		fmp4_write_fragment(writer); // fragment per video keyframe
 
 	if (track->sample_count + 1 >= track->sample_offset)
 	{
@@ -536,13 +581,17 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 	sample->flags = flags;
 	sample->pts = pts;
 	sample->dts = dts;
-//	sample->offset = file_writer_tell(mov->fp); // don't need
-	sample->first_chunk = 0; // invalid sample
+//	sample->offset = 0;
 
 	sample->data = malloc(bytes);
 	if (NULL == sample->data)
 		return -ENOMEM;
 	memcpy(sample->data, data, bytes);
+
+	// cluster
+	sample->samples_per_chunk = 0;
+	sample->first_chunk = writer->sn++;
+	fmp4_writer_cluster(writer, track, flags);
 
 	writer->mdat_size += bytes; // update media data size
 	track->sample_count += 1;
@@ -672,4 +721,73 @@ int fmp4_writer_add_video(struct fmp4_writer_t* writer, uint8_t object, int widt
 	track->mdhd.duration = 0; // placeholder
 
 	return mov->track_count++;
+}
+
+static int fmp4_writer_save(fmp4_writer_t* writer)
+{
+	size_t i;
+	struct mov_t* mov;
+	mov = &writer->mov;
+
+	if (!mov->fp)
+		return -1;
+
+	// flush fragment
+	fmp4_write_fragment(writer);
+
+	// write mfra
+	if (0 == (mov->flags & MOV_FLAG_SEGMENT))
+	{
+		fmp4_write_mfra(mov);
+		for (i = 0; i < mov->track_count; i++)
+			mov->tracks[i].frag_count = 0; // don't free frags memory
+	}
+
+	file_writer_destroy(mov->fp);
+	mov->fp = NULL;
+	return 0;
+}
+
+int fmp4_writer_new_segment(fmp4_writer_t* writer, const char* file)
+{
+	struct mov_t* mov;
+	mov = &writer->mov;
+
+	fmp4_writer_save(writer);
+
+	mov->fp = file_writer_create(file);
+	if (!mov->fp)
+		return -1;
+
+	if (mov->flags & MOV_FLAG_SEGMENT)
+	{
+		mov_write_styp(mov);
+	}
+	else
+	{
+		mov_write_ftyp(mov);
+	}
+
+	return file_writer_error(mov->fp);
+}
+
+int fmp4_writer_init_segment(fmp4_writer_t* writer, const char* file)
+{
+	void* fp;
+	struct mov_t* mov;
+	mov = &writer->mov;
+	fp = mov->fp;
+
+	mov->fp = file_writer_create(file);
+	if (!mov->fp)
+	{
+		mov->fp = fp;
+		return -1;
+	}
+
+	mov_write_ftyp(mov);
+	fmp4_write_moov(mov);
+	file_writer_destroy(mov->fp);
+	mov->fp = fp;
+	return 0;
 }

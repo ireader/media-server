@@ -235,7 +235,7 @@ size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);
-size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first);
+size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, size_t from, size_t count);
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
 

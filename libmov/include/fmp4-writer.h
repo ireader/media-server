@@ -31,6 +31,9 @@ int fmp4_writer_add_video(fmp4_writer_t* fmp4, uint8_t object, int width, int he
 /// @return 0-ok, other-error
 int fmp4_writer_write(fmp4_writer_t* fmp4, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
+int fmp4_writer_new_segment(fmp4_writer_t* fmp4, const char* file);
+int fmp4_writer_init_segment(fmp4_writer_t* fmp4, const char* file);
+
 #ifdef __cplusplus
 }
 #endif

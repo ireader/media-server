@@ -82,7 +82,7 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	return file_reader_error(mov->fp); (void)box;
 }
 
-size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first)
+size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, size_t from, size_t count)
 {
 	uint32_t delta;
 	uint64_t offset;
@@ -97,21 +97,22 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t first)
 	file_writer_write(mov->fp, "trun", 4);
 	file_writer_w8(mov->fp, 1); /* version */
 	file_writer_wb24(mov->fp, flags); /* flags */
-	file_writer_wb32(mov->fp, track->sample_count); /* sample_count */
+	file_writer_wb32(mov->fp, count); /* sample_count */
 
 	if (flags & MOV_TRUN_FLAG_DATA_OFFSET_PRESENT)
 	{
-		file_writer_wb32(mov->fp, 0); /* data_offset */
+		file_writer_wb32(mov->fp, 0); /* data_offset, rewrite on fmp4_write_fragment */
 		size += 4;;
 	}
 
 	if (flags & MOV_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT)
 	{
-		file_writer_wb32(mov->fp, first); /* first_sample_flags */
+		file_writer_wb32(mov->fp, flags0); /* first_sample_flags */
 		size += 4;;
 	}
 
-	for (i = 0; i < track->sample_count; i++)
+	assert(from + count <= track->sample_count);
+	for (i = from; i < from + count; i++)
 	{
 		sample = track->samples + i;
 		if (flags & MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
