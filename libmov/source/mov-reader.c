@@ -10,6 +10,8 @@
 
 #define MOV_NULL MOV_TAG(0, 0, 0, 0)
 
+#define AV_TRACK_TIMEBASE 1000
+
 struct mov_reader_t
 {
 	struct mov_t mov;
@@ -497,6 +499,7 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 {
 	size_t i;
+	int64_t dts, best_dts = 0;
 	struct mov_track_t* track = NULL;
 	struct mov_track_t* track2;
 
@@ -507,10 +510,13 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 		if (track2->sample_offset >= track2->sample_count)
 			continue;
 
+		dts = track2->samples[track2->sample_offset].dts * 1000 / track2->mdhd.timescale;
 		//if (NULL == track || track->samples[track->sample_offset].dts > track2->samples[track2->sample_offset].dts)
-		if (NULL == track || track->samples[track->sample_offset].offset > track2->samples[track2->sample_offset].offset)
+		//if (NULL == track || track->samples[track->sample_offset].offset > track2->samples[track2->sample_offset].offset)
+		if (NULL == track || (dts < best_dts && best_dts - dts > AV_TRACK_TIMEBASE) || track2->samples[track2->sample_offset].offset < track->samples[track->sample_offset].offset)
 		{
 			track = track2;
+			best_dts = dts;
 		}
 	}
 
