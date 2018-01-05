@@ -344,7 +344,7 @@ static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uin
 	return 0;
 }
 
-static int fmp4_writer_cluster(struct fmp4_writer_t* writer, struct mov_track_t* track, int flags)
+static void fmp4_writer_cluster(struct fmp4_writer_t* writer, struct mov_track_t* track, int flags)
 {
 	size_t i;
 	struct mov_sample_t* cluster;
@@ -357,14 +357,10 @@ static int fmp4_writer_cluster(struct fmp4_writer_t* writer, struct mov_track_t*
 		// all track switch to new chunk(cluster)
 		for (i = 0; i < writer->mov.track_count; i++)
 			writer->mov.tracks[i].offset = writer->mov.tracks[i].sample_count;
-		track->samples[track->offset].samples_per_chunk = 1;
-		return 1;
+		cluster = track->samples + track->offset;
 	}
-	else
-	{
-		cluster->samples_per_chunk += 1;
-		return 0;
-	}
+
+	++cluster->samples_per_chunk;
 }
 
 static int fmp4_write_fragment(struct fmp4_writer_t* writer)
