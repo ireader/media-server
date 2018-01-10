@@ -71,7 +71,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	if (0xFF == ptr[0] && 0xF0 == (ptr[1] & 0xF0) && bytes > 7)
 	{
 		// skip ADTS header
-		assert(bytes - 7 == (((ptr[3] & 0x03) << 11) | (ptr[4] << 3) | ((ptr[5] >> 5) & 0x07)));
+		assert(bytes == (((ptr[3] & 0x03) << 11) | (ptr[4] << 3) | ((ptr[5] >> 5) & 0x07)));
 		ptr += 7;
 		bytes -= 7;
 	}
