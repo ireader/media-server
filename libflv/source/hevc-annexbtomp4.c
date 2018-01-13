@@ -16,7 +16,6 @@ struct hevc_handle_t
 	uint8_t* ptr;
 	size_t bytes;
 	size_t capacity;
-	size_t offset;
 };
 
 typedef void(*hevc_nalu_handler)(void* param, const uint8_t* nalu, size_t bytes);
@@ -136,15 +135,14 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	case H265_VPS:
 	case H265_SPS:
 	case H265_PPS:
-		assert(mp4->offset + bytes <= sizeof(mp4->hevc->data));
-		if (mp4->offset + bytes >= sizeof(mp4->hevc->data)
-			|| mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0]))
+		sodb = mp4->hevc->numOfArrays > 0 ? mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].data + mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].bytes : mp4->hevc->data;
+		if (mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0])
+			|| sodb + bytes >= mp4->hevc->data + sizeof(mp4->hevc->data))
 		{
 			mp4->errcode = -1;
 			return;
 		}
 
-		sodb = mp4->hevc->data + mp4->offset;
 		sodb_bytes = hevc_rbsp_decode(nalu, bytes, sodb);
 
 		if (nal_type == H265_VPS)
@@ -174,10 +172,9 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].type = nal_type;
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].bytes = (uint16_t)bytes;
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].array_completeness = 1;
-		mp4->hevc->nalu[mp4->hevc->numOfArrays].data = mp4->hevc->data + mp4->offset;
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].data = sodb;
 		memcpy(mp4->hevc->nalu[mp4->hevc->numOfArrays].data, nalu, bytes);
 		++mp4->hevc->numOfArrays;
-		mp4->offset += bytes;
 		return;
 
 	case 16: // BLA_W_LP
@@ -216,7 +213,6 @@ size_t hevc_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, size_t byte
 	h.hevc = hevc;
 	h.ptr = (uint8_t*)out;
 	h.capacity = size;
-	h.offset = 0;
 	h.bytes = 0;
 	h.errcode = 0;
 
