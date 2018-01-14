@@ -4,6 +4,7 @@
 #include "fmp4-writer.h"
 #include "list.h"
 #include <time.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
