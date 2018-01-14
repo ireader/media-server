@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 #define H264_NAL(v)	(v & 0x1F)
 
 enum { NAL_IDR = 5, NAL_SEI = 6, NAL_SPS = 7, NAL_PPS = 8 };
@@ -99,9 +101,11 @@ void mov_writer_h264(const char* h264, int width, int height, const char* mp4)
 	uint8_t* ptr = file_read(h264, &bytes);
 	if (NULL == ptr) return;
 
-	mov_writer_t* mov = mov_writer_create(mp4, MOV_FLAG_FASTSTART);
+	FILE* fp = fopen(mp4, "wb+");
+	mov_writer_t* mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
 	h264_read_frame(mov, width, height, ptr, ptr + bytes);
 	mov_writer_destroy(mov);
 
+	fclose(fp);
 	free(ptr);
 }

@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\file-reader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mov-reader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -25,9 +22,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mov-box.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\file-writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mov-atom.h">
@@ -42,11 +36,14 @@
     <ClInclude Include="include\fmp4-writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mov-buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mov-ioutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\file-reader.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\mov-reader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -81,9 +78,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-elst.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\file-writer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-ftyp.c">

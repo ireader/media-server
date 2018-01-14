@@ -10,6 +10,8 @@
 #include <string.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 static uint8_t s_packet[2 * 1024 * 1024];
 static uint8_t s_buffer[4 * 1024 * 1024];
 static uint32_t s_aac_track;
@@ -117,7 +119,8 @@ void mov_2_flv_test(const char* mp4)
 {
 	snprintf((char*)s_packet, sizeof(s_packet), "%s.flv", mp4);
 
-	mov_reader_t* mov = mov_reader_create(mp4);
+	FILE* fp = fopen(mp4, "rb");
+	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	void* flv = flv_writer_create((char*)s_packet);
 
 	//flv_muxer_t* muxer = flv_muxer_create(mov_meta_info, flv);
@@ -138,4 +141,5 @@ void mov_2_flv_test(const char* mp4)
 
 	mov_reader_destroy(mov);
 	flv_writer_destroy(flv);
+	fclose(fp);
 }

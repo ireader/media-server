@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <errno.h>
 #include <stdlib.h>
@@ -12,9 +10,9 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t version;
 	struct mov_track_t* track = mov->track;
 
-	version = file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	entry_count = file_reader_rb32(mov->fp);
+	version = mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	entry_count = mov_buffer_r32(&mov->io);
 
 	assert(0 == track->elst_count && NULL == track->elst);
 	if (track->elst_count < entry_count)
@@ -29,21 +27,21 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 	{
 		if (1 == version)
 		{
-			track->elst[i].segment_duration = file_reader_rb64(mov->fp);
-			track->elst[i].media_time = (int64_t)file_reader_rb64(mov->fp);
+			track->elst[i].segment_duration = mov_buffer_r64(&mov->io);
+			track->elst[i].media_time = (int64_t)mov_buffer_r64(&mov->io);
 		}
 		else
 		{
 			assert(0 == version);
-			track->elst[i].segment_duration = file_reader_rb32(mov->fp);
-			track->elst[i].media_time = (int32_t)file_reader_rb32(mov->fp);
+			track->elst[i].segment_duration = mov_buffer_r32(&mov->io);
+			track->elst[i].media_time = (int32_t)mov_buffer_r32(&mov->io);
 		}
-		track->elst[i].media_rate_integer = (int16_t)file_reader_rb16(mov->fp);
-		track->elst[i].media_rate_fraction = (int16_t)file_reader_rb16(mov->fp);
+		track->elst[i].media_rate_integer = (int16_t)mov_buffer_r16(&mov->io);
+		track->elst[i].media_rate_fraction = (int16_t)mov_buffer_r16(&mov->io);
 	}
 
 	(void)box;
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_elst(const struct mov_t* mov)
@@ -66,42 +64,42 @@ size_t mov_write_elst(const struct mov_t* mov)
 	time = time < 0 ? 0 : time;
 	size = 12/* full box */ + 4/* entry count */ + (delay > 0 ? 2 : 1) * (version ? 20 : 12);
 
-	file_writer_wb32(mov->fp, size); /* size */
-	file_writer_write(mov->fp, "elst", 4);
-	file_writer_w8(mov->fp, version); /* version */
-	file_writer_wb24(mov->fp, 0); /* flags */
-	file_writer_wb32(mov->fp, delay > 0 ? 2 : 1); /* entry count */
+	mov_buffer_w32(&mov->io, size); /* size */
+	mov_buffer_write(&mov->io, "elst", 4);
+	mov_buffer_w8(&mov->io, version); /* version */
+	mov_buffer_w24(&mov->io, 0); /* flags */
+	mov_buffer_w32(&mov->io, delay > 0 ? 2 : 1); /* entry count */
 
 	if (delay > 0)
 	{
 		if (1 == version)
 		{
-			file_writer_wb64(mov->fp, (uint64_t)delay); /* segment_duration */
-			file_writer_wb64(mov->fp, (uint64_t)-1); /* media_time */
+			mov_buffer_w64(&mov->io, (uint64_t)delay); /* segment_duration */
+			mov_buffer_w64(&mov->io, (uint64_t)-1); /* media_time */
 		}
 		else
 		{
-			file_writer_wb32(mov->fp, (uint32_t)delay);
-			file_writer_wb32(mov->fp, (uint32_t)-1);
+			mov_buffer_w32(&mov->io, (uint32_t)delay);
+			mov_buffer_w32(&mov->io, (uint32_t)-1);
 		}
 
-		file_writer_wb16(mov->fp, 1); /* media_rate_integer */
-		file_writer_wb16(mov->fp, 0); /* media_rate_fraction */
+		mov_buffer_w16(&mov->io, 1); /* media_rate_integer */
+		mov_buffer_w16(&mov->io, 0); /* media_rate_fraction */
 	}
 
 	/* duration */
 	if (version == 1) 
 	{
-		file_writer_wb64(mov->fp, track->tkhd.duration);
-		file_writer_wb64(mov->fp, time);
+		mov_buffer_w64(&mov->io, track->tkhd.duration);
+		mov_buffer_w64(&mov->io, time);
 	}
 	else 
 	{
-		file_writer_wb32(mov->fp, (uint32_t)track->tkhd.duration);
-		file_writer_wb32(mov->fp, (uint32_t)time);
+		mov_buffer_w32(&mov->io, (uint32_t)track->tkhd.duration);
+		mov_buffer_w32(&mov->io, (uint32_t)time);
 	}
-	file_writer_wb16(mov->fp, 1); /* media_rate_integer */
-	file_writer_wb16(mov->fp, 0); /* media_rate_fraction */
+	mov_buffer_w16(&mov->io, 1); /* media_rate_integer */
+	mov_buffer_w16(&mov->io, 0); /* media_rate_fraction */
 
 	return size;
 }

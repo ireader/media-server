@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "mov-buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,7 +11,7 @@ extern "C" {
 
 typedef struct mov_reader_t mov_reader_t;
 
-mov_reader_t* mov_reader_create(const char* file);
+mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* param);
 void mov_reader_destroy(mov_reader_t* mov);
 
 /// @param[in] object: MOV_OBJECT_H264/MOV_OBJECT_AAC, see more @mov-format.h

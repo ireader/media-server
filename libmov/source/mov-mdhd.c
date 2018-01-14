@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 
@@ -32,47 +30,47 @@ int mov_read_mdhd(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t val;
 	struct mov_mdhd_t* mdhd = &mov->track->mdhd;
 
-	mdhd->version = file_reader_r8(mov->fp);
-	mdhd->flags = file_reader_rb24(mov->fp);
+	mdhd->version = mov_buffer_r8(&mov->io);
+	mdhd->flags = mov_buffer_r24(&mov->io);
 
 	if (1 == mdhd->version)
 	{
-		mdhd->creation_time = file_reader_rb64(mov->fp);
-		mdhd->modification_time = file_reader_rb64(mov->fp);
-		mdhd->timescale = file_reader_rb32(mov->fp);
-		mdhd->duration = file_reader_rb64(mov->fp);
+		mdhd->creation_time = mov_buffer_r64(&mov->io);
+		mdhd->modification_time = mov_buffer_r64(&mov->io);
+		mdhd->timescale = mov_buffer_r32(&mov->io);
+		mdhd->duration = mov_buffer_r64(&mov->io);
 	}
 	else
 	{
 		assert(0 == mdhd->version);
-		mdhd->creation_time = file_reader_rb32(mov->fp);
-		mdhd->modification_time = file_reader_rb32(mov->fp);
-		mdhd->timescale = file_reader_rb32(mov->fp);
-		mdhd->duration = file_reader_rb32(mov->fp);
+		mdhd->creation_time = mov_buffer_r32(&mov->io);
+		mdhd->modification_time = mov_buffer_r32(&mov->io);
+		mdhd->timescale = mov_buffer_r32(&mov->io);
+		mdhd->duration = mov_buffer_r32(&mov->io);
 	}
 
-	val = file_reader_rb32(mov->fp);
+	val = mov_buffer_r32(&mov->io);
 	mdhd->language = (val >> 16) & 0x7FFF;
 	mdhd->pre_defined = val & 0xFFFF;
 
 	(void)box;
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_mdhd(const struct mov_t* mov)
 {
 	const struct mov_mdhd_t* mdhd = &mov->track->mdhd;
 	
-	file_writer_wb32(mov->fp, 32); /* size */
-	file_writer_write(mov->fp, "mdhd", 4);
-	file_writer_wb32(mov->fp, 0); /* version 1 & flags */
+	mov_buffer_w32(&mov->io, 32); /* size */
+	mov_buffer_write(&mov->io, "mdhd", 4);
+	mov_buffer_w32(&mov->io, 0); /* version 1 & flags */
 
-	file_writer_wb32(mov->fp, (uint32_t)mdhd->creation_time); /* creation_time */
-	file_writer_wb32(mov->fp, (uint32_t)mdhd->modification_time); /* modification_time */
-	file_writer_wb32(mov->fp, mdhd->timescale); /* timescale */
-	file_writer_wb32(mov->fp, (uint32_t)mdhd->duration); /* duration */
+	mov_buffer_w32(&mov->io, (uint32_t)mdhd->creation_time); /* creation_time */
+	mov_buffer_w32(&mov->io, (uint32_t)mdhd->modification_time); /* modification_time */
+	mov_buffer_w32(&mov->io, mdhd->timescale); /* timescale */
+	mov_buffer_w32(&mov->io, (uint32_t)mdhd->duration); /* duration */
 	
-	file_writer_wb16(mov->fp, (uint16_t)mdhd->language); /* ISO-639-2/T language code */
-	file_writer_wb16(mov->fp, 0); /* pre_defined (quality) */
+	mov_buffer_w16(&mov->io, (uint16_t)mdhd->language); /* ISO-639-2/T language code */
+	mov_buffer_w16(&mov->io, 0); /* pre_defined (quality) */
 	return 32;
 }

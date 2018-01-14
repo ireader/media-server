@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 static uint8_t* file_read(const char* file, long* size)
 {
 	FILE* fp = fopen(file, "rb");
@@ -78,7 +80,8 @@ void mov_writer_audio(const char* audio, int type, const char* mp4)
 	uint8_t* ptr = file_read(audio, &bytes);
 	if (NULL == ptr) return;
 
-	mov_writer_t* mov = mov_writer_create(mp4, MOV_FLAG_FASTSTART);
+	FILE* fp = fopen(mp4, "wb+");
+	mov_writer_t* mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
 	switch (type)
 	{
 	case 1:
@@ -91,6 +94,6 @@ void mov_writer_audio(const char* audio, int type, const char* mp4)
 		assert(0);
 	}
 	mov_writer_destroy(mov);
-
+	fclose(fp);
 	free(ptr);
 }

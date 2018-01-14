@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 
@@ -39,45 +37,45 @@ int mov_read_mvhd(struct mov_t* mov, const struct mov_box_t* box)
 	int i;
 	struct mov_mvhd_t* mvhd = &mov->mvhd;
 
-	mvhd->version = file_reader_r8(mov->fp);
-	mvhd->flags = file_reader_rb24(mov->fp);
+	mvhd->version = mov_buffer_r8(&mov->io);
+	mvhd->flags = mov_buffer_r24(&mov->io);
 
 	if (1 == mvhd->version)
 	{
-		mvhd->creation_time = file_reader_rb64(mov->fp);
-		mvhd->modification_time = file_reader_rb64(mov->fp);
-		mvhd->timescale = file_reader_rb32(mov->fp);
-		mvhd->duration = file_reader_rb64(mov->fp);
+		mvhd->creation_time = mov_buffer_r64(&mov->io);
+		mvhd->modification_time = mov_buffer_r64(&mov->io);
+		mvhd->timescale = mov_buffer_r32(&mov->io);
+		mvhd->duration = mov_buffer_r64(&mov->io);
 	}
 	else
 	{
 		assert(0 == mvhd->version);
-		mvhd->creation_time = file_reader_rb32(mov->fp);
-		mvhd->modification_time = file_reader_rb32(mov->fp);
-		mvhd->timescale = file_reader_rb32(mov->fp);
-		mvhd->duration = file_reader_rb32(mov->fp);
+		mvhd->creation_time = mov_buffer_r32(&mov->io);
+		mvhd->modification_time = mov_buffer_r32(&mov->io);
+		mvhd->timescale = mov_buffer_r32(&mov->io);
+		mvhd->duration = mov_buffer_r32(&mov->io);
 	}
 
-	mvhd->rate = file_reader_rb32(mov->fp);
-	mvhd->volume = (uint16_t)file_reader_rb16(mov->fp);
-	//mvhd->reserved = file_reader_rb16(mov->fp);
-	//mvhd->reserved2[0] = file_reader_rb32(mov->fp);
-	//mvhd->reserved2[1] = file_reader_rb32(mov->fp);
-	file_reader_skip(mov->fp, 10);
+	mvhd->rate = mov_buffer_r32(&mov->io);
+	mvhd->volume = (uint16_t)mov_buffer_r16(&mov->io);
+	//mvhd->reserved = mov_buffer_r16(&mov->io);
+	//mvhd->reserved2[0] = mov_buffer_r32(&mov->io);
+	//mvhd->reserved2[1] = mov_buffer_r32(&mov->io);
+	mov_buffer_skip(&mov->io, 10);
 	for (i = 0; i < 9; i++)
-		mvhd->matrix[i] = file_reader_rb32(mov->fp);
+		mvhd->matrix[i] = mov_buffer_r32(&mov->io);
 #if 0
 	for (i = 0; i < 6; i++)
-		mvhd->pre_defined[i] = file_reader_rb32(mov->fp);
+		mvhd->pre_defined[i] = mov_buffer_r32(&mov->io);
 #else
-	file_reader_rb32(mov->fp); /* preview time */
-	file_reader_rb32(mov->fp); /* preview duration */
-	file_reader_rb32(mov->fp); /* poster time */
-	file_reader_rb32(mov->fp); /* selection time */
-	file_reader_rb32(mov->fp); /* selection duration */
-	file_reader_rb32(mov->fp); /* current time */
+	mov_buffer_r32(&mov->io); /* preview time */
+	mov_buffer_r32(&mov->io); /* preview duration */
+	mov_buffer_r32(&mov->io); /* poster time */
+	mov_buffer_r32(&mov->io); /* selection time */
+	mov_buffer_r32(&mov->io); /* selection duration */
+	mov_buffer_r32(&mov->io); /* current time */
 #endif
-	mvhd->next_track_ID = file_reader_rb32(mov->fp);
+	mvhd->next_track_ID = mov_buffer_r32(&mov->io);
 
 	(void)box;
 	return 0;
@@ -88,40 +86,40 @@ size_t mov_write_mvhd(const struct mov_t* mov)
 //	int rotation = 0; // 90/180/270
 	const struct mov_mvhd_t* mvhd = &mov->mvhd;
 
-	file_writer_wb32(mov->fp, 108); /* size */
-	file_writer_write(mov->fp, "mvhd", 4);
-	file_writer_wb32(mov->fp, 0); /* version & flags */
+	mov_buffer_w32(&mov->io, 108); /* size */
+	mov_buffer_write(&mov->io, "mvhd", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
 
-	file_writer_wb32(mov->fp, (uint32_t)mvhd->creation_time); /* creation_time */
-	file_writer_wb32(mov->fp, (uint32_t)mvhd->modification_time); /* modification_time */
-	file_writer_wb32(mov->fp, mvhd->timescale); /* timescale */
-	file_writer_wb32(mov->fp, (uint32_t)mvhd->duration); /* duration */
+	mov_buffer_w32(&mov->io, (uint32_t)mvhd->creation_time); /* creation_time */
+	mov_buffer_w32(&mov->io, (uint32_t)mvhd->modification_time); /* modification_time */
+	mov_buffer_w32(&mov->io, mvhd->timescale); /* timescale */
+	mov_buffer_w32(&mov->io, (uint32_t)mvhd->duration); /* duration */
 
-	file_writer_wb32(mov->fp, 0x00010000); /* rate 1.0 */
-	file_writer_wb16(mov->fp, 0x0100); /* volume 1.0 = normal */
-	file_writer_wb16(mov->fp, 0); /* reserved */
-	file_writer_wb32(mov->fp, 0); /* reserved */
-	file_writer_wb32(mov->fp, 0); /* reserved */
+	mov_buffer_w32(&mov->io, 0x00010000); /* rate 1.0 */
+	mov_buffer_w16(&mov->io, 0x0100); /* volume 1.0 = normal */
+	mov_buffer_w16(&mov->io, 0); /* reserved */
+	mov_buffer_w32(&mov->io, 0); /* reserved */
+	mov_buffer_w32(&mov->io, 0); /* reserved */
 
 	// matrix
-	file_writer_wb32(mov->fp, 0x00010000); /* u */
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0); /* v */
-	file_writer_wb32(mov->fp, 0x00010000);
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0); /* w */
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0x40000000);
+	mov_buffer_w32(&mov->io, 0x00010000); /* u */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* v */
+	mov_buffer_w32(&mov->io, 0x00010000);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* w */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0x40000000);
 
-	file_writer_wb32(mov->fp, 0); /* reserved (preview time) */
-	file_writer_wb32(mov->fp, 0); /* reserved (preview duration) */
-	file_writer_wb32(mov->fp, 0); /* reserved (poster time) */
-	file_writer_wb32(mov->fp, 0); /* reserved (selection time) */
-	file_writer_wb32(mov->fp, 0); /* reserved (selection duration) */
-	file_writer_wb32(mov->fp, 0); /* reserved (current time) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (preview time) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (preview duration) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (poster time) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (selection time) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (selection duration) */
+	mov_buffer_w32(&mov->io, 0); /* reserved (current time) */
 
-	file_writer_wb32(mov->fp, mvhd->next_track_ID); /* Next track id */
+	mov_buffer_w32(&mov->io, mvhd->next_track_ID); /* Next track id */
 
 	return 108;
 }

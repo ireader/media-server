@@ -8,6 +8,8 @@
 #include <string.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 static uint8_t s_packet[2 * 1024 * 1024];
 static uint8_t s_buffer[4 * 1024 * 1024];
 static FILE *s_vfp, *s_afp;
@@ -76,7 +78,8 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 
 void mov_reader_test(const char* mp4)
 {
-	mov_reader_t* mov = mov_reader_create(mp4);
+	FILE* fp = fopen(mp4, "rb");
+	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	uint64_t duration = mov_reader_getduration(mov);
 
 	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, NULL);
@@ -91,4 +94,5 @@ void mov_reader_test(const char* mp4)
 	mov_reader_destroy(mov);
 	if(s_vfp) fclose(s_vfp);
 	if(s_afp) fclose(s_afp);
+	fclose(fp);
 }

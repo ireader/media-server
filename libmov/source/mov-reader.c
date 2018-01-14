@@ -1,5 +1,4 @@
 #include "mov-reader.h"
-#include "file-reader.h"
 #include "mov-internal.h"
 #include <errno.h>
 #include <stdio.h>
@@ -30,14 +29,16 @@ static int mov_sample_seek(struct mov_track_t* track, int64_t timestamp);
 // 8.1.1 Media Data Box (p28)
 static int mov_read_mdat(struct mov_t* mov, const struct mov_box_t* box)
 {
-	return file_reader_skip(mov->fp, box->size);
+	mov_buffer_skip(&mov->io, box->size);
+	return mov_buffer_error(&mov->io);
 }
 
 // 8.1.2 Free Space Box (p28)
 static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 {
 	// Container: File or other box
-	return file_reader_skip(mov->fp, box->size);
+	mov_buffer_skip(&mov->io, box->size);
+	return mov_buffer_error(&mov->io);
 }
 
 //static struct mov_stsd_t* mov_track_stsd_find(struct mov_track_t* track, uint32_t sample_description_index)
@@ -200,16 +201,16 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_read_dref(struct mov_t* mov, const struct mov_box_t* box)
 {
 	uint32_t i, entry_count;
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	entry_count = file_reader_rb32(mov->fp);
+	mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	entry_count = mov_buffer_r32(&mov->io);
 
 	for (i = 0; i < entry_count; i++)
 	{
-		uint32_t size = file_reader_rb32(mov->fp);
-		/*uint32_t type = */file_reader_rb32(mov->fp);
-		/*uint32_t vern = */file_reader_rb32(mov->fp); /* version + flags */
-		file_reader_skip(mov->fp, size-12);
+		uint32_t size = mov_buffer_r32(&mov->io);
+		/*uint32_t type = */mov_buffer_r32(&mov->io);
+		/*uint32_t vern = */mov_buffer_r32(&mov->io); /* version + flags */
+		mov_buffer_skip(&mov->io, size-12);
 	}
 
 	(void)box;
@@ -220,9 +221,9 @@ static int mov_read_btrt(struct mov_t* mov, const struct mov_box_t* box)
 {
 	// ISO/IEC 14496-15:2010(E)
 	// 5.3.4 AVC Video Stream Definition (p19)
-	file_reader_rb32(mov->fp); /* bufferSizeDB */
-	file_reader_rb32(mov->fp); /* maxBitrate */
-	file_reader_rb32(mov->fp); /* avgBitrate */
+	mov_buffer_r32(&mov->io); /* bufferSizeDB */
+	mov_buffer_r32(&mov->io); /* maxBitrate */
+	mov_buffer_r32(&mov->io); /* avgBitrate */
 	(void)box;
 	return 0;
 }
@@ -232,15 +233,15 @@ static int mov_read_uuid(struct mov_t* mov, const struct mov_box_t* box)
 	uint8_t usertype[16] = { 0 };
 	if(box->size > 16) 
 	{
-		file_reader_read(mov->fp, usertype, sizeof(usertype));
-		file_reader_skip(mov->fp, box->size - 16);
+		mov_buffer_read(&mov->io, usertype, sizeof(usertype));
+		mov_buffer_skip(&mov->io, box->size - 16);
 	}
-	return 0;
+	return mov_buffer_error(&mov->io);
 }
 
 static int mov_read_moof(struct mov_t* mov, const struct mov_box_t* box)
 {
-	mov->moof_offset = file_reader_tell(mov->fp) - 8 /*box size */;
+	mov->moof_offset = mov_buffer_tell(&mov->io) - 8 /*box size */;
 	return mov_reader_box(mov, box);
 }
 
@@ -248,47 +249,47 @@ static int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	unsigned int version;
 	uint64_t fragment_duration;
-	version = file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
+	version = mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
 
 	if (1 == version)
-		fragment_duration = file_reader_rb64(mov->fp); /* fragment_duration*/
+		fragment_duration = mov_buffer_r64(&mov->io); /* fragment_duration*/
 	else
-		fragment_duration = file_reader_rb32(mov->fp); /* fragment_duration*/
+		fragment_duration = mov_buffer_r32(&mov->io); /* fragment_duration*/
 
 	(void)box;
 	assert(fragment_duration <= mov->mvhd.duration);
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 static int mov_read_mfhd(struct mov_t* mov, const struct mov_box_t* box)
 {
 	(void)box;
-	file_reader_rb32(mov->fp); /* version & flags */
-	file_reader_rb32(mov->fp); /* sequence_number */
-	return file_reader_error(mov->fp);
+	mov_buffer_r32(&mov->io); /* version & flags */
+	mov_buffer_r32(&mov->io); /* sequence_number */
+	return mov_buffer_error(&mov->io);
 }
 
 // 8.8.12 Track fragment decode time (p76)
 static int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box)
 {
 	unsigned int version;
-	version = file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
+	version = mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
 	if (1 == version)
-		mov->track->end_dts = file_reader_rb64(mov->fp); /* baseMediaDecodeTime */
+		mov->track->end_dts = mov_buffer_r64(&mov->io); /* baseMediaDecodeTime */
 	else
-		mov->track->end_dts = file_reader_rb32(mov->fp); /* baseMediaDecodeTime */
-	return file_reader_error(mov->fp); (void)box;
+		mov->track->end_dts = mov_buffer_r32(&mov->io); /* baseMediaDecodeTime */
+	return mov_buffer_error(&mov->io); (void)box;
 }
 
 // 8.8.11 Movie Fragment Random Access Offset Box (p75)
 static int mov_read_mfro(struct mov_t* mov, const struct mov_box_t* box)
 {
 	(void)box;
-	file_reader_rb32(mov->fp); /* version & flags */
-	file_reader_rb32(mov->fp); /* size */
-	return file_reader_error(mov->fp);
+	mov_buffer_r32(&mov->io); /* version & flags */
+	mov_buffer_r32(&mov->io); /* size */
+	return mov_buffer_error(&mov->io);
 }
 
 static int mov_read_default(struct mov_t* mov, const struct mov_box_t* box)
@@ -356,16 +357,16 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 	struct mov_box_t box;
 	int (*parse)(struct mov_t* mov, const struct mov_box_t* box);
 
-	while (bytes + 8 < parent->size && 0 == file_reader_error(mov->fp))
+	while (bytes + 8 < parent->size && 0 == mov_buffer_error(&mov->io))
 	{
 		uint64_t n = 8;
-		box.size = file_reader_rb32(mov->fp);
-		box.type = file_reader_rb32(mov->fp);
+		box.size = mov_buffer_r32(&mov->io);
+		box.type = mov_buffer_r32(&mov->io);
 
 		if (1 == box.size)
 		{
 			// unsigned int(64) largesize
-			box.size = file_reader_rb64(mov->fp);
+			box.size = mov_buffer_r64(&mov->io);
 			n += 8;
 		}
 		else if (0 == box.size)
@@ -400,19 +401,19 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 		if (NULL == parse)
 		{
-			file_reader_skip(mov->fp, box.size);
+			mov_buffer_skip(&mov->io, box.size);
 		}
 		else
 		{
 			int r;
 			uint64_t pos, pos2;
-			pos = file_reader_tell(mov->fp);
+			pos = mov_buffer_tell(&mov->io);
 			r = parse(mov, &box);
 			assert(0 == r);
 			if (0 != r) return r;
-			pos2 = file_reader_tell(mov->fp);
+			pos2 = mov_buffer_tell(&mov->io);
 			assert(pos2 - pos == box.size);
-			file_reader_skip(mov->fp, box.size - (pos2 - pos));
+			mov_buffer_skip(&mov->io, box.size - (pos2 - pos));
 		}
 	}
 
@@ -450,7 +451,7 @@ static int mov_reader_init(struct mov_t* mov)
 	return 0;
 }
 
-struct mov_reader_t* mov_reader_create(const char* file)
+struct mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* param)
 {
 	struct mov_reader_t* reader;
 	reader = (struct mov_reader_t*)calloc(1, sizeof(*reader));
@@ -465,8 +466,9 @@ struct mov_reader_t* mov_reader_create(const char* file)
 	reader->mov.ftyp.brands_count = 0;
 	reader->mov.header = 0;
 
-	reader->mov.fp = file_reader_create(file);
-	if (NULL == reader->mov.fp || 0 != mov_reader_init(&reader->mov))
+	reader->mov.io.param = param;
+	memcpy(&reader->mov.io.io, buffer, sizeof(reader->mov.io.io));
+	if (0 != mov_reader_init(&reader->mov))
 	{
 		mov_reader_destroy(reader);
 		return NULL;
@@ -479,7 +481,6 @@ struct mov_reader_t* mov_reader_create(const char* file)
 void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	size_t i;
-	file_reader_destroy(reader->mov.fp);
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
 		FREE(reader->mov.tracks[i].extra_data);
@@ -539,14 +540,11 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	if (bytes < sample->bytes)
 		return ENOMEM;
 
-	if (0 != file_reader_seek(reader->mov.fp, sample->offset))
+	mov_buffer_seek(&reader->mov.io, sample->offset);
+	mov_buffer_read(&reader->mov.io, buffer, sample->bytes);
+	if (mov_buffer_error(&reader->mov.io))
 	{
-		return -1;
-	}
-
-	if (sample->bytes != file_reader_read(reader->mov.fp, buffer, sample->bytes))
-	{
-		return file_reader_error(reader->mov.fp);
+		return mov_buffer_error(&reader->mov.io);
 	}
 
 	track->sample_offset++; //mark as read

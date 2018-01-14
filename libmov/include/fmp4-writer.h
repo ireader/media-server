@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "mov-buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,7 +12,7 @@ extern "C" {
 typedef struct fmp4_writer_t fmp4_writer_t;
 
 /// @param[in] flags mov flags, such as: MOV_FLAG_SEGMENT, see more @mov-format.h
-fmp4_writer_t* fmp4_writer_create(const char* file, int flags);
+fmp4_writer_t* fmp4_writer_create(const struct mov_buffer_t *buffer, void* param, int flags);
 void fmp4_writer_destroy(fmp4_writer_t* fmp4);
 
 /// @param[in] object MPEG-4 systems ObjectTypeIndication such as: MOV_OBJECT_H264, see more @mov-format.h
@@ -19,6 +20,7 @@ void fmp4_writer_destroy(fmp4_writer_t* fmp4);
 /// @return >=0-track, <0-error
 int fmp4_writer_add_audio(fmp4_writer_t* fmp4, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 int fmp4_writer_add_video(fmp4_writer_t* fmp4, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
+int fmp4_writer_add_subtitle(fmp4_writer_t* fmp4, uint8_t object);
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig
@@ -31,8 +33,14 @@ int fmp4_writer_add_video(fmp4_writer_t* fmp4, uint8_t object, int width, int he
 /// @return 0-ok, other-error
 int fmp4_writer_write(fmp4_writer_t* fmp4, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
-int fmp4_writer_new_segment(fmp4_writer_t* fmp4, const char* file);
-int fmp4_writer_init_segment(fmp4_writer_t* fmp4, const char* file);
+/// Save data and open next segment
+/// @return 0-ok, other-error
+int fmp4_writer_save_segment(fmp4_writer_t* fmp4);
+
+/// Get init segment data(write FTYP, MOOV only)
+/// WARNING: it caller duty to switch file/buffer context with fmp4_writer_write
+/// @return 0-ok, other-error
+int fmp4_writer_init_segment(fmp4_writer_t* fmp4);
 
 #ifdef __cplusplus
 }

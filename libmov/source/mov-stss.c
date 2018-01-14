@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <stdlib.h>
 #include <assert.h>
@@ -11,9 +9,9 @@ int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t i, entry_count;
 	struct mov_stbl_t* stbl = &mov->track->stbl;
 
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	entry_count = file_reader_rb32(mov->fp);
+	mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	entry_count = mov_buffer_r32(&mov->io);
 
 	assert(0 == stbl->stss_count && NULL == stbl->stss);
 	if (stbl->stss_count < entry_count)
@@ -25,10 +23,10 @@ int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box)
 	stbl->stss_count = entry_count;
 
 	for (i = 0; i < entry_count; i++)
-		stbl->stss[i] = file_reader_rb32(mov->fp); // uint32_t sample_number
+		stbl->stss[i] = mov_buffer_r32(&mov->io); // uint32_t sample_number
 
 	(void)box;
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_stss(const struct mov_t* mov)
@@ -41,11 +39,11 @@ size_t mov_write_stss(const struct mov_t* mov)
 
 	size = 12/* full box */ + 4/* entry count */;
 
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "stss", 4);
-	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, 0); /* entry count */
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "stss", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	mov_buffer_w32(&mov->io, 0); /* entry count */
 
 	for (i = 0, j = 0; i < track->sample_count; i++)
 	{
@@ -53,16 +51,16 @@ size_t mov_write_stss(const struct mov_t* mov)
 		if (sample->flags & MOV_AV_FLAG_KEYFREAME)
 		{
 			++j;
-			file_writer_wb32(mov->fp, i + 1);
+			mov_buffer_w32(&mov->io, i + 1);
 		}
 	}
 
 	size += j * 4/* entry */;
-	offset2 = file_writer_tell(mov->fp);
-	file_writer_seek(mov->fp, offset);
-	file_writer_wb32(mov->fp, size); /* size */
-	file_writer_seek(mov->fp, offset + 12);
-	file_writer_wb32(mov->fp, j); /* entry count */
-	file_writer_seek(mov->fp, offset2);
+	offset2 = mov_buffer_tell(&mov->io);
+	mov_buffer_seek(&mov->io, offset);
+	mov_buffer_w32(&mov->io, size); /* size */
+	mov_buffer_seek(&mov->io, offset + 12);
+	mov_buffer_w32(&mov->io, j); /* entry count */
+	mov_buffer_seek(&mov->io, offset2);
 	return size;
 }
