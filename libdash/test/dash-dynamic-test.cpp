@@ -30,18 +30,20 @@ struct dash_playlist_t
 
 std::map<std::string, dash_playlist_t*> s_playlists;
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes)
 {
 	dash_playlist_t* dash = (dash_playlist_t*)param;
 	dash->track_video = track;
-	dash->adapation_video = dash_mpd_add_video_adapation_set(dash->mpd, object, width, height, extra, bytes);
+	dash->adapation_video = dash_mpd_add_video_adapation_set(dash->mpd, dash->name.c_str(), object, width, height, extra, bytes);
 }
 
 static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes)
 {
 	dash_playlist_t* dash = (dash_playlist_t*)param;
 	dash->track_audio = track;
-	dash->adapation_audio = dash_mpd_add_audio_adapation_set(dash->mpd, object, channel_count, bit_per_sample, sample_rate, extra, bytes);
+	dash->adapation_audio = dash_mpd_add_audio_adapation_set(dash->mpd, dash->name.c_str(), object, channel_count, bit_per_sample, sample_rate, extra, bytes);
 }
 
 static void mp4_onread(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
@@ -64,13 +66,25 @@ static void mp4_onread(void* param, uint32_t track, const void* buffer, size_t b
 	}
 }
 
+static int dash_mpd_onsegment(void* param, int /*track*/, const void* data, size_t bytes, int64_t /*pts*/, int64_t /*dts*/, int64_t /*duration*/, const char* name)
+{
+	FILE* fp = fopen(name, "wb");
+	fwrite(data, 1, bytes, fp);
+	fclose(fp);
+
+	dash_playlist_t* dash = (dash_playlist_t*)param;
+	dash_mpd_playlist(dash->mpd, dash->playlist, sizeof(dash->playlist));
+	return 0;
+}
+
 static int STDCALL dash_server_worker(void* param)
 {
 	uint64_t clock = 0;
 	dash_playlist_t* dash = (dash_playlist_t*)param;
 	std::string file = dash->name.substr(0, dash->name.find('.', 0)) + ".mp4";
 
-	mov_reader_t* mov = mov_reader_create(file.c_str());
+	FILE* fp = fopen(file.c_str(), "rb");
+	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	mov_reader_getinfo(mov, mp4_onvideo, mp4_onaudio, dash);
 	int r = mov_reader_read(mov, dash->packet, sizeof(dash->packet), mp4_onread, dash);
 
@@ -92,17 +106,10 @@ static int STDCALL dash_server_worker(void* param)
 	}
 
 	mov_reader_destroy(mov);
+	fclose(fp);
 	//dash_mpd_destroy(dash->mpd);
 	//s_playlists.erase();
 	//delete playlist;
-	return 0;
-}
-
-static int dash_playlist_update(void* param)
-{
-	printf("dash playlist update\n");
-	dash_playlist_t* dash = (dash_playlist_t*)param;
-	dash_mpd_playlist(dash->mpd, dash->playlist, sizeof(dash->playlist));
 	return 0;
 }
 
@@ -124,12 +131,9 @@ static int dash_server_onlive(void* /*http*/, http_session_t* session, const cha
 	{
 		if (s_playlists.find(name) == s_playlists.end())
 		{
-			struct dash_mpd_notify_t notify;
-			notify.onupdate = dash_playlist_update;
-
 			dash_playlist_t* dash = new dash_playlist_t();
 			dash->name = name;
-			dash->mpd = dash_mpd_create(name, DASH_DYNAMIC, &notify, dash);
+			dash->mpd = dash_mpd_create(DASH_DYNAMIC, dash_mpd_onsegment, dash);
 			dash_mpd_playlist(dash->mpd, dash->playlist, sizeof(dash->playlist));
 			s_playlists[name] = dash;
 
