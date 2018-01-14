@@ -49,7 +49,7 @@ struct hls_playlist_t
 
 static std::map<std::string, hls_playlist_t*> s_playlists;
 
-static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts, int64_t /*dts*/, int64_t duration)
+static int hls_handler(void* param, const void* data, size_t bytes, int64_t pts, int64_t /*dts*/, int64_t duration)
 {
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
 
@@ -81,6 +81,7 @@ static void hls_handler(void* param, const void* data, size_t bytes, int64_t pts
 	}
 
 	printf("new segment: %s\n", name);
+	return 0;
 }
 
 static int flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
@@ -230,11 +231,17 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	}
 	else if (path_testfile(fullpath.c_str()))
 	{
+		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
-		if(std::string::npos != fullpath.find(".m3u8"))
+		if (std::string::npos != fullpath.find(".m3u8"))
 			http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
-		else if (std::string::npos != fullpath.find(".mp4"))
+		else if (std::string::npos != fullpath.find(".mpd"))
+			http_server_set_header(session, "content-type", "application/dash+xml");
+		else if (std::string::npos != fullpath.find(".mp4") || std::string::npos != fullpath.find(".m4v"))
 			http_server_set_header(session, "content-type", "video/mp4");
+		else if (std::string::npos != fullpath.find(".m4a"))
+			http_server_set_header(session, "content-type", "audio/mp4"); 
 		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 

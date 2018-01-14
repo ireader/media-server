@@ -10,21 +10,16 @@ extern "C" {
 
 typedef struct hls_fmp4_t hls_fmp4_t;
 
-struct hls_fmp4_handler_t
-{
-	/// @param[in] param user-defined parameter(hls_fmp4_create)
-	/// @param[out] file new mp4 file name
-	/// @param[in] file buffer length in byte
-	int (*open)(void* param, char* file, size_t length);
-
-	/// @param[in] pts/dts ts file first pts/dts(ms)
-	/// @param[in] param user-defined parameter(hls_fmp4_create)
-	/// @param[in] duration file duration(ms)
-	int (*close)(void* param, int64_t pts, int64_t dts, int64_t duration);
-};
+/// @param[in] param user-defined parameter(hls_media_create)
+/// @param[in] data ts file content
+/// @param[in] byts ts file length in byte
+/// @param[in] pts/dts ts file first pts/dts(ms)
+/// @param[in] duration file duration(ms)
+/// @return 0-ok, other-error
+typedef int (*hls_fmp4_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration);
 
 /// @param[in] duration ts segment duration(millisecond), 0-create segment per video key frame
-hls_fmp4_t* hls_fmp4_create(int64_t duration, struct hls_fmp4_handler_t* handler, void* param);
+hls_fmp4_t* hls_fmp4_create(int64_t duration, hls_fmp4_handler handler, void* param);
 
 void hls_fmp4_destroy(hls_fmp4_t* hls);
 
@@ -42,7 +37,11 @@ int hls_fmp4_add_video(hls_fmp4_t* hls, uint8_t object, int width, int height, c
 /// @return 0-ok, other-error
 int hls_fmp4_input(hls_fmp4_t* hls, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
-int hls_fmp4_init_segment(hls_fmp4_t* hls, const char* file);
+/// WARNING: hls_fmp4_input/hls_fmp4_init_segment not thread-safe
+/// @param[in] data init segment buffer
+/// @param[in] bytes data buffer size
+/// @return >0-bytes, <0-error
+int hls_fmp4_init_segment(hls_fmp4_t* hls, void* data, size_t bytes);
 
 #ifdef __cplusplus
 }

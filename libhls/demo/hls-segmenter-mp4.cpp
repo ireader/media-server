@@ -62,18 +62,27 @@ static AVFormatContext* ffmpeg_open(const char* url)
 	return ic;
 }
 
-static char name[128] = { 0 };
-static int hls_segment_open(void* /*m3u8*/, char* file, size_t bytes)
+static int hls_init_segment(hls_fmp4_t* hls, hls_m3u8_t* m3u)
 {
-	static int i = 0;
-	snprintf(name, sizeof(name), "hls/%d.mp4", ++i);
-	snprintf(file, bytes, "%s", name);
-	return 0;
+	int bytes = hls_fmp4_init_segment(hls, s_packet, sizeof(s_packet));
+
+	FILE* fp = fopen("hls/0.mp4", "wb");
+	fwrite(s_packet, 1, bytes, fp);
+	fclose(fp);
+
+	return hls_m3u8_set_x_map(m3u, "hls/0.mp4");
 }
 
-static int hls_segment_close(void* m3u8, int64_t pts, int64_t /*dts*/, int64_t duration)
+static int hls_segment(void* m3u8, const void* data, size_t bytes, int64_t /*pts*/, int64_t dts, int64_t duration)
 {
-	return hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, 0);
+	static int i = 0;
+	static char name[128] = { 0 };
+	snprintf(name, sizeof(name), "hls/%d.mp4", ++i);
+	FILE* fp = fopen(name, "wb");
+	fwrite(data, 1, bytes, fp);
+	fclose(fp);
+
+	return hls_m3u8_add((hls_m3u8_t*)m3u8, name, dts, duration, 0);
 }
 
 void hls_segmenter_fmp4_test(const char* file)
@@ -84,14 +93,9 @@ void hls_segmenter_fmp4_test(const char* file)
 	memset(&pkt, 0, sizeof(pkt));
 	//av_init_packet(&pkt);
 
-	struct hls_fmp4_handler_t handler = {
-		hls_segment_open,
-		hls_segment_close,
-	};
-
 	AVFormatContext* ic = ffmpeg_open(file);
 	hls_m3u8_t* m3u = hls_m3u8_create(0, 7);
-	hls_fmp4_t* hls = hls_fmp4_create(HLS_DURATION * 1000, &handler, m3u);
+	hls_fmp4_t* hls = hls_fmp4_create(HLS_DURATION * 1000, hls_segment, m3u);
 
 	int track_aac = -1;
 	int track_264 = -1;
@@ -107,8 +111,8 @@ void hls_segmenter_fmp4_test(const char* file)
 			track_265 = hls_fmp4_add_video(hls, MOV_OBJECT_HEVC, st->codecpar->width, st->codecpar->height, st->codecpar->extradata, st->codecpar->extradata_size);
 	}
 
-	hls_fmp4_init_segment(hls, "hls/0.mp4");
-	hls_m3u8_set_x_map(m3u, "hls/0.mp4");
+	// write init segment
+	hls_init_segment(hls, m3u);
 
 	int r = av_read_frame(ic, &pkt);
 	while (0 == r)
@@ -140,16 +144,16 @@ void hls_segmenter_fmp4_test(const char* file)
 		r = av_read_frame(ic, &pkt);
 	}
 
+	avformat_close_input(&ic);
+	avformat_free_context(ic); 
+	hls_fmp4_destroy(hls);
+
 	// write m3u8 file
-	hls_fmp4_input(hls, 0, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, s_packet, sizeof(s_packet));
+	hls_m3u8_destroy(m3u);
+
 	FILE* fp = fopen("playlist.m3u8", "wb");
 	fwrite(s_packet, 1, strlen(s_packet), fp);
 	fclose(fp);
-
-	avformat_close_input(&ic);
-	avformat_free_context(ic);
-	hls_m3u8_destroy(m3u);
-	hls_fmp4_destroy(hls);
 }
 #endif

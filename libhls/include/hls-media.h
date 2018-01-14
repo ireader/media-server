@@ -17,7 +17,8 @@ typedef struct hls_media_t hls_media_t;
 /// @param[in] byts ts file length in byte
 /// @param[in] pts/dts ts file first pts/dts(ms)
 /// @param[in] duration file duration(ms)
-typedef void (*hls_media_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration);
+/// @return 0-ok, other-error
+typedef int (*hls_media_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration);
 
 /// param[in] duration ts segment duration(millisecond), 0-create segment per video key frame
 hls_media_t* hls_media_create(int64_t duration, hls_media_handler handler, void* param);
