@@ -65,7 +65,8 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 
 	memcpy(fmp4->ptr + fmp4->offset, data, (size_t)bytes);
 	fmp4->offset += (size_t)bytes;
-	fmp4->bytes += (size_t)bytes;
+	if(fmp4->offset > fmp4->bytes)
+		fmp4->bytes = fmp4->offset;
 	return 0;
 }
 

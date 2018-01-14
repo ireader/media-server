@@ -123,7 +123,8 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 
 	memcpy(dash->ptr + dash->offset, data, (size_t)bytes);
 	dash->offset += (size_t)bytes;
-	dash->bytes += (size_t)bytes;
+	if (dash->offset > dash->bytes)
+		dash->bytes = dash->offset;
 	return 0;
 }
 
