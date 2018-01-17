@@ -55,7 +55,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_track_build(struct mov_track_t* track)
 {
 	size_t i, j, k;
-	uint32_t dts_shift;
+	int32_t delta, dts_shift;
 	uint64_t n, chunk_offset;
 	struct mov_stbl_t* stbl = &track->stbl;
 
@@ -110,17 +110,17 @@ static int mov_track_build(struct mov_track_t* track)
 	dts_shift = 0;
 	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
-		if ((int32_t)stbl->ctts[i].sample_delta < 0 
-			&& (int32_t)stbl->ctts[i].sample_delta != -1 // see more cslg box
-			&& dts_shift < (uint32_t)(-(int32_t)stbl->ctts[i].sample_delta))
-			dts_shift = -(int32_t)stbl->ctts[i].sample_delta;
+		delta = (int32_t)stbl->ctts[i].sample_delta;
+		if (delta < 0 && dts_shift > delta && delta != -1 /* see more cslg box*/)
+			dts_shift = delta;
 	}
+	assert(dts_shift <= 0);
 
 	// sample cts/pts
 	for (i = 0, n = 0; i < stbl->ctts_count; i++)
 	{
 		for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
-			track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta + dts_shift; // always as int, fixed mp4box delta version error
+			track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta - dts_shift; // always as int, fixed mp4box delta version error
 	}
 	assert(0 == stbl->ctts_count || n == track->sample_count);
 
