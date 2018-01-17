@@ -334,6 +334,7 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 int flv_muxer_hevc_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r;
+	uint8_t* p;
 	uint8_t type = (*(const uint8_t*)nalu >> 1) & 0x3f;
 
 	flv->keyframe = 0; // reset keyframe flag
@@ -343,9 +344,9 @@ int flv_muxer_hevc_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes,
 	case 32:
 	case 33:
 	case 34:
-		assert(bytes <= sizeof(flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data));
-		if (bytes >= sizeof(flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data)
-			|| flv->v.hevc.numOfArrays >= sizeof(flv->v.hevc.nalu) / sizeof(flv->v.hevc.nalu[0]))
+		p = flv->v.hevc.numOfArrays > 0 ? flv->v.hevc.nalu[flv->v.hevc.numOfArrays - 1].data + flv->v.hevc.nalu[flv->v.hevc.numOfArrays - 1].bytes : flv->v.hevc.data;
+		if (flv->v.hevc.numOfArrays >= sizeof(flv->v.hevc.nalu) / sizeof(flv->v.hevc.nalu[0])
+			|| p + bytes >= flv->v.hevc.data + sizeof(flv->v.hevc.data))
 		{
 			assert(0);
 			return -1;
@@ -354,6 +355,7 @@ int flv_muxer_hevc_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes,
 		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].type = type;
 		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].bytes = (uint16_t)bytes;
 		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].array_completeness = 1;
+		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data = p;
 		memcpy(flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data, nalu, bytes);
 		++flv->v.hevc.numOfArrays;
 		return 0;

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
-static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration)
+static int hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration)
 {
 	static int64_t s_dts = -1;
 	int discontinue = -1 != s_dts ? 0 : (dts > s_dts + HLS_DURATION / 2 ? 1 : 0);
@@ -24,6 +24,8 @@ static void hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts,
 	FILE* fp = fopen(name, "wb");
 	fwrite(data, 1, bytes, fp);
 	fclose(fp);
+
+	return 0;
 }
 
 static int flv_handler(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)

@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 
@@ -9,30 +7,30 @@ int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box)
 	unsigned int version;
 	unsigned int i, reference_count;
 
-	version = file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	file_reader_rb32(mov->fp); /* reference_ID */
-	file_reader_rb32(mov->fp); /* timescale */
+	version = mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	mov_buffer_r32(&mov->io); /* reference_ID */
+	mov_buffer_r32(&mov->io); /* timescale */
 
 	if (0 == version)
 	{
-		file_reader_rb32(mov->fp); /* earliest_presentation_time */
-		file_reader_rb32(mov->fp); /* first_offset */
+		mov_buffer_r32(&mov->io); /* earliest_presentation_time */
+		mov_buffer_r32(&mov->io); /* first_offset */
 	}
 	else
 	{
-		file_reader_rb64(mov->fp); /* earliest_presentation_time */
-		file_reader_rb64(mov->fp); /* first_offset */
+		mov_buffer_r64(&mov->io); /* earliest_presentation_time */
+		mov_buffer_r64(&mov->io); /* first_offset */
 	}
 
-	file_reader_rb16(mov->fp); /* reserved */
-	reference_count = file_reader_rb16(mov->fp); /* reference_count */
+	mov_buffer_r16(&mov->io); /* reserved */
+	reference_count = mov_buffer_r16(&mov->io); /* reference_count */
 	for (i = 0; i < reference_count; i++)
 	{
-		file_reader_rb32(mov->fp); /* reference_type & referenced_size */
-		file_reader_rb32(mov->fp); /* subsegment_duration */
-		file_reader_rb32(mov->fp); /* starts_with_SAP & SAP_type & SAP_delta_time */
+		mov_buffer_r32(&mov->io); /* reference_type & referenced_size */
+		mov_buffer_r32(&mov->io); /* subsegment_duration */
+		mov_buffer_r32(&mov->io); /* starts_with_SAP & SAP_type & SAP_delta_time */
 	}
 
-	return file_reader_error(mov->fp); (void)box;
+	return mov_buffer_error(&mov->io); (void)box;
 }

@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 
@@ -40,36 +38,36 @@ int mov_read_tkhd(struct mov_t* mov, const struct mov_box_t* box)
 	int i;
 	struct mov_tkhd_t* tkhd = &mov->track->tkhd;
 
-	tkhd->version = file_reader_r8(mov->fp);
-	tkhd->flags = file_reader_rb24(mov->fp);
+	tkhd->version = mov_buffer_r8(&mov->io);
+	tkhd->flags = mov_buffer_r24(&mov->io);
 
 	if (1 == tkhd->version)
 	{
-		tkhd->creation_time = file_reader_rb64(mov->fp);
-		tkhd->modification_time = file_reader_rb64(mov->fp);
-		tkhd->track_ID = file_reader_rb32(mov->fp);
-		/*tkhd->reserved = */file_reader_rb32(mov->fp);
-		tkhd->duration = file_reader_rb64(mov->fp);
+		tkhd->creation_time = mov_buffer_r64(&mov->io);
+		tkhd->modification_time = mov_buffer_r64(&mov->io);
+		tkhd->track_ID = mov_buffer_r32(&mov->io);
+		/*tkhd->reserved = */mov_buffer_r32(&mov->io);
+		tkhd->duration = mov_buffer_r64(&mov->io);
 	}
 	else
 	{
 		assert(0 == tkhd->version);
-		tkhd->creation_time = file_reader_rb32(mov->fp);
-		tkhd->modification_time = file_reader_rb32(mov->fp);
-		tkhd->track_ID = file_reader_rb32(mov->fp);
-		/*tkhd->reserved = */file_reader_rb32(mov->fp);
-		tkhd->duration = file_reader_rb32(mov->fp);
+		tkhd->creation_time = mov_buffer_r32(&mov->io);
+		tkhd->modification_time = mov_buffer_r32(&mov->io);
+		tkhd->track_ID = mov_buffer_r32(&mov->io);
+		/*tkhd->reserved = */mov_buffer_r32(&mov->io);
+		tkhd->duration = mov_buffer_r32(&mov->io);
 	}
 
-	file_reader_skip(mov->fp, 8); // const unsigned int(32)[2] reserved = 0;
-	tkhd->layer = (uint16_t)file_reader_rb16(mov->fp);
-	tkhd->alternate_group = (uint16_t)file_reader_rb16(mov->fp);
-	tkhd->volume = (uint16_t)file_reader_rb16(mov->fp);
-	file_reader_skip(mov->fp, 2); // const unsigned int(16) reserved = 0;
+	mov_buffer_skip(&mov->io, 8); // const unsigned int(32)[2] reserved = 0;
+	tkhd->layer = (uint16_t)mov_buffer_r16(&mov->io);
+	tkhd->alternate_group = (uint16_t)mov_buffer_r16(&mov->io);
+	tkhd->volume = (uint16_t)mov_buffer_r16(&mov->io);
+	mov_buffer_skip(&mov->io, 2); // const unsigned int(16) reserved = 0;
 	for (i = 0; i < 9; i++)
-		tkhd->matrix[i] = file_reader_rb32(mov->fp);
-	tkhd->width = file_reader_rb32(mov->fp);
-	tkhd->height = file_reader_rb32(mov->fp);
+		tkhd->matrix[i] = mov_buffer_r32(&mov->io);
+	tkhd->width = mov_buffer_r32(&mov->io);
+	tkhd->height = mov_buffer_r32(&mov->io);
 
 	(void)box;
 	return 0;
@@ -81,39 +79,39 @@ size_t mov_write_tkhd(const struct mov_t* mov)
 	uint16_t group = 0;
 	const struct mov_tkhd_t* tkhd = &mov->track->tkhd;
 
-	file_writer_wb32(mov->fp, 92); /* size */
-	file_writer_write(mov->fp, "tkhd", 4);
-	file_writer_w8(mov->fp, 0); /* version */
-	file_writer_wb24(mov->fp, tkhd->flags); /* flags */
+	mov_buffer_w32(&mov->io, 92); /* size */
+	mov_buffer_write(&mov->io, "tkhd", 4);
+	mov_buffer_w8(&mov->io, 0); /* version */
+	mov_buffer_w24(&mov->io, tkhd->flags); /* flags */
 
-	file_writer_wb32(mov->fp, (uint32_t)tkhd->creation_time); /* creation_time */
-	file_writer_wb32(mov->fp, (uint32_t)tkhd->modification_time); /* modification_time */
-	file_writer_wb32(mov->fp, tkhd->track_ID); /* track_ID */
-	file_writer_wb32(mov->fp, 0); /* reserved */
-	file_writer_wb32(mov->fp, (uint32_t)tkhd->duration); /* duration */
+	mov_buffer_w32(&mov->io, (uint32_t)tkhd->creation_time); /* creation_time */
+	mov_buffer_w32(&mov->io, (uint32_t)tkhd->modification_time); /* modification_time */
+	mov_buffer_w32(&mov->io, tkhd->track_ID); /* track_ID */
+	mov_buffer_w32(&mov->io, 0); /* reserved */
+	mov_buffer_w32(&mov->io, (uint32_t)tkhd->duration); /* duration */
 
-	file_writer_wb32(mov->fp, 0); /* reserved */
-	file_writer_wb32(mov->fp, 0); /* reserved */
-	file_writer_wb16(mov->fp, 0); /* layer */
-	file_writer_wb16(mov->fp, group); /* alternate_group */
-	//file_writer_wb16(mov->fp, AVSTREAM_AUDIO == track->stream_type ? 0x0100 : 0); /* volume */
-	file_writer_wb16(mov->fp, tkhd->volume); /* volume */
-	file_writer_wb16(mov->fp, 0); /* reserved */
+	mov_buffer_w32(&mov->io, 0); /* reserved */
+	mov_buffer_w32(&mov->io, 0); /* reserved */
+	mov_buffer_w16(&mov->io, 0); /* layer */
+	mov_buffer_w16(&mov->io, group); /* alternate_group */
+	//mov_buffer_w16(&mov->io, AVSTREAM_AUDIO == track->stream_type ? 0x0100 : 0); /* volume */
+	mov_buffer_w16(&mov->io, tkhd->volume); /* volume */
+	mov_buffer_w16(&mov->io, 0); /* reserved */
 
 	// matrix
 	//for (i = 0; i < 9; i++)
 	//	file_reader_rb32(mov->fp, tkhd->matrix[i]);
-	file_writer_wb32(mov->fp, 0x00010000); /* u */
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0); /* v */
-	file_writer_wb32(mov->fp, 0x00010000);
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0); /* w */
-	file_writer_wb32(mov->fp, 0);
-	file_writer_wb32(mov->fp, 0x40000000);
+	mov_buffer_w32(&mov->io, 0x00010000); /* u */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* v */
+	mov_buffer_w32(&mov->io, 0x00010000);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* w */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0x40000000);
 
-	file_writer_wb32(mov->fp, tkhd->width /*track->av.video.width * 0x10000U*/); /* width */
-	file_writer_wb32(mov->fp, tkhd->height/*track->av.video.height * 0x10000U*/); /* height */
+	mov_buffer_w32(&mov->io, tkhd->width /*track->av.video.width * 0x10000U*/); /* width */
+	mov_buffer_w32(&mov->io, tkhd->height/*track->av.video.height * 0x10000U*/); /* height */
 	return 92;
 }

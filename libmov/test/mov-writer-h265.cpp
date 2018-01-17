@@ -6,6 +6,8 @@
 #include <string.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 #define H265_NAL(v)	((v >> 1) & 0x3F)
 
 static uint8_t s_buffer[2 * 1024 * 1024];
@@ -98,9 +100,11 @@ void mov_writer_h265(const char* h265, int width, int height, const char* mp4)
 	uint8_t* ptr = file_read(h265, &bytes);
 	if (NULL == ptr) return;
 
-	mov_writer_t* mov = mov_writer_create(mp4, MOV_FLAG_FASTSTART);
+	FILE* fp = fopen(mp4, "wb+");
+	mov_writer_t* mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
 	h265_read_frame(mov, width, height, ptr, ptr + bytes);
 	mov_writer_destroy(mov);
 
+	fclose(fp);
 	free(ptr);
 }

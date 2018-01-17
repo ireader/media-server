@@ -19,19 +19,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\file-reader.h" />
-    <ClInclude Include="include\file-writer.h" />
     <ClInclude Include="include\mov-atom.h" />
     <ClInclude Include="include\mov-box.h" />
     <ClInclude Include="include\mov-format.h" />
     <ClInclude Include="include\fmp4-writer.h" />
     <ClInclude Include="include\mov-reader.h" />
     <ClInclude Include="include\mov-writer.h" />
+    <ClInclude Include="include\mov-buffer.h" />
     <ClInclude Include="source\mov-internal.h" />
+    <ClInclude Include="source\mov-ioutil.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\file-reader.c" />
-    <ClCompile Include="source\file-writer.c" />
     <ClCompile Include="source\mov-avc1.c" />
     <ClCompile Include="source\mov-dinf.c" />
     <ClCompile Include="source\mov-elst.c" />

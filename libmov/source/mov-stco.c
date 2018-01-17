@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <errno.h>
 #include <stdlib.h>
@@ -27,9 +25,9 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t i, entry_count;
 	struct mov_stbl_t* stbl = &mov->track->stbl;
 
-	file_reader_r8(mov->fp); /* version */
-	file_reader_rb24(mov->fp); /* flags */
-	entry_count = file_reader_rb32(mov->fp);
+	mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	entry_count = mov_buffer_r32(&mov->io);
 
 	assert(0 == stbl->stco_count && NULL == stbl->stco);
 	if (stbl->stco_count < entry_count)
@@ -43,12 +41,12 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 	if (MOV_TAG('s', 't', 'c', 'o') == box->type)
 	{
 		for (i = 0; i < entry_count; i++)
-			stbl->stco[i] = file_reader_rb32(mov->fp); // chunk_offset
+			stbl->stco[i] = mov_buffer_r32(&mov->io); // chunk_offset
 	}
 	else if (MOV_TAG('c', 'o', '6', '4') == box->type)
 	{
 		for (i = 0; i < entry_count; i++)
-			stbl->stco[i] = file_reader_rb64(mov->fp); // chunk_offset
+			stbl->stco[i] = mov_buffer_r64(&mov->io); // chunk_offset
 	}
 	else
 	{
@@ -57,7 +55,7 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 	}
 
 	stbl->stco_count = i;
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
@@ -71,10 +69,10 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 	co64 = (sample && sample->offset + track->offset > UINT32_MAX) ? 1 : 0;
 	size = 12/* full box */ + 4/* entry count */ + count * (co64 ? 8 : 4);
 
-	file_writer_wb32(mov->fp, size); /* size */
-	file_writer_write(mov->fp, co64 ? "co64" : "stco", 4);
-	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, count); /* entry count */
+	mov_buffer_w32(&mov->io, size); /* size */
+	mov_buffer_write(&mov->io, co64 ? "co64" : "stco", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	mov_buffer_w32(&mov->io, count); /* entry count */
 
 	for (i = 0; i < track->sample_count; i++)
 	{
@@ -83,9 +81,9 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 			continue;
 
 		if(0 == co64)
-			file_writer_wb32(mov->fp, (uint32_t)(sample->offset + track->offset));
+			mov_buffer_w32(&mov->io, (uint32_t)(sample->offset + track->offset));
 		else
-			file_writer_wb64(mov->fp, sample->offset + track->offset);
+			mov_buffer_w64(&mov->io, sample->offset + track->offset);
 	}
 
 	return size;

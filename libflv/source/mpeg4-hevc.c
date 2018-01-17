@@ -68,6 +68,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 	uint8_t nalutype;
 	uint16_t i, j, k, n, numOfArrays;
 	const uint8_t* p;
+	uint8_t* dst;
 
 	if (bytes < 23)
 		return -1;
@@ -96,6 +97,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 	numOfArrays = data[22];
 	
 	p = data + 23;
+	dst = hevc->data;
 	hevc->numOfArrays = 0;
 	for (i = 0; i < numOfArrays; i++)
 	{
@@ -118,9 +120,9 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 				return -1;
 
 			k = (p[0] << 8) | p[1];
-			if (p + 2 + k > data + bytes || k > sizeof(hevc->nalu[hevc->numOfArrays].data))
+			if (p + 2 + k > data + bytes || dst + k > hevc->data + sizeof(hevc->data))
 			{
-				assert(k <= sizeof(hevc->nalu[hevc->numOfArrays].data));
+				assert(0);
 				return -1;
 			}
 
@@ -128,10 +130,12 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 			hevc->nalu[hevc->numOfArrays].array_completeness = (nalutype >> 7) & 0x01;
 			hevc->nalu[hevc->numOfArrays].type = nalutype & 0x3F;
 			hevc->nalu[hevc->numOfArrays].bytes = k;
+			hevc->nalu[hevc->numOfArrays].data = dst;
 			memcpy(hevc->nalu[hevc->numOfArrays].data, p + 2, k);
 			hevc->numOfArrays++;
 
 			p += 2 + k;
+			dst += k;
 		}
 	}
 
@@ -196,7 +200,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 				return 0; // don't have enough memory
 
 			array_completeness = hevc->nalu[j].array_completeness;
-			assert(hevc->nalu[j].bytes <= sizeof(hevc->nalu[j].data));
+			assert(hevc->nalu[i].data + hevc->nalu[j].bytes <= hevc->data + sizeof(hevc->data));
 			w16(ptr, hevc->nalu[j].bytes);
 			memcpy(ptr + 2, hevc->nalu[j].data, hevc->nalu[j].bytes);
 			ptr += 2 + hevc->nalu[j].bytes;

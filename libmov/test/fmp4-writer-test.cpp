@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+
 static uint8_t s_buffer[2 * 1024 * 1024];
 static int s_width, s_height;
 
@@ -59,8 +61,9 @@ void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4)
 {
 	int r, type;
 	uint32_t timestamp;
+	FILE* fp = fopen(outmp4, "wb+");
 	void* flv = flv_reader_create(inflv);
-	fmp4_writer_t* mov = fmp4_writer_create(outmp4, 0);
+	fmp4_writer_t* mov = fmp4_writer_create(mov_file_buffer(), fp, 0);
 	flv_parser_t* parser = flv_parser_create(onFLV, mov);
 
 	s_width = w;
@@ -74,4 +77,5 @@ void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	fmp4_writer_destroy(mov);
 	flv_reader_destroy(flv);
 	flv_parser_destroy(parser);
+	fclose(fp);
 }

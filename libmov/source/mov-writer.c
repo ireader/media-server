@@ -1,6 +1,5 @@
 #include "mov-writer.h"
 #include "mov-internal.h"
-#include "file-writer.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -104,13 +103,13 @@ static int mov_write_edts(const struct mov_t* mov)
 	uint64_t offset;
 
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "edts", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "edts", 4);
 
 	size += mov_write_elst(mov);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -126,9 +125,9 @@ static size_t mov_write_stbl(const struct mov_t* mov)
 	track = (struct mov_track_t*)mov->track;
 
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "stbl", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "stbl", 4);
 
 	size += mov_write_stsd(mov);
 
@@ -145,7 +144,7 @@ static size_t mov_write_stbl(const struct mov_t* mov)
 	size += mov_write_stsz(mov);
 	size += mov_write_stco(mov, count);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -156,9 +155,9 @@ static size_t mov_write_minf(const struct mov_t* mov)
 	const struct mov_track_t* track = mov->track;
 
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "minf", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "minf", 4);
 
 	if (MOV_VIDEO == track->handler_type)
 	{
@@ -175,7 +174,7 @@ static size_t mov_write_minf(const struct mov_t* mov)
 
 	size += mov_write_dinf(mov);
 	size += mov_write_stbl(mov);
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -185,15 +184,15 @@ static int mov_write_mdia(const struct mov_t* mov)
 	uint64_t offset;
 	
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "mdia", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "mdia", 4);
 
 	size += mov_write_mdhd(mov);
 	size += mov_write_hdlr(mov);
 	size += mov_write_minf(mov);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -203,16 +202,16 @@ static size_t mov_write_trak(const struct mov_t* mov)
 	uint64_t offset;
 
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "trak", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "trak", 4);
 
 	size += mov_write_tkhd(mov);
 //	size += mov_write_tref(mov);
 	size += mov_write_edts(mov);
 	size += mov_write_mdia(mov);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -222,9 +221,9 @@ static size_t mov_write_moov(struct mov_t* mov)
 	uint64_t offset;
 
 	size = 8 /* Box */;
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "moov", 4);
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "moov", 4);
 
 	size += mov_write_mvhd(mov);
 //	size += mov_write_iods(mov);
@@ -237,17 +236,17 @@ static size_t mov_write_moov(struct mov_t* mov)
 	}
 
 //  size += mov_write_udta(mov);
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
-void mov_write_size(void* fp, uint64_t offset, size_t size)
+void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size)
 {
 	uint64_t offset2;
-	offset2 = file_writer_tell(fp);
-	file_writer_seek(fp, offset);
-	file_writer_wb32(fp, size);
-	file_writer_seek(fp, offset2);
+	offset2 = mov_buffer_tell(&mov->io);
+	mov_buffer_seek(&mov->io, offset);
+	mov_buffer_w32(&mov->io, size);
+	mov_buffer_seek(&mov->io, offset2);
 }
 
 static int mov_writer_init(struct mov_t* mov)
@@ -263,7 +262,7 @@ static int mov_writer_init(struct mov_t* mov)
 	return 0;
 }
 
-struct mov_writer_t* mov_writer_create(const char* file, int flags)
+struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* param, int flags)
 {
 	struct mov_t* mov;
 	struct mov_writer_t* writer;
@@ -273,12 +272,8 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 
 	mov = &writer->mov;
 	mov->flags = flags;
-	mov->fp = file_writer_create(file);
-	if (NULL == mov->fp)
-	{
-		mov_writer_destroy(writer);
-		return NULL;
-	}
+	mov->io.param = param;
+	memcpy(&mov->io.io, buffer, sizeof(mov->io.io));
 
 	mov->mvhd.next_track_ID = 1;
 	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
@@ -290,12 +285,13 @@ struct mov_writer_t* mov_writer_create(const char* file, int flags)
 	mov_write_ftyp(mov);
 
 	// mdat
-	writer->mdat_offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "mdat", 4);
+	writer->mdat_offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "mdat", 4);
 	return writer;
 }
 
+static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t bytes);
 void mov_writer_destroy(struct mov_writer_t* writer)
 {
 	size_t i;
@@ -305,7 +301,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 	mov = &writer->mov;
 
 	// finish mdat box
-	mov_write_size(mov->fp, writer->mdat_offset, writer->mdat_size+8); /* update size */
+	mov_write_size(mov, writer->mdat_offset, writer->mdat_size+8); /* update size */
 
 	// finish sample info
 	for (i = 0; i < mov->track_count; i++)
@@ -323,9 +319,9 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 	}
 
 	// write moov box
-	offset = file_writer_tell(mov->fp);
+	offset = mov_buffer_tell(&mov->io);
 	mov_write_moov(mov);
-	offset2 = file_writer_tell(mov->fp);
+	offset2 = mov_buffer_tell(&mov->io);
 	
 	if (MOV_FLAG_FASTSTART & mov->flags)
 	{
@@ -354,15 +350,13 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		for (i = 0; i < mov->track_count; i++)
 			mov->tracks[i].offset += (offset2 - offset) + co64;
 
-		file_writer_seek(mov->fp, offset);
+		mov_buffer_seek(&mov->io, offset);
 		mov_write_moov(mov);
-		assert(file_writer_tell(mov->fp) == offset2 + co64);
-		offset2 = file_writer_tell(mov->fp);
+		assert(mov_buffer_tell(&mov->io) == offset2 + co64);
+		offset2 = mov_buffer_tell(&mov->io);
 
-		file_writer_move(mov->fp, writer->mdat_offset, offset, (size_t)(offset2 - offset));
+		mov_writer_move(mov, writer->mdat_offset, offset, (size_t)(offset2 - offset));
 	}
-
-	file_writer_destroy(writer->mov.fp);
 
 	for (i = 0; i < mov->track_count; i++)
 	{
@@ -372,6 +366,39 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		if (track->stsd) free(track->stsd);
 	}
 	free(writer);
+}
+
+static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t bytes)
+{
+	uint8_t* ptr;
+	uint64_t i, j;
+	void* buffer[2];
+
+	assert(bytes < INT32_MAX);
+	ptr = malloc((size_t)(bytes * 2));
+	if (NULL == ptr)
+		return -ENOMEM;
+	buffer[0] = ptr;
+	buffer[1] = ptr + bytes;
+
+	mov_buffer_seek(&mov->io, from);
+	mov_buffer_read(&mov->io, buffer[0], bytes);
+
+	j = 1;
+	mov_buffer_seek(&mov->io, to);
+	for (i = to; i < from; i += bytes)
+	{
+		mov_buffer_seek(&mov->io, i);
+		mov_buffer_read(&mov->io, buffer[j], bytes);
+
+		j ^= 1;
+		mov_buffer_seek(&mov->io, i);
+		mov_buffer_write(&mov->io, buffer[j], bytes);
+	}
+
+	mov_buffer_write(&mov->io, buffer[j], bytes - (size_t)(i - from));
+	free(ptr);
+	return mov_buffer_error(&mov->io);
 }
 
 int mov_writer_write(struct mov_writer_t* writer, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
@@ -410,12 +437,11 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* data, s
 	sample->pts = pts;
 	sample->dts = dts;
 	
-	sample->offset = file_writer_tell(mov->fp);
-	if (bytes != file_writer_write(mov->fp, data, bytes))
-		return -1; // file write error
+	sample->offset = mov_buffer_tell(&mov->io);
+	mov_buffer_write(&mov->io, data, bytes);
 
 	writer->mdat_size += bytes; // update media data size
-	return file_writer_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 int mov_writer_add_audio(struct mov_writer_t* writer, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)

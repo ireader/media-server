@@ -34,10 +34,11 @@ struct mpeg4_hevc_t
 		uint8_t array_completeness;
 		uint8_t type; // nalu type
 		uint16_t bytes;
-		uint8_t data[256];
+		uint8_t* data;
 	} nalu[64];
 
 	uint8_t array_completeness;
+	uint8_t data[4 * 1024];
 };
 
 int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc);

@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -11,10 +9,10 @@ static int mp4_read_extra(struct mov_t* mov, const struct mov_box_t* box)
 {
 	int r;
 	uint64_t p1, p2;
-	p1 = file_reader_tell(mov->fp);
+	p1 = mov_buffer_tell(&mov->io);
 	r = mov_reader_box(mov, box);
-	p2 = file_reader_tell(mov->fp);
-	file_reader_skip(mov->fp, box->size - (p2 - p1));
+	p2 = mov_buffer_tell(&mov->io);
+	mov_buffer_skip(&mov->io, box->size - (p2 - p1));
 	return r;
 }
 
@@ -27,10 +25,10 @@ aligned(8) abstract class SampleEntry (unsigned int(32) format)
 */
 static int mov_read_sample_entry(struct mov_t* mov, struct mov_box_t* box, uint16_t* data_reference_index)
 {
-	box->size = file_reader_rb32(mov->fp);
-	box->type = file_reader_rb32(mov->fp);
-	file_reader_skip(mov->fp, 6); // const unsigned int(8)[6] reserved = 0;
-	*data_reference_index = (uint16_t)file_reader_rb16(mov->fp); // ref [stsc] sample_description_index
+	box->size = mov_buffer_r32(&mov->io);
+	box->type = mov_buffer_r32(&mov->io);
+	mov_buffer_skip(&mov->io, 6); // const unsigned int(8)[6] reserved = 0;
+	*data_reference_index = (uint16_t)mov_buffer_r16(&mov->io); // ref [stsc] sample_description_index
 	return 0;
 }
 
@@ -54,26 +52,26 @@ static int mov_read_audio(struct mov_t* mov, struct mov_stsd_t* stsd)
 
 #if 1
 	// const unsigned int(32)[2] reserved = 0;
-	file_reader_skip(mov->fp, 8);
+	mov_buffer_skip(&mov->io, 8);
 #else
-	file_reader_rb16(mov->fp); /* version */
-	file_reader_rb16(mov->fp); /* revision level */
-	file_reader_rb32(mov->fp); /* vendor */
+	mov_buffer_r16(&mov->io); /* version */
+	mov_buffer_r16(&mov->io); /* revision level */
+	mov_buffer_r32(&mov->io); /* vendor */
 #endif
 
-	stsd->u.audio.channelcount = (uint16_t)file_reader_rb16(mov->fp);
-	stsd->u.audio.samplesize = (uint16_t)file_reader_rb16(mov->fp);
+	stsd->u.audio.channelcount = (uint16_t)mov_buffer_r16(&mov->io);
+	stsd->u.audio.samplesize = (uint16_t)mov_buffer_r16(&mov->io);
 
 #if 1
 	// unsigned int(16) pre_defined = 0; 
 	// const unsigned int(16) reserved = 0 ;
-	file_reader_skip(mov->fp, 4);
+	mov_buffer_skip(&mov->io, 4);
 #else
-	file_reader_rb16(mov->fp); /* audio cid */
-	file_reader_rb16(mov->fp); /* packet size = 0 */
+	mov_buffer_r16(&mov->io); /* audio cid */
+	mov_buffer_r16(&mov->io); /* packet size = 0 */
 #endif
 
-	stsd->u.audio.samplerate = file_reader_rb32(mov->fp); // { default samplerate of media}<<16;
+	stsd->u.audio.samplerate = mov_buffer_r32(&mov->io); // { default samplerate of media}<<16;
 
 	// audio extra(avc1: ISO/IEC 14496-14:2003(E))
 	box.size -= 36;
@@ -121,30 +119,30 @@ static int mov_read_video(struct mov_t* mov, struct mov_stsd_t* stsd)
 	 //unsigned int(16) pre_defined = 0; 
 	 //const unsigned int(16) reserved = 0;
 	 //unsigned int(32)[3] pre_defined = 0;
-	file_reader_skip(mov->fp, 16);
+	mov_buffer_skip(&mov->io, 16);
 #else
-	file_reader_rb16(mov->fp); /* version */
-	file_reader_rb16(mov->fp); /* revision level */
-	file_reader_rb32(mov->fp); /* vendor */
-	file_reader_rb32(mov->fp); /* temporal quality */
-	file_reader_rb32(mov->fp); /* spatial quality */
+	mov_buffer_r16(&mov->io); /* version */
+	mov_buffer_r16(&mov->io); /* revision level */
+	mov_buffer_r32(&mov->io); /* vendor */
+	mov_buffer_r32(&mov->io); /* temporal quality */
+	mov_buffer_r32(&mov->io); /* spatial quality */
 #endif
-	stsd->u.visual.width = (uint16_t)file_reader_rb16(mov->fp);
-	stsd->u.visual.height = (uint16_t)file_reader_rb16(mov->fp);
-	stsd->u.visual.horizresolution = file_reader_rb32(mov->fp); // 0x00480000 - 72 dpi
-	stsd->u.visual.vertresolution = file_reader_rb32(mov->fp); // 0x00480000 - 72 dpi
+	stsd->u.visual.width = (uint16_t)mov_buffer_r16(&mov->io);
+	stsd->u.visual.height = (uint16_t)mov_buffer_r16(&mov->io);
+	stsd->u.visual.horizresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
+	stsd->u.visual.vertresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
 	// const unsigned int(32) reserved = 0;
-	file_reader_rb32(mov->fp); /* data size, always 0 */
-	stsd->u.visual.frame_count = (uint16_t)file_reader_rb16(mov->fp);
+	mov_buffer_r32(&mov->io); /* data size, always 0 */
+	stsd->u.visual.frame_count = (uint16_t)mov_buffer_r16(&mov->io);
 
 	//string[32] compressorname;
-	//uint32_t len = file_reader_r8(mov->fp);
-	//file_reader_skip(mov->fp, len);
-	file_reader_skip(mov->fp, 32);
+	//uint32_t len = mov_buffer_r8(&mov->io);
+	//mov_buffer_skip(&mov->io, len);
+	mov_buffer_skip(&mov->io, 32);
 
-	stsd->u.visual.depth = (uint16_t)file_reader_rb16(mov->fp);
+	stsd->u.visual.depth = (uint16_t)mov_buffer_r16(&mov->io);
 	// int(16) pre_defined = -1;
-	file_reader_skip(mov->fp, 2);
+	mov_buffer_skip(&mov->io, 2);
 
 	// video extra(avc1: ISO/IEC 14496-15:2010(E))
 	box.size -= 86;
@@ -155,14 +153,16 @@ static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	return file_reader_skip(mov->fp, box.size - 16);
+	mov_buffer_skip(&mov->io, box.size - 16);
+	return mov_buffer_error(&mov->io);
 }
 
 static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	return file_reader_skip(mov->fp, box.size - 16);
+	mov_buffer_skip(&mov->io, box.size - 16);
+	return mov_buffer_error(&mov->io);
 }
 
 int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
@@ -170,9 +170,9 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t i, entry_count;
 	struct mov_track_t* track = mov->track;
 
-	file_reader_r8(mov->fp);
-	file_reader_rb24(mov->fp);
-	entry_count = file_reader_rb32(mov->fp);
+	mov_buffer_r8(&mov->io);
+	mov_buffer_r24(&mov->io);
+	entry_count = mov_buffer_r32(&mov->io);
 
 	if (track->stsd_count < entry_count)
 	{
@@ -212,7 +212,7 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 	}
 
 	(void)box;
-	return file_reader_error(mov->fp);
+	return mov_buffer_error(&mov->io);
 }
 
 //static int mov_write_h264(const struct mov_t* mov)
@@ -223,11 +223,11 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 //
 //	size = 8 /* Box */;
 //
-//	offset = file_writer_tell(mov->fp);
-//	file_writer_wb32(mov->fp, 0); /* size */
-//	file_writer_wb32(mov->fp, MOV_TAG('a', 'v', 'c', 'C'));
+//	offset = mov_buffer_tell(&mov->io);
+//	mov_buffer_w32(&mov->io, 0); /* size */
+//	mov_buffer_w32(&mov->io, MOV_TAG('a', 'v', 'c', 'C'));
 //
-//	mov_write_size(mov->fp, offset, size); /* update size */
+//	mov_write_size(mov, offset, size); /* update size */
 //	return size;
 //}
 
@@ -239,32 +239,32 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	size = 8 /* Box */ + 8 /* SampleEntry */ + 70 /* VisualSampleEntry */;
 
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_wb32(mov->fp, mov->track->tag); // "h264"
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_w32(&mov->io, mov->track->tag); // "h264"
 
-	file_writer_wb32(mov->fp, 0); /* Reserved */
-	file_writer_wb16(mov->fp, 0); /* Reserved */
-	file_writer_wb16(mov->fp, stsd->data_reference_index); /* Data-reference index */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, stsd->data_reference_index); /* Data-reference index */
 
-	file_writer_wb16(mov->fp, 0); /* Reserved / Codec stream version */
-	file_writer_wb16(mov->fp, 0); /* Reserved / Codec stream revision (=0) */
-	file_writer_wb32(mov->fp, 0); /* Reserved */
-	file_writer_wb32(mov->fp, 0); /* Reserved */
-	file_writer_wb32(mov->fp, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 0); /* Reserved / Codec stream version */
+	mov_buffer_w16(&mov->io, 0); /* Reserved / Codec stream revision (=0) */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
 
-	file_writer_wb16(mov->fp, stsd->u.visual.width); /* Video width */
-	file_writer_wb16(mov->fp, stsd->u.visual.height); /* Video height */
-	file_writer_wb32(mov->fp, 0x00480000); /* Horizontal resolution 72dpi */
-	file_writer_wb32(mov->fp, 0x00480000); /* Vertical resolution 72dpi */
-	file_writer_wb32(mov->fp, 0); /* reserved / Data size (= 0) */
-	file_writer_wb16(mov->fp, 1); /* Frame count (= 1) */
+	mov_buffer_w16(&mov->io, stsd->u.visual.width); /* Video width */
+	mov_buffer_w16(&mov->io, stsd->u.visual.height); /* Video height */
+	mov_buffer_w32(&mov->io, 0x00480000); /* Horizontal resolution 72dpi */
+	mov_buffer_w32(&mov->io, 0x00480000); /* Vertical resolution 72dpi */
+	mov_buffer_w32(&mov->io, 0); /* reserved / Data size (= 0) */
+	mov_buffer_w16(&mov->io, 1); /* Frame count (= 1) */
 
-	file_writer_w8(mov->fp, 0 /*strlen(compressor_name)*/); /* compressorname */
-	file_writer_write(mov->fp, " ", 31); // fill empty
+	mov_buffer_w8(&mov->io, 0 /*strlen(compressor_name)*/); /* compressorname */
+	mov_buffer_write(&mov->io, " ", 31); // fill empty
 
-	file_writer_wb16(mov->fp, 0x18); /* Reserved */
-	file_writer_wb16(mov->fp, 0xffff); /* Reserved */
+	mov_buffer_w16(&mov->io, 0x18); /* Reserved */
+	mov_buffer_w16(&mov->io, 0xffff); /* Reserved */
 
 	if(MOV_OBJECT_H264 == stsd->object_type_indication)
 		size += mov_write_avcc(mov);
@@ -273,7 +273,7 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	else if (MOV_OBJECT_HEVC == stsd->object_type_indication)
 		size += mov_write_hvcc(mov);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -284,31 +284,31 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	size = 8 /* Box */ + 8 /* SampleEntry */ + 20 /* AudioSampleEntry */;
 
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_wb32(mov->fp, mov->track->tag); // "mp4a"
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_w32(&mov->io, mov->track->tag); // "mp4a"
 
-	file_writer_wb32(mov->fp, 0); /* Reserved */
-	file_writer_wb16(mov->fp, 0); /* Reserved */
-	file_writer_wb16(mov->fp, 1); /* Data-reference index */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 1); /* Data-reference index */
 
 	/* SoundDescription */
-	file_writer_wb16(mov->fp, 0); /* Version */
-	file_writer_wb16(mov->fp, 0); /* Revision level */
-	file_writer_wb32(mov->fp, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 0); /* Version */
+	mov_buffer_w16(&mov->io, 0); /* Revision level */
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
 
-	file_writer_wb16(mov->fp, stsd->u.audio.channelcount); /* channelcount */
-	file_writer_wb16(mov->fp, stsd->u.audio.samplesize); /* samplesize */
+	mov_buffer_w16(&mov->io, stsd->u.audio.channelcount); /* channelcount */
+	mov_buffer_w16(&mov->io, stsd->u.audio.samplesize); /* samplesize */
 
-	file_writer_wb16(mov->fp, 0); /* pre_defined */
-	file_writer_wb16(mov->fp, 0); /* reserved / packet size (= 0) */
+	mov_buffer_w16(&mov->io, 0); /* pre_defined */
+	mov_buffer_w16(&mov->io, 0); /* reserved / packet size (= 0) */
 
-	file_writer_wb32(mov->fp, stsd->u.audio.samplerate); /* samplerate */
+	mov_buffer_w32(&mov->io, stsd->u.audio.samplerate); /* samplerate */
 
 	if(MOV_OBJECT_AAC == stsd->object_type_indication)
 		size += mov_write_esds(mov);
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
@@ -320,11 +320,11 @@ size_t mov_write_stsd(const struct mov_t* mov)
 
 	size = 12 /* full box */ + 4 /* entry count */;
 
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "stsd", 4);
-	file_writer_wb32(mov->fp, 0); /* version & flags */
-	file_writer_wb32(mov->fp, track->stsd_count); /* entry count */
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "stsd", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	mov_buffer_w32(&mov->io, track->stsd_count); /* entry count */
 
 	for (i = 0; i < track->stsd_count; i++)
 	{
@@ -342,6 +342,6 @@ size_t mov_write_stsd(const struct mov_t* mov)
 		}
 	}
 
-	mov_write_size(mov->fp, offset, size); /* update size */
+	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }

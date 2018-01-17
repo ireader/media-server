@@ -135,15 +135,14 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	case H265_VPS:
 	case H265_SPS:
 	case H265_PPS:
-		assert(bytes <= sizeof(mp4->hevc->nalu[mp4->hevc->numOfArrays].data));
-		if (bytes >= sizeof(mp4->hevc->nalu[mp4->hevc->numOfArrays].data)
-			|| mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0]))
+		sodb = mp4->hevc->numOfArrays > 0 ? mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].data + mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].bytes : mp4->hevc->data;
+		if (mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0])
+			|| sodb + bytes >= mp4->hevc->data + sizeof(mp4->hevc->data))
 		{
 			mp4->errcode = -1;
 			return;
 		}
 
-		sodb = mp4->hevc->nalu[mp4->hevc->numOfArrays].data;
 		sodb_bytes = hevc_rbsp_decode(nalu, bytes, sodb);
 
 		if (nal_type == H265_VPS)
@@ -173,6 +172,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].type = nal_type;
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].bytes = (uint16_t)bytes;
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].array_completeness = 1;
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].data = sodb;
 		memcpy(mp4->hevc->nalu[mp4->hevc->numOfArrays].data, nalu, bytes);
 		++mp4->hevc->numOfArrays;
 		return;

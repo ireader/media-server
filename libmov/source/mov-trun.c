@@ -1,5 +1,3 @@
-#include "file-reader.h"
-#include "file-writer.h"
 #include "mov-internal.h"
 #include <stdlib.h>
 #include <assert.h>
@@ -18,9 +16,9 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	struct mov_track_t* track;
 	struct mov_sample_t* sample;
 
-	version = file_reader_r8(mov->fp); /* version */
-	flags = file_reader_rb24(mov->fp); /* flags */
-	sample_count = file_reader_rb32(mov->fp); /* sample_count */
+	version = mov_buffer_r8(&mov->io); /* version */
+	flags = mov_buffer_r24(&mov->io); /* flags */
+	sample_count = mov_buffer_r32(&mov->io); /* sample_count */
 
 	track = mov->track;
 	if (track->sample_count + sample_count + 1 > track->sample_offset)
@@ -33,10 +31,10 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 
 	data_offset = track->tfhd.base_data_offset;
 	if (MOV_TRUN_FLAG_DATA_OFFSET_PRESENT & flags)
-		data_offset += (int32_t)file_reader_rb32(mov->fp); /* data_offset */
+		data_offset += (int32_t)mov_buffer_r32(&mov->io); /* data_offset */
 
 	if (MOV_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT & flags)
-		first_sample_flags = (int32_t)file_reader_rb32(mov->fp); /* first_sample_flags */
+		first_sample_flags = (int32_t)mov_buffer_r32(&mov->io); /* first_sample_flags */
 	else
 		first_sample_flags = track->tfhd.flags;
 
@@ -44,23 +42,23 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	for (i = 0; i < sample_count; i++)
 	{
 		if (MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT & flags)
-			sample_duration = file_reader_rb32(mov->fp); /* sample_duration*/
+			sample_duration = mov_buffer_r32(&mov->io); /* sample_duration*/
 		else
 			sample_duration = track->tfhd.default_sample_duration;
 
 		if (MOV_TRUN_FLAG_SAMPLE_SIZE_PRESENT & flags)
-			sample_size = file_reader_rb32(mov->fp); /* sample_size*/
+			sample_size = mov_buffer_r32(&mov->io); /* sample_size*/
 		else
 			sample_size = track->tfhd.default_sample_size;
 
 		if (MOV_TRUN_FLAG_SAMPLE_FLAGS_PRESENT & flags)
-			sample_flags = file_reader_rb32(mov->fp); /* sample_flags*/
+			sample_flags = mov_buffer_r32(&mov->io); /* sample_flags*/
 		else
 			sample_flags = i ? track->tfhd.default_sample_flags : first_sample_flags;
 
 		if (MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT & flags)
 		{
-			sample_composition_time_offset = file_reader_rb32(mov->fp); /* sample_composition_time_offset*/
+			sample_composition_time_offset = mov_buffer_r32(&mov->io); /* sample_composition_time_offset*/
 			if (1 == version)
 				sample_composition_time_offset = (int32_t)sample_composition_time_offset;
 		}
@@ -79,7 +77,7 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	}
 	track->sample_count += sample_count;
 
-	return file_reader_error(mov->fp); (void)box;
+	return mov_buffer_error(&mov->io); (void)box;
 }
 
 size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, size_t from, size_t count)
@@ -92,22 +90,22 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, 
 
 	size = 12/* full box */ + 4/* sample count */;
 
-	offset = file_writer_tell(mov->fp);
-	file_writer_wb32(mov->fp, 0); /* size */
-	file_writer_write(mov->fp, "trun", 4);
-	file_writer_w8(mov->fp, 1); /* version */
-	file_writer_wb24(mov->fp, flags); /* flags */
-	file_writer_wb32(mov->fp, count); /* sample_count */
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_write(&mov->io, "trun", 4);
+	mov_buffer_w8(&mov->io, 1); /* version */
+	mov_buffer_w24(&mov->io, flags); /* flags */
+	mov_buffer_w32(&mov->io, count); /* sample_count */
 
 	if (flags & MOV_TRUN_FLAG_DATA_OFFSET_PRESENT)
 	{
-		file_writer_wb32(mov->fp, 0); /* data_offset, rewrite on fmp4_write_fragment */
+		mov_buffer_w32(&mov->io, 0); /* data_offset, rewrite on fmp4_write_fragment */
 		size += 4;;
 	}
 
 	if (flags & MOV_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT)
 	{
-		file_writer_wb32(mov->fp, flags0); /* first_sample_flags */
+		mov_buffer_w32(&mov->io, flags0); /* first_sample_flags */
 		size += 4;;
 	}
 
@@ -118,26 +116,26 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, 
 		if (flags & MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
 		{
 			delta = (uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : 0);
-			file_writer_wb32(mov->fp, delta); /* sample_duration */
+			mov_buffer_w32(&mov->io, delta); /* sample_duration */
 			size += 4;
 		}
 
 		if (flags & MOV_TRUN_FLAG_SAMPLE_SIZE_PRESENT)
 		{
-			file_writer_wb32(mov->fp, (uint32_t)sample->bytes); /* sample_size */
+			mov_buffer_w32(&mov->io, (uint32_t)sample->bytes); /* sample_size */
 			size += 4;
 		}
 
 		assert(0 == (flags & MOV_TRUN_FLAG_SAMPLE_FLAGS_PRESENT));
-//		file_writer_wb32(mov->fp, 0); /* sample_flags */
+//		mov_buffer_w32(&mov->io, 0); /* sample_flags */
 
 		if (flags & MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT)
 		{
-			file_writer_wb32(mov->fp, (int32_t)(sample->pts - sample->dts)); /* sample_composition_time_offset */
+			mov_buffer_w32(&mov->io, (int32_t)(sample->pts - sample->dts)); /* sample_composition_time_offset */
 			size += 4;
 		}
 	}
 
-	mov_write_size(mov->fp, offset, size);
+	mov_write_size(mov, offset, size);
 	return size;
 }

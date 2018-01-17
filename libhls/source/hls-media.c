@@ -113,6 +113,7 @@ void hls_media_destroy(struct hls_media_t* hls)
 
 int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
+	int r;
 	int segment;
 	int force_new_segment;
 	int64_t duration;
@@ -148,7 +149,8 @@ int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_
 		if (hls->bytes > 0)
 		{
 			duration = ((force_new_segment || dts > hls->dts_last + 100) ? hls->dts_last : dts) - hls->dts;
-			hls->handler(hls->param, hls->ptr, hls->bytes, hls->pts, hls->dts, duration);
+			r = hls->handler(hls->param, hls->ptr, hls->bytes, hls->pts, hls->dts, duration);
+			if (0 != r) return r;
 
 			// reset mpeg ts generator
 			mpeg_ts_reset(hls->ts);
