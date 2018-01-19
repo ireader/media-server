@@ -49,15 +49,9 @@ PSFileSource::~PSFileSource()
 	mpeg_ps_destroy(m_ps);
 }
 
-int PSFileSource::SetRTPSocket(const char* /*track*/, const char* ip, socket_t socket[2], unsigned short port[2])
+int PSFileSource::SetTransport(const char* /*track*/, IRTPTransport* transport)
 {
-	int r1 = socket_addr_from(&m_addr[0], &m_addrlen[0], ip, port[0]);
-	int r2 = socket_addr_from(&m_addr[1], &m_addrlen[1], ip, port[1]);
-	if (0 != r1 || 0 != r2)
-		return 0 != r1 ? r1 : r2;
-
-	m_socket[0] = socket[0];
-	m_socket[1] = socket[1];
+	m_transport = transport;
 	return 0;
 }
 
@@ -155,7 +149,7 @@ int PSFileSource::SendRTCP()
 		size_t n = rtp_rtcp_report(m_rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		socket_sendto(m_socket[1], rtcp, n, 0, (struct sockaddr*)&m_addr[1], m_addrlen[1]);
+		m_transport->Send(true, rtcp, n);
 
 		m_rtcp_clock = clock;
 	}
@@ -201,7 +195,7 @@ void PSFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);
 
-	int r = socket_sendto(self->m_socket[0], packet, bytes, 0, (struct sockaddr*)&self->m_addr[0], self->m_addrlen[0]);
+	int r = self->m_transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
 	rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
 }

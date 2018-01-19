@@ -3,6 +3,7 @@
 #include "media-source.h"
 #include "mov-reader.h"
 #include <string>
+#include <stdio.h>
 #include <stdint.h>
 
 class MP4FileSource : public IMediaSource
@@ -19,7 +20,7 @@ public:
 	virtual int GetDuration(int64_t& duration) const;
 	virtual int GetSDPMedia(std::string& sdp) const;
 	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const;
-	virtual int SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2]);
+	virtual int SetTransport(const char* track, IRTPTransport* transport);
 
 private:
 	struct media_t;
@@ -40,6 +41,7 @@ private:
 	int64_t m_dts;
 	uint64_t m_clock;
 	mov_reader_t* m_reader;
+	FILE* m_fp;
 
 	std::string m_sdp;
 
@@ -60,7 +62,8 @@ private:
 	struct media_t
 	{
 		void* rtp;
-		int64_t dts; // last frame dts
+		int64_t dts_first; // first frame timestamp
+		int64_t dts_last; // last frame timestamp
 		uint64_t timestamp; // rtp timestamp
 		uint64_t rtcp_clock;
 
@@ -72,10 +75,7 @@ private:
 		void* packer; // rtp encoder
 		uint8_t packet[1450];
 
-		socket_t socket[2];
-		socklen_t addrlen[2];
-		struct sockaddr_storage addr[2];
-
+		IRTPTransport* transport;
 		int track; // mp4 track
 	};
 

@@ -8,11 +8,12 @@
 #include "ctypedef.h"
 #include "ntp-time.h"
 #include "rtp-profile.h"
-#include "rtp-socket.h"
 #include "rtsp-server.h"
 #include "media/ps-file-source.h"
 #include "media/h264-file-source.h"
 #include "media/mp4-file-source.h"
+#include "rtp-udp-transport.h"
+#include "rtp-tcp-transport.h"
 #include "rtsp-server-aio.h"
 #include "uri-parse.h"
 #include "urlcodec.h"
@@ -25,14 +26,14 @@
 #include "media/ffmpeg-file-source.h"
 #endif
 
-static const char* s_workdir = "e:";
+static const char* s_workdir = "d:\\video";
 
 static ThreadLocker s_locker;
 
 struct rtsp_media_t
 {
 	std::shared_ptr<IMediaSource> media;
-	socket_t socket[2];
+	std::shared_ptr<IRTPTransport> transport;
 	unsigned short port[2];
 	int status; // setup-init, 1-play, 2-pause
 };
@@ -56,6 +57,12 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 	url_decode(r->path, strlen(r->path), path1, sizeof(path1));
 	path = path1;
 	uri_free(r);
+	return 0;
+}
+
+static int rtsp_send(void* param, const void* data, size_t bytes)
+{
+	struct rtsp_media_t* media = (struct rtsp_media_t*)param;
 	return 0;
 }
 
@@ -165,20 +172,18 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	}
 
 	assert(NULL == transport);
-	for(size_t i = 0; i < num; i++)
+	for(size_t i = 0; i < num && !transport; i++)
 	{
 		if(RTSP_TRANSPORT_RTP_UDP == transports[i].transport)
 		{
 			// RTP/AVP/UDP
 			transport = &transports[i];
-			break;
 		}
 		else if(RTSP_TRANSPORT_RTP_TCP == transports[i].transport)
 		{
 			// RTP/AVP/TCP
 			// 10.12 Embedded (Interleaved) Binary Data (p40)
 			transport = &transports[i];
-			break;
 		}
 	}
 	if(!transport)
@@ -187,7 +192,20 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
 	}
 
-	if(transport->multicast)
+	rtsp_media_t &item = it->second;
+	if (RTSP_TRANSPORT_RTP_TCP == transport->transport)
+	{
+		// 10.12 Embedded (Interleaved) Binary Data (p40)
+		item.transport = std::make_shared<RTPTcpTransport>();
+		item.media->SetTransport(path_basename(uri), item.transport.get());
+
+		// RTP/AVP/TCP;interleaved=0-1
+		if (0 == transport->interleaved1 && 0 == transport->interleaved2)
+			snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=0-1");
+		else
+			snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d", transport->interleaved1, transport->interleaved2);
+	}
+	else if(transport->multicast)
 	{
 		// RFC 2326 1.6 Overall Operation p12
 		// Multicast, client chooses address
@@ -197,37 +215,27 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	else
 	{
 		// unicast
-		assert(transport->rtp.u.client_port1 && transport->rtp.u.client_port2);
+		item.transport = std::make_shared<RTPUdpTransport>();
 
-		rtsp_media_t &item = it->second;
-		if(0 != rtp_socket_create(NULL, item.socket, item.port))
+		assert(transport->rtp.u.client_port1 && transport->rtp.u.client_port2);
+		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
+		const char *ip = transport->destination[0] ? transport->destination : rtsp_server_get_client(rtsp, NULL);
+		if(0 != ((RTPUdpTransport*)item.transport.get())->Init(ip, port))
 		{
 			// log
 
 			// 500 Internal Server Error
 			return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
 		}
+		item.media->SetTransport(path_basename(uri), item.transport.get());
 
-		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257
+		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257;destination=xxxx
 		snprintf(rtsp_transport, sizeof(rtsp_transport), 
-			"RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu", 
+			"RTP/AVP;unicast;client_port=%hu-%hu;server_port=%hu-%hu%s%s", 
 			transport->rtp.u.client_port1, transport->rtp.u.client_port2,
-			item.port[0], item.port[1]);
-
-		const char *ip = NULL;
-		if(transport->destination[0])
-		{
-			ip = transport->destination;
-			strcat(rtsp_transport, ";destination=");
-			strcat(rtsp_transport, transport->destination);
-		}
-		else
-		{
-			ip = rtsp_server_get_client(rtsp, NULL);
-		}
-
-		unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
-		item.media->SetRTPSocket(path_basename(uri), ip, item.socket, port);
+			port[0], port[1],
+			transport->destination[0] ? ";destination=" : "",
+			transport->destination[0] ? transport->destination : "");
 	}
 
     return rtsp_server_reply_setup(rtsp, 200, it->first.c_str(), rtsp_transport);
@@ -335,22 +343,34 @@ static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri
 	return rtsp_server_reply_teardown(rtsp, 200);
 }
 
-static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int /*code*/)
+static int rtsp_onclose(void* /*ptr2*/)
 {
-	rtsp_server_destroy(rtsp);
+	// TODO: notify rtsp connection lost
+	//       start a timer to check rtp/rtcp activity
+	//       close rtsp media session on expired
+	printf("rtsp close\n");
+	return 0;
 }
 
-#define N_AIO_THREAD 1
+static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
+{
+	printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
+}
+
+#define N_AIO_THREAD 4
 extern "C" void rtsp_example()
 {
 	aio_worker_init(N_AIO_THREAD);
 
 	struct aio_rtsp_handler_t handler;
+	memset(&handler, 0, sizeof(handler));
 	handler.base.ondescribe = rtsp_ondescribe;
     handler.base.onsetup = rtsp_onsetup;
     handler.base.onplay = rtsp_onplay;
     handler.base.onpause = rtsp_onpause;
     handler.base.onteardown = rtsp_onteardown;
+	handler.base.close = rtsp_onclose;
+//	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
 	void* tcp = rtsp_server_listen(NULL, 554, &handler, NULL); assert(tcp);
@@ -369,6 +389,8 @@ extern "C" void rtsp_example()
 			if(1 == session.status)
 				session.media->Play();
 		}
+
+		// TODO: check rtsp session activity
     }
 
 	aio_worker_clean(N_AIO_THREAD);

@@ -26,7 +26,7 @@ public:
 	virtual int GetDuration(int64_t& duration) const;
 	virtual int GetSDPMedia(std::string& sdp) const;
 	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const;
-	virtual int SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2]);
+	virtual int SetTransport(const char* track, IRTPTransport* transport);
 
 private:
 	static void *Alloc(void* param, size_t bytes);
@@ -54,9 +54,7 @@ private:
 	time64_t m_rtp_clock;
 	time64_t m_rtcp_clock;
 	H264FileReader m_reader;
-	socket_t m_socket[2];
-	socklen_t m_addrlen[2];
-	struct sockaddr_storage m_addr[2];
+	IRTPTransport* m_transport;
 
 	void *m_pspacker;
 	unsigned char m_packet[MAX_UDP_PACKET+14];

@@ -11,6 +11,7 @@
 #include <assert.h>
 
 extern "C" int rtp_ssrc(void);
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
 MP4FileSource::MP4FileSource(const char *file)
 {
@@ -20,7 +21,8 @@ MP4FileSource::MP4FileSource(const char *file)
 	m_frame.bytes = 0;
 	m_count = 0;
 
-	m_reader = mov_reader_create(file);
+	m_fp = fopen(file, "rb");
+	m_reader = mov_reader_create(mov_file_buffer(), m_fp);
 	if (m_reader)
 		mov_reader_getinfo(m_reader, MP4OnVideo, MP4OnAudio, this);
 
@@ -54,9 +56,11 @@ MP4FileSource::~MP4FileSource()
 		mov_reader_destroy(m_reader);
 		m_reader = NULL;
 	}
+	if (m_fp)
+		fclose(m_fp);
 }
 
-int MP4FileSource::SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2])
+int MP4FileSource::SetTransport(const char* track, IRTPTransport* transport)
 {
 	int t = atoi(track + 5/*track*/);
 	for (int i = 0; i < m_count; i++)
@@ -65,13 +69,7 @@ int MP4FileSource::SetRTPSocket(const char* track, const char* ip, socket_t sock
 		if(t != m->track)
 			continue;
 
-		int r1 = socket_addr_from(&m->addr[0], &m->addrlen[0], ip, port[0]);
-		int r2 = socket_addr_from(&m->addr[1], &m->addrlen[1], ip, port[1]);
-		if (0 != r1 || 0 != r2)
-			return 0 != r1 ? r1 : r2;
-
-		m->socket[0] = socket[0];
-		m->socket[1] = socket[1];
+		m->transport = transport;
 		return 0;
 	}
 	return -1;
@@ -114,7 +112,7 @@ SEND_PACKET:
 		if (-1 == m_dts)
 			m_dts = m_frame.dts;
 
-		if (int64_t(clock - m_clock) + m_dts >= m_frame.pts)
+		if (int64_t(clock - m_clock) + m_dts >= m_frame.dts)
 		{
 			if (0 == strcmp("H264", m->name))
 			{
@@ -146,12 +144,17 @@ SEND_PACKET:
 				assert(0);
 			}
 
+			if (-1 == m->dts_first)
+				m->dts_first = m_frame.pts;
+			m->dts_last = m_frame.pts;
+			uint32_t timestamp = m->timestamp + m->dts_last - m->dts_first;
+/*
 			if (-1 == m->dts)
 				m->dts = m_frame.dts;
 			m->timestamp += m_frame.dts - m->dts;
 			m->dts = m_frame.dts;
-
-			rtp_payload_encode_input(m->packer, m_frame.buffer, m_frame.bytes, (uint32_t)(m->timestamp * (m->frequency / 1000) /*kHz*/));
+*/
+			rtp_payload_encode_input(m->packer, m_frame.buffer, m_frame.bytes, (uint32_t)(timestamp * (m->frequency / 1000) /*kHz*/));
 			SendRTCP(m, clock);
 
 			m_frame.bytes = 0; // send flag
@@ -178,8 +181,11 @@ int MP4FileSource::Seek(int64_t pos)
 	// update timestamp
 	for (int i = 0; i < m_count; i++)
 	{
-		m_media[i].dts = -1;
-		m_media[i].timestamp += 1;
+		//m_media[i].dts = -1;
+		//m_media[i].timestamp += 1;
+		if (-1 != m_media[i].dts_first)
+			m_media[i].timestamp += m_media[i].dts_last - m_media[i].dts_first + 1;
+		m_media[i].dts_first = -1;
 	}
 
 	m_dts = pos;
@@ -240,7 +246,8 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 	m->ssrc = (uint32_t)rtp_ssrc();
 	m->timestamp = m->ssrc;
 	m->bandwidth = 4 * 1024 * 1024;
-	m->dts = -1;
+	m->dts_first = -1;
+	m->dts_last = -1;
 
 	if (MOV_OBJECT_H264 == object)
 	{
@@ -314,7 +321,8 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	m->ssrc = (uint32_t)rtp_ssrc();
 	m->timestamp = m->ssrc;
 	m->bandwidth = 128 * 1024;
-	m->dts = -1;
+	m->dts_first = -1;
+	m->dts_last = -1;
 
 	if (MOV_OBJECT_AAC == object)
 	{
@@ -435,7 +443,7 @@ int MP4FileSource::SendBye()
 		size_t n = rtp_rtcp_bye(m->rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		socket_sendto(m->socket[1], rtcp, n, 0, (struct sockaddr*)&m->addr[1], m->addrlen[1]);
+		m->transport->Send(true, rtcp, n);
 	}
 
 	return 0;
@@ -452,7 +460,7 @@ int MP4FileSource::SendRTCP(struct media_t* m, uint64_t clock)
 		size_t n = rtp_rtcp_report(m->rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		socket_sendto(m->socket[1], rtcp, n, 0, (struct sockaddr*)&m->addr[1], m->addrlen[1]);
+		m->transport->Send(true, rtcp, n);
 
 		m->rtcp_clock = clock;
 	}
@@ -478,7 +486,7 @@ void MP4FileSource::RTPPacket(void* param, const void *packet, int bytes, uint32
 	struct media_t* m = (struct media_t*)param;
 	assert(m->packet == packet);
 
-	int r = socket_sendto(m->socket[0], packet, bytes, 0, (struct sockaddr*)&m->addr[0], m->addrlen[0]);
+	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
 	rtp_onsend(m->rtp, packet, bytes/*, time*/);
 }

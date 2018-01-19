@@ -56,7 +56,7 @@ FFFileSource::FFFileSource(const char *file)
 			uint8_t object = ffmpeg_codec_id_2_mp4_object(codecpar->codec_id);
 			if (0 == object)
 			{
-				assert(0);
+//				assert(0);
 				continue;
 			}
 			if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
@@ -143,7 +143,7 @@ int FFFileSource::Open(const char* file)
 	return 0;
 }
 
-int FFFileSource::SetRTPSocket(const char* track, const char* ip, socket_t socket[2], unsigned short port[2])
+int FFFileSource::SetTransport(const char* track, IRTPTransport* transport)
 {
 	int t = atoi(track + 5/*track*/);
 	for (int i = 0; i < m_count; i++)
@@ -152,13 +152,7 @@ int FFFileSource::SetRTPSocket(const char* track, const char* ip, socket_t socke
 		if (t != m->track)
 			continue;
 
-		int r1 = socket_addr_from(&m->addr[0], &m->addrlen[0], ip, port[0]);
-		int r2 = socket_addr_from(&m->addr[1], &m->addrlen[1], ip, port[1]);
-		if (0 != r1 || 0 != r2)
-			return 0 != r1 ? r1 : r2;
-
-		m->socket[0] = socket[0];
-		m->socket[1] = socket[1];
+		m->transport = transport;
 		return 0;
 	}
 	return -1;
@@ -187,6 +181,19 @@ SEND_PACKET:
 			return r;
 		}
 
+		for (r = 0; r < m_count; r++)
+		{
+			struct media_t* m = &m_media[r];
+			if (m->track == m_pkt.stream_index)
+				break;
+		}
+		if (r == m_count)
+		{
+			av_packet_unref(&m_pkt); // send flag
+			sendframe = 1;
+			goto SEND_PACKET;
+		}
+
 		AVRational time_base = { 1, 1000/*ms*/ };
 		m_pkt.dts = (AV_NOPTS_VALUE == m_pkt.dts ? m_pkt.pts : m_pkt.dts);
 		m_pkt.pts = (AV_NOPTS_VALUE == m_pkt.pts ? m_pkt.dts : m_pkt.pts);
@@ -207,7 +214,7 @@ SEND_PACKET:
 		if (-1 == m_dts)
 			m_dts = m_pkt.dts;
 
-		if (int64_t(clock - m_clock) + m_dts >= m_pkt.pts)
+		if (int64_t(clock - m_clock) + m_dts >= m_pkt.dts)
 		{
 			if (0 == strcmp("H264", m->name))
 			{
@@ -524,7 +531,7 @@ int FFFileSource::SendBye()
 		size_t n = rtp_rtcp_bye(m->rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		socket_sendto(m->socket[1], rtcp, n, 0, (struct sockaddr*)&m->addr[1], m->addrlen[1]);
+		m->transport->Send(true, rtcp, n);
 	}
 
 	return 0;
@@ -541,7 +548,7 @@ int FFFileSource::SendRTCP(struct media_t* m, uint64_t clock)
 		size_t n = rtp_rtcp_report(m->rtp, rtcp, sizeof(rtcp));
 
 		// send RTCP packet
-		socket_sendto(m->socket[1], rtcp, n, 0, (struct sockaddr*)&m->addr[1], m->addrlen[1]);
+		m->transport->Send(true, rtcp, n);
 
 		m->rtcp_clock = clock;
 	}
@@ -571,8 +578,8 @@ void FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_
 	// so that receivers will (likely) be able to get RTCP-synchronized presentation times immediately:
 	rtp_onsend(m->rtp, packet, bytes/*, time*/);
 	SendRTCP(m, system_clock());
-
-	int r = socket_sendto(m->socket[0], packet, bytes, 0, (struct sockaddr*)&m->addr[0], m->addrlen[0]);
+	
+	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
 }
 
