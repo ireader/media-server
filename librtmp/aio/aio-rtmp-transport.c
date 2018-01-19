@@ -90,7 +90,10 @@ static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_transport_t* t;
 	t = (struct aio_rtmp_transport_t*)param;
-	
+
+	if (0 == code && 0 == bytes)
+		code = ECONNRESET;
+
 	// if we have active send connection, recv timeout maybe normal case
 	// e.g. RTMP play session
 	if (ETIMEDOUT == code && 0 == aio_rtmp_transport_check_write_timeout(t))
