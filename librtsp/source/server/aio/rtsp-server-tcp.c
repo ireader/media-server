@@ -70,6 +70,7 @@ static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 	if (0 != code || 0 == bytes)
 	{
 		session->onerror(session->param, session->rtsp, code ? code : ECONNRESET);
+		aio_tcp_transport_destroy(session->aio);
 	}
 }
 
@@ -79,7 +80,10 @@ static void rtsp_session_onsend(void* param, int code, size_t bytes)
 	session = (struct rtsp_session_t *)param;
 //	session->server->onsend(session, code, bytes);
 	if (0 != code)
+	{
 		session->onerror(session->param, session->rtsp, code);
+		aio_tcp_transport_destroy(session->aio);
+	}
 	(void)bytes;
 }
 
@@ -88,14 +92,6 @@ static int rtsp_session_send(void* ptr, const void* data, size_t bytes)
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)ptr;
 	return aio_tcp_transport_send(session->aio, data, bytes);
-}
-
-static int rtsp_session_close(void* ptr)
-{
-	struct rtsp_session_t *session;
-	session = (struct rtsp_session_t *)ptr;
-	session->rtsp = NULL; // user call rtsp_server_destroy
-	return aio_tcp_transport_destroy(session->aio);
 }
 
 int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct aio_rtsp_handler_t* handler, void* param)
@@ -112,7 +108,6 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	h.onsend = rtsp_session_onsend;
 
 	memcpy(&rtsphandler, &handler->base, sizeof(rtsphandler));
-	rtsphandler.close = rtsp_session_close;
 	rtsphandler.send = rtsp_session_send;
 
 	session = (struct rtsp_session_t*)malloc(sizeof(*session));
