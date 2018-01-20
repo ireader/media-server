@@ -87,3 +87,8 @@ int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header)
 
 	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
 }
+
+int rtsp_server_send_interleaved_data(rtsp_server_t* rtsp, const void* data, size_t bytes)
+{
+	return rtsp->handler.send(rtsp->sendparam, data, bytes);
+}

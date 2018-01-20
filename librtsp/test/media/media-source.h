@@ -1,8 +1,8 @@
 #ifndef _media_source_h_
 #define _media_source_h_
 
-
 #include <string>
+#include <memory>
 
 struct IRTPTransport
 {
@@ -20,7 +20,7 @@ struct IMediaSource
 	virtual int GetDuration(int64_t& duration) const = 0;
     virtual int GetSDPMedia(std::string& sdp) const = 0;
 	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const = 0;
-	virtual int SetTransport(const char* track, IRTPTransport* transport) = 0;
+	virtual int SetTransport(const char* track, std::shared_ptr<IRTPTransport> transport) = 0;
 };
 
 #endif /* !_media_source_h_ */

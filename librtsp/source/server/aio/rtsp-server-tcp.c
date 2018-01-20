@@ -1,7 +1,9 @@
 #include "rtsp-server-aio.h"
 #include "aio-tcp-transport.h"
+#include "rtp-over-rtsp.h"
 #include "sys/sock.h"
 #include "sys/atomic.h"
+#include "sys/system.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -13,14 +15,18 @@
 struct rtsp_session_t
 {
 	uint64_t wclock; // last sent clock(for check recv timeout)
+	socket_t socket;
 	aio_tcp_transport_t* aio;
-	char buffer[1024];
+	struct rtp_over_rtsp_t rtp;
+	int rtsp_need_more_data;
+	uint8_t buffer[4 * 1024];
 
 	struct rtsp_server_t *rtsp;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
 
-	void (*onerror)();
+	void (*onerror)(void* param, rtsp_server_t* rtsp, int code);
+	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
 	void* param;
 };
 
@@ -45,19 +51,42 @@ static void rtsp_session_ondestroy(void* param)
 static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 {
 	size_t remain;
+	const uint8_t* p, *end;
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
 
+	if (0 == code && 0 == bytes)
+		code = ECONNRESET;
+
+	// if we have active send connection, recv timeout maybe normal case
+	// e.g. Embedded (Interleaved) Binary Data
+	if (ETIMEDOUT == code && session->wclock + TIMEOUT_RECV > system_clock())
+		code = 0; // send active, so try recv more
+
 	if (0 == code)
 	{
-		remain = bytes;
-		code = rtsp_server_input(session->rtsp, session->buffer, &remain);
-		if (0 == code)
+		p = session->buffer;
+		end = session->buffer + bytes;
+		do
 		{
-			// TODO: pipeline remain data
-			assert(bytes > remain);
-			assert(0 == remain);
-		}
+			if (0 == session->rtsp_need_more_data && ('$' == *p || 0 != session->rtp.state))
+			{
+				p = rtp_over_rtsp(&session->rtp, p, end);
+			}
+			else
+			{
+				remain = end - p;
+				code = rtsp_server_input(session->rtsp, p, &remain);
+				session->rtsp_need_more_data = code;
+				if (0 == code)
+				{
+					// TODO: pipeline remain data
+					assert(bytes > remain);
+					assert(0 == remain);
+				}
+				p = end - remain;
+			}
+		} while (p < end && 0 == code);
 		
 		if (code >= 0)
 		{
@@ -78,6 +107,7 @@ static void rtsp_session_onsend(void* param, int code, size_t bytes)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
+	session->wclock = system_clock(); // update send clock(for check timeout)
 //	session->server->onsend(session, code, bytes);
 	if (0 != code)
 	{
@@ -91,7 +121,10 @@ static int rtsp_session_send(void* ptr, const void* data, size_t bytes)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)ptr;
-	return aio_tcp_transport_send(session->aio, data, bytes);
+	//return aio_tcp_transport_send(session->aio, data, bytes);
+
+	// TODO: send multiple rtp packet once time
+	return bytes == socket_send(session->socket, data, bytes, 0) ? 0 : -1;
 }
 
 int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, socklen_t addrlen, struct aio_rtsp_handler_t* handler, void* param)
@@ -110,9 +143,10 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	memcpy(&rtsphandler, &handler->base, sizeof(rtsphandler));
 	rtsphandler.send = rtsp_session_send;
 
-	session = (struct rtsp_session_t*)malloc(sizeof(*session));
+	session = (struct rtsp_session_t*)calloc(1, sizeof(*session));
 	if (!session) return -1;
 
+	session->socket = socket;
 	socket_addr_to(addr, addrlen, ip, &port);
 	assert(addrlen <= sizeof(session->addr));
 	session->addrlen = addrlen < sizeof(session->addr) ? addrlen : sizeof(session->addr);
@@ -128,6 +162,8 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 		return -1;
 	}
 	
+	session->rtp.param = param;
+	session->rtp.onrtp = handler->onrtp;
 	aio_tcp_transport_set_timeout(session->aio, TIMEOUT_RECV, TIMEOUT_SEND);
 	if (0 != aio_tcp_transport_recv(session->aio, session->buffer, sizeof(session->buffer)))
 	{

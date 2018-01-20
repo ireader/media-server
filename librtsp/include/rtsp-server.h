@@ -118,6 +118,13 @@ int rtsp_server_reply_pause(rtsp_server_t* rtsp, int code);
 /// @return 0-ok, other-error code
 int rtsp_server_reply_teardown(rtsp_server_t* rtsp, int code);
 
+/// RTSP send Embedded (Interleaved) Binary Data
+/// @param[in] rtsp request handle
+/// @param[in] data interleaved binary data, start with 1-byte $ + 1-byte CHANNEL + 2-bytes LEN + RTP/RTCP HEADER + PAYLOAD
+/// @param[in] bytes data length in bytes
+/// @return 0-ok, other-error code
+int rtsp_server_send_interleaved_data(rtsp_server_t* rtsp, const void* data, size_t bytes);
+
 /// find RTSP header
 /// @param[in] rtsp request handle
 /// @param[in] name header name

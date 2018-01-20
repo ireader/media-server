@@ -60,7 +60,7 @@ MP4FileSource::~MP4FileSource()
 		fclose(m_fp);
 }
 
-int MP4FileSource::SetTransport(const char* track, IRTPTransport* transport)
+int MP4FileSource::SetTransport(const char* track, std::shared_ptr<IRTPTransport> transport)
 {
 	int t = atoi(track + 5/*track*/);
 	for (int i = 0; i < m_count; i++)

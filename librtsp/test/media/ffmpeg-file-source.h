@@ -22,7 +22,7 @@ public:
 	virtual int GetDuration(int64_t& duration) const;
 	virtual int GetSDPMedia(std::string& sdp) const;
 	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const;
-	virtual int SetTransport(const char* track, IRTPTransport* transport);
+	virtual int SetTransport(const char* track, std::shared_ptr<IRTPTransport> transport);
 
 private:
 	int Open(const char* file);
@@ -70,7 +70,7 @@ private:
 		void* packer; // rtp encoder
 		uint8_t packet[2048];
 
-		IRTPTransport* transport;
+		std::shared_ptr<IRTPTransport> transport;
 
 		int track; // mp4 track
 	};

@@ -38,7 +38,7 @@ H264FileSource::~H264FileSource()
 		rtp_payload_encode_destroy(m_rtppacker);
 }
 
-int H264FileSource::SetTransport(const char* /*track*/, IRTPTransport* transport)
+int H264FileSource::SetTransport(const char* /*track*/, std::shared_ptr<IRTPTransport> transport)
 {
 	m_transport = transport;
 	return 0;

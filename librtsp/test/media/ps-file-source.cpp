@@ -49,7 +49,7 @@ PSFileSource::~PSFileSource()
 	mpeg_ps_destroy(m_ps);
 }
 
-int PSFileSource::SetTransport(const char* /*track*/, IRTPTransport* transport)
+int PSFileSource::SetTransport(const char* /*track*/, std::shared_ptr<IRTPTransport> transport)
 {
 	m_transport = transport;
 	return 0;

@@ -26,7 +26,7 @@
 #include "media/ffmpeg-file-source.h"
 #endif
 
-static const char* s_workdir = "d:\\video";
+static const char* s_workdir = "e:\\";
 
 static ThreadLocker s_locker;
 
@@ -34,7 +34,7 @@ struct rtsp_media_t
 {
 	std::shared_ptr<IMediaSource> media;
 	std::shared_ptr<IRTPTransport> transport;
-	unsigned short port[2];
+	uint8_t channel; // rtp over rtsp interleaved channel
 	int status; // setup-init, 1-play, 2-pause
 };
 typedef std::map<std::string, rtsp_media_t> TSessions;
@@ -57,12 +57,6 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 	url_decode(r->path, strlen(r->path), path1, sizeof(path1));
 	path = path1;
 	uri_free(r);
-	return 0;
-}
-
-static int rtsp_send(void* param, const void* data, size_t bytes)
-{
-	struct rtsp_media_t* media = (struct rtsp_media_t*)param;
 	return 0;
 }
 
@@ -155,7 +149,8 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	else
 	{
 		rtsp_media_t item;
-		memset(&item, 0, sizeof(item));
+		item.channel = 0;
+		item.status = 0;
 //		item.media.reset(new PSFileSource(filename.c_str()));
 //		item.media.reset(new H264FileSource(filename.c_str()));
 #if defined(_HAVE_FFMPEG_)
@@ -196,14 +191,23 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	if (RTSP_TRANSPORT_RTP_TCP == transport->transport)
 	{
 		// 10.12 Embedded (Interleaved) Binary Data (p40)
-		item.transport = std::make_shared<RTPTcpTransport>();
-		item.media->SetTransport(path_basename(uri), item.transport.get());
+		int interleaved[2];
+		if (transport->interleaved1 == transport->interleaved2)
+		{
+			interleaved[0] = item.channel++;
+			interleaved[1] = item.channel++;
+		}
+		else
+		{
+			interleaved[0] = transport->interleaved1;
+			interleaved[1] = transport->interleaved2;
+		}
+
+		item.transport = std::make_shared<RTPTcpTransport>(rtsp, interleaved[0], interleaved[1]);
+		item.media->SetTransport(path_basename(uri), item.transport);
 
 		// RTP/AVP/TCP;interleaved=0-1
-		if (0 == transport->interleaved1 && 0 == transport->interleaved2)
-			snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=0-1");
-		else
-			snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d", transport->interleaved1, transport->interleaved2);
+		snprintf(rtsp_transport, sizeof(rtsp_transport), "RTP/AVP/TCP;interleaved=%d-%d", interleaved[0], interleaved[1]);		
 	}
 	else if(transport->multicast)
 	{
@@ -211,6 +215,8 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		// Multicast, client chooses address
 		// Multicast, server chooses address
 		assert(0);
+		// 461 Unsupported Transport
+		return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
 	}
 	else
 	{
@@ -227,7 +233,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 			// 500 Internal Server Error
 			return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
 		}
-		item.media->SetTransport(path_basename(uri), item.transport.get());
+		item.media->SetTransport(path_basename(uri), item.transport);
 
 		// RTP/AVP;unicast;client_port=4588-4589;server_port=6256-6257;destination=xxxx
 		snprintf(rtsp_transport, sizeof(rtsp_transport), 
