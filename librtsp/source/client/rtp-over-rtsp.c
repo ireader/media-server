@@ -76,7 +76,8 @@ const uint8_t* rtp_over_rtsp(struct rtp_over_rtsp_t *rtp, const uint8_t* data, c
 			if (rtp->bytes == rtp->length)
 			{
 				rtp->state = rtp_start;
-				rtp->onrtp(rtp->param, rtp->channel, rtp->data, rtp->length);
+				if(rtp->onrtp)
+					rtp->onrtp(rtp->param, rtp->channel, rtp->data, rtp->length);
 				return data;
 			}
 			break;

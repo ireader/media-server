@@ -100,8 +100,8 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 				r = rtsp_client_handle(rtsp, rtsp->parser);
 				rtsp_parser_clear(rtsp->parser); // reset parser
 				assert((size_t)remain < bytes);
-				p = end - remain;
 			}
+			p = end - remain;
 		}
 	} while (p < end && r >= 0);
 
