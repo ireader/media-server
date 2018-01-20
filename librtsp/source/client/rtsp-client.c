@@ -85,7 +85,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 
 	do
 	{
-		if (*p == '$' || 0 != rtsp->rtp.state)
+		if (0 == rtsp->parser_need_more_data && (*p == '$' || 0 != rtsp->rtp.state))
 		{
 			p = rtp_over_rtsp(&rtsp->rtp, p, end);
 		}
@@ -93,6 +93,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 		{
 			remain = (int)(end - p);
 			r = rtsp_parser_input(rtsp->parser, p, &remain);
+			rtsp->parser_need_more_data = r;
 			assert(r <= 1); // 1-need more data
 			if (0 == r)
 			{

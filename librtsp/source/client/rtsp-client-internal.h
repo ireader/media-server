@@ -63,6 +63,7 @@ struct rtsp_client_t
 
 	rtsp_parser_t* parser;
 	enum rtsp_state_t state;
+	int parser_need_more_data;
 	int progress;
 	unsigned int cseq; // rtsp sequence
 
