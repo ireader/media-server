@@ -2,6 +2,7 @@
 #define _rtsp_client_internal_h_
 
 #include "rtsp-client.h"
+#include "rtp-over-rtsp.h"
 #include "http-header-auth.h"
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
@@ -65,15 +66,7 @@ struct rtsp_client_t
 	int progress;
 	unsigned int cseq; // rtsp sequence
 
-	struct rtp_over_rtsp_t
-	{
-		int state;
-		uint8_t channel;
-		uint16_t length;
-		uint16_t bytes;
-		uint16_t capacity;
-		uint8_t* data;
-	} rtp;
+	struct rtp_over_rtsp_t rtp;
 
 	sdp_t* sdp;
 	int media_count;
@@ -130,7 +123,5 @@ int rtsp_client_set_parameter_onreply(struct rtsp_client_t* rtsp, void* parser);
 
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed);
 int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, const char* uri, const char* content, int length, char* authenrization, int bytes);
-
-const uint8_t* rtp_over_rtsp(struct rtsp_client_t *rtsp, const uint8_t* data, const uint8_t* end);
 
 #endif /* !_rtsp_client_internal_h_ */

@@ -1,4 +1,7 @@
-#include "rtsp-client-internal.h"
+#include "rtp-over-rtsp.h"
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 #define VMIN(x, y) ((x) < (y) ? (x) : (y))
 
@@ -11,16 +14,16 @@ enum rtp_over_tcp_state_t
 	rtp_data,
 };
 
-static int rtp_alloc(struct rtsp_client_t *rtsp)
+static int rtp_alloc(struct rtp_over_rtsp_t *rtp)
 {
 	void* p;
-	if (rtsp->rtp.capacity < rtsp->rtp.length)
+	if (rtp->capacity < rtp->length)
 	{
-		p = realloc(rtsp->rtp.data, rtsp->rtp.length);
+		p = realloc(rtp->data, rtp->length);
 		if (!p)
 			return -1;
-		rtsp->rtp.data = (uint8_t*)p;
-		rtsp->rtp.capacity = rtsp->rtp.length;
+		rtp->data = (uint8_t*)p;
+		rtp->capacity = rtp->length;
 	}
 	return 0;
 }
@@ -29,50 +32,51 @@ static int rtp_alloc(struct rtsp_client_t *rtsp)
 // Stream data such as RTP packets is encapsulated by an ASCII dollar sign(24 hexadecimal), 
 // followed by a one-byte channel identifier,
 // followed by the length of the encapsulated binary data as a binary two-byte integer in network byte order.
-const uint8_t* rtp_over_rtsp(struct rtsp_client_t *rtsp, const uint8_t* data, const uint8_t* end)
+const uint8_t* rtp_over_rtsp(struct rtp_over_rtsp_t *rtp, const uint8_t* data, const uint8_t* end)
 {
 	int n;
 
 	for (n = 0; data < end; data++)
 	{
-		switch (rtsp->rtp.state)
+		switch (rtp->state)
 		{
 		case rtp_start:
-			assert(*data == '$');
-			rtsp->rtp.bytes = 0;
-			rtsp->rtp.state = rtp_channel;
+			if (*data != '$')
+				return data;
+			rtp->bytes = 0;
+			rtp->state = rtp_channel;
 			break;
 
 		case rtp_channel:
 			// The channel identifier is defined in the Transport header with 
 			// the interleaved parameter(Section 12.39).
-			rtsp->rtp.channel = *data;
-			rtsp->rtp.state = rtp_length_1;
+			rtp->channel = *data;
+			rtp->state = rtp_length_1;
 			break;
 
 		case rtp_length_1:
-			rtsp->rtp.length = *data << 8;
-			rtsp->rtp.state = rtp_length_2;
+			rtp->length = *data << 8;
+			rtp->state = rtp_length_2;
 			break;
 
 		case rtp_length_2:
-			rtsp->rtp.length |= *data;
-			rtsp->rtp.state = rtp_data;
+			rtp->length |= *data;
+			rtp->state = rtp_data;
 			break;
 
 		case rtp_data:
-			if (0 == rtsp->rtp.bytes && 0 != rtp_alloc(rtsp))
+			if (0 == rtp->bytes && 0 != rtp_alloc(rtp))
 				return end;
 			n = end - data;
-			n = VMIN(rtsp->rtp.length - rtsp->rtp.bytes, n);
-			memcpy(rtsp->rtp.data + rtsp->rtp.bytes, data, n);
-			rtsp->rtp.bytes += (uint16_t)n;
+			n = VMIN(rtp->length - rtp->bytes, n);
+			memcpy(rtp->data + rtp->bytes, data, n);
+			rtp->bytes += (uint16_t)n;
 			data += n;
 
-			if (rtsp->rtp.bytes == rtsp->rtp.length)
+			if (rtp->bytes == rtp->length)
 			{
-				rtsp->rtp.state = rtp_start;
-				rtsp->handler.onrtp(rtsp->param, rtsp->rtp.channel, rtsp->rtp.data, rtsp->rtp.length);
+				rtp->state = rtp_start;
+				rtp->onrtp(rtp->param, rtp->channel, rtp->data, rtp->length);
 				return data;
 			}
 			break;
