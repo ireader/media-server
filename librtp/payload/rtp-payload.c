@@ -46,6 +46,7 @@ void rtp_payload_encode_destroy(void* encoder)
 	struct rtp_payload_delegate_t* ctx;
 	ctx = (struct rtp_payload_delegate_t*)encoder;
 	ctx->encoder->destroy(ctx->packer);
+	free(ctx);
 }
 
 void rtp_payload_encode_getinfo(void* encoder, uint16_t* seq, uint32_t* timestamp)
@@ -83,6 +84,7 @@ void rtp_payload_decode_destroy(void* decoder)
 	struct rtp_payload_delegate_t* ctx;
 	ctx = (struct rtp_payload_delegate_t*)decoder;
 	ctx->decoder->destroy(ctx->packer);
+	free(ctx);
 }
 
 int rtp_payload_decode_input(void* decoder, const void* packet, int bytes)
