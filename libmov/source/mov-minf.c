@@ -43,3 +43,24 @@ size_t mov_write_smhd(const struct mov_t* mov)
 	mov_buffer_w16(&mov->io, 0); /* reserved */
 	return 16;
 }
+
+size_t mov_write_nmhd(const struct mov_t* mov)
+{
+	mov_buffer_w32(&mov->io, 12); /* size */
+	mov_buffer_write(&mov->io, "nmhd", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	return 12;
+}
+
+/*
+ISO/IEC 14496-12:2015(E) 12.6.2 Subtitle media header (p185)
+aligned(8) class SubtitleMediaHeaderBox extends FullBox (¡®sthd¡¯, version = 0, flags = 0){
+}
+*/
+size_t mov_write_sthd(const struct mov_t* mov)
+{
+	mov_buffer_w32(&mov->io, 12); /* size */
+	mov_buffer_write(&mov->io, "sthd", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	return 12;
+}
