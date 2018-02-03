@@ -20,6 +20,7 @@ void mov_writer_destroy(mov_writer_t* mov);
 /// @return >=0-track, <0-error
 int mov_writer_add_audio(mov_writer_t* mov, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 int mov_writer_add_video(mov_writer_t* mov, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
+int mov_writer_add_subtitle(mov_writer_t* mov, uint8_t object, const void* extra_data, size_t extra_data_size);
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig

@@ -125,5 +125,8 @@
     <ClCompile Include="source\mov-dinf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mov-tx3g.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

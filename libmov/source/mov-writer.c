@@ -167,6 +167,10 @@ static size_t mov_write_minf(const struct mov_t* mov)
 	{
 		size += mov_write_smhd(mov);
 	}
+	else if (MOV_SUBT == track->handler_type)
+	{
+		size += mov_write_nmhd(mov);
+	}
 	else
 	{
 		assert(0);
@@ -563,6 +567,69 @@ int mov_writer_add_video(struct mov_writer_t* writer, uint8_t object, int width,
 	track->mdhd.creation_time = mov->mvhd.creation_time;
 	track->mdhd.modification_time = mov->mvhd.modification_time;
 	track->mdhd.timescale = 16000; //mov->mvhd.timescale
+	track->mdhd.language = 0x55c4;
+	track->mdhd.duration = 0; // placeholder
+
+	return mov->track_count++;
+}
+
+int mov_writer_add_subtitle(struct mov_writer_t* writer, uint8_t object, const void* extra_data, size_t extra_data_size)
+{
+	uint32_t tag;
+	void* ptr = NULL;
+	struct mov_t* mov;
+	struct mov_stsd_t* stsd;
+	struct mov_track_t* track;
+
+	tag = mov_object_to_tag(object);
+	if (0 == tag)
+		return -ENOENT; // invalid object type
+
+	mov = &writer->mov;
+	ptr = realloc(mov->tracks, sizeof(struct mov_track_t) * (mov->track_count + 1));
+	if (NULL == ptr)
+		return -ENOMEM;
+
+	mov->tracks = ptr;
+	track = &mov->tracks[mov->track_count];
+	memset(track, 0, sizeof(struct mov_track_t));
+
+	track->extra_data = malloc(extra_data_size + 1);
+	if (NULL == track->extra_data)
+		return -ENOMEM;
+	memcpy(track->extra_data, extra_data, extra_data_size);
+	track->extra_data_size = extra_data_size;
+
+	track->stsd = calloc(1, sizeof(struct mov_stsd_t));
+	if (NULL == track->stsd)
+		return -ENOMEM;
+
+	stsd = &track->stsd[0];
+	stsd->data_reference_index = 1;
+	stsd->object_type_indication = object;
+	stsd->stream_type = MP4_STREAM_VISUAL; // Visually composed tracks including video and text are layered using the ¡®layer¡¯ value.
+
+	track->tag = tag;
+	track->handler_type = MOV_SUBT;
+	track->handler_descr = "SubtitleHandler";
+	track->stsd_count = 1;
+	track->start_dts = INT64_MIN;
+	track->start_cts = INT64_MIN;
+	track->end_dts = 0;
+	track->offset = 0;
+
+	track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
+	track->tkhd.track_ID = mov->mvhd.next_track_ID++;
+	track->tkhd.creation_time = mov->mvhd.creation_time;
+	track->tkhd.modification_time = mov->mvhd.modification_time;
+	track->tkhd.width = 0;
+	track->tkhd.height = 0;
+	track->tkhd.volume = 0;
+	track->tkhd.duration = 0; // placeholder
+
+	track->mdhd.creation_time = mov->mvhd.creation_time;
+	track->mdhd.modification_time = mov->mvhd.modification_time;
+	track->mdhd.timescale = 1000; //mov->mvhd.timescale
 	track->mdhd.language = 0x55c4;
 	track->mdhd.duration = 0; // placeholder
 

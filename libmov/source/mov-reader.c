@@ -325,11 +325,13 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'o', 'o', 'f'), MOV_ROOT, mov_read_moof },
 	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
+	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
 	{ MOV_TAG('s', 't', 'b', 'l'), MOV_MINF, mov_read_default },
 	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
+	{ MOV_TAG('s', 't', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 12.6.2 Subtitle media header (p185)
 	{ MOV_TAG('s', 't', 's', 'c'), MOV_STBL, mov_read_stsc },
 	{ MOV_TAG('s', 't', 's', 'd'), MOV_STBL, mov_read_stsd },
 	{ MOV_TAG('s', 't', 's', 's'), MOV_STBL, mov_read_stss },
@@ -581,7 +583,7 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 	return 0;
 }
 
-int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param)
+int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_t *ontrack, void* param)
 {
 	size_t i, j;
 	struct mov_stsd_t* stsd;
@@ -596,11 +598,16 @@ int mov_reader_getinfo(struct mov_reader_t* reader, mov_reader_onvideo onvideo, 
 			switch (track->handler_type)
 			{
 			case MOV_VIDEO:
-				onvideo(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.visual.width, stsd->u.visual.height, track->extra_data, track->extra_data_size);
+				if(ontrack->onvideo) ontrack->onvideo(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.visual.width, stsd->u.visual.height, track->extra_data, track->extra_data_size);
 				break;
 
 			case MOV_AUDIO:
-				onaudio(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.audio.channelcount, stsd->u.audio.samplesize, stsd->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
+				if (ontrack->onaudio) ontrack->onaudio(param, track->tkhd.track_ID, stsd->object_type_indication, stsd->u.audio.channelcount, stsd->u.audio.samplesize, stsd->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
+				break;
+
+			case MOV_SUBT:
+			case MOV_TEXT:
+				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, MOV_OBJECT_TEXT, track->extra_data, track->extra_data_size);
 				break;
 
 			default:

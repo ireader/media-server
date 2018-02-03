@@ -20,7 +20,7 @@ void fmp4_writer_destroy(fmp4_writer_t* fmp4);
 /// @return >=0-track, <0-error
 int fmp4_writer_add_audio(fmp4_writer_t* fmp4, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 int fmp4_writer_add_video(fmp4_writer_t* fmp4, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
-int fmp4_writer_add_subtitle(fmp4_writer_t* fmp4, uint8_t object);
+int fmp4_writer_add_subtitle(fmp4_writer_t* fmp4, uint8_t object, const void* extra_data, size_t extra_data_size);
 
 /// Write audio/video stream
 /// raw AAC data, don't include ADTS/AudioSpecificConfig

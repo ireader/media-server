@@ -154,6 +154,7 @@ static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
+	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
 
@@ -162,6 +163,74 @@ static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
+	mov->track->tag = box.type;
+	return mov_buffer_error(&mov->io);
+}
+
+// ISO/IEC 14496-12:2015(E) 12.5 Text media (p184)
+/*
+class PlainTextSampleEntry(codingname) extends SampleEntry (codingname) {
+}
+class SimpleTextSampleEntry(codingname) extends PlainTextSampleEntry (¡®stxt¡¯) {
+	string content_encoding; // optional
+	string mime_format;
+	BitRateBox (); // optional
+	TextConfigBox (); // optional
+}
+*/
+static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+{
+	struct mov_box_t box;
+	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	mov_buffer_skip(&mov->io, box.size - 16);
+	mov->track->tag = box.type;
+	return mov_buffer_error(&mov->io);
+}
+
+// ISO/IEC 14496-12:2015(E) 12.6 Subtitle media (p185)
+/*
+class SubtitleSampleEntry(codingname) extends SampleEntry (codingname) {
+}
+class XMLSubtitleSampleEntry() extends SubtitleSampleEntry (¡¯stpp¡®) {
+	string namespace;
+	string schema_location; // optional
+	string auxiliary_mime_types;
+	// optional, required if auxiliary resources are present
+	BitRateBox (); // optional
+}
+class TextSubtitleSampleEntry() extends SubtitleSampleEntry (¡®sbtt¡¯) {
+	string content_encoding; // optional
+	string mime_format;
+	BitRateBox (); // optional
+	TextConfigBox (); // optional
+}
+class TextSampleEntry() extends SampleEntry (¡®tx3g¡¯) {
+	unsigned int(32) displayFlags;
+	signed int(8) horizontal-justification;
+	signed int(8) vertical-justification;
+	unsigned int(8) background-color-rgba[4];
+	BoxRecord default-text-box;
+	StyleRecord default-style;
+	FontTableBox font-table;
+	DisparityBox default-disparity;
+}
+*/
+static int mov_read_subtitle_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+{
+	struct mov_box_t box;
+	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	if (box.type == MOV_TAG('t', 'x', '3', 'g'))
+	{
+		mov_read_tx3g(mov, &box);
+	}
+	else
+	{
+		mov_buffer_skip(&mov->io, box.size - 16);
+	}
+
+	stsd->object_type_indication = MOV_OBJECT_TEXT;
+	stsd->stream_type = MP4_STREAM_VISUAL;
+	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
 
@@ -203,6 +272,14 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		else if (MOV_CLCP == track->handler_type)
 		{
 			mov_read_meta_sample_entry(mov, &track->stsd[i]);
+		}
+		else if (MOV_TEXT == track->handler_type)
+		{
+			mov_read_text_sample_entry(mov, &track->stsd[i]);
+		}
+		else if (MOV_SUBT == track->handler_type)
+		{
+			mov_read_subtitle_sample_entry(mov, &track->stsd[i]);
 		}
 		else
 		{
@@ -312,6 +389,29 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 	return size;
 }
 
+static int mov_write_subtitle(const struct mov_t* mov, const struct mov_stsd_t* stsd)
+{
+	size_t size;
+	uint64_t offset;
+	const struct mov_track_t* track = mov->track;
+
+	size = 8 /* Box */ + 8 /* SampleEntry */ + track->extra_data_size;
+
+	offset = mov_buffer_tell(&mov->io);
+	mov_buffer_w32(&mov->io, 0); /* size */
+	mov_buffer_w32(&mov->io, mov->track->tag); // "tx3g"
+
+	mov_buffer_w32(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, 0); /* Reserved */
+	mov_buffer_w16(&mov->io, stsd->data_reference_index); /* Data-reference index */
+
+	if (track->extra_data_size > 0)
+		mov_buffer_write(&mov->io, track->extra_data, track->extra_data_size);
+
+	mov_write_size(mov, offset, size); /* update size */
+	return size;
+}
+
 size_t mov_write_stsd(const struct mov_t* mov)
 {
 	size_t i, size;
@@ -335,6 +435,10 @@ size_t mov_write_stsd(const struct mov_t* mov)
 		else if (MOV_AUDIO == track->handler_type)
 		{
 			size += mov_write_audio(mov, &track->stsd[i]);
+		}
+		else if (MOV_SUBT == track->handler_type || MOV_TEXT == track->handler_type)
+		{
+			size += mov_write_subtitle(mov, &track->stsd[i]);
 		}
 		else
 		{

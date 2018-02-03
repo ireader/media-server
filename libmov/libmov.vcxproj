@@ -56,6 +56,7 @@
     <ClCompile Include="source\mov-tkhd.c" />
     <ClCompile Include="source\mov-trex.c" />
     <ClCompile Include="source\mov-trun.c" />
+    <ClCompile Include="source\mov-tx3g.c" />
     <ClCompile Include="source\mov-writer.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

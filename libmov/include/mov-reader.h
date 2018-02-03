@@ -14,11 +14,16 @@ typedef struct mov_reader_t mov_reader_t;
 mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* param);
 void mov_reader_destroy(mov_reader_t* mov);
 
-/// @param[in] object: MOV_OBJECT_H264/MOV_OBJECT_AAC, see more @mov-format.h
-typedef void (*mov_reader_onvideo)(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes);
-typedef void (*mov_reader_onaudio)(void* param, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
+struct mov_reader_trackinfo_t
+{
+	/// @param[in] object: MOV_OBJECT_H264/MOV_OBJECT_AAC, see more @mov-format.h
+	void (*onvideo)(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes);
+	void (*onaudio)(void* param, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
+	void (*onsubtitle)(void* param, uint32_t track, uint8_t object, const void* extra, size_t bytes);
+};
+
 /// @return 0-OK, other-error
-int mov_reader_getinfo(mov_reader_t* mov, mov_reader_onvideo onvideo, mov_reader_onaudio onaudio, void* param);
+int mov_reader_getinfo(mov_reader_t* mov, struct mov_reader_trackinfo_t *ontrack, void* param);
 
 uint64_t mov_reader_getduration(mov_reader_t* mov);
 
