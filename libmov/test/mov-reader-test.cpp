@@ -82,7 +82,8 @@ void mov_reader_test(const char* mp4)
 	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	uint64_t duration = mov_reader_getduration(mov);
 
-	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, NULL);
+	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info };
+	mov_reader_getinfo(mov, &info, NULL);
 
 	while (mov_reader_read(mov, s_buffer, sizeof(s_buffer), onread, NULL) > 0)
 	{

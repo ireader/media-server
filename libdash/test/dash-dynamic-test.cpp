@@ -85,7 +85,8 @@ static int STDCALL dash_server_worker(void* param)
 
 	FILE* fp = fopen(file.c_str(), "rb");
 	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
-	mov_reader_getinfo(mov, mp4_onvideo, mp4_onaudio, dash);
+	struct mov_reader_trackinfo_t info = { mp4_onvideo, mp4_onaudio };
+	mov_reader_getinfo(mov, &info, dash);
 	int r = mov_reader_read(mov, dash->packet, sizeof(dash->packet), mp4_onread, dash);
 
 	while (1 == r)

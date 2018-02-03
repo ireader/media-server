@@ -133,7 +133,8 @@ void mov_2_flv_test(const char* mp4)
 	//flv_muxer_metadata(muxer, &metadata);
 	//flv_muxer_destroy(muxer);
 
-	mov_reader_getinfo(mov, mov_video_info, mov_audio_info, flv);
+	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info };
+	mov_reader_getinfo(mov, &info, flv);
 
 	while (mov_reader_read(mov, s_buffer, sizeof(s_buffer), onread, flv) > 0)
 	{

@@ -24,7 +24,10 @@ MP4FileSource::MP4FileSource(const char *file)
 	m_fp = fopen(file, "rb");
 	m_reader = mov_reader_create(mov_file_buffer(), m_fp);
 	if (m_reader)
-		mov_reader_getinfo(m_reader, MP4OnVideo, MP4OnAudio, this);
+	{
+		struct mov_reader_trackinfo_t info = { MP4OnVideo, MP4OnAudio };
+		mov_reader_getinfo(m_reader, &info, this);
+	}
 
 	for (int i = 0; i < m_count; i++)
 	{

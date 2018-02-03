@@ -66,7 +66,8 @@ void dash_static_test(const char* mp4, const char* name)
 	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	dash_mpd_t* mpd = dash_mpd_create(DASH_STATIC, dash_mpd_onsegment, NULL);
 
-	mov_reader_getinfo(mov, mp4_onvideo, mp4_onaudio, mpd);
+	struct mov_reader_trackinfo_t info = { mp4_onvideo, mp4_onaudio };
+	mov_reader_getinfo(mov, &info, mpd);
 	int r = mov_reader_read(mov, s_packet, sizeof(s_packet), mp4_onread, mpd);
 	while (1 == r)
 	{
