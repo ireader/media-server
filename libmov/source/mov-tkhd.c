@@ -92,7 +92,7 @@ size_t mov_write_tkhd(const struct mov_t* mov)
 
 	mov_buffer_w32(&mov->io, 0); /* reserved */
 	mov_buffer_w32(&mov->io, 0); /* reserved */
-	mov_buffer_w16(&mov->io, 0); /* layer */
+	mov_buffer_w16(&mov->io, tkhd->layer); /* layer */
 	mov_buffer_w16(&mov->io, group); /* alternate_group */
 	//mov_buffer_w16(&mov->io, AVSTREAM_AUDIO == track->stream_type ? 0x0100 : 0); /* volume */
 	mov_buffer_w16(&mov->io, tkhd->volume); /* volume */
