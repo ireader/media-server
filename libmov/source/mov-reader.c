@@ -514,7 +514,7 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 			continue;
 
 		dts = track2->samples[track2->sample_offset].dts * 1000 / track2->mdhd.timescale;
-		//if (NULL == track || track->samples[track->sample_offset].dts > track2->samples[track2->sample_offset].dts)
+		//if (NULL == track || dts < best_dts)
 		//if (NULL == track || track->samples[track->sample_offset].offset > track2->samples[track2->sample_offset].offset)
 		if (NULL == track || (dts < best_dts && best_dts - dts > AV_TRACK_TIMEBASE) || track2->samples[track2->sample_offset].offset < track->samples[track->sample_offset].offset)
 		{
