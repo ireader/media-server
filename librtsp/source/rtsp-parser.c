@@ -331,7 +331,7 @@ static int rtsp_parse_request_line(struct rtsp_parser_t *rtsp)
 				break;
 
 			default:
-				rtsp->stateM = SM_REQUEST_VERSION;
+				rtsp->stateM = SM_REQUEST_URI;
 				break;
 			}
 			break;
