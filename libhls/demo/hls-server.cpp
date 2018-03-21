@@ -12,8 +12,10 @@
 #include "http-route.h"
 #include "sys/thread.h"
 #include "sys/system.h"
+#include "sys/atomic.h"
 #include "sys/path.h"
 #include "cstringext.h"
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <map>
@@ -21,12 +23,13 @@
 #include <vector>
 #include <string>
 
-#define CWD "./"
+#define CWD "d:\\video\\"
 
 extern "C" int http_list_dir(http_session_t* session, const char* path);
 
 struct hls_ts_t
 {
+	int32_t ref;
 	void* data;
 	size_t size;
 	std::string name;
@@ -44,7 +47,7 @@ struct hls_playlist_t
 	uint8_t packet[2 * 1024 * 1024];
 
 	int i;
-	std::list<hls_ts_t> files;
+	std::list<hls_ts_t*> files;
 };
 
 static std::map<std::string, hls_playlist_t*> s_playlists;
@@ -66,18 +69,24 @@ static int hls_handler(void* param, const void* data, size_t bytes, int64_t pts,
 	hls_m3u8_add(playlist->m3u8, name, pts, duration, discontinue);
 
 	// add new segment
-	hls_ts_t ts;
-	ts.name = name;
-	ts.size = bytes;
-	ts.data = malloc(bytes);
-	memcpy(ts.data, data, bytes);
+	hls_ts_t* ts = new hls_ts_t;
+	ts->ref = 1;
+	ts->name = name;
+	ts->size = bytes;
+	ts->data = malloc(bytes);
+	memcpy(ts->data, data, bytes);
 	playlist->files.push_back(ts);
 
 	// remove oldest segment
 	while(playlist->files.size() > HLS_LIVE_NUM + 1)
 	{
-		free(playlist->files.front().data);
+		ts = playlist->files.front();
 		playlist->files.pop_front();
+		if (0 == atomic_decrement32(&ts->ref))
+		{
+			free(ts->data);
+			delete ts;
+		}
 	}
 
 	printf("new segment: %s\n", name);
@@ -164,20 +173,33 @@ static int hls_server_m3u8(http_session_t* session, const std::string& path)
 	return 0;
 }
 
+static int hls_server_ts_onsend(void* param, int code, size_t bytes)
+{
+	hls_ts_t* ts = (hls_ts_t*)param;
+	if (0 == atomic_decrement32(&ts->ref))
+	{
+		free(ts->data);
+		delete ts;
+	}
+	return 0;
+}
+
 static int hls_server_ts(http_session_t* session, const std::string& path, const std::string& ts)
 {
 	hls_playlist_t* playlist = s_playlists.find(path)->second;
 	assert(playlist);
 
-	std::list<hls_ts_t>::iterator i;
+	std::list<hls_ts_t*>::iterator i;
 	std::string file = path + '/' + ts;
 	for(i = playlist->files.begin(); i != playlist->files.end(); ++i)
 	{
-		if(i->name == file)
+		hls_ts_t* ts = *i;
+		if(ts->name == file)
 		{
+			atomic_increment32(&ts->ref);
 			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-			http_server_reply(session, 200, i->data, i->size);
+			http_server_send(session, 200, ts->data, ts->size, hls_server_ts_onsend, ts);
 			printf("load file %s\n", file.c_str());
 			return 0;
 		}
@@ -231,17 +253,11 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	}
 	else if (path_testfile(fullpath.c_str()))
 	{
-		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
-		if (std::string::npos != fullpath.find(".m3u8"))
+		if(std::string::npos != fullpath.find(".m3u8"))
 			http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
-		else if (std::string::npos != fullpath.find(".mpd"))
-			http_server_set_header(session, "content-type", "application/dash+xml");
-		else if (std::string::npos != fullpath.find(".mp4") || std::string::npos != fullpath.find(".m4v"))
-			http_server_set_header(session, "content-type", "video/mp4");
-		else if (std::string::npos != fullpath.find(".m4a"))
-			http_server_set_header(session, "content-type", "audio/mp4"); 
+		else if (std::string::npos != fullpath.find(".mp4"))
+			http_server_set_header(session, "Content-Type", "video/mp4");
 		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 
@@ -250,7 +266,7 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 
 void hls_server_test(const char* ip, int port)
 {
-	aio_worker_init(1);
+	aio_worker_init(4);
 	http_server_t* http = http_server_create(ip, port);
 	http_server_set_handler(http, http_server_route, http);
 	http_server_addroute("/live/", hls_server_onlive);

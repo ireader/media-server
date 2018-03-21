@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.vcxproj", "{C34CC56F-34FE-4D93-8582-5853B05442EA}"
 EndProject
@@ -18,6 +18,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libflv", "libflv\libflv.vcxproj", "{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdash", "libdash\libdash.vcxproj", "{A5DA231F-6146-43B5-8BBE-891F7E552357}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaio", "..\sdk\libaio\libaio.vcxproj", "{24239EF8-56AC-4B79-81AA-5CB49B8B1178}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "..\sdk\libhttp\libhttp.vcxproj", "{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,8 +89,35 @@ Global
 		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|Win32.Build.0 = Release|Win32
 		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|x64.ActiveCfg = Release|x64
 		{A5DA231F-6146-43B5-8BBE-891F7E552357}.Release|x64.Build.0 = Release|x64
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Debug|Win32.ActiveCfg = Debug|Win32
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Debug|Win32.Build.0 = Debug|Win32
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Debug|x64.ActiveCfg = Debug|x64
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Debug|x64.Build.0 = Debug|x64
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Release|Win32.ActiveCfg = Release|Win32
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Release|Win32.Build.0 = Release|Win32
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Release|x64.ActiveCfg = Release|x64
+		{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}.Release|x64.Build.0 = Release|x64
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Debug|Win32.ActiveCfg = Debug|Win32
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Debug|Win32.Build.0 = Debug|Win32
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Debug|x64.ActiveCfg = Debug|x64
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Debug|x64.Build.0 = Debug|x64
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Release|Win32.ActiveCfg = Release|Win32
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Release|Win32.Build.0 = Release|Win32
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Release|x64.ActiveCfg = Release|x64
+		{24239EF8-56AC-4B79-81AA-5CB49B8B1178}.Release|x64.Build.0 = Release|x64
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|Win32.Build.0 = Debug|Win32
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|x64.ActiveCfg = Debug|x64
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Debug|x64.Build.0 = Debug|x64
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|Win32.ActiveCfg = Release|Win32
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|Win32.Build.0 = Release|Win32
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|x64.ActiveCfg = Release|x64
+		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E0DCA535-6F79-4DB7-83ED-919129918A77}
 	EndGlobalSection
 EndGlobal

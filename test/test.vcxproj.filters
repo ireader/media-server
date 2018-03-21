@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="librtmp">
+      <UniqueIdentifier>{f3db94fb-de80-40f1-b2f1-1adc88726e92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libflv">
+      <UniqueIdentifier>{83bd3232-d071-494c-a892-2bb471e72e98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libmov">
+      <UniqueIdentifier>{753cb105-02dc-435b-86c5-71de6fc82b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtmp\aio">
+      <UniqueIdentifier>{75338d24-c7bc-47e9-b2d3-0a155b919f0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{97b72406-88ce-4ba0-ac2e-0d66f0669a3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtsp">
+      <UniqueIdentifier>{a32f7f42-2c3d-44f5-9876-73289ca5ac43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtsp\media">
+      <UniqueIdentifier>{b1c91a94-0572-4ed6-bfb1-acd36ab71e40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtp">
+      <UniqueIdentifier>{6ccbd831-80b9-47aa-bbb2-208bd9f20c33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtsp\aio">
+      <UniqueIdentifier>{84a6ad98-af6f-4aa9-bbbd-31d247b1c0ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libmpeg">
+      <UniqueIdentifier>{4409985a-d2a4-4ed1-85d4-99c3d778a759}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libhls">
+      <UniqueIdentifier>{54c09e9c-2702-42c9-9ced-e11f70c07890}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
+      <Filter>librtmp\aio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h">
+      <Filter>librtmp\aio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h">
+      <Filter>librtmp\aio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-socket.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\h264-file-reader.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\h264-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\media-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\mp4-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\ps-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-udp-transport.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\amf0-test.c">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\flv2ts-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\flv-reader-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\flv-read-write-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\h264-flv-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\ts2flv-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-play-aio-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-play-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-publish-aio-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-publish-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-publish-aio-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-vod-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\fmp4-writer-test.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-2-flv.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-reader-test.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-audio.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-h264.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-h265.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-test.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\aio\aio-rtmp-client.c">
+      <Filter>librtmp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\aio\aio-rtmp-server.c">
+      <Filter>librtmp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\aio\aio-rtmp-transport.c">
+      <Filter>librtmp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\crc32.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtp-socket.c">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-client-test.c">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-payload-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-receiver-test.c">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c">
+      <Filter>librtsp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c">
+      <Filter>librtsp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c">
+      <Filter>librtsp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\ntp-time.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\md5.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\uri-parse.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\urlcodec.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\base64.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\time64.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="BinaryDiff.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libhls\demo\hls-segmenter-flv.cpp">
+      <Filter>libhls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libhls\demo\hls-segmenter-mp4.cpp">
+      <Filter>libhls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libhls\demo\hls-server.cpp">
+      <Filter>libhls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-list-dir.cpp">
+      <Filter>libhls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\hkdf.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\hmac.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\sha.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\sha1.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\sha224-256.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\sha384-512.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-file-buffer.c">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\unicode.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\libflv\test\rtmp.onStatus.amf0">
+      <Filter>libflv</Filter>
+    </None>
+    <None Include="..\libmpeg\test\fileSequence0.ts">
+      <Filter>libmpeg</Filter>
+    </None>
+  </ItemGroup>
+</Project>
