@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "sockutil.h"
+#include "sys/poll.h"
 #include "sys/thread.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
@@ -80,57 +81,6 @@ static int rtcp_read(struct rtp_context_t* ctx, socket_t s)
 	return r;
 }
 
-#if defined(OS_WINDOWS)
-static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
-{
-	int r;
-	int interval;
-	time64_t clock;
-	fd_set fds;
-	struct timeval tv;
-
-	clock = time64_now();
-	while (1)
-	{
-		FD_ZERO(&fds);
-		FD_SET(rtp[0], &fds);
-		FD_SET(rtp[1], &fds);
-
-		// RTCP report
-		interval = rtp_rtcp_interval(ctx->rtp);
-		if (clock + interval < time64_now())
-		{
-			r = rtp_rtcp_report(ctx->rtp, ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer));
-			r = sendto(rtp[1], ctx->rtcp_buffer, r, 0, (struct sockaddr*)&ctx->ss, ctx->len);
-			clock = time64_now();
-		}
-
-		tv.tv_sec = timeout / 1000;
-		tv.tv_usec = (timeout % 1000) * 1000;
-		r = select(0, &fds, NULL, NULL, timeout < 0 ? NULL : &tv);
-		if (0 == r)
-		{
-			continue; // timeout
-		}
-		else if (r < 0)
-		{
-			return r; // error
-		}
-		else
-		{
-			if (FD_ISSET(rtp[0], &fds))
-			{
-				rtp_read(ctx, rtp[0]);
-			}
-
-			if (FD_ISSET(rtp[1], &fds))
-			{
-				rtcp_read(ctx, rtp[1]);
-			}
-		}
-	}
-}
-#else
 static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 {
 	int i, r;
@@ -157,9 +107,9 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 			clock = time64_now();
 		}
 
-		r = poll(&fds, 2, timeout);
+		r = poll(fds, 2, timeout);
 		while (-1 == r && EINTR == errno)
-			r = poll(&fds, 1, timeout);
+			r = poll(fds, 2, timeout);
 
 		if (0 == r)
 		{
@@ -177,7 +127,7 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 				fds[0].revents = 0;
 			}
 
-			if (0 != fds[0].revents)
+			if (0 != fds[1].revents)
 			{
 				rtcp_read(ctx, rtp[1]);
 				fds[1].revents = 0;
@@ -186,7 +136,6 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 	}
 	return r;
 }
-#endif
 
 static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time, int flags)
 {
