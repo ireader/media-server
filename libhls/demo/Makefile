@@ -23,6 +23,7 @@ INCLUDES = . \
 #--------------------------------------------------------------------
 #SOURCE_PATHS = source
 SOURCE_FILES = hls-server.cpp
+SOURCE_FILES += $(ROOT)/source/unicode.c
 SOURCE_FILES += $(ROOT)/source/urlcodec.c
 SOURCE_FILES += $(ROOT)/source/uri-parse.c
 SOURCE_FILES += $(ROOT)/source/digest/crc32.c
