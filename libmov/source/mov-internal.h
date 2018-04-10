@@ -245,6 +245,7 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, 
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
 
+struct mov_track_t* mov_track_add(struct mov_t* mov);
 struct mov_track_t* mov_track_find(const struct mov_t* mov, uint32_t track);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);

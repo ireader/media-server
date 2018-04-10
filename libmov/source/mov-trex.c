@@ -1,5 +1,21 @@
 #include "mov-internal.h"
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
+
+struct mov_track_t* mov_track_add(struct mov_t* mov)
+{
+    void* p;
+    struct mov_track_t* track;
+    p = realloc(mov->tracks, sizeof(struct mov_track_t) * (mov->track_count + 1));
+    if (NULL == p) return NULL;
+
+    mov->tracks = p;
+    mov->track_count += 1;
+    track = &mov->tracks[mov->track_count - 1];
+    memset(track, 0, sizeof(struct mov_track_t));
+    return track;
+}
 
 struct mov_track_t* mov_track_find(const struct mov_t* mov, uint32_t track)
 {
@@ -22,8 +38,13 @@ int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box)
 	track_ID = mov_buffer_r32(&mov->io); /* track_ID */
 
 	track = mov_track_find(mov, track_ID);
-	if (NULL == track)
-		return -1;
+    if (NULL == track)
+    {
+        track = mov_track_add(mov);
+        if (NULL == track)
+            return -1;
+        track->tkhd.track_ID = track_ID;
+    }
 
 	track->trex.default_sample_description_index = mov_buffer_r32(&mov->io); /* default_sample_description_index */
 	track->trex.default_sample_duration = mov_buffer_r32(&mov->io); /* default_sample_duration */
