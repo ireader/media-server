@@ -192,7 +192,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 
 		if (0 == packetType)
 		{
-			// AVCDecoderConfigurationRecord
+			// HEVCDecoderConfigurationRecord
 			assert(bytes > 5 + 7);
 			mpeg4_hevc_decoder_configuration_record_load(data + 5, bytes - 5, &flv->v.hevc);
 			return flv->handler(flv->param, FLV_VIDEO_HVCC, data + 5, bytes - 5, timestamp, timestamp, 0);

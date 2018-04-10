@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "sockutil.h"
-#include "sys/poll.h"
+#include "sys/pollfd.h"
 #include "sys/thread.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
