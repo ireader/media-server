@@ -64,7 +64,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	{
 		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_AUDIO_ASC == codec || FLV_VIDEO_AVCC == codec || FLV_VIDEO_HVCC)
+	else if (FLV_AUDIO_ASC == codec || FLV_VIDEO_AVCC == codec || FLV_VIDEO_HVCC == codec)
 	{
 		// nothing to do
 	}

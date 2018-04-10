@@ -187,11 +187,11 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 		//n = snprintf(buffer, sizeof(buffer), ", algorithm=MD5");
 		n = snprintf(buffer, sizeof(buffer), "%s", ""); // default MD5
 		if (n + 1 < sizeof(buffer) && rtsp->auth.opaque[0])
-			n += snprintf(buffer + n, sizeof(buffer) - n, ", opaque=\"%s\", ", rtsp->auth.opaque);
+			n += snprintf(buffer + n, sizeof(buffer) - n - 1, ", opaque=\"%s\", ", rtsp->auth.opaque);
 		if (n + 1 < sizeof(buffer) && rtsp->auth.qop[0])
-			n += snprintf(buffer + n, sizeof(buffer) - n, ", cnonce=\"%s\", nc=%s, qop=%s", rtsp->cnonce, rtsp->nc, rtsp->auth.qop);
+			n += snprintf(buffer + n, sizeof(buffer) - n - 1, ", cnonce=\"%s\", nc=%s, qop=%s", rtsp->cnonce, rtsp->nc, rtsp->auth.qop);
 		if (n + 1 < sizeof(buffer) && rtsp->auth.userhash)
-			n += snprintf(buffer + n, sizeof(buffer) - n, ", userhash=%s", rtsp->auth.userhash ? "true" : "false");
+			n += snprintf(buffer + n, sizeof(buffer) - n - 1, ", userhash=%s", rtsp->auth.userhash ? "true" : "false");
 
 		return snprintf(authenrization, bytes, "Authorization: Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"%s\r\n",
 			rtsp->auth.userhash ? username : rtsp->usr,

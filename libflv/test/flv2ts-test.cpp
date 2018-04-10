@@ -68,7 +68,7 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 	{
 		mpeg_ts_write(ts, STREAM_AUDIO_MP3, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;

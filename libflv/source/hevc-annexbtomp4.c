@@ -106,9 +106,9 @@ static void hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t m
 	hevc->general_constraint_indicator_flags = 0;
 	hevc->general_constraint_indicator_flags |= ((uint64_t)nalu[5]) << 40;
 	hevc->general_constraint_indicator_flags |= ((uint64_t)nalu[6]) << 32;
-	hevc->general_constraint_indicator_flags |= nalu[7] << 24;
-	hevc->general_constraint_indicator_flags |= nalu[8] << 8;
-	hevc->general_constraint_indicator_flags |= nalu[9] << 8;
+	hevc->general_constraint_indicator_flags |= ((uint64_t)nalu[7]) << 24;
+	hevc->general_constraint_indicator_flags |= ((uint64_t)nalu[8]) << 16;
+	hevc->general_constraint_indicator_flags |= ((uint64_t)nalu[9]) << 8;
 	hevc->general_constraint_indicator_flags |= nalu[10];
 
 	hevc->general_level_idc = nalu[11];

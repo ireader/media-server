@@ -146,7 +146,7 @@ static int mov_index_build(struct mov_track_t* track)
 	if (!p) return ENOMEM;
 	stbl->stss = p;
 
-	for (j = i = 0; i < track->sample_count; i++)
+	for (j = i = 0; i < track->sample_count && j < stbl->stss_count; i++)
 	{
 		if (track->samples[i].flags & MOV_AV_FLAG_KEYFREAME)
 			stbl->stss[j++] = i + 1; // uint32_t sample_number, start from 1
