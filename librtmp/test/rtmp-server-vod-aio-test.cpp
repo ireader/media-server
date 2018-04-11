@@ -3,7 +3,7 @@
 #include "sys/thread.h"
 #include "sys/system.h"
 #include "sys/sync.hpp"
-#include "aio-socket.h"
+#include "aio-worker.h"
 #include "flv-reader.h"
 #include "flv-proto.h"
 #include "aio-rtmp-server.h"
@@ -147,16 +147,15 @@ void rtmp_server_vod_aio_test(const char* flv)
 	handler.onseek = aio_rtmp_server_onseek;
 	handler.onclose = aio_rtmp_server_onclose;
 
-	aio_socket_init(8);
+	aio_worker_init(8);
 
 	s_file = flv;
 	rtmp = aio_rtmp_server_create(NULL, 1935, &handler, NULL);
 
-	while (1)
+	while ('q' != getchar())
 	{
-		aio_socket_process(2000);
 	}
 
 	aio_rtmp_server_destroy(rtmp);
-	aio_socket_clean();
+    aio_worker_clean(8);
 }
