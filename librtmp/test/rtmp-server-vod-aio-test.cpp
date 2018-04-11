@@ -16,62 +16,77 @@ struct rtmp_server_vod_t
 {
 	int ref;
 	ThreadLocker locker;
-	aio_rtmp_session_t* session;
+    aio_rtmp_session_t* session;
+
+    uint8_t packet[4 * 1024 * 1024];
 };
 
 static int STDCALL aio_rtmp_server_worker(void* param)
 {
 	int r, type;
-	uint32_t timestamp;
-	uint64_t clock0 = system_clock() - 3000; // send more data, open fast
+    uint32_t timestamp;
+    uint32_t s_timestamp = 0;
+    uint32_t diff = 0;
+    uint64_t clock;
+	//uint64_t clock0 = system_clock() - 3000; // send more data, open fast
 	rtmp_server_vod_t* vod = (rtmp_server_vod_t*)param;
-	void* f = flv_reader_create(s_file);
 
-	static unsigned char packet[8 * 1024 * 1024];
-	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
-	{
-		assert(r < sizeof(packet));
-		uint64_t clock = system_clock();
-		if (clock0 + timestamp > clock)
-			system_sleep(clock0 + timestamp - clock);
+    while (1)
+    {
+        void* f = flv_reader_create(s_file);
 
-		AutoThreadLocker locker(vod->locker);
-		if (NULL == vod->session)
-			break;
+        clock = system_clock(); // timestamp start from 0
+        while ((r = flv_reader_read(f, &type, &timestamp, vod->packet, sizeof(vod->packet))) > 0)
+        {
+            assert(r < sizeof(vod->packet));
+            uint64_t t = system_clock();
+            if (clock + timestamp > t)
+                system_sleep(clock + timestamp - t);
 
-		while (aio_rtmp_server_get_unsend(vod->session) > 8 * 1024 * 1024)
-		{
-			vod->locker.Unlock();
-			system_sleep(1000); // can't send?
-			vod->locker.Lock();
-		}
+            timestamp += diff;
+            s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
 
-		if (FLV_TYPE_AUDIO == type)
-		{
-			r = aio_rtmp_server_send_audio(vod->session, packet, r, timestamp);
-		}
-		else if (FLV_TYPE_VIDEO == type)
-		{
-			r = aio_rtmp_server_send_video(vod->session, packet, r, timestamp);
-		}
-		else if (FLV_TYPE_SCRIPT == type)
-		{
-			r = aio_rtmp_server_send_script(vod->session, packet, r, timestamp);
-		}
-		else
-		{
-			//assert(0);
-			r = 0;
-		}
+            AutoThreadLocker locker(vod->locker);
+            if (NULL == vod->session)
+                break;
 
-		if (0 != r)
-		{
-			assert(0);
-			break; // TODO: handle send failed
-		}
-	}
+            while (aio_rtmp_server_get_unsend(vod->session) > 8 * 1024 * 1024)
+            {
+                vod->locker.Unlock();
+                system_sleep(1000); // can't send?
+                vod->locker.Lock();
+            }
 
-	flv_reader_destroy(f);
+            if (FLV_TYPE_AUDIO == type)
+            {
+                r = aio_rtmp_server_send_audio(vod->session, vod->packet, r, timestamp);
+            }
+            else if (FLV_TYPE_VIDEO == type)
+            {
+                r = aio_rtmp_server_send_video(vod->session, vod->packet, r, timestamp);
+            }
+            else if (FLV_TYPE_SCRIPT == type)
+            {
+                r = aio_rtmp_server_send_script(vod->session, vod->packet, r, timestamp);
+            }
+            else
+            {
+                //assert(0);
+                r = 0;
+            }
+
+            if (0 != r)
+            {
+                assert(0);
+                break; // TODO: handle send failed
+            }
+        }
+
+        flv_reader_destroy(f);
+
+        diff = s_timestamp + 30;
+    }
+
 	if(0 == atomic_decrement32(&vod->ref))
 		delete vod;
 	return 0;
@@ -132,7 +147,7 @@ void rtmp_server_vod_aio_test(const char* flv)
 	handler.onseek = aio_rtmp_server_onseek;
 	handler.onclose = aio_rtmp_server_onclose;
 
-	aio_socket_init(1);
+	aio_socket_init(8);
 
 	s_file = flv;
 	rtmp = aio_rtmp_server_create(NULL, 1935, &handler, NULL);
