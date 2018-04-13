@@ -5,7 +5,7 @@ NOVERSION = 1
 # OUTTYPE: 0-exe, 1-dll, 2-static
 #--------------------------------------------------------------------
 OUTTYPE = 0
-OUTFILE = media-server
+OUTFILE = test
 
 #-------------------------------Include------------------------------
 #
@@ -72,30 +72,6 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
 DEFINES = OS_INT64_TYPE
-
-
-ifdef HTTP_TEST
-SOURCE_FILES += http-test.c
-SOURCE_FILES += $(ROOT)/libhttp/test/http-client-test.cpp
-SOURCE_FILES += $(ROOT)/libhttp/test/http-client-test2.cpp
-DEFINES += HTTP_TEST
-INCLUDES += $(ROOT)/libhttp/include
-endif
-
-ifdef RTSP_TEST
-SOURCE_FILES += sdp-test.c
-SOURCE_FILES += rtsp-test.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/rtsp-header-range.c 
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/rtsp-header-rtp-info.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/rtsp-header-session.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/rtsp-header-transport.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/sdp.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/sdp-a-fmtp.c
-SOURCE_FILES += $(ROOT)/../media-server/librtsp/source/sdp-a-rtpmap.c
-DEFINES += SDP_TEST
-DEFINES += RTSP_TEST
-INCLUDES += $(ROOT)/../media-server/librtsp/include
-endif
 
 include $(ROOT)/gcc.mk
 

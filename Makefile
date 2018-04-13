@@ -1,3 +1,16 @@
+ifdef PLATFORM
+	CROSS:=$(PLATFORM)-
+else
+	CROSS:=
+	PLATFORM:=linux
+endif
+
+ifeq ($(RELEASE),1)
+	BUILD:=release
+else
+	BUILD:=debug
+endif
+
 all:
 	$(MAKE) -C libflv
 	$(MAKE) -C librtmp
@@ -17,3 +30,9 @@ clean:
 	$(MAKE) -C librtsp clean
 	$(MAKE) -C libmov clean
 	$(MAKE) -C libdash clean
+	
+.PHONY : test
+test:
+	$(MAKE) -C test clean
+	$(MAKE) -C test
+	./test/$(BUILD).$(PLATFORM)/test
