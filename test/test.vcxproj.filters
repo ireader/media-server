@@ -46,6 +46,12 @@
     <Filter Include="libhls">
       <UniqueIdentifier>{54c09e9c-2702-42c9-9ced-e11f70c07890}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libdash">
+      <UniqueIdentifier>{042f0745-3d50-44cf-948d-44e13d0f0d41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libhttp">
+      <UniqueIdentifier>{8de6b9a5-f676-40e5-b5b7-72587b84f844}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -267,6 +273,33 @@
       <Filter>librtsp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sdk\source\unicode.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-forward-aio-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libdash\test\dash-dynamic-test.cpp">
+      <Filter>libdash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libdash\test\dash-static-test.cpp">
+      <Filter>libdash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\benchmark.c">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-client-test.cpp">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-client-test2.cpp">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-download.c">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\thread-pool.c">
       <Filter>sdk</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -23,13 +23,13 @@
     <ProjectGuid>{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -165,7 +165,12 @@
     <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\sdk\libhttp\test\benchmark.c" />
+    <ClCompile Include="..\..\sdk\libhttp\test\http-client-test.cpp" />
+    <ClCompile Include="..\..\sdk\libhttp\test\http-client-test2.cpp" />
+    <ClCompile Include="..\..\sdk\libhttp\test\http-download.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-list-dir.cpp" />
+    <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp" />
     <ClCompile Include="..\..\sdk\source\base64.c" />
     <ClCompile Include="..\..\sdk\source\digest\crc32.c" />
     <ClCompile Include="..\..\sdk\source\digest\hkdf.c" />
@@ -176,10 +181,13 @@
     <ClCompile Include="..\..\sdk\source\digest\sha224-256.c" />
     <ClCompile Include="..\..\sdk\source\digest\sha384-512.c" />
     <ClCompile Include="..\..\sdk\source\ntp-time.c" />
+    <ClCompile Include="..\..\sdk\source\thread-pool.c" />
     <ClCompile Include="..\..\sdk\source\time64.c" />
     <ClCompile Include="..\..\sdk\source\unicode.c" />
     <ClCompile Include="..\..\sdk\source\uri-parse.c" />
     <ClCompile Include="..\..\sdk\source\urlcodec.c" />
+    <ClCompile Include="..\libdash\test\dash-dynamic-test.cpp" />
+    <ClCompile Include="..\libdash\test\dash-static-test.cpp" />
     <ClCompile Include="..\libflv\test\amf0-test.c" />
     <ClCompile Include="..\libflv\test\flv-read-write-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-reader-test.cpp" />
@@ -206,6 +214,7 @@
     <ClCompile Include="..\librtmp\test\rtmp-play-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-publish-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-publish-test.cpp" />
+    <ClCompile Include="..\librtmp\test\rtmp-server-forward-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp" />
