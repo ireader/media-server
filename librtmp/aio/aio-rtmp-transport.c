@@ -21,7 +21,6 @@ struct aio_rtmp_chunk_t
 struct aio_rtmp_transport_t
 {
 	int code;
-	uint64_t wclock; // last write done clock
 
 	int vecsize;
 	socket_bufvec_t vec[VEC];
@@ -85,7 +84,6 @@ static void aio_rtmp_ondestroy(void* param)
 	free(t);
 }
 
-static int aio_rtmp_transport_check_write_timeout(struct aio_rtmp_transport_t* t);
 static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 {
 	struct aio_rtmp_transport_t* t;
@@ -94,13 +92,7 @@ static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 	if (0 == code && 0 == bytes)
 		code = ECONNRESET;
 
-	// if we have active send connection, recv timeout maybe normal case
-	// e.g. RTMP play session
-	if (ETIMEDOUT == code && 0 == aio_rtmp_transport_check_write_timeout(t))
-		code = 0; // send active, so try recv more
-	else
-		t->handler.onrecv(t->param, code, t->buffer, bytes);
-
+	t->handler.onrecv(t->param, code, t->buffer, bytes);
 	if (0 == code)
 	{
 		code = aio_tcp_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
@@ -117,8 +109,6 @@ static void aio_rtmp_onsend(void* param, int code, size_t bytes)
 	
 	if (0 == code)
 	{
-		t->wclock = system_clock(); // update send clock(for check timeout)
-
 		locker_lock(&t->locker);
 		for (assert(t->vecsize > 0); t->vecsize > 0; --t->vecsize)
 		{
@@ -152,17 +142,13 @@ struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, stru
 	h.onrecv = aio_rtmp_onrecv;
 	h.onsend = aio_rtmp_onsend;
 
-	t = (struct aio_rtmp_transport_t*)malloc(sizeof(*t));
+	t = (struct aio_rtmp_transport_t*)calloc(1, sizeof(*t));
 	if (!t) return NULL;
 
 	LIST_INIT_HEAD(&t->root);
 	locker_create(&t->locker);
 	memcpy(&t->handler, handler, sizeof(t->handler));
 	t->param = param;
-	t->code = 0;
-	t->count = 0;
-	t->bytes = 0;
-	t->vecsize = 0;
 	t->aio = aio_tcp_transport_create2(socket, &h, t);
 	return t;
 }
@@ -209,11 +195,4 @@ size_t aio_rtmp_transport_get_unsend(struct aio_rtmp_transport_t* t)
 void aio_rtmp_transport_set_timeout(struct aio_rtmp_transport_t* t, int recv, int send)
 {
 	aio_tcp_transport_set_timeout(t->aio, recv, send);
-}
-
-static int aio_rtmp_transport_check_write_timeout(struct aio_rtmp_transport_t* t)
-{
-	int recv, send;
-	aio_tcp_transport_get_timeout(t->aio, &recv, &send);
-	return t->wclock + recv > system_clock() ? 0 : 1;
 }

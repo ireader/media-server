@@ -14,7 +14,6 @@
 
 struct rtsp_session_t
 {
-	uint64_t wclock; // last sent clock(for check recv timeout)
 	socket_t socket;
 	aio_tcp_transport_t* aio;
 	struct rtp_over_rtsp_t rtp;
@@ -57,11 +56,6 @@ static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 
 	if (0 == code && 0 == bytes)
 		code = ECONNRESET;
-
-	// if we have active send connection, recv timeout maybe normal case
-	// e.g. Embedded (Interleaved) Binary Data
-	if (ETIMEDOUT == code && session->wclock + TIMEOUT_RECV > system_clock())
-		code = 0; // send active, so try recv more
 
 	if (0 == code)
 	{
@@ -107,7 +101,6 @@ static void rtsp_session_onsend(void* param, int code, size_t bytes)
 {
 	struct rtsp_session_t *session;
 	session = (struct rtsp_session_t *)param;
-	session->wclock = system_clock(); // update send clock(for check timeout)
 //	session->server->onsend(session, code, bytes);
 	if (0 != code)
 	{
