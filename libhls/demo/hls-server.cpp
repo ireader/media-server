@@ -15,7 +15,7 @@
 #include "sys/atomic.h"
 #include "sys/path.h"
 #include "cstringext.h"
-#include <stdlib.h>
+#include "utf8codec.h"
 #include <string.h>
 #include <assert.h>
 #include <map>
@@ -244,8 +244,10 @@ static int hls_server_onlive(void* /*http*/, http_session_t* session, const char
 
 static int hls_server_onvod(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
 {
+	UTF8Decode utf8(path + 5 /* /vod/ */);
 	std::string fullpath = CWD;
-	fullpath += path + 5 /* /vod/ */;
+	fullpath += utf8;
+	printf("hls_server_onvod: %s\n", fullpath.c_str());
 
 	if (path_testdir(fullpath.c_str()))
 	{
@@ -253,11 +255,17 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	}
 	else if (path_testfile(fullpath.c_str()))
 	{
+		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
-		if(std::string::npos != fullpath.find(".m3u8"))
+		if (std::string::npos != fullpath.find(".m3u8"))
 			http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
-		else if (std::string::npos != fullpath.find(".mp4"))
-			http_server_set_header(session, "Content-Type", "video/mp4");
+		else if (std::string::npos != fullpath.find(".mpd"))
+			http_server_set_header(session, "content-type", "application/dash+xml");
+		else if (std::string::npos != fullpath.find(".mp4") || std::string::npos != fullpath.find(".m4v"))
+			http_server_set_header(session, "content-type", "video/mp4");
+		else if (std::string::npos != fullpath.find(".m4a"))
+			http_server_set_header(session, "content-type", "audio/mp4"); 
 		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 
