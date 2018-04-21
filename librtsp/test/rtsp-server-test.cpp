@@ -24,6 +24,7 @@
 
 #if defined(_HAVE_FFMPEG_)
 #include "media/ffmpeg-file-source.h"
+#include "media/ffmpeg-live-source.h"
 #endif
 
 static const char* s_workdir = "e:\\";
@@ -62,14 +63,23 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 
 static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 {
-	static const char* pattern =
+	static const char* pattern_vod =
 		"v=0\n"
 		"o=- %llu %llu IN IP4 %s\n"
 		"s=%s\n"
 		"c=IN IP4 0.0.0.0\n"
 		"t=0 0\n"
 		"a=range:npt=0-%.1f\n"
-//		"a=range:npt=now-\n" // live
+		"a=recvonly\n"
+		"a=control:*\n"; // aggregate control
+
+	static const char* pattern_live =
+		"v=0\n"
+		"o=- %llu %llu IN IP4 %s\n"
+		"s=%s\n"
+		"c=IN IP4 0.0.0.0\n"
+		"t=0 0\n"
+		"a=range:npt=now-\n" // live
 		"a=recvonly\n"
 		"a=control:*\n"; // aggregate control
 
@@ -77,9 +87,21 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 	std::map<std::string, TFileDescription>::const_iterator it;
 
 	rtsp_uri_parse(uri, filename);
-	assert(strstartswith(filename.c_str(), "/live/"));
-	filename = path::join(s_workdir, filename.c_str()+6);
+	if (strstartswith(filename.c_str(), "/live/"))
+	{
+		filename = filename.c_str() + 6;
+	}
+	else if (strstartswith(filename.c_str(), "/vod/"))
+	{
+		filename = path::join(s_workdir, filename.c_str() + 5);
+	}
+	else
+	{
+		assert(0);
+		return -1;
+	}
 
+	char buffer[1024];
 	{
 		AutoThreadLocker locker(s_locker);
 		it = s_describes.find(filename);
@@ -88,14 +110,29 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			// unlock
 			TFileDescription describe;
 			std::shared_ptr<IMediaSource> source;
-//			source.reset(new PSFileSource(filename.c_str()));
-//			source.reset(new H264FileSource(filename.c_str()));
+			if (0 == strcmp(filename.c_str(), "camera"))
+			{
 #if defined(_HAVE_FFMPEG_)
-			source.reset(new FFFileSource(filename.c_str()));
-#else
-			source.reset(new MP4FileSource(filename.c_str()));
+				source.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
-			source->GetDuration(describe.duration);
+				int offset = snprintf(buffer, sizeof(buffer), pattern_live, ntp64_now(), ntp64_now(), "0.0.0.0", uri);
+				assert(offset > 0 && offset + 1 < sizeof(buffer));
+			}
+			else
+			{
+				//source.reset(new PSFileSource(filename.c_str()));
+				//source.reset(new H264FileSource(filename.c_str()));
+#if defined(_HAVE_FFMPEG_)
+				source.reset(new FFFileSource(filename.c_str()));
+#else
+				source.reset(new MP4FileSource(filename.c_str()));
+#endif
+				source->GetDuration(describe.duration);
+
+				int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration / 1000.0);
+				assert(offset > 0 && offset + 1 < sizeof(buffer));
+			}
+
 			source->GetSDPMedia(describe.sdpmedia);
 
 			// re-lock
@@ -103,9 +140,6 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 		}
 	}
     
-	char buffer[1024];
-	int offset = snprintf(buffer, sizeof(buffer), pattern, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration/1000.0);
-	assert(offset > 0 && offset + 1 < sizeof(buffer));
 	std::string sdp = buffer;
 	sdp += it->second.sdpmedia;
     return rtsp_server_reply_describe(rtsp, 200, sdp.c_str());
@@ -118,8 +152,20 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	const struct rtsp_header_transport_t *transport = NULL;
 
 	rtsp_uri_parse(uri, filename);
-	assert(strstartswith(filename.c_str(), "/live/"));
-	filename = path::join(s_workdir, filename.c_str() + 6);
+	if (strstartswith(filename.c_str(), "/live/"))
+	{
+		filename = filename.c_str() + 6;
+	}
+	else if (strstartswith(filename.c_str(), "/vod/"))
+	{
+		filename = path::join(s_workdir, filename.c_str() + 5);
+	}
+	else
+	{
+		assert(0);
+		return -1;
+	}
+
 	if ('\\' == *filename.rbegin() || '/' == *filename.rbegin())
 		filename.erase(filename.end() - 1);
 	const char* basename = path_basename(filename.c_str());
@@ -151,13 +197,23 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		rtsp_media_t item;
 		item.channel = 0;
 		item.status = 0;
-//		item.media.reset(new PSFileSource(filename.c_str()));
-//		item.media.reset(new H264FileSource(filename.c_str()));
+
+		if (0 == strcmp(filename.c_str(), "camera"))
+		{
 #if defined(_HAVE_FFMPEG_)
-		item.media.reset(new FFFileSource(filename.c_str()));
-#else
-		item.media.reset(new MP4FileSource(filename.c_str()));
+			item.media.reset(new FFLiveSource("video=Integrated Webcam"));
 #endif
+		}
+		else
+		{
+			//item.media.reset(new PSFileSource(filename.c_str()));
+			//item.media.reset(new H264FileSource(filename.c_str()));
+#if defined(_HAVE_FFMPEG_)
+			item.media.reset(new FFFileSource(filename.c_str()));
+#else
+			item.media.reset(new MP4FileSource(filename.c_str()));
+#endif
+		}
 
 		char rtspsession[32];
 		snprintf(rtspsession, sizeof(rtspsession), "%p", item.media.get());
