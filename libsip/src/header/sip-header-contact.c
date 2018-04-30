@@ -56,15 +56,29 @@ static int sip_header_contact_item(const char* s, const char* end, struct sip_co
 	const char* p;
 	struct sip_param_t param;
 
-	p = strpbrk(s, "<;");
+	p = strpbrk(s, "<;\"");
 	if (!p || p > end)
 	{
 		// addr-spec only
 		return sip_header_uri(s, end, &c->uri);
 	}
 
+	if ('"' == *p)
+	{
+		// name-addr: [ display-name ]
+		p = strchr(p + 1, '"');
+		if (!p || p > end)
+			return EINVAL;
+
+		// LAQUOT addr-spec RAQUOT
+		p = strchr(p + 1, '<');
+		if (!p || p > end)
+			return EINVAL;
+	}
+
 	if ('<' == *p)
 	{
+		// [ display-name ]
 		c->nickname.p = s;
 		c->nickname.n = p - s;
 		cstrtrim(&c->nickname, " \t");
@@ -80,7 +94,7 @@ static int sip_header_contact_item(const char* s, const char* end, struct sip_co
 			return r;
 
 		s = p + 1;
-		p = strpbrk(s, ";");
+		p = strchr(s, ';');
 	}
 	else
 	{
@@ -92,7 +106,7 @@ static int sip_header_contact_item(const char* s, const char* end, struct sip_co
 	while (0 == r && p && p < end && ';' == *p)
 	{
 		s = p + 1;
-		p = strpbrk(s, ";");
+		p = strchr(s, ';');
 		if (!p || p >= end)
 			p = end;
 
@@ -133,7 +147,6 @@ int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* co
 void sip_header_contact_test(void)
 {
 	const char* s;
-	struct sip_param_t *p;
 	struct sip_contact_t* c;
 	struct sip_contacts_t contacts;
 
@@ -143,8 +156,7 @@ void sip_header_contact_test(void)
 	c = sip_contacts_get(&contacts, 0);
 	assert(0 == cstrcmp(&c->nickname, "Mr.Watson") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "watson@worcester.bell-telephone.com") && 0 == c->uri.headers.n && 0 == c->uri.parameters.n);
 	assert(2 == sip_params_count(&c->params));
-	p = sip_params_get(&c->params, 0);
-	assert(0 == cstrcmp(&p->name, "q") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "0.7"));
+	assert(0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "q") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "0.7"));
 	assert(0 == cstrcmp(&sip_params_get(&c->params, 1)->name, "expires") && 0 == cstrcmp(&sip_params_get(&c->params, 1)->value, "3600"));
 	c = sip_contacts_get(&contacts, 1);
 	assert(0 == cstrcmp(&c->nickname, "Mr.Watson") && 0 == cstrcmp(&c->uri.scheme, "mailto") && 0 == cstrcmp(&c->uri.host, "watson@bell-telephone.com") && 0 == c->uri.headers.n && 0 == c->uri.parameters.n);
@@ -159,6 +171,13 @@ void sip_header_contact_test(void)
 	assert(1 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "expires") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "60"));
 	sip_contacts_free(&contacts);
 
+	sip_contacts_init(&contacts);
+	s = "\"<sip:joe@big.org>\" <sip:joe@really.big.com>";
+	assert(0 == sip_header_contact(s, s + strlen(s), &contacts) && 1 == sip_contacts_count(&contacts));
+	c = sip_contacts_get(&contacts, 0);
+	assert(0 == cstrcmp(&c->nickname, "<sip:joe@big.org>") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "joe@really.big.com") && 0 == c->uri.headers.n && 0 == c->uri.parameters.n);
+	sip_contacts_free(&contacts);
+	
 	sip_contacts_init(&contacts);
 	s = "*";
 	sip_contacts_free(&contacts);

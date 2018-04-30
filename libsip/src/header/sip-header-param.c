@@ -5,6 +5,7 @@
 DARRAY_IMPLEMENT(sip_uri);
 DARRAY_IMPLEMENT(sip_param);
 DARRAY_IMPLEMENT(sip_contact);
+DARRAY_IMPLEMENT(sip_via);
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 {

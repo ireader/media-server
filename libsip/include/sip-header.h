@@ -93,11 +93,22 @@ struct sip_contact_t
 	struct cstring_t nickname;
 	struct sip_params_t params;
 };
-DARRAY_DECLARE(sip_contact, 2);
+DARRAY_DECLARE(sip_contact, 1);
+
+struct sip_via_t
+{
+	struct cstring_t protocol;
+	struct cstring_t version;
+	struct cstring_t transport;
+	struct cstring_t host; // host:port
+	struct sip_params_t params;
+};
+DARRAY_DECLARE(sip_via, 1);
 
 /// @return 0-ok, other-error
 int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
-int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* contact);
+int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* contacts);
+int sip_header_via(const char* s, const char* end, struct sip_vias_t* vias);
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
 
