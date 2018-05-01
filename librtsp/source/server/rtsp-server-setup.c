@@ -27,8 +27,8 @@ int rtsp_server_setup(struct rtsp_server_t* rtsp, const char* uri)
 	struct rtsp_header_session_t session;
 	struct rtsp_header_transport_t transport[16];
 
-	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
-	ptransport = rtsp_get_header_by_name(rtsp->parser, "Transport");
+	psession = http_get_header_by_name(rtsp->parser, "Session");
+	ptransport = http_get_header_by_name(rtsp->parser, "Transport");
 
 	memset(transport, 0, sizeof(transport));
 	n = sizeof(transport) / sizeof(transport[0]);

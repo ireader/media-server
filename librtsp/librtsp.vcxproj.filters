@@ -29,9 +29,6 @@
     <ClCompile Include="source\rtsp-header-transport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rtsp-parser.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\rtsp-reason.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -119,9 +116,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtsp-header-transport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rtsp-parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtsp-reason.h">

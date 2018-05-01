@@ -6,7 +6,7 @@
 #include "http-header-auth.h"
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
-#include "rtsp-parser.h"
+#include "http-parser.h"
 #include "sdp.h"
 #include <errno.h>
 #include <stdio.h>
@@ -61,7 +61,7 @@ struct rtsp_client_t
 	struct rtsp_client_handler_t handler;
 	void* param;
 
-	rtsp_parser_t* parser;
+	http_parser_t* parser;
 	enum rtsp_state_t state;
 	int parser_need_more_data;
 	int progress;

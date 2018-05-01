@@ -46,7 +46,7 @@ int rtsp_client_announce_onreply(struct rtsp_client_t* rtsp, void* parser)
 	int code;
 	assert(RTSP_ANNOUNCE == rtsp->state);
 	
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (200 == code)
 	{
 		//if(rtsp->media_count == ++rtsp->progress)

@@ -2,7 +2,7 @@
 #define _rtsp_server_internal_h_
 
 #include "rtsp-server.h"
-#include "rtsp-parser.h"
+#include "http-parser.h"
 #include "rtsp-header-session.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +20,7 @@ struct rtsp_server_t
 	struct rtsp_handler_t handler;
 	void *param, *sendparam;
 
-	rtsp_parser_t* parser;
+	http_parser_t* parser;
 	struct rtsp_header_session_t session;
 
 	unsigned int cseq;

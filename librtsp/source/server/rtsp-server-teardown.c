@@ -6,7 +6,7 @@ int rtsp_server_teardown(struct rtsp_server_t *rtsp, const char* uri)
 	const char *psession;
 	struct rtsp_header_session_t session;
 
-	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
+	psession = http_get_header_by_name(rtsp->parser, "Session");
 	if (!psession || 0 != rtsp_header_session(psession, &session))
 	{
 		// 454 (Session Not Found)

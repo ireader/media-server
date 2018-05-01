@@ -9,9 +9,9 @@ int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri)
 	const char *pscale, *prange, *psession;
 	struct rtsp_header_range_t range;
 
-	pscale = rtsp_get_header_by_name(rtsp->parser, "scale");
-	prange = rtsp_get_header_by_name(rtsp->parser, "range");
-	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
+	pscale = http_get_header_by_name(rtsp->parser, "scale");
+	prange = http_get_header_by_name(rtsp->parser, "range");
+	psession = http_get_header_by_name(rtsp->parser, "Session");
 
 	rtsp->session.session[0] = 0; // clear session value
 	if (!psession || 0 != rtsp_header_session(psession, &rtsp->session))

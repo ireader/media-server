@@ -55,17 +55,17 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 	assert(RTSP_DESCRIBE == rtsp->state);
 
 	r = -1;
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (200 == code)
 	{
 		const void* content;
 		const char* contentType;
 		const char* contentBase;
 		const char* contentLocation;
-		content = rtsp_get_content(parser);
-		contentType = rtsp_get_header_by_name(parser, "Content-Type");
-		contentBase = rtsp_get_header_by_name(parser, "Content-Base");
-		contentLocation = rtsp_get_header_by_name(parser, "Content-Location");
+		content = http_get_content(parser);
+		contentType = http_get_header_by_name(parser, "Content-Type");
+		contentBase = http_get_header_by_name(parser, "Content-Base");
+		contentLocation = http_get_header_by_name(parser, "Content-Location");
 
 		if (contentBase)
 			snprintf(rtsp->baseuri, sizeof(rtsp->baseuri), "%s", contentBase);
@@ -82,7 +82,7 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 	{
 		// Unauthorized
 		const char* authenticate;
-		authenticate = rtsp_get_header_by_name(parser, "WWW-Authenticate");
+		authenticate = http_get_header_by_name(parser, "WWW-Authenticate");
 		if (authenticate && 0 == rtsp->auth_failed++)
 		{
 			rtsp_client_www_authenticate(rtsp, authenticate);

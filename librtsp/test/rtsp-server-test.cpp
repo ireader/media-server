@@ -129,7 +129,7 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 #endif
 				source->GetDuration(describe.duration);
 
-				int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri, it->second.duration / 1000.0);
+				int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri, describe.duration / 1000.0);
 				assert(offset > 0 && offset + 1 < sizeof(buffer));
 			}
 

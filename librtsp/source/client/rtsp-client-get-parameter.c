@@ -66,10 +66,10 @@ int rtsp_client_get_parameter_onreply(struct rtsp_client_t* rtsp, void* parser)
 	const void* content;
 
 	assert(RTSP_GET_PARAMETER == rtsp->state);
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (200 == code)
 	{
-		content = rtsp_get_content(parser);
+		content = http_get_content(parser);
 		(void)content; // TODO: callback(content)
 		return 0; // next step
 	}

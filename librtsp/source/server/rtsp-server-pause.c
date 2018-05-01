@@ -11,8 +11,8 @@ int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 	const char *prange, *psession;
 	struct rtsp_header_range_t range;
 
-	prange = rtsp_get_header_by_name(rtsp->parser, "range");
-	psession = rtsp_get_header_by_name(rtsp->parser, "Session");
+	prange = http_get_header_by_name(rtsp->parser, "range");
+	psession = http_get_header_by_name(rtsp->parser, "Session");
 
 	rtsp->session.session[0] = 0; // clear session value
 	if (!psession || 0 != rtsp_header_session(psession, &rtsp->session))

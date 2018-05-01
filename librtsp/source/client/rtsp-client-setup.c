@@ -101,11 +101,11 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 	assert(RTSP_SETUP == rtsp->state);
 	assert(rtsp->progress < rtsp->media_count);
 
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (200 == code)
 	{
-		session = rtsp_get_header_by_name(parser, "Session");
-		transport = rtsp_get_header_by_name(parser, "Transport");
+		session = http_get_header_by_name(parser, "Session");
+		transport = http_get_header_by_name(parser, "Transport");
 		if (!session || 0 != rtsp_header_session(session, &rtsp->media[rtsp->progress].session)
 			|| !transport || 0 != rtsp_header_transport(transport, &rtsp->media[rtsp->progress].transport))
 		{
@@ -130,7 +130,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 	{
 		// Unauthorized
 		const char* authenticate;
-		authenticate = rtsp_get_header_by_name(parser, "WWW-Authenticate");
+		authenticate = http_get_header_by_name(parser, "WWW-Authenticate");
 		if (authenticate)
 		{
 			rtsp_client_www_authenticate(rtsp, authenticate);

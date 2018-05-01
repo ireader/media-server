@@ -106,12 +106,12 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 	struct rtsp_header_rtp_info_t rtpinfo[N_MEDIA];
 	struct rtsp_rtp_info_t rtpInfo[N_MEDIA];
 
-	if (200 != rtsp_get_status_code(parser))
+	if (200 != http_get_status_code(parser))
 		return -1;
 
-	prange = rtsp_get_header_by_name(parser, "Range");
-	pscale = rtsp_get_header_by_name(parser, "Scale");
-	prtpinfo = rtsp_get_header_by_name(parser, "RTP-Info");
+	prange = http_get_header_by_name(parser, "Range");
+	pscale = http_get_header_by_name(parser, "Scale");
+	prtpinfo = http_get_header_by_name(parser, "RTP-Info");
 
 	if (pscale)
 	{
@@ -157,7 +157,7 @@ static int rtsp_client_aggregate_play_onreply(struct rtsp_client_t* rtsp, void* 
 	assert(0 == rtsp->progress);
 	assert(rtsp->aggregate);
 	
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (459 == code) // 459 Aggregate operation not allowed (p26)
 	{
 		rtsp->aggregate = 0;

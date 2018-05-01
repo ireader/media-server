@@ -49,7 +49,7 @@ int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
 	assert(RTSP_TEARDWON == rtsp->state);
 	assert(rtsp->progress <= rtsp->media_count);
 
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (200 != code)
 		return -1;
 	

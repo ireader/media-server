@@ -75,7 +75,7 @@ static int rtsp_client_media_pause_onreply(struct rtsp_client_t* rtsp, void* par
 	assert(0 == rtsp->aggregate);
 	assert(rtsp->progress < rtsp->media_count);
 
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	assert(460 != code); // 460 Only aggregate operation allowed (p26)
 	if (200 == code)
 	{
@@ -100,7 +100,7 @@ static int rtsp_client_aggregate_pause_onreply(struct rtsp_client_t* rtsp, void*
 	int code;
 
 	assert(rtsp->aggregate);
-	code = rtsp_get_status_code(parser);
+	code = http_get_status_code(parser);
 	if (459 == code) // 459 Aggregate operation not allowed (p26)
 	{
 		rtsp->aggregate = 0;

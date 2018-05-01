@@ -18,7 +18,7 @@ struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port,
 	rtsp->param = ptr;
 	rtsp->sendparam = ptr2;
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
-	rtsp->parser = rtsp_parser_create(RTSP_PARSER_SERVER);
+	rtsp->parser = http_parser_create(HTTP_PARSER_SERVER);
 	return rtsp;
 }
 
@@ -29,7 +29,7 @@ int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 
 	if (rtsp->parser)
 	{
-		rtsp_parser_destroy(rtsp->parser);
+		http_parser_destroy(rtsp->parser);
 		rtsp->parser = NULL;
 	}
 
@@ -39,15 +39,16 @@ int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 
 int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t* bytes)
 {
-	int r, remain;
+	int r;
+	size_t remain;
 
-	remain = (int)*bytes;
-	r = rtsp_parser_input(rtsp->parser, data, &remain);
+	remain = *bytes;
+	r = http_parser_input(rtsp->parser, data, &remain);
 	assert(r <= 1); // 1-need more data
 	if (0 == r)
 	{
 		r = rtsp_server_handle(rtsp);
-		rtsp_parser_clear(rtsp->parser); // reset parser
+		http_parser_clear(rtsp->parser); // reset parser
 	}
 
 	*bytes = remain;
@@ -56,7 +57,7 @@ int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t* byte
 
 const char* rtsp_server_get_header(struct rtsp_server_t *rtsp, const char* name)
 {
-	return rtsp_get_header_by_name(rtsp->parser, name);
+	return http_get_header_by_name(rtsp->parser, name);
 }
 
 const char* rtsp_server_get_client(rtsp_server_t* rtsp, unsigned short* port)
