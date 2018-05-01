@@ -71,9 +71,6 @@
     <ClCompile Include="source\client\rtsp-client-get-parameter.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
-    <ClCompile Include="source\client\rtmp-client-set-parameter.c">
-      <Filter>Source Files\client</Filter>
-    </ClCompile>
     <ClCompile Include="source\server\rtsp-server-handler.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
@@ -102,6 +99,9 @@
       <Filter>Source Files\client</Filter>
     </ClCompile>
     <ClCompile Include="source\client\rtp-over-rtsp.c">
+      <Filter>Source Files\client</Filter>
+    </ClCompile>
+    <ClCompile Include="source\client\rtsp-client-set-parameter.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
   </ItemGroup>
