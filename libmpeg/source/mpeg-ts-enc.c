@@ -309,7 +309,7 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
 	assert(func);
 	tsctx = (mpeg_ts_enc_context_t *)calloc(1, sizeof(mpeg_ts_enc_context_t) 
 											+ sizeof(tsctx->pat.pmt[0])
-											+ 2 * sizeof(tsctx->pat.pmt[0].streams[0]));
+											+ N_MPEG_TS_STREAM * sizeof(tsctx->pat.pmt[0].streams[0]));
 	if(!tsctx)
 		return NULL;
 
@@ -374,49 +374,73 @@ int mpeg_ts_reset(void* ts)
 	return 0;
 }
 
-int mpeg_ts_add_stream(void* ts, int avtype)
+int mpeg_ts_add_stream(void* ts, int avtype, const void* extra_data, size_t extra_data_size)
 {
-	pmt_t *pmt = NULL;
-	mpeg_ts_enc_context_t *tsctx;
+    pmt_t *pmt = NULL;
+    pes_t *stream = NULL;
+    mpeg_ts_enc_context_t *tsctx;
 
-	tsctx = (mpeg_ts_enc_context_t*)ts;
-	pmt = tsctx->pat.pmt;
-	if(pmt->stream_count + 1 >= N_MPEG_TS_STREAM)
-	{
-		assert(0);
-		return -1;
-	}
+    tsctx = (mpeg_ts_enc_context_t*)ts;
+    pmt = &tsctx->pat.pmt[0];
+    if (pmt->stream_count >= N_MPEG_TS_STREAM)
+    {
+        assert(0);
+        return -1;
+    }
 
-	pmt = &tsctx->pat.pmt[0];
-	pmt->streams[pmt->stream_count].avtype = (uint8_t)avtype;
-	pmt->streams[pmt->stream_count].pid = (uint16_t)(TS_PID_USER + pmt->stream_count);
-	pmt->streams[pmt->stream_count].esinfo_len = 0;
-	pmt->streams[pmt->stream_count].esinfo = NULL;
+    stream = &pmt->streams[pmt->stream_count];
+    stream->avtype = (uint8_t)avtype;
+    stream->pid = (uint16_t)(TS_PID_USER + pmt->stream_count);
+    stream->esinfo_len = 0;
+    stream->esinfo = NULL;
 
-	// stream id
-	// Table 2-22 ¨C Stream_id assignments
-	if(PSI_STREAM_H264==avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_MPEG4==avtype || PSI_STREAM_MPEG2==avtype || PSI_STREAM_MPEG1==avtype || PSI_STREAM_VIDEO_VC1==avtype || PSI_STREAM_VIDEO_SVAC==avtype)
-	{
-		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
-		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
-		pmt->streams[pmt->stream_count].sid = PES_SID_VIDEO;
-	}
-	else if(PSI_STREAM_AAC==avtype || PSI_STREAM_MPEG4_AAC_LATM==avtype || PSI_STREAM_MPEG4_AAC==avtype || PSI_STREAM_MP3==avtype || PSI_STREAM_AUDIO_AC3==avtype 
-		|| PSI_STREAM_AUDIO_SVAC==avtype || PSI_STREAM_AUDIO_G711==avtype || PSI_STREAM_AUDIO_G722==avtype || PSI_STREAM_AUDIO_G723==avtype || PSI_STREAM_AUDIO_G729==avtype)
-	{
-		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
-		// audio stream number
-		pmt->streams[pmt->stream_count].sid = PES_SID_AUDIO;
-	}
-	else
-	{
-		// private_stream_1
-		pmt->streams[pmt->stream_count].sid = PES_SID_PRIVATE_1;
-	}
+    // stream id
+    // Table 2-22 ¨C Stream_id assignments
+    switch (avtype)
+    {
+    case PSI_STREAM_H264:
+    case PSI_STREAM_H265:
+    case PSI_STREAM_MPEG1:
+    case PSI_STREAM_MPEG2:
+    case PSI_STREAM_MPEG4:
+    case PSI_STREAM_VIDEO_VC1:
+    case PSI_STREAM_VIDEO_SVAC:
+        // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
+        // or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
+        stream->sid = PES_SID_VIDEO;
+        break;
 
-	++pmt->stream_count;
-	pmt->ver = (pmt->ver+1) % 32;
+    case PSI_STREAM_AAC: // with ADTS
+    case PSI_STREAM_MPEG4_AAC: // AAC raw stream
+    case PSI_STREAM_MPEG4_AAC_LATM:
+    case PSI_STREAM_MP3:
+    case PSI_STREAM_AUDIO_MPEG1: // mp1/mp2
+    case PSI_STREAM_AUDIO_AC3:
+    case PSI_STREAM_AUDIO_SVAC:
+    case PSI_STREAM_AUDIO_G711:
+    case PSI_STREAM_AUDIO_G722:
+    case PSI_STREAM_AUDIO_G723:
+    case PSI_STREAM_AUDIO_G729:
+        // ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
+        // audio stream number
+        stream->sid = PES_SID_AUDIO;
 
-	mpeg_ts_reset(ts); // immediate update pat/pmt
-	return 0;
+    default:
+        // private_stream_1
+        stream->sid = PES_SID_PRIVATE_1;
+    }
+
+    if (extra_data_size > 0 && extra_data)
+    {
+        stream->esinfo = malloc(extra_data_size);
+        if (!stream->esinfo)
+            return -ENOMEM;
+        memcpy(stream->esinfo, extra_data, extra_data_size);
+        stream->esinfo_len = (uint16_t)extra_data_size;
+    }
+
+    pmt->stream_count++;
+    pmt->ver = (pmt->ver + 1) % 32;
+    mpeg_ts_reset(ts); // immediate update pat/pmt
+    return stream->pid - TS_PID_USER;
 }
