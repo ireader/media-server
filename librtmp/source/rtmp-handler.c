@@ -13,6 +13,11 @@ static int rtmp_video(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, c
 	return rtmp->onvideo(rtmp->param, payload, header->length, header->timestamp);
 }
 
+static int rtmp_script(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
+{
+	return rtmp->onscript(rtmp->param, payload, header->length, header->timestamp);
+}
+
 int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
 {
 	switch (header->type)
@@ -48,7 +53,7 @@ int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const 
 	case RTMP_TYPE_FLEX_STREAM:
 		// play -> RtmpSampleAccess
 		// finish -> onPlayStatus("NetStream.Play.Complete")
-		break;
+		return rtmp_script(rtmp, header, payload);
 
 	case RTMP_TYPE_SHARED_OBJECT:
 	case RTMP_TYPE_FLEX_OBJECT:
