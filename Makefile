@@ -30,9 +30,9 @@ clean:
 	$(MAKE) -C librtsp clean
 	$(MAKE) -C libmov clean
 	$(MAKE) -C libdash clean
+	$(MAKE) -C test clean
 	
 .PHONY : test
 test:
-	$(MAKE) -C test clean
 	$(MAKE) -C test
 	./test/$(BUILD).$(PLATFORM)/test
