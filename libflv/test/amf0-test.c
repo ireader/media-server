@@ -25,7 +25,7 @@ static int amf0_get(const char* file, void* amf0, size_t bytes)
 	return r;
 }
 
-void amf0_test(void)
+void amf0_test2(void)
 {
 	int r;
 	uint8_t* end;

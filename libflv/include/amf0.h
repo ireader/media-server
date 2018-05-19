@@ -31,21 +31,26 @@ enum AMFDataType
 };
 
 uint8_t* AMFWriteNull(uint8_t* ptr, const uint8_t* end);
+uint8_t* AMFWriteUndefined(uint8_t* ptr, const uint8_t* end);
 uint8_t* AMFWriteObject(uint8_t* ptr, const uint8_t* end);
 uint8_t* AMFWriteObjectEnd(uint8_t* ptr, const uint8_t* end);
+uint8_t* AMFWriteTypedObject(uint8_t* ptr, const uint8_t* end);
 
 uint8_t* AMFWriteBoolean(uint8_t* ptr, const uint8_t* end, uint8_t value);
 uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value);
 uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, size_t length);
+uint8_t* AMFWriteDate(uint8_t* ptr, const uint8_t* end, double milliseconds, int16_t timezone);
 
 uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2);
 uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value);
 uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value);
 
 const uint8_t* AMFReadNull(const uint8_t* ptr, const uint8_t* end);
+const uint8_t* AMFReadUndefined(const uint8_t* ptr, const uint8_t* end);
 const uint8_t* AMFReadBoolean(const uint8_t* ptr, const uint8_t* end, uint8_t* value);
 const uint8_t* AMFReadDouble(const uint8_t* ptr, const uint8_t* end, double* value);
 const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongString, char* string, size_t length);
+const uint8_t* AMFReadDate(const uint8_t* ptr, const uint8_t* end, double *milliseconds, int16_t *timezone);
 
 
 struct amf_object_item_t

@@ -18,7 +18,7 @@
 struct flv_audio_tag_t
 {
 	uint8_t format; // 1-ADPCM, 2-MP3, 10-AAC, 14-MP3 8kHz
-	uint8_t bitrate; // 0-5.5kHz, 1-11kHz, 2-22kHz,3-44kHz
+	uint8_t sampleRate; // 0-5.5kHz, 1-11kHz, 2-22kHz,3-44kHz
 	uint8_t bitsPerSample; // 0-8bits, 1-16bits
 	uint8_t channel; // 0-Mono sound, ,1-Stereo sound
 };
@@ -87,7 +87,7 @@ static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
 static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
 	flv->audio.format = (data[0] & 0xF0) /*>> 4*/;
-	flv->audio.bitrate = (data[0] & 0x0C) >> 2;
+	flv->audio.sampleRate = (data[0] & 0x0C) >> 2;
 	flv->audio.bitsPerSample = (data[0] & 0x02) >> 1;
 	flv->audio.channel = data[0] & 0x01;
 
