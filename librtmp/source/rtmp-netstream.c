@@ -181,6 +181,30 @@ uint8_t* rtmp_netstream_fcunsubscribe(uint8_t* out, size_t bytes, double transac
 	return out;
 }
 
+uint8_t* rtmp_netstream_onbwdone(uint8_t* out, size_t bytes, double transactionId, double bandwidth)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "onBWDone";
+
+	out = AMFWriteString(out, end, command, strlen(command));
+	out = AMFWriteDouble(out, end, transactionId);
+	out = AMFWriteNull(out, end);
+	out = AMFWriteDouble(out, end, bandwidth);
+	return out;
+}
+
+// c -> s
+uint8_t* rtmp_netstream_checkbw(uint8_t* out, size_t bytes, double transactionId)
+{
+    uint8_t* end = out + bytes;
+    const char* command = "_checkbw";
+
+    out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+    out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+    out = AMFWriteNull(out, end); // command object
+    return out;
+}
+
 uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, double transactionId, const char* level, const char* code, const char* description)
 {
 	uint8_t* end = out + bytes;
