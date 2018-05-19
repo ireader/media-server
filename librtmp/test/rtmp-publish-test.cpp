@@ -19,6 +19,8 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 {
 	int r, type;
+    int avcrecord = 0;
+    int aacconfig = 0;
 	uint32_t timestamp;
 	uint32_t s_timestamp = 0;
 	uint32_t diff = 0;
@@ -41,10 +43,22 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 
 			if (FLV_TYPE_AUDIO == type)
 			{
+                if (0 == packet[1])
+                {
+                    if(0 != aacconfig)
+                        continue;
+                    aacconfig = 1;
+                }
 				r = rtmp_client_push_audio(rtmp, packet, r, timestamp);
 			}
 			else if (FLV_TYPE_VIDEO == type)
 			{
+                if (0 == packet[1] || 2 == packet[1])
+                {
+                    if (0 != avcrecord)
+                        continue;
+                    avcrecord = 1;
+                }
 				printf("timestamp: %u, s_timestamp: %u\n", timestamp, s_timestamp);
 				r = rtmp_client_push_video(rtmp, packet, r, timestamp);
 			}

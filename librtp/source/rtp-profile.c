@@ -20,8 +20,8 @@ static struct rtp_profile_t s_profiles[] = {
 	{ 7, RTP_TYPE_AUDIO,	1, 8000,	"LPC"  },
 	{ 8, RTP_TYPE_AUDIO,	1, 8000,	"PCMA" }, // G711 A-law
 	{ 9, RTP_TYPE_AUDIO,	1, 8000,	"G722" },
-	{ 10,RTP_TYPE_AUDIO,	2, 44100,	"L16"  },
-	{ 11,RTP_TYPE_AUDIO,	1, 44100,	"L16"  },
+	{ 10,RTP_TYPE_AUDIO,	2, 44100,	"L16"  }, // PCM S16BE
+	{ 11,RTP_TYPE_AUDIO,	1, 44100,	"L16"  }, // PCM S16BE
 	{ 12,RTP_TYPE_AUDIO,	1, 8000,	"QCELP"},
 	{ 13,RTP_TYPE_AUDIO,	1, 8000,	"CN"   },
 	{ 14,RTP_TYPE_AUDIO,	2, 90000,	"MPA"  }, // MPEG-1/MPEG-2 audio 1/2 channels
@@ -46,7 +46,7 @@ static struct rtp_profile_t s_profiles[] = {
 
 	// video
 	{ 25,RTP_TYPE_VIDEO,	0, 90000,	"CELB" }, // SUN CELL-B
-	{ 26,RTP_TYPE_VIDEO,	0, 90000,	"JPEG" },
+	{ 26,RTP_TYPE_VIDEO,	0, 90000,	"JPEG" }, // MJPEG
 	{ 27,RTP_TYPE_UNKNOWN,	0, 0,		""     }, // unassigned
 	{ 28,RTP_TYPE_VIDEO,	0, 90000,	"nv"   },
 	{ 29,RTP_TYPE_UNKNOWN,	0, 0,		""     }, // unassigned

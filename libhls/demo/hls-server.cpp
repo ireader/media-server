@@ -281,12 +281,12 @@ void hls_server_test(const char* ip, int port)
 	http_server_addroute("/vod/", hls_server_onvod);
 
 	// http process
-	while(aio_socket_process(10000) >= 0)
+	while('q' != getchar())
 	{
 	}
 
 	http_server_destroy(http);
-	aio_worker_clean(1);
+	aio_worker_clean(4);
 }
 
 #if defined(_HLS_SERVER_TEST_)
