@@ -6,7 +6,7 @@
 #include "mpeg-util.h"
 #include <assert.h>
 
-size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)
+size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 {
 	// Table 2-30 ¨C Program association section(p65)
 
@@ -33,11 +33,12 @@ size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)
 	pat->tsid = transport_stream_id;
 	pat->ver = version_number;
 
+    // TODO: version_number change, reload pmts
 	assert(bytes >= section_length + 3); // PAT = section_length + 3
-	for(i = 8; i < section_length + 8 - 5 - 4; i += 4) // 4:CRC, 5:follow section_length item
+	for(i = 8; i < section_length + 8 - 5 - 4 && j < sizeof(pat->pmts)/sizeof(pat->pmts[0]); i += 4) // 4:CRC, 5:follow section_length item
 	{
-		pat->pmt[j].pn = (data[i] << 8) | data[i+1];
-		pat->pmt[j].pid = ((data[i+2] & 0x1F) << 8) | data[i+3];
+		pat->pmts[j].pn = (data[i] << 8) | data[i+1];
+		pat->pmts[j].pid = ((data[i+2] & 0x1F) << 8) | data[i+3];
 //		printf("PAT[%d]: pn: %0x, pid: %0x\n", j, pat->pmt[j].pn, pat->pmt[j].pid);
 		j++;
 	}
@@ -51,7 +52,7 @@ size_t pat_read(const uint8_t* data, size_t bytes, pat_t *pat)
 	return 0;
 }
 
-size_t pat_write(const pat_t *pat, uint8_t *data)
+size_t pat_write(const struct pat_t *pat, uint8_t *data)
 {
 	// Table 2-30 ¨C Program association section(p65)
 
@@ -86,8 +87,8 @@ size_t pat_write(const pat_t *pat, uint8_t *data)
 
 	for(i = 0; i < pat->pmt_count; i++)
 	{
-		nbo_w16(data + 8 + i * 4 + 0, (uint16_t)pat->pmt[i].pn);
-		nbo_w16(data + 8 + i * 4 + 2, (uint16_t)(0xE000 | pat->pmt[i].pid));
+		nbo_w16(data + 8 + i * 4 + 0, (uint16_t)pat->pmts[i].pn);
+		nbo_w16(data + 8 + i * 4 + 2, (uint16_t)(0xE000 | pat->pmts[i].pid));
 	}
 
 	// crc32

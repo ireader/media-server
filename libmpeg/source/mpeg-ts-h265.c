@@ -3,21 +3,25 @@
 #include <assert.h>
 #include <string.h>
 
+#define H265_NAL_AUD 35
+
+/// @return -1-not found, other-AUD position(include start code)
 int find_h265_access_unit_delimiter(const uint8_t* p, size_t bytes)
 {
 	size_t i;
-	uint8_t type;
 	for (i = 2; i + 1 < bytes; i++)
 	{
-		if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2])
+		if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2] && H265_NAL_AUD == ((p[i + 1] >> 1) & 0x3f))
 		{
-			type = (p[i + 1] >> 1) & 0x3f;
-			if (35 == type || type < 32)
-				return 35 == type ? 1 : 0;
+            for (i -= 2; i > 0 && 0 == p[i - 1]; --i)
+            {
+                // filter trailing zero
+            }
+            return i;
 		}
 	}
 
-	return 0;
+	return -1;
 }
 
 // Rec. ITU-T H.265 v4 (12/2016) (p26)

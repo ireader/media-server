@@ -35,7 +35,7 @@ inline const char* ts_type(int type)
 	}
 }
 
-static void ts_packet(void* ts, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+static void ts_packet(void* ts, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	printf("[%s] pts: %08lu, dts: %08lu\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts);
 

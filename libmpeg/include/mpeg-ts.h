@@ -36,8 +36,9 @@ int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* 
 
 int mpeg_ts_reset(void* ts);
 
-typedef void (*onpacket)(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes);
-int mpeg_ts_packet_dec(const unsigned char* data, size_t bytes, onpacket handler, void* param);
+typedef void (*onpacket)(void* param, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes);
+int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void* param);
+int mpeg_ts_packet_flush(onpacket handler, void* param);
 
 #ifdef __cplusplus
 }

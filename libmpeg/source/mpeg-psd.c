@@ -5,7 +5,7 @@
 #include "mpeg-ps-proto.h"
 #include <assert.h>
 
-size_t psd_read(const uint8_t* data, size_t bytes, psd_t *psd)
+size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 {
 	int i, j;
 	uint16_t packet_length;

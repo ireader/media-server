@@ -21,14 +21,16 @@ inline const char* ftimestamp(int64_t t, char* buf)
 	return buf;
 }
 
-static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static char s_pts[64], s_dts[64];
 
 	if (PSI_STREAM_AAC == avtype)
 	{
 		static int64_t a_pts = 0, a_dts = 0;
-		assert(0 == a_dts || dts >= a_dts);
+        if (PTS_NO_VALUE == dts)
+            dts = pts;
+		//assert(0 == a_dts || dts >= a_dts);
 		printf("[A] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
 		a_pts = pts;
 		a_dts = dts;
@@ -47,7 +49,7 @@ static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, voi
 	}
 	else
 	{
-		assert(0);
+		//assert(0);
 	}
 }
 
@@ -60,8 +62,10 @@ void mpeg_ts_dec_test(const char* file)
 
 	while (1 == fread(ptr, sizeof(ptr), 1, fp))
 	{
-		mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, NULL);
+        mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, NULL);
 	}
+    mpeg_ts_packet_flush(ts_packet, NULL);
+
 	fclose(fp);
 	fclose(vfp);
 	fclose(afp);
