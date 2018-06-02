@@ -37,7 +37,10 @@
     <ClCompile Include="source\mov-ftyp.c" />
     <ClCompile Include="source\mov-hdlr.c" />
     <ClCompile Include="source\mov-hvcc.c" />
+    <ClCompile Include="source\mov-iods.c" />
     <ClCompile Include="source\mov-leva.c" />
+    <ClCompile Include="source\mov-mehd.c" />
+    <ClCompile Include="source\mov-mfhd.c" />
     <ClCompile Include="source\mov-minf.c" />
     <ClCompile Include="source\mov-sidx.c" />
     <ClCompile Include="source\mov-stco.c" />
@@ -51,9 +54,11 @@
     <ClCompile Include="source\mov-stsd.c" />
     <ClCompile Include="source\mov-stts.c" />
     <ClCompile Include="source\mov-tag.c" />
+    <ClCompile Include="source\mov-tfdt.c" />
     <ClCompile Include="source\mov-tfhd.c" />
     <ClCompile Include="source\mov-tfra.c" />
     <ClCompile Include="source\mov-tkhd.c" />
+    <ClCompile Include="source\mov-track.c" />
     <ClCompile Include="source\mov-trex.c" />
     <ClCompile Include="source\mov-trun.c" />
     <ClCompile Include="source\mov-tx3g.c" />

@@ -42,12 +42,12 @@ class AudioSampleEntry(codingname) extends SampleEntry (codingname){
 	template unsigned int(32) samplerate = { default samplerate of media}<<16; 
 }
 */
-static int mov_read_audio(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_audio(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	stsd->object_type_indication = mov_tag_to_object(box.type);
-	stsd->stream_type = MP4_STREAM_AUDIO;
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
+    entry->object_type_indication = mov_tag_to_object(box.type);
+    entry->stream_type = MP4_STREAM_AUDIO;
 	mov->track->tag = box.type;
 
 #if 1
@@ -59,8 +59,8 @@ static int mov_read_audio(struct mov_t* mov, struct mov_stsd_t* stsd)
 	mov_buffer_r32(&mov->io); /* vendor */
 #endif
 
-	stsd->u.audio.channelcount = (uint16_t)mov_buffer_r16(&mov->io);
-	stsd->u.audio.samplesize = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.audio.channelcount = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.audio.samplesize = (uint16_t)mov_buffer_r16(&mov->io);
 
 #if 1
 	// unsigned int(16) pre_defined = 0; 
@@ -71,7 +71,7 @@ static int mov_read_audio(struct mov_t* mov, struct mov_stsd_t* stsd)
 	mov_buffer_r16(&mov->io); /* packet size = 0 */
 #endif
 
-	stsd->u.audio.samplerate = mov_buffer_r32(&mov->io); // { default samplerate of media}<<16;
+    entry->u.audio.samplerate = mov_buffer_r32(&mov->io); // { default samplerate of media}<<16;
 
 	// audio extra(avc1: ISO/IEC 14496-14:2003(E))
 	box.size -= 36;
@@ -108,12 +108,12 @@ class AVC2SampleEntry() extends VisualSampleEntry (¡®avc2¡¯){
 	extra_boxes boxes; // optional
 }
 */
-static int mov_read_video(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_video(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
-	stsd->object_type_indication = mov_tag_to_object(box.type);
-	stsd->stream_type = MP4_STREAM_VISUAL; 
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
+    entry->object_type_indication = mov_tag_to_object(box.type);
+    entry->stream_type = MP4_STREAM_VISUAL;
 	mov->track->tag = box.type;
 #if 1
 	 //unsigned int(16) pre_defined = 0; 
@@ -127,20 +127,20 @@ static int mov_read_video(struct mov_t* mov, struct mov_stsd_t* stsd)
 	mov_buffer_r32(&mov->io); /* temporal quality */
 	mov_buffer_r32(&mov->io); /* spatial quality */
 #endif
-	stsd->u.visual.width = (uint16_t)mov_buffer_r16(&mov->io);
-	stsd->u.visual.height = (uint16_t)mov_buffer_r16(&mov->io);
-	stsd->u.visual.horizresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
-	stsd->u.visual.vertresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
+    entry->u.visual.width = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.visual.height = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.visual.horizresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
+    entry->u.visual.vertresolution = mov_buffer_r32(&mov->io); // 0x00480000 - 72 dpi
 	// const unsigned int(32) reserved = 0;
 	mov_buffer_r32(&mov->io); /* data size, always 0 */
-	stsd->u.visual.frame_count = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.visual.frame_count = (uint16_t)mov_buffer_r16(&mov->io);
 
 	//string[32] compressorname;
 	//uint32_t len = mov_buffer_r8(&mov->io);
 	//mov_buffer_skip(&mov->io, len);
 	mov_buffer_skip(&mov->io, 32);
 
-	stsd->u.visual.depth = (uint16_t)mov_buffer_r16(&mov->io);
+    entry->u.visual.depth = (uint16_t)mov_buffer_r16(&mov->io);
 	// int(16) pre_defined = -1;
 	mov_buffer_skip(&mov->io, 2);
 
@@ -149,19 +149,19 @@ static int mov_read_video(struct mov_t* mov, struct mov_stsd_t* stsd)
 	return mp4_read_extra(mov, &box);
 }
 
-static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
 
-static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
@@ -178,10 +178,10 @@ class SimpleTextSampleEntry(codingname) extends PlainTextSampleEntry (¡®stxt¡¯) 
 	TextConfigBox (); // optional
 }
 */
-static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
@@ -215,10 +215,10 @@ class TextSampleEntry() extends SampleEntry (¡®tx3g¡¯) {
 	DisparityBox default-disparity;
 }
 */
-static int mov_read_subtitle_sample_entry(struct mov_t* mov, struct mov_stsd_t* stsd)
+static int mov_read_subtitle_sample_entry(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
-	mov_read_sample_entry(mov, &box, &stsd->data_reference_index);
+	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	if (box.type == MOV_TAG('t', 'x', '3', 'g'))
 	{
 		mov_read_tx3g(mov, &box);
@@ -228,8 +228,8 @@ static int mov_read_subtitle_sample_entry(struct mov_t* mov, struct mov_stsd_t* 
 		mov_buffer_skip(&mov->io, box.size - 16);
 	}
 
-	stsd->object_type_indication = MOV_OBJECT_TEXT;
-	stsd->stream_type = MP4_STREAM_VISUAL;
+    entry->object_type_indication = MOV_OBJECT_TEXT;
+    entry->stream_type = MP4_STREAM_VISUAL;
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
@@ -243,48 +243,49 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 	mov_buffer_r24(&mov->io);
 	entry_count = mov_buffer_r32(&mov->io);
 
-	if (track->stsd_count < entry_count)
+	if (track->stsd.entry_count < entry_count)
 	{
-		void* p = realloc(track->stsd, sizeof(struct mov_stsd_t) * entry_count);
+		void* p = realloc(track->stsd.entries, sizeof(track->stsd.entries[0]) * entry_count);
 		if (NULL == p) return ENOMEM;
-		track->stsd = (struct mov_stsd_t*)p;
+		track->stsd.entries = (struct mov_sample_entry_t*)p;
 	}
 
-	track->stsd_count = entry_count;
+	track->stsd.entry_count = entry_count;
 	for (i = 0; i < entry_count; i++)
 	{
+        track->stsd.current = &track->stsd.entries[i];
 		if (MOV_AUDIO == track->handler_type)
 		{
-			mov_read_audio(mov, &track->stsd[i]);
+			mov_read_audio(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_VIDEO == track->handler_type)
 		{
-			mov_read_video(mov, &track->stsd[i]);
+			mov_read_video(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_HINT == track->handler_type)
 		{
-			mov_read_hint_sample_entry(mov, &track->stsd[i]);
+			mov_read_hint_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_META == track->handler_type)
 		{
-			mov_read_meta_sample_entry(mov, &track->stsd[i]);
+			mov_read_meta_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_CLCP == track->handler_type)
 		{
-			mov_read_meta_sample_entry(mov, &track->stsd[i]);
+			mov_read_meta_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_TEXT == track->handler_type)
 		{
-			mov_read_text_sample_entry(mov, &track->stsd[i]);
+			mov_read_text_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_SUBT == track->handler_type)
 		{
-			mov_read_subtitle_sample_entry(mov, &track->stsd[i]);
+			mov_read_subtitle_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else
 		{
 			assert(0); // ignore
-			mov_read_meta_sample_entry(mov, &track->stsd[i]);
+			mov_read_meta_sample_entry(mov, &track->stsd.entries[i]);
 		}
 	}
 
@@ -308,11 +309,11 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 //	return size;
 //}
 
-static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* stsd)
+static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
 	size_t size;
 	uint64_t offset;
-	assert(1 == stsd->data_reference_index);
+	assert(1 == entry->data_reference_index);
 
 	size = 8 /* Box */ + 8 /* SampleEntry */ + 70 /* VisualSampleEntry */;
 
@@ -322,7 +323,7 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 
 	mov_buffer_w32(&mov->io, 0); /* Reserved */
 	mov_buffer_w16(&mov->io, 0); /* Reserved */
-	mov_buffer_w16(&mov->io, stsd->data_reference_index); /* Data-reference index */
+	mov_buffer_w16(&mov->io, entry->data_reference_index); /* Data-reference index */
 
 	mov_buffer_w16(&mov->io, 0); /* Reserved / Codec stream version */
 	mov_buffer_w16(&mov->io, 0); /* Reserved / Codec stream revision (=0) */
@@ -330,8 +331,8 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	mov_buffer_w32(&mov->io, 0); /* Reserved */
 	mov_buffer_w32(&mov->io, 0); /* Reserved */
 
-	mov_buffer_w16(&mov->io, stsd->u.visual.width); /* Video width */
-	mov_buffer_w16(&mov->io, stsd->u.visual.height); /* Video height */
+	mov_buffer_w16(&mov->io, entry->u.visual.width); /* Video width */
+	mov_buffer_w16(&mov->io, entry->u.visual.height); /* Video height */
 	mov_buffer_w32(&mov->io, 0x00480000); /* Horizontal resolution 72dpi */
 	mov_buffer_w32(&mov->io, 0x00480000); /* Vertical resolution 72dpi */
 	mov_buffer_w32(&mov->io, 0); /* reserved / Data size (= 0) */
@@ -340,21 +341,25 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_stsd_t* sts
 	mov_buffer_w8(&mov->io, 0 /*strlen(compressor_name)*/); /* compressorname */
 	mov_buffer_write(&mov->io, " ", 31); // fill empty
 
+    // ISO/IEC 14496-15:2017 4.5 Template field used (19)
+    // 0x18 - the video sequence is in color with no alpha
+    // 0x28 - the video sequence is in grayscale with no alpha
+    // 0x20 - the video sequence has alpha (gray or color)
 	mov_buffer_w16(&mov->io, 0x18); /* Reserved */
 	mov_buffer_w16(&mov->io, 0xffff); /* Reserved */
 
-	if(MOV_OBJECT_H264 == stsd->object_type_indication)
+	if(MOV_OBJECT_H264 == entry->object_type_indication)
 		size += mov_write_avcc(mov);
-	else if(MOV_OBJECT_MP4V == stsd->object_type_indication)
+	else if(MOV_OBJECT_MP4V == entry->object_type_indication)
 		size += mov_write_esds(mov);
-	else if (MOV_OBJECT_HEVC == stsd->object_type_indication)
+	else if (MOV_OBJECT_HEVC == entry->object_type_indication)
 		size += mov_write_hvcc(mov);
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
-static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* stsd)
+static int mov_write_audio(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
 	size_t size;
 	uint64_t offset;
@@ -374,22 +379,22 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_stsd_t* sts
 	mov_buffer_w16(&mov->io, 0); /* Revision level */
 	mov_buffer_w32(&mov->io, 0); /* Reserved */
 
-	mov_buffer_w16(&mov->io, stsd->u.audio.channelcount); /* channelcount */
-	mov_buffer_w16(&mov->io, stsd->u.audio.samplesize); /* samplesize */
+	mov_buffer_w16(&mov->io, entry->u.audio.channelcount); /* channelcount */
+	mov_buffer_w16(&mov->io, entry->u.audio.samplesize); /* samplesize */
 
 	mov_buffer_w16(&mov->io, 0); /* pre_defined */
 	mov_buffer_w16(&mov->io, 0); /* reserved / packet size (= 0) */
 
-	mov_buffer_w32(&mov->io, stsd->u.audio.samplerate); /* samplerate */
+	mov_buffer_w32(&mov->io, entry->u.audio.samplerate); /* samplerate */
 
-	if(MOV_OBJECT_AAC == stsd->object_type_indication)
+	if(MOV_OBJECT_AAC == entry->object_type_indication)
 		size += mov_write_esds(mov);
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
 
-static int mov_write_subtitle(const struct mov_t* mov, const struct mov_stsd_t* stsd)
+static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
 	size_t size;
 	uint64_t offset;
@@ -403,7 +408,7 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_stsd_t* 
 
 	mov_buffer_w32(&mov->io, 0); /* Reserved */
 	mov_buffer_w16(&mov->io, 0); /* Reserved */
-	mov_buffer_w16(&mov->io, stsd->data_reference_index); /* Data-reference index */
+	mov_buffer_w16(&mov->io, entry->data_reference_index); /* Data-reference index */
 
 	if (track->extra_data_size > 0)
 		mov_buffer_write(&mov->io, track->extra_data, track->extra_data_size);
@@ -424,21 +429,23 @@ size_t mov_write_stsd(const struct mov_t* mov)
 	mov_buffer_w32(&mov->io, 0); /* size */
 	mov_buffer_write(&mov->io, "stsd", 4);
 	mov_buffer_w32(&mov->io, 0); /* version & flags */
-	mov_buffer_w32(&mov->io, track->stsd_count); /* entry count */
+	mov_buffer_w32(&mov->io, track->stsd.entry_count); /* entry count */
 
-	for (i = 0; i < track->stsd_count; i++)
+	for (i = 0; i < track->stsd.entry_count; i++)
 	{
+        ((struct mov_track_t*)track)->stsd.current = &track->stsd.entries[i];
+
 		if (MOV_VIDEO == track->handler_type)
 		{
-			size += mov_write_video(mov, &track->stsd[i]);
+			size += mov_write_video(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_AUDIO == track->handler_type)
 		{
-			size += mov_write_audio(mov, &track->stsd[i]);
+			size += mov_write_audio(mov, &track->stsd.entries[i]);
 		}
 		else if (MOV_SUBT == track->handler_type || MOV_TEXT == track->handler_type)
 		{
-			size += mov_write_subtitle(mov, &track->stsd[i]);
+			size += mov_write_subtitle(mov, &track->stsd.entries[i]);
 		}
 		else
 		{

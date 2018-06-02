@@ -82,6 +82,10 @@ enum
 #define MOV_TREX_FLAG_SAMPLE_IS_NO_SYNC_SAMPLE			0x00010000
 #define MOV_TREX_FLAG_SAMPLE_DEGRADATION_PRIORITY_MASK	0x0000FFFF
 
+// 8.6.4 Independent and Disposable Samples Box (p55)
+#define MOV_TREX_FLAG_SAMPLE_DEPENDS_ON_I_PICTURE       0x02000000
+#define MOV_TREX_FLAG_SAMPLE_DEPENDS_ON_NOT_I_PICTURE   0x01000000
+
 #define MOV_TFHD_FLAG_BASE_DATA_OFFSET					0x00000001
 #define MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX			0x00000002
 #define MOV_TFHD_FLAG_DEFAULT_DURATION					0x00000008
@@ -154,8 +158,7 @@ struct mov_track_t
 	struct mov_fragment_t* frags;
 	size_t frag_count, frag_capacity;
 
-	struct mov_stsd_t* stsd;
-	size_t stsd_count;
+	struct mov_stsd_t stsd;
 
 	struct mov_elst_t* elst;
 	size_t elst_count;
@@ -164,10 +167,8 @@ struct mov_track_t
 	size_t sample_count;
 	size_t sample_offset; // sample_capacity
 
-	int64_t start_dts;
-	int64_t start_cts;
-	int64_t end_dts; // tfdt baseMediaDecodeTime
-	uint64_t offset; // write only
+    int64_t tfdt_dts; // tfdt baseMediaDecodeTime
+    uint64_t offset; // write only
 };
 
 struct mov_t
@@ -180,6 +181,7 @@ struct mov_t
 	int flags;
 	int header;
 	uint64_t moof_offset; // last moof offset(from file begin)
+    uint64_t implicit_offset;
 
 	struct mov_track_t* track; // current stream
 	struct mov_track_t* tracks;
@@ -215,6 +217,9 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_mfhd(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -241,12 +246,25 @@ size_t mov_write_hvcc(const struct mov_t* mov);
 size_t mov_write_tx3g(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);
-size_t mov_write_trun(const struct mov_t* mov, uint32_t flags, uint32_t flags0, size_t from, size_t count);
+size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32_t offset);
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
+size_t mov_write_tfdt(const struct mov_t* mov);
+size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset);
+size_t mov_write_mfhd(const struct mov_t* mov, uint32_t fragment);
+size_t mov_write_edts(const struct mov_t* mov);
+size_t mov_write_stbl(const struct mov_t* mov);
+size_t mov_write_minf(const struct mov_t* mov);
+size_t mov_write_mdia(const struct mov_t* mov);
+size_t mov_write_trak(const struct mov_t* mov);
 
-struct mov_track_t* mov_track_add(struct mov_t* mov);
-struct mov_track_t* mov_track_find(const struct mov_t* mov, uint32_t track);
+uint32_t mov_build_stts(struct mov_track_t* track);
+uint32_t mov_build_ctts(struct mov_track_t* track);
+uint32_t mov_build_stco(struct mov_track_t* track);
+void mov_apply_stco(struct mov_track_t* track);
+void mov_apply_elst(struct mov_track_t *track);
+void mov_apply_stts(struct mov_track_t* track);
+void mov_apply_ctts(struct mov_track_t* track);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);
 
@@ -254,5 +272,12 @@ size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
 
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);
+
+struct mov_track_t* mov_add_track(struct mov_t* mov);
+struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track);
+struct mov_track_t* mov_fetch_track(struct mov_t* mov, uint32_t track); // find and add
+int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint32_t timescale, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
+int mov_add_video(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint32_t timescale, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
+int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint32_t timescale, uint8_t object, const void* extra_data, size_t extra_data_size);
 
 #endif /* !_mov_internal_h_ */

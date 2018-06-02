@@ -67,14 +67,9 @@ int mov_read_tkhd(struct mov_t* mov, const struct mov_box_t* box)
 	}
     mov_buffer_skip(&mov->io, 8); // const unsigned int(32)[2] reserved = 0;
 
-    track = mov_track_find(mov, track_ID);
-    if (NULL == track)
-    {
-        track = mov_track_add(mov);
-        if (NULL == track)
-            return -1;
-        track->tkhd.track_ID = track_ID;
-    }
+    track = mov_fetch_track(mov, track_ID);
+    if (NULL == track) return -1;
+
     mov->track = track;
     tkhd = &mov->track->tkhd;
 	tkhd->version = version;
@@ -83,9 +78,9 @@ int mov_read_tkhd(struct mov_t* mov, const struct mov_box_t* box)
     tkhd->creation_time = creation_time;
     tkhd->modification_time = modification_time;
 
-	tkhd->layer = (uint16_t)mov_buffer_r16(&mov->io);
-	tkhd->alternate_group = (uint16_t)mov_buffer_r16(&mov->io);
-	tkhd->volume = (uint16_t)mov_buffer_r16(&mov->io);
+	tkhd->layer = (int16_t)mov_buffer_r16(&mov->io);
+	tkhd->alternate_group = (int16_t)mov_buffer_r16(&mov->io);
+	tkhd->volume = (int16_t)mov_buffer_r16(&mov->io);
 	mov_buffer_skip(&mov->io, 2); // const unsigned int(16) reserved = 0;
 	for (i = 0; i < 9; i++)
 		tkhd->matrix[i] = mov_buffer_r32(&mov->io);

@@ -15,7 +15,7 @@ int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
 	mov_buffer_r24(&mov->io); /* flags */
 	track_ID = mov_buffer_r32(&mov->io); /* track_ID */
 
-	track = mov_track_find(mov, track_ID);
+	track = mov_find_track(mov, track_ID);
 	if (NULL == track)
 		return -1;
 
@@ -60,8 +60,8 @@ size_t mov_write_tfra(const struct mov_t* mov)
 	mov_buffer_w24(&mov->io, 0); /* flags */
 
 	mov_buffer_w32(&mov->io, track->tkhd.track_ID); /* track_ID */
-	mov_buffer_w32(&mov->io, 0); /* traf/trun/sample num */
-	mov_buffer_w32(&mov->io, track->frag_count); /* track_ID */
+	mov_buffer_w32(&mov->io, 0); /* length_size_of_traf_num/trun/sample */
+	mov_buffer_w32(&mov->io, track->frag_count); /* number_of_entry */
 
 	for (i = 0; i < track->frag_count; i++)
 	{

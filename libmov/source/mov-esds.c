@@ -176,8 +176,8 @@ class DecoderConfigDescriptor extends BaseDescriptor : bit(8) tag=DecoderConfigD
 */
 static int mp4_read_decoder_config_descriptor(struct mov_t* mov, int len)
 {
-	mov->track->stsd[0].object_type_indication = (uint8_t)mov_buffer_r8(&mov->io); /* objectTypeIndication */
-	mov->track->stsd[0].stream_type = (uint8_t)mov_buffer_r8(&mov->io) >> 2; /* stream type */
+	mov->track->stsd.current->object_type_indication = (uint8_t)mov_buffer_r8(&mov->io); /* objectTypeIndication */
+	mov->track->stsd.current->stream_type = (uint8_t)mov_buffer_r8(&mov->io) >> 2; /* stream type */
 	/*uint32_t bufferSizeDB = */mov_buffer_r24(&mov->io); /* buffer size db */
 	/*uint32_t max_rate = */mov_buffer_r32(&mov->io); /* max bit-rate */
 	/*uint32_t bit_rate = */mov_buffer_r32(&mov->io); /* avg bit-rate */
@@ -188,8 +188,8 @@ static int mp4_write_decoder_config_descriptor(const struct mov_t* mov)
 {
 	size_t size = 13 + (mov->track->extra_data_size > 0 ? mov->track->extra_data_size + 5 : 0);
 	mov_write_base_descr(mov, ISO_DecoderConfigDescrTag, size);
-	mov_buffer_w8(&mov->io, mov->track->stsd[0].object_type_indication);
-	mov_buffer_w8(&mov->io, 0x01/*reserved*/ | (mov->track->stsd[0].stream_type << 2));
+	mov_buffer_w8(&mov->io, mov->track->stsd.current->object_type_indication);
+	mov_buffer_w8(&mov->io, 0x01/*reserved*/ | (mov->track->stsd.current->stream_type << 2));
 	mov_buffer_w24(&mov->io, 0); /* buffer size db */
 	mov_buffer_w32(&mov->io, 88360); /* max bit-rate */
 	mov_buffer_w32(&mov->io, 88360); /* avg bit-rate */

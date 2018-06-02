@@ -9,6 +9,8 @@ struct mov_object_tag {
 static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_H264,	MOV_H264 }, // AVCSampleEntry  (ISO/IEC 14496-15:2010)
 	{ MOV_OBJECT_H264,	MOV_TAG('a', 'v', 'c', '2') }, // AVC2SampleEntry (ISO/IEC 14496-15:2010)
+    { MOV_OBJECT_H264,	MOV_TAG('a', 'v', 'c', '3') }, // AVCSampleEntry (ISO/IEC 14496-15:2017)
+    { MOV_OBJECT_H264,	MOV_TAG('a', 'v', 'c', '4') }, // AVC2SampleEntry (ISO/IEC 14496-15:2017)
 	{ MOV_OBJECT_HEVC,	MOV_HEVC }, // HEVCSampleEntry (ISO/IEC 14496-15:2013)
 	{ MOV_OBJECT_HEVC,	MOV_TAG('h', 'e', 'v', '1') }, // HEVCSampleEntry (ISO/IEC 14496-15:2013)
 	{ MOV_OBJECT_MP4V,	MOV_MP4V },

@@ -83,44 +83,51 @@ struct mov_mdhd_t
 	uint32_t pre_defined : 16;
 };
 
+struct mov_sample_entry_t
+{
+    uint16_t data_reference_index; // ref [stsc] sample_description_index
+    uint8_t object_type_indication; // H.264/AAC MOV_OBJECT_XXX (DecoderConfigDescriptor)
+    uint8_t stream_type; // MP4_STREAM_XXX
+
+    union
+    {
+        struct mov_bitrate_t
+        {
+            uint32_t bufferSizeDB;
+            uint32_t maxBitrate;
+            uint32_t avgBitrate;
+        } bitrate;
+
+        //struct mov_uri_t
+        //{
+        //	char uri[256];
+        //} uri;
+
+        // visual
+        struct mov_visual_sample_t
+        {
+            uint16_t width;
+            uint16_t height;
+            uint32_t horizresolution; // 0x00480000 - 72dpi
+            uint32_t vertresolution; // 0x00480000 - 72dpi
+            uint16_t frame_count; // default 1
+            uint16_t depth; // 0x0018
+        } visual;
+
+        struct mov_audio_sample_t
+        {
+            uint16_t channelcount; // default 2
+            uint16_t samplesize; // default 16
+            uint32_t samplerate; // { default samplerate of media } << 16
+        } audio;
+    } u;
+};
+
 struct mov_stsd_t
 {
-	uint16_t data_reference_index; // ref [stsc] sample_description_index
-	uint8_t object_type_indication; // H.264/AAC MOV_OBJECT_XXX (DecoderConfigDescriptor)
-	uint8_t stream_type; // MP4_STREAM_XXX
-
-	union
-	{
-		struct mov_bitrate_t
-		{
-			uint32_t bufferSizeDB;
-			uint32_t maxBitrate;
-			uint32_t avgBitrate;
-		} bitrate;
-
-		//struct mov_uri_t
-		//{
-		//	char uri[256];
-		//} uri;
-
-		// visual
-		struct mov_visual_sample_t
-		{
-			uint16_t width;
-			uint16_t height;
-			uint32_t horizresolution; // 0x00480000 - 72dpi
-			uint32_t vertresolution; // 0x00480000 - 72dpi
-			uint16_t frame_count; // default 1
-			uint16_t depth; // 0x0018
-		} visual;
-
-		struct mov_audio_sample_t
-		{
-			uint16_t channelcount; // default 2
-			uint16_t samplesize; // default 16
-			uint32_t samplerate; // { default samplerate of media } << 16
-		} audio;
-	} u;
+    struct mov_sample_entry_t *current; // current entry, read only
+    struct mov_sample_entry_t *entries;
+    size_t entry_count;
 };
 
 struct mov_stts_t

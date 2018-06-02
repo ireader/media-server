@@ -11,7 +11,7 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 	flags = mov_buffer_r24(&mov->io); /* flags */
 	track_ID = mov_buffer_r32(&mov->io); /* track_ID */
 	
-	mov->track = mov_track_find(mov, track_ID);
+	mov->track = mov_find_track(mov, track_ID);
 	if (NULL == mov->track)
 		return -1;
 
@@ -22,7 +22,7 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 	else if(MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF & flags)
 		mov->track->tfhd.base_data_offset = mov->moof_offset; /* default©\base©\is©\moof */
 	else
-		mov->track->tfhd.base_data_offset = mov->track->sample_count > 0 ? (mov->track->samples[mov->track->sample_count - 1].offset + mov->track->samples[mov->track->sample_count - 1].bytes) : 0;
+		mov->track->tfhd.base_data_offset = mov->implicit_offset;
 
 	if (MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX & flags)
 		mov->track->tfhd.sample_description_index = mov_buffer_r32(&mov->io); /* sample_description_index*/
@@ -71,7 +71,7 @@ size_t mov_write_tfhd(const struct mov_t* mov)
 
 	if (MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX & mov->track->tfhd.flags)
 	{
-		mov_buffer_w32(&mov->io, mov->track->stsd[0].data_reference_index); /* sample_description_index*/
+		mov_buffer_w32(&mov->io, mov->track->stsd.entries[0].data_reference_index); /* sample_description_index*/
 		size += 4;
 	}
 

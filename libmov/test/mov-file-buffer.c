@@ -11,7 +11,9 @@
 
 static int mov_file_read(void* fp, void* data, uint64_t bytes)
 {
-	return bytes == fread(data, 1, bytes, (FILE*)fp) ? 0 : ferror((FILE*)fp);
+    if (bytes == fread(data, 1, bytes, (FILE*)fp))
+        return 0;
+	return 0 != ferror((FILE*)fp) ? ferror((FILE*)fp) : -1 /*EOF*/;
 }
 
 static int mov_file_write(void* fp, const void* data, uint64_t bytes)
