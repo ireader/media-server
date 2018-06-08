@@ -76,6 +76,57 @@ if ( samplingFrequencyIndex == 0xf ) {
 }
 channelConfiguration;							4 bslbf
 */
+/*
+4.4.1.1 Program config element (p488)
+program_config_element()
+{
+    element_instance_tag;                       4 uimsbf
+    object_type;                                2 uimsbf
+    sampling_frequency_index;                   4 uimsbf
+    num_front_channel_elements;                 4 uimsbf
+    num_side_channel_elements;                  4 uimsbf
+    num_back_channel_elements;                  4 uimsbf
+    num_lfe_channel_elements;                   2 uimsbf
+    num_assoc_data_elements;                    3 uimsbf
+    num_valid_cc_elements;                      4 uimsbf
+    mono_mixdown_present;                       1 uimsbf
+    if (mono_mixdown_present == 1 )
+        mono_mixdown_element_number;            4 uimsbf
+    stereo_mixdown_present;                     1 uimsbf
+    if (stereo_mixdown_present == 1 )
+        stereo_mixdown_element_number;          4 uimsbf
+    matrix_mixdown_idx_present;                 1 uimsbf
+    if (matrix_mixdown_idx_present == 1 ) {
+        matrix_mixdown_idx ;                    2 uimsbf
+        pseudo_surround_enable;                 1 uimsbf
+    }
+
+    for (i = 0; i < num_front_channel_elements; i++) {
+        front_element_is_cpe[i];                1 bslbf
+        front_element_tag_select[i];            4 uimsbf
+    }
+    for (i = 0; i < num_side_channel_elements; i++) {
+        side_element_is_cpe[i];                 1 bslbf
+        side_element_tag_select[i];             4 uimsbf
+    }
+    for (i = 0; i < num_back_channel_elements; i++) {
+        back_element_is_cpe[i];                 1 bslbf
+        back_element_tag_select[i];             4 uimsbf
+    }
+    for (i = 0; i < num_lfe_channel_elements; i++)
+        lfe_element_tag_select[i];              4 uimsbf
+    for ( i = 0; i < num_assoc_data_elements; i++)
+        assoc_data_element_tag_select[i];       4 uimsbf
+    for (i = 0; i < num_valid_cc_elements; i++) {
+        cc_element_is_ind_sw[i];                1 uimsbf
+        valid_cc_element_tag_select[i];         4 uimsbf
+    }
+    byte_alignment();                           Note 1
+    comment_field_bytes;                        8 uimsbf
+    for (i = 0; i < comment_field_bytes; i++)
+        comment_field_data[i];                  8 uimsbf
+}
+*/
 /// @return >=0-adts header length, <0-error
 int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
@@ -87,6 +138,10 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+
+    if (0 == aac->channel_configuration)
+    {
+    }
 	return 2;
 }
 
