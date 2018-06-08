@@ -52,6 +52,9 @@
     <Filter Include="libhttp">
       <UniqueIdentifier>{8de6b9a5-f676-40e5-b5b7-72587b84f844}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libsip">
+      <UniqueIdentifier>{47092231-3039-49a4-8cc2-83f4ed15d45b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -89,6 +92,9 @@
     </ClInclude>
     <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h">
       <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h">
+      <Filter>librtsp\media</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -301,6 +307,27 @@
     </ClCompile>
     <ClCompile Include="..\..\sdk\source\thread-pool.c">
       <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\app-log.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-header-test.c">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\darray.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libhttp\test\http-parser-test.c">
+      <Filter>libhttp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-dec-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp">
+      <Filter>libmpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

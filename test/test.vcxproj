@@ -96,7 +96,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../3rd/ffmpeg/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>avcodec.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;avdevice.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -155,6 +155,7 @@
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h" />
+    <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\media-source.h" />
@@ -170,8 +171,11 @@
     <ClCompile Include="..\..\sdk\libhttp\test\http-client-test2.cpp" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-download.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-list-dir.cpp" />
+    <ClCompile Include="..\..\sdk\libhttp\test\http-parser-test.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp" />
+    <ClCompile Include="..\..\sdk\source\app-log.c" />
     <ClCompile Include="..\..\sdk\source\base64.c" />
+    <ClCompile Include="..\..\sdk\source\darray.c" />
     <ClCompile Include="..\..\sdk\source\digest\crc32.c" />
     <ClCompile Include="..\..\sdk\source\digest\hkdf.c" />
     <ClCompile Include="..\..\sdk\source\digest\hmac.c" />
@@ -205,6 +209,8 @@
     <ClCompile Include="..\libmov\test\mov-writer-h264.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-h265.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-dec-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-test.cpp" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-client.c" />
@@ -225,6 +231,7 @@
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c" />
     <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp" />
@@ -233,6 +240,7 @@
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp" />
+    <ClCompile Include="..\libsip\test\sip-header-test.c" />
     <ClCompile Include="BinaryDiff.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
@@ -270,6 +278,9 @@
     </ProjectReference>
     <ProjectReference Include="..\librtsp\librtsp.vcxproj">
       <Project>{c34cc56f-34fe-4d93-8582-5853b05442ea}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libsip\libsip.vcxproj">
+      <Project>{5cdf2275-37a7-450a-b69f-2063079d6946}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
