@@ -348,26 +348,14 @@ struct fmp4_writer_t* fmp4_writer_create(const struct mov_buffer_t *buffer, void
 
 void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 {
-	size_t i, j;
+	size_t i;
 	struct mov_t* mov;
-	struct mov_track_t* track;
 	mov = &writer->mov;
 
 	fmp4_writer_save_segment(writer);
 
 	for (i = 0; i < mov->track_count; i++)
-	{
-		track = &mov->tracks[i];
-		for (j = 0; j < track->sample_count; j++)
-		{
-			if (track->samples[j].data)
-				free(track->samples[j].data);
-		}
-		if (track->extra_data) free(track->extra_data);
-		if (track->samples) free(track->samples);
-		if (track->frags) free(track->frags);
-		if (track->stsd.entries) free(track->stsd.entries);
-	}
+        mov_free_track(mov->tracks + i);
 	free(writer);
 }
 

@@ -372,24 +372,13 @@ struct mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* 
 	return reader;
 }
 
-#define FREE(p) do { if(p) free(p); } while(0)
-
 void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	size_t i;
 	for (i = 0; i < reader->mov.track_count; i++)
-	{
-		FREE(reader->mov.tracks[i].extra_data);
-		FREE(reader->mov.tracks[i].stsd.entries);
-		FREE(reader->mov.tracks[i].elst);
-		FREE(reader->mov.tracks[i].samples);
-		FREE(reader->mov.tracks[i].stbl.stco);
-		FREE(reader->mov.tracks[i].stbl.stsc);
-		FREE(reader->mov.tracks[i].stbl.stss);
-		FREE(reader->mov.tracks[i].stbl.stts);
-		FREE(reader->mov.tracks[i].stbl.ctts);
-	}
-	FREE(reader->mov.tracks);
+        mov_free_track(reader->mov.tracks + i);
+    if (reader->mov.tracks)
+        free(reader->mov.tracks);
 	free(reader);
 }
 

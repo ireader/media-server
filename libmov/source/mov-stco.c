@@ -162,6 +162,7 @@ void mov_apply_stco(struct mov_track_t* track)
             {
                 track->samples[n].sample_description_index = stbl->stsc[i].sample_description_index;
                 track->samples[n].offset = chunk_offset;
+                track->samples[n].data = NULL;
                 chunk_offset += track->samples[n].bytes;
                 assert(track->samples[n].bytes > 0);
                 assert(0 == n || track->samples[n - 1].offset + track->samples[n - 1].bytes <= track->samples[n].offset);

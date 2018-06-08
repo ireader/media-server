@@ -273,6 +273,7 @@ size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);
 
+void mov_free_track(struct mov_track_t* track);
 struct mov_track_t* mov_add_track(struct mov_t* mov);
 struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track);
 struct mov_track_t* mov_fetch_track(struct mov_t* mov, uint32_t track); // find and add

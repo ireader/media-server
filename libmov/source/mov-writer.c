@@ -157,12 +157,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 	}
 
 	for (i = 0; i < mov->track_count; i++)
-	{
-		track = &mov->tracks[i];
-		if (track->extra_data) free(track->extra_data);
-		if (track->samples) free(track->samples);
-		if (track->stsd.entries) free(track->stsd.entries);
-	}
+        mov_free_track(mov->tracks + i);
 	free(writer);
 }
 
@@ -225,6 +220,7 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* data, s
 	sample->sample_description_index = 1;
 	sample->bytes = bytes;
 	sample->flags = flags;
+    sample->data = NULL;
 	sample->pts = pts;
 	sample->dts = dts;
 	

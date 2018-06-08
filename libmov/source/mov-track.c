@@ -4,6 +4,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define FREE(p) do { if(p) free(p); } while(0)
+
 struct mov_track_t* mov_add_track(struct mov_t* mov)
 {
     void* ptr = NULL;
@@ -22,6 +24,27 @@ struct mov_track_t* mov_add_track(struct mov_t* mov)
     track->stsd.current = track->stsd.entries;
 
     return track;
+}
+
+void mov_free_track(struct mov_track_t* track)
+{
+    size_t i;
+    for (i = 0; i < track->sample_count; i++)
+    {
+        if (track->samples[i].data)
+            free(track->samples[i].data);
+    }
+    
+    FREE(track->elst);
+    FREE(track->frags);
+    FREE(track->samples);
+    FREE(track->extra_data);
+    FREE(track->stsd.entries);
+    FREE(track->stbl.stco);
+    FREE(track->stbl.stsc);
+    FREE(track->stbl.stss);
+    FREE(track->stbl.stts);
+    FREE(track->stbl.ctts);
 }
 
 struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track)
