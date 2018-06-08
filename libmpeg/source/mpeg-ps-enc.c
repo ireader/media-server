@@ -16,125 +16,49 @@
 #define MAX_PES_HEADER	1024	// pack_header + system_header + psm
 #define MAX_PES_PACKET	0xFFFF	// 64k pes data
 
-typedef struct _mpeg_ps_enc_context_t
+struct ps_muxer_t
 {
     struct psm_t psm; 
-    struct ps_system_header_t syshd;
-    struct ps_packet_header_t packhd;
+    struct ps_pack_header_t pack;
+    struct ps_system_header_t system;
     
 	unsigned int psm_period;
 	unsigned int scr_period;
 
-	struct mpeg_ps_func_t func;
+	struct ps_muxer_func_t func;
 	void* param;
 
 //	uint8_t packet[MAX_PACKET_SIZE];
+};
 
-} mpeg_ps_enc_context_t;
-
-static uint8_t ps_stream_find(mpeg_ps_enc_context_t *psctx, int codecid)
+static struct pes_t* ps_stream_find(struct ps_muxer_t *ps, int streamid)
 {
-	size_t i;
-	for(i = 0; i < psctx->psm.stream_count; i++)
-	{
-		if(codecid == psctx->psm.streams[i].codecid)
-			return psctx->psm.streams[i].sid;
-	}
-	return 0;
+    size_t i;
+    for (i = 0; i < ps->psm.stream_count; i++)
+    {
+        if (streamid == ps->psm.streams[i].sid)
+            return &ps->psm.streams[i];
+    }
+    return NULL;
 }
 
-static size_t ps_packet_header_write(const struct ps_packet_header_t *packethd, uint8_t *data)
-{
-	// pack_start_code
-	nbo_w32(data, 0x000001BA);
-
-	// 33-system_clock_reference_base + 9-system_clock_reference_extension
-	// '01xxx1xx xxxxxxxx xxxxx1xx xxxxxxxx xxxxx1xx xxxxxxx1'
-	data[4] = 0x44 | (((packethd->system_clock_reference_base >> 30) & 0x07) << 3) | ((packethd->system_clock_reference_base >> 28) & 0x03);
-	data[5] = ((packethd->system_clock_reference_base >> 20) & 0xFF);
-	data[6] = 0x04 | (((packethd->system_clock_reference_base >> 15) & 0x1F) << 3) | ((packethd->system_clock_reference_base >> 13) & 0x03);
-	data[7] = ((packethd->system_clock_reference_base >> 5) & 0xFF);
-	data[8] = 0x04 | ((packethd->system_clock_reference_base & 0x1F) << 3) | ((packethd->system_clock_reference_extension >> 7) & 0x03);
-	data[9] = 0x01 | ((packethd->system_clock_reference_extension & 0x7F) << 1);
-
-	// program_mux_rate
-	// 'xxxxxxxx xxxxxxxx xxxxxx11'
-	data[10] = (uint8_t)(packethd->program_mux_rate >> 14);
-	data[11] = (uint8_t)(packethd->program_mux_rate >> 6);
-	data[12] = (uint8_t)(0x03 | ((packethd->program_mux_rate & 0x3F) << 2));
-
-	// stuffing length
-	// '00000xxx'
-	data[13] = 0xF8;
-
-	return 14;
-}
-
-static size_t ps_system_header_write(const struct ps_system_header_t *syshd, uint8_t *data)
-{
-	size_t i, j;
-
-	// system_header_start_code
-	nbo_w32(data, 0x000001BB);
-
-	// header length
-	//put16(data + 4, 6 + syshd->stream_count*3);
-
-	// rate_bound
-	// 1xxxxxxx xxxxxxxx xxxxxxx1
-	data[6] = 0x80 | ((syshd->rate_bound >> 15) & 0x7F);
-	data[7] = (syshd->rate_bound >> 7) & 0xFF;
-	data[8] = 0x01 | ((syshd->rate_bound & 0x7F) << 1);
-
-	// 6-audio_bound + 1-fixed_flag + 1-CSPS_flag
-	data[9] = ((syshd->audio_bound & 0x3F) << 2) | ((syshd->fixed_flag & 0x01) << 1) | (syshd->CSPS_flag & 0x01);
-
-	// 1-system_audio_lock_flag + 1-system_video_lock_flag + 1-maker + 5-video_bound
-	data[10] = 0x20 | ((syshd->system_audio_lock_flag & 0x01) << 7) | ((syshd->system_video_lock_flag & 0x01) << 6) | (syshd->video_bound & 0x1F);
-
-	// 1-packet_rate_restriction_flag + 7-reserved
-	data[11] = 0x7F | ((syshd->packet_rate_restriction_flag & 0x01) << 7);
-
-	i = 12;
-	for(j = 0; j < syshd->stream_count; j++)
-	{
-		data[i++] = (uint8_t)syshd->streams[j].stream_id;
-		if(PES_SID_EXTENSION == syshd->streams[j].stream_id) // '10110111'
-		{
-			data[i++] = 0xD0; // '11000000'
-			data[i++] = syshd->streams[j].stream_extid & 0x7F; // '0xxxxxxx'
-			data[i++] = 0xB6; // '10110110'
-		}
-
-		// '11' + 1-P-STD_buffer_bound_scale + 13-P-STD_buffer_size_bound
-		// '11xxxxxx xxxxxxxx'
-		data[i++] = 0xC0 | ((syshd->streams[j].buffer_bound_scale & 0x01) << 5) | ((syshd->streams[j].buffer_size_bound >> 8) & 0x1F);
-		data[i++] = syshd->streams[j].buffer_size_bound & 0xFF;
-	}
-
-	// header length
-	nbo_w16(data + 4, (uint16_t)(i-6));
-	return i;
-}
-
-int mpeg_ps_write(void* ps, int codecid, int64_t pts, int64_t dts, const void* data, size_t bytes)
+int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	int first;
 	size_t i, n, sz;
 	uint8_t *packet;
-    struct pes_t stream;
+    struct pes_t* stream;
     const uint8_t* payload;
-    mpeg_ps_enc_context_t *psctx;
 
 	i = 0;
 	first = 1;
-	psctx = (mpeg_ps_enc_context_t*)ps;
 	payload = (const uint8_t*)data;
 
-    memset(&stream, 0, sizeof(stream));
-    stream.pts = pts;
-    stream.dts = dts;
-    stream.sid = ps_stream_find(psctx, codecid);
+    stream = ps_stream_find(ps, streamid);
+    if (NULL == stream) return -1; // not found
+    stream->data_alignment_indicator = flags ? 1 : 0;
+    stream->pts = pts;
+    stream->dts = dts;
 
 	// TODO: 
 	// 1. update packet header program_mux_rate
@@ -142,26 +66,26 @@ int mpeg_ps_write(void* ps, int codecid, int64_t pts, int64_t dts, const void* d
 
 	// alloc once (include Multi-PES packet)
 	sz = bytes + MAX_PES_HEADER + (bytes/MAX_PES_PACKET+1) * 64; // 64 = 0x000001 + stream_id + PES_packet_length + other
-	packet = psctx->func.alloc(psctx->param, sz);
+	packet = ps->func.alloc(ps->param, sz);
 	if(!packet) return ENOMEM;
 
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference
 	// http://www.bretl.com/mpeghtml/SCR.HTM
 	//the maximum allowed interval between SCRs is 700ms 
-	//psctx->packhd.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
-	psctx->packhd.system_clock_reference_base = dts - 3600;
-	psctx->packhd.system_clock_reference_extension = 0;
-	psctx->packhd.program_mux_rate = 6106;
-	i += ps_packet_header_write(&psctx->packhd, packet + i);
+	//ps->pack.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
+	ps->pack.system_clock_reference_base = dts - 3600;
+	ps->pack.system_clock_reference_extension = 0;
+	ps->pack.program_mux_rate = 6106;
+	i += pack_header_write(&ps->pack, packet + i);
 
 	// write system_header(p76)
-	if(0 == (psctx->psm_period % 30))
-		i += ps_system_header_write(&psctx->syshd, packet + i);
+	if(0 == (ps->psm_period % 30))
+		i += system_header_write(&ps->system, packet + i);
 
 	// write program_stream_map(p79)
-	if(0 == (psctx->psm_period % 30))
-		i += psm_write(&psctx->psm, packet + i);
+	if(0 == (ps->psm_period % 30))
+		i += psm_write(&ps->psm, packet + i);
 
 	// check packet size
 	assert(i < MAX_PES_HEADER);
@@ -172,12 +96,12 @@ int mpeg_ps_write(void* ps, int codecid, int64_t pts, int64_t dts, const void* d
 		uint8_t *p;
 		uint8_t *pes = packet + i;
 		
-		p = pes + pes_write_header(&stream, pes, sz - i);
+		p = pes + pes_write_header(stream, pes, sz - i);
 		assert(p - pes < 64);
 
 		if(first)
 		{
-			if (PSI_STREAM_H264 == codecid && -1 == find_h264_access_unit_delimiter(payload, bytes))
+			if (PSI_STREAM_H264 == stream->codecid && -1 == find_h264_access_unit_delimiter(payload, bytes))
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -186,7 +110,7 @@ int mpeg_ps_write(void* ps, int codecid, int64_t pts, int64_t dts, const void* d
 				p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 				p += 6;
 			}
-			else if (PSI_STREAM_H265 == codecid && -1 == find_h265_access_unit_delimiter(payload, bytes))
+			else if (PSI_STREAM_H265 == stream->codecid && -1 == find_h265_access_unit_delimiter(payload, bytes))
 			{
 				// 2.17 Carriage of HEVC
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
@@ -226,128 +150,119 @@ int mpeg_ps_write(void* ps, int codecid, int64_t pts, int64_t dts, const void* d
 	}
 
 	assert(i < sz);
-	psctx->func.write(psctx->param, codecid, packet, i);
-	psctx->func.free(psctx->param, packet);
+	ps->func.write(ps->param, stream->sid, packet, i);
+	ps->func.free(ps->param, packet);
 
-	++psctx->psm_period;
+	++ps->psm_period;
 	return 0;
 }
 
-void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param)
+struct ps_muxer_t* ps_muxer_create(const struct ps_muxer_func_t *func, void* param)
 {
-	mpeg_ps_enc_context_t *psctx = NULL;
+	struct ps_muxer_t *ps = NULL;
 
 	assert(func);
-	psctx = (mpeg_ps_enc_context_t *)calloc(1, sizeof(mpeg_ps_enc_context_t));
-	if(!psctx)
+	ps = (struct ps_muxer_t *)calloc(1, sizeof(struct ps_muxer_t));
+	if(!ps)
 		return NULL;
 
-	memcpy(&psctx->func, func, sizeof(psctx->func));
-	psctx->param = param;
+	memcpy(&ps->func, func, sizeof(ps->func));
+	ps->param = param;
 
-	psctx->syshd.rate_bound = 26234; //10493600~10mbps(50BPS * 8 = 400bps)
-//	psctx->syshd.audio_bound = 1; // [0,32] max active audio streams
-//	psctx->syshd.video_bound = 1; // [0,16] max active video streams
-	psctx->syshd.fixed_flag = 0; // 1-fixed bitrate, 0-variable bitrate
-	psctx->syshd.CSPS_flag = 0; // meets the constraints defined in 2.7.9.
-	psctx->syshd.packet_rate_restriction_flag = 0; // dependence CSPS_flag
-	psctx->syshd.system_audio_lock_flag = 0; // all audio stream sampling rate is constant
-	psctx->syshd.system_video_lock_flag = 0; // all video stream frequency is constant
+	ps->system.rate_bound = 26234; //10493600~10mbps(50BPS * 8 = 400bps)
+//	ps->system.audio_bound = 1; // [0,32] max active audio streams
+//	ps->system.video_bound = 1; // [0,16] max active video streams
+	ps->system.fixed_flag = 0; // 1-fixed bitrate, 0-variable bitrate
+	ps->system.CSPS_flag = 0; // meets the constraints defined in 2.7.9.
+	ps->system.packet_rate_restriction_flag = 0; // dependence CSPS_flag
+	ps->system.system_audio_lock_flag = 0; // all audio stream sampling rate is constant
+	ps->system.system_video_lock_flag = 0; // all video stream frequency is constant
 
-	//psctx->psm.ver = 1;
-	//psctx->psm.stream_count = 2;
-	//psctx->psm.streams[0].element_stream_id = PES_SID_VIDEO;
-	//psctx->psm.streams[0].stream_type = PSI_STREAM_H264;
-	//psctx->psm.streams[1].element_stream_id = PES_SID_AUDIO;
-	//psctx->psm.streams[1].stream_type = PSI_STREAM_AAC;
+	//ps->psm.ver = 1;
+	//ps->psm.stream_count = 2;
+	//ps->psm.streams[0].element_stream_id = PES_SID_VIDEO;
+	//ps->psm.streams[0].stream_type = PSI_STREAM_H264;
+	//ps->psm.streams[1].element_stream_id = PES_SID_AUDIO;
+	//ps->psm.streams[1].stream_type = PSI_STREAM_AAC;
 
-	return psctx;
+	return ps;
 }
 
-int mpeg_ps_destroy(void* ps)
+int ps_muxer_destroy(struct ps_muxer_t* ps)
 {
-	mpeg_ps_enc_context_t *psctx;
+    size_t i;
+    for (i = 0; i < ps->psm.stream_count; i++)
+    {
+        if (ps->psm.streams[i].esinfo)
+        {
+            free(ps->psm.streams[i].esinfo);
+            ps->psm.streams[i].esinfo = NULL;
+        }
+    }
 
-	psctx = (mpeg_ps_enc_context_t*)ps;
-	free(psctx);
+	free(ps);
 	return 0;
 }
 
-int mpeg_ps_add_stream(void* ps, int codecid, const void* info, size_t bytes)
+int ps_muxer_add_stream(struct ps_muxer_t* ps, int codecid, const void* extradata, size_t bytes)
 {
     struct psm_t *psm;
-    mpeg_ps_enc_context_t* psctx;
+    struct pes_t *pes;
 
 	assert(bytes < 512);
-	psctx = (mpeg_ps_enc_context_t*)ps;
-	if(!psctx || psctx->psm.stream_count >= sizeof(psctx->psm.streams)/sizeof(psctx->psm.streams[0]))
+	if(!ps || ps->psm.stream_count >= sizeof(ps->psm.streams)/sizeof(ps->psm.streams[0]))
 	{
 		assert(0);
 		return -1;
 	}
 
-	psm = &psctx->psm;
-	if(bytes > 0)
-	{
-		psm->streams[psm->stream_count].esinfo = (uint8_t*)malloc(bytes);
-		if(psm->streams[psm->stream_count].esinfo)
-		{
-			memcpy(psm->streams[psm->stream_count].esinfo, info, bytes);
-			psm->streams[psm->stream_count].esinfo_len = (uint16_t)bytes;
-		}
-	}
+	psm = &ps->psm;
+    pes = &psm->streams[psm->stream_count];
 
-	switch(codecid)
-	{
-    case PSI_STREAM_H264:
-    case PSI_STREAM_H265:
-    case PSI_STREAM_MPEG1:
-	case PSI_STREAM_MPEG2:
-	case PSI_STREAM_MPEG4:
-	case PSI_STREAM_VIDEO_VC1:
-	case PSI_STREAM_VIDEO_SVAC:
-    case PSI_STREAM_VIDEO_DIRAC:
-        psm->streams[psm->stream_count].sid = (uint8_t)(PES_SID_VIDEO + psctx->syshd.video_bound);
+	if (mpeg_stream_type_video(codecid))
+    {
+        pes->sid = (uint8_t)(PES_SID_VIDEO + ps->system.video_bound);
 
-		assert(psctx->syshd.video_bound + 1 < 16);
-		++psctx->syshd.video_bound; // [0,16] max active video streams
-		psctx->syshd.streams[psctx->syshd.stream_count].buffer_bound_scale = 1;
-		psctx->syshd.streams[psctx->syshd.stream_count].buffer_size_bound = 232;
-		break;
+        assert(ps->system.video_bound + 1 < 16);
+        ++ps->system.video_bound; // [0,16] max active video streams
+        ps->system.streams[ps->system.stream_count].buffer_bound_scale = 1;
+        /* FIXME -- VCD uses 46, SVCD uses 230, ffmpeg has 230 with a note that it is small */
+        ps->system.streams[ps->system.stream_count].buffer_size_bound = 400 /* 8191-13 bits max value */;
+    }
+    else if (mpeg_stream_type_audio(codecid))
+    {
+        pes->sid = (uint8_t)(PES_SID_AUDIO + ps->system.audio_bound);
 
-    case PSI_STREAM_AAC:
-    case PSI_STREAM_MPEG4_AAC:
-    case PSI_STREAM_MPEG4_AAC_LATM:
-    case PSI_STREAM_AUDIO_MPEG1:
-	case PSI_STREAM_MP3:
-	case PSI_STREAM_AUDIO_AC3:
-	case PSI_STREAM_AUDIO_DTS:
-	case PSI_STREAM_AUDIO_SVAC:
-	case PSI_STREAM_AUDIO_G711:
-	case PSI_STREAM_AUDIO_G722:
-	case PSI_STREAM_AUDIO_G723:
-	case PSI_STREAM_AUDIO_G729:
-		psm->streams[psm->stream_count].sid = (uint8_t)(PES_SID_AUDIO + psctx->syshd.audio_bound);
-
-		assert(psctx->syshd.audio_bound + 1 < 32);
-		++psctx->syshd.audio_bound; // [0,32] max active audio streams
-		psctx->syshd.streams[psctx->syshd.stream_count].buffer_bound_scale = 0;
-		psctx->syshd.streams[psctx->syshd.stream_count].buffer_size_bound = 32;
-		break;
-
-	default:
-		assert(0);
+        assert(ps->system.audio_bound + 1 < 32);
+        ++ps->system.audio_bound; // [0,32] max active audio streams
+        ps->system.streams[ps->system.stream_count].buffer_bound_scale = 0;
+        /* This value HAS to be used for VCD (see VCD standard, p. IV-7).
+        * Right now it is also used for everything else. */
+        ps->system.streams[ps->system.stream_count].buffer_size_bound = 32 /* 4 * 1024 / 128 */;
+    }
+    else
+    {
+        assert(0);
 		return -1;
 	}
 
-	psctx->syshd.streams[psctx->syshd.stream_count].stream_id = psm->streams[psm->stream_count].sid;
-	++psctx->syshd.stream_count;
+    if (bytes > 0)
+    {
+        pes->esinfo = (uint8_t*)malloc(bytes);
+        if (!pes->esinfo)
+            return -1;
+        memcpy(pes->esinfo, extradata, bytes);
+        pes->esinfo_len = (uint16_t)bytes;
+    }
 
-	psm->streams[psm->stream_count].codecid = (uint8_t)codecid;
+    assert(psm->stream_count == ps->system.stream_count);
+    ps->system.streams[ps->system.stream_count].stream_id = pes->sid;
+	++ps->system.stream_count;
+
+    pes->codecid = (uint8_t)codecid;
 	++psm->stream_count;
 	++psm->ver;
 
-	assert(psm->stream_count == psctx->syshd.stream_count);
-	psctx->psm_period = 0; // immediate update psm
-	return 0;
+	ps->psm_period = 0; // immediate update psm
+	return pes->sid;
 }

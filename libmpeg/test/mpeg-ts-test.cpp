@@ -2,9 +2,9 @@
 #include "mpeg-ts.h"
 #include "mpeg-ts-proto.h"
 #include <assert.h>
-#include <stdio.h>
-#include <list>
 #include <string.h>
+#include <stdio.h>
+#include <map>
 
 static void* ts_alloc(void* /*param*/, size_t bytes)
 {
@@ -35,27 +35,47 @@ inline const char* ts_type(int type)
 	}
 }
 
-static void ts_packet(void* ts, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int ts_stream(void* ts, int codecid)
 {
-	printf("[%s] pts: %08lu, dts: %08lu\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts);
+    static std::map<int, int> streams;
+    std::map<int, int>::const_iterator it = streams.find(codecid);
+    if (streams.end() != it)
+        return it->second;
 
-	mpeg_ts_write(ts, avtype, pts, dts, data, bytes);
+    int i = mpeg_ts_add_stream(ts, codecid, NULL, 0);
+    streams[codecid] = i;
+    return i;
 }
 
-static void mpeg_ts_file(const char* file, void* ts)
+static void on_ts_packet(void* ts, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+	printf("[%s] pts: %08lu, dts: %08lu%s\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts, flags ? " [I]":"");
+
+    mpeg_ts_write(ts, ts_stream(ts, avtype), flags, pts, dts, data, bytes);
+}
+
+static void mpeg_ts_file(const char* file, void* muxer)
 {
 	unsigned char ptr[188];
+    struct ts_demuxer_t *ts;
 	FILE* fp = fopen(file, "rb");
-	while (1 == fread(ptr, sizeof(ptr), 1, fp))
-	{
-		mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, ts);
-	}
+
+    ts = ts_demuxer_create(on_ts_packet, muxer);
+    while (1 == fread(ptr, sizeof(ptr), 1, fp))
+    {
+        ts_demuxer_input(ts, ptr, sizeof(ptr));
+    }
+    ts_demuxer_flush(ts);
+    ts_demuxer_destroy(ts);
 	fclose(fp);
 }
 
 //mpeg_ts_test("test/fileSequence0.ts", "test/apple.ts")
-void mpeg_ts_test(const char* input, const char* output)
+void mpeg_ts_test(const char* input)
 {
+    char output[256] = { 0 };
+    snprintf(output, sizeof(output), "%s.ts", input);
+
 	struct mpeg_ts_func_t tshandler;
 	tshandler.alloc = ts_alloc;
 	tshandler.write = ts_write;

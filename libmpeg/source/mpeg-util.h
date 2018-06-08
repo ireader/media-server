@@ -18,6 +18,8 @@ static inline void nbo_w32(uint8_t* ptr, uint32_t val)
 }
 
 void pcr_write(uint8_t *ptr, int64_t pcr);
+int mpeg_stream_type_audio(int codecid);
+int mpeg_stream_type_video(int codecid);
 
 int h264_find_nalu(const uint8_t* p, size_t bytes);
 int find_h264_keyframe(const uint8_t* p, size_t bytes);

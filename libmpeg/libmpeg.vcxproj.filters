@@ -54,6 +54,15 @@
     <ClCompile Include="source\mpeg-ts-h265.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mpeg-packet.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg-pack-header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mpeg-system-header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mpeg-element-descriptor.h">

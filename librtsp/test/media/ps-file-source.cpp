@@ -1,6 +1,5 @@
 #include "ps-file-source.h"
 #include "cstringext.h"
-#include "mpeg-ps.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
 #include <assert.h>
@@ -20,12 +19,12 @@ PSFileSource::PSFileSource(const char *file)
 
 	unsigned int ssrc = (unsigned int)rtp_ssrc();
 
-	struct mpeg_ps_func_t func;
+	struct ps_muxer_func_t func;
 	func.alloc = Alloc;
 	func.free = Free;
 	func.write = Packet;
-	m_ps = mpeg_ps_create(&func, this);
-	mpeg_ps_add_stream(m_ps, STREAM_VIDEO_H264, NULL, 0);
+	m_ps = ps_muxer_create(&func, this);
+    m_ps_stream = ps_muxer_add_stream(m_ps, STREAM_VIDEO_H264, NULL, 0);
 
 	static struct rtp_payload_t s_psfunc = {
 		PSFileSource::RTPAlloc,
@@ -46,7 +45,7 @@ PSFileSource::~PSFileSource()
 		rtp_destroy(m_rtp);
 	if(m_pspacker)
 		rtp_payload_encode_destroy(m_pspacker);
-	mpeg_ps_destroy(m_ps);
+	ps_muxer_destroy(m_ps);
 }
 
 int PSFileSource::SetTransport(const char* /*track*/, std::shared_ptr<IRTPTransport> transport)
@@ -68,7 +67,7 @@ int PSFileSource::Play()
 		{
 			if(0 == m_ps_clock)
 				m_ps_clock = clock;
-			mpeg_ps_write(m_ps, STREAM_VIDEO_H264, (clock-m_ps_clock)*90, (clock-m_ps_clock)*90, ptr, bytes);
+			ps_muxer_input(m_ps, m_ps_stream, 0, (clock-m_ps_clock)*90, (clock-m_ps_clock)*90, ptr, bytes);
 			m_rtp_clock += 40;
 
 			SendRTCP();

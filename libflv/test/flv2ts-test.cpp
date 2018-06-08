@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <map>
 
 static void* ts_alloc(void* /*param*/, size_t bytes)
 {
@@ -45,6 +46,18 @@ inline char flv_type(int type)
 	}
 }
 
+static int ts_stream(void* ts, int codecid)
+{
+    static std::map<int, int> streams;
+    std::map<int, int>::const_iterator it = streams.find(codecid);
+    if (streams.end() != it)
+        return it->second;
+
+    int i = mpeg_ts_add_stream(ts, codecid, NULL, 0);
+    streams[codecid] = i;
+    return i;
+}
+
 static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned int pts, unsigned int dts, int flags)
 {
 	static char s_pts[64], s_dts[64];
@@ -58,7 +71,7 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 		//		assert(0 == a_dts || dts >= a_dts);
 		pts = (a_pts && pts < a_pts) ? a_pts : pts;
 		dts = (a_dts && dts < a_dts) ? a_dts : dts;
-		mpeg_ts_write(ts, STREAM_AUDIO_AAC, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, ts_stream(ts, STREAM_AUDIO_AAC), 0, pts * 90, dts * 90, data, bytes);
 
 		printf("diff: %03d/%03d", (int)(pts - a_pts), (int)(dts - a_dts));
 		a_pts = pts;
@@ -66,18 +79,28 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 	}
 	if (FLV_AUDIO_MP3 == codec)
 	{
-		mpeg_ts_write(ts, STREAM_AUDIO_MP3, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, ts_stream(ts, STREAM_AUDIO_MP3), 0, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
+	else if (FLV_VIDEO_H264)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;
-		mpeg_ts_write(ts, FLV_VIDEO_H264 == codec ? STREAM_VIDEO_H264 : STREAM_VIDEO_H265, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, ts_stream(ts, STREAM_VIDEO_H264), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
 
 		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
 		v_pts = pts;
 		v_dts = dts;
 	}
+    else if (FLV_VIDEO_H265 == codec)
+    {
+        assert(0 == v_dts || dts >= v_dts);
+        dts = (a_dts && dts < v_dts) ? v_dts : dts;
+        mpeg_ts_write(ts, ts_stream(ts, STREAM_VIDEO_H265), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
+
+        printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
+        v_pts = pts;
+        v_dts = dts;
+    }
 	else
 	{
 		// nothing to do
@@ -99,7 +122,7 @@ void flv2ts_test(const char* inputFLV, const char* outputTS)
 	void* reader = flv_reader_create(inputFLV);
 	flv_demuxer_t* flv = flv_demuxer_create(onFLV, ts);
 
-	int type, r = 0;
+    int type, r = 0;
 	uint32_t timestamp;
 	static unsigned char s_packet[8 * 1024 * 1024];
 	while ((r = flv_reader_read(reader, &type, &timestamp, s_packet, sizeof(s_packet))) > 0)

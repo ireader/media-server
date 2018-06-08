@@ -23,46 +23,50 @@ enum
 	STREAM_AUDIO_SVAC	= 0x9B,
 };
 
-struct mpeg_ps_func_t
+struct ps_muxer_func_t
 {
 	/// alloc new packet
-	/// @param[in] param user-defined parameter(by mpeg_ps_create)
+	/// @param[in] param user-defined parameter(by ps_muxer_create)
 	/// @param[in] bytes alloc memory size in byte
 	/// @return memory pointer
 	void* (*alloc)(void* param, size_t bytes);
 
 	/// free packet
-	/// @param[in] param user-defined parameter(by mpeg_ps_create)
+	/// @param[in] param user-defined parameter(by ps_muxer_create)
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	void (*free)(void* param, void* packet);
 
 	/// callback on PS packet done
-	/// @param[in] param user-defined parameter(by mpeg_ps_create)
-	/// @param[in] avtype STREAM_VIDEO_XXX/STREAM_AUDIO_XXX
+	/// @param[in] param user-defined parameter(by ps_muxer_create)
+	/// @param[in] stream stream id, return by ps_muxer_add_stream
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	/// @param[in] bytes packet size
-	void (*write)(void* param, int avtype, void* packet, size_t bytes);
+	void (*write)(void* param, int stream, void* packet, size_t bytes);
 };
 
-void* mpeg_ps_create(const struct mpeg_ps_func_t *func, void* param);
-int mpeg_ps_destroy(void* ps);
-int mpeg_ps_add_stream(void* ps, int streamType, const void* info, size_t bytes);
-int mpeg_ps_reset(void* ps);
+struct ps_muxer_t;
+struct ps_muxer_t* ps_muxer_create(const struct ps_muxer_func_t *func, void* param);
+int ps_muxer_destroy(struct ps_muxer_t* muxer);
+int ps_muxer_add_stream(struct ps_muxer_t* muxer, int codecid, const void* extradata, size_t bytes);
 
 /// input ES
-/// @param[in] ps MPEG-2 Program Stream packer(mpeg_ps_create)
-/// @param[in] streamType such as: STREAM_VIDEO_H264/STREAM_AUDIO_AAC
+/// @param[in] muxer MPEG-2 Program Stream packer(ps_muxer_create)
+/// @param[in] stream stream id, return by ps_muxer_add_stream
+/// @param[in] flags 0x0001 key frame
 /// @param[in] pts presentation time stamp(in 90KHZ)
 /// @param[in] dts decoding time stamp(in 90KHZ)
 /// @param[in] data ES memory
 /// @param[in] bytes ES length in byte
 /// @return 0-ok, ENOMEM-alloc failed, <0-error
-int mpeg_ps_write(void* ps, int streamType, int64_t pts, int64_t dts, const void* data, size_t bytes);
+int ps_muxer_input(struct ps_muxer_t* muxer, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 
-void* mpeg_ps_unpacker_create(struct mpeg_ps_func_t *func, void* param);
-int mpeg_ps_unpacker_destroy(void* unpacker);
-size_t mpeg_ps_unpacker_input(void* unpacker, const uint8_t* data, size_t bytes);
+typedef void (*ps_dumuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+
+struct ps_demuxer_t; 
+struct ps_demuxer_t* ps_demuxer_create(ps_dumuxer_onpacket onpacket, void* param);
+int ps_demuxer_destroy(struct ps_demuxer_t* demuxer);
+size_t ps_demuxer_input(struct ps_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
 
 #ifdef __cplusplus
 }

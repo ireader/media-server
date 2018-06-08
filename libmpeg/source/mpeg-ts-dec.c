@@ -7,36 +7,19 @@
 #include "mpeg-pes-proto.h"
 #include "mpeg-util.h"
 #include "mpeg-ts.h"
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 
-struct mpeg_ts_handler_t
-{
-	void(*handler)();
-};
-
-typedef struct _mpeg_ts_dec_context_t
+struct ts_demuxer_t
 {
     struct pat_t pat;
-	struct mpeg_ts_handler_t handlers[0x1fff + 1]; // TODO: setup PID handler
 
-    struct
-    {
-        int flags;
-        int codecid;
-        
-        int64_t pts;
-        int64_t dts;
-
-        uint8_t data[2*1024*1024];
-        size_t size;
-    } video, audio;
-
-	uint8_t payload[4 * 1024 * 1024]; // TODO: need more payload buffer!!!
-} mpeg_ts_dec_context_t;
-
-static mpeg_ts_dec_context_t tsctx;
+    ts_dumuxer_onpacket onpacket;
+    void* param;
+};
 
 static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const uint8_t* data, size_t bytes)
 {
@@ -136,147 +119,39 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-static uint8_t s_video[2*1024*1024];
-static uint8_t s_audio[1024*1024];
-
-static int mpeg_ts_packet_submit(struct pes_t* pes, onpacket handler, void* param)
+size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
-    const uint8_t* p = pes->pkt.data;
-
-    if (PSI_STREAM_H264 == pes->codecid)
+    uint32_t i, j;
+    for (i = 0; i < ts->pat.pmt_count; i++)
     {
-        if (tsctx.video.size > 0)
+        for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
         {
-            int aud = find_h264_access_unit_delimiter(pes->pkt.data, pes->pkt.size);
-            if (-1 != aud)
+            struct pes_t* pes = &ts->pat.pmts[i].streams[j];
+            if (pes->pkt.size < 5)
+                continue;
+            
+            if (PSI_STREAM_H264 == pes->codecid)
             {
-                p += aud;
-
-                // only one AUD
-                assert(-1 == find_h264_access_unit_delimiter(pes->pkt.data + aud + 4, pes->pkt.size - aud - 4));
-
-                // merge data
-                memcpy(tsctx.video.data + tsctx.video.size, pes->pkt.data, aud);
-                tsctx.video.size += aud;
-
-                //assert(0 == pes->len || pes->payload.len == pes->len);
-                aud = find_h264_access_unit_delimiter(tsctx.video.data, tsctx.video.size);
-                assert(0 == aud);
-                assert(-1 == find_h264_access_unit_delimiter(tsctx.video.data + aud + 4, tsctx.video.size - aud - 4));
-
-                // filter 0x09 AUD
-                aud += 4 + h264_find_nalu(tsctx.video.data + aud + 4, tsctx.video.size - aud - 4);
-                handler(param, tsctx.video.codecid, tsctx.video.pts, tsctx.video.dts, tsctx.video.data + aud, tsctx.video.size - aud);
+                const uint8_t aud[] = {0,0,0,1,0x09,0xf0};
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), ts->onpacket, ts->param);
+            }
+            else if (PSI_STREAM_H265 == pes->codecid)
+            {
+                const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), ts->onpacket, ts->param);
             }
             else
             {
-                //assert(0);
-                memcpy(tsctx.video.data + tsctx.video.size, pes->pkt.data, pes->pkt.size);
-                tsctx.video.size += pes->pkt.size;
-                return 0;
+                assert(0);
             }
         }
-
-        // copy new data
-        tsctx.video.pts = pes->pts;
-        tsctx.video.dts = pes->dts;
-        tsctx.video.codecid = pes->codecid;
-        tsctx.video.flags = pes->data_alignment_indicator ? 1 : 0;
-        tsctx.video.size = pes->pkt.size - (p - pes->pkt.data);
-        memcpy(tsctx.video.data, p, tsctx.video.size);
-        assert(0 == find_h264_access_unit_delimiter(tsctx.video.data, tsctx.video.size)); // start with AUD
-    }
-    else if (PSI_STREAM_H265 == pes->codecid)
-    {
-        if (tsctx.video.size > 0)
-        {
-            int aud = find_h265_access_unit_delimiter(pes->pkt.data, pes->pkt.size);
-            if (-1 != aud)
-            {
-                p += aud;
-
-                // only one AUD
-                assert(-1 == find_h265_access_unit_delimiter(pes->pkt.data + aud + 4, pes->pkt.size - aud - 4));
-
-                // merge data
-                memcpy(tsctx.video.data + tsctx.video.size, pes->pkt.data, aud);
-                tsctx.video.size += aud;
-
-                //assert(0 == pes->len || pes->payload.len == pes->len);
-                aud = find_h265_access_unit_delimiter(tsctx.video.data, tsctx.video.size);
-                assert(0 == aud);
-                assert(-1 == find_h265_access_unit_delimiter(tsctx.video.data + aud + 4, tsctx.video.size - aud - 4));
-
-                // filter AUD
-                aud += 4 + h264_find_nalu(tsctx.video.data + aud + 4, tsctx.video.size - aud - 4);
-                handler(param, tsctx.video.codecid, tsctx.video.pts, tsctx.video.dts, tsctx.video.data + aud, tsctx.video.size - aud);
-
-                // copy new data
-                tsctx.video.size = pes->pkt.size - aud;
-                memcpy(tsctx.video.data, pes->pkt.data + aud, pes->pkt.size - aud);
-            }
-            else
-            {
-                //assert(0);
-                memcpy(tsctx.video.data + tsctx.video.size, pes->pkt.data, pes->pkt.size);
-                tsctx.video.size += pes->pkt.size;
-                return 0;
-            }
-        }
-
-        // copy new data
-        tsctx.video.pts = pes->pts;
-        tsctx.video.dts = pes->dts;
-        tsctx.video.codecid = pes->codecid;
-        tsctx.video.flags = pes->data_alignment_indicator ? 1 : 0;
-        tsctx.video.size = pes->pkt.size - (p - pes->pkt.data);
-        memcpy(tsctx.video.data, p, tsctx.video.size);
-        assert(0 == find_h264_access_unit_delimiter(tsctx.video.data, tsctx.video.size)); // start with AUD
-    }
-    else
-    {
-        handler(param, pes->codecid, pes->pts, pes->dts, pes->pkt.data, pes->pkt.size);
     }
     return 0;
 }
 
-int mpeg_ts_packet_flush(onpacket handler, void* param)
+size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
-    int aud, next;
-    uint32_t j, k;
-    for (j = 0; j < tsctx.pat.pmt_count; j++)
-    {
-        for (k = 0; k < tsctx.pat.pmts[j].stream_count; k++)
-        {
-            struct pes_t* pes = &tsctx.pat.pmts[j].streams[k];
-            if (pes->pkt.size > 0)
-            {
-                mpeg_ts_packet_submit(pes, handler, param);
-                pes->pkt.size = 0;
-            }
-        }
-    }
-
-    if (tsctx.video.size < 1)
-        return 0;
-
-    if (PSI_STREAM_H264 == tsctx.video.codecid)
-    {
-        aud = find_h264_access_unit_delimiter(tsctx.video.data, tsctx.video.size);
-        assert(0 == aud);
-
-        next = find_h264_access_unit_delimiter(tsctx.video.data + 4, tsctx.video.size - 4);
-        assert(-1 == next);
-
-        // filter 0x09 AUD
-        aud += 4 + h264_find_nalu(tsctx.video.data + aud + 4, tsctx.video.size - aud - 4);
-        handler(param, tsctx.video.codecid, tsctx.video.pts, tsctx.video.dts, tsctx.video.data + aud, tsctx.video.size - aud);
-    }
-    return 0;
-}
-
-int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void* param)
-{
+    int r = 0;
     uint32_t i, j, k;
 	uint32_t PID;
     struct ts_packet_header_t pkhd;
@@ -320,57 +195,37 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void
 			if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 				i += 1; // pointer 0x00
 
-			pat_read(&tsctx.pat, data + i, bytes - i);
+			pat_read(&ts->pat, data + i, bytes - i);
 		}
 		else
 		{
-			for(j = 0; j < tsctx.pat.pmt_count; j++)
+			for(j = 0; j < ts->pat.pmt_count; j++)
 			{
-				if(PID == tsctx.pat.pmts[j].pid)
+				if(PID == ts->pat.pmts[j].pid)
 				{
 					if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 						i += 1; // pointer 0x00
 
-					pmt_read(&tsctx.pat.pmts[j], data + i, bytes - i);
+					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
 					break;
 				}
 				else
 				{
-					for (k = 0; k < tsctx.pat.pmts[j].stream_count; k++)
+					for (k = 0; k < ts->pat.pmts[j].stream_count; k++)
 					{
-                        struct pes_t* pes = &tsctx.pat.pmts[j].streams[k];
+                        struct pes_t* pes = &ts->pat.pmts[j].streams[k];
 						if (PID != pes->pid)
                             continue;
 
                         if (TS_PAYLOAD_UNIT_START_INDICATOR(data))
                         {
                             size_t n;
-
-                            if (pes->pkt.size > 0)
-                            {
-                                mpeg_ts_packet_submit(pes, handler, param);
-                                pes->pkt.size = 0;
-                            }
-
                             n = pes_read_header(pes, data + i, bytes - i);
                             assert(n > 0);
                             i += n;
 						}
 
-                        if (!pes->pkt.data)
-                            pes->pkt.data = (0xE0 == (pes->sid & 0xE0)) ? s_video : s_audio;
-
-                        memcpy(pes->pkt.data + pes->pkt.size, data + i, bytes - i);
-                        pes->pkt.size += bytes - i;
-
-                        if (pes->pkt.size >= pes->len && pes->len > 0)
-                        {
-                            assert(pes->pkt.size == pes->len);
-                            pes->pkt.size = pes->len; // why???
-                            mpeg_ts_packet_submit(pes, handler, param);
-                            pes->pkt.size = 0;
-                        }
-
+                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, ts->onpacket, ts->param);
                         break; // find stream
 					}
 				} // PMT handler
@@ -378,7 +233,7 @@ int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void
 		} // PAT handler
 	}
 
-	return 0;
+	return r;
 }
 
 static inline int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
@@ -400,4 +255,35 @@ static inline int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
 	}
 
 	return (payload_unit_start_indicator && pkhd.adaptation.random_access_indicator) ? 1 : 0;
+}
+
+struct ts_demuxer_t* ts_demuxer_create(ts_dumuxer_onpacket onpacket, void* param)
+{
+    struct ts_demuxer_t* ts;
+    ts = calloc(1, sizeof(struct ts_demuxer_t));
+    if (!ts)
+        return NULL;
+
+    ts->onpacket = onpacket;
+    ts->param = param;
+    return ts;
+}
+
+int ts_demuxer_destroy(struct ts_demuxer_t* ts)
+{
+    size_t i, j;
+    struct pes_t* pes;
+    for (i = 0; i < ts->pat.pmt_count; i++)
+    {
+        for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
+        {
+            pes = &ts->pat.pmts[i].streams[j];
+            if (pes->pkt.data)
+                free(pes->pkt.data);
+            pes->pkt.data = NULL;
+        }
+    }
+
+    free(ts);
+    return 0;
 }

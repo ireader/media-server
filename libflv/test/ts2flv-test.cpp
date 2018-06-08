@@ -10,7 +10,7 @@ static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, ui
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void ts_packet(void* param, int avtype, int64_t pts, int64_t dts, void* data, size_t bytes)
+static void on_ts_packet(void* param, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static int64_t s_pts = 0;
 	if (0 == s_pts)
@@ -44,10 +44,13 @@ void ts2flv_test(const char* inputTS, const char* outputFLV)
 
 	unsigned char ptr[188];
 	FILE* fp = fopen(inputTS, "rb");
-	while (1 == fread(ptr, sizeof(ptr), 1, fp))
-	{
-		mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, m);
-	}
+    ts_demuxer_t *ts = ts_demuxer_create(on_ts_packet, m);
+    while (1 == fread(ptr, sizeof(ptr), 1, fp))
+    {
+        ts_demuxer_input(ts, ptr, sizeof(ptr));
+    }
+    ts_demuxer_flush(ts);
+    ts_demuxer_destroy(ts);
 	fclose(fp);
 
 	flv_muxer_destroy(m);

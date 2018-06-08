@@ -134,6 +134,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\mpeg-element-descriptor.c" />
+    <ClCompile Include="source\mpeg-pack-header.c" />
+    <ClCompile Include="source\mpeg-packet.c" />
     <ClCompile Include="source\mpeg-pat.c" />
     <ClCompile Include="source\mpeg-pes.c" />
     <ClCompile Include="source\mpeg-pmt.c" />
@@ -141,6 +143,7 @@
     <ClCompile Include="source\mpeg-ps-enc.c" />
     <ClCompile Include="source\mpeg-psd.c" />
     <ClCompile Include="source\mpeg-psm.c" />
+    <ClCompile Include="source\mpeg-system-header.c" />
     <ClCompile Include="source\mpeg-ts-dec.c" />
     <ClCompile Include="source\mpeg-ts-enc.c" />
     <ClCompile Include="source\mpeg-ts-h264.c" />

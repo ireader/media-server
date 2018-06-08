@@ -21,7 +21,7 @@ inline const char* ftimestamp(int64_t t, char* buf)
 	return buf;
 }
 
-static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static void on_ts_packet(void* /*param*/, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static char s_pts[64], s_dts[64];
 
@@ -31,7 +31,7 @@ static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, con
         if (PTS_NO_VALUE == dts)
             dts = pts;
 		//assert(0 == a_dts || dts >= a_dts);
-		printf("[A] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
+		printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
 		a_pts = pts;
 		a_dts = dts;
 
@@ -41,7 +41,7 @@ static void ts_packet(void* /*param*/, int avtype, int64_t pts, int64_t dts, con
 	{
 		static int64_t v_pts = 0, v_dts = 0;
 		assert(0 == v_dts || dts >= v_dts);
-		printf("[V] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90);
+		printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, flags ? " [I]":"");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -59,12 +59,14 @@ void mpeg_ts_dec_test(const char* file)
 	FILE* fp = fopen(file, "rb");
 	vfp = fopen("v.h264", "wb");
 	afp = fopen("a.aac", "wb");
-
+    
+    ts_demuxer_t *ts = ts_demuxer_create(on_ts_packet, NULL);
 	while (1 == fread(ptr, sizeof(ptr), 1, fp))
 	{
-        mpeg_ts_packet_dec(ptr, sizeof(ptr), ts_packet, NULL);
+        ts_demuxer_input(ts, ptr, sizeof(ptr));
 	}
-    mpeg_ts_packet_flush(ts_packet, NULL);
+    ts_demuxer_flush(ts);
+    ts_demuxer_destroy(ts);
 
 	fclose(fp);
 	fclose(vfp);

@@ -44,6 +44,19 @@ enum EPES_STREAM_ID
 	PES_SID_PSD			= 0xFF, // program_stream_directory
 };
 
+struct packet_t
+{
+    uint8_t sid;
+    uint8_t codecid;
+
+    int flags;
+    int64_t pts;
+    int64_t dts;
+    uint8_t *data;
+    size_t size;
+    size_t capacity;
+};
+
 struct pes_t
 {
 	uint16_t pid;		// PES PID : 13
@@ -97,13 +110,13 @@ struct pes_t
 
 	//uint32_t pack_field_length : 8;
 
-    struct {
-        uint8_t *data;
-        size_t size;
-    } pkt;
+    struct packet_t pkt;
 };
 
 size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes);
 size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes);
+
+typedef void (*pes_packet_handler)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, pes_packet_handler handler, void* param);
 
 #endif /* !_mpeg_pes_dec_h_ */

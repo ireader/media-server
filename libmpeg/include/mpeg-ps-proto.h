@@ -9,7 +9,7 @@
 
 #define SEQUENCE_END_CODE		(0x000001B7)
 
-struct ps_packet_header_t
+struct ps_pack_header_t
 {
 	int64_t system_clock_reference_base;
 	uint32_t system_clock_reference_extension;
@@ -72,5 +72,10 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes);
 size_t psm_write(const struct psm_t *psm, uint8_t *data);
 
 size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes);
+
+size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t bytes);
+size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, size_t bytes);
+size_t pack_header_write(const struct ps_pack_header_t *h, uint8_t *data);
+size_t system_header_write(const struct ps_system_header_t *h, uint8_t *data);
 
 #endif /* !_mpeg_ps_proto_h_ */

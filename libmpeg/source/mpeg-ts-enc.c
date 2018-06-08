@@ -84,7 +84,7 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
 	return 0;
 }
 
-static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, struct pes_t *stream, const uint8_t* payload, size_t bytes)
+static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, struct pes_t *stream, const uint8_t* payload, size_t bytes)
 {
 	// 2.4.3.6 PES packet
 	// Table 2-21
@@ -113,7 +113,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, struct pes_t *stream, cons
 		// 2.7.2 Frequency of coding the program clock reference
 		// http://www.bretl.com/mpeghtml/SCR.HTM
 		// the maximum between PCRs is 100ms.  
-		if(start && stream->pid == tsctx->pat.pmts[0].PCR_PID)
+		if(start && stream->pid == pmt->PCR_PID)
 		{
 			data[3] |= 0x20; // +AF
 			data[5] |= AF_FLAG_PCR; // +PCR_flag
@@ -171,7 +171,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, struct pes_t *stream, cons
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
 				nbo_w32(p, 0x00000001);
 				p[4] = 0x46; // 35-AUD_NUT
-				p[5] = 01;
+				p[5] = 0x01;
 				p[6] = 0x50; // B&P&I (0x2) + rbsp stop one bit
 				p += 7;
 			}
@@ -237,50 +237,52 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, struct pes_t *stream, cons
 	return 0;
 }
 
-int mpeg_ts_write(void* ts, int codecid, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static struct pes_t *mpeg_ts_find(mpeg_ts_enc_context_t *ts, int pid, struct pmt_t** pmt)
+{
+    size_t i, j;
+    struct pes_t* stream;
+
+    for (i = 0; i < ts->pat.pmt_count; i++)
+    {
+        *pmt = &ts->pat.pmts[i];
+        for (j = 0; j < (*pmt)->stream_count; j++)
+        {
+            stream = &(*pmt)->streams[j];
+            if (pid == (int)stream->pid)
+                return stream;
+        }
+    }
+
+    return NULL;
+}
+
+int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	size_t i, r;
+    struct pmt_t *pmt = NULL;
 	struct pes_t *stream = NULL;
 	mpeg_ts_enc_context_t *tsctx;
 
 	tsctx = (mpeg_ts_enc_context_t*)ts;
+    stream = mpeg_ts_find(tsctx, pid, &pmt);
+    if (NULL == stream)
+        return -ENOENT; // not found
 
-	// Elementary Stream
-	for (i = 0; i < tsctx->pat.pmts[0].stream_count; i++)
-	{
-		stream = &tsctx->pat.pmts[0].streams[i];
+    stream->pts = pts;
+    stream->dts = dts;
+    stream->data_alignment_indicator = flags ? 1 : 0; // idr frame
 
-		// enable audio stream type change (AAC -> MP3)
-		if (PES_SID_AUDIO == stream->sid 
-			&& (PSI_STREAM_AAC == codecid || PSI_STREAM_MP3 == codecid)
-			&& codecid != stream->codecid)
-		{
-			stream->codecid = (uint8_t)codecid;
-			mpeg_ts_reset(tsctx);
-		}
+    // set PCR_PID
+    assert(1 == tsctx->pat.pmt_count);
+    if (0x1FFF == pmt->PCR_PID || (PES_SID_VIDEO == (stream->sid & PES_SID_VIDEO) && pmt->PCR_PID != stream->pid))
+    {
+        pmt->PCR_PID = stream->pid;
+        tsctx->pat_period = 0;
+    }
 
-		if (codecid == (int)stream->codecid)
-		{
-            int keyframe = 0;
-            keyframe = (PSI_STREAM_H264 == stream->codecid && find_h264_keyframe(data, bytes)) ||
-                (PSI_STREAM_H265 == stream->codecid && find_h265_keyframe(data, bytes));
-            stream->data_alignment_indicator = keyframe ? 1 : 0;
-			stream->pts = pts;
-			stream->dts = dts;
-
-			if (0x1FFF == tsctx->pat.pmts[0].PCR_PID 
-				|| (0xE0 == (tsctx->pat.pmts[0].streams[i].sid&PES_SID_VIDEO) && tsctx->pat.pmts[0].PCR_PID != tsctx->pat.pmts[0].streams[i].pid))
-			{
-				tsctx->pat.pmts[0].PCR_PID = tsctx->pat.pmts[0].streams[i].pid;
-				tsctx->pat_period = 0;
-			}
-
-			if (tsctx->pat.pmts[0].PCR_PID == tsctx->pat.pmts[0].streams[i].pid)
-				++tsctx->pcr_clock;
-			break;
-		}
-	}
-
+    if (pmt->PCR_PID == stream->pid)
+        ++tsctx->pcr_clock;
+    
 	if(0 == tsctx->pat_period)
 	{
 		// PAT(program_association_section)
@@ -297,7 +299,7 @@ int mpeg_ts_write(void* ts, int codecid, int64_t pts, int64_t dts, const void* d
 
 	tsctx->pat_period = (tsctx->pat_period + 1) % 200;
 
-	ts_write_pes(tsctx, stream, data, bytes);
+	ts_write_pes(tsctx, pmt, stream, data, bytes);
 	return 0;
 }
 
@@ -325,13 +327,13 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
     tsctx->pat.pmts[0].pminfo = NULL;
     tsctx->pat.pmts[0].PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
 
-    tsctx->pat.pmts[0].stream_count = 2; // H.264 + AAC
-    tsctx->pat.pmts[0].streams[0].pid = 0x101;
-	tsctx->pat.pmts[0].streams[0].sid = PES_SID_AUDIO;
-	tsctx->pat.pmts[0].streams[0].codecid = PSI_STREAM_AAC;
-    tsctx->pat.pmts[0].streams[1].pid = 0x102;
-    tsctx->pat.pmts[0].streams[1].sid = PES_SID_VIDEO;
-	tsctx->pat.pmts[0].streams[1].codecid = PSI_STREAM_H264;
+ //   tsctx->pat.pmts[0].stream_count = 2; // H.264 + AAC
+ //   tsctx->pat.pmts[0].streams[0].pid = 0x101;
+	//tsctx->pat.pmts[0].streams[0].sid = PES_SID_AUDIO;
+	//tsctx->pat.pmts[0].streams[0].codecid = PSI_STREAM_AAC;
+ //   tsctx->pat.pmts[0].streams[1].pid = 0x102;
+ //   tsctx->pat.pmts[0].streams[1].sid = PES_SID_VIDEO;
+	//tsctx->pat.pmts[0].streams[1].codecid = PSI_STREAM_H264;
 
 	memcpy(&tsctx->func, func, sizeof(tsctx->func));
 	tsctx->param = param;
@@ -383,43 +385,26 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extra_data, size_t ext
 
     stream = &pmt->streams[pmt->stream_count];
     stream->codecid = (uint8_t)codecid;
-    stream->pid = (uint16_t)(TS_PID_USER + pmt->stream_count);
+    stream->pid = (uint16_t)(0x101 + pmt->stream_count);
     stream->esinfo_len = 0;
     stream->esinfo = NULL;
 
     // stream id
     // Table 2-22 ¨C Stream_id assignments
-    switch (codecid)
+    if (mpeg_stream_type_video(codecid))
     {
-    case PSI_STREAM_H264:
-    case PSI_STREAM_H265:
-    case PSI_STREAM_MPEG1:
-    case PSI_STREAM_MPEG2:
-    case PSI_STREAM_MPEG4:
-    case PSI_STREAM_VIDEO_VC1:
-    case PSI_STREAM_VIDEO_SVAC:
-    case PSI_STREAM_VIDEO_DIRAC:
         // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
         // or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
         stream->sid = PES_SID_VIDEO;
-        break;
-
-    case PSI_STREAM_AAC: // with ADTS
-    case PSI_STREAM_MPEG4_AAC: // AAC raw stream
-    case PSI_STREAM_MPEG4_AAC_LATM:
-    case PSI_STREAM_AUDIO_MPEG1: // mp1/mp2
-    case PSI_STREAM_MP3:
-    case PSI_STREAM_AUDIO_AC3:
-    case PSI_STREAM_AUDIO_SVAC:
-    case PSI_STREAM_AUDIO_G711:
-    case PSI_STREAM_AUDIO_G722:
-    case PSI_STREAM_AUDIO_G723:
-    case PSI_STREAM_AUDIO_G729:
+    }
+    else if (mpeg_stream_type_audio(codecid))
+    {
         // ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
         // audio stream number
         stream->sid = PES_SID_AUDIO;
-
-    default:
+    }
+    else
+    {
         // private_stream_1
         stream->sid = PES_SID_PRIVATE_1;
     }
@@ -436,5 +421,5 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extra_data, size_t ext
     pmt->stream_count++;
     pmt->ver = (pmt->ver + 1) % 32;
     mpeg_ts_reset(ts); // immediate update pat/pmt
-    return stream->pid - TS_PID_USER;
+    return stream->pid;
 }

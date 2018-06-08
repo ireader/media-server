@@ -46,10 +46,10 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
         i += 5;
     }
-    else
-    {
-        pes->pts = PTS_NO_VALUE;
-    }
+    //else
+    //{
+    //    pes->pts = PTS_NO_VALUE;
+    //}
 
     if (0x01 & pes->PTS_DTS_flags)
     {
@@ -57,10 +57,15 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
         pes->dts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
         i += 5;
     }
-    else
+    else if(0x02 & pes->PTS_DTS_flags)
     {
-        pes->dts = PTS_NO_VALUE;
+        // has pts
+        pes->dts = pes->pts;
     }
+    //else
+    //{
+    //    pes->dts = PTS_NO_VALUE;
+    //}
 
     if (pes->ESCR_flag)
     {

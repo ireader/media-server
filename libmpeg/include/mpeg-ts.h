@@ -29,16 +29,18 @@ struct mpeg_ts_func_t
 };
 
 void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param);
-
 int mpeg_ts_destroy(void* ts);
-
-int mpeg_ts_write(void* ts, int streamId, int64_t pts, int64_t dts, const void* data, size_t bytes);
-
+int mpeg_ts_add_stream(void* ts, int codecid, const void* extradata, size_t extradata_size);
+int mpeg_ts_write(void* ts, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 int mpeg_ts_reset(void* ts);
 
-typedef void (*onpacket)(void* param, int avtype, int64_t pts, int64_t dts, const void* data, size_t bytes);
-int mpeg_ts_packet_dec(const uint8_t* data, size_t bytes, onpacket handler, void* param);
-int mpeg_ts_packet_flush(onpacket handler, void* param);
+typedef void (*ts_dumuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+
+struct ts_demuxer_t;
+struct ts_demuxer_t* ts_demuxer_create(ts_dumuxer_onpacket onpacket, void* param);
+int ts_demuxer_destroy(struct ts_demuxer_t* demuxer);
+size_t ts_demuxer_input(struct ts_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
+size_t ts_demuxer_flush(struct ts_demuxer_t* demuxer);
 
 #ifdef __cplusplus
 }
