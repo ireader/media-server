@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #define PCR_DELAY			0 //(700 * 90) // 700ms
+#define PAT_PERIOD			(500 * 90) // 500ms
 
 #define TS_HEADER_LEN		4 // 1-bytes sync byte + 2-bytes PID + 1-byte CC
 #define PES_HEADER_LEN		6 // 3-bytes packet_start_code_prefix + 1-byte stream_id + 2-bytes PES_packet_length
@@ -25,7 +26,7 @@ typedef struct _mpeg_ts_enc_context_t
 {
     struct pat_t pat;
 
-	unsigned int pat_period;
+	int64_t pat_period;
 	int64_t pcr_period;
 	int64_t pcr_clock; // last pcr time
 
@@ -280,11 +281,13 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
         tsctx->pat_period = 0;
     }
 
-    if (pmt->PCR_PID == stream->pid)
-        ++tsctx->pcr_clock;
-    
-	if(0 == tsctx->pat_period)
+	if (pmt->PCR_PID == stream->pid)
+		++tsctx->pcr_clock;
+
+	if(0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts)
 	{
+		tsctx->pat_period = dts;
+
 		// PAT(program_association_section)
 		r = pat_write(&tsctx->pat, tsctx->payload);
 		mpeg_ts_write_section_header(ts, PAT_TID_PAS, &tsctx->pat.cc, tsctx->payload, r); // PID = 0x00 program association table
@@ -296,8 +299,6 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 			mpeg_ts_write_section_header(ts, tsctx->pat.pmts[i].pid, &tsctx->pat.pmts[i].cc, tsctx->payload, r);
 		}
 	}
-
-	tsctx->pat_period = (tsctx->pat_period + 1) % 200;
 
 	ts_write_pes(tsctx, pmt, stream, data, bytes);
 	return 0;
@@ -327,12 +328,12 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
     tsctx->pat.pmts[0].pminfo = NULL;
     tsctx->pat.pmts[0].PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
 
- //   tsctx->pat.pmts[0].stream_count = 2; // H.264 + AAC
- //   tsctx->pat.pmts[0].streams[0].pid = 0x101;
+	//tsctx->pat.pmts[0].stream_count = 2; // H.264 + AAC
+	//tsctx->pat.pmts[0].streams[0].pid = 0x101;
 	//tsctx->pat.pmts[0].streams[0].sid = PES_SID_AUDIO;
 	//tsctx->pat.pmts[0].streams[0].codecid = PSI_STREAM_AAC;
- //   tsctx->pat.pmts[0].streams[1].pid = 0x102;
- //   tsctx->pat.pmts[0].streams[1].sid = PES_SID_VIDEO;
+	//tsctx->pat.pmts[0].streams[1].pid = 0x102;
+	//tsctx->pat.pmts[0].streams[1].sid = PES_SID_VIDEO;
 	//tsctx->pat.pmts[0].streams[1].codecid = PSI_STREAM_H264;
 
 	memcpy(&tsctx->func, func, sizeof(tsctx->func));

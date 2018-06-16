@@ -28,12 +28,30 @@ struct mpeg_ts_func_t
 	void (*write)(void* param, const void* packet, size_t bytes);
 };
 
+/// Create/Destroy MPEG2-TS muxer
 void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param);
 int mpeg_ts_destroy(void* ts);
+
+/// Add audio/video stream
+/// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
+/// @param[in] extradata audio/video decoder initialize parameter data, NULL for H.264/H.265/AAC
+/// @param[in] extradata_size extradata size in byte, 0 for 264/265/aac
+/// @return <=0-error, >0-audio/video stream id
 int mpeg_ts_add_stream(void* ts, int codecid, const void* extradata, size_t extradata_size);
+
+/// Muxer audio/video stream data
+/// @param[in] stream stream id by mpeg_ts_add_stream
+/// @param[in] flags 1-video IDR frame, 0-other
+/// @param[in] pts/dts audio/video stream timestamp in 90*ms
+/// @param[in] data H.264/H.265-AnnexB stream(include 00 00 00 01), AAC-ADTS stream
+/// @return 0-ok, other-error
 int mpeg_ts_write(void* ts, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+
+/// Reset PAT/PCR period
 int mpeg_ts_reset(void* ts);
 
+
+/// see more mpeg_ts_write
 typedef void (*ts_dumuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 struct ts_demuxer_t;
