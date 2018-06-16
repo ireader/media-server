@@ -80,23 +80,6 @@ static int mov_index_build(struct mov_track_t* track)
 	return 0;
 }
 
-static int mov_fragment_build(struct mov_track_t* track)
-{
-	size_t i, j;
-	for (i = 0; i < track->elst_count; i++)
-	{
-		if (-1 != track->elst[i].media_time)
-			continue;
-		
-		for (j = 0; j < track->sample_count; j++)
-		{
-			track->samples[j].dts += track->elst[i].segment_duration;
-			track->samples[j].pts += track->elst[i].segment_duration;
-		}
-	}
-	return 0;
-}
-
 // 8.3.1 Track Box (p31)
 // Box Type : ¡®trak¡¯ 
 // Container : Movie Box(¡®moov¡¯) 
@@ -332,7 +315,6 @@ static int mov_reader_init(struct mov_t* mov)
 	{
 		track = mov->tracks + i;
 		mov_index_build(track);
-		mov_fragment_build(track);
 		track->sample_offset = 0; // reset
 
 		// fragment mp4

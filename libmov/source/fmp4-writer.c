@@ -395,6 +395,8 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 		return -ENOMEM;
 	memcpy(sample->data, data, bytes);
 
+    if (INT64_MIN == track->start_dts)
+        track->start_dts = sample->dts;
 	writer->mdat_size += bytes; // update media data size
 	track->sample_count += 1;
 	return 0;

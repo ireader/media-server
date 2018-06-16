@@ -168,6 +168,7 @@ struct mov_track_t
 	size_t sample_offset; // sample_capacity
 
     int64_t tfdt_dts; // tfdt baseMediaDecodeTime
+    int64_t start_dts; // write fmp4 only
     uint64_t offset; // write only
 };
 
@@ -265,6 +266,7 @@ void mov_apply_stco(struct mov_track_t* track);
 void mov_apply_elst(struct mov_track_t *track);
 void mov_apply_stts(struct mov_track_t* track);
 void mov_apply_ctts(struct mov_track_t* track);
+void mov_apply_elst_tfdt(struct mov_track_t *track);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);
 

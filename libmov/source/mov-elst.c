@@ -52,6 +52,7 @@ size_t mov_write_elst(const struct mov_t* mov)
 	uint8_t version;
 	const struct mov_track_t* track = mov->track;
 
+    assert(track->start_dts == track->samples[0].dts);
 	version = track->tkhd.duration > UINT32_MAX ? 1 : 0;
 
     // in media time scale units, in composition time
@@ -117,6 +118,19 @@ void mov_apply_elst(struct mov_track_t *track)
         {
             track->samples[0].dts = track->elst[i].segment_duration;
             track->samples[0].pts = track->samples[0].dts;
+        }
+    }
+}
+
+void mov_apply_elst_tfdt(struct mov_track_t *track)
+{
+    size_t i;
+
+    for (i = 0; i < track->elst_count; i++)
+    {
+        if (-1 == track->elst[i].media_time)
+        {
+            track->tfdt_dts += track->elst[i].segment_duration;
         }
     }
 }

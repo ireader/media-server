@@ -1,5 +1,6 @@
 #include "mov-internal.h"
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -27,6 +28,7 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 		if (NULL == p) return ENOMEM;
 		track->samples = (struct mov_sample_t*)p;
 		track->sample_offset = track->sample_count + 2 * sample_count + 1;
+		memset(track->samples + track->sample_count,  0, sizeof(struct mov_sample_t) * (2 * sample_count + 1));
 	}
 
 	data_offset = track->tfhd.base_data_offset;
