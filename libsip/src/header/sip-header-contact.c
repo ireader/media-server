@@ -49,6 +49,8 @@ delta-seconds = 1*DIGIT
 */
 
 #include "sip-header.h"
+#include <stdlib.h>
+#include <ctype.h>
 
 static int sip_header_contact_item(const char* s, const char* end, struct sip_contact_t* c)
 {
@@ -112,6 +114,12 @@ static int sip_header_contact_item(const char* s, const char* end, struct sip_co
 
 		sip_header_param(s, p, &param);
 		r = sip_params_push(&c->params, &param);
+
+		if (0 == cstrcmp(&param.name, "tag"))
+		{
+			c->tag.p = param.value.p;
+			c->tag.n = param.value.n;
+		}
 	}
 
 	return 0;
@@ -141,6 +149,52 @@ int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* co
 	}
 
 	return r;
+}
+
+static int sip_nickname_check(const struct cstring_t* s)
+{
+	size_t i;
+	for (i = 0; i < s->n; i++)
+	{
+		if (!isalnum(s->p[i]))
+			return 0;
+	}
+	return 1;
+}
+
+// Alice <sip:alice@atlanta.com>;tag=1928301774
+int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end)
+{
+	int n;
+	char* p;
+
+	p = data;
+	if (c->nickname.p && c->nickname.n > 0)
+	{
+		if (sip_nickname_check(&c->nickname))
+		{
+			if (p < end) p += cstrcpy(&c->nickname, p, end - p);
+		}
+		else
+		{
+			if (p < end) *p++ = '\"';
+			if (p < end) p += cstrcpy(&c->nickname, p, end - p - 1);
+			if (p < end) *p++ = '\"';
+		}
+
+		if (p < end) *p++ = ' ';
+	}
+
+	if (p < end) *p++ = '<';
+	n = sip_uri_write(&c->uri, p, end);
+	if (n < 0) return n;
+	if (p < end) *p++ = '>';
+
+	n = sip_params_write(&c->params, p, end);
+	if (n < 0) return n;
+	p += n;
+	
+	return p - data;
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -180,6 +234,15 @@ void sip_header_contact_test(void)
 	
 	sip_contacts_init(&contacts);
 	s = "*";
+	sip_contacts_free(&contacts);
+
+	// TO/FROM
+	sip_contacts_init(&contacts);
+	s = "Alice <sip:alice@atlanta.com>;tag=1928301774";
+	assert(0 == sip_header_contact(s, s + strlen(s), &contacts) && 1 == sip_contacts_count(&contacts));
+	c = sip_contacts_get(&contacts, 0);
+	assert(0 == cstrcmp(&c->nickname, "Alice") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "alice@atlanta.com") && 0 == c->uri.headers.n && 0 == c->uri.parameters.n);
+	assert(1 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "tag") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "1928301774") && 0 == cstrcmp(&c->tag, "1928301774"));
 	sip_contacts_free(&contacts);
 }
 #endif

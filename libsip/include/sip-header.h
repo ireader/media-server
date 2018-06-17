@@ -87,11 +87,26 @@ struct sip_uri_t
 };
 DARRAY_DECLARE(sip_uri, 1);
 
+struct sip_requestline_t
+{
+	struct cstring_t method;
+	struct sip_uri_t uri;
+};
+
+struct sip_statusline_t
+{
+	int code;
+	struct cstring_t version;
+	struct cstring_t reason;
+};
+
 struct sip_contact_t
 {
 	struct sip_uri_t uri;
 	struct cstring_t nickname;
 	struct sip_params_t params;
+
+	struct cstring_t tag; // TO/FROM tag
 };
 DARRAY_DECLARE(sip_contact, 1);
 
@@ -105,11 +120,26 @@ struct sip_via_t
 };
 DARRAY_DECLARE(sip_via, 1);
 
-/// @return 0-ok, other-error
-int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
-int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* contacts);
-int sip_header_via(const char* s, const char* end, struct sip_vias_t* vias);
+struct sip_cseq_t
+{
+	uint32_t id;
+	struct cstring_t method;
+};
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
+int sip_param_write(const struct sip_param_t* param, char* data, const char* end);
+int sip_params_write(const struct sip_params_t* params, char* data, const char* end);
+
+/// @return 0-ok, other-error
+int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
+int sip_header_via(const char* s, const char* end, struct sip_vias_t* vias);
+int sip_header_cseq(const char* s, const char* end, struct sip_cseq_t* cseq);
+int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* contacts);
+
+/// @return <0-error, other-ok
+int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
+int sip_via_write(const struct sip_via_t* via, char* data, const char* end);
+int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end);
+int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);
 
 #endif /* !_sip_header_h_ */

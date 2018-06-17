@@ -110,6 +110,30 @@ int sip_header_via(const char* s, const char* end, struct sip_vias_t* vias)
 	return r;
 }
 
+// SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bK776asdhds
+int sip_via_write(const struct sip_via_t* via, char* data, const char* end)
+{
+	int n;
+	char* p;
+	if (!cstrvalid(&via->protocol) || !cstrvalid(&via->version) || !cstrvalid(&via->transport) || !cstrvalid(&via->host))
+		return -1;
+
+	p = data;
+	if (p < end) p += cstrcpy(&via->protocol, p, end - p);
+	if (p < end) *p++ = '/';
+	if (p < end) p += cstrcpy(&via->version, p, end - p);
+	if (p < end) *p++ = '/';
+	if (p < end) p += cstrcpy(&via->transport, p, end - p);
+	if (p < end) *p++ = ' ';
+	if (p < end) p += cstrcpy(&via->host, p, end - p);
+
+	n = sip_params_write(&via->params, p, end);
+	if (n < 0) return n;
+	p += n;
+
+	return p - data;
+}
+
 #if defined(DEBUG) || defined(_DEBUG)
 void sip_header_via_test(void)
 {

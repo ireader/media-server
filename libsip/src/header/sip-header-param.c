@@ -69,6 +69,41 @@ int sip_header_param_double(const struct sip_param_t* params, int n, const char*
 	return 0;
 }
 
+int sip_param_write(const struct sip_param_t* param, char* data, const char* end)
+{
+	char* p;
+	if (!cstrvalid(&param->name))
+		return -1;
+
+	p = data;
+	if (p < end) p += cstrcpy(&param->name, p, end - p);
+	
+	if (cstrvalid(&param->value))
+	{
+		if (p < end) *p++ = '=';
+		if (p < end) p += cstrcpy(&param->value, p, end - p);
+	}
+
+	return p - data;
+}
+
+int sip_params_write(const struct sip_params_t* params, char* data, const char* end)
+{
+	char* p;
+	int i, n;
+
+	p = data;
+	for (i = 0; i < sip_params_count((struct sip_params_t*)params) && p < end; i++)
+	{
+		*p++ = ';';
+		n = sip_param_write(sip_params_get((struct sip_params_t*)params, i), p, end);
+		if (n < 0) return n;
+		p += n;
+	}
+
+	return p - data;
+}
+
 #if defined(DEBUG) || defined(_DEBUG)
 void sip_header_param_test(void)
 {
