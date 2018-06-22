@@ -17,13 +17,13 @@ static int s_adapation_audio;
 static void mp4_onvideo(void* mpd, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes)
 {
 	s_track_video = track;
-	s_adapation_video = dash_mpd_add_video_adapation_set((dash_mpd_t*)mpd, "dash-static-video", object, width, height, extra, bytes);
+	s_adapation_video = dash_mpd_add_video_adaptation_set((dash_mpd_t*)mpd, "dash-static-video", object, width, height, extra, bytes);
 }
 
 static void mp4_onaudio(void* mpd, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes)
 {
 	s_track_audio = track;
-	s_adapation_audio = dash_mpd_add_audio_adapation_set((dash_mpd_t*)mpd, "dash-static-audio", object, channel_count, bit_per_sample, sample_rate, extra, bytes);
+	s_adapation_audio = dash_mpd_add_audio_adaptation_set((dash_mpd_t*)mpd, "dash-static-audio", object, channel_count, bit_per_sample, sample_rate, extra, bytes);
 }
 
 static void mp4_onread(void* mpd, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)

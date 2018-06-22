@@ -17,8 +17,8 @@ void dash_mpd_destroy(dash_mpd_t* mpd);
 
 /// @param[in] prefix dash adapation set name prefix
 /// @return >=0-adapation id, <0-error
-int dash_mpd_add_video_adapation_set(dash_mpd_t* mpd, const char* prefix, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
-int dash_mpd_add_audio_adapation_set(dash_mpd_t* mpd, const char* prefix, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
+int dash_mpd_add_video_adaptation_set(dash_mpd_t* mpd, const char* prefix, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size);
+int dash_mpd_add_audio_adaptation_set(dash_mpd_t* mpd, const char* prefix, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 
 /// @param[in] adapation create by dash_mpd_add_video_adapation_set/dash_mpd_add_audio_adapation_set
 int dash_mpd_input(dash_mpd_t* mpd, int adapation, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);

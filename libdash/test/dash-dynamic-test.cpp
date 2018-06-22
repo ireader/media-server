@@ -78,19 +78,19 @@ static int dash_live_onflv(void* param, int codec, const void* data, size_t byte
     {
     case FLV_VIDEO_AVCC:
         if (-1 == dash->adapation_video && mpeg4_avc_decoder_configuration_record_load((const uint8_t*)data, bytes, &avc) > 0)
-            dash->adapation_video = dash_mpd_add_video_adapation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_H264, dash->width, dash->height, data, bytes);
+            dash->adapation_video = dash_mpd_add_video_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_H264, dash->width, dash->height, data, bytes);
         break;
 
     case FLV_VIDEO_HVCC:
         if (-1 == dash->adapation_video && mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)data, bytes, &hevc) > 0)
-            dash->adapation_video = dash_mpd_add_video_adapation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_HEVC, dash->width, dash->height, data, bytes);
+            dash->adapation_video = dash_mpd_add_video_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_HEVC, dash->width, dash->height, data, bytes);
         break;
 
     case FLV_AUDIO_ASC:
         if (-1 == dash->adapation_audio && mpeg4_aac_audio_specific_config_load((const uint8_t*)data, bytes, &aac) > 0)
         {
             int rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
-            dash->adapation_audio = dash_mpd_add_audio_adapation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_AAC, aac.channel_configuration, 32, rate, data, bytes);
+            dash->adapation_audio = dash_mpd_add_audio_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_AAC, aac.channel_configuration, 32, rate, data, bytes);
         }
         break;
 

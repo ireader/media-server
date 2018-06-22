@@ -1,3 +1,15 @@
+// https://en.wikipedia.org/wiki/ISO_8601
+// Durations: 
+// 1. P[n]Y[n]M[n]DT[n]H[n]M[n]S
+// 2. P[n]W
+// 3. P<date>T<time>
+// 4. PYYYYMMDDThhmmss
+// 5. P[YYYY]-[MM]-[DD]T[hh]:[mm]:[ss]
+// For example, "P3Y6M4DT12H30M5S" represents a duration of "three years, six months, four days, twelve hours, thirty minutes, and five seconds".
+// "P23DT23H" and "P4Y" "P0.5Y" == "P0,5Y"
+// "PT0S" or "P0D"
+// "P0003-06-04T12:30:05"
+
 #include "dash-mpd.h"
 #include "dash-proto.h"
 #include "mov-format.h"
@@ -90,6 +102,34 @@ struct dash_mpd_t
 	int count; // adaptation set count
 	struct dash_adaptation_set_t tracks[N_TRACK];
 };
+
+/// @param[in] duration millisecond duration
+/// @param[out] data ISO8601 duration: P[n]Y[n]M[n]DT[n]H[n]M[n]S
+static int ISO8601Duration(int64_t duration, char* data, int size)
+{
+    int n = 1;
+    data[0] = 'P';
+    if (duration > 24 * 3600 * 1000)
+    {
+        n += snprintf(data + n, size - n, "%dD", (int)(duration / (24 * 3600 * 1000)));
+        duration %= 24 * 3600 * 1000;
+    }
+
+    data[n++] = 'T';
+    if (duration > 3600 * 1000)
+    {
+        n += snprintf(data + n, size - n, "%dH", (int)(duration / (3600 * 1000)));
+        duration %= 3600 * 1000;
+
+        n += snprintf(data + n, size - n, "%dM", (int)(duration / (60 * 1000)));
+        duration %= 60 * 1000;
+    }
+
+    n += snprintf(data + n, size - n, "%dS", (int)((duration + 999) / 1000));
+    duration %= 1000;
+
+    return n;
+}
 
 static int mov_buffer_read(void* param, void* data, uint64_t bytes)
 {
@@ -264,7 +304,7 @@ void dash_mpd_destroy(struct dash_mpd_t* mpd)
 	free(mpd);
 }
 
-int dash_mpd_add_video_adapation_set(struct dash_mpd_t* mpd, const char* prefix, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size)
+int dash_mpd_add_video_adaptation_set(struct dash_mpd_t* mpd, const char* prefix, uint8_t object, int width, int height, const void* extra_data, size_t extra_data_size)
 {
 	int r;
 	char name[N_NAME + 16];
@@ -312,7 +352,7 @@ int dash_mpd_add_video_adapation_set(struct dash_mpd_t* mpd, const char* prefix,
 	return 0 == r ? track->setid : r;
 }
 
-int dash_mpd_add_audio_adapation_set(struct dash_mpd_t* mpd, const char* prefix, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
+int dash_mpd_add_audio_adaptation_set(struct dash_mpd_t* mpd, const char* prefix, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
 {
 	int r;
 	char name[N_NAME + 16];
