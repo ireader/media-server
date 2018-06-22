@@ -87,9 +87,21 @@ private:
             case FLV_VIDEO_H264:
                 r = flv_muxer_avc((*it)->muxer, data, bytes, pts, dts);
                 break;
+            case FLV_VIDEO_H265:
+                r = flv_muxer_hevc((*it)->muxer, data, bytes, pts, dts);
+                break;
             case FLV_AUDIO_AAC:
                 r = flv_muxer_aac((*it)->muxer, data, bytes, pts, dts);
                 break;
+            case FLV_AUDIO_MP3:
+                r = flv_muxer_mp3((*it)->muxer, data, bytes, pts, dts);
+                break;
+
+            case FLV_VIDEO_AVCC:
+            case FLV_VIDEO_HVCC:
+            case FLV_AUDIO_ASC:
+                break; // ignore
+
             default:
                 assert(0);
             }

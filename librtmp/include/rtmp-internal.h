@@ -140,7 +140,8 @@ struct rtmp_t
 			int (*onconnect)(void* param);
 			int (*oncreate_stream)(void* param, double stream_id);
 			int (*onnotify)(void* param, enum rtmp_notify_t notify);
-			int (*onping)(void* param, uint32_t timestamp); // send pong
+            int (*oneof)(void* param, uint32_t stream_id); // EOF event
+			int (*onping)(void* param, uint32_t stream_id); // send pong
 			int (*onbandwidth)(void* param); // send window acknowledgement size
 		} client;
 	} u;

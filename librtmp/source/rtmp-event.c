@@ -117,10 +117,12 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 	switch (event)
 	{
 	case RTMP_EVENT_STREAM_BEGIN:
-	case RTMP_EVENT_STREAM_EOF:
 	case RTMP_EVENT_STREAM_DRY:
 	case RTMP_EVENT_STREAM_IS_RECORD:
 		return 6;
+
+    case RTMP_EVENT_STREAM_EOF:
+        rtmp->u.client.oneof(rtmp->param, streamId);
 
 	case RTMP_EVENT_SET_BUFFER_LENGTH:
 		if (header->length < 10) return 0;

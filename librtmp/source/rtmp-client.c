@@ -270,6 +270,12 @@ static int rtmp_client_onnotify(void* param, enum rtmp_notify_t notify)
 	return 0;
 }
 
+static int rtmp_client_oneof(void* param, uint32_t streamId)
+{
+    (void)streamId;
+    return rtmp_client_onnotify(param, RTMP_NOTIFY_STOP);
+}
+
 static int rtmp_client_onping(void* param, uint32_t seqNo)
 {
 	int n, r;
@@ -356,6 +362,7 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->rtmp.u.client.oncreate_stream = rtmp_client_oncreate_stream;
 	ctx->rtmp.u.client.onnotify = rtmp_client_onnotify;
 	ctx->rtmp.u.client.onping = rtmp_client_onping;
+    ctx->rtmp.u.client.oneof = rtmp_client_oneof;
 	ctx->rtmp.u.client.onbandwidth = rtmp_client_onbandwidth;
 
 	snprintf(ctx->connect.app, sizeof(ctx->connect.app), "%s", appname);
