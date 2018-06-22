@@ -1,6 +1,7 @@
 #include "mov-internal.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 // stsd: Sample Description Box
@@ -313,6 +314,8 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entr
 {
 	size_t size;
 	uint64_t offset;
+    char compressorname[32];
+    memset(compressorname, 0, sizeof(compressorname));
 	assert(1 == entry->data_reference_index);
 
 	size = 8 /* Box */ + 8 /* SampleEntry */ + 70 /* VisualSampleEntry */;
@@ -338,8 +341,8 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entr
 	mov_buffer_w32(&mov->io, 0); /* reserved / Data size (= 0) */
 	mov_buffer_w16(&mov->io, 1); /* Frame count (= 1) */
 
-	mov_buffer_w8(&mov->io, 0 /*strlen(compressor_name)*/); /* compressorname */
-	mov_buffer_write(&mov->io, " ", 31); // fill empty
+	//mov_buffer_w8(&mov->io, 0 /*strlen(compressor_name)*/); /* compressorname */
+	mov_buffer_write(&mov->io, compressorname, 32); // fill empty
 
     // ISO/IEC 14496-15:2017 4.5 Template field used (19)
     // 0x18 - the video sequence is in color with no alpha
