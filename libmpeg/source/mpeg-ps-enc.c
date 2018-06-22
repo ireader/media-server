@@ -22,6 +22,7 @@ struct ps_muxer_t
     struct ps_pack_header_t pack;
     struct ps_system_header_t system;
     
+    int h264_h265_with_aud;
 	unsigned int psm_period;
 	unsigned int scr_period;
 
@@ -56,9 +57,11 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 
     stream = ps_stream_find(ps, streamid);
     if (NULL == stream) return -1; // not found
-    stream->data_alignment_indicator = flags ? 1 : 0;
+    stream->data_alignment_indicator = (flags & MPEG_FLAG_IDR_FRAME) ? 1 : 0; // idr frame
     stream->pts = pts;
     stream->dts = dts;
+
+    ps->h264_h265_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
 
 	// TODO: 
 	// 1. update packet header program_mux_rate
@@ -101,7 +104,7 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 
 		if(first)
 		{
-			if (PSI_STREAM_H264 == stream->codecid && -1 == find_h264_access_unit_delimiter(payload, bytes))
+			if (PSI_STREAM_H264 == stream->codecid && !ps->h264_h265_with_aud)
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -110,7 +113,7 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 				p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 				p += 6;
 			}
-			else if (PSI_STREAM_H265 == stream->codecid && -1 == find_h265_access_unit_delimiter(payload, bytes))
+			else if (PSI_STREAM_H265 == stream->codecid && !ps->h264_h265_with_aud)
 			{
 				// 2.17 Carriage of HEVC
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.

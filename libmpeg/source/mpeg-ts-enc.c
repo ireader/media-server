@@ -25,6 +25,7 @@
 typedef struct _mpeg_ts_enc_context_t
 {
     struct pat_t pat;
+    int h264_h265_with_aud;
 
 	int64_t pat_period;
 	int64_t pcr_period;
@@ -157,7 +158,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 
             p += pes_write_header(stream, header, bytes - (header - data));
 
-			if(PSI_STREAM_H264 == stream->codecid && -1 == find_h264_access_unit_delimiter(payload, bytes))
+			if(PSI_STREAM_H264 == stream->codecid && !tsctx->h264_h265_with_aud)
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -166,7 +167,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 				p[5] = 0xF0; // any slice type (0xe) + rbsp stop one bit
 				p += 6;
 			}
-			else if (PSI_STREAM_H265 == stream->codecid && -1 == find_h265_access_unit_delimiter(payload, bytes))
+			else if (PSI_STREAM_H265 == stream->codecid && !tsctx->h264_h265_with_aud)
 			{
 				// 2.17 Carriage of HEVC
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
@@ -271,7 +272,8 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 
     stream->pts = pts;
     stream->dts = dts;
-    stream->data_alignment_indicator = flags ? 1 : 0; // idr frame
+    stream->data_alignment_indicator = (flags & MPEG_FLAG_IDR_FRAME) ? 1 : 0; // idr frame
+    tsctx->h264_h265_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
 
     // set PCR_PID
     assert(1 == tsctx->pat.pmt_count);

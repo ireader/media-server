@@ -90,13 +90,13 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
             break;
 
 		// ffmpeg mpeg.c mpegps_read_pes_header
-		case 0x1c0:
-		case 0x1df:
-		case 0x1e0:
-		case 0x1ef:
-		case 0x1bd:
-		case 0x01fd:
-			break;
+		//case 0x1c0:
+		//case 0x1df:
+		//case 0x1e0:
+		//case 0x1ef:
+		//case 0x1bd:
+		//case 0x01fd:
+		//	break;
 
         default:
             pes = psm_fetch(&ps->psm, data[i+3]);

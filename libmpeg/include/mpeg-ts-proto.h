@@ -169,6 +169,12 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_AUDIO_G729		= 0x99,
 };
 
+enum
+{
+    MPEG_FLAG_IDR_FRAME          = 0x0001,
+    MPEG_FLAG_H264_H265_WITH_AUD = 0x8000,
+};
+
 size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
 size_t pat_write(const struct pat_t *pat, uint8_t *data);
 size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes);

@@ -41,7 +41,7 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extradata, size_t extr
 
 /// Muxer audio/video stream data
 /// @param[in] stream stream id by mpeg_ts_add_stream
-/// @param[in] flags 1-video IDR frame, 0-other
+/// @param[in] flags 0x0001-video IDR frame, 0x8000-H.264/H.265 with AUD
 /// @param[in] pts/dts audio/video stream timestamp in 90*ms
 /// @param[in] data H.264/H.265-AnnexB stream(include 00 00 00 01), AAC-ADTS stream
 /// @return 0-ok, other-error

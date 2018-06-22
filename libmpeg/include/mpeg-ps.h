@@ -52,7 +52,7 @@ int ps_muxer_add_stream(struct ps_muxer_t* muxer, int codecid, const void* extra
 /// input ES
 /// @param[in] muxer MPEG-2 Program Stream packer(ps_muxer_create)
 /// @param[in] stream stream id, return by ps_muxer_add_stream
-/// @param[in] flags 0x0001 key frame
+/// @param[in] 0x0001-video IDR frame, 0x8000-H.264/H.265 with AUD
 /// @param[in] pts presentation time stamp(in 90KHZ)
 /// @param[in] dts decoding time stamp(in 90KHZ)
 /// @param[in] data ES memory
