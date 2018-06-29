@@ -47,6 +47,8 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 
 int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes);
 
+int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t bytes);
+
 size_t hevc_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size);
 
 size_t hevc_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size);

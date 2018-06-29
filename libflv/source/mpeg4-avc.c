@@ -1,4 +1,5 @@
 #include "mpeg4-avc.h"
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -45,9 +46,10 @@ aligned(8) class AVCDecoderConfigurationRecord {
 */
 int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc)
 {
-	uint8_t i;
+    uint8_t i;
 	uint32_t j;
 	uint16_t len;
+    uint8_t *p, *end;
 	
 	if (bytes < 7) return -1;
 	assert(1 == data[0]);
@@ -64,22 +66,25 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	}
 
 	j = 6;
+    p = avc->data;
+    end = avc->data + sizeof(avc->data);
 	for (i = 0; i < avc->nb_sps && j + 2 < bytes; ++i)
 	{
 		len = (data[j] << 8) | data[j + 1];
-		if (len + j + 2 >= bytes // data length + sps length
-			|| len >= sizeof(avc->sps[i].data))
+		if (len + j + 2 >= bytes || p + len > end)
 		{
 			assert(0);
 			return -1;
 		}
 
-		memcpy(avc->sps[i].data, data + j + 2, len);
+		memcpy(p, data + j + 2, len);
+        avc->sps[i].data = p;
 		avc->sps[i].bytes = len;
 		j += len + 2;
+        p += len;
 	}
 
-	if (j+1 >= bytes || data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
+	if (j >= bytes || data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
 	{
 		assert(0);
 		return -1;
@@ -89,13 +94,17 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	for (i = 0; i < avc->nb_pps && j + 2 < bytes; i++)
 	{
 		len = (data[j] << 8) | data[j + 1];
-		if (len + j + 2 > bytes // data length + pps length
-			|| len >= sizeof(avc->pps[i].data))
-			return -1;
+        if (len + j + 2 > bytes || p + len > end)
+        {
+            assert(0);
+            return -1;
+        }
 
-		memcpy(avc->pps[i].data, data + j + 2, len);
+		memcpy(p, data + j + 2, len);
+        avc->pps[i].data = p;
 		avc->pps[i].bytes = len;
 		j += len + 2;
+        p += len;
 	}
 
 	return j;
@@ -208,6 +217,11 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 	return (int)k;
 }
 
+int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes)
+{
+    return snprintf(codecs, bytes, "avc1.%02x%02x%02x", avc->profile, avc->compatibility, avc->level);
+}
+
 #if defined(_DEBUG) || defined(DEBUG)
 void mpeg4_avc_test(void)
 {
@@ -229,6 +243,8 @@ void mpeg4_avc_test(void)
 	assert(4 == avc.nalu && 1 == avc.nb_sps && 1 == avc.nb_pps);
 	assert(sizeof(src) == mpeg4_avc_decoder_configuration_record_save(&avc, data, sizeof(data)));
 	assert(0 == memcmp(src, data, sizeof(src)));
+    mpeg4_avc_codecs(&avc, (char*)data, sizeof(data));
+    assert(0 == memcmp("avc1.42e01e", data, 11));
 
 	assert(sizeof(nalu) == mpeg4_avc_to_nalu(&avc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));

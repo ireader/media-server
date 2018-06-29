@@ -18,6 +18,7 @@
 struct mpeg4_handle_t
 {
 	struct mpeg4_avc_t* avc;
+    uint8_t* avcptr;
 	int errcode;
 
 	uint8_t* ptr;
@@ -80,16 +81,18 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 	switch (((unsigned char*)nalu)[0] & 0x1f)
 	{
 	case H264_NAL_SPS:
-		assert(bytes <= sizeof(mp4->avc->sps[mp4->avc->nb_sps].data));
-		if (bytes <= sizeof(mp4->avc->sps[mp4->avc->nb_sps].data)
+		if (mp4->avcptr + bytes <= mp4->avc->data + sizeof(mp4->avc->data)
 			&& mp4->avc->nb_sps < sizeof(mp4->avc->sps) / sizeof(mp4->avc->sps[0]))
 		{
+            mp4->avc->sps[mp4->avc->nb_sps].data = mp4->avcptr;
 			mp4->avc->sps[mp4->avc->nb_sps].bytes = (uint16_t)bytes;
 			memcpy(mp4->avc->sps[mp4->avc->nb_sps].data, nalu, bytes);
+            mp4->avcptr += bytes;
 			++mp4->avc->nb_sps;
 		}
 		else
 		{
+            assert(0);
 			mp4->errcode = -1;
 		}
 
@@ -102,16 +105,18 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 		break;
 
 	case H264_NAL_PPS:
-		assert(bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data));
-		if (bytes <= sizeof(mp4->avc->pps[mp4->avc->nb_pps].data)
+		if (mp4->avcptr + bytes <= mp4->avc->data + sizeof(mp4->avc->data)
 			&& mp4->avc->nb_pps < sizeof(mp4->avc->pps) / sizeof(mp4->avc->pps[0]))
 		{
+            mp4->avc->pps[mp4->avc->nb_pps].data = mp4->avcptr;
 			mp4->avc->pps[mp4->avc->nb_pps].bytes = (uint16_t)bytes;
 			memcpy(mp4->avc->pps[mp4->avc->nb_pps].data, nalu, bytes);
+            mp4->avcptr += bytes;
 			++mp4->avc->nb_pps;
 		}
 		else
 		{
+            assert(0);
 			mp4->errcode = -1;
 		}
 		break;
@@ -144,8 +149,9 @@ size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes
 {
 	struct mpeg4_handle_t h;
 	h.avc = avc;
-	h.ptr = (uint8_t*)out;
-	h.capacity = size;
+    h.avcptr = avc->data;
+    h.ptr = (uint8_t*)out;
+    h.capacity = size;
 	h.bytes = 0;
 	h.errcode = 0;
 	avc->chroma_format_idc = 0;
