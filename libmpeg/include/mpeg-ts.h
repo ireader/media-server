@@ -34,8 +34,8 @@ int mpeg_ts_destroy(void* ts);
 
 /// Add audio/video stream
 /// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
-/// @param[in] extradata audio/video decoder initialize parameter data, NULL for H.264/H.265/AAC
-/// @param[in] extradata_size extradata size in byte, 0 for 264/265/aac
+/// @param[in] extradata itu h.222.0 program and program element descriptors, NULL for H.264/H.265/AAC
+/// @param[in] extradata_size extradata size in byte
 /// @return <=0-error, >0-audio/video stream id
 int mpeg_ts_add_stream(void* ts, int codecid, const void* extradata, size_t extradata_size);
 
