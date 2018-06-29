@@ -7,6 +7,9 @@
 #include <string.h>
 #include <assert.h>
 
+#define RTMP_CHUNK_SIZE_MINIMUM 64
+#define RTMP_CHUNK_SIZE_MAXIMUM 0x800000
+
 /// 5.4.1. Set Chunk Size (1)
 /// @return 0-error, >0-ok
 static int rtmp_read_chunk_size(const uint8_t* out, size_t size, uint32_t *chunkSize)
@@ -14,7 +17,8 @@ static int rtmp_read_chunk_size(const uint8_t* out, size_t size, uint32_t *chunk
 	if (size >= 4)
 	{
 		be_read_uint32(out, chunkSize);
-		*chunkSize &= 0x7FFFFFFF;
+        if (*chunkSize < RTMP_CHUNK_SIZE_MINIMUM || *chunkSize > RTMP_CHUNK_SIZE_MAXIMUM)
+            return 0;
 		return 4;
 	}
 	return 0;
