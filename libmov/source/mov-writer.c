@@ -176,20 +176,31 @@ static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t
 
 	mov_buffer_seek(&mov->io, from);
 	mov_buffer_read(&mov->io, buffer[0], bytes);
+    mov_buffer_seek(&mov->io, to);
+    mov_buffer_read(&mov->io, buffer[1], bytes);
 
-	j = 1;
-	mov_buffer_seek(&mov->io, to);
+	j = 0;
 	for (i = to; i < from; i += bytes)
 	{
 		mov_buffer_seek(&mov->io, i);
-		mov_buffer_read(&mov->io, buffer[j], bytes);
-
-		j ^= 1;
-		mov_buffer_seek(&mov->io, i);
 		mov_buffer_write(&mov->io, buffer[j], bytes);
+        // MSDN: fopen https://msdn.microsoft.com/en-us/library/yeby3zcb.aspx
+        // When the "r+", "w+", or "a+" access type is specified, both reading and 
+        // writing are enabled (the file is said to be open for "update"). 
+        // However, when you switch from reading to writing, the input operation 
+        // must encounter an EOF marker. If there is no EOF, you must use an intervening 
+        // call to a file positioning function. The file positioning functions are 
+        // fsetpos, fseek, and rewind. 
+        // When you switch from writing to reading, you must use an intervening 
+        // call to either fflush or to a file positioning function.
+        mov_buffer_seek(&mov->io, i+bytes);
+        mov_buffer_read(&mov->io, buffer[j], bytes);
+        j ^= 1;
 	}
 
+    mov_buffer_seek(&mov->io, i);
 	mov_buffer_write(&mov->io, buffer[j], bytes - (size_t)(i - from));
+
 	free(ptr);
 	return mov_buffer_error(&mov->io);
 }
