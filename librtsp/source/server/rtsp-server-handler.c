@@ -56,6 +56,18 @@ int rtsp_server_handle(struct rtsp_server_t *rtsp)
 		if (0 == strcasecmp("TEARDOWN", method))
 			return rtsp_server_teardown(rtsp, uri);
 		break;
+
+    case 'a':
+    case 'A':
+        if (0 == strcasecmp("ANNOUNCE", method))
+            return rtsp_server_announce(rtsp, uri);
+        break;
+
+    case 'r':
+    case 'R':
+        if (0 == strcasecmp("RECORD", method))
+            return rtsp_server_record(rtsp, uri);
+        break;
 	}
 
 	// 501 Not implemented

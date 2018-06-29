@@ -34,7 +34,10 @@ static const char* sc_format =
 int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp)
 {
 	int r;
+    rtsp->progress = 0;
 	rtsp->state = RTSP_ANNOUNCE;
+    rtsp->announce = sdp; // hijack
+
 	r = rtsp_client_authenrization(rtsp, "ANNOUNCE", rtsp->uri, sdp, strlen(sdp), rtsp->authenrization, sizeof(rtsp->authenrization));
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->uri, rtsp->cseq++, rtsp->media[0].session.session, rtsp->authenrization, (unsigned int)strlen(sdp), sdp);
 	assert(r > 0 && r < sizeof(rtsp->req));
@@ -43,29 +46,28 @@ int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp)
 
 int rtsp_client_announce_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
-	int code;
-	assert(RTSP_ANNOUNCE == rtsp->state);
-	
+    int code, r;
+    assert(0 == rtsp->progress);
+    assert(RTSP_ANNOUNCE == rtsp->state);
+
+    r = -1;
 	code = http_get_status_code(parser);
 	if (200 == code)
 	{
-		//if(rtsp->media_count == ++rtsp->progress)
-		//{
-		//	rtsp->client.onaction(rtsp->param, 0);
-		//}
-		//else
-		//{
-		//	r = rtsp_client_media_pause(rtsp);
-		//	if(0 != r)
-		//	{
-		//		rtsp->client.onaction(rtsp->param, r);
-		//	}
-		//}
+        rtsp->auth_failed = 0;
+        r = rtsp->handler.onannounce(rtsp->param);
 	}
-	else
-	{
-//		rtsp->client.onaction(rtsp->param, -1);
-	}
+    else if(401 == code)
+    {
+        // Unauthorized
+        const char* authenticate;
+        authenticate = http_get_header_by_name(parser, "WWW-Authenticate");
+        if (authenticate && 0 == rtsp->auth_failed++)
+        {
+            rtsp_client_www_authenticate(rtsp, authenticate);
+            r = rtsp_client_announce(rtsp, rtsp->announce);
+        }
+    }
 
-	return 0;
+	return r;
 }

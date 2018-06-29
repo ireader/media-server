@@ -28,13 +28,14 @@ struct rtsp_client_handler_t
 	int (*rtpport)(void* param, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
 
 	/// rtsp_client_announce callback only
-	void (*onannounce)(void* param);
+	int (*onannounce)(void* param);
 
 	/// call rtsp_client_setup
 	int (*ondescribe)(void* param, const char* sdp);
 
 	int (*onsetup)(void* param);
 	int (*onplay)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
+    int (*onrecord)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // record
 	int (*onpause)(void* param);
 	int (*onteardown)(void* param);
 
@@ -90,6 +91,14 @@ int rtsp_client_pause(rtsp_client_t* rtsp);
 /// announce server sdp
 /// @return 0-ok, other-error.
 int rtsp_client_announce(rtsp_client_t* rtsp, const char* sdp);
+
+/// record session(publish)
+/// call onrecord on done
+/// @param[in] npt RECORD range parameter [optional, NULL is acceptable]
+/// @param[in] scale RECORD scale parameter [optional, NULL is acceptable]
+/// @return 0-ok, other-error.
+/// Notice: if npt and scale is null, resume record only
+int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *scale);
 
 /// SDP API
 int rtsp_client_media_count(rtsp_client_t* rtsp);

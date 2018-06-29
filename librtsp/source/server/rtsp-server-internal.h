@@ -32,11 +32,13 @@ struct rtsp_server_t
 
 int rtsp_server_handle(struct rtsp_server_t *rtsp);
 int rtsp_server_options(struct rtsp_server_t *rtsp, const char* uri);
+int rtsp_server_announce(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_describe(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_setup(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_pause(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_teardown(struct rtsp_server_t *rtsp, const char* uri);
+int rtsp_server_record(struct rtsp_server_t *rtsp, const char* uri);
 int rtsp_server_reply(struct rtsp_server_t *rtsp, int code);
 int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header);
 

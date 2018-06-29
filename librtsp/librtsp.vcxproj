@@ -140,6 +140,7 @@
     <ClCompile Include="source\client\rtsp-client-options.c" />
     <ClCompile Include="source\client\rtsp-client-pause.c" />
     <ClCompile Include="source\client\rtsp-client-play.c" />
+    <ClCompile Include="source\client\rtsp-client-record.c" />
     <ClCompile Include="source\client\rtsp-client-sdp.c" />
     <ClCompile Include="source\client\rtsp-client-set-parameter.c" />
     <ClCompile Include="source\client\rtsp-client-setup.c" />
@@ -153,11 +154,13 @@
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
     <ClCompile Include="source\sdp.c" />
+    <ClCompile Include="source\server\rtsp-server-announce.c" />
     <ClCompile Include="source\server\rtsp-server-describe.c" />
     <ClCompile Include="source\server\rtsp-server-handler.c" />
     <ClCompile Include="source\server\rtsp-server-options.c" />
     <ClCompile Include="source\server\rtsp-server-pause.c" />
     <ClCompile Include="source\server\rtsp-server-play.c" />
+    <ClCompile Include="source\server\rtsp-server-record.c" />
     <ClCompile Include="source\server\rtsp-server-setup.c" />
     <ClCompile Include="source\server\rtsp-server-teardown.c" />
     <ClCompile Include="source\server\rtsp-server.c" />

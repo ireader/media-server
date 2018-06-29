@@ -24,7 +24,7 @@ struct rtsp_handler_t
 	/// @return 0-ok, other-error
 	int (*send)(void* ptr2, const void* data, size_t bytes);
 
-	/// RTSP DESCRIBE request(call rtsp_server_reply_setup)
+	/// RTSP DESCRIBE request(call rtsp_server_reply_describe)
 	/// @param[in] ptr user-defined parameter
 	/// @param[in] uri request uri
 	/// @return 0-ok, other-error
@@ -59,6 +59,21 @@ struct rtsp_handler_t
 	/// @param[in] uri request uri
 	/// @return 0-ok, other-error code
 	int (*onteardown)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session);
+
+    /// RTSP ANNOUNCE request(call rtsp_server_reply_announce)
+    /// @param[in] ptr user-defined parameter
+    /// @param[in] uri request uri
+    /// @param[in] sdp RTSP SDP
+    /// @return 0-ok, other-error
+    int (*onannounce)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* sdp);
+
+    /// RTSP RECORD request(call rtsp_server_reply_record)
+    /// @param[in] ptr user-defined parameter
+    /// @param[in] session RTSP Session
+    /// @param[in] npt request begin time, NULL if don't have Range parameter, 0 represent now
+    /// @param[in] scale request scale, NULL if don't have Scale parameter
+    /// @return 0-ok, other-error code
+    int (*onrecord)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale);
 };
 
 /// create (reuse-able) rtsp server
@@ -117,6 +132,21 @@ int rtsp_server_reply_pause(rtsp_server_t* rtsp, int code);
 /// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
 /// @return 0-ok, other-error code
 int rtsp_server_reply_teardown(rtsp_server_t* rtsp, int code);
+
+/// RTSP ANNOUNCE reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+/// @return 0-ok, other-error code
+int rtsp_server_reply_announce(rtsp_server_t* rtsp, int code);
+
+/// RTSP RECORD reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
+/// @param[in] nptstart Range start time(ms) [optional]
+/// @param[in] nptend Range end time(ms) [optional]
+/// @param[in] rtpinfo RTP-info [optional] e.g. url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
+/// @return 0-ok, other-error code
+int rtsp_server_reply_record(rtsp_server_t* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtpinfo);
 
 /// RTSP send Embedded (Interleaved) Binary Data
 /// @param[in] rtsp request handle

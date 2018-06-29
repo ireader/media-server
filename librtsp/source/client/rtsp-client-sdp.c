@@ -216,12 +216,13 @@ int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* content)
 	count = sdp_media_count(sdp);
 	if(count > N_MEDIA)
 	{
-		rtsp->media_ptr = (struct rtsp_media_t*)malloc(sizeof(struct rtsp_media_t)*(count-N_MEDIA));
-		if(!rtsp->media_ptr)
+        media = (struct rtsp_media_t*)realloc(rtsp->media_ptr, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
+		if(!media)
 		{
 			sdp_destroy(sdp);
 			return ENOMEM;
 		}
+        rtsp->media_ptr = media;
 		memset(rtsp->media_ptr, 0, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
 	}
 

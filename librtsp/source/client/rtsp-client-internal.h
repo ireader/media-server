@@ -46,6 +46,7 @@ enum rtsp_state_t
 {
 	RTSP_INIT,
 	RTSP_ANNOUNCE,
+    RTSP_RECORD,
 	RTSP_DESCRIBE,
 	RTSP_SETUP,
 	RTSP_PLAY,
@@ -61,6 +62,7 @@ struct rtsp_client_t
 	struct rtsp_client_handler_t handler;
 	void* param;
 
+    const char* announce; // announce sdp
 	http_parser_t* parser;
 	enum rtsp_state_t state;
 	int parser_need_more_data;
@@ -77,7 +79,8 @@ struct rtsp_client_t
 	// media
 	char range[64]; // rtsp header Range
 	char speed[16]; // rtsp header speed
-	char req[2048];
+    char scale[16]; // rtsp header scale
+    char req[2048];
 
 	char uri[256];
 	char baseuri[256]; // Content-Base
@@ -119,6 +122,7 @@ int rtsp_client_play_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_pause_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser);
+int rtsp_client_record_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_get_parameter_onreply(struct rtsp_client_t* rtsp, void* parser);
 int rtsp_client_set_parameter_onreply(struct rtsp_client_t* rtsp, void* parser);
 

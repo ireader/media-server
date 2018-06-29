@@ -104,6 +104,15 @@
     <ClCompile Include="source\client\rtsp-client-set-parameter.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
+    <ClCompile Include="source\client\rtsp-client-record.c">
+      <Filter>Source Files\client</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-announce.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-record.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtsp-header-range.h">
