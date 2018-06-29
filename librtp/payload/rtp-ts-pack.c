@@ -35,7 +35,7 @@ static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssr
 	packer = (struct rtp_encode_ts_t *)calloc(1, sizeof(*packer));
 	if (!packer) return NULL;
 
-	assert(pt == RTP_PAYLOAD_MP2T);
+	//assert(pt == RTP_PAYLOAD_MP2T);
 	if (RTP_PAYLOAD_MP2T == pt)
 	{
 		size -= RTP_FIXED_HEADER;
