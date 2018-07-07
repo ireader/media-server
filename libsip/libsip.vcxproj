@@ -20,13 +20,35 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sip-header.h" />
+    <ClInclude Include="include\sip-message.h" />
+    <ClInclude Include="include\sip-timer.h" />
+    <ClInclude Include="include\sip-transport.h" />
+    <ClInclude Include="src\uac\sip-uac.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c" />
-    <ClCompile Include="src\header\sip-header-from.c" />
     <ClCompile Include="src\header\sip-header-param.c" />
+    <ClCompile Include="src\header\sip-header-cseq.c" />
     <ClCompile Include="src\header\sip-header-uri.c" />
     <ClCompile Include="src\header\sip-header-via.c" />
+    <ClCompile Include="src\sip-message.c" />
+    <ClCompile Include="src\uac\sip-uac-bye.c" />
+    <ClCompile Include="src\uac\sip-uac-cancel.c" />
+    <ClCompile Include="src\uac\sip-uac-dialog.c" />
+    <ClCompile Include="src\uac\sip-uac-invite.c" />
+    <ClCompile Include="src\uac\sip-uac-options.c" />
+    <ClCompile Include="src\uac\sip-uac-register.c" />
+    <ClCompile Include="src\uac\sip-uac-transaction-invite.c" />
+    <ClCompile Include="src\uac\sip-uac-transaction-noninvite.c" />
+    <ClCompile Include="src\uac\sip-uac.c" />
+    <ClCompile Include="src\uac\sip-uas-register.c" />
+    <ClCompile Include="src\uas\sip-uas-bye.c" />
+    <ClCompile Include="src\uas\sip-uas-cancel.c" />
+    <ClCompile Include="src\uas\sip-uas-dialog.c" />
+    <ClCompile Include="src\uas\sip-uas-invite.c" />
+    <ClCompile Include="src\uas\sip-uas-options.c" />
+    <ClCompile Include="src\uas\sip-uas-transaction.c" />
+    <ClCompile Include="src\uas\sip-uas.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5CDF2275-37A7-450A-B69F-2063079D6946}</ProjectGuid>
@@ -86,7 +108,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;include;../../sdk/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -113,7 +135,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

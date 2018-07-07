@@ -13,7 +13,16 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header">
+    <Filter Include="Source Files\proxy">
+      <UniqueIdentifier>{5a130e70-6cc1-4c2b-b41c-d1c1d1fee785}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\uas">
+      <UniqueIdentifier>{1aadb350-7464-4f9b-8680-8ff146365b83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\uac">
+      <UniqueIdentifier>{f1d0d52b-9c9e-40f6-9e7f-f261f9563d02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SIP Header">
       <UniqueIdentifier>{83d7eb8d-7a2e-4a85-9236-4ba56c2916b6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -21,22 +30,88 @@
     <ClInclude Include="include\sip-header.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sip-transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sip-timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sip-message.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\uac\sip-uac.h">
+      <Filter>Source Files\uac</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c">
-      <Filter>Header</Filter>
-    </ClCompile>
-    <ClCompile Include="src\header\sip-header-from.c">
-      <Filter>Header</Filter>
+      <Filter>SIP Header</Filter>
     </ClCompile>
     <ClCompile Include="src\header\sip-header-uri.c">
-      <Filter>Header</Filter>
+      <Filter>SIP Header</Filter>
     </ClCompile>
     <ClCompile Include="src\header\sip-header-via.c">
-      <Filter>Header</Filter>
+      <Filter>SIP Header</Filter>
     </ClCompile>
     <ClCompile Include="src\header\sip-header-param.c">
-      <Filter>Header</Filter>
+      <Filter>SIP Header</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-dialog.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-transaction.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-dialog.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-register.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uas-register.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-invite.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-options.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-cancel.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-bye.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-invite.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-cancel.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-bye.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-options.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\header\sip-header-cseq.c">
+      <Filter>SIP Header</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sip-message.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-transaction-invite.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-transaction-noninvite.c">
+      <Filter>Source Files\uac</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

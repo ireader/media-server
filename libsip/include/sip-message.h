@@ -4,6 +4,9 @@
 #include "sip-header.h"
 #include <stdint.h>
 
+// 8.1.1.7 Via (p39)
+#define SIP_BRANCH_PREFIX "z9hG4bK"
+
 struct sip_message_t
 {
 	// request line

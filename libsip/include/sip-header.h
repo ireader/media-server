@@ -65,7 +65,7 @@
 		return (struct name##_t*)darray_get(&p->arr, index);	\
 	}										\
 											\
-	int name##s_count(struct name##s_t* p)	\
+	int name##s_count(const struct name##s_t* p)	\
 	{										\
 		return darray_count(&p->arr);		\
 	}
@@ -105,8 +105,6 @@ struct sip_contact_t
 	struct sip_uri_t uri;
 	struct cstring_t nickname;
 	struct sip_params_t params;
-
-	struct cstring_t tag; // TO/FROM tag
 };
 DARRAY_DECLARE(sip_contact, 1);
 
@@ -129,6 +127,11 @@ struct sip_cseq_t
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end);
 int sip_params_write(const struct sip_params_t* params, char* data, const char* end);
+const struct sip_param_t* sip_params_find(const struct sip_params_t* params, const char* name);
+const struct cstring_t* sip_params_find_string(const struct sip_params_t* params, const char* name);
+int sip_params_find_int(const struct sip_params_t* params, const char* name, int* value);
+int sip_params_find_int64(const struct sip_params_t* params, const char* name, int64_t* value);
+int sip_params_find_double(const struct sip_params_t* params, const char* name, double* value);
 
 /// @return 0-ok, other-error
 int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
@@ -141,5 +144,8 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 int sip_via_write(const struct sip_via_t* via, char* data, const char* end);
 int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end);
 int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);
+
+const struct cstring_t* sip_via_branch(const struct sip_via_t* via);
+const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias);
 
 #endif /* !_sip_header_h_ */

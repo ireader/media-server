@@ -115,11 +115,11 @@ static int sip_header_contact_item(const char* s, const char* end, struct sip_co
 		sip_header_param(s, p, &param);
 		r = sip_params_push(&c->params, &param);
 
-		if (0 == cstrcmp(&param.name, "tag"))
-		{
-			c->tag.p = param.value.p;
-			c->tag.n = param.value.n;
-		}
+		//if (0 == cstrcmp(&param.name, "tag"))
+		//{
+		//	c->tag.p = param.value.p;
+		//	c->tag.n = param.value.n;
+		//}
 	}
 
 	return 0;
@@ -242,7 +242,8 @@ void sip_header_contact_test(void)
 	assert(0 == sip_header_contact(s, s + strlen(s), &contacts) && 1 == sip_contacts_count(&contacts));
 	c = sip_contacts_get(&contacts, 0);
 	assert(0 == cstrcmp(&c->nickname, "Alice") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "alice@atlanta.com") && 0 == c->uri.headers.n && 0 == c->uri.parameters.n);
-	assert(1 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "tag") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "1928301774") && 0 == cstrcmp(&c->tag, "1928301774"));
+	assert(1 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "tag") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "1928301774"));
+	//assert(0 == cstrcmp(&c->tag, "1928301774"));
 	sip_contacts_free(&contacts);
 }
 #endif

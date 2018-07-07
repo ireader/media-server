@@ -134,6 +134,18 @@ int sip_via_write(const struct sip_via_t* via, char* data, const char* end)
 	return p - data;
 }
 
+const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias)
+{
+	const struct sip_via_t *via;
+	via = sip_vias_get(vias, 0);
+	return via ? sip_via_branch(via) : NULL;
+}
+
+const struct cstring_t* sip_via_branch(const struct sip_via_t* via)
+{
+	return sip_params_find_string(&via->params, "branch");
+}
+
 #if defined(DEBUG) || defined(_DEBUG)
 void sip_header_via_test(void)
 {
