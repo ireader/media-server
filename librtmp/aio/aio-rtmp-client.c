@@ -74,6 +74,16 @@ int aio_rtmp_client_stop(struct aio_rtmp_client_t* client)
 	return rtmp_client_stop(client->rtmp);
 }
 
+int aio_rtmp_client_pause(struct aio_rtmp_client_t* client, int pause)
+{
+	return rtmp_client_pause(client->rtmp, pause);
+}
+
+int aio_rtmp_client_seek(struct aio_rtmp_client_t* client, double timestamp)
+{
+	return rtmp_client_seek(client->rtmp, timestamp);
+}
+
 int aio_rtmp_client_send_audio(struct aio_rtmp_client_t* client, const void* flv, size_t bytes, uint32_t timestamp)
 {
 	return rtmp_client_push_audio(client->rtmp, flv, bytes, timestamp);
