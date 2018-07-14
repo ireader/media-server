@@ -87,9 +87,10 @@ enum
 
 	RTP_PAYLOAD_MP4V		= 96, // MP4V-ES MPEG-4 Visual (rfc6416)
 	RTP_PAYLOAD_H264		= 97, // H.264 video (MPEG-4 Part 10) (rfc6184)
-	RTP_PAYLOAD_MP2P		= 98, // MPEG-2 Program Streams video (rfc2250)
-	RTP_PAYLOAD_MP4A		= 99, // MP4A-LATM MPEG-4 Audio (rfc6416)
-	RTP_PAYLOAD_MP4ES		= 100, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
+	RTP_PAYLOAD_H265		= 98, // H.265 video (MPEG-H Part 2) (rfc7798)
+	RTP_PAYLOAD_MP2P		= 99, // MPEG-2 Program Streams video (rfc2250)
+	RTP_PAYLOAD_MP4A		= 100, // MP4A-LATM MPEG-4 Audio (rfc6416)
+	RTP_PAYLOAD_MP4ES		= 101, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
 };
 
 ///@param[in] payload RTP payload type(0 ~ 127)
