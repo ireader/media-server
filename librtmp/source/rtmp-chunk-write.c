@@ -25,22 +25,22 @@ static struct rtmp_packet_t* rtmp_packet_find(struct rtmp_t* rtmp, uint32_t cid)
 	return NULL;
 }
 
-static struct rtmp_packet_t* rtmp_packet_create(struct rtmp_t* rtmp, uint32_t cid)
-{
-	uint32_t i;
-	struct rtmp_packet_t* pkt;
-
-	// The protocol supports up to 65597 streams with IDs 3-65599
-	assert(cid <= 65535 + 64 && cid >= 2 /* Protocol Control Messages */);
-	assert(NULL == rtmp_packet_find(rtmp, cid));
-	for (i = 0; i < N_CHUNK_STREAM; i++)
-	{
-		pkt = rtmp->out_packets + ((i + cid) % N_CHUNK_STREAM);
-		if (0 == pkt->header.cid)
-			return pkt;
-	}
-	return NULL;
-}
+//static struct rtmp_packet_t* rtmp_packet_create(struct rtmp_t* rtmp, uint32_t cid)
+//{
+//	uint32_t i;
+//	struct rtmp_packet_t* pkt;
+//
+//	// The protocol supports up to 65597 streams with IDs 3-65599
+//	assert(cid <= 65535 + 64 && cid >= 2 /* Protocol Control Messages */);
+//	assert(NULL == rtmp_packet_find(rtmp, cid));
+//	for (i = 0; i < N_CHUNK_STREAM; i++)
+//	{
+//		pkt = rtmp->out_packets + ((i + cid) % N_CHUNK_STREAM);
+//		if (0 == pkt->header.cid)
+//			return pkt;
+//	}
+//	return NULL;
+//}
 
 static const struct rtmp_chunk_header_t* rtmp_chunk_header_zip(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* header)
 {
@@ -56,9 +56,11 @@ static const struct rtmp_chunk_header_t* rtmp_chunk_header_zip(struct rtmp_t* rt
 	pkt = rtmp_packet_find(rtmp, h.cid);
 	if (NULL == pkt)
 	{
-		pkt = rtmp_packet_create(rtmp, h.cid);
-		if (NULL == pkt)
-			return NULL; // too many chunk stream id
+		//pkt = rtmp_packet_create(rtmp, h.cid);
+		//if (NULL == pkt)
+		//	return NULL; // too many chunk stream id
+		assert(0);
+		return NULL; // can't find chunk stream id 
 	}
 
 	h.fmt = RTMP_CHUNK_TYPE_0;

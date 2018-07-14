@@ -221,6 +221,23 @@ static int rtmp_server_ondelete_stream(void* param, int r, double transaction, d
 	return r;
 }
 
+static int rtmp_server_onget_stream_length(void* param, int r, double transaction, const char* stream_name)
+{
+	double duration = -1;
+	struct rtmp_server_t* ctx;
+	ctx = (struct rtmp_server_t*)param;
+
+	if (0 == r)
+	{
+		// TODO: get duration (seconds)
+		(void)stream_name;
+		//r = ctx->handler.onget_stream_length(ctx->param, stream_name);
+		r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
+	}
+
+	return r;
+}
+
 // 7.2.2.6. publish (p45)
 // The server responds with the onStatus command
 static int rtmp_server_onpublish(void* param, int r, double transaction, const char* stream_name, const char* stream_type)
@@ -394,6 +411,7 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.u.server.onconnect = rtmp_server_onconnect;
 	ctx->rtmp.u.server.oncreate_stream = rtmp_server_oncreate_stream;
 	ctx->rtmp.u.server.ondelete_stream = rtmp_server_ondelete_stream;
+	ctx->rtmp.u.server.onget_stream_length = rtmp_server_onget_stream_length;
 	ctx->rtmp.u.server.onpublish = rtmp_server_onpublish;
 	ctx->rtmp.u.server.onplay = rtmp_server_onplay;
 	ctx->rtmp.u.server.onpause = rtmp_server_onpause;
@@ -401,6 +419,11 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.u.server.onreceive_audio = rtmp_server_onreceive_audio;
 	ctx->rtmp.u.server.onreceive_video = rtmp_server_onreceive_video;
 	
+	ctx->rtmp.out_packets[RTMP_CHANNEL_PROTOCOL].header.cid = RTMP_CHANNEL_PROTOCOL;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_INVOKE].header.cid = RTMP_CHANNEL_INVOKE;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_AUDIO].header.cid = RTMP_CHANNEL_AUDIO;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_VIDEO].header.cid = RTMP_CHANNEL_VIDEO;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_DATA].header.cid = RTMP_CHANNEL_DATA;
 	return ctx;
 }
 

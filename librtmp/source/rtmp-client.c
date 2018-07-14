@@ -377,6 +377,11 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->connect.videoFunction = SUPPORT_VID_CLIENT_SEEK;
 	ctx->connect.encoding = RTMP_ENCODING_AMF_0;
 
+	ctx->rtmp.out_packets[RTMP_CHANNEL_PROTOCOL].header.cid = RTMP_CHANNEL_PROTOCOL;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_INVOKE].header.cid = RTMP_CHANNEL_INVOKE;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_AUDIO].header.cid = RTMP_CHANNEL_AUDIO;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_VIDEO].header.cid = RTMP_CHANNEL_VIDEO;
+	ctx->rtmp.out_packets[RTMP_CHANNEL_DATA].header.cid = RTMP_CHANNEL_DATA;
 	return ctx;
 }
 

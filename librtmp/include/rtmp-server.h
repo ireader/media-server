@@ -40,7 +40,7 @@ struct rtmp_server_handler_t
 	int (*onaudio)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 	///@param[in] data FLV onMetaData
 	///@return 0-ok, other-error
-	int(*onscript)(void* param, const void* data, size_t bytes, uint32_t timestamp);
+	int (*onscript)(void* param, const void* data, size_t bytes, uint32_t timestamp);
 };
 
 rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_handler_t* handler);
