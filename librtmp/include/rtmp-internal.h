@@ -132,6 +132,7 @@ struct rtmp_t
 			int (*onpublish)(void* param, int r, double transaction, const char* stream_name, const char* stream_type);
 			int (*onseek)(void* param, int r, double transaction, double milliSeconds);
 			int (*onpause)(void* param, int r, double transaction, uint8_t pause, double milliSeconds);
+			int (*onget_stream_length)(void* param, int r, double transaction, const char* stream_name);
 		} server;
 
 		struct

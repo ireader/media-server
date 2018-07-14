@@ -146,6 +146,18 @@ static int rtmp_command_onpause(struct rtmp_t* rtmp, double transaction, const u
 	return rtmp->u.server.onpause(rtmp->param, r, transaction, pause, milliSeconds);
 }
 
+static int rtmp_command_onget_stream_length(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
+{
+	int r;
+	char stream_name[N_STREAM_NAME] = { 0 };
+	struct amf_object_item_t items[3];
+	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
+	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", stream_name, sizeof(stream_name));
+
+	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
+	return rtmp->u.server.onget_stream_length(rtmp->param, 0, transaction, stream_name);
+}
+
 /*
 // FCPublish request parser
 static int rtmp_command_onfcpublish(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
@@ -229,6 +241,7 @@ const static struct rtmp_command_handler_t s_command_handler[] = {
 	{ "publish",		rtmp_command_onpublish },
 	{ "seek",			rtmp_command_onseek },
 	{ "pause",			rtmp_command_onpause },
+	{ "getStreamLength",rtmp_command_onget_stream_length },
 
 //	{ "FCPublish",		rtmp_command_onfcpublish },
 //	{ "FCUnpublish",	rtmp_command_onfcunpublish },
