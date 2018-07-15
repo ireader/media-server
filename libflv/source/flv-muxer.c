@@ -42,6 +42,7 @@ struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
 	if (NULL == flv)
 		return NULL;
 
+	flv_muxer_reset(flv);
 	flv->handler = handler;
 	flv->param = param;
 	return flv;
@@ -61,6 +62,7 @@ void flv_muxer_destroy(struct flv_muxer_t* flv)
 
 int flv_muxer_reset(struct flv_muxer_t* flv)
 {
+	flv->v.avc.nalu = 4;
 	flv->aac_sequence_header = 0;
 	flv->avc_sequence_header = 0;
 	return 0;
@@ -205,46 +207,20 @@ int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	return flv_muxer_h264(flv, pts, dts);
 }
 
+int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes);
 int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r;
-	uint8_t type = (*(const uint8_t*)nalu) & 0x1f;
+	int type;
+	
+	type = h264_update_avc(&flv->v.avc, (const uint8_t*)nalu, bytes);
+	if (type < 0)
+		return -1;
 
 	switch (type)
 	{
 	case 7:
-		// FIXME: check sps id
-		if (bytes > sizeof(flv->v.avc.sps[0].data)
-			|| flv->v.avc.nb_sps >= sizeof(flv->v.avc.sps) / sizeof(flv->v.avc.sps[0]))
-		{
-			assert(0);
-			return -1;
-		}
-		if (flv->avc_sequence_header)
-			return 0;
-		memcpy(flv->v.avc.sps[flv->v.avc.nb_sps].data, nalu, bytes);
-		flv->v.avc.sps[flv->v.avc.nb_sps].bytes = (uint16_t)bytes;
-		flv->v.avc.nb_sps++;
-
-		flv->v.avc.nalu = 4;
-		flv->v.avc.profile = flv->v.avc.sps[0].data[1];
-		flv->v.avc.compatibility = flv->v.avc.sps[0].data[2];
-		flv->v.avc.level = flv->v.avc.sps[0].data[3];
-		break;
-
 	case 8:
-		// FIXME: check pps/sps id
-		if (bytes > sizeof(flv->v.avc.pps[0].data)
-			|| (int)flv->v.avc.nb_pps >= sizeof(flv->v.avc.pps) / sizeof(flv->v.avc.pps[0]))
-		{
-			assert(0);
-			return -1;
-		}
-		if (flv->avc_sequence_header)
-			return 0;
-		memcpy(flv->v.avc.pps[flv->v.avc.nb_pps].data, nalu, bytes);
-		flv->v.avc.pps[flv->v.avc.nb_pps].bytes = (uint16_t)bytes;
-		flv->v.avc.nb_pps++;
 		break;
 
 	default:
