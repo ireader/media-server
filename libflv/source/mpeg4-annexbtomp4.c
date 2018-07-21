@@ -107,24 +107,44 @@ static inline uint8_t h264_pps_id(const uint8_t* data, size_t bytes)
 	return h264_read_ue(data, bytes);
 }
 
+static void mpeg4_avc_update_spspps(struct mpeg4_avc_t* avc, int total, uint8_t* ptr, int bytes, int offset)
+{
+	uint8_t i;
+
+	assert(total > offset && total + offset < sizeof(avc->data));
+	memmove(ptr + bytes + offset, ptr + bytes, (avc->data + total) - (ptr + bytes));
+
+	for (i = 0; i < avc->nb_sps; i++)
+	{
+		if (avc->sps[i].data > ptr)
+			avc->sps[i].data += offset;
+	}
+	
+	for (i = 0; i < avc->nb_pps; i++)
+	{
+		if (avc->pps[i].data > ptr)
+			avc->pps[i].data += offset;
+	}
+}
+
 /// @return >0-ok(nalu type), <=0-error
 int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 {
 	uint8_t id;
 	uint8_t nalutype;
-	uint8_t* avcptr;
+	uint8_t* ptr;
 	
-	// get remain data
-	avcptr = avc->nb_sps > 0 ? avc->sps[avc->nb_sps - 1].data + avc->sps[avc->nb_sps - 1].bytes : avc->data;
-	if (avc->nb_pps > 0 && avc->pps[avc->nb_pps - 1].data + avc->pps[avc->nb_pps - 1].bytes > avcptr)
-		avcptr = avc->pps[avc->nb_pps - 1].data + avc->pps[avc->nb_pps - 1].bytes;
+	// tailer pointer
+	ptr = avc->nb_sps > 0 ? avc->sps[avc->nb_sps - 1].data + avc->sps[avc->nb_sps - 1].bytes : avc->data;
+	if (avc->nb_pps > 0 && avc->pps[avc->nb_pps - 1].data + avc->pps[avc->nb_pps - 1].bytes > ptr)
+		ptr = avc->pps[avc->nb_pps - 1].data + avc->pps[avc->nb_pps - 1].bytes;
 
 	nalutype = nalu[0] & 0x1f;
 	switch (nalutype)
 	{
 	case H264_NAL_SPS:
 		id = h264_sps_id(nalu + 1, bytes - 1);
-		if (avcptr + bytes > avc->data + sizeof(avc->data)
+		if (ptr + bytes > avc->data + sizeof(avc->data)
 			|| id >= sizeof(avc->sps) / sizeof(avc->sps[0]))
 		{
 			assert(0);
@@ -132,8 +152,12 @@ int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 		}
 
 		assert(id >= avc->nb_sps || id == h264_sps_id(avc->sps[id].data + 1, avc->sps[id].bytes - 1));
+		if (id < avc->nb_sps && avc->sps[id].bytes != bytes)
+			mpeg4_avc_update_spspps(avc, ptr - avc->data, avc->sps[id].data, (int)avc->sps[id].bytes, (int)(bytes - avc->sps[id].bytes));
+
+		ptr = id >= avc->nb_sps ? ptr : avc->sps[id].data;
 		id = id >= avc->nb_sps ? avc->nb_sps++ : id;
-		avc->sps[id].data = avcptr;
+		avc->sps[id].data = ptr;
 		avc->sps[id].bytes = (uint16_t)bytes;
 		memcpy(avc->sps[id].data, nalu, bytes);
 
@@ -147,7 +171,7 @@ int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 
 	case H264_NAL_PPS:
 		id = h264_pps_id(nalu + 1, bytes - 1);
-		if (avcptr + bytes > avc->data + sizeof(avc->data)
+		if (ptr + bytes > avc->data + sizeof(avc->data)
 			|| id >= sizeof(avc->pps) / sizeof(avc->pps[0]))
 		{
 			assert(0);
@@ -155,8 +179,12 @@ int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 		}
 
 		assert(id >= avc->nb_pps || id == h264_pps_id(avc->pps[id].data + 1, avc->pps[id].bytes - 1));
+		if (id < avc->nb_pps && avc->pps[id].bytes != bytes)
+			mpeg4_avc_update_spspps(avc, ptr - avc->data, avc->pps[id].data, (int)avc->pps[id].bytes, (int)(bytes - avc->pps[id].bytes));
+
+		ptr = id >= avc->nb_pps ? ptr : avc->pps[id].data;
 		id = id >= avc->nb_pps ? avc->nb_pps++ : id;
-		avc->pps[id].data = avcptr;
+		avc->pps[id].data = ptr;
 		avc->pps[id].bytes = (uint16_t)bytes;
 		memcpy(avc->pps[id].data, nalu, bytes);
 		break;
@@ -220,3 +248,30 @@ size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes
 	h264_stream(data, bytes, h264_handler, &h);
 	return 0 == h.errcode ? h.bytes : 0;
 }
+
+#if defined(_DEBUG) || defined(DEBUG)
+void mpeg4_annexbtomp4_test(void)
+{
+	const uint8_t sps[] = { 0x67,0x42,0xe0,0x1e,0xab };
+	const uint8_t pps[] = { 0x28,0xce,0x3c,0x80 };
+	const uint8_t sps1[] = { 0x67,0x42,0xe0,0x1e,0xab, 0x01 };
+	const uint8_t pps1[] = { 0x28,0xce,0x3c,0x80, 0x01 };
+	const uint8_t sps2[] = { 0x67,0x42,0xe0,0x1e };
+	const uint8_t pps2[] = { 0x28,0xce,0x3c };
+
+	struct mpeg4_avc_t avc;
+	memset(&avc, 0, sizeof(avc));
+
+	h264_update_avc(&avc, sps, sizeof(sps));
+	h264_update_avc(&avc, pps, sizeof(pps));
+	assert(0 == memcmp(avc.data, sps, sizeof(sps)) && 0 == memcmp(avc.data + sizeof(sps), pps, sizeof(pps)));
+	h264_update_avc(&avc, sps1, sizeof(sps1));
+	assert(0 == memcmp(avc.data, sps1, sizeof(sps1)) && 0 == memcmp(avc.data + sizeof(sps1), pps, sizeof(pps)));
+	h264_update_avc(&avc, pps1, sizeof(pps1));
+	assert(0 == memcmp(avc.data, sps1, sizeof(sps1)) && 0 == memcmp(avc.data + sizeof(sps1), pps1, sizeof(pps1)));
+	h264_update_avc(&avc, sps2, sizeof(sps2));
+	assert(0 == memcmp(avc.data, sps2, sizeof(sps2)) && 0 == memcmp(avc.data + sizeof(sps2), pps1, sizeof(pps1)));
+	h264_update_avc(&avc, pps2, sizeof(pps2));
+	assert(0 == memcmp(avc.data, sps2, sizeof(sps2)) && 0 == memcmp(avc.data + sizeof(sps2), pps2, sizeof(pps2)));
+}
+#endif
