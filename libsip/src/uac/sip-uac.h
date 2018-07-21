@@ -3,6 +3,7 @@
 
 #include "sip-timer.h"
 #include "sip-header.h"
+#include "sip-dialog.h"
 #include "sip-message.h"
 #include "sip-transport.h"
 #include "sys/atomic.h"
@@ -54,7 +55,7 @@ struct sip_uac_t
 	void* timerptr;
 
 	struct list_head transactions; // transaction layer handler
-	struct list_head invites; // uac layer handler
+	struct list_head dialogs; // early or confirmed dialogs
 };
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, const struct sip_message_t* msg);

@@ -9,7 +9,7 @@ struct sip_uac_t* sip_uac_create()
 
 	uac->ref = 1;
 	locker_create(&uac->locker);
-	LIST_INIT_HEAD(&uac->invites);
+	LIST_INIT_HEAD(&uac->dialogs);
 	LIST_INIT_HEAD(&uac->transactions);
 	return uac;
 }
@@ -29,12 +29,11 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 		sip_uac_transaction_destroy(t);
 	}
 
-	list_for_each_safe(pos, next, &uac->invites)
+	list_for_each_safe(pos, next, &uac->dialogs)
 	{
-		struct sip_uac_transaction_t* t;
-		t = list_entry(pos, struct sip_uac_transaction_t, link);
-		assert(t->uac == uac);
-		sip_uac_transaction_destroy(t);
+		struct sip_dialog_t* t;
+		t = list_entry(pos, struct sip_dialog_t, link);
+		// TODO
 	}
 
 	locker_destroy(&uac->locker);
@@ -83,13 +82,13 @@ int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
 }
 
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
-static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* transactions, struct sip_message_t* msg)
+static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* transactions, struct sip_message_t* reply)
 {
 	struct cstring_t *p, *p2;
 	struct list_head *pos, *next;
 	struct sip_uac_transaction_t* t;
 
-	p = sip_vias_top_branch(&msg->vias);
+	p = sip_vias_top_branch(&reply->vias);
 	if (!p) return NULL;
 	assert(0 == cstrprefix(p, SIP_BRANCH_PREFIX));
 
@@ -104,14 +103,14 @@ static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* 
 		assert(0 == cstrprefix(p2, SIP_BRANCH_PREFIX));
 
 		// 2. cseq method parameter
-		if(t->msg->cseq.id != msg->cseq.id || 0 == cstreq(&msg->cseq.method, &t->msg->cseq.method))
+		if(reply->cseq.id != t->msg->cseq.id || !cstreq(&reply->cseq.method, &t->msg->cseq.method))
 			continue;
 
-		// 3. to tag
-		p = sip_params_find_string(&msg->to.params, "tag");
-		p2 = sip_params_find_string(&t->msg->to.params, "tag");
-		if (p2 && (!p || 0 == cstreq(p, p2)))
-			continue;
+		//// 3. to tag
+		//p = sip_params_find_string(&reply->to.params, "tag");
+		//p2 = sip_params_find_string(&t->msg->to.params, "tag");
+		//if (p2 && (!p || !cstreq(p, p2)))
+		//	continue;
 
 		return t;
 	}
@@ -119,18 +118,27 @@ static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* 
 	return NULL;
 }
 
-int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* msg)
+int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 {
-	int invite;
 	struct sip_uac_transaction_t* t;
 
-	invite = cstrcasecmp(&msg->cseq.method, "INVITE");
-
 	// 1. find transaction
-	t = sip_uac_transaction_find(&uac->transactions, msg);
-	if (t)
-		return invite ? sip_uac_transaction_invite_input(t, msg) : sip_uac_transaction_noninvite_intput(t, msg);
+	t = sip_uac_transaction_find(&uac->transactions, reply);
+	if (!t)
+	{
+		// timeout response, discard
+		return 0;
+	}
 	
+	if (cstrcasecmp(&reply->cseq.method, "INVITE"))
+	{
+		return sip_uac_transaction_invite_input(t, reply);
+	}
+	else
+	{
+		return sip_uac_transaction_noninvite_input(t, reply);
+	}
+
 	// 2. not find transaction, do it by UAC Core
 	if (!invite)
 	{
@@ -139,9 +147,9 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* msg)
 	}
 
 	// invite fork response
-	t = sip_uac_transaction_find(&uac->invites, msg);
+	t = sip_uac_transaction_find(&uac->invites, reply);
 	if (t)
-		return sip_uac_transaction_invite_input(t, msg);
+		return sip_uac_transaction_invite_input(t, reply);
 
 	return 0; // not found, discard
 }

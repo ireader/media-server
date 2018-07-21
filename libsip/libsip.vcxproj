@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\sip-dialog.h" />
     <ClInclude Include="include\sip-header.h" />
     <ClInclude Include="include\sip-message.h" />
     <ClInclude Include="include\sip-timer.h" />

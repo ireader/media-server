@@ -3,23 +3,26 @@
 #include <string.h>
 #include <assert.h>
 
-int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* msg)
+int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	switch (t->status)
 	{
 	case SIP_UAC_TRANSACTION_CALLING:
+		// stop retry timer A
+		t->uac->timer.stop(t->uac->timerptr, t->timera);
+
 	case SIP_UAC_TRANSACTION_PROCEEDING:
-		if (100 <= msg->u.s.code && msg->u.s.code < 200)
+		if (100 <= reply->u.s.code && reply->u.s.code < 200)
 		{
-			return sip_uac_transaction_invite_onproceeding(t, msg);
+			return sip_uac_transaction_invite_onproceeding(t, reply);
 		}
-		else if (200 <= msg->u.s.code && msg->u.s.code < 300)
+		else if (200 <= reply->u.s.code && reply->u.s.code < 300)
 		{
-			return sip_uac_transaction_invite_onterminated(t, msg);
+			return sip_uac_transaction_invite_onterminated(t, reply);
 		}
-		else if (300 <= msg->u.s.code && msg->u.s.code < 700)
+		else if (300 <= reply->u.s.code && reply->u.s.code < 700)
 		{
-			return sip_uac_transaction_invite_oncompleted(t, msg);
+			return sip_uac_transaction_invite_oncompleted(t, reply);
 		}
 		else
 		{
@@ -28,17 +31,36 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 		}
 
 	case SIP_UAC_TRANSACTION_COMPLETED:
-		if (300 <= msg->u.s.code && msg->u.s.code < 700)
+		if (300 <= reply->u.s.code && reply->u.s.code < 700)
 		{
-			return sip_uac_transaction_invite_oncompleted(t, msg);
+			return sip_uac_transaction_invite_oncompleted(t, reply);
 		}
-		else if (100 <= msg->u.s.code && msg->u.s.code < 200)
+		else if (100 <= reply->u.s.code && reply->u.s.code < 200)
 		{
 			// multi-target, ignore
 		}
-		else if (200 <= msg->u.s.code && msg->u.s.code < 300)
+		else if (200 <= reply->u.s.code && reply->u.s.code < 300)
 		{
 			// multi-target, notify UA Core directly
+		}
+		else
+		{
+			assert(0);
+			return -1;
+		}
+
+	case SIP_UAC_TRANSACTION_TERMINATED:
+		if (100 <= reply->u.s.code && reply->u.s.code < 200)
+		{
+			return sip_uac_transaction_invite_onproceeding(t, reply);
+		}
+		else if (200 <= reply->u.s.code && reply->u.s.code < 300)
+		{
+			return sip_uac_transaction_invite_onterminated(t, reply);
+		}
+		else if (300 <= reply->u.s.code && reply->u.s.code < 700)
+		{
+			return sip_uac_transaction_invite_oncompleted(t, reply);
 		}
 		else
 		{
@@ -71,17 +93,17 @@ int sip_uac_transaction_invite_send(struct sip_uac_transaction_t* t)
 	}
 }
 
-static int sip_uac_transaction_invite_onproceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* msg)
+static int sip_uac_transaction_invite_onproceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	locker_lock(&t->locker);
 	assert(SIP_UAC_TRANSACTION_CALLING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status);
 	t->status = SIP_UAC_TRANSACTION_PROCEEDING;
 	t->uac->timer.stop(t->uac->timerptr, t->timera);
-	r = t->uac->oncalling(t, msg);
+	r = t->uac->oncalling(t, reply);
 	locker_unlock(&t->locker);
 }
 
-static int sip_uac_transaction_invite_oncompleted(struct sip_uac_transaction_t* t, const struct sip_message_t* msg)
+static int sip_uac_transaction_invite_oncompleted(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	locker_lock(&t->locker);
 	assert(SIP_UAC_TRANSACTION_CALLING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
@@ -93,12 +115,12 @@ static int sip_uac_transaction_invite_oncompleted(struct sip_uac_transaction_t* 
 }
 
 // only once
-static int sip_uac_transaction_invite_onterminated(struct sip_uac_transaction_t* t, const struct sip_message_t* msg)
+static int sip_uac_transaction_invite_onterminated(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	locker_lock(&t->locker);
 	assert(SIP_UAC_TRANSACTION_TERMINATED != t->status);
 	t->status = SIP_UAC_TRANSACTION_TERMINATED;
-	r = t->uac->onreply(t, msg);
+	r = t->uac->onreply(t, reply);
 	locker_unlock(&t->locker);
 
 	sip_uac_transaction_destroy(t);
