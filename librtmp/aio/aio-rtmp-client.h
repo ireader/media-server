@@ -13,6 +13,10 @@ typedef struct aio_rtmp_client_t aio_rtmp_client_t;
 
 struct aio_rtmp_client_handler_t
 {
+	/// aio_rtmp_client_t object destroy
+	/// @param[in] param aio_rtmp_client_create param
+	void (*ondestroy)(void* param);
+
 	/// aio transport recv/send error
 	void (*onerror)(void* param, int code);
 
