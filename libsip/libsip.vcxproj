@@ -26,6 +26,8 @@
     <ClInclude Include="include\sip-transport.h" />
     <ClInclude Include="src\uac\sip-uac-transaction.h" />
     <ClInclude Include="src\uac\sip-uac.h" />
+    <ClInclude Include="src\uas\sip-uas-transaction.h" />
+    <ClInclude Include="src\uas\sip-uas.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c" />

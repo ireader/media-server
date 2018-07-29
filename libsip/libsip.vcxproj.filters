@@ -48,6 +48,12 @@
     <ClInclude Include="src\uac\sip-uac-transaction.h">
       <Filter>Source Files\uac</Filter>
     </ClInclude>
+    <ClInclude Include="src\uas\sip-uas-transaction.h">
+      <Filter>Source Files\uas</Filter>
+    </ClInclude>
+    <ClInclude Include="src\uas\sip-uas.h">
+      <Filter>Source Files\uas</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c">
