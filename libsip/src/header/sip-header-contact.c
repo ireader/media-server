@@ -197,6 +197,11 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 	return p - data;
 }
 
+const struct cstring_t* sip_contact_tag(const struct sip_contact_t* contact)
+{
+	return sip_params_find_string(&contact->params, "tag");
+}
+
 #if defined(DEBUG) || defined(_DEBUG)
 void sip_header_contact_test(void)
 {

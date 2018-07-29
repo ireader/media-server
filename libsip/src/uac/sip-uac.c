@@ -1,11 +1,27 @@
 #include "sip-uac.h"
+#include "sip-uac-transaction.h"
 
-struct sip_uac_t* sip_uac_create()
+static struct sip_contact_t* sip_uac_from(const char* name)
+{
+	struct sip_contact_t from;
+	memset(&from, 0, sizeof(from));
+	return 0 == sip_header_contact(name, name + strlen(name), &from) ? &from : NULL;
+}
+
+struct sip_uac_t* sip_uac_create(const char* name)
 {
 	struct sip_uac_t* uac;
+	struct sip_contact_t* from;
+	
 	uac = (struct sip_uac_t*)calloc(1, sizeof(*uac));
 	if (NULL == uac)
 		return NULL;
+
+	if ((from = sip_uac_from(name), !from) || 0 != sip_contact_clone(&uac->user, from))
+	{
+		sip_uac_destroy(uac);
+		return NULL;
+	}
 
 	uac->ref = 1;
 	locker_create(&uac->locker);
@@ -16,14 +32,16 @@ struct sip_uac_t* sip_uac_create()
 
 int sip_uac_destroy(struct sip_uac_t* uac)
 {
+	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
+	struct sip_uac_transaction_t* t;
+
 	assert(uac->ref > 0);
 	if (0 != atomic_decrement32(&uac->ref))
 		return 0;
 
 	list_for_each_safe(pos, next, &uac->transactions)
 	{
-		struct sip_uac_transaction_t* t;
 		t = list_entry(pos, struct sip_uac_transaction_t, link);
 		assert(t->uac == uac);
 		sip_uac_transaction_destroy(t);
@@ -31,9 +49,8 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 
 	list_for_each_safe(pos, next, &uac->dialogs)
 	{
-		struct sip_dialog_t* t;
-		t = list_entry(pos, struct sip_dialog_t, link);
-		// TODO
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		sip_dialog_destroy(dialog);
 	}
 
 	locker_destroy(&uac->locker);
@@ -41,48 +58,8 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 	return 0;
 }
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, const struct sip_message_t* msg)
-{
-	struct sip_uac_transaction_t* t;
-	t = (struct sip_uac_transaction_t*)calloc(1, sizeof(*t));
-	if (NULL == t) return NULL;
-
-	atomic_increment32(&uac->ref);
-	locker_create(&t->locker);
-	t->msg = msg;
-	t->uac = uac;
-	t->status = SIP_UAC_TRANSACTION_TERMINATED;
-
-	// link to tail
-	locker_lock(&uac->locker);
-	list_insert_after(&t->link, uac->transactions.prev);
-	locker_unlock(&uac->locker);
-
-	// message
-	t->size = sip_message_write(msg, t->data, sizeof(t->data));
-	if (t->size < 0 || t->size >= sizeof(t->data))
-	{
-		sip_uac_transaction_destroy(uac, t);
-		return NULL;
-	}
-	return t;
-}
-
-int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
-{
-	// unlink from uac
-	locker_lock(&t->uac->locker);
-	list_remove(&t->link);
-	locker_unlock(&t->uac->locker);
-	sip_uac_destroy(t->uac);
-
-	locker_destroy(&t->locker);
-	free(t);
-	return 0;
-}
-
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
-static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* transactions, struct sip_message_t* reply)
+static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* transactions, struct sip_message_t* reply)
 {
 	struct cstring_t *p, *p2;
 	struct list_head *pos, *next;
@@ -103,7 +80,7 @@ static struct sip_uac_transaction_t* sip_uac_transaction_find(struct list_head* 
 		assert(0 == cstrprefix(p2, SIP_BRANCH_PREFIX));
 
 		// 2. cseq method parameter
-		if(reply->cseq.id != t->msg->cseq.id || !cstreq(&reply->cseq.method, &t->msg->cseq.method))
+		if (reply->cseq.id != t->msg->cseq.id || !cstreq(&reply->cseq.method, &t->msg->cseq.method))
 			continue;
 
 		//// 3. to tag
@@ -123,14 +100,14 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 	struct sip_uac_transaction_t* t;
 
 	// 1. find transaction
-	t = sip_uac_transaction_find(&uac->transactions, reply);
+	t = sip_uac_find_transaction(&uac->transactions, reply);
 	if (!t)
 	{
 		// timeout response, discard
 		return 0;
 	}
-	
-	if (cstrcasecmp(&reply->cseq.method, "INVITE"))
+
+	if (sip_message_isinvite(reply))
 	{
 		return sip_uac_transaction_invite_input(t, reply);
 	}
@@ -138,18 +115,41 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 	{
 		return sip_uac_transaction_noninvite_input(t, reply);
 	}
+}
 
-	// 2. not find transaction, do it by UAC Core
-	if (!invite)
-	{
-		// non-invite response, discard
-		return 0;
-	}
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* to, const char* sdp, sip_uac_oninvite* oninvite, void* param)
+{
+	struct sip_message_t* msg;
+	struct sip_uac_transaction_t* t;
+	msg = sip_message_create(uac->name);
+	t = sip_uac_transaction_create(uac, msg);
+	sip_uac_transaction_send(t);
+	return t;
+}
 
-	// invite fork response
-	t = sip_uac_transaction_find(&uac->invites, reply);
-	if (t)
-		return sip_uac_transaction_invite_input(t, reply);
+int sip_uac_ack(struct sip_uac_t* uac, struct sip_dialog_t* dialog, const char* sdp)
+{
+	struct sip_message_t* msg;
+	struct sip_uac_transaction_t* t;
+	t = sip_uac_transaction_create(uac, msg);
+	sip_uac_transaction_send(t);
+	return t;
+}
 
-	return 0; // not found, discard
+int sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog)
+{
+	struct sip_message_t* msg;
+	struct sip_uac_transaction_t* t;
+	t = sip_uac_transaction_create(uac, msg);
+	sip_uac_transaction_send(t);
+	return t;
+}
+
+int sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
+{
+	struct sip_message_t* msg;
+	struct sip_uac_transaction_t* t;
+	t = sip_uac_transaction_create(uac, msg);
+	sip_uac_transaction_send(t);
+	return t;
 }

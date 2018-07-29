@@ -24,6 +24,7 @@
     <ClInclude Include="include\sip-message.h" />
     <ClInclude Include="include\sip-timer.h" />
     <ClInclude Include="include\sip-transport.h" />
+    <ClInclude Include="src\uac\sip-uac-transaction.h" />
     <ClInclude Include="src\uac\sip-uac.h" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +33,7 @@
     <ClCompile Include="src\header\sip-header-cseq.c" />
     <ClCompile Include="src\header\sip-header-uri.c" />
     <ClCompile Include="src\header\sip-header-via.c" />
+    <ClCompile Include="src\sip-dialog.c" />
     <ClCompile Include="src\sip-message.c" />
     <ClCompile Include="src\uac\sip-uac-bye.c" />
     <ClCompile Include="src\uac\sip-uac-cancel.c" />
@@ -41,6 +43,7 @@
     <ClCompile Include="src\uac\sip-uac-register.c" />
     <ClCompile Include="src\uac\sip-uac-transaction-invite.c" />
     <ClCompile Include="src\uac\sip-uac-transaction-noninvite.c" />
+    <ClCompile Include="src\uac\sip-uac-transaction.c" />
     <ClCompile Include="src\uac\sip-uac.c" />
     <ClCompile Include="src\uac\sip-uas-register.c" />
     <ClCompile Include="src\uas\sip-uas-bye.c" />

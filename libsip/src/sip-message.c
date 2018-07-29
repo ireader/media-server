@@ -1,5 +1,37 @@
 #include "sip-message.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct sip_message_t* sip_message_create()
+{
+	struct sip_message_t* msg;
+	msg = (struct sip_message_t*)calloc(1, sizeof(*msg));
+	if (!msg) return NULL;
+	return msg;
+}
+
+int sip_message_destroy(struct sip_message_t* msg)
+{
+	free(msg);
+	return 0;
+}
+
+int sip_message_isinvite(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, "INVITE") ? 1 : 0;
+}
+
+struct sip_message_t* sip_message_load(const uint8_t* data, int bytes)
+{
+	struct sip_message_t* msg;
+	msg = (struct sip_message_t*)malloc(sizeof(*msg) + bytes);
+	if (NULL == msg)
+		return NULL;
+
+	memcpy(msg + 1, data, bytes);
+	return msg;
+}
 
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 {

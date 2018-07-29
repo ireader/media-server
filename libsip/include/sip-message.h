@@ -36,6 +36,14 @@ struct sip_message_t
 	int size; // payload size in byte
 };
 
+struct sip_message_t* sip_message_create();
+int sip_message_addref(struct sip_message_t*);
+int sip_message_release(struct sip_message_t* msg);
+
+struct sip_message_t* sip_message_load(const uint8_t* data, int bytes);
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes);
+
+/// @return 1-invite, 0-noninvite
+int sip_message_isinvite(const struct sip_message_t* msg);
 
 #endif /* !_sip_message_h_ */

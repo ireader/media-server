@@ -30,4 +30,10 @@ struct sip_dialog_t
 	struct sip_uris_t routers; // route set(the list of URIs in the Record-Route header field from the request)
 };
 
+struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg);
+int sip_dialog_destroy(struct sip_dialog_t* dialog);
+
+/// @return 1-match, 0-don't match
+int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* from, const struct cstring_t* to);
+
 #endif /* !_sip_dialog_h_ */

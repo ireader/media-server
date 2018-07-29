@@ -10,43 +10,13 @@
 #include "sys/locker.h"
 #include "list.h"
 
-#define UDP_PACKET_SIZE 1440
-
-enum
-{
-	SIP_UAC_TRANSACTION_TRYING,
-	SIP_UAC_TRANSACTION_CALLING,
-	SIP_UAC_TRANSACTION_PROCEEDING,
-	SIP_UAC_TRANSACTION_COMPLETED,
-	SIP_UAC_TRANSACTION_TERMINATED,
-};
-
-typedef int(*sip_uac_transaction_handler)(void* param);
-
-struct sip_uac_transaction_t
-{
-	struct list_head link;
-	locker_t locker;
-
-	struct sip_message_t* msg;
-	uint8_t data[UDP_PACKET_SIZE];
-	int size;
-	int retransmission; // default 0
-
-	int status;
-	void* timera;
-	void* timerb;
-	void* timerd;
-	
-	struct sip_uac_t* uac;
-	sip_uac_transaction_handler handler;
-	void* param;
-};
+struct sip_uac_transaction_t;
 
 struct sip_uac_t
 {
 	int32_t ref;
 	locker_t locker;
+	struct sip_contact_t user; // sip from
 
 	struct sip_transport_t* transport;
 	void* transportptr;
@@ -58,7 +28,26 @@ struct sip_uac_t
 	struct list_head dialogs; // early or confirmed dialogs
 };
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, const struct sip_message_t* msg);
-int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t);
+/// @param[in] name such as: "Alice <sip:alice@atlanta.com>"
+struct sip_uac_t* sip_uac_create(const char* name);
+int sip_uac_destroy(struct sip_uac_t* uac);
+int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply);
+
+typedef int (*sip_uac_oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* to, const char* sdp, sip_uac_oninvite* oninvite, void* param);
+
+typedef int(*sip_uac_oncancel)(void* param, int code);
+int sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
+
+typedef int(*sip_uac_onbye)(void* param, int code);
+int sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
+
+int sip_uac_ack(struct sip_uac_t* uac, struct sip_dialog_t* dialog, const char* sdp);
+
+typedef int(*sip_uac_onregister)(void* param, int code);
+int sip_uac_register(struct sip_uac_t* uac, int expiration);
+
+typedef int(*sip_uac_onoptions)(void* param, int code);
+int sip_uac_options(struct sip_uac_t* uac);
 
 #endif /* !_sip_uac_h_ */
