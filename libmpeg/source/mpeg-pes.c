@@ -113,6 +113,8 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 	uint8_t flags = 0x00;
 	uint8_t *p = NULL;
 
+	if (bytes < 9) return 0; // error
+
 	// packet_start_code_prefix 0x000001
 	data[0] = 0x00;
 	data[1] = 0x00;

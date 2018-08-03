@@ -81,13 +81,13 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 	{
 		mpeg_ts_write(ts, ts_stream(ts, STREAM_AUDIO_MP3), 0, pts * 90, dts * 90, data, bytes);
 	}
-	else if (FLV_VIDEO_H264)
+	else if (FLV_VIDEO_H264 == codec)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;
 		mpeg_ts_write(ts, ts_stream(ts, STREAM_VIDEO_H264), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
 
-		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
+		printf("diff: %03d/%03d%s", (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 	}

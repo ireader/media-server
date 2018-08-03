@@ -68,7 +68,7 @@ void hls_segmenter_flv(const char* file)
 	}
 
 	// write m3u8 file
-	hls_media_input(hls, 0, NULL, 0, 0, 0, 0);
+	hls_media_input(hls, STREAM_VIDEO_H264, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, data, sizeof(data));
 	FILE* fp = fopen("playlist.m3u8", "wb");
 	fwrite(data, 1, strlen(data), fp);

@@ -11,7 +11,7 @@
 #include <assert.h>
 
 #define PCR_DELAY			0 //(700 * 90) // 700ms
-#define PAT_PERIOD			(500 * 90) // 500ms
+#define PAT_PERIOD			(400 * 90) // 500ms
 
 #define TS_HEADER_LEN		4 // 1-bytes sync byte + 2-bytes PID + 1-byte CC
 #define PES_HEADER_LEN		6 // 3-bytes packet_start_code_prefix + 1-byte stream_id + 2-bytes PES_packet_length
@@ -156,7 +156,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 		{
 			data[1] |= TS_PAYLOAD_UNIT_START_INDICATOR; // payload_unit_start_indicator
 
-            p += pes_write_header(stream, header, bytes - (header - data));
+            p += pes_write_header(stream, header, TS_PACKET_SIZE - (header - data));
 
 			if(PSI_STREAM_H264 == stream->codecid && !tsctx->h264_h265_with_aud)
 			{
