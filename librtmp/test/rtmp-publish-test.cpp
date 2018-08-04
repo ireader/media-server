@@ -6,6 +6,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
+
+//#define CORRUPT_RTMP_CHUNK_DATA
+
+#if defined(CORRUPT_RTMP_CHUNK_DATA)
+static void rtmp_corrupt_data(const void* data, size_t bytes)
+{
+    static unsigned int seed;
+    if (0 == seed)
+    {
+        seed = (unsigned int)time(NULL);
+        srand(seed);
+    }
+
+    if (bytes < 1)
+        return;
+
+    //size_t i = bytes > 20 ? 20 : bytes;
+    //i = rand() % i;
+
+    //uint8_t v = ((uint8_t*)data)[i];
+    //((uint8_t*)data)[i] = rand() % 255;
+    //printf("rtmp_corrupt_data[%d] %d == %d\n", i, (int)v, (int)((uint8_t*)data)[i]);
+ 
+    if (5 == rand() % 10)
+    {
+        size_t i = rand() % bytes;
+        uint8_t v = ((uint8_t*)data)[i];
+        ((uint8_t*)data)[i] = rand() % 255;
+        printf("rtmp_corrupt_data[%d] %d == %d\n", i, (int)v, (int)((uint8_t*)data)[i]);
+    }
+}
+
+static uint8_t s_buffer[4 * 1024 * 1024];
+static size_t s_offset;
+static FILE* s_fp;
+static void fwritepacket(uint32_t timestamp)
+{
+    assert(4 == fwrite(&s_offset, 1, 4, s_fp));
+    assert(4 == fwrite(&timestamp, 1, 4, s_fp));
+    assert(s_offset == fwrite(s_buffer, 1, s_offset, s_fp));
+    s_offset = 0;
+}
+#endif
 
 static int rtmp_client_send(void* param, const void* header, size_t len, const void* data, size_t bytes)
 {
@@ -13,6 +58,24 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 	socket_bufvec_t vec[2];
 	socket_setbufvec(vec, 0, (void*)header, len);
 	socket_setbufvec(vec, 1, (void*)data, bytes);
+
+#if defined(CORRUPT_RTMP_CHUNK_DATA)
+	//if (len > 0)
+	//{
+	//    assert(s_offset + len < sizeof(s_buffer));
+	//    memcpy(s_buffer + s_offset, header, len);
+	//    s_offset += len;
+	//}
+	//if (bytes > 0)
+	//{
+	//    assert(s_offset + bytes < sizeof(s_buffer));
+	//    memcpy(s_buffer + s_offset, data, bytes);
+	//    s_offset += bytes;
+	//}
+	
+	rtmp_corrupt_data(header, len);
+    rtmp_corrupt_data(data, bytes);
+#endif
 	return socket_send_v_all_by_time(*socket, vec, bytes > 0 ? 2 : 1, 0, 5000);
 }
 
