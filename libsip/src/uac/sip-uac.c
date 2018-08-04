@@ -78,9 +78,12 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 		if (!p2 || 0 == cstreq(p, p2))
 			continue;
 		assert(0 == cstrprefix(p2, SIP_BRANCH_PREFIX));
-
+		
 		// 2. cseq method parameter
-		if (reply->cseq.id != t->msg->cseq.id || !cstreq(&reply->cseq.method, &t->msg->cseq.method))
+		// The method is needed since a CANCEL request constitutes a
+		// different transaction, but shares the same value of the branch parameter.
+		assert(reply->cseq.id == t->msg->cseq.id);
+		if (!cstreq(&reply->cseq.method, &t->msg->cseq.method))
 			continue;
 
 		//// 3. to tag

@@ -96,7 +96,8 @@ struct sip_requestline_t
 struct sip_statusline_t
 {
 	int code;
-	struct cstring_t version;
+	int verminor, vermajor;
+	char protocol[64];
 	struct cstring_t reason;
 };
 
@@ -104,7 +105,12 @@ struct sip_contact_t
 {
 	struct sip_uri_t uri;
 	struct cstring_t nickname;
-	struct sip_params_t params;
+
+	// parameters
+	struct cstring_t tag; // TO/FROM
+	double q; // c-p-q
+	int64_t expires; // delta-seconds, default 3600
+	struct sip_params_t params; // include tag/q/expires
 };
 DARRAY_DECLARE(sip_contact, 1);
 
@@ -114,7 +120,13 @@ struct sip_via_t
 	struct cstring_t version;
 	struct cstring_t transport;
 	struct cstring_t host; // host:port
-	struct sip_params_t params;
+
+	// parameters
+	struct cstring_t branch; // token
+	struct cstring_t maddr; // host
+	struct cstring_t received; // IPv4address / IPv6address
+	int ttl; // 0-255
+	struct sip_params_t params; // include branch/maddr/received/ttl
 };
 DARRAY_DECLARE(sip_via, 1);
 
@@ -145,16 +157,16 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 
 int sip_via_free(struct sip_via_t* via);
 int sip_via_clone(struct sip_via_t* clone, const struct sip_via_t* via);
-int sip_header_via(const char* s, const char* end, struct sip_vias_t* vias);
+int sip_header_via(const char* s, const char* end, struct sip_via_t* via);
+int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias);
 int sip_via_write(const struct sip_via_t* via, char* data, const char* end);
-const struct cstring_t* sip_via_branch(const struct sip_via_t* via);
 const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias);
 
 int sip_contact_free(struct sip_contact_t* contact);
 int sip_contact_clone(struct sip_contact_t* clone, const struct sip_contact_t* contact);
-int sip_header_contact(const char* s, const char* end, struct sip_contacts_t* contacts);
+int sip_header_contact(const char* s, const char* end, struct sip_contact_t* contact);
+int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* contacts);
 int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);
-const struct cstring_t* sip_contact_tag(const struct sip_contact_t* contact);
 
 int cstring_free(struct cstring_t* s);
 int cstring_clone(struct cstring_t* clone, const struct cstring_t* s);

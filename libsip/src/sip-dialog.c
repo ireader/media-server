@@ -11,15 +11,13 @@ static const struct cstring_t sc_null = { "", 0 };
 struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 {
 	int i;
-	const struct cstring_t* from;
 	const struct cstring_t* to;
 	struct sip_uri_t uri;
 	struct sip_dialog_t* dialog;
 
-	from = sip_contact_tag(&msg->from);
-	to = sip_contact_tag(&msg->to);
-	if (!to) to = &sc_null;
-	assert(cstrvalid(from));
+	to = &msg->to.tag;
+	if (!cstrvalid(to)) to = &sc_null;
+	assert(cstrvalid(&msg->from.tag));
 
 	dialog = (struct sip_dialog_t*)calloc(1, sizeof(*dialog));
 	if (!dialog) return NULL;
@@ -29,7 +27,7 @@ struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 	cstring_clone(&dialog->callid, &msg->callid);
 	sip_uri_clone(&dialog->local.uri, &msg->from.uri);
 	sip_uri_clone(&dialog->remote.uri, &msg->to.uri);
-	cstring_clone(&dialog->local.tag, from);
+	cstring_clone(&dialog->local.tag, &msg->from.tag);
 	cstring_clone(&dialog->remote.tag, to);
 	dialog->local.id = msg->cseq.id;
 	dialog->remote.id = -1;

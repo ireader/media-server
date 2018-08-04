@@ -28,6 +28,21 @@ struct sip_uac_t
 	struct list_head dialogs; // early or confirmed dialogs
 };
 
+struct sip_uac_handler_t
+{
+	// send ack
+	int (*oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog);
+
+	int (*onbye)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
+	int (*oncancel)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
+
+	int (*onregister)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
+
+	int (*onoptions)(void* param, struct sip_uac_transaction_t* t);
+
+	int (*send)(void* param, const void* data, int bytes);
+};
+
 /// @param[in] name such as: "Alice <sip:alice@atlanta.com>"
 struct sip_uac_t* sip_uac_create(const char* name);
 int sip_uac_destroy(struct sip_uac_t* uac);

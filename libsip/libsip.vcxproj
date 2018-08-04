@@ -37,6 +37,7 @@
     <ClCompile Include="src\header\sip-header-via.c" />
     <ClCompile Include="src\sip-dialog.c" />
     <ClCompile Include="src\sip-message.c" />
+    <ClCompile Include="src\sip-reason.c" />
     <ClCompile Include="src\uac\sip-uac-bye.c" />
     <ClCompile Include="src\uac\sip-uac-cancel.c" />
     <ClCompile Include="src\uac\sip-uac-dialog.c" />
@@ -53,6 +54,7 @@
     <ClCompile Include="src\uas\sip-uas-dialog.c" />
     <ClCompile Include="src\uas\sip-uas-invite.c" />
     <ClCompile Include="src\uas\sip-uas-options.c" />
+    <ClCompile Include="src\uas\sip-uas-transaction-invite.c" />
     <ClCompile Include="src\uas\sip-uas-transaction.c" />
     <ClCompile Include="src\uas\sip-uas.c" />
   </ItemGroup>
@@ -115,7 +117,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;../../sdk/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

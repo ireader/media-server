@@ -131,5 +131,11 @@
     <ClCompile Include="src\uac\sip-uac-transaction.c">
       <Filter>Source Files\uac</Filter>
     </ClCompile>
+    <ClCompile Include="src\sip-reason.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-transaction-invite.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

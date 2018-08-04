@@ -2,6 +2,7 @@
 #define _sip_message_h_
 
 #include "sip-header.h"
+#include "http-parser.h"
 #include <stdint.h>
 
 // 8.1.1.7 Via (p39)
@@ -36,11 +37,10 @@ struct sip_message_t
 	int size; // payload size in byte
 };
 
-struct sip_message_t* sip_message_create();
-int sip_message_addref(struct sip_message_t*);
-int sip_message_release(struct sip_message_t* msg);
+struct sip_message_t* sip_message_create(const uint8_t* data, int bytes);
+int sip_message_destroy(struct sip_message_t* msg);
 
-struct sip_message_t* sip_message_load(const uint8_t* data, int bytes);
+int sip_message_load(const struct http_parser_t* parser, struct sip_message_t* msg);
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes);
 
 /// @return 1-invite, 0-noninvite

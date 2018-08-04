@@ -6,18 +6,13 @@
 
 static struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg)
 {
-	const struct cstring_t* to;
-	const struct cstring_t* from;
 	struct list_head *pos, *next;
 	struct sip_dialog_t* dialog;
-
-	from = sip_contact_tag(&msg->from);
-	to = sip_contact_tag(&msg->to);
 
 	list_for_each_safe(pos, next, &uac->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (sip_dialog_match(dialog, &msg->callid, from, to))
+		if (sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
 			return dialog;
 	}
 	return NULL;
@@ -34,8 +29,8 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	if (SIP_UAC_TRANSACTION_COMPLETED == t->status)
 		return 0; // 1. miss order, 2. fork invite
 
-	assert(sip_contact_tag(&reply->to));
-	if (!dialog && sip_contact_tag(&reply->to))
+	assert(cstrvalid(&reply->to.tag));
+	if (!dialog && cstrvalid(&reply->to.tag))
 	{
 		dialog = sip_dialog_create( reply);
 		if (!dialog) return -1;
