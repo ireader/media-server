@@ -66,7 +66,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 
 	//assert(j+4 == bytes);
 	//crc = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | data[j+3];
-	assert(0 == crc32((unsigned int)(-1), data, section_length+3));
+	assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
 	return 0;
 }
 
@@ -146,7 +146,7 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 	nbo_w16(data + 1, (uint16_t)(0xb000 | len)); 
 
 	// crc32
-	crc = crc32(0xffffffff, data, (uint32_t)(p-data));
+	crc = mpeg_crc32(0xffffffff, data, (uint32_t)(p-data));
 	//put32(p, crc);
 	p[3] = (crc >> 24) & 0xFF;
 	p[2] = (crc >> 16) & 0xFF;

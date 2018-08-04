@@ -27,6 +27,6 @@ int find_h264_access_unit_delimiter(const uint8_t* p, size_t bytes);
 int find_h265_keyframe(const uint8_t* p, size_t bytes);
 int find_h265_access_unit_delimiter(const uint8_t* p, size_t bytes);
 
-uint32_t crc32(uint32_t crc, const uint8_t *buffer, uint32_t size);
+uint32_t mpeg_crc32(uint32_t crc, const uint8_t *buffer, uint32_t size);
 
 #endif /* !_mpeg_util_h_ */

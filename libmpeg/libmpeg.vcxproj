@@ -133,6 +133,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\mpeg-crc32.c" />
     <ClCompile Include="source\mpeg-element-descriptor.c" />
     <ClCompile Include="source\mpeg-pack-header.c" />
     <ClCompile Include="source\mpeg-packet.c" />

@@ -47,8 +47,8 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 
 	//assert(i+4 == bytes);
 	//crc = (data[i] << 24) | (data[i+1] << 16) | (data[i+2] << 8) | data[i+3];
-	//crc = crc32(-1, data, bytes-4);
-	assert(0 == crc32(0xffffffff, data, section_length+3));
+	//crc = mpeg_crc32(-1, data, bytes-4);
+	assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
 	return 0;
 }
 
@@ -92,7 +92,7 @@ size_t pat_write(const struct pat_t *pat, uint8_t *data)
 	}
 
 	// crc32
-	crc = crc32(0xffffffff, data, len-1);
+	crc = mpeg_crc32(0xffffffff, data, len-1);
 	//put32(data + section_length - 1, crc);
 	data[len - 1 + 3] = (crc >> 24) & 0xFF;
 	data[len - 1 + 2] = (crc >> 16) & 0xFF;

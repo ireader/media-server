@@ -70,7 +70,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	}
 
 //	assert(j+4 == program_stream_map_length+6);
-	assert(0 == crc32(-1, data, program_stream_map_length+6));
+	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
 
@@ -126,7 +126,7 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	nbo_w16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
 	// crc32
-	crc = crc32(0xffffffff, data, (uint32_t)j);
+	crc = mpeg_crc32(0xffffffff, data, (uint32_t)j);
 	data[j+3] = (uint8_t)((crc >> 24) & 0xFF);
 	data[j+2] = (uint8_t)((crc >> 16) & 0xFF);
 	data[j+1] = (uint8_t)((crc >> 8) & 0xFF);
