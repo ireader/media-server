@@ -88,7 +88,7 @@ static uint8_t h264_read_ue(const uint8_t* data, size_t bytes)
 	assert(leadingZeroBits < 32);
 	for(i = 0; i < leadingZeroBits && offset / 8 < bytes; i++)
 	{
-		bit = (bit << 1) | (data[offset / 8] >> (7 - (offset % 8))) & 0x01;
+		bit = (bit << 1) | ((data[offset / 8] >> (7 - (offset % 8))) & 0x01);
 		++offset;
 	}
 
