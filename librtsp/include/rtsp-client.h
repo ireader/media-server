@@ -25,7 +25,7 @@ struct rtsp_client_handler_t
 	///@return >0-sent bytes, <0-error
 	int (*send)(void* param, const char* uri, const void* req, size_t bytes);
 	///create rtp/rtcp port 
-	int (*rtpport)(void* param, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
+	int (*rtpport)(void* param, int media, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
 
 	/// rtsp_client_announce callback only
 	int (*onannounce)(void* param);

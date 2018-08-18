@@ -69,7 +69,7 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
 	for (i = 0; i < rtsp->media_count; i++)
 	{
 		media = rtsp_get_media(rtsp, i);
-		r = rtsp->handler.rtpport(rtsp->param, &media->transport.rtp.u.client_port1);
+		r = rtsp->handler.rtpport(rtsp->param, i, &media->transport.rtp.u.client_port1);
 		if (0 != r)
 			return r;
 
@@ -113,6 +113,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 			return -EINVAL;
 		}
 
+		//assert(rtsp->media[rtsp->progress].transport.transport != RTSP_TRANSPORT_RTP_TCP || (rtsp->media[rtsp->progress].transport.rtp.u.client_port1== rtsp->media[rtsp->progress].transport.interleaved1 && rtsp->media[rtsp->progress].transport.rtp.u.client_port2 == rtsp->media[rtsp->progress].transport.interleaved2));
 		assert(strlen(session) < sizeof(rtsp->media[0].session.session));
 		assert(!rtsp->aggregate || 0 == strcmp(rtsp->media[0].session.session, rtsp->media[rtsp->progress].session.session));
 
@@ -136,6 +137,11 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 			rtsp_client_www_authenticate(rtsp, authenticate);
 		}
 		return -EACCES; // try again
+	}
+	else if (461 == code)
+	{
+		// Unsupported Transport
+		return -1;
 	}
 	else
 	{
