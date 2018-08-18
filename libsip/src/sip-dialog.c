@@ -71,7 +71,23 @@ int sip_dialog_destroy(struct sip_dialog_t* dialog)
 
 int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* from, const struct cstring_t* to)
 {
+	assert(dialog && from);
 	if (!to) to = &sc_null;
 
 	return cstreq(callid, &dialog->callid) && cstreq(from, &dialog->local.tag) && cstreq(to, &dialog->remote.tag) ? 1 : 0;
+}
+
+struct sip_dialog_t* sip_dialog_find(struct list_head* dialogs, struct sip_message_t* req)
+{
+	struct list_head *pos, *next;
+	struct sip_dialog_t* dialog;
+	
+	list_for_each_safe(pos, next, dialogs)
+	{
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		if(sip_dialog_match(dialog, &req->callid, &req->from.tag, &req->to.tag))
+			return dialog;
+	}
+
+	return NULL;
 }

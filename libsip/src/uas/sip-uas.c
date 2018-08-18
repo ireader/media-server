@@ -116,32 +116,31 @@ static struct sip_dialog_t* sip_uas_find_dialog(struct sip_uas_t* uas, const str
 	return NULL;
 }
 
-int sip_uas_input(struct sip_uas_t* uas, struct http_parser_t* parser)
+int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 {
-	struct sip_message_t msg;
 	struct sip_dialog_t *dialog;
 	struct sip_uas_transaction_t* t;
-	sip_message_load(parser, &msg);
 
 	// 1. find transaction
-	t = sip_uas_find_transaction(&uas->transactions, &msg);
+	t = sip_uas_find_transaction(&uas->transactions, msg);
 	if (!t)
 	{
-		t = sip_uas_transaction_create(uas, &msg);
+		t = sip_uas_transaction_create(uas, msg);
 		if (!t) return -1;
 	}
+	t->msg = msg;
 
 	// 2. find dialog
-	dialog = sip_uas_find_dialog(&uas->dialogs, &msg);
+	dialog = sip_uas_find_dialog(&uas->dialogs, msg);
 
 	// 3. handle
-	if (sip_message_isinvite(&msg))
+	if (sip_message_isinvite(msg))
 	{
-		return sip_uas_transaction_invite_input(t, dialog, &msg);
+		return sip_uas_transaction_invite_input(t, dialog, msg);
 	}
 	else
 	{
-		return sip_uas_transaction_noninvite_input(t, dialog, &msg);
+		return sip_uas_transaction_noninvite_input(t, dialog, msg);
 	}
 }
 
@@ -163,15 +162,19 @@ int sip_uas_discard(struct sip_uas_transaction_t* t)
 
 int sip_uas_get_header_count(struct sip_uas_transaction_t* t)
 {
-	return http_get_header_count(t->http);
+	return sip_params_count(&t->msg->headers);
 }
 
 int sip_uas_get_header(struct sip_uas_transaction_t* t, int i, const char** name, const char** value)
 {
-	return http_get_header(t->http, i, name, value);
+	struct sip_param_t* param;
+	param = sip_params_get(&t->msg->headers, i);
+	name = &param->name.p;
+	value = &param->value.p;
+	return 0;
 }
 
 const char* sip_uas_get_header_by_name(struct sip_uas_transaction_t* t, const char* name)
 {
-	return http_get_header_by_name(t->http, name);
+	return sip_params_find(&t->msg->headers, name, strlen(name));
 }

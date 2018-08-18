@@ -1,16 +1,16 @@
 #include "sip-uac-transaction.h"
 #include "sip-uac.h"
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, const struct sip_message_t* msg)
+struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac)
 {
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)calloc(1, sizeof(*t));
 	if (NULL == t) return NULL;
 
-	atomic_increment32(&uac->ref);
-	locker_create(&t->locker);
-	t->msg = msg;
+	t->ref = 1;
 	t->uac = uac;
+	LIST_INIT_HEAD(&t->link);
+	locker_create(&t->locker);
 	t->status = SIP_UAC_TRANSACTION_CALLING;
 
 	// 17.1.1.1 Overview of INVITE Transaction (p125)
@@ -19,23 +19,11 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, 
 	// 17.1.2.1 Formal Description (p130)
 	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
 	t->t2 = sip_message_isinvite(msg) ? (64 * T1) : T2;
-
-	// link to tail
-	locker_lock(&uac->locker);
-	list_insert_after(&t->link, uac->transactions.prev);
-	locker_unlock(&uac->locker);
-
-	// message
-	t->size = sip_message_write(msg, t->data, sizeof(t->data));
-	if (t->size < 0 || t->size >= sizeof(t->data))
-	{
-		sip_uac_transaction_destroy(uac, t);
-		return NULL;
-	}
+	
 	return t;
 }
 
-int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
+static int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
@@ -46,12 +34,12 @@ int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
 	// unlink from uac
 	locker_lock(&t->uac->locker);
 	list_remove(&t->link);
-	
+
 	// destroy all early dialog
 	list_for_each_safe(pos, next, &t->uac->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (cstreq(&dialog->callid, &t->msg->callid) && DIALOG_ERALY == dialog->state)
+		if (cstreq(&dialog->callid, &t->req->callid) && DIALOG_ERALY == dialog->state)
 		{
 			sip_dialog_destroy(dialog);
 			list_remove(pos);
@@ -59,8 +47,29 @@ int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
 	}
 	locker_unlock(&t->uac->locker);
 
+	sip_uac_release(t->uac);
+
+	if (!t->req)
+		sip_message_destroy(t->req);
+	if (!t->reply)
+		sip_message_destroy(t->reply);
+
 	locker_destroy(&t->locker);
 	free(t);
+	return 0;
+}
+
+int sip_uac_transaction_addref(struct sip_uac_transaction_t* t)
+{
+	atomic_increment32(&t->ref);
+	return 0;
+}
+
+int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
+{
+	assert(t->ref > 0);
+	if (0 == atomic_decrement32(&t->ref))
+		return sip_uac_transaction_destroy(t);
 	return 0;
 }
 

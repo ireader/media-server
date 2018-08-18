@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -35,6 +35,7 @@
     <ClCompile Include="src\header\sip-header-cseq.c" />
     <ClCompile Include="src\header\sip-header-uri.c" />
     <ClCompile Include="src\header\sip-header-via.c" />
+    <ClCompile Include="src\sip-callid.c" />
     <ClCompile Include="src\sip-dialog.c" />
     <ClCompile Include="src\sip-message.c" />
     <ClCompile Include="src\sip-reason.c" />
@@ -48,12 +49,12 @@
     <ClCompile Include="src\uac\sip-uac-transaction-noninvite.c" />
     <ClCompile Include="src\uac\sip-uac-transaction.c" />
     <ClCompile Include="src\uac\sip-uac.c" />
-    <ClCompile Include="src\uac\sip-uas-register.c" />
     <ClCompile Include="src\uas\sip-uas-bye.c" />
     <ClCompile Include="src\uas\sip-uas-cancel.c" />
     <ClCompile Include="src\uas\sip-uas-dialog.c" />
     <ClCompile Include="src\uas\sip-uas-invite.c" />
     <ClCompile Include="src\uas\sip-uas-options.c" />
+    <ClCompile Include="src\uas\sip-uas-register.c" />
     <ClCompile Include="src\uas\sip-uas-transaction-invite.c" />
     <ClCompile Include="src\uas\sip-uas-transaction.c" />
     <ClCompile Include="src\uas\sip-uas.c" />
@@ -74,20 +75,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

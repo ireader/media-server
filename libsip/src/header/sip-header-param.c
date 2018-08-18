@@ -32,50 +32,75 @@ int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 	return 0;
 }
 
-const struct sip_param_t* sip_params_find(const struct sip_params_t* params, const char* name)
+int sip_header_params(char sep, const char* s, const char* end, struct sip_params_t* params)
+{
+	int r;
+	const char* p;
+	struct sip_param_t param;
+
+	r = 0;
+	for (p = s; 0 == r && p && p < end; p++)
+	{
+		s = p;
+		p = strchr(s, sep);
+		if (!p || p > end)
+			p = end;
+
+		memset(&param, 0, sizeof(param));
+		r = sip_header_param(s, p, &param);
+		r = sip_params_push(params, &param);
+	}
+
+	return r;
+}
+
+const struct sip_param_t* sip_params_find(const struct sip_params_t* params, const char* name, int bytes)
 {
 	int i;
+	struct cstring_t s;
 	const struct sip_param_t* p;
+	s.p = name;
+	s.n = bytes;
 	for(i = 0; i < sip_params_count(params); i++)
 	{
 		p = sip_params_get(params, i);
-		if (0 == cstrcmp(&p->name, name))
+		if (0 == cstreq(&p->name, &s))
 			return p;
 	}
 	return NULL;
 }
 
-const struct cstring_t* sip_params_find_string(const struct sip_params_t* params, const char* name)
+const struct cstring_t* sip_params_find_string(const struct sip_params_t* params, const char* name, int bytes)
 {
 	const struct sip_param_t* p;
-	p = sip_params_find(params, name);
+	p = sip_params_find(params, name, bytes);
 	return p ? &p->value : NULL;
 }
 
-int sip_params_find_int(const struct sip_params_t* params, const char* name, int* value)
+int sip_params_find_int(const struct sip_params_t* params, const char* name, int bytes, int* value)
 {
 	const struct sip_param_t* p;
-	p = sip_params_find(params, name);
+	p = sip_params_find(params, name, bytes);
 	if (NULL == p) return -ENOENT; // not found
 	*value = cstrtol(&p->value, NULL, 10);
 	return 0;
 }
 
-int sip_params_find_int64(const struct sip_params_t* params, const char* name, int64_t* value)
+int sip_params_find_int64(const struct sip_params_t* params, const char* name, int bytes, int64_t* value)
 {
 	const struct sip_param_t* p;
-	p = sip_params_find(params, name);
+	p = sip_params_find(params, name, bytes);
 	if (NULL == p) return -ENOENT; // not found
 	*value = cstrtoll(&p->value, NULL, 10);
 	return 0;
 }
 
-int sip_params_find_double(const struct sip_params_t* params, const char* name, double* value)
+int sip_params_find_double(const struct sip_params_t* params, const char* name, int bytes, double* value)
 {
 	const struct sip_param_t* p;
-	p = sip_params_find(params, name);
+	p = sip_params_find(params, name, bytes);
 	if (NULL == p) return -ENOENT; // not found
-	*value = strtod(&p->value, NULL);
+	*value = cstrtod(&p->value, NULL);
 	return 0;
 }
 
@@ -97,16 +122,19 @@ int sip_param_write(const struct sip_param_t* param, char* data, const char* end
 	return p - data;
 }
 
-int sip_params_write(const struct sip_params_t* params, char* data, const char* end)
+int sip_params_write(const struct sip_params_t* params, char* data, const char* end, char sep)
 {
 	char* p;
 	int i, n;
+	const struct sip_param_t* param;
 
 	p = data;
-	for (i = 0; i < sip_params_count((struct sip_params_t*)params) && p < end; i++)
+	for (i = 0; i < sip_params_count(params) && p < end; i++)
 	{
-		*p++ = ';';
-		n = sip_param_write(sip_params_get((struct sip_params_t*)params, i), p, end);
+		param = sip_params_get(params, i);
+
+		if(i > 0) *p++ = sep;
+		n = sip_param_write(param, p, end);
 		if (n < 0) return n;
 		p += n;
 	}

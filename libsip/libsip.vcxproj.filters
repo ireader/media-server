@@ -86,9 +86,6 @@
     <ClCompile Include="src\uac\sip-uac-register.c">
       <Filter>Source Files\uac</Filter>
     </ClCompile>
-    <ClCompile Include="src\uac\sip-uas-register.c">
-      <Filter>Source Files\uas</Filter>
-    </ClCompile>
     <ClCompile Include="src\uac\sip-uac-invite.c">
       <Filter>Source Files\uac</Filter>
     </ClCompile>
@@ -136,6 +133,12 @@
     </ClCompile>
     <ClCompile Include="src\uas\sip-uas-transaction-invite.c">
       <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-register.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sip-callid.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

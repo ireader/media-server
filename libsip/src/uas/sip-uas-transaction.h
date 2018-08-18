@@ -1,6 +1,8 @@
 #ifndef _sip_uas_transaction_h_
 #define _sip_uas_transaction_h_
 
+#include "sip-message.h"
+#include "sip-header.h"
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
@@ -25,7 +27,6 @@ struct sip_uas_transaction_t
 	struct list_head link;
 	locker_t locker;
 
-	struct http_parser_t* http;
 	struct sip_message_t* msg;
 	uint8_t data[UDP_PACKET_SIZE];
 	int size;

@@ -9,7 +9,6 @@
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
-#include "http-parser.h"
 
 struct sip_uas_transaction_t;
 
@@ -34,10 +33,17 @@ struct sip_uas_t
 
 struct sip_uas_handler_t
 {
-	int (*oninvite)(void* param, struct sip_uas_transaction_t* t, const void* data, int bytes);
-	int (*onack)(void* param, struct sip_uas_transaction_t* t, const void* data, int bytes);
-	int (*onbye)(void* param, struct sip_uas_transaction_t* t);
-	int (*oncancel)(void* param, struct sip_uas_transaction_t* t);
+	/// @return user-defined session-id, null if error
+	void* (*oninvite)(void* param, struct sip_uas_transaction_t* t, const void* data, int bytes);
+	/// @return 0-ok, other-error
+	int (*onack)(void* param, const void* session, const void* data, int bytes);
+	
+	/// on terminating a session(dialog)
+	int (*onbye)(void* param, struct sip_uas_transaction_t* t, const void* session);
+	
+	/// cancel a transaction(should be an invite transaction)
+	int (*oncancel)(void* param, struct sip_uas_transaction_t* t, const void* session);
+	
 	int (*onregister)(void* param, struct sip_uas_transaction_t* t, const char* user, const char* location, int expire);
 
 	int (*send)(void* param, const void* data, int bytes);
@@ -47,7 +53,7 @@ struct sip_uas_handler_t
 struct sip_uas_t* sip_uas_create(const char* name, struct sip_uas_handler_t* handler, void* param);
 int sip_uas_destroy(struct sip_uas_t* uas);
 
-int sip_uas_input(struct sip_uas_t* uas, struct http_parser_t* parser);
+int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg);
 
 // valid only on callback
 int sip_uas_get_header_count(struct sip_uas_transaction_t* t);

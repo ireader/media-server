@@ -25,9 +25,9 @@ ttl = 1*3DIGIT ; 0 to 255
 
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 {
-	int r;
+	int i, r;
 	const char* p;
-	struct sip_param_t param;
+	struct sip_param_t* param;
 
 	p = strchr(s, '/');
 	if (!p || p > end)
@@ -70,38 +70,37 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 
 	// via-params
 	r = 0;
-	while (0 == r && p && p < end && ';' == *p)
+	if (p && p < end && ';' == *p)
 	{
-		s = p + 1;
-		p = strchr(s, ';');
-		if (!p || p >= end)
-			p = end;
+		r = sip_header_params(';', p + 1, end, &via->params);
 
-		sip_header_param(s, p, &param);
-		r = sip_params_push(&via->params, &param);
+		for (i = 0; i < sip_params_count(&via->params); i++)
+		{
+			param = sip_params_get(&via->params, i);
 
-		if (0 == cstrcmp(&param.name, "branch"))
-		{
-			via->branch.p = param.value.p;
-			via->branch.n = param.value.n;
-		}
-		else if (0 == cstrcmp(&param.name, "maddr"))
-		{
-			via->maddr.p = param.value.p;
-			via->maddr.n = param.value.n;
-		}
-		else if (0 == cstrcmp(&param.name, "received"))
-		{
-			via->received.p = param.value.p;
-			via->received.n = param.value.n;
-		}
-		else if (0 == cstrcmp(&param.name, "ttl"))
-		{
-			via->ttl = atoi(param.value.p);
+			if (0 == cstrcmp(&param->name, "branch"))
+			{
+				via->branch.p = param->value.p;
+				via->branch.n = param->value.n;
+			}
+			else if (0 == cstrcmp(&param->name, "maddr"))
+			{
+				via->maddr.p = param->value.p;
+				via->maddr.n = param->value.n;
+			}
+			else if (0 == cstrcmp(&param->name, "received"))
+			{
+				via->received.p = param->value.p;
+				via->received.n = param->value.n;
+			}
+			else if (0 == cstrcmp(&param->name, "ttl"))
+			{
+				via->ttl = atoi(param->value.p);
+			}
 		}
 	}
 
-	return 0;
+	return r;
 }
 
 int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias)
@@ -147,7 +146,7 @@ int sip_via_write(const struct sip_via_t* via, char* data, const char* end)
 	if (p < end) *p++ = ' ';
 	if (p < end) p += cstrcpy(&via->host, p, end - p);
 
-	n = sip_params_write(&via->params, p, end);
+	n = sip_params_write(&via->params, p, end, ';');
 	if (n < 0) return n;
 	p += n;
 

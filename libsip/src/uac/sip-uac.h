@@ -1,68 +1,36 @@
 #ifndef _sip_uac_h_
 #define _sip_uac_h_
 
-#include "sip-timer.h"
-#include "sip-header.h"
-#include "sip-dialog.h"
 #include "sip-message.h"
-#include "sip-transport.h"
-#include "sys/atomic.h"
-#include "sys/locker.h"
-#include "list.h"
 
+struct sip_uac_t;
 struct sip_uac_transaction_t;
 
-struct sip_uac_t
-{
-	int32_t ref;
-	locker_t locker;
-	struct sip_contact_t user; // sip from
-
-	struct sip_transport_t* transport;
-	void* transportptr;
-
-	struct sip_timer_t timer;
-	void* timerptr;
-
-	struct list_head transactions; // transaction layer handler
-	struct list_head dialogs; // early or confirmed dialogs
-};
-
-struct sip_uac_handler_t
-{
-	// send ack
-	int (*oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog);
-
-	int (*onbye)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
-	int (*oncancel)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
-
-	int (*onregister)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog);
-
-	int (*onoptions)(void* param, struct sip_uac_transaction_t* t);
-
-	int (*send)(void* param, const void* data, int bytes);
-};
+typedef int (*sip_uac_oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+typedef int (*sip_uac_onreply)(void* param, struct sip_uac_transaction_t* t, int code);
+typedef int (*sip_uac_onsend)(void* param, const char* host, int port, const void* data, int bytes);
 
 /// @param[in] name such as: "Alice <sip:alice@atlanta.com>"
-struct sip_uac_t* sip_uac_create(const char* name);
+struct sip_uac_t* sip_uac_create();
 int sip_uac_destroy(struct sip_uac_t* uac);
+
 int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply);
 
-typedef int (*sip_uac_oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
-struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* to, const char* sdp, sip_uac_oninvite* oninvite, void* param);
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite* oninvite, void* param);
+struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, void* session, sip_uac_onreply oncancel, void* param);
+struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, void* session, sip_uac_onreply onbye, void* param);
+struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, void* session, sip_uac_oninvite* oninvite, void* param);
+/// @param[in] seconds expires seconds
+struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, int seconds, sip_uac_onreply onregister, void* param);
+struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_onreply onoptins, void* param);
 
-typedef int(*sip_uac_oncancel)(void* param, int code);
-int sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
+// valid only on callback
+int sip_uac_get_header_count(struct sip_uac_transaction_t* t);
+int sip_uac_get_header(struct sip_uac_transaction_t* t, int i, const char** name, const char** value);
+const char* sip_uac_get_header_by_name(struct sip_uac_transaction_t* t, const char* name);
 
-typedef int(*sip_uac_onbye)(void* param, int code);
-int sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
+int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
 
-int sip_uac_ack(struct sip_uac_t* uac, struct sip_dialog_t* dialog, const char* sdp);
-
-typedef int(*sip_uac_onregister)(void* param, int code);
-int sip_uac_register(struct sip_uac_t* uac, int expiration);
-
-typedef int(*sip_uac_onoptions)(void* param, int code);
-int sip_uac_options(struct sip_uac_t* uac);
+int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, sip_uac_onsend onsend, void* param);
 
 #endif /* !_sip_uac_h_ */
