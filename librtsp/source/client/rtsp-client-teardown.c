@@ -38,12 +38,25 @@ static int rtsp_client_media_teardown(struct rtsp_client_t* rtsp)
 
 int rtsp_client_teardown(struct rtsp_client_t* rtsp)
 {
+	int r;
 	rtsp->state = RTSP_TEARDWON;
 	rtsp->progress = 0;
-	return rtsp_client_media_teardown(rtsp);
+	if (rtsp->aggregate)
+	{
+		assert(rtsp->media_count > 0);
+		assert(rtsp->aggregate_uri[0]);
+		r = rtsp_client_authenrization(rtsp, "TEARDOWN", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->media[0].session.session, rtsp->authenrization, USER_AGENT);
+		assert(r > 0 && r < sizeof(rtsp->req));
+		return r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r) ? 0 : -1;
+	}
+	else
+	{
+		return rtsp_client_media_teardown(rtsp);
+	}
 }
 
-int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
+static int rtsp_client_media_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
 	int code;
 	assert(RTSP_TEARDWON == rtsp->state);
@@ -62,4 +75,39 @@ int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
 		// teardown next media
 		return rtsp_client_media_teardown(rtsp);
 	}
+}
+
+// aggregate control reply
+static int rtsp_client_aggregate_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
+{
+	int code;
+	assert(RTSP_TEARDWON == rtsp->state);
+	assert(0 == rtsp->progress);
+	assert(rtsp->aggregate);
+
+	code = http_get_status_code(parser);
+	if (459 == code) // 459 Aggregate operation not allowed (p26)
+	{
+		rtsp->aggregate = 0;
+		return rtsp_client_media_teardown(rtsp);
+	}
+	else if (200 == code)
+	{
+		return rtsp->handler.onteardown(rtsp->param);
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+int rtsp_client_teardown_onreply(struct rtsp_client_t* rtsp, void* parser)
+{
+	assert(RTSP_TEARDWON == rtsp->state);
+	assert(rtsp->progress < rtsp->media_count);
+
+	if (rtsp->aggregate)
+		return rtsp_client_aggregate_teardown_onreply(rtsp, parser);
+	else
+		return rtsp_client_media_teardown_onreply(rtsp, parser);
 }
