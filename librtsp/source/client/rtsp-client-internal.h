@@ -38,7 +38,7 @@ struct rtsp_media_t
 		int rate; // RTP payload frequency
 		int channel; // RTP payload channel
 		char encoding[64]; // RTP payload encoding
-		char spspps[128]; // H.264 only
+		char ps[4 * 1024]; // H.264/H.265 only
 	} avformats[N_MEDIA_FORMAT];
 };
 

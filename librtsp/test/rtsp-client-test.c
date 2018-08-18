@@ -9,12 +9,16 @@
 #include "sys/system.h"
 #include "cpm/unuse.h"
 
+void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes);
+void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int payload, const char* encoding);
+void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char* encoding);
+
 struct rtsp_client_test_t
 {
 	void* rtsp;
 	socket_t socket;
 
-	int media;
+	int transport;
 	socket_t rtp[5][2];
 	unsigned short port[5][2];
 };
@@ -28,20 +32,32 @@ static int rtsp_client_send(void* param, const char* uri, const void* req, size_
 	return socket_send_all_by_time(ctx->socket, req, bytes, 0, 2000);
 }
 
-static int rtpport(void* param, unsigned short *rtp)
+static int rtpport(void* param, int media, unsigned short *rtp)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
-	assert(0 == rtp_socket_create(NULL, ctx->rtp[ctx->media], ctx->port[ctx->media]));
-	*rtp = ctx->port[ctx->media][0];
-//	*rtp = 0; // tcp
-	++ctx->media;
+	switch (ctx->transport)
+	{
+	case RTSP_TRANSPORT_RTP_UDP:
+		assert(0 == rtp_socket_create(NULL, ctx->rtp[media], ctx->port[media]));
+		*rtp = ctx->port[media][0];
+		break;
+
+	case RTSP_TRANSPORT_RTP_TCP:
+		*rtp = 0;
+		break;
+
+	default:
+		assert(0);
+		return -1;
+	}
+
 	return 0;
 }
 
 static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
-//	rtp_receiver_tcp_input(channel, data, bytes);
+	rtp_receiver_tcp_input(channel, data, bytes);
 }
 
 static int ondescribe(void* param, const char* sdp)
@@ -52,15 +68,13 @@ static int ondescribe(void* param, const char* sdp)
 
 static int onsetup(void* param)
 {
-	int i, count;
+	int i;
 	uint64_t npt = 0;
 	char ip[65];
 	u_short rtspport;
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	assert(0 == rtsp_client_play(ctx->rtsp, &npt, NULL));
-	count = rtsp_client_media_count(ctx->rtsp);
-	assert(count == ctx->media);
-	for (i = 0; i < count; i++)
+	for (i = 0; i < rtsp_client_media_count(ctx->rtsp); i++)
 	{
 		int payload, port[2];
 		const char* encoding;
@@ -89,7 +103,9 @@ static int onsetup(void* param)
 		}
 		else if (RTSP_TRANSPORT_RTP_TCP == transport->transport)
 		{
-	//		rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
+			//assert(transport->rtp.u.client_port1 == transport->interleaved1);
+			//assert(transport->rtp.u.client_port2 == transport->interleaved2);
+			rtp_receiver_tcp_test(transport->interleaved1, transport->interleaved2, payload, encoding);
 		}
 		else
 		{
@@ -118,7 +134,6 @@ static int onpause(void* param)
 void rtsp_client_test(const char* host, const char* file)
 {
 	int r;
-	void* parser;
 	struct rtsp_client_test_t ctx;
 	struct rtsp_client_handler_t handler;
 	static char packet[2 * 1024 * 1024];
@@ -133,6 +148,7 @@ void rtsp_client_test(const char* host, const char* file)
 	handler.onteardown = onteardown;
 	handler.onrtp = onrtp;
 
+	ctx.transport = RTSP_TRANSPORT_RTP_UDP; // RTSP_TRANSPORT_RTP_TCP
 	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
 	socket_init();

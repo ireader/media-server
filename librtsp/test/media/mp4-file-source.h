@@ -1,5 +1,8 @@
 #pragma once
 
+#include "mpeg4-avc.h"
+#include "mpeg4-aac.h"
+#include "mpeg4-hevc.h"
 #include "media-source.h"
 #include "mov-reader.h"
 #include <string>
@@ -58,6 +61,10 @@ private:
 		int track;
 	};
 	struct frame_t m_frame;
+	struct mpeg4_aac_t m_aac;
+	struct mpeg4_avc_t m_avc;
+	struct mpeg4_hevc_t m_hevc;
+	uint8_t m_packet[2 * 1024 * 1024];
 
 	struct media_t
 	{

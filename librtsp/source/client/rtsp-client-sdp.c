@@ -170,9 +170,19 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 						memset(&h264, 0, sizeof(h264));
 						sdp_a_fmtp_h264(value, &payload, &h264);
 						if(h264.flags & SDP_A_FMTP_H264_SPROP_PARAMETER_SETS)
-						{
-							snprintf(media->avformats[i].spspps, sizeof(media->avformats[i].spspps), "%s", h264.sprop_parameter_sets);
-						}
+							snprintf(media->avformats[i].ps, sizeof(media->avformats[i].ps), "%s", h264.sprop_parameter_sets);
+					}
+					else if (0 == strcmp("H265", media->avformats[i].encoding))
+					{
+						struct sdp_a_fmtp_h265_t h265;
+						memset(&h265, 0, sizeof(h265));
+						sdp_a_fmtp_h265(value, &payload, &h265);
+						//if (h265.flags & SDP_A_FMTP_H265_SPROP_VPS)
+						//	snprintf(media->avformats[i].ps, sizeof(media->avformats[i].ps), "%s", h265.sprop_vps);
+						//if (h265.flags & SDP_A_FMTP_H265_SPROP_SPS)
+						//	snprintf(media->avformats[i].ps, sizeof(media->avformats[i].ps), "%s", h265.sprop_sps); 
+						//if (h265.flags & SDP_A_FMTP_H265_SPROP_PPS)
+						//	snprintf(media->avformats[i].ps, sizeof(media->avformats[i].ps), "%s", h265.sprop_pps);
 					}
 					else if(0 == strcmp("mpeg4-generic", media->avformats[i].encoding))
 					{

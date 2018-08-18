@@ -90,7 +90,8 @@ enum
 	RTP_PAYLOAD_H265		= 98, // H.265 video (MPEG-H Part 2) (rfc7798)
 	RTP_PAYLOAD_MP2P		= 99, // MPEG-2 Program Streams video (rfc2250)
 	RTP_PAYLOAD_MP4A		= 100, // MP4A-LATM MPEG-4 Audio (rfc6416)
-	RTP_PAYLOAD_MP4ES		= 101, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
+	RTP_PAYLOAD_OPUS		= 101, // RTP Payload Format for the Opus Speech and Audio Codec (rfc7587)
+	RTP_PAYLOAD_MP4ES		= 102, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
 };
 
 ///@param[in] payload RTP payload type(0 ~ 127)

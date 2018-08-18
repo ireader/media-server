@@ -55,6 +55,9 @@
     <Filter Include="libsip">
       <UniqueIdentifier>{47092231-3039-49a4-8cc2-83f4ed15d45b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="librtsp\sdp">
+      <UniqueIdentifier>{65f4c8fc-27c7-4b37-9c1b-de6acfc134bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -172,9 +175,6 @@
     </ClCompile>
     <ClCompile Include="..\librtmp\aio\aio-rtmp-transport.c">
       <Filter>librtmp\aio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdk\source\digest\crc32.c">
-      <Filter>sdk</Filter>
     </ClCompile>
     <ClCompile Include="..\librtsp\test\rtp-socket.c">
       <Filter>librtsp</Filter>
@@ -314,9 +314,6 @@
     <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
-    <ClCompile Include="..\libsip\test\sip-header-test.c">
-      <Filter>libsip</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sdk\source\darray.c">
       <Filter>sdk</Filter>
     </ClCompile>
@@ -328,6 +325,21 @@
     </ClCompile>
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp">
       <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-h265.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c">
+      <Filter>librtsp\sdp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
