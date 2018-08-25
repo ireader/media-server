@@ -14,7 +14,13 @@ else
 	BUILD:=debug
 endif
 
-DEFINES += OS_LINUX
+KERNEL := $(shell uname -s)
+ifeq ($(KERNEL),Linux)
+	DEFINES += OS_LINUX
+endif
+ifeq ($(KERNEL),Darwin)
+	DEFINES += OS_MAC
+endif
 
 #--------------------------------Compile-----------------------------
 #

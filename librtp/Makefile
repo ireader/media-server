@@ -40,8 +40,3 @@ STATIC_LIBS =
 DEFINES =
 
 include ../gcc.mk
-
-GCC_VER_GTE44 := $(shell echo `gcc -dumpversion | cut -f1-2 -d.` \< 4.4 | bc )
-ifeq ($(GCC_VER_GTE44),1)
-CFLAGS += -march=i586
-endif
