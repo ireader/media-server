@@ -133,6 +133,13 @@ const char* rtsp_client_get_media_encoding(struct rtsp_client_t *rtsp, int media
 	return rtsp_get_media(rtsp, media)->avformats[0].encoding;
 }
 
+const char* rtsp_client_get_media_fmtp(struct rtsp_client_t *rtsp, int media)
+{
+	if (media < 0 || media >= rtsp->media_count)
+		return NULL;
+	return rtsp_get_media(rtsp, media)->avformats[0].fmtp;
+}
+
 int rtsp_client_get_media_payload(struct rtsp_client_t *rtsp, int media)
 {
 	if (media < 0 || media >= rtsp->media_count)

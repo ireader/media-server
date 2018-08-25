@@ -104,6 +104,7 @@ int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const fl
 int rtsp_client_media_count(rtsp_client_t* rtsp);
 const struct rtsp_header_transport_t* rtsp_client_get_media_transport(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_encoding(rtsp_client_t* rtsp, int media);
+const char* rtsp_client_get_media_fmtp(rtsp_client_t* rtsp, int media);
 int rtsp_client_get_media_payload(rtsp_client_t* rtsp, int media);
 int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media); // return 0 if unknown rate
 

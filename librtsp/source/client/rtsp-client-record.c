@@ -51,7 +51,7 @@ static int rtsp_client_media_record(struct rtsp_client_t *rtsp)
     media = rtsp_get_media(rtsp, rtsp->progress);
     if (NULL == media) return -1;
 
-    assert(media && media->uri && media->session.session[0]);
+    assert(media && media->uri[0] && media->session.session[0]);
     r = rtsp_client_authenrization(rtsp, "RECORD", media->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
     r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, rtsp->range, rtsp->scale, rtsp->authenrization, USER_AGENT);
     assert(r > 0 && r < sizeof(rtsp->req));
