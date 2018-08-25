@@ -525,7 +525,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 				seg = list_entry(link, struct dash_segment_t, link);
 				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, s_footer);
+			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
 		}
 		else if (MOV_OBJECT_HEVC == track->object)
 		{
@@ -535,7 +535,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 				seg = list_entry(link, struct dash_segment_t, link);
 				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, s_footer);
+			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
 		}
 		else if (MOV_OBJECT_AAC == track->object)
 		{
@@ -545,7 +545,7 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 				seg = list_entry(link, struct dash_segment_t, link);
 				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, s_footer);
+			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
 		}
 		else
 		{

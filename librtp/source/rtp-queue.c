@@ -265,7 +265,7 @@ static void rtp_queue_dump(struct rtp_queue_t* q)
 	printf("[%02d/%02d]: ", q->pos, q->size);
 	for (i = 0; i < q->size; i++)
 	{
-		printf("%hu\t", q->items[(i + q->pos) % q->capacity].pkt->rtp.seq);
+		printf("%u\t", (unsigned int)q->items[(i + q->pos) % q->capacity].pkt->rtp.seq);
 	}
 	printf("\n");
 }
