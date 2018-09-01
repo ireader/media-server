@@ -8,13 +8,14 @@
 #include "sip-transport.h"
 #include "sys/atomic.h"
 #include "sys/locker.h"
+#include "cstringext.h"
+#include "uri-parse.h"
 #include "list.h"
 
 struct sip_uac_t
 {
 	int32_t ref;
 	locker_t locker;
-	struct sip_contact_t user; // sip from
 
 	struct sip_transport_t* transport;
 	void* transportptr;
@@ -26,27 +27,12 @@ struct sip_uac_t
 	struct list_head dialogs; // early or confirmed dialogs
 };
 
-static struct sip_contact_t* sip_uac_from(const char* name)
-{
-	struct sip_contact_t from;
-	memset(&from, 0, sizeof(from));
-	return 0 == sip_header_contact(name, name + strlen(name), &from) ? &from : NULL;
-}
-
 struct sip_uac_t* sip_uac_create()
 {
-	struct sip_uac_t* uac;
-	struct sip_contact_t* from;
-	
+	struct sip_uac_t* uac;	
 	uac = (struct sip_uac_t*)calloc(1, sizeof(*uac));
 	if (NULL == uac)
 		return NULL;
-
-	if ((from = sip_uac_from(name), !from) || 0 != sip_contact_clone(&uac->user, from))
-	{
-		sip_uac_destroy(uac);
-		return NULL;
-	}
 
 	uac->ref = 1;
 	locker_create(&uac->locker);
@@ -69,7 +55,7 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 	{
 		t = list_entry(pos, struct sip_uac_transaction_t, link);
 		assert(t->uac == uac);
-		sip_uac_transaction_destroy(t);
+		sip_uac_transaction_release(t);
 	}
 
 	list_for_each_safe(pos, next, &uac->dialogs)
@@ -86,7 +72,7 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
 static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* transactions, struct sip_message_t* reply)
 {
-	struct cstring_t *p, *p2;
+	const struct cstring_t *p, *p2;
 	struct list_head *pos, *next;
 	struct sip_uac_transaction_t* t;
 
@@ -147,19 +133,28 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, sip_uac_onsend onsend, void* param)
 {
-	atomic_increment32(t->uac->ref); // ref by transaction
+	struct uri_t* host;
+	atomic_increment32(&t->uac->ref); // ref by transaction
 
 	// link to tail
 	locker_lock(&t->uac->locker);
 	list_insert_after(&t->link, t->uac->transactions.prev);
 	locker_unlock(&t->uac->locker);
 
+	// Request-Line
+	memcpy(&t->req->u.c.method, &t->req->cseq.method, sizeof(struct cstring_t));
+	t->req->u.c.uri = dialog->target;
+
+	// TODO: via !!!
+
 	// message
+	t->req->payload = sdp;
+	t->req->size = bytes;
 	t->size = sip_message_write(t->req, t->data, sizeof(t->data));
 	if (t->size < 0 || t->size >= sizeof(t->data))
 	{
 		sip_uac_transaction_release(t);
-		return NULL;
+		return -1;
 	}
 
 	// 8.1.2 Sending the Request (p41)
@@ -187,16 +182,24 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, si
 	// Before a request is sent, the client transport MUST insert a value of
 	// the "sent-by" field into the Via header field.
 
-	return onsend(param, t->data, t->size);
+	host = uri_parse(t->req->u.c.uri.host.p, t->req->u.c.uri.host.n);
+	if (!host) return -1; // invalid host uri
+	return onsend(param, host->host, 0 == host->port ? SIP_PORT : host->port, t->data, t->size);
 }
 
 struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, int seconds, sip_uac_onreply onregister, void* param)
 {
 	struct sip_uac_transaction_t* t;
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_REGISTER, name, name);
+	t->req = sip_message_create();
 	t->onreply = onregister;
 	t->param = param;
+
+	if (0 != sip_message_init(t->req, SIP_METHOD_REGISTER, name, name))
+	{
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
@@ -204,19 +207,31 @@ struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char*
 {
 	struct sip_uac_transaction_t* t;
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_OPTIONS, name, to);
+	t->req = sip_message_create();
 	t->onreply = onoptins;
 	t->param = param;
+
+	if (0 != sip_message_init(t->req, SIP_METHOD_OPTIONS, name, to))
+	{
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
-struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite* oninvite, void* param)
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param)
 {
 	struct sip_uac_transaction_t* t;
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_INVITE, name, to);
+	t->req = sip_message_create();
 	t->oninvite = oninvite;
 	t->param = param;
+
+	if (0 != sip_message_init(t->req, SIP_METHOD_INVITE, name, to))
+	{
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
@@ -227,9 +242,17 @@ struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, void* sessio
 	dialog = (struct sip_dialog_t*)session;
 
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_CANCEL, name, to);
+	t->req = sip_message_create();
 	t->onreply = oncancel;
 	t->param = param;
+
+	++dialog->local.id;
+	if (0 != sip_message_init2(t->req, SIP_METHOD_CANCEL, dialog))
+	{
+		--dialog->local.id;
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
@@ -240,22 +263,38 @@ struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, void* session, 
 	dialog = (struct sip_dialog_t*)session;
 
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_BYE, name, to);
+	t->req = sip_message_create();
 	t->onreply = onbye;
 	t->param = param;
+
+	++dialog->local.id;
+	if (0 != sip_message_init2(t->req, SIP_METHOD_BYE, dialog))
+	{
+		--dialog->local.id;
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
-struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, void* session, sip_uac_oninvite* oninvite, void* param)
+struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, void* session, sip_uac_oninvite oninvite, void* param)
 {
 	struct sip_dialog_t* dialog;
 	struct sip_uac_transaction_t* t;
 	dialog = (struct sip_dialog_t*)session;
 
 	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create(SIP_METHOD_INVITE, name, to);
+	t->req = sip_message_create();
 	t->oninvite = oninvite;
 	t->param = param;
+
+	++dialog->local.id;
+	if (0 != sip_message_init2(t->req, SIP_METHOD_INVITE, dialog))
+	{
+		--dialog->local.id;
+		sip_uac_transaction_release(t);
+		return NULL;
+	}
 	return t;
 }
 
@@ -264,19 +303,19 @@ int sip_uac_get_header_count(struct sip_uac_transaction_t* t)
 	return sip_params_count(&t->reply->headers);
 }
 
-int sip_uac_get_header(struct sip_uac_transaction_t* t, int i, const char** name, const char** value)
+int sip_uac_get_header(struct sip_uac_transaction_t* t, int i, struct cstring_t* const name, struct cstring_t* const value)
 {
 	struct sip_param_t* param;
 	param = sip_params_get(&t->reply->headers, i);
 	if (!param) return -1;
-	name = &param->name.p;
-	value = &param->value.p;
+	memcpy(&name, &param->name, sizeof(struct cstring_t));
+	memcpy(&value, &param->value, sizeof(struct cstring_t));
 	return 0;
 }
 
-const char* sip_uac_get_header_by_name(struct sip_uac_transaction_t* t, const char* name)
+const struct cstring_t* sip_uac_get_header_by_name(struct sip_uac_transaction_t* t, const char* name)
 {
-	return sip_params_find(&t->reply->headers, name, strlen(name));
+	return sip_params_find_string(&t->reply->headers, name, strlen(name));
 }
 
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value)
@@ -313,7 +352,7 @@ int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const 
 	}
 	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
 	{
-		r = sip_header_via(value, end, &t->req->vias);
+		r = sip_header_vias(value, end, &t->req->vias);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
 	{
@@ -341,4 +380,11 @@ int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const 
 		header.value.n = value ? strlen(value) : 0;
 		return sip_params_push(&t->req->headers, &header);
 	}
+}
+
+int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value)
+{
+	char v[32];
+	snprintf(v, sizeof(v), "%d", value);
+	return sip_uac_add_header(t, name, v);
 }

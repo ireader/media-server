@@ -1,15 +1,12 @@
 #include "sip-message.h"
 #include "sip-header.h"
+#include "sys/system.h"
+#include "cstringext.h"
+#include "uuid.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#if defined(OS_WINDOWS)
-	#if !defined(strcasecmp)
-		#define strcasecmp	_stricmp
-	#endif
-#endif
 
 struct sip_message_t* sip_message_create()
 {
@@ -19,7 +16,7 @@ struct sip_message_t* sip_message_create()
 		return NULL;
 
 	memset(msg, 0, sizeof(*msg));
-	msg->ptr.ptr = msg + 1;
+	msg->ptr.ptr = (char*)(msg + 1);
 	msg->ptr.end = msg->ptr.ptr + 2 * 1024;
 	return msg;
 }
@@ -37,22 +34,27 @@ int sip_message_destroy(struct sip_message_t* msg)
 
 static int sip_message_copy(struct sip_message_t* msg, struct cstring_t* str, const char* s)
 {
-	int n;
+	size_t n;
 	n = msg->ptr.end - msg->ptr.ptr;
 
 	str->p = msg->ptr.ptr;
 	str->n = s ? strlen(s) : 0;
 	str->n = str->n >= n ? str->n : n;
 
-	memcpy(str->p, s, str->n);
+	memcpy(msg->ptr.ptr, s, str->n);
 	msg->ptr.ptr += str->n;
 	return 0;
 }
 
 // Fill From/To/Call-Id/Max-Forwards/CSeq
-int sip_message_init(struct sip_message_t* msg, const char* method, const char* from, const char* to, const char* callid)
+// Add Via by transport ???
+int sip_message_init(struct sip_message_t* msg, const char* method, const char* from, const char* to)
 {
+	char tag[16];
+	char callid[128];
 	struct cstring_t f, t;
+
+	uuid_generate(callid); // TODO: callid @ host
 	sip_message_copy(msg, &t, to);
 	sip_message_copy(msg, &f, from);
 	sip_message_copy(msg, &msg->callid, callid);
@@ -62,9 +64,52 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 		return -1;
 
 	if (!cstrvalid(&msg->from.tag))
+	{
+		snprintf(tag, sizeof(tag), "%u", (unsigned int)system_clock());
 		sip_message_copy(msg, &msg->from.tag, tag);
+	}
+
+	// TODO: Via
 
 	msg->cseq.id = rand();
+	msg->maxforwards = SIP_MAX_FORWARDS;
+	return 0;
+}
+// Copy From/To/Call-Id/Max-Forwards/CSeq
+// Add Via by transport ???
+int sip_message_init2(struct sip_message_t* msg, const char* method, const struct sip_dialog_t* dialog)
+{
+	int i, n;
+	struct sip_uri_t uri;
+	struct cstring_t f, t;
+
+	f.p = msg->ptr.ptr;
+	f.n = sip_uri_write(&dialog->local.uri, msg->ptr.ptr, msg->ptr.end);
+	msg->ptr.ptr += f.n;
+	t.p = msg->ptr.ptr;
+	t.n = sip_uri_write(&dialog->remote.uri, msg->ptr.ptr, msg->ptr.end);
+	msg->ptr.ptr += t.n;
+
+	if (0 != sip_header_contact(f.p, f.p + f.n, &msg->from)
+		|| 0 != sip_header_contact(t.p, t.p + t.n, &msg->to))
+		return -1;
+
+	sip_message_copy(msg, &msg->cseq.method, method);
+	sip_message_copy(msg, &msg->callid, dialog->callid);
+	sip_message_copy(msg, &msg->to.tag, dialog->remote.tag);
+	sip_message_copy(msg, &msg->from.tag, dialog->local.tag);
+
+	for (i = 0; i < sip_uris_count(&dialog->routers); i++)
+	{
+		n = sip_uri_write(sip_uris_get(&dialog->routers, i), msg->ptr.ptr, msg->ptr.end);
+		sip_header_uri(msg->ptr.ptr, msg->ptr.ptr + n, &uri);
+		sip_uris_push(&msg->routers, &uri);
+		msg->ptr.ptr += n;
+	}
+
+	// TODO: Via
+
+	msg->cseq.id = dialog->local.id;
 	msg->maxforwards = SIP_MAX_FORWARDS;
 	return 0;
 }
@@ -94,50 +139,82 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 			continue;
 
 		end = value + strlen(value);
-		if (0 == strcasecmp(SIP_HEADER_FROM, name) || 0 == strcasecmp(SIP_HEADER_ABBR_FROM, name))
+		if (1 == strlen(name))
 		{
-			r = sip_header_contact(value, end, &msg->from);
-		}
-		else if(0 == strcasecmp(SIP_HEADER_TO, name) || 0 == strcasecmp(SIP_HEADER_ABBR_TO, name))
-		{
-			r = sip_header_contact(value, end, &msg->to);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_CALLID, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CALLID, name))
-		{
-			msg->callid.p = value;
-			msg->callid.n = end - value;
-		}
-		else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
-		{
-			r = sip_header_cseq(value, end, &msg->cseq);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
-		{
-			msg->maxforwards = strtol(value, NULL, 10);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_VIA, name) || 0 == strcasecmp(SIP_HEADER_ABBR_VIA, name))
-		{
-			r = sip_header_via(value, end, &msg->vias);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_CONTACT, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CONTACT, name))
-		{
-			r = sip_header_contacts(value, end, &msg->contacts);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
-		{
-			r = sip_header_uri(value, end, &uri);
-			if(0 == r)
-				sip_uris_push(&msg->routers, &uri);
-		}
-		else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
-		{
-			r = sip_header_uri(value, end, &uri);
-			if (0 == r)
-				sip_uris_push(&msg->record_routers, &uri);
+			switch (tolower(name[0]))
+			{
+			case SIP_HEADER_ABBR_FROM:
+				r = sip_header_contact(value, end, &msg->from);
+				break;
+
+			case SIP_HEADER_ABBR_TO:
+				r = sip_header_contact(value, end, &msg->to);
+				break;
+
+			case SIP_HEADER_ABBR_CALLID:
+				msg->callid.p = value;
+				msg->callid.n = end - value;
+				break;
+
+			case SIP_HEADER_ABBR_VIA:
+				r = sip_header_vias(value, end, &msg->vias);
+				break;
+
+			case SIP_HEADER_ABBR_CONTACT:
+				r = sip_header_contacts(value, end, &msg->contacts);
+				break;
+
+			default:
+				break;
+			}
 		}
 		else
 		{
-			// ignore
+			if (0 == strcasecmp(SIP_HEADER_FROM, name))
+			{
+				r = sip_header_contact(value, end, &msg->from);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_TO, name))
+			{
+				r = sip_header_contact(value, end, &msg->to);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
+			{
+				msg->callid.p = value;
+				msg->callid.n = end - value;
+			}
+			else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
+			{
+				r = sip_header_cseq(value, end, &msg->cseq);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
+			{
+				msg->maxforwards = strtol(value, NULL, 10);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_VIA, name))
+			{
+				r = sip_header_vias(value, end, &msg->vias);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
+			{
+				r = sip_header_contacts(value, end, &msg->contacts);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
+			{
+				r = sip_header_uri(value, end, &uri);
+				if (0 == r)
+					sip_uris_push(&msg->routers, &uri);
+			}
+			else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
+			{
+				r = sip_header_uri(value, end, &uri);
+				if (0 == r)
+					sip_uris_push(&msg->record_routers, &uri);
+			}
+			else
+			{
+				// ignore
+			}
 		}
 
 		memset(&param, 0, sizeof(param));
@@ -157,6 +234,9 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	int content_length;
 	uint8_t* p, *end;
 	const struct sip_param_t* param;
+
+	// check overwrite
+	assert(data + bytes <= (uint8_t*)msg || data >= (uint8_t*)msg->ptr.end);
 
 	p = data;
 	end = data + bytes;

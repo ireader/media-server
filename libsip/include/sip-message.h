@@ -2,6 +2,7 @@
 #define _sip_message_h_
 
 #include "sip-header.h"
+#include "sip-dialog.h"
 #include "http-parser.h"
 #include <stdint.h>
 
@@ -26,16 +27,16 @@
 #define SIP_HEADER_ROUTE		"Route"
 #define SIP_HEADER_RECORD_ROUTE "Record-Route"
 
-#define SIP_HEADER_ABBR_FROM				"f"
-#define SIP_HEADER_ABBR_TO					"t"
-#define SIP_HEADER_ABBR_CALLID				"i"
-#define SIP_HEADER_ABBR_VIA					"v"
-#define SIP_HEADER_ABBR_CONTACT				"m"
-#define SIP_HEADER_ABBR_SUPPORTED			"k"
-#define SIP_HEADER_ABBR_SUBJECT				"s"
-#define SIP_HEADER_ABBR_CONTENT_TYPE		"c"
-#define SIP_HEADER_ABBR_CONTENT_LENGTH		"l"
-#define SIP_HEADER_ABBR_CONTENT_ENCODING	"e"
+#define SIP_HEADER_ABBR_FROM				'f'
+#define SIP_HEADER_ABBR_TO					't'
+#define SIP_HEADER_ABBR_CALLID				'i'
+#define SIP_HEADER_ABBR_VIA					'v'
+#define SIP_HEADER_ABBR_CONTACT				'm'
+#define SIP_HEADER_ABBR_SUPPORTED			'k'
+#define SIP_HEADER_ABBR_SUBJECT				's'
+#define SIP_HEADER_ABBR_CONTENT_TYPE		'c'
+#define SIP_HEADER_ABBR_CONTENT_LENGTH		'l'
+#define SIP_HEADER_ABBR_CONTENT_ENCODING	'e'
 
 struct sip_message_t
 {
@@ -73,8 +74,10 @@ struct sip_message_t
 	} ptr;
 };
 
-struct sip_message_t* sip_message_create(const char* method, const char* from, const char* to);
+struct sip_message_t* sip_message_create();
 int sip_message_destroy(struct sip_message_t* msg);
+int sip_message_init(struct sip_message_t* msg, const char* method, const char* from, const char* to);
+int sip_message_init2(struct sip_message_t* msg, const char* method, const struct sip_dialog_t* dialog);
 
 int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* parser);
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes);

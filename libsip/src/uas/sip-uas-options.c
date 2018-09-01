@@ -33,11 +33,11 @@ int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_
 	static const char* headers[] = { "Accept", "Accept-Encoding", "Accept-Language" };
 
 	int i;
-	const char* header;
+	const struct cstring_t* header;
 	
 	for (i = 0; i < sizeof(headers) / sizeof(headers[0]); i++)
 	{
-		header = http_get_header_by_name(t->http, headers[i]);
+		header = sip_uas_get_header_by_name(t, headers[i]);
 		if (!header) continue;
 		sip_uas_add_header(headers[i], header);
 	}

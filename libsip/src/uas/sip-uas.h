@@ -57,8 +57,8 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg);
 
 // valid only on callback
 int sip_uas_get_header_count(struct sip_uas_transaction_t* t);
-int sip_uas_get_header(struct sip_uas_transaction_t* t, int i, const char** name, const char** value);
-const char* sip_uas_get_header_by_name(struct sip_uas_transaction_t* t, const char* name);
+int sip_uas_get_header(struct sip_uas_transaction_t* t, int i, struct cstring_t* const name, struct cstring_t* const value);
+const struct cstring_t* sip_uas_get_header_by_name(struct sip_uas_transaction_t* t, const char* name);
 
 int sip_uas_add_header(struct sip_uas_transaction_t* t, const char* name, const char* value);
 int sip_uas_add_header_int(struct sip_uas_transaction_t* t, const char* name, int value);

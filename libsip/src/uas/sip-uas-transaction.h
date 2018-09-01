@@ -27,7 +27,8 @@ struct sip_uas_transaction_t
 	struct list_head link;
 	locker_t locker;
 
-	struct sip_message_t* msg;
+	struct sip_message_t* req;
+	struct sip_message_t* reply;
 	uint8_t data[UDP_PACKET_SIZE];
 	int size;
 	int retransmission; // default 0

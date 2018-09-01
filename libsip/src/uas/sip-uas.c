@@ -73,7 +73,7 @@ static struct sip_uas_transaction_t* sip_uas_find_transaction(struct list_head* 
 	list_for_each_safe(pos, next, transactions)
 	{
 		t = list_entry(pos, struct sip_uas_transaction_t, link);
-		via2 = sip_vias_get(&t->msg->vias, 0);
+		via2 = sip_vias_get(&t->req->vias, 0);
 		assert(via2);
 
 		// 1. via branch parameter
@@ -92,8 +92,8 @@ static struct sip_uas_transaction_t* sip_uas_find_transaction(struct list_head* 
 		// the method of the request matches the one that created the
 		// transaction, except for ACK, where the method of the request
 		// that created the transaction is INVITE
-		assert(req->cseq.id == t->msg->cseq.id);
-		if (!cstreq(&req->cseq.method, &t->msg->cseq.method) && 0 != cstrcasecmp(&req->cseq.method, "ACK"))
+		assert(req->cseq.id == t->req->cseq.id);
+		if (!cstreq(&req->cseq.method, &t->req->cseq.method) && 0 != cstrcasecmp(&req->cseq.method, "ACK"))
 			continue;
 
 		return t;
@@ -128,7 +128,7 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 		t = sip_uas_transaction_create(uas, msg);
 		if (!t) return -1;
 	}
-	t->msg = msg;
+	t->req = msg;
 
 	// 2. find dialog
 	dialog = sip_uas_find_dialog(&uas->dialogs, msg);
@@ -146,7 +146,7 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 
 int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
 {
-	if (sip_message_isinvite(&t->msg))
+	if (sip_message_isinvite(&t->reply))
 	{
 		return sip_uas_transaction_invite_reply(t, code, data, bytes);
 	}
@@ -162,19 +162,91 @@ int sip_uas_discard(struct sip_uas_transaction_t* t)
 
 int sip_uas_get_header_count(struct sip_uas_transaction_t* t)
 {
-	return sip_params_count(&t->msg->headers);
+	return sip_params_count(&t->req->headers);
 }
 
-int sip_uas_get_header(struct sip_uas_transaction_t* t, int i, const char** name, const char** value)
+int sip_uas_get_header(struct sip_uas_transaction_t* t, int i, struct cstring_t* const name, struct cstring_t* const value)
 {
 	struct sip_param_t* param;
-	param = sip_params_get(&t->msg->headers, i);
-	name = &param->name.p;
-	value = &param->value.p;
+	param = sip_params_get(&t->req->headers, i);
+	if (!param) return -1;
+	memcpy(&name, &param->name, sizeof(struct cstring_t));
+	memcpy(&value, &param->value, sizeof(struct cstring_t));
 	return 0;
 }
 
-const char* sip_uas_get_header_by_name(struct sip_uas_transaction_t* t, const char* name)
+const struct cstring_t* sip_uas_get_header_by_name(struct sip_uas_transaction_t* t, const char* name)
 {
-	return sip_params_find(&t->msg->headers, name, strlen(name));
+	return sip_params_find_string(&t->req->headers, name, strlen(name));
+}
+
+int sip_uas_add_header(struct sip_uas_transaction_t* t, const char* name, const char* value)
+{
+	int r;
+	const char* end;
+	struct sip_uri_t uri;
+	struct sip_param_t header;
+
+	// TODO: release memory
+	value = strdup(value ? value : "");
+	end = value + strlen(value);
+
+	if (0 == strcasecmp(SIP_HEADER_FROM, name))
+	{
+		r = sip_header_contact(value, end, &t->reply->from);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_TO, name))
+	{
+		r = sip_header_contact(value, end, &t->reply->to);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
+	{
+		t->reply->callid.p = value;
+		t->reply->callid.n = end - value;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
+	{
+		r = sip_header_cseq(value, end, &t->reply->cseq);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
+	{
+		t->reply->maxforwards = strtol(value, NULL, 10);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
+	{
+		r = sip_header_vias(value, end, &t->reply->vias);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
+	{
+		r = sip_header_contacts(value, end, &t->reply->contacts);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
+	{
+		memset(&uri, 0, sizeof(uri));
+		r = sip_header_uri(value, end, &uri);
+		if (0 == r)
+			sip_uris_push(&t->reply->routers, &uri);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
+	{
+		memset(&uri, 0, sizeof(uri));
+		r = sip_header_uri(value, end, &uri);
+		if (0 == r)
+			sip_uris_push(&t->reply->record_routers, &uri);
+	}
+	else
+	{
+		header.name.p = name;
+		header.name.n = strlen(name);
+		header.value.p = value ? value : "";
+		header.value.n = value ? strlen(value) : 0;
+		return sip_params_push(&t->reply->headers, &header);
+	}
+}
+
+int sip_uas_add_header_int(struct sip_uas_transaction_t* t, const char* name, int value)
+{
+	char v[32];
+	snprintf(v, sizeof(v), "%d", value);
+	return sip_uas_add_header(t, name, v);
 }
