@@ -10,11 +10,11 @@ static FILE* h264;
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
-	sprintf(buf, "%02u:%02u:%02u.%03u", t / 36000000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
+	sprintf(buf, "%02u:%02u:%02u.%03u", t / 3600000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
 	return buf;
 }
 
-inline size_t get_astd_length(const uint8_t* data, size_t bytes)
+inline size_t get_adst_length(const uint8_t* data, size_t bytes)
 {
 	assert(bytes >= 6);
 	return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] >> 5) & 0x07);
@@ -49,7 +49,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 		a_pts = pts;
 		a_dts = dts;
 
-		assert(bytes == get_astd_length((const uint8_t*)data, bytes));
+		assert(bytes == get_adst_length((const uint8_t*)data, bytes));
 		fwrite(data, bytes, 1, aac);
 	}
 	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)

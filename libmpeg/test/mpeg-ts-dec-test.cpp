@@ -16,7 +16,7 @@ inline const char* ftimestamp(int64_t t, char* buf)
 	else
 	{
 		t /= 90;
-		sprintf(buf, "%d:%02d:%02d.%03d", (int)(t / 36000000), (int)((t / 60000) % 60), (int)((t / 1000) % 60), (int)(t % 1000));
+		sprintf(buf, "%d:%02d:%02d.%03d", (int)(t / 3600000), (int)((t / 60000) % 60), (int)((t / 1000) % 60), (int)(t % 1000));
 	}
 	return buf;
 }

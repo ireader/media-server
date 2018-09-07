@@ -27,7 +27,7 @@ static void ts_write(void* param, const void* packet, size_t bytes)
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
-	sprintf(buf, "%u:%02u:%02u.%03u", t / 36000000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
+	sprintf(buf, "%u:%02u:%02u.%03u", t / 3600000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
 	return buf;
 }
 
