@@ -58,7 +58,6 @@ struct rtmp_packet_t
 {
 	struct rtmp_chunk_header_t header;
 	uint32_t clock; // timestamp
-	uint32_t delta; // delta timestamp
 
 	uint8_t* payload;
 	size_t capacity; // only for network read

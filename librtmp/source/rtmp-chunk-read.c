@@ -175,14 +175,9 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 				{
 					// handle timestamp/delta
 					if (RTMP_CHUNK_TYPE_0 == parser->pkt->header.fmt)
-					{
-						parser->pkt->clock = 0xFFFFFF == parser->pkt->header.timestamp ? extended_timestamp : parser->pkt->header.timestamp;
-						parser->pkt->delta = 0; // clear delta(use as delta)
-					}
+						parser->pkt->clock = extended_timestamp;
 					else
-					{
-						parser->pkt->delta = 0xFFFFFF == parser->pkt->header.timestamp ? extended_timestamp : parser->pkt->header.timestamp;
-					}
+						parser->pkt->clock += extended_timestamp;
 
 					if (0 != rtmp_packet_alloc(rtmp, parser->pkt))
 						return ENOMEM;
@@ -213,7 +208,6 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 				assert(parser->pkt->bytes == parser->pkt->header.length);
 				parser->state = RTMP_PARSE_INIT; // reset parser state
 				parser->pkt->bytes = 0; // clear bytes
-				parser->pkt->clock += parser->pkt->delta;
 
 				memcpy(&header, &parser->pkt->header, sizeof(header));
 				header.timestamp = parser->pkt->clock;
