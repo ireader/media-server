@@ -78,11 +78,22 @@ struct sip_message_t* sip_message_create();
 int sip_message_destroy(struct sip_message_t* msg);
 int sip_message_init(struct sip_message_t* msg, const char* method, const char* from, const char* to);
 int sip_message_init2(struct sip_message_t* msg, const char* method, const struct sip_dialog_t* dialog);
+int sip_message_init3(struct sip_message_t* reply, const struct sip_message_t* req);
 
 int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* parser);
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes);
 
+/// @return 1-ack, 0-not ack
+int sip_message_isack(const struct sip_message_t* msg);
 /// @return 1-invite, 0-noninvite
 int sip_message_isinvite(const struct sip_message_t* msg);
+
+int sip_message_get_next_hop(const struct sip_message_t* msg, char* host, int bytes);
+
+int sip_message_get_header_count(const struct sip_message_t* msg);
+int sip_message_get_header(const struct sip_message_t* msg, int i, struct cstring_t* const name, struct cstring_t* const value);
+const struct cstring_t* sip_message_get_header_by_name(const struct sip_message_t* msg, const char* name);
+
+int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value);
 
 #endif /* !_sip_message_h_ */

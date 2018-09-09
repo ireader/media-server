@@ -1,11 +1,10 @@
 #include "sip-uas-transaction.h"
 
-int sip_uas_onbye(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
+int sip_uas_onbye(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
 {
 	int r;
-	struct sip_dialog_t* dialog;
 
-	dialog = sip_dialog_find(&t->uas->dialogs, req);
+	//dialog = sip_dialog_find(&t->uas->dialogs, req);
 	if (!dialog)
 	{
 		// 481 Call/Transaction Does Not Exist
@@ -15,8 +14,9 @@ int sip_uas_onbye(struct sip_uas_transaction_t* t, const struct sip_message_t* r
 	// The UAS MUST still respond to any pending requests received for that 
 	// dialog. It is RECOMMENDED that a 487 (Request Terminated) response be 
 	// generated to those pending requests.
-	r =  t->uas->handler->onbye(t->uas->param, t, dialog->session);
+	assert(dialog == t->session);
+	r = t->handler->onbye(t->param, t, t->session);
 
-	list_remove(&dialog->link);
+	sip_uas_del_dialog(t->uas, dialog);
 	return r;
 }

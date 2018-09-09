@@ -1,23 +1,84 @@
 #include "sip-uas-transaction.h"
+#include "sip-transport.h"
 
-static int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, const struct sip_message_t* req)
 {
-	if (0 == cstrcasecmp(&req->u.c.method, "ACK"))
+	struct sip_uas_transaction_t* t;
+	t = (struct sip_uas_transaction_t*)calloc(1, sizeof(*t));
+	if (NULL == t) return NULL;
+
+	t->req = req;
+	t->reply = sip_message_create();
+	if (0 != sip_message_init3(t->reply, req))
 	{
+		free(t);
+		return NULL;
 	}
-	else if (0 == cstrcasecmp(&req->u.c.method, "CANCEL"))
+
+	t->ref = 1;
+	t->uas = uas;
+	LIST_INIT_HEAD(&t->link);
+	locker_create(&t->locker);
+	t->status = SIP_UAS_TRANSACTION_INIT;
+
+	// 17.1.1.1 Overview of INVITE Transaction (p125)
+	// For unreliable transports (such as UDP), the client transaction retransmits 
+	// requests at an interval that starts at T1 seconds and doubles after every retransmission.
+	// 17.1.2.1 Formal Description (p130)
+	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
+	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
+
+	sip_uas_add_transaction(uas, t);
+	return t;
+}
+
+static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
+{
+	assert(t->ref > 0);
+	if (0 != atomic_decrement32(&t->ref))
+		return 0;
+	
+	assert(0 == t->ref);
+	assert(NULL == t->timerg);
+	assert(NULL == t->timerh);
+	assert(NULL == t->timerij);
+
+	// unlink from uas
+	sip_uas_del_transaction(t->uas, t);
+
+	// MUST: destroy t->req after sip_uac_del_transaction
+	sip_message_destroy((struct sip_message_t*)t->req);
+
+	if (t->reply)
+		sip_message_destroy(t->reply);
+
+	locker_destroy(&t->locker);
+	free(t);
+	return 0;
+}
+
+int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
+{
+	return atomic_increment32(&t->ref);
+}
+
+int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
+{
+	if (0 == cstrcasecmp(&req->u.c.method, "CANCEL"))
 	{
+		return sip_uas_oncancel(t, dialog, req);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, "BYE"))
 	{
+		return sip_uas_onbye(t, dialog, req);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, "REGISTER"))
 	{
-		return t->uas->handler->onregister(t->uas->param, t, );
+		return sip_uas_onregister(t, req);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, "OPTIONS"))
 	{
-		return sip_uas_transaction_noninvite_reply(t, 200, );
+		return sip_uas_onoptions(t, req);
 	}
 	else
 	{
@@ -26,84 +87,28 @@ static int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct s
 	}
 }
 
-int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
+int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 {
 	int r;
-	switch (t->status)
-	{
-	case SIP_UAS_TRANSACTION_INIT:
-		t->status = SIP_UAS_TRANSACTION_TRYING;
-		return sip_uas_transaction_handler(t, dialog, req);
+	const struct sip_via_t *via;
 
-	case SIP_UAS_TRANSACTION_TRYING:
-		// Once in the "Trying" state, any further request
-		// retransmissions are discarded.
-		return 0;
+	assert(t->size > 0);
 
-	case SIP_UAS_TRANSACTION_PROCEEDING:
-		// If a retransmission of the request is received while in 
-		// the "Proceeding" state, the most recently sent provisional 
-		// response MUST be passed to the transport layer for retransmission.
-		assert(t->size > 0);
-		r = t->uas->handler->send(t->uas->param, t->data, t->size);
-		assert(0 == r); // ignore transport error(client will retransmission request)
-		return 0;
+	// 18.2.2 Sending Responses (p146)
+	// The server transport uses the value of the top Via header field in
+	// order to determine where to send a response.
+	
+	// If the host portion of the "sent-by" parameter
+	// contains a domain name, or if it contains an IP address that differs
+	// from the packet source address, the server MUST add a "received"
+	// parameter to that Via header field value.
+	// Via: SIP/2.0/UDP bobspc.biloxi.com:5060;received=192.0.2.4
 
-	case SIP_UAS_TRANSACTION_COMPLETED:
-		// 1. While in the "Completed" state, the server transaction MUST pass 
-		//    the final response to the transport layer for retransmission 
-		//    whenever a retransmission of the request is received.
-		// 2. Any other final responses passed by the TU to the server
-		//    transaction MUST be discarded while in the "Completed" state
-		assert(t->size > 0);
-		r = t->uas->handler->send(t->uas->param, t->data, t->size);
-		assert(0 == r); // ignore transport error(client will retransmission request)
-		return 0;
+	via = sip_vias_get(&t->req->vias, 0);
+	if (!via) return -1; // invalid via
 
-	case SIP_UAS_TRANSACTION_TERMINATED:
-	default:
-		assert(0);
-		return -1;
-	}
-}
-
-int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
-{
-	int r;
-	assert(SIP_UAS_TRANSACTION_TRYING == t->status || SIP_UAS_TRANSACTION_PROCEEDING == t->status);
-	if (SIP_UAS_TRANSACTION_TRYING != t->status && SIP_UAS_TRANSACTION_PROCEEDING != t->status)
-		return 0; // discard
-
-	t->msg->u.s.code = code;
-	t->msg->u.s.reason.p = sip_reason_phrase(code);
-	t->msg->u.s.reason.n = strlen(t->msg->u.s.reason.p);
-	t->msg->payload = data;
-	t->msg->size = bytes;
-
-	t->size = t->msg->write(t->data);
-	if (t->size < 1)
-		return -1;
-
-	if (100 <= code && code < 200)
-	{
-		// provisional response
-		t->status = SIP_UAS_TRANSACTION_PROCEEDING;
-	}
-	else if (200 <= code && code < 700)
-	{
-		t->status = SIP_UAS_TRANSACTION_COMPLETED;
-		if (t->uas->transport->reliable(t->uas->transportptr))
-		{
-			// start timer J
-			r = t->uas->timer.start(t->uas->timerptr, 64 * T1, sip_uas_transaction_terminated, t);
-			if (0 != r) return r;
-		}
-	}
-	else
-	{
-		assert(0);
-		return -1; // invalid code
-	}
-
-	return t->uas->handler->send(t->uas->param, t->data, t->size);
+	r = t->handler->send(t->param, &via->host, &via->received, t->data, t->size);
+	if (r >= 0)
+		t->reliable = r;
+	return r;
 }

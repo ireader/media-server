@@ -31,6 +31,12 @@ struct sip_transport_t
 	/// @return 1-tcp, 0-udp
 	int (*reliable)(void* transport);
 
+	/// @param[in] destination remote host/addr
+	/// @param[out] protocol UDP/TCP/TLS/SCTP
+	/// @param[out] local local address, IPv4/IPv6 with port
+	/// @return 0-ok, other-error
+	int (*via)(void* transport, const char* destination, char protocol[16], char local[128]);
+
 	/// @return 0-ok, other-error
 	int (*send)(void* transport, const void* data, size_t bytes);
 };

@@ -56,7 +56,7 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 {
 	int i, r;
 	const char* p;
-	struct sip_param_t* param;
+	const struct sip_param_t* param;
 
 	p = strpbrk(s, "<;\"");
 	if (!p || p > end)
@@ -225,7 +225,7 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 void sip_header_contact_test(void)
 {
 	const char* s;
-	struct sip_contact_t* c;
+	const struct sip_contact_t* c;
 	struct sip_contact_t contact;
 	struct sip_contacts_t contacts;
 

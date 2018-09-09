@@ -1,7 +1,8 @@
 #include "sip-uac-transaction.h"
-#include "sip-uac.h"
+#include "sip-transport.h"
+#include "uri-parse.h"
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac)
+struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req)
 {
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)calloc(1, sizeof(*t));
@@ -9,6 +10,7 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac)
 
 	t->ref = 1;
 	t->uac = uac;
+	t->req = req;
 	LIST_INIT_HEAD(&t->link);
 	locker_create(&t->locker);
 	t->status = SIP_UAC_TRANSACTION_CALLING;
@@ -18,41 +20,28 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac)
 	// requests at an interval that starts at T1 seconds and doubles after every retransmission.
 	// 17.1.2.1 Formal Description (p130)
 	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
-	t->t2 = sip_message_isinvite(msg) ? (64 * T1) : T2;
+	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 	
+	sip_uac_add_transaction(uac, t);
 	return t;
 }
 
-static int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
+int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 {
-	struct sip_dialog_t* dialog;
-	struct list_head *pos, *next;
+	assert(t->ref > 0);
+	if (0 != atomic_decrement32(&t->ref))
+		return 0;
 
+	assert(0 == t->ref);
 	assert(NULL == t->timera);
 	assert(NULL == t->timerb);
+	assert(NULL == t->timerk);
 
 	// unlink from uac
-	locker_lock(&t->uac->locker);
-	list_remove(&t->link);
+	sip_uac_del_transaction(t->uac, t);
 
-	// destroy all early dialog
-	list_for_each_safe(pos, next, &t->uac->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (cstreq(&dialog->callid, &t->req->callid) && DIALOG_ERALY == dialog->state)
-		{
-			sip_dialog_destroy(dialog);
-			list_remove(pos);
-		}
-	}
-	locker_unlock(&t->uac->locker);
-
-	sip_uac_release(t->uac);
-
-	if (!t->req)
-		sip_message_destroy(t->req);
-	if (!t->reply)
-		sip_message_destroy(t->reply);
+	// MUST: destroy t->req after sip_uac_del_transaction
+	sip_message_destroy(t->req);
 
 	locker_destroy(&t->locker);
 	free(t);
@@ -65,12 +54,9 @@ int sip_uac_transaction_addref(struct sip_uac_transaction_t* t)
 	return 0;
 }
 
-int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
+static int sip_uac_transaction_dosend(struct sip_uac_transaction_t* t)
 {
-	assert(t->ref > 0);
-	if (0 == atomic_decrement32(&t->ref))
-		return sip_uac_transaction_destroy(t);
-	return 0;
+	return t->transport->send(t->transportptr, t->data, t->size);
 }
 
 static int sip_uac_transaction_timer_retransmission(void* id, void* usrptr)
@@ -82,16 +68,19 @@ static int sip_uac_transaction_timer_retransmission(void* id, void* usrptr)
 
 	locker_lock(&t->locker);
 	t->timera = NULL;
-	r = t->uac->transport->send(t->uac->transportptr, t->data, r);
+	r = sip_uac_transaction_dosend(t);
 	if (0 != r)
 	{
 		locker_unlock(&t->locker);
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
-		return t->handler(t->param, 503/*Service Unavailable*/);
+		if (t->oninvite)
+			return t->oninvite(t->param, t, NULL, 503/*Service Unavailable*/);
+		else
+			return t->onreply(t->param, t, 503/*Service Unavailable*/);
 	}
 	
-	t->timera = t->uac->timer.start(t->uac->timerptr, min(t->t2, T1 * (1<<t->retries++)), sip_uac_transaction_timer_retransmission, t);
+	t->timera = sip_uac_start_timer(t->uac, min(t->t2, T1 * (1<<t->retries++)), sip_uac_transaction_timer_retransmission, t);
 	locker_unlock(&t->locker);
 	return r;
 }
@@ -107,30 +96,30 @@ static int sip_uac_transaction_timer_timeout(void* id, void* usrptr)
 	locker_unlock(&t->locker);
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
-	r = t->handler(t->param, 408/*Request Timeout*/);
+	if(t->oninvite)
+		r = t->oninvite(t->param, t, NULL, 408/*Request Timeout*/);
+	else
+		r = t->onreply(t->param, t, 408/*Request Timeout*/);
 
-	sip_uac_transaction_destroy(t);
+	sip_uac_transaction_release(t);
 	return r;
 }
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
 {
 	int r;
-	r = sip_message_write(t->msg, t->data, sizeof(t->data));
-	if (0 != r)
-		return r;
-
 	locker_lock(&t->locker);
-	r = t->uac->transport->send(t->uac->transportptr, t->data, r);
-	if (0 == r)
+	r = sip_uac_transaction_dosend(t);
+	if (r >= 0)
 	{
 		t->retries = 1;
-		t->timerb = t->uac->timer.start(t->uac->timerptr, 64 * T1, sip_uac_transaction_timer_timeout, t);
-		if (0 == t->uac->transport->reliable(t->uac->transportptr))
-			t->timera = t->uac->timer.start(t->uac->timerptr, T1, sip_uac_transaction_timer_retransmission, t);
+		t->timerb = sip_uac_start_timer(t->uac, 64 * T1, sip_uac_transaction_timer_timeout, t);
+		//if (0 == t->uac->transport->reliable(t->uac->transportptr))
+		if(0 == r) // UDP, transport reliable == false
+			t->timera = sip_uac_start_timer(t->uac, T1, sip_uac_transaction_timer_retransmission, t);
 	}
 	locker_unlock(&t->locker);
 
-	return r;
+	return r >= 0 ? 0 : r;
 	// TODO: return 503/*Service Unavailable*/
 }

@@ -27,7 +27,7 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 {
 	int i, r;
 	const char* p;
-	struct sip_param_t* param;
+	const struct sip_param_t* param;
 
 	p = strchr(s, '/');
 	if (!p || p > end)
@@ -169,7 +169,7 @@ const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias)
 void sip_header_via_test(void)
 {
 	const char* s;
-	struct sip_via_t* v;
+	const struct sip_via_t* v;
 	struct sip_via_t via;
 	struct sip_vias_t vias;
 

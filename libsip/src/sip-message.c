@@ -1,5 +1,6 @@
 #include "sip-message.h"
 #include "sip-header.h"
+#include "sip-dialog.h"
 #include "sys/system.h"
 #include "cstringext.h"
 #include "uuid.h"
@@ -7,6 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+static void sip_message_copy(struct sip_message_t* msg, struct cstring_t* str, const char* s)
+{
+	msg->ptr.ptr = cstring_clone(msg->ptr.ptr, msg->ptr.end, str, s, s ? strlen(s) : 0);
+}
+static void sip_message_copy2(struct sip_message_t* msg, struct cstring_t* str, const struct cstring_t* src)
+{
+	msg->ptr.ptr = cstring_clone(msg->ptr.ptr, msg->ptr.end, str, src->p, src->n);
+}
 
 struct sip_message_t* sip_message_create()
 {
@@ -23,26 +33,15 @@ struct sip_message_t* sip_message_create()
 
 int sip_message_destroy(struct sip_message_t* msg)
 {
-	sip_vias_free(&msg->vias);
-	sip_contacts_free(&msg->contacts);
-	sip_uris_free(&msg->routers);
-	sip_uris_free(&msg->record_routers);
-	sip_params_free(&msg->headers);
-	free(msg);
-	return 0;
-}
-
-static int sip_message_copy(struct sip_message_t* msg, struct cstring_t* str, const char* s)
-{
-	size_t n;
-	n = msg->ptr.end - msg->ptr.ptr;
-
-	str->p = msg->ptr.ptr;
-	str->n = s ? strlen(s) : 0;
-	str->n = str->n >= n ? str->n : n;
-
-	memcpy(msg->ptr.ptr, s, str->n);
-	msg->ptr.ptr += str->n;
+	if (msg)
+	{
+		sip_vias_free(&msg->vias);
+		sip_uris_free(&msg->routers);
+		sip_uris_free(&msg->record_routers);
+		sip_contacts_free(&msg->contacts);
+		sip_params_free(&msg->headers);
+		free(msg);
+	}
 	return 0;
 }
 
@@ -69,43 +68,53 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 		sip_message_copy(msg, &msg->from.tag, tag);
 	}
 
+	// initialize remote target
+	memcpy(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
+	memcpy(&msg->u.c.uri, &msg->to.uri, sizeof(struct sip_uri_t));
+
 	// TODO: Via
 
 	msg->cseq.id = rand();
 	msg->maxforwards = SIP_MAX_FORWARDS;
 	return 0;
 }
+
 // Copy From/To/Call-Id/Max-Forwards/CSeq
 // Add Via by transport ???
 int sip_message_init2(struct sip_message_t* msg, const char* method, const struct sip_dialog_t* dialog)
 {
-	int i, n;
+	int i;
 	struct sip_uri_t uri;
-	struct cstring_t f, t;
+	//struct cstring_t f, t;
 
-	f.p = msg->ptr.ptr;
-	f.n = sip_uri_write(&dialog->local.uri, msg->ptr.ptr, msg->ptr.end);
-	msg->ptr.ptr += f.n;
-	t.p = msg->ptr.ptr;
-	t.n = sip_uri_write(&dialog->remote.uri, msg->ptr.ptr, msg->ptr.end);
-	msg->ptr.ptr += t.n;
+	//f.p = msg->ptr.ptr;
+	//f.n = sip_uri_write(&dialog->local.uri, msg->ptr.ptr, msg->ptr.end);
+	//msg->ptr.ptr += f.n;
+	//t.p = msg->ptr.ptr;
+	//t.n = sip_uri_write(&dialog->remote.uri, msg->ptr.ptr, msg->ptr.end);
+	//msg->ptr.ptr += t.n;
 
-	if (0 != sip_header_contact(f.p, f.p + f.n, &msg->from)
-		|| 0 != sip_header_contact(t.p, t.p + t.n, &msg->to))
-		return -1;
+	//if (0 != sip_header_contact(f.p, f.p + f.n, &msg->from)
+	//	|| 0 != sip_header_contact(t.p, t.p + t.n, &msg->to))
+	//	return -1;
 
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->from, &dialog->local.uri);
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->to, &dialog->remote.uri);
 	sip_message_copy(msg, &msg->cseq.method, method);
 	sip_message_copy(msg, &msg->callid, dialog->callid);
-	sip_message_copy(msg, &msg->to.tag, dialog->remote.tag);
-	sip_message_copy(msg, &msg->from.tag, dialog->local.tag);
+	//sip_message_copy(msg, &msg->to.tag, dialog->remote.tag);
+	//sip_message_copy(msg, &msg->from.tag, dialog->local.tag);
 
+	// initialize routers
 	for (i = 0; i < sip_uris_count(&dialog->routers); i++)
 	{
-		n = sip_uri_write(sip_uris_get(&dialog->routers, i), msg->ptr.ptr, msg->ptr.end);
-		sip_header_uri(msg->ptr.ptr, msg->ptr.ptr + n, &uri);
+		msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&dialog->routers, i));
 		sip_uris_push(&msg->routers, &uri);
-		msg->ptr.ptr += n;
 	}
+
+	// initialize remote target
+	memcpy(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
+	memcpy(&msg->u.c.uri, &dialog->target, sizeof(struct sip_uri_t));
 
 	// TODO: Via
 
@@ -114,9 +123,88 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	return 0;
 }
 
+// Copy From/To/Call-Id/Max-Forwards/CSeq
+// Add Via by transport ???
+int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req)
+{
+	int i;
+	char tag[16];
+	struct sip_uri_t uri;
+	struct sip_via_t via;
+
+	// 8.2.6 Generating the Response
+	// 8.2.6.2 Headers and Tags
+	// 1. The From field of the response MUST equal the From header field of the request
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->from, &req->from);
+
+	// 2. The Call-ID header field of the response MUST equal the Call-ID header field of the request.
+	sip_message_copy2(msg, &msg->callid, &req->callid);
+
+	// 3. The CSeq header field of the response MUST equal the CSeq field of the request.
+	sip_message_copy2(msg, &msg->cseq.method, &req->cseq.method);
+	msg->cseq.id = req->cseq.id;
+
+	// 4. The Via header field values in the response MUST equal the Via header field values 
+	//	  in the request and MUST maintain the same ordering
+	for (i = 0; i < sip_vias_count(&req->vias); i++)
+	{
+		msg->ptr.ptr = sip_via_clone(msg->ptr.ptr, msg->ptr.end, &via, sip_vias_get(&req->vias, i));
+		sip_vias_push(&msg->vias, &via);
+	}
+
+	// 5. If a request contained a To tag in the request, the To header field
+	//	  in the response MUST equal that of the request. However, if the To
+	//	  header field in the request did not contain a tag, the URI in the To
+	//	  header field in the response MUST equal the URI in the To header field; 
+	//	  additionally, the UAS MUST add a tag to the To header field in the response 
+	//	  (with the exception of the 100 (Trying) response, in which a tag MAY be present)
+	//	  The same tag MUST be used for all responses to that request, both final
+	//	  and provisional (again excepting the 100 (Trying)).
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->to, &req->to);
+	if (!cstrvalid(&msg->to.tag))
+	{
+		snprintf(tag, sizeof(tag), "%u", (unsigned int)system_clock());
+		sip_message_copy(msg, &msg->to.tag, tag);
+	}
+
+	// 6. Max-Forwards
+	msg->maxforwards = SIP_MAX_FORWARDS;
+
+	// 12.1.1 UAS behavior (p70)
+	// When a UAS responds to a request with a response that establishes a
+	// dialog (such as a 2xx to INVITE), the UAS MUST copy all Record-Route
+	// header field values from the request into the response (including the
+	// URIs, URI parameters, and any Record-Route header field parameters,
+	// whether they are known or unknown to the UAS) and MUST maintain the
+	// order of those values.
+	for (i = 0; i < sip_uris_count(&req->record_routers); i++)
+	{
+		msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&req->record_routers, i));
+		sip_uris_push(&msg->record_routers, &uri);
+	}
+
+	// 12.1.1 UAS behavior (p70)
+	// The UAS MUST add a Contact header field to the response.
+
+
+	// initialize routers
+	//for (i = 0; i < sip_uris_count(&req->routers); i++)
+	//{
+	//	msg->ptr.ptr = sip_via_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&req->routers, i));
+	//	sip_uris_push(&msg->routers, &via);
+	//}
+
+	return 0;
+}
+
 int sip_message_isinvite(const struct sip_message_t* msg)
 {
 	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_INVITE) ? 1 : 0;
+}
+
+int sip_message_isack(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_ACK) ? 1 : 0;
 }
 
 int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* parser)
@@ -228,6 +316,125 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 	return r;
 }
 
+int sip_message_get_next_hop(const struct sip_message_t* msg, char* host, int bytes)
+{
+	const struct sip_uri_t *router;
+
+	// 8.1.2 Sending the Request (p41)
+	// 1. If the first element in the route set indicated a strict router (resulting
+	//    in forming the request as described in Section 12.2.1.1), the procedures 
+	//    MUST be applied to the Request-URI of the request.
+	// 2. Otherwise, the procedures are applied to the first Route header field
+	//	  value in the request (if one exists), or to the request¡¯s Request-URI
+	//    if there is no Route header field present.
+
+	// 18.1.1 Sending Requests (p142)
+	// 1. A client that sends a request to a multicast address MUST add the
+	// 	  "maddr" parameter to its Via header field value containing the
+	// 	  destination multicast address, and for IPv4, SHOULD add the "ttl"
+	// 	  parameter with a value of 1. Usage of IPv6 multicast is not defined
+	// 	  in this specification
+	// 2. Before a request is sent, the client transport MUST insert a value of
+	// 	  the "sent-by" field into the Via header field.
+
+	router = sip_uris_get(&msg->routers, 0);
+	if (!router || router->lr)
+		return sip_uri_write(&msg->u.c.uri, host, host + bytes);
+	else
+		return sip_uri_write(router, host, host + bytes);
+}
+
+// INVITE sip:bob@biloxi.com SIP/2.0
+static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t* p, const uint8_t *end)
+{
+	int n;
+	const struct sip_uri_t* host;
+	const struct sip_uri_t *router;
+
+	// 8.1.1.1 Request-URI (p35)
+	// 1. The initial Request-URI of the message SHOULD be set to the value of
+	//    the URI in the To field. 
+	// 2. One notable exception is the REGISTER method; behavior for setting 
+	//    the Request-URI of REGISTER is given in Section 10.
+	// 3. When a pre-existing route set is present, the procedures for
+	//    populating the Request-URI and Route header field detailed in Section
+	//    12.2.1.1 MUST be followed (even though there is no dialog), using the
+	//    desired Request-URI as the remote target URI.
+
+	// 12.2.1.1 Generating the Request (p73)
+	// 1. If the route set is empty, the UAC MUST place the remote target URI into 
+	//    the Request-URI. The UAC MUST NOT add a Route header field to the request.
+	// 2. If the route set is not empty, and the first URI in the route set contains 
+	//    the lr parameter, the UAC MUST place the remote target URI into the 
+	//    Request-URI and MUST include a Route header field containing the route 
+	//    set values in order, including all parameters.
+	// 3. If the route set is not empty, and its first URI does not contain the
+	//    lr parameter, the UAC MUST place the first URI from the route set into 
+	//    the Request-URI, stripping any parameters that are not allowed in a Request-URI.
+	//    The UAC MUST add a Route header field containing the remainder of the 
+	//	  route set values in order, including all parameters. The UAC MUST then 
+	//    place the remote target URI into the Route header field as the last value.
+	//	  METHOD sip:proxy1
+	//	  Route: <sip:proxy2>,<sip:proxy3;lr>,<sip:proxy4>,<sip:user@remoteua>
+	// 4. A UAC SHOULD include a Contact header field in any target refresh
+	//    requests within a dialog, and unless there is a need to change it,
+
+	router = sip_uris_get(&msg->routers, 0);
+	if (!router || router->lr)
+		host = &msg->u.c.uri;
+	else
+		host = router;
+
+	// TODO: uri method (19.1 SIP and SIPS Uniform Resource Indicators)
+	// sip:atlanta.com;method=REGISTER?to=alice%40atlanta.com
+	if (p < end) p += cstrcpy(&msg->u.c.method, p, end - p);
+	if (p < end) *p++ = ' ';
+	
+	if (0 != cstrcasecmp(&msg->u.c.method, SIP_METHOD_REGISTER))
+	{
+		// INVITE sip:bob@biloxi.com SIP/2.0
+		if (p < end) p += sip_uri_write(host, p, end);
+	}
+	else
+	{
+		// TODO: rewrite register uri
+
+		// REGISTER sip:registrar.biloxi.com SIP/2.0
+		if (p < end) p += sip_uri_write(host, p, end);
+	}
+
+	n = snprintf(p, end - p, " SIP/2.0");
+	if (n < 0 || n >= end - p)
+		return (uint8_t*)end; // don't have enough space
+	return p;
+}
+
+static uint8_t* sip_message_routers(const struct sip_message_t* msg, uint8_t* p, const uint8_t *end)
+{
+	int i, strict_router;
+	const struct sip_uri_t *router;
+
+	router = sip_uris_get(&msg->routers, 0);
+	strict_router = (!router || router->lr) ? 0 : 1;
+
+	// METHOD sip:proxy1
+	// Route: <sip:proxy2>,<sip:proxy3;lr>,<sip:proxy4>,<sip:user@remoteua>
+	for (i = strict_router; i < sip_uris_count((struct sip_uris_t*)&msg->routers); i++)
+	{
+		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_ROUTE);
+		if (p < end) p += sip_uri_write(sip_uris_get((struct sip_uris_t*)&msg->routers, i), p, end);
+	}
+
+	// place the remote target URI into the Route header field as the last value
+	if (strict_router)
+	{
+		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_ROUTE);
+		if (p < end) p += sip_uri_write(&msg->u.c.uri, p, end);
+	}
+
+	return p;
+}
+
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 {
 	int i, n;
@@ -243,12 +450,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	content_length = 0;
 
 	// Request-Line
-	if (p < end) p += cstrcpy(&msg->u.c.method, p, end - p);
-	if (p < end) *p++ = ' ';
-	if (p < end) p += cstrcpy(&msg->u.c.uri.host, p, end - p);
-	n = snprintf(p, end - p, " SIP/2.0");
-	if (n < 0 || n >= end - p)
-		return -ENOMEM; // don't have enough space
+	p = sip_message_request_uri(msg, p, end);
 
 	// 6-base headers
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_TO);
@@ -274,11 +476,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	}
 
 	// routers
-	for (i = 0; i < sip_uris_count((struct sip_uris_t*)&msg->routers); i++)
-	{
-		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_ROUTE);
-		if (p < end) p += sip_uri_write(sip_uris_get((struct sip_uris_t*)&msg->routers, i), p, end);
-	}
+	p = sip_message_routers(msg, p, end);
 
 	// record-routers
 	for (i = 0; i < sip_uris_count((struct sip_uris_t*)&msg->record_routers); i++)
@@ -321,4 +519,90 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	}
 	
 	return p - data;
+}
+
+int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value)
+{
+	int r;
+	const char* end;
+	struct sip_uri_t uri;
+	struct sip_param_t header;
+
+	// TODO: release memory
+	value = strdup(value ? value : "");
+	end = value + strlen(value);
+
+	if (0 == strcasecmp(SIP_HEADER_FROM, name))
+	{
+		r = sip_header_contact(value, end, &msg->from);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_TO, name))
+	{
+		r = sip_header_contact(value, end, &msg->to);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
+	{
+		msg->callid.p = value;
+		msg->callid.n = end - value;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
+	{
+		r = sip_header_cseq(value, end, &msg->cseq);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
+	{
+		msg->maxforwards = strtol(value, NULL, 10);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
+	{
+		r = sip_header_vias(value, end, &msg->vias);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
+	{
+		r = sip_header_contacts(value, end, &msg->contacts);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
+	{
+		memset(&uri, 0, sizeof(uri));
+		r = sip_header_uri(value, end, &uri);
+		if (0 == r)
+			sip_uris_push(&msg->routers, &uri);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
+	{
+		memset(&uri, 0, sizeof(uri));
+		r = sip_header_uri(value, end, &uri);
+		if (0 == r)
+			sip_uris_push(&msg->record_routers, &uri);
+	}
+	else
+	{
+		header.name.p = name;
+		header.name.n = strlen(name);
+		header.value.p = value ? value : "";
+		header.value.n = value ? strlen(value) : 0;
+		return sip_params_push(&msg->headers, &header);
+	}
+
+	return 0;
+}
+
+int sip_message_get_header_count(const struct sip_message_t* msg)
+{
+	return sip_params_count(&msg->headers);
+}
+
+int sip_message_get_header(const struct sip_message_t* msg, int i, struct cstring_t* const name, struct cstring_t* const value)
+{
+	const struct sip_param_t* param;
+	param = sip_params_get(&msg->headers, i);
+	if (!param) return -1;
+	memcpy(&name, &param->name, sizeof(struct cstring_t));
+	memcpy(&value, &param->value, sizeof(struct cstring_t));
+	return 0;
+}
+
+const struct cstring_t* sip_message_get_header_by_name(const struct sip_message_t* msg, const char* name)
+{
+	return sip_params_find_string(&msg->headers, name, strlen(name));
 }

@@ -4,20 +4,6 @@
 #include <string.h>
 #include <assert.h>
 
-static struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg)
-{
-	struct list_head *pos, *next;
-	struct sip_dialog_t* dialog;
-
-	list_for_each_safe(pos, next, &uac->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
-			return dialog;
-	}
-	return NULL;
-}
-
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply)
 {
 	int r = 0;
@@ -34,9 +20,7 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	{
 		dialog = sip_dialog_create( reply);
 		if (!dialog) return -1;
-
-		// link to tail
-		list_insert_after(&dialog->link, t->uac->dialogs.prev);
+		sip_uac_add_dialog(t->uac, dialog);
 	}
 
 	// 17.1.1.2 Formal Description (p126)
@@ -44,11 +28,11 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
 	if (dialog && DIALOG_ERALY == dialog->state)
 	{
-		r = t->h.invite(t->param, t, dialog, reply->u.s.code);
+		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
 	}
 	else if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
 	{
-		r = t->h.invite(t->param, t, dialog, reply->u.s.code);
+		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
 	}
 	else
 	{
@@ -72,25 +56,18 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	// transport layer for retransmission, but the newly received response
 	// MUST NOT be passed up to the TU.
 
-	// 1. start timer D (deprecated)
-	// 2. send ACK
-	r = sip_uac_ack(t, reply, NULL);
-
 	if (dialog)
 	{
 		assert(DIALOG_ERALY == dialog->state);
-		r = t->h.invite(t->param, t, dialog, reply->u.s.code);
+		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
 
-		locker_lock(&t->uac->locker);
-		list_remove(&dialog->link);
-		locker_unlock(&t->uac->locker);
-
-		sip_dialog_destroy(dialog);
+		sip_uac_del_dialog(t->uac, dialog);
+		sip_dialog_release(dialog);
 	}
 	else if (t->status < SIP_UAC_TRANSACTION_COMPLETED)
 	{
 		// only once
-		r = t->h.invite(t->param, t, NULL, reply->u.s.code);
+		r = t->oninvite(t->param, t, NULL, reply->u.s.code);
 	}
 	else
 	{
@@ -98,6 +75,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	}
 
 	t->status = SIP_UAC_TRANSACTION_COMPLETED;
+
 	return r;
 }
 
@@ -108,18 +86,18 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	{
 		dialog = sip_dialog_create(reply);
 		if (!dialog) return -1;
-
-		// link to tail
-		locker_lock(&t->uac->locker);
-		list_insert_after(&dialog->link, t->uac->dialogs.prev);
-		locker_unlock(&t->uac->locker);
+		sip_uac_add_dialog(t->uac, dialog);
 	}
+
+	// completed To tag
+	if (!cstrvalid(&dialog->remote.uri.tag))
+		sip_dialog_setremotetag(dialog, &reply->to.tag);
 	
 	if (dialog->state != DIALOG_CONFIRMED)
 	{
 		dialog->state = DIALOG_CONFIRMED;
 
-		r = t->h.invite(t->param, t, dialog, reply->u.s.code);
+		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
 	}
 	else
 	{
@@ -134,9 +112,17 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	if (t->status < SIP_UAC_TRANSACTION_ACCEPTED)
 		t->status = SIP_UAC_TRANSACTION_ACCEPTED;
 
+	if (0 == r)
+	{
+		// 1. start timer D (deprecated)
+		// 2. send ACK
+		r = sip_uac_ack(t, dialog);
+	}
+
 	return r;
 }
 
+// Figure 5: INVITE client transaction (p128)
 int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
@@ -150,7 +136,7 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 		// stop retry timer A
 		if (NULL != t->timera)
 		{
-			t->uac->timer.stop(t->uac->timerptr, t->timera);
+			sip_uac_stop_timer(t->uac, t->timera);
 			t->timera = NULL;
 		}
 

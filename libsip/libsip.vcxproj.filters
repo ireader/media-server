@@ -74,14 +74,8 @@
     <ClCompile Include="src\uas\sip-uas.c">
       <Filter>Source Files\uas</Filter>
     </ClCompile>
-    <ClCompile Include="src\uas\sip-uas-dialog.c">
-      <Filter>Source Files\uas</Filter>
-    </ClCompile>
     <ClCompile Include="src\uas\sip-uas-transaction.c">
       <Filter>Source Files\uas</Filter>
-    </ClCompile>
-    <ClCompile Include="src\uac\sip-uac-dialog.c">
-      <Filter>Source Files\uac</Filter>
     </ClCompile>
     <ClCompile Include="src\uac\sip-uac-register.c">
       <Filter>Source Files\uac</Filter>
@@ -97,9 +91,6 @@
     </ClCompile>
     <ClCompile Include="src\uac\sip-uac-bye.c">
       <Filter>Source Files\uac</Filter>
-    </ClCompile>
-    <ClCompile Include="src\uas\sip-uas-invite.c">
-      <Filter>Source Files\uas</Filter>
     </ClCompile>
     <ClCompile Include="src\uas\sip-uas-cancel.c">
       <Filter>Source Files\uas</Filter>
@@ -137,8 +128,14 @@
     <ClCompile Include="src\uas\sip-uas-register.c">
       <Filter>Source Files\uas</Filter>
     </ClCompile>
-    <ClCompile Include="src\sip-callid.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\uas\sip-uas-transaction-noninvite.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\header\sip-header.c">
+      <Filter>SIP Header</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-ack.c">
+      <Filter>Source Files\uac</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

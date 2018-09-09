@@ -1,24 +1,20 @@
 #include "sip-uac.h"
 #include "sip-uac-transaction.h"
-
 #include "sip-timer.h"
 #include "sip-header.h"
 #include "sip-dialog.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+
 #include "sys/atomic.h"
 #include "sys/locker.h"
 #include "cstringext.h"
-#include "uri-parse.h"
 #include "list.h"
 
 struct sip_uac_t
 {
 	int32_t ref;
 	locker_t locker;
-
-	struct sip_transport_t* transport;
-	void* transportptr;
 
 	struct sip_timer_t timer;
 	void* timerptr;
@@ -61,12 +57,91 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 	list_for_each_safe(pos, next, &uac->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		sip_dialog_destroy(dialog);
+		sip_dialog_release(dialog);
 	}
 
 	locker_destroy(&uac->locker);
 	free(uac);
 	return 0;
+}
+
+int sip_uac_add_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog)
+{
+	// link to tail
+	assert(uac->ref > 0);
+	locker_lock(&uac->locker);
+	list_insert_after(&dialog->link, uac->dialogs.prev);
+	locker_unlock(&uac->locker);
+	return sip_dialog_addref(dialog);
+}
+
+int sip_uac_del_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog)
+{
+	// unlink dialog
+	assert(uac->ref > 0);
+	locker_lock(&uac->locker);
+	list_remove(&dialog->link);
+	locker_unlock(&uac->locker);
+	return sip_dialog_release(dialog);
+}
+
+struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg)
+{
+	struct list_head *pos, *next;
+	struct sip_dialog_t* dialog;
+
+	list_for_each_safe(pos, next, &uac->dialogs)
+	{
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		if (sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
+			return dialog;
+	}
+	return NULL;
+}
+
+int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
+{
+	// link to tail
+	assert(uac->ref > 0);
+	locker_lock(&uac->locker);
+	list_insert_after(&t->link, uac->transactions.prev);
+	locker_unlock(&uac->locker);
+	return sip_uac_transaction_addref(t);
+}
+
+int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
+{
+	struct sip_dialog_t* dialog;
+	struct list_head *pos, *next;
+
+	assert(uac->ref > 0);
+	locker_lock(&uac->locker);
+
+	// unlink transaction
+	list_remove(&t->link);
+
+	list_for_each_safe(pos, next, &uac->dialogs)
+	{
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
+		{
+			list_remove(pos);
+			sip_dialog_release(dialog); // WARNING: release in locker
+		}
+	}
+
+	locker_unlock(&uac->locker);
+	return sip_uac_transaction_release(t);
+}
+
+void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr)
+{
+	return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
+}
+
+void sip_uac_stop_timer(struct sip_uac_t* uac, void* id)
+{
+	uac->timer.stop(uac->timerptr, id);
 }
 
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
@@ -131,21 +206,29 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 	}
 }
 
-int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, sip_uac_onsend onsend, void* param)
+int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, struct sip_transport_t* transport, void* param)
 {
-	struct uri_t* host;
-	atomic_increment32(&t->uac->ref); // ref by transaction
+	int r;
+	char via[256];
+	char local[128];
+	char remote[256]; // destination/router
+	char protocol[16];
 
-	// link to tail
-	locker_lock(&t->uac->locker);
-	list_insert_after(&t->link, t->uac->transactions.prev);
-	locker_unlock(&t->uac->locker);
+	// router
+	r = sip_message_get_next_hop(t->req, remote, sizeof(remote));
+	if (0 != r)
+		return r;
 
-	// Request-Line
-	memcpy(&t->req->u.c.method, &t->req->cseq.method, sizeof(struct cstring_t));
-	t->req->u.c.uri = dialog->target;
+	r = transport->via(param, remote, protocol, local);
+	if (0 != r)
+		return r;
 
-	// TODO: via !!!
+	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
+	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
+	r = snprintf(via, sizeof(via), "SIP/2.0/%s %s;branch=%s%p", protocol, local, SIP_BRANCH_PREFIX, t);
+	if (r < 0 || r >= sizeof(via))
+		return -1; // ENOMEM
+	sip_message_add_header(t->req, "Via", via);
 
 	// message
 	t->req->payload = sdp;
@@ -157,229 +240,15 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, si
 		return -1;
 	}
 
-	// 8.1.2 Sending the Request (p41)
-
-	// 12.2.1.1 Generating the Request (p73)
-	// 1. If the route set is empty, the UAC MUST place the remote target URI into 
-	//    the Request-URI. The UAC MUST NOT add a Route header field to the request.
-	// 2. If the route set is not empty, and the first URI in the route set contains 
-	//    the lr parameter, the UAC MUST place the remote target URI into the 
-	//    Request-URI and MUST include a Route header field containing the route 
-	//    set values in order, including all parameters.
-	// 3. If the route set is not empty, and its first URI does not contain the
-	//    lr parameter, the UAC MUST place the first URI from the route set into 
-	//    the Request-URI, stripping any parameters that are not allowed in a Request-URI.
-	//    The UAC MUST add a Route header field containing the remainder of the 
-	//	  route set values in order, including all parameters. The UAC MUST then 
-	//    place the remote target URI into the Route header field as the last value.
-	//	  METHOD sip:proxy1
-	//	  Route: <sip:proxy2>,<sip:proxy3;lr>,<sip:proxy4>,<sip:user@remoteua>
-	// 4. A UAC SHOULD include a Contact header field in any target refresh
-	//    requests within a dialog, and unless there is a need to change it,
-
-	// 18.1.1 Sending Requests (p142)
-
-	// Before a request is sent, the client transport MUST insert a value of
-	// the "sent-by" field into the Via header field.
-
-	host = uri_parse(t->req->u.c.uri.host.p, t->req->u.c.uri.host.n);
-	if (!host) return -1; // invalid host uri
-	return onsend(param, host->host, 0 == host->port ? SIP_PORT : host->port, t->data, t->size);
-}
-
-struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, int seconds, sip_uac_onreply onregister, void* param)
-{
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->onreply = onregister;
-	t->param = param;
-
-	if (0 != sip_message_init(t->req, SIP_METHOD_REGISTER, name, name))
-	{
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_onreply onoptins, void* param)
-{
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->onreply = onoptins;
-	t->param = param;
-
-	if (0 != sip_message_init(t->req, SIP_METHOD_OPTIONS, name, to))
-	{
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param)
-{
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->oninvite = oninvite;
-	t->param = param;
-
-	if (0 != sip_message_init(t->req, SIP_METHOD_INVITE, name, to))
-	{
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, void* session, sip_uac_onreply oncancel, void* param)
-{
-	struct sip_dialog_t* dialog;
-	struct sip_uac_transaction_t* t;
-	dialog = (struct sip_dialog_t*)session;
-
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->onreply = oncancel;
-	t->param = param;
-
-	++dialog->local.id;
-	if (0 != sip_message_init2(t->req, SIP_METHOD_CANCEL, dialog))
-	{
-		--dialog->local.id;
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, void* session, sip_uac_onreply onbye, void* param)
-{
-	struct sip_dialog_t* dialog;
-	struct sip_uac_transaction_t* t;
-	dialog = (struct sip_dialog_t*)session;
-
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->onreply = onbye;
-	t->param = param;
-
-	++dialog->local.id;
-	if (0 != sip_message_init2(t->req, SIP_METHOD_BYE, dialog))
-	{
-		--dialog->local.id;
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, void* session, sip_uac_oninvite oninvite, void* param)
-{
-	struct sip_dialog_t* dialog;
-	struct sip_uac_transaction_t* t;
-	dialog = (struct sip_dialog_t*)session;
-
-	t = sip_uac_transaction_create(uac);
-	t->req = sip_message_create();
-	t->oninvite = oninvite;
-	t->param = param;
-
-	++dialog->local.id;
-	if (0 != sip_message_init2(t->req, SIP_METHOD_INVITE, dialog))
-	{
-		--dialog->local.id;
-		sip_uac_transaction_release(t);
-		return NULL;
-	}
-	return t;
-}
-
-int sip_uac_get_header_count(struct sip_uac_transaction_t* t)
-{
-	return sip_params_count(&t->reply->headers);
-}
-
-int sip_uac_get_header(struct sip_uac_transaction_t* t, int i, struct cstring_t* const name, struct cstring_t* const value)
-{
-	struct sip_param_t* param;
-	param = sip_params_get(&t->reply->headers, i);
-	if (!param) return -1;
-	memcpy(&name, &param->name, sizeof(struct cstring_t));
-	memcpy(&value, &param->value, sizeof(struct cstring_t));
-	return 0;
-}
-
-const struct cstring_t* sip_uac_get_header_by_name(struct sip_uac_transaction_t* t, const char* name)
-{
-	return sip_params_find_string(&t->reply->headers, name, strlen(name));
+	atomic_increment32(&t->uac->ref); // ref by transaction
+	t->transport = transport;
+	t->transportptr = param;
+	return sip_uac_transaction_send(t);
 }
 
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value)
 {
-	int r;
-	const char* end;
-	struct sip_uri_t uri;
-	struct sip_param_t header;
-
-	// TODO: release memory
-	value = strdup(value ? value : "");
-	end = value + strlen(value);
-
-	if (0 == strcasecmp(SIP_HEADER_FROM, name))
-	{
-		r = sip_header_contact(value, end, &t->req->from);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_TO, name))
-	{
-		r = sip_header_contact(value, end, &t->req->to);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
-	{
-		t->req->callid.p = value;
-		t->req->callid.n = end - value;
-	}
-	else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
-	{
-		r = sip_header_cseq(value, end, &t->req->cseq);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
-	{
-		t->req->maxforwards = strtol(value, NULL, 10);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
-	{
-		r = sip_header_vias(value, end, &t->req->vias);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
-	{
-		r = sip_header_contacts(value, end, &t->req->contacts);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
-	{
-		memset(&uri, 0, sizeof(uri)); 
-		r = sip_header_uri(value, end, &uri);
-		if (0 == r)
-			sip_uris_push(&t->req->routers, &uri);
-	}
-	else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
-	{
-		memset(&uri, 0, sizeof(uri));
-		r = sip_header_uri(value, end, &uri);
-		if (0 == r)
-			sip_uris_push(&t->req->record_routers, &uri);
-	}
-	else
-	{
-		header.name.p = name;
-		header.name.n = strlen(name);
-		header.value.p = value ? value : "";
-		header.value.n = value ? strlen(value) : 0;
-		return sip_params_push(&t->req->headers, &header);
-	}
+	return sip_message_add_header(t->req, name, value);
 }
 
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value)

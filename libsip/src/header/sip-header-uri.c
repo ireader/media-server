@@ -24,7 +24,7 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 {
 	int i;
 	const char* p;
-	struct sip_param_t* param;
+	const struct sip_param_t* param;
 	struct cstring_t parameters;
 	memset(uri, 0, sizeof(*uri));
 

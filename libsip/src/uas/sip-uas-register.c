@@ -37,19 +37,40 @@ static int sip_uas_get_expires(const char* expires)
 	return mktime(&tm) - time(NULL);
 }
 
+static int sip_register_check_request_uri(const struct uri_t* uri)
+{
+	// Request-URI: The "userinfo" and "@" components of the SIP URI MUST NOT be present
+	return (uri && uri->host) ? 1 : 0;
+}
+
+static int sip_register_check_to_domain(const struct sip_message_t* req)
+{
+	int r;
+	struct uri_t* to;
+	struct uri_t* uri;
+	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
+	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
+
+	r = (!uri || !uri->host || !to || !to->host || 0 != strcasecmp(to->host, uri->host)) ? 0 : 1;
+
+	uri_free(to);
+	uri_free(uri);
+	return r;
+}
+
 // 10.3 Processing REGISTER Requests(p63)
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
 {
-	int i, r, expires;
+	int r, expires;
 	struct uri_t* to;
 	struct uri_t* uri;
-	const char* header;
-	struct sip_contact_t* contact;
+	const struct cstring_t* header;
+	const struct sip_contact_t* contact;
 
 	// If contact.expire is not provided, 
 	// the value of the Expires header field is used instead
-	header = http_get_header_by_name(t->http, "Expires");
-	expires = header ? atoi(header) : 0;
+	header = sip_message_get_header_by_name(req, "Expires");
+	expires = header ? atoi(header->p) : 0;
 
 	// 1. Request-URI
 
@@ -57,6 +78,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
 	if (!uri || !uri->host)
 	{
+		uri_free(uri);
 		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
 	}
 	assert(NULL == uri->userinfo && uri->host);
@@ -67,7 +89,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//}
 
 	// 2. the registrar MUST process the Require header field values
-	header = http_get_header_by_name(t->http, "require");
+	header = sip_message_get_header_by_name(req, "require");
 	if (!header)
 	{
 		// TODO: check require
@@ -80,10 +102,13 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
 	if (!to || !to->host || 0 != strcasecmp(to->host, uri->host))
 	{
+		uri_free(to);
+		uri_free(uri);
 		// all URI parameters MUST be removed (including the user-param), and
 		// any escaped characters MUST be converted to their unescaped form.
 		return sip_uas_transaction_noninvite_reply(t, 404/*Not Found*/, NULL, 0);
 	}
+	uri_free(uri);
 
 	// 6. Contact
 	//    * - multi-contacts, expires != 0 (400 Invalid Request)
@@ -91,6 +116,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//    cseq
 	if (sip_contacts_match_any(&req->contacts) && (1 != sip_contacts_count(&req->contacts) || 0 < expires) )
 	{
+		uri_free(to);
 		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
 	}
 
@@ -104,12 +130,15 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	req->cseq.id;
 
 	// zero or more values containing address bindings
-	req->contacts;
+	contact = sip_contacts_get(&req->contacts, 0);
+	uri = contact ? uri_parse(contact->uri.host.p, contact->uri.host.n) : NULL;
+	if(contact && contact->expires > 0)
+		expires = (int)contact->expires;
 
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	return t->uas->handler->onregister(t->uas->param, t, &req->to, &req->contacts);
+	r = t->handler->onregister(t->param, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires);
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{
@@ -119,4 +148,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//// The Record-Route header field has no meaning in REGISTER requests or responses, 
 	//// and MUST be ignored if present.
 	//return sip_uas_transaction_noninvite_reply(t, r, NULL, 0);
+	free(uri);
+	free(to);
+	return r;
 }

@@ -2,6 +2,9 @@
 #define _sip_uac_transaction_h_
 
 #include "sip-uac.h"
+#include "sip-timer.h"
+#include "sip-message.h"
+#include "sip-transport.h"
 #include "sys/locker.h"
 #include "list.h"
 
@@ -24,8 +27,9 @@ struct sip_uac_transaction_t
 	locker_t locker;
 	int32_t ref;
 
+	// valid only in [sip_uas_input, sip_uas_reply]
+	// create in sip_uas_input, destroy in sip_uas_reply
 	struct sip_message_t* req;
-	struct sip_message_t* reply;
 	uint8_t data[UDP_PACKET_SIZE];
 	int size;
 	int retransmission; // default 0
@@ -42,9 +46,13 @@ struct sip_uac_transaction_t
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;
 	void* param;
+	
+	struct sip_transport_t* transport;
+//	sip_uac_onsend onsend;
+	void* transportptr;
 };
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac);
+struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req);
 int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
 int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
@@ -52,5 +60,16 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
 
 int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+
+struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg);
+int sip_uac_add_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
+int sip_uac_del_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
+int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
+int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
+
+void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr);
+void sip_uac_stop_timer(struct sip_uac_t* uac, void* id);
+
+int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog);
 
 #endif /* !_sip_uac_transaction_h_ */

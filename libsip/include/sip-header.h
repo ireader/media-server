@@ -30,14 +30,14 @@
 	void name##s_free(struct name##s_t* p);	\
 	int name##s_count(const struct name##s_t* p);	\
 	int name##s_push(struct name##s_t* p, struct name##_t* item); \
-	struct name##_t* name##s_get(struct name##s_t* p, int index);
+	struct name##_t* name##s_get(const struct name##s_t* p, int index);
 
 #define DARRAY_IMPLEMENT(name)				\
 	static inline void name##s_arrfree(struct darray_t *arr)	\
 	{										\
 		struct name##s_t* p;				\
 		p = (struct name##s_t*)(((char*)arr) - offsetof(struct name##s_t, arr)); \
-		if(p->arr.elements != p->ptr)		\
+		if(p && p->arr.elements != p->ptr)	\
 			free(p->arr.elements);			\
 	}										\
 											\
@@ -70,7 +70,7 @@
 		return darray_push_back(&p->arr, item, 1);	\
 	}										\
 											\
-	struct name##_t* name##s_get(struct name##s_t* p, int index)	\
+	struct name##_t* name##s_get(const struct name##s_t* p, int index)	\
 	{										\
 		return (struct name##_t*)darray_get(&p->arr, index);	\
 	}										\
@@ -169,27 +169,23 @@ int sip_header_cseq(const char* s, const char* end, struct sip_cseq_t* cseq);
 /// @return write length, >0-ok, <0-error
 int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end);
 
-int sip_uri_free(struct sip_uri_t* uri);
-int sip_uri_clone(struct sip_uri_t* clone, const struct sip_uri_t* uri);
 int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
 int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r);
 
-int sip_via_free(struct sip_via_t* via);
-int sip_via_clone(struct sip_via_t* clone, const struct sip_via_t* via);
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via);
 int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias);
 int sip_via_write(const struct sip_via_t* via, char* data, const char* end);
 const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias);
 
-int sip_contact_free(struct sip_contact_t* contact);
-int sip_contact_clone(struct sip_contact_t* clone, const struct sip_contact_t* contact);
 int sip_header_contact(const char* s, const char* end, struct sip_contact_t* contact);
 int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* contacts);
 int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);
 int sip_contacts_match_any(const struct sip_contacts_t* contacts);
 
-int cstring_free(struct cstring_t* s);
-int cstring_clone(struct cstring_t* clone, const struct cstring_t* s);
+uint8_t* cstring_clone(uint8_t* ptr, const uint8_t* end, struct cstring_t* clone, const char* s, size_t n);
+uint8_t* sip_uri_clone(uint8_t* ptr, const uint8_t* end, struct sip_uri_t* clone, const struct sip_uri_t* uri);
+uint8_t* sip_via_clone(uint8_t* ptr, const uint8_t* end, struct sip_via_t* clone, const struct sip_via_t* via);
+uint8_t* sip_contact_clone(uint8_t* ptr, const uint8_t* end, struct sip_contact_t* clone, const struct sip_contact_t* contact);
 
 #endif /* !_sip_header_h_ */
