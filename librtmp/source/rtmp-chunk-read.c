@@ -164,6 +164,7 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 			assert(parser->bytes <= size);
 			if (parser->bytes >= size)
 			{
+				extended_timestamp = parser->pkt->header.timestamp;
 				if (parser->pkt->header.timestamp == 0xFFFFFF)
 				{
 					// parse extended timestamp
