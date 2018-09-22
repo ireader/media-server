@@ -232,7 +232,8 @@ static int rtmp_server_onget_stream_length(void* param, int r, double transactio
 		// TODO: get duration (seconds)
 		(void)stream_name;
 		//r = ctx->handler.onget_stream_length(ctx->param, stream_name);
-		r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
+		//r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
+		//r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 	}
 
 	return r;
