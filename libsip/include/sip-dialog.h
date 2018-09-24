@@ -7,6 +7,10 @@
 #include "darray.h"
 #include "list.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 enum {
 	DIALOG_ERALY = 0,
 	DIALOG_CONFIRMED,
@@ -14,10 +18,6 @@ enum {
 
 struct sip_dialog_t
 {
-	struct list_head link;
-	uint8_t* ptr;
-	int32_t ref;
-
 	int state; // DIALOG_ERALY/DIALOG_CONFIRMED
 
 	char callid[128];
@@ -32,7 +32,14 @@ struct sip_dialog_t
 	struct sip_uri_t target; //remote target(the URI from the Contact header field of the request)
 	int secure; // bool
 
-	struct sip_uris_t routers; // route set(the list of URIs in the Record-Route header field from the request)
+	// route set(the list of URIs in the Record-Route header field from the request)
+	struct sip_uris_t routers;
+
+	// internal use only
+	void* session; // user-defined session
+	struct list_head link;
+	uint8_t* ptr;
+	int32_t ref;
 };
 
 struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg);
@@ -40,10 +47,14 @@ int sip_dialog_addref(struct sip_dialog_t* dialog);
 int sip_dialog_release(struct sip_dialog_t* dialog);
 
 /// @return 1-match, 0-don't match
-int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* from, const struct cstring_t* to);
+int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
 
 struct sip_dialog_t* sip_dialog_find(struct list_head* dialogs, struct sip_message_t* msg);
 
 int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t* tag);
 
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_sip_dialog_h_ */

@@ -1,5 +1,6 @@
 #include "sip-uas-transaction.h"
 #include "http-header-expires.h"
+#include "cstringext.h"
 #include "uri-parse.h"
 
 /*
@@ -100,7 +101,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 
 	// 5. To domain check (404 Not Found)
 	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
-	if (!to || !to->host || 0 != strcasecmp(to->host, uri->host))
+	if (!to || !to->host /*|| 0 != strcasecmp(to->host, uri->host)*/)
 	{
 		uri_free(to);
 		uri_free(uri);

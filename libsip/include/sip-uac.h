@@ -1,13 +1,19 @@
 #ifndef _sip_uac_h_
 #define _sip_uac_h_
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 struct sip_uac_t;
 struct sip_dialog_t;
 struct sip_message_t;
 struct sip_transport_t;
 struct sip_uac_transaction_t;
 
+/// @return 0-ok, other-error
 typedef int (*sip_uac_oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+/// @return 0-ok, other-error
 typedef int (*sip_uac_onreply)(void* param, struct sip_uac_transaction_t* t, int code);
 /// @return <0-error, 0-udp, 1-tcp, other-reserved
 //typedef int (*sip_uac_onsend)(void* param, const char* url, const void* data, int bytes);
@@ -22,8 +28,9 @@ struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* 
 struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply oncancel, void* param);
 struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
 struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param);
+/// @param[in] registrar register server, such as sip:registrar.biloxi.com. can be null.
 /// @param[in] seconds expires seconds
-struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, int seconds, sip_uac_onreply onregister, void* param);
+struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
 struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_onreply onoptins, void* param);
 
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
@@ -36,4 +43,7 @@ int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, in
 /// @return 0-ok, other-error
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, struct sip_transport_t* transport, void* param);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_sip_uac_h_ */

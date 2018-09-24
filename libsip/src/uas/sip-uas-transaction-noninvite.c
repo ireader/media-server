@@ -1,7 +1,5 @@
 #include "sip-uas-transaction.h"
 
-static int sip_uas_transaction_timer_terminated(void* id, void* usrptr);
-
 // Figure 8: non-INVITE server transaction (p140)
 int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
 {
@@ -77,25 +75,8 @@ int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int cod
 	if (SIP_UAS_TRANSACTION_COMPLETED == t->status)
 	{
 		// start timer J
-		if (!t->reliable)
-			t->timerij = sip_uas_start_timer(t->uas, 64 * T1, sip_uas_transaction_timer_terminated, t);
-		else
-			sip_uas_transaction_release(t);
+		sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_J);
 	}
 
 	return r;
-}
-
-static int sip_uas_transaction_timer_terminated(void* id, void* usrptr)
-{
-	struct sip_uas_transaction_t* t;
-	t = (struct sip_uas_transaction_t*)usrptr;
-	assert(t->timerij == id);
-	locker_lock(&t->locker);
-	t->timerij = NULL;
-	locker_unlock(&t->locker);
-
-	// all done
-	sip_uas_transaction_release(t);
-	return 0;
 }

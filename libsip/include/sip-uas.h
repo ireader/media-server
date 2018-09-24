@@ -3,6 +3,10 @@
 
 #include "cstring.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 struct sip_uas_t;
 struct sip_dialog_t;
 struct sip_message_t;
@@ -10,10 +14,11 @@ struct sip_uas_transaction_t;
 
 struct sip_uas_handler_t
 {
+	/// @param[in] dialog nil-new invite, not nil-reinvite
 	/// @return user-defined session-id, null if error
-	void* (*oninvite)(void* param, struct sip_uas_transaction_t* t, const void* data, int bytes);
-	/// @return 0-ok, other-error
+	void* (*oninvite)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes);
 	/// @param[in] code 0-ok, other-sip status code
+	/// @return 0-ok, other-error
 	int (*onack)(void* param, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes);
 	
 	/// on terminating a session(dialog)
@@ -26,7 +31,7 @@ struct sip_uas_handler_t
 	int (*onregister)(void* param, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
 
 	/// @return <0-error, 0-udp, 1-tcp, other-reserved
-	int (*send)(void* param, const struct cstring_t* url, const struct cstring_t* received, const void* data, int bytes);
+	int (*send)(void* param, const struct cstring_t* url, const void* data, int bytes);
 };
 
 /// @param[in] name such as: "Alice <sip:alice@atlanta.com>"
@@ -41,4 +46,7 @@ int sip_uas_add_header_int(struct sip_uas_transaction_t* t, const char* name, in
 int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes);
 int sip_uas_discard(struct sip_uas_transaction_t* t);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_sip_uas_h_ */

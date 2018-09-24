@@ -16,8 +16,8 @@ struct sip_uac_t
 	int32_t ref;
 	locker_t locker;
 
-	struct sip_timer_t timer;
-	void* timerptr;
+	//struct sip_timer_t timer;
+	//void* timerptr;
 
 	struct list_head transactions; // transaction layer handler
 	struct list_head dialogs; // early or confirmed dialogs
@@ -51,7 +51,7 @@ int sip_uac_destroy(struct sip_uac_t* uac)
 	{
 		t = list_entry(pos, struct sip_uac_transaction_t, link);
 		assert(t->uac == uac);
-		sip_uac_transaction_release(t);
+		//sip_uac_transaction_release(t);
 	}
 
 	list_for_each_safe(pos, next, &uac->dialogs)
@@ -106,7 +106,8 @@ int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 	locker_lock(&uac->locker);
 	list_insert_after(&t->link, uac->transactions.prev);
 	locker_unlock(&uac->locker);
-	return sip_uac_transaction_addref(t);
+	//return sip_uac_transaction_addref(t);
+	return 0;
 }
 
 int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
@@ -120,6 +121,10 @@ int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 	// unlink transaction
 	list_remove(&t->link);
 
+	// 12.3 Termination of a Dialog (p77)
+	// Independent of the method, if a request outside of a dialog generates
+	// a non-2xx final response, any early dialogs created through
+	// provisional responses to that request are terminated.
 	list_for_each_safe(pos, next, &uac->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
@@ -131,17 +136,20 @@ int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 	}
 
 	locker_unlock(&uac->locker);
-	return sip_uac_transaction_release(t);
+	//return sip_uac_transaction_release(t);
+	return 0;
 }
 
 void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr)
 {
-	return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
+	//return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
+	return sip_timer_start(timeout, handler, usrptr);
 }
 
 void sip_uac_stop_timer(struct sip_uac_t* uac, void* id)
 {
-	uac->timer.stop(uac->timerptr, id);
+	//uac->timer.stop(uac->timerptr, id);
+	sip_timer_stop(id);
 }
 
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
@@ -153,7 +161,7 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 
 	p = sip_vias_top_branch(&reply->vias);
 	if (!p) return NULL;
-	assert(0 == cstrprefix(p, SIP_BRANCH_PREFIX));
+	assert(cstrprefix(p, SIP_BRANCH_PREFIX));
 
 	list_for_each_safe(pos, next, transactions)
 	{
@@ -163,7 +171,7 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 		p2 = sip_vias_top_branch(&t->req->vias);
 		if (!p2 || 0 == cstreq(p, p2))
 			continue;
-		assert(0 == cstrprefix(p2, SIP_BRANCH_PREFIX));
+		assert(cstrprefix(p2, SIP_BRANCH_PREFIX));
 		
 		// 2. cseq method parameter
 		// The method is needed since a CANCEL request constitutes a
@@ -209,26 +217,67 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, struct sip_transport_t* transport, void* param)
 {
 	int r;
-	char via[256];
+	char ptr[1024];
+	char dns[128];
 	char local[128];
 	char remote[256]; // destination/router
 	char protocol[16];
+	struct cstring_t user;
+	const struct sip_uri_t* uri;
 
-	// router
-	r = sip_message_get_next_hop(t->req, remote, sizeof(remote));
-	if (0 != r)
-		return r;
+	if (t->transportptr)
+		return -1; // EEXIST
 
-	r = transport->via(param, remote, protocol, local);
-	if (0 != r)
-		return r;
+	// 1. get transport local info
+	if (0 == sip_vias_count(&t->req->vias) || 0 == sip_contacts_count(&t->req->contacts))
+	{
+		uri = sip_message_get_next_hop(t->req);
+		if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
+			return -1;
 
-	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
-	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
-	r = snprintf(via, sizeof(via), "SIP/2.0/%s %s;branch=%s%p", protocol, local, SIP_BRANCH_PREFIX, t);
-	if (r < 0 || r >= sizeof(via))
-		return -1; // ENOMEM
-	sip_message_add_header(t->req, "Via", via);
+		protocol[0] = local[0] = dns[0] = 0;
+		r = transport->via(param, remote, protocol, local, dns);
+		if (0 != r)
+			return r;
+
+		if (NULL == strchr(dns, '.'))
+			snprintf(dns, sizeof(dns), "%s", local); // don't have valid dns
+	}
+
+	// 2. Via
+	if (0 == sip_vias_count(&t->req->vias))
+	{
+		// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
+		// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
+		r = snprintf(ptr, sizeof(ptr), "SIP/2.0/%s %s;branch=%s%p", protocol, dns, SIP_BRANCH_PREFIX, t);
+		if (r < 0 || r >= sizeof(ptr))
+			return -1; // ENOMEM
+		r = sip_message_add_header(t->req, "Via", ptr);
+	}
+	
+	// 3. Contact: <sip:bob@192.0.2.4>
+	if (0 == sip_contacts_count(&t->req->contacts) && sip_message_isinvite(t->req) && 0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote))
+	{
+		// The Contact header field MUST be present and contain exactly one SIP or 
+		// SIPS URI in any request that can result in the establishment of a dialog.
+		// For the methods defined in this specification, that includes only the INVITE request.
+
+		// While the Via header field tells other elements where to send the
+		// response, the Contact header field tells other elements where to send
+		// future requests.
+
+		// usually composed of a username at a fully qualified domain name(FQDN)
+		cstrcpy(&user, remote, sizeof(remote));
+		snprintf(ptr, sizeof(ptr), "<sip:%s@%s>", remote, dns);
+		r = sip_message_add_header(t->req, "Contact", ptr);
+	}
+
+	// 4. get transport reliable from via protocol
+	t->reliable = 0;
+	if (sip_vias_count(&t->req->vias) > 0)
+	{
+		t->reliable = cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "UDP");
+	}
 
 	// message
 	t->req->payload = sdp;
@@ -236,13 +285,13 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	t->size = sip_message_write(t->req, t->data, sizeof(t->data));
 	if (t->size < 0 || t->size >= sizeof(t->data))
 	{
-		sip_uac_transaction_release(t);
+		sip_uac_transaction_destroy(t);
 		return -1;
 	}
 
-	atomic_increment32(&t->uac->ref); // ref by transaction
-	t->transport = transport;
+	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
 	t->transportptr = param;
+	atomic_increment32(&t->uac->ref); // ref by transaction
 	return sip_uac_transaction_send(t);
 }
 
@@ -253,7 +302,5 @@ int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const 
 
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value)
 {
-	char v[32];
-	snprintf(v, sizeof(v), "%d", value);
-	return sip_uac_add_header(t, name, v);
+	return sip_message_add_header_int(t->req, name, value);
 }

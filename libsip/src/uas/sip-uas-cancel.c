@@ -26,6 +26,5 @@ int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialo
 	
 	// the To tag of the response to the CANCEL and the To tag
 	// in the response to the original request SHOULD be the same.
-	assert(dialog == t->session);
-	return t->handler->oncancel(t->param, t, t->session);
+	return t->handler->oncancel(t->param, t, dialog ? dialog->session : NULL);
 }

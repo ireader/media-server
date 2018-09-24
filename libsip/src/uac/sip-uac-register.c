@@ -6,17 +6,19 @@
 //#include "port/ip-route.h"
 //#include "uri-parse.h"
 
-struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, int seconds, sip_uac_onreply onregister, void* param)
+struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param)
 {
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	req = sip_message_create();
-	if (0 != sip_message_init(req, SIP_METHOD_REGISTER, name, name))
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
+	if (0 != sip_message_init(req, SIP_METHOD_REGISTER, registrar ? registrar : name, name, name))
 	{
 		sip_message_destroy(req);
 		return NULL;
 	}
+
+	sip_message_add_header_int(req, "Expires", seconds);
 
 	t = sip_uac_transaction_create(uac, req);
 	t->onreply = onregister;

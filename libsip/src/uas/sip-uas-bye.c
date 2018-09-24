@@ -14,8 +14,7 @@ int sip_uas_onbye(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, 
 	// The UAS MUST still respond to any pending requests received for that 
 	// dialog. It is RECOMMENDED that a 487 (Request Terminated) response be 
 	// generated to those pending requests.
-	assert(dialog == t->session);
-	r = t->handler->onbye(t->param, t, t->session);
+	r = t->handler->onbye(t->param, t, dialog ? dialog->session : NULL);
 
 	sip_uas_del_dialog(t->uas, dialog);
 	return r;

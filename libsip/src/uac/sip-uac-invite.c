@@ -8,8 +8,8 @@ struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* 
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	req = sip_message_create();
-	if (0 != sip_message_init(req, SIP_METHOD_INVITE, name, to))
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
+	if (0 != sip_message_init(req, SIP_METHOD_INVITE, to, name, to))
 	{
 		sip_message_destroy(req);
 		return NULL;
@@ -27,7 +27,7 @@ struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip
 	struct sip_uac_transaction_t* t;
 
 	++dialog->local.id;
-	req = sip_message_create();
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_INVITE, dialog))
 	{
 		--dialog->local.id;

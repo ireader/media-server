@@ -7,8 +7,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	t = (struct sip_uas_transaction_t*)calloc(1, sizeof(*t));
 	if (NULL == t) return NULL;
 
-	t->req = req;
-	t->reply = sip_message_create();
+	t->reply = sip_message_create(SIP_MESSAGE_REPLY);
 	if (0 != sip_message_init3(t->reply, req))
 	{
 		free(t);
@@ -32,7 +31,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	return t;
 }
 
-static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
+int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 {
 	assert(t->ref > 0);
 	if (0 != atomic_decrement32(&t->ref))
@@ -46,8 +45,8 @@ static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 	// unlink from uas
 	sip_uas_del_transaction(t->uas, t);
 
-	// MUST: destroy t->req after sip_uac_del_transaction
-	sip_message_destroy((struct sip_message_t*)t->req);
+	// MUST: destroy t->reply after sip_uas_del_transaction
+	//sip_message_destroy((struct sip_message_t*)t->req);
 
 	if (t->reply)
 		sip_message_destroy(t->reply);
@@ -104,11 +103,66 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 	// parameter to that Via header field value.
 	// Via: SIP/2.0/UDP bobspc.biloxi.com:5060;received=192.0.2.4
 
-	via = sip_vias_get(&t->req->vias, 0);
+	via = sip_vias_get(&t->reply->vias, 0);
 	if (!via) return -1; // invalid via
 
-	r = t->handler->send(t->param, &via->host, &via->received, t->data, t->size);
+	r = t->handler->send(t->param, cstrvalid(&via->received) ? &via->received : &via->host, t->data, t->size);
 	if (r >= 0)
 		t->reliable = r;
 	return r;
+}
+
+static int sip_uas_transaction_onterminated(void* usrptr)
+{
+	struct sip_uas_transaction_t* t;
+	t = (struct sip_uas_transaction_t*)usrptr;
+
+	locker_lock(&t->locker);
+	t->status = SIP_UAS_TRANSACTION_TERMINATED;
+
+	if (t->timerh)
+	{
+		sip_uas_stop_timer(t->uas, t->timerh);
+		t->timerh = NULL;
+	}
+	if (t->timerg)
+	{
+		sip_uas_stop_timer(t->uas, t->timerg);
+		t->timerg = NULL;
+	}
+	if (t->timerij)
+	{
+		sip_uas_stop_timer(t->uas, t->timerij);
+		t->timerij = NULL;
+	}
+	locker_unlock(&t->locker);
+
+	// all done
+	sip_uas_transaction_release(t);
+	return 0;
+}
+
+int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
+{
+	locker_lock(&t->locker);
+	if (t->timerh)
+	{
+		sip_uas_stop_timer(t->uas, t->timerh);
+		t->timerh = NULL;
+	}
+	if (t->timerg)
+	{
+		sip_uas_stop_timer(t->uas, t->timerg);
+		t->timerg = NULL;
+	}
+	if (t->timerij)
+	{
+		sip_uas_stop_timer(t->uas, t->timerij);
+		t->timerij = NULL;
+	}
+
+	t->timerij = sip_uas_start_timer(t->uas, timeout, sip_uas_transaction_onterminated, t);
+
+	locker_unlock(&t->locker);
+	return t->timerij ? 0 : -1;
 }

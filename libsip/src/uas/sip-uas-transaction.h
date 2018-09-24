@@ -4,6 +4,7 @@
 #include "sip-uas.h"
 #include "sip-timer.h"
 #include "sip-header.h"
+#include "sip-dialog.h"
 #include "sip-message.h"
 #include "sip-transport.h"
 #include "sys/atomic.h"
@@ -18,6 +19,7 @@ enum
 	SIP_UAS_TRANSACTION_TRYING,
 	SIP_UAS_TRANSACTION_PROCEEDING,
 	SIP_UAS_TRANSACTION_COMPLETED,
+	SIP_UAS_TRANSACTION_ACCEPTED, // rfc6026 7.1 (p5)
 	SIP_UAS_TRANSACTION_CONFIRMED,
 	SIP_UAS_TRANSACTION_TERMINATED,
 };
@@ -28,7 +30,6 @@ struct sip_uas_transaction_t
 	locker_t locker;
 	int32_t ref;
 
-	void* session; // user-defined session
 	uint8_t data[UDP_PACKET_SIZE];
 	int size;
 	int retransmission; // default 0
@@ -42,12 +43,12 @@ struct sip_uas_transaction_t
 	void* timerij; // Timer-I: T4, comfirmed -> terminated, Timer-J: 64*T1, completed -> terminated
 
 	struct sip_uas_t* uas;
+	struct sip_dialog_t* dialog;
 	struct sip_uas_handler_t* handler;
 	void* param;
 
 	// valid only in [sip_uas_input, sip_uas_reply]
 	// create in sip_uas_input, destroy in sip_uas_reply
-	const struct sip_message_t* req;
 	struct sip_message_t* reply; // for set reply sip header
 };
 
@@ -56,6 +57,9 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t);
 int sip_uas_transaction_addref(struct sip_uas_transaction_t* t);
 
 int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
+
+// wait for all in-flight reply
+int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout);
 
 struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, const struct sip_message_t* req, int matchmethod);
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);

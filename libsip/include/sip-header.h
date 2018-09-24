@@ -9,21 +9,24 @@
 #include "cstring.h"
 #include "darray.h"
 
-// 19.1.1 SIP and SIPS URI Components (p152)
-// The default port value is transport and scheme dependent. The
-// default is 5060 for sip: using UDP, TCP, or SCTP. The default is
-// 5061 for sip: using TLS over TCP and sips: over TCP.
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+	// 19.1.1 SIP and SIPS URI Components (p152)
+	// The default port value is transport and scheme dependent. The
+	// default is 5060 for sip: using UDP, TCP, or SCTP. The default is
+	// 5061 for sip: using TLS over TCP and sips: over TCP.
 #define SIP_PORT 5060
 
 // 10.2.6 Discovering a Registrar (p62)
 #define SIP_MULTICAST_HOST "sip.mcast.net"
 #define SIP_MULTICAST_ADDRESS "224.0.1.75"
 
-#define DARRAY_DECLARE(name, N)				\
+#define DARRAY_DECLARE(name)				\
 	struct name##s_t						\
 	{										\
 		struct darray_t arr;				\
-		struct name##_t ptr[N];				\
 	};										\
 											\
 	void name##s_init(struct name##s_t* p);	\
@@ -32,32 +35,28 @@
 	int name##s_push(struct name##s_t* p, struct name##_t* item); \
 	struct name##_t* name##s_get(const struct name##s_t* p, int index);
 
-#define DARRAY_IMPLEMENT(name)				\
+#define DARRAY_IMPLEMENT(name, N)			\
 	static inline void name##s_arrfree(struct darray_t *arr)	\
 	{										\
+		int i;								\
 		struct name##s_t* p;				\
 		p = (struct name##s_t*)(((char*)arr) - offsetof(struct name##s_t, arr)); \
-		if(p && p->arr.elements != p->ptr)	\
-			free(p->arr.elements);			\
+		for(i = 0; i < darray_count(arr); i++) \
+			name##_params_free(name##s_get(p, i)); \
+		if(arr && arr->elements)			\
+			free(arr->elements);			\
 	}										\
 											\
 	static inline void* name##s_arralloc(struct darray_t *arr, size_t size) \
 	{										\
-		void* ptr;							\
-		struct name##s_t* p;				\
-		p = (struct name##s_t*)(((char*)arr) - offsetof(struct name##s_t, arr));	\
-		if(size <= sizeof(p->ptr)) return p->ptr;									\
-		ptr = realloc(p->ptr == p->arr.elements ? NULL : p->arr.elements, size);	\
-		if (ptr && p->ptr == p->arr.elements)										\
-			memcpy(ptr, p->ptr, sizeof(p->ptr));									\
-		return ptr;																	\
+		return realloc(arr->elements, size);\
 	}										\
 											\
 	void name##s_init(struct name##s_t* p)	\
 	{										\
 		p->arr.free = name##s_arrfree;		\
 		p->arr.alloc = name##s_arralloc;	\
-		darray_init(&p->arr, sizeof(struct name##_t), sizeof(p->ptr)/sizeof(p->ptr[0])); \
+		darray_init(&p->arr, sizeof(struct name##_t), N); \
 	}										\
 											\
 	void name##s_free(struct name##s_t* p)	\
@@ -72,7 +71,7 @@
 											\
 	struct name##_t* name##s_get(const struct name##s_t* p, int index)	\
 	{										\
-		return (struct name##_t*)darray_get(&p->arr, index);	\
+		return (struct name##_t*)darray_get(&((struct name##s_t*)p)->arr, index);	\
 	}										\
 											\
 	int name##s_count(const struct name##s_t* p)	\
@@ -86,7 +85,7 @@ struct sip_param_t
 	struct cstring_t name;
 	struct cstring_t value;
 };
-DARRAY_DECLARE(sip_param, 5);
+DARRAY_DECLARE(sip_param);
 
 struct sip_uri_t
 {
@@ -103,7 +102,7 @@ struct sip_uri_t
 
 	struct sip_params_t headers;
 };
-DARRAY_DECLARE(sip_uri, 3);
+DARRAY_DECLARE(sip_uri);
 
 struct sip_requestline_t
 {
@@ -130,7 +129,7 @@ struct sip_contact_t
 	int64_t expires; // delta-seconds, default 3600
 	struct sip_params_t params; // include tag/q/expires
 };
-DARRAY_DECLARE(sip_contact, 3);
+DARRAY_DECLARE(sip_contact);
 
 struct sip_via_t
 {
@@ -146,7 +145,7 @@ struct sip_via_t
 	int ttl; // 0-255
 	struct sip_params_t params; // include branch/maddr/received/ttl
 };
-DARRAY_DECLARE(sip_via, 8);
+DARRAY_DECLARE(sip_via);
 
 struct sip_cseq_t
 {
@@ -172,6 +171,7 @@ int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end);
 int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
 int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r);
+int sip_uri_username(const struct sip_uri_t* uri, struct cstring_t* user);
 
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via);
 int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias);
@@ -188,4 +188,11 @@ uint8_t* sip_uri_clone(uint8_t* ptr, const uint8_t* end, struct sip_uri_t* clone
 uint8_t* sip_via_clone(uint8_t* ptr, const uint8_t* end, struct sip_via_t* clone, const struct sip_via_t* via);
 uint8_t* sip_contact_clone(uint8_t* ptr, const uint8_t* end, struct sip_contact_t* clone, const struct sip_contact_t* contact);
 
+void sip_uri_params_free(struct sip_uri_t* uri);
+void sip_via_params_free(struct sip_via_t* via);
+void sip_contact_params_free(struct sip_contact_t* contact);
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_sip_header_h_ */

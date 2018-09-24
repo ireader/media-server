@@ -15,8 +15,8 @@ struct sip_uas_t
 	int32_t ref;
 	locker_t locker;
 
-	struct sip_timer_t timer;
-	void* timerptr;
+	//struct sip_timer_t timer;
+	//void* timerptr;
 
 	struct list_head transactions; // transaction layer handler
 	struct list_head dialogs; // early or confirmed dialogs
@@ -36,6 +36,8 @@ struct sip_uas_t* sip_uas_create(const char* name, struct sip_uas_handler_t* han
 	locker_create(&uas->locker);
 	LIST_INIT_HEAD(&uas->dialogs);
 	LIST_INIT_HEAD(&uas->transactions);
+	memcpy(&uas->handler, handler, sizeof(uas->handler));
+	uas->param = param;
 	return uas;
 }
 
@@ -89,12 +91,14 @@ int sip_uas_del_dialog(struct sip_uas_t* uas, struct sip_dialog_t* dialog)
 
 void* sip_uas_start_timer(struct sip_uas_t* uas, int timeout, sip_timer_handle handler, void* usrptr)
 {
-	return uas->timer.start(uas->timerptr, timeout, handler, usrptr);
+	//return uas->timer.start(uas->timerptr, timeout, handler, usrptr);
+	return sip_timer_start(timeout, handler, usrptr);
 }
 
 void sip_uas_stop_timer(struct sip_uas_t* uas, void* id)
 {
-	uas->timer.stop(uas->timerptr, id);
+	//uas->timer.stop(uas->timerptr, id);
+	sip_timer_stop(id);
 }
 
 int sip_uas_add_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t)
@@ -121,10 +125,14 @@ int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t*
 	// unlink transaction
 	list_remove(&t->link);
 
+	// 12.3 Termination of a Dialog (p77)
+	// Independent of the method, if a request outside of a dialog generates
+	// a non-2xx final response, any early dialogs created through
+	// provisional responses to that request are terminated.
 	list_for_each_safe(pos, next, &uas->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
+		if (0 == cstrcmp(&t->reply->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
 			list_remove(pos);
 			sip_dialog_release(dialog); // WARNING: release in locker
@@ -133,6 +141,21 @@ int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t*
 
 	locker_unlock(&uas->locker);
 	return sip_uas_transaction_release(t);
+}
+
+static struct sip_uas_transaction_t* sip_uas_find_acktransaction(struct sip_uas_t* uas, const struct sip_message_t* req)
+{
+	struct list_head *pos, *next;
+	struct sip_uas_transaction_t* t;
+
+	list_for_each_safe(pos, next, &uas->transactions)
+	{
+		t = list_entry(pos, struct sip_uas_transaction_t, link);
+		if (cstreq(&t->reply->callid, &req->callid) && cstreq(&t->reply->from.tag, &req->from.tag) && cstreq(&t->reply->to.tag, &req->to.tag))
+			return t;
+	}
+
+	return NULL;
 }
 
 // RFC3261 17.2.3 Matching Requests to Server Transactions (p138)
@@ -144,18 +167,18 @@ struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, co
 
 	via = sip_vias_get(&req->vias, 0);
 	if (!via) return NULL; // invalid sip message
-	assert(0 == cstrprefix(&via->branch, SIP_BRANCH_PREFIX));
+	assert(cstrprefix(&via->branch, SIP_BRANCH_PREFIX));
 
 	list_for_each_safe(pos, next, &uas->transactions)
 	{
 		t = list_entry(pos, struct sip_uas_transaction_t, link);
-		via2 = sip_vias_get(&t->req->vias, 0);
+		via2 = sip_vias_get(&t->reply->vias, 0);
 		assert(via2);
 
 		// 1. via branch parameter
 		if (!cstreq(&via->branch, &via2->branch))
 			continue;
-		assert(0 == cstrprefix(&via2->branch, SIP_BRANCH_PREFIX));
+		assert(cstrprefix(&via2->branch, SIP_BRANCH_PREFIX));
 
 		// 2. via send-by value
 		// The sent-by value is used as part of the matching process because
@@ -168,17 +191,18 @@ struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, co
 		// the method of the request matches the one that created the
 		// transaction, except for ACK, where the method of the request
 		// that created the transaction is INVITE
-		assert(req->cseq.id == t->req->cseq.id);
-		assert(cstreq(&req->cseq.method, &t->req->cseq.method) || 0 == cstrcasecmp(&req->cseq.method, SIP_METHOD_CANCEL) || 0 == cstrcasecmp(&req->cseq.method, SIP_METHOD_ACK));
-		if (matchmethod && cstreq(&req->cseq.method, &t->req->cseq.method))
+		assert(req->cseq.id == t->reply->cseq.id);
+		assert(cstreq(&req->cseq.method, &t->reply->cseq.method) || 0 == cstrcasecmp(&req->cseq.method, SIP_METHOD_CANCEL) || 0 == cstrcasecmp(&req->cseq.method, SIP_METHOD_ACK));
+		if (matchmethod && cstreq(&req->cseq.method, &t->reply->cseq.method))
 			return t;
 
 		// ACK/CANCEL find origin request transaction
-		if (!matchmethod && !cstreq(&req->cseq.method, &t->req->cseq.method) && 0 != cstrcasecmp(&t->req->cseq.method, SIP_METHOD_CANCEL) && 0 != cstrcasecmp(&t->req->cseq.method, SIP_METHOD_ACK))
+		if (!matchmethod && !cstreq(&req->cseq.method, &t->reply->cseq.method) && 0 != cstrcasecmp(&t->reply->cseq.method, SIP_METHOD_CANCEL) && 0 != cstrcasecmp(&t->reply->cseq.method, SIP_METHOD_ACK))
 			return t;
 	}
 
-	return NULL;
+	// The ACK for a 2xx response to an INVITE request is a separate transaction
+	return sip_message_isack(req) ? sip_uas_find_acktransaction(uas, req) : NULL;
 }
 
 static struct sip_dialog_t* sip_uas_find_dialog(struct sip_uas_t* uas, const struct sip_message_t* msg)
@@ -189,10 +213,26 @@ static struct sip_dialog_t* sip_uas_find_dialog(struct sip_uas_t* uas, const str
 	list_for_each_safe(pos, next, &uas->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
+		if (sip_dialog_match(dialog, &msg->callid, &msg->to.tag, &msg->from.tag))
 			return dialog;
 	}
 	return NULL;
+}
+
+static struct sip_dialog_t* sip_uas_create_dialog(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
+{
+	struct sip_dialog_t* dialog;
+	struct sip_message_t msg;
+	memcpy(&msg, req, sizeof(msg));
+	memcpy(&msg.to, &req->from, sizeof(msg.to));
+	memcpy(&msg.from, &t->reply->to, sizeof(msg.from));
+	dialog = sip_dialog_create(&msg);
+	if (dialog)
+	{
+		dialog->local.id = dialog->remote.id;
+		dialog->remote.id = req->cseq.id;
+	}
+	return dialog;
 }
 
 int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
@@ -213,8 +253,19 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 
 	// 2. find dialog
 	dialog = sip_uas_find_dialog(uas, msg);
+	if (!dialog && sip_message_isinvite(msg))
+	{
+		// 3. create early dialog
+		dialog = sip_uas_create_dialog(t, msg);
+		if (!dialog)
+		{
+			sip_uas_transaction_release(t);
+			return -1;
+		}
+		sip_uas_add_dialog(t->uas, dialog);
+	}
 
-	// 3. handle
+	// 4. handle
 	if (sip_message_isinvite(msg) || sip_message_isack(msg))
 	{
 		return sip_uas_transaction_invite_input(t, dialog, msg);
@@ -233,7 +284,7 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 
 int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
 {
-	if (sip_message_isinvite(t->req))
+	if (sip_message_isinvite(t->reply))
 	{
 		return sip_uas_transaction_invite_reply(t, code, data, bytes);
 	}
@@ -255,7 +306,5 @@ int sip_uas_add_header(struct sip_uas_transaction_t* t, const char* name, const 
 
 int sip_uas_add_header_int(struct sip_uas_transaction_t* t, const char* name, int value)
 {
-	char v[32];
-	snprintf(v, sizeof(v), "%d", value);
-	return sip_uas_add_header(t, name, v);
+	return sip_message_add_header_int(t->reply, name, value);
 }

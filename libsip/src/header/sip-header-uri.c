@@ -11,7 +11,6 @@
 // sip:alice;day=tuesday@atlanta.com
 
 #include "sip-header.h"
-#include "uri-parse.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -20,6 +19,12 @@
 #define strncasecmp	_strnicmp
 #endif
 
+void sip_uri_params_free(struct sip_uri_t* uri)
+{
+	sip_params_free(&uri->headers);
+	sip_params_free(&uri->parameters);
+}
+
 int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 {
 	int i;
@@ -27,6 +32,8 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 	const struct sip_param_t* param;
 	struct cstring_t parameters;
 	memset(uri, 0, sizeof(*uri));
+	sip_params_init(&uri->headers);
+	sip_params_init(&uri->parameters);
 
 	p = strchr(s, ':');
 	if (!p || p >= end)
@@ -66,33 +73,33 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 	for(i = 0; i < sip_params_count(&uri->parameters); i++)
 	{
 		param = sip_params_get(&uri->parameters, i);
-		if (cstrcasecmp(&param->name, "transport"))
+		if (0 == cstrcasecmp(&param->name, "transport"))
 		{
 			uri->transport.p = param->value.p;
 			uri->transport.n = param->value.n;
 		}
-		else if (cstrcasecmp(&param->name, "method"))
+		else if (0 == cstrcasecmp(&param->name, "method"))
 		{
 			uri->method.p = param->value.p;
 			uri->method.n = param->value.n;
 		}
-		else if (cstrcasecmp(&param->name, "maddr"))
+		else if (0 == cstrcasecmp(&param->name, "maddr"))
 		{
 			uri->maddr.p = param->value.p;
 			uri->maddr.n = param->value.n;
 		}
-		else if (cstrcasecmp(&param->name, "user"))
+		else if (0 == cstrcasecmp(&param->name, "user"))
 		{
 			uri->user.p = param->value.p;
 			uri->user.n = param->value.n;
 		}
-		else if (cstrcasecmp(&param->name, "ttl"))
+		else if (0 == cstrcasecmp(&param->name, "ttl"))
 		{
 			uri->ttl = cstrtol(&param->value, NULL, 10);
 		}
-		else if (cstrcasecmp(&param->name, "lr"))
+		else if (0 == cstrcasecmp(&param->name, "lr"))
 		{
-			uri->lr = cstrtol(&param->value, NULL, 10);
+			uri->lr = 1;
 		}
 	}
 
@@ -123,6 +130,7 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
 		p += sip_params_write(&uri->headers, p, end, '&');
 	}
 
+	if (p < end) *p = '\0';
 	return p - data;
 }
 
@@ -199,54 +207,87 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 	return 1;
 }
 
+int sip_uri_username(const struct sip_uri_t* uri, struct cstring_t* user)
+{
+	const char *p1, *p2;
+	p1 = cstrchr(&uri->host, '@');
+	if (!p1) return -1;
+	p2 = cstrchr(&uri->host, ':');
+	if (!p2 || p2 > p1)
+		p2 = p1;
+
+	user->p = uri->host.p;
+	user->n = p2 - uri->host.p;
+	return 0;
+}
+
+
 #if defined(DEBUG) || defined(_DEBUG)
 void sip_uri_parse_test(void)
 {
 	char p[1024];
 	const char* s;
 	struct sip_uri_t uri;
+	struct cstring_t usr;
 
 	s = "sip:user:password@host:port;uri-parameters?headers";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
 	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "user:password@host:port") && 1 == sip_params_count(&uri.parameters) && 1 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "uri-parameters") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, ""));
 	assert(0 == cstrcmp(&sip_params_get(&uri.headers, 0)->name, "headers") && 0 == cstrcmp(&sip_params_get(&uri.headers, 0)->value, ""));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "user"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sip:alice@atlanta.com";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
 	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "alice@atlanta.com") && 0 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "alice"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sips:alice@atlanta.com?subject=project%20x&priority=urgent";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
 	assert(0 == cstrcmp(&uri.scheme, "sips") && 0 == cstrcmp(&uri.host, "alice@atlanta.com") && 0 == sip_params_count(&uri.parameters) && 2 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.headers, 0)->name, "subject") && 0 == cstrcmp(&sip_params_get(&uri.headers, 0)->value, "project%20x"));
 	assert(0 == cstrcmp(&sip_params_get(&uri.headers, 1)->name, "priority") && 0 == cstrcmp(&sip_params_get(&uri.headers, 1)->value, "urgent"));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "alice"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sip:alice:secretword@atlanta.com;transport=tcp";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
-	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "alice:secretword@atlanta.com") && 0 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "alice:secretword@atlanta.com") && 1 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "transport") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, "tcp"));
+	assert(0 == cstrcmp(&uri.transport, "tcp"));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "alice"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sip:+1-212-555-1212:1234@gateway.com;user=phone";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
-	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "+1-212-555-1212:1234@gateway.com") && 0 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "+1-212-555-1212:1234@gateway.com") && 1 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "user") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, "phone"));
+	assert(0 == cstrcmp(&uri.user, "phone"));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "+1-212-555-1212"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sip:alice;day=tuesday@atlanta.com";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
 	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "alice") && 1 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "day") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, "tuesday@atlanta.com"));
+	assert(0 != sip_uri_username(&uri, &usr));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 
 	s = "sip:p2.domain.com;lr";
 	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
 	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "p2.domain.com") && 1 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
 	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "lr") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, ""));
+	assert(1 == uri.lr);
+	assert(0 != sip_uri_username(&uri, &usr));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 }
 #endif

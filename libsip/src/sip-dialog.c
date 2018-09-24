@@ -1,5 +1,6 @@
 #include "sip-dialog.h"
 #include "sip-message.h"
+#include <stdlib.h>
 
 #define N 2048
 
@@ -39,7 +40,7 @@ struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 	dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->local.uri, &msg->from);
 	dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->remote.uri, &msg->to);
 	dialog->local.id = msg->cseq.id;
-	dialog->remote.id = -1;
+	dialog->remote.id = rand();
 
 	assert(1 == sip_contacts_count(&msg->contacts));
 	contact = sip_contacts_get(&msg->contacts, 0);
@@ -85,25 +86,10 @@ int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t*
 	return 0;
 }
 
-int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* from, const struct cstring_t* to)
+int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
 {
-	assert(dialog && from);
-	if (!to) to = &sc_null;
+	assert(dialog && local);
+	if (!remote) remote = &sc_null;
 
-	return 0 == cstrcmp(callid, dialog->callid) && cstreq(from, &dialog->local.uri.tag) && cstreq(to, &dialog->remote.uri.tag) ? 1 : 0;
-}
-
-struct sip_dialog_t* sip_dialog_find(struct list_head* dialogs, struct sip_message_t* msg)
-{
-	struct list_head *pos, *next;
-	struct sip_dialog_t* dialog;
-	
-	list_for_each_safe(pos, next, dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if(sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
-			return dialog;
-	}
-
-	return NULL;
+	return 0 == cstrcmp(callid, dialog->callid) && cstreq(local, &dialog->local.uri.tag) && cstreq(remote, &dialog->remote.uri.tag) ? 1 : 0;
 }

@@ -8,8 +8,8 @@ struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char*
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	req = sip_message_create();
-	if (0 != sip_message_init(req, SIP_METHOD_OPTIONS, name, to))
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
+	if (0 != sip_message_init(req, SIP_METHOD_OPTIONS, to, name, to))
 	{
 		sip_message_destroy(req);
 		return NULL;

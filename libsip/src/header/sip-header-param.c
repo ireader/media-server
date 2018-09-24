@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-DARRAY_IMPLEMENT(sip_uri);
-DARRAY_IMPLEMENT(sip_param);
-DARRAY_IMPLEMENT(sip_contact);
-DARRAY_IMPLEMENT(sip_via);
+static void sip_param_params_free(struct sip_param_t* param)
+{
+}
+
+DARRAY_IMPLEMENT(sip_uri, 3);
+DARRAY_IMPLEMENT(sip_param, 5);
+DARRAY_IMPLEMENT(sip_contact, 3);
+DARRAY_IMPLEMENT(sip_via, 8);
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 {
@@ -64,7 +68,7 @@ const struct sip_param_t* sip_params_find(const struct sip_params_t* params, con
 	for(i = 0; i < sip_params_count(params); i++)
 	{
 		p = sip_params_get(params, i);
-		if (0 == cstreq(&p->name, &s))
+		if (cstreq(&p->name, &s))
 			return p;
 	}
 	return NULL;

@@ -6,102 +6,107 @@
 
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply)
 {
-	int r = 0;
-
-	// 12.3 Termination of a Dialog (p77)
-	// Independent of the method, if a request outside of a dialog generates
-	// a non-2xx final response, any early dialogs created through
-	// provisional responses to that request are terminated.
-	if (SIP_UAC_TRANSACTION_COMPLETED == t->status)
-		return 0; // 1. miss order, 2. fork invite
-
-	assert(cstrvalid(&reply->to.tag));
 	if (!dialog && cstrvalid(&reply->to.tag))
 	{
+		// create early dialog
+		locker_lock(&t->locker);
 		dialog = sip_dialog_create( reply);
-		if (!dialog) return -1;
+		if (!dialog)
+		{
+			locker_unlock(&t->locker);
+			return -1;
+		}
 		sip_uac_add_dialog(t->uac, dialog);
+		locker_unlock(&t->locker);
 	}
 
 	// 17.1.1.2 Formal Description (p126)
 	// the provisional response MUST be passed to the TU. 
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
-	if (dialog && DIALOG_ERALY == dialog->state)
+	return t->oninvite(t->param, t, dialog, reply->u.s.code);
+}
+
+static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply, int retransmissions)
+{
+	int r;
+
+	assert(!dialog || DIALOG_ERALY == dialog->state);
+
+	if (!retransmissions)
 	{
-		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
-	}
-	else if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
-	{
+		// Any retransmissions of the final response that are received while in
+		// the "Completed" state MUST cause the ACK to be re-passed to the
+		// transport layer for retransmission, but the newly received response
+		// MUST NOT be passed up to the TU
 		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
 	}
 	else
 	{
-		// miss order reply, discard
+		// 1. miss order / in-flight
+		// 2. fork invite
+		r = 0;
 	}
 
-	// update status
-	if (t->status == SIP_UAC_TRANSACTION_CALLING)
-		t->status = SIP_UAC_TRANSACTION_PROCEEDING;
+	// The ACK MUST be sent to the same address, port, 
+	// and transport to which the original request was sent.
+	sip_uac_ack(t, dialog, 0); // ignore ack transport layer error, retry send on retransmissions
+
+	if (!retransmissions)
+	{
+		// The client transaction SHOULD start timer D when it enters the
+		// "Completed" state, with a value of at least 32 seconds for unreliable
+		// transports, and a value of zero seconds for reliable transports.
+
+		// Timer D reflects the amount of time that the server transaction can
+		// remain in the "Completed" state when unreliable transports are used.
+		// This is equal to Timer H in the INVITE server transaction, whose
+		// default is 64*T1. However, the client transaction does not know the
+		// value of T1 in use by the server transaction, so an absolute minimum
+		// of 32s is used instead of basing Timer D on T1.
+
+		// transfer to terminated
+		sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_D);
+	}
+
+	// delete dialog on sip_uac_del_transaction
 
 	return r;
 }
 
-static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply)
+static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply, int retransmissions)
 {
 	int r = 0;
 
-	// 17.1.1.2 Formal Description (p127)
-	// Any retransmissions of the final response that are received while in
-	// the "Completed" state MUST cause the ACK to be re-passed to the
-	// transport layer for retransmission, but the newly received response
-	// MUST NOT be passed up to the TU.
-
-	if (dialog)
-	{
-		assert(DIALOG_ERALY == dialog->state);
-		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
-
-		sip_uac_del_dialog(t->uac, dialog);
-		sip_dialog_release(dialog);
-	}
-	else if (t->status < SIP_UAC_TRANSACTION_COMPLETED)
-	{
-		// only once
-		r = t->oninvite(t->param, t, NULL, reply->u.s.code);
-	}
-	else
-	{
-		// retransmissions final response
-	}
-
-	t->status = SIP_UAC_TRANSACTION_COMPLETED;
-
-	return r;
-}
-
-static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply)
-{
-	int r = 0;
-	if (!dialog)
+	locker_lock(&t->locker);
+	// only create new dialog on first 2xx response
+	if (!dialog && !retransmissions)
 	{
 		dialog = sip_dialog_create(reply);
-		if (!dialog) return -1;
+		if (!dialog)
+		{
+			locker_unlock(&t->locker);
+			return -1;
+		}
 		sip_uac_add_dialog(t->uac, dialog);
 	}
+	locker_unlock(&t->locker);
 
-	// completed To tag
-	if (!cstrvalid(&dialog->remote.uri.tag))
-		sip_dialog_setremotetag(dialog, &reply->to.tag);
-	
-	if (dialog->state != DIALOG_CONFIRMED)
+	if (!dialog)
+		return 0; // ignore fork response
+
+	if (dialog->state == DIALOG_ERALY)
 	{
+		// transfer dialog state
 		dialog->state = DIALOG_CONFIRMED;
+		
+		// completed To tag
+		if (!cstrvalid(&dialog->remote.uri.tag))
+			sip_dialog_setremotetag(dialog, &reply->to.tag);
 
+		// receive and pass to the TU any retransmissions of the 2xx
+		// response or any additional 2xx responses from other branches of a
+		// downstream fork of the matching request.
 		r = t->oninvite(t->param, t, dialog, reply->u.s.code);
-	}
-	else
-	{
-		// miss order reply, discard
 	}
 
 	// rfc6026
@@ -109,67 +114,96 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	// to send a response to an INVITE request MUST NOT immediately destroy
 	// the associated INVITE server transaction state.  This state is
 	// necessary to ensure correct processing of retransmissions of the request.
-	if (t->status < SIP_UAC_TRANSACTION_ACCEPTED)
-		t->status = SIP_UAC_TRANSACTION_ACCEPTED;
-
-	if (0 == r)
+	sip_uac_ack(t, dialog, 1); // ignore ack transport layer error, retry send on retransmissions
+	
+	if (!retransmissions)
 	{
-		// 1. start timer D (deprecated)
-		// 2. send ACK
-		r = sip_uac_ack(t, dialog);
+		// If a 2xx response is received while the client INVITE state machine is 
+		// in the "Calling" or "Proceeding" states, it MUST transition to the 
+		// "Accepted" state, pass the 2xx response to the TU, and set Timer M to 64*T1.
+		sip_uac_transaction_timewait(t, TIMER_M);
 	}
 
 	return r;
 }
 
 // Figure 5: INVITE client transaction (p128)
-int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
+static int sip_uac_transaction_inivte_change_state(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
-	int r;
-	struct sip_dialog_t* dialog;
-
-	locker_lock(&t->locker);
-
+	// 17.1.1.2 Formal Description
 	switch (t->status)
 	{
 	case SIP_UAC_TRANSACTION_CALLING:
-		// stop retry timer A
-		if (NULL != t->timera)
-		{
-			sip_uac_stop_timer(t->uac, t->timera);
-			t->timera = NULL;
-		}
-
 	case SIP_UAC_TRANSACTION_PROCEEDING:
-	case SIP_UAC_TRANSACTION_COMPLETED:
-	case SIP_UAC_TRANSACTION_ACCEPTED:
-		dialog = sip_uac_find_dialog(t->uac, reply);
-
+		assert(100 <= reply->u.s.code && reply->u.s.code < 700);
 		if (100 <= reply->u.s.code && reply->u.s.code < 200)
-		{
-			r = sip_uac_transaction_invite_proceeding(t, dialog, reply);
-		}
+			t->status = SIP_UAC_TRANSACTION_PROCEEDING;
 		else if (200 <= reply->u.s.code && reply->u.s.code < 300)
-		{
-			r = sip_uac_transaction_invite_accepted(t, dialog, reply);
-		}
-		else if (300 <= reply->u.s.code && reply->u.s.code < 700)
-		{
-			r = sip_uac_transaction_invite_completed(t, dialog, reply);
-		}
-		else
-		{
-			assert(0);
-			r = -1;
-		}
+			t->status = SIP_UAC_TRANSACTION_ACCEPTED;
+		else if (200 <= reply->u.s.code && reply->u.s.code < 700)
+			t->status = SIP_UAC_TRANSACTION_COMPLETED;
+		break;
+
+	case SIP_UAC_TRANSACTION_COMPLETED:
+		assert(100 <= reply->u.s.code && reply->u.s.code < 700);
+		break;
+
+	case SIP_UAC_TRANSACTION_ACCEPTED:
+		assert(100 <= reply->u.s.code && reply->u.s.code < 700);
+		break;
+
+	case SIP_UAC_TRANSACTION_TERMINATED:
+		// nothing to do
+		break;
+
+	default:
+		assert(0);
+	}
+
+	return t->status;
+}
+
+int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
+{
+	int r, status, oldstatus;
+	struct sip_dialog_t* dialog;
+	
+	locker_lock(&t->locker);
+	// stop retry timer A
+	if (NULL != t->timera)
+	{
+		sip_uac_stop_timer(t->uac, t->timera);
+		t->timera = NULL;
+	}
+	dialog = sip_uac_find_dialog(t->uac, reply);
+
+	oldstatus = t->status;
+	status = sip_uac_transaction_inivte_change_state(t, reply);
+	locker_unlock(&t->locker);
+
+	r = 0;
+	switch (status)
+	{
+	case SIP_UAC_TRANSACTION_CALLING:
+	case SIP_UAC_TRANSACTION_PROCEEDING:
+		r = sip_uac_transaction_invite_proceeding(t, dialog, reply);
+		break;
+
+	case SIP_UAC_TRANSACTION_ACCEPTED:
+		if (200 <= reply->u.s.code && reply->u.s.code < 300)
+			r = sip_uac_transaction_invite_accepted(t, dialog, reply, oldstatus == status);
+		// ignore other status code (fork)
+		break;
+
+	case SIP_UAC_TRANSACTION_COMPLETED:
+		r = sip_uac_transaction_invite_completed(t, dialog, reply, oldstatus != status);
 		break;
 
 	case SIP_UAC_TRANSACTION_TERMINATED:
 	default:
 		assert(0);
-		r = -1;
+		break;
 	}
 
-	locker_unlock(&t->locker);
 	return r;
 }

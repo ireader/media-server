@@ -9,7 +9,7 @@ struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, struct sip_dial
 	struct sip_uac_transaction_t* t;
 
 	++dialog->local.id;
-	req = sip_message_create();
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_BYE, dialog))
 	{
 		--dialog->local.id;
