@@ -29,7 +29,7 @@ struct rtmp_server_t
 	size_t handshake_bytes;
 	int handshake_state; // RTMP_HANDSHAKE_XXX
 
-	struct rtmp_connect_t info; // Server application name, e.g.: testapp
+	char app[64]; // Server application name, e.g.: testapp
 	char stream_name[256]; // Play/Publishing stream name, flv:sample, mp3:sample, H.264/AAC: mp4:sample.m4v
 	char stream_type[18]; // Publishing type: live/record/append
 	uint32_t stream_id; // createStream/deleteStream
@@ -168,7 +168,7 @@ static int rtmp_server_onconnect(void* param, int r, double transaction, const s
 	if (0 == r)
 	{
 		assert(1 == (int)transaction);
-		memcpy(&ctx->info, connect, sizeof(ctx->info));
+		snprintf(ctx->app, sizeof(ctx->app), "%s", connect->app);
 		r = rtmp_server_send_server_bandwidth(ctx);
 		r = 0 == r ? rtmp_server_send_client_bandwidth(ctx) : r;
 		r = 0 == r ? rtmp_server_send_set_chunk_size(ctx) : r;
@@ -248,7 +248,7 @@ static int rtmp_server_onpublish(void* param, int r, double transaction, const c
 
 	if (0 == r)
 	{
-		r = ctx->handler.onpublish(ctx->param, ctx->info.app, stream_name, stream_type);
+		r = ctx->handler.onpublish(ctx->param, ctx->app, stream_name, stream_type);
 		if (0 == r)
 		{
 			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
@@ -275,7 +275,7 @@ static int rtmp_server_onplay(void* param, int r, double transaction, const char
 
 	if (0 == r)
 	{
-		r = ctx->handler.onplay(ctx->param, ctx->info.app, stream_name, start, duration, reset);
+		r = ctx->handler.onplay(ctx->param, ctx->app, stream_name, start, duration, reset);
 		if (0 == r)
 		{
 			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
