@@ -35,6 +35,7 @@ uint8_t* AMFWriteUndefined(uint8_t* ptr, const uint8_t* end);
 uint8_t* AMFWriteObject(uint8_t* ptr, const uint8_t* end);
 uint8_t* AMFWriteObjectEnd(uint8_t* ptr, const uint8_t* end);
 uint8_t* AMFWriteTypedObject(uint8_t* ptr, const uint8_t* end);
+uint8_t* AMFWriteECMAArarry(uint8_t* ptr, const uint8_t* end);
 
 uint8_t* AMFWriteBoolean(uint8_t* ptr, const uint8_t* end, uint8_t value);
 uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value);

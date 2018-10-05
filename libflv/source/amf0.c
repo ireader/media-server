@@ -82,6 +82,14 @@ uint8_t* AMFWriteTypedObject(uint8_t* ptr, const uint8_t* end)
     return ptr;
 }
 
+uint8_t* AMFWriteECMAArarry(uint8_t* ptr, const uint8_t* end)
+{
+	if (!ptr || ptr + 1 > end) return NULL;
+
+	*ptr++ = AMF_ECMA_ARRAY;
+	return AMFWriteInt32(ptr, end, 0); // U32 associative-count
+}
+
 uint8_t* AMFWriteBoolean(uint8_t* ptr, const uint8_t* end, uint8_t value)
 {
 	if (!ptr || ptr + 2 > end) return NULL;
