@@ -61,8 +61,18 @@ int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t by
 		assert(0);
 		return -1;
 	}
+	
+	// filter @setDataFrame
+	if (0 == strcmp(buffer, "@setDataFrame"))
+	{
+		if (AMF_STRING != data[0] || NULL == (data = AMFReadString(data + 1, end, 0, buffer, sizeof(buffer) - 1)))
+		{
+			assert(0);
+			return -1;
+		}
+	}
 
-	// onTextData/onCaption/onCaptionInfo/onCuePoint
+	// onTextData/onCaption/onCaptionInfo/onCuePoint/|RtmpSampleAccess
 	if (0 != strcmp(buffer, "onMetaData"))
 		return 0; // skip
 
