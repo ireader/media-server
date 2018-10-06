@@ -12,6 +12,13 @@
 #include <assert.h>
 
 extern "C" int rtp_ssrc(void);
+extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+extern "C" int sdp_h264(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_aac_latm(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_aac_generic(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_opus(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_g711u(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
 
 inline uint8_t ffmpeg_codec_id_2_mp4_object(AVCodecID codecid)
 {
@@ -216,7 +223,7 @@ SEND_PACKET:
 
 		if (int64_t(clock - m_clock) + m_dts >= m_pkt.dts)
 		{
-			if (0 == strcmp("H264", m->name))
+			if (0 == strcmp("H264", m->name) || 0 == strcmp("H265", m->name))
 			{
 				// MPEG4 -> H.264 byte stream
 				uint8_t* p = m_pkt.data;
@@ -349,44 +356,17 @@ void FFFileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int /
 
 	if (MOV_OBJECT_H264 == object)
 	{
-		struct mpeg4_avc_t avc;
-		mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &avc);
-		assert(avc.nb_pps + avc.nb_sps > 0);
-
-		static const char* pattern =
-			"m=video 0 RTP/AVP %d\n"
-			"a=rtpmap:%d H264/90000\n"
-			"a=fmtp:%d profile-level-id=%02X%02X%02X;packetization-mode=1;sprop-parameter-sets=";
-
-		n = snprintf((char*)buffer, sizeof(buffer), pattern,
-			RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264,
-			(unsigned int)avc.profile, (unsigned int)avc.compatibility, (unsigned int)avc.level);
-
-		for (uint8_t i = 0; i < avc.nb_sps; i++)
-		{
-			if (i > 0) buffer[n++] = ',';
-			n += base64_encode((char*)buffer + n, avc.sps[i].data, avc.sps[i].bytes);
-			buffer[n] = '\0';
-		}
-
-		for (uint8_t i = 0; i < avc.nb_pps; i++)
-		{
-			buffer[n++] = ',';
-			n += base64_encode((char*)buffer + n, avc.pps[i].data, avc.pps[i].bytes);
-			buffer[n] = '\0';
-		}
-
-		buffer[n++] = '\n';
 		m->frequency = 90000;
 		m->payload = RTP_PAYLOAD_H264;
 		snprintf(m->name, sizeof(m->name), "%s", "H264");
+		n = sdp_h264(buffer, sizeof(buffer), RTP_PAYLOAD_H264, 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
-		assert(0);
 		m->frequency = 90000;
-		m->payload = RTP_PAYLOAD_H264;
+		m->payload = RTP_PAYLOAD_H265;
 		snprintf(m->name, sizeof(m->name), "%s", "H265");
+		n = sdp_h265(buffer, sizeof(buffer), RTP_PAYLOAD_H265, 90000, extra, bytes);
 	}
 	else
 	{
@@ -438,27 +418,10 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 			// In the presence of SBR, the sampling rates for the core encoder/
 			// decoder and the SBR tool are different in most cases. Therefore,
 			// this parameter SHALL NOT be considered as the definitive sampling rate.
-			static const char* pattern =
-				"m=audio 0 RTP/AVP %d\n"
-				"a=rtpmap:%d MP4A-LATM/%d/%d\n"
-				"a=fmtp:%d profile-level-id=%d;object=%d;cpresent=0;config=";
-
-			sample_rate = 90000;
-			n = snprintf((char*)buffer, sizeof(buffer), pattern,
-				RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP4A, sample_rate, channel_count,
-				RTP_PAYLOAD_MP4A, mpeg4_aac_profile_level(&aac), aac.profile);
-
-			uint8_t config[6];
-			int r = mpeg4_aac_stream_mux_config_save(&aac, config, sizeof(config));
-			static const char* hex = "0123456789abcdef";
-			for (int i = 0; i < r; i++)
-			{
-				buffer[n++] = hex[config[i] >> 4];
-				buffer[n++] = hex[config[i] & 0x0F];
-			}
-			buffer[n] = '\0';
-
+			m->frequency = sample_rate;
+			m->payload = RTP_PAYLOAD_MP4A;
 			snprintf(m->name, sizeof(m->name), "%s", "MP4A-LATM");
+			n = sdp_aac_latm(buffer, sizeof(buffer), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
 		}
 		else
 		{
@@ -469,25 +432,26 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 			// When using SDP, the clock rate of the RTP time stamp MUST be expressed using the "rtpmap" attribute. 
 			// If an MPEG-4 audio stream is transported, the rate SHOULD be set to the same value as the sampling rate of the audio stream. 
 			// If an MPEG-4 video stream transported, it is RECOMMENDED that the rate be set to 90 kHz.
-			static const char* pattern =
-				"m=audio 0 RTP/AVP %d\n"
-				"a=rtpmap:%d MPEG4-GENERIC/%d/%d\n"
-				"a=fmtp:%d streamType=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=";
-
-			n = snprintf((char*)buffer, sizeof(buffer), pattern,
-				RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP4A, sample_rate, channel_count, RTP_PAYLOAD_MP4A);
-
-			// For MPEG-4 Audio streams, config is the audio object type specific
-			// decoder configuration data AudioSpecificConfig()
-			n += base64_encode((char*)buffer + n, extra, bytes);
-			buffer[n] = '\0';
-
+			m->frequency = sample_rate;
+			m->payload = RTP_PAYLOAD_MP4A;
 			snprintf(m->name, sizeof(m->name), "%s", "MPEG4-GENERIC");
+			n = sdp_aac_generic(buffer, sizeof(buffer), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
 		}
-
+	}
+	else if (MOV_OBJECT_OPUS == object)
+	{
+		// RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
 		m->frequency = sample_rate;
-		m->payload = RTP_PAYLOAD_MP4A;
-		buffer[n++] = '\n';
+		m->payload = RTP_PAYLOAD_OPUS;
+		snprintf(m->name, sizeof(m->name), "%s", "opus");
+		n = sdp_opus(buffer, sizeof(buffer), RTP_PAYLOAD_OPUS, sample_rate, channel_count, extra, bytes);
+	}
+	else if (MOV_OBJECT_G711u == object)
+	{
+		m->frequency = sample_rate;
+		m->payload = RTP_PAYLOAD_PCMU;
+		snprintf(m->name, sizeof(m->name), "%s", "PCMU");
+		n = sdp_g711u(buffer, sizeof(buffer), RTP_PAYLOAD_PCMU, sample_rate, channel_count, extra, bytes);
 	}
 	else
 	{
