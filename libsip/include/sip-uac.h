@@ -1,6 +1,8 @@
 #ifndef _sip_uac_h_
 #define _sip_uac_h_
 
+#include "cstring.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -12,9 +14,9 @@ struct sip_transport_t;
 struct sip_uac_transaction_t;
 
 /// @return 0-ok, other-error
-typedef int (*sip_uac_oninvite)(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+typedef int (*sip_uac_oninvite)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
 /// @return 0-ok, other-error
-typedef int (*sip_uac_onreply)(void* param, struct sip_uac_transaction_t* t, int code);
+typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code);
 /// @return <0-error, 0-udp, 1-tcp, other-reserved
 //typedef int (*sip_uac_onsend)(void* param, const char* url, const void* data, int bytes);
 
@@ -31,7 +33,12 @@ struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip
 /// @param[in] registrar register server, such as sip:registrar.biloxi.com. can be null.
 /// @param[in] seconds expires seconds
 struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
-struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_onreply onoptins, void* param);
+struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onoptins, void* param);
+struct sip_uac_transaction_t* sip_uac_info(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply oninfo, void* param);
+struct sip_uac_transaction_t* sip_uac_message(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
+struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onsubscribe, void* param);
+struct sip_uac_transaction_t* sip_uac_notify(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onnotify, void* param);
+struct sip_uac_transaction_t* sip_uac_custom(struct sip_uac_t* uac, const char* method, const char* from, const char* to, sip_uac_onreply onreply, void* param);
 
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value);

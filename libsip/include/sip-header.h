@@ -13,12 +13,6 @@
 extern "C" {
 #endif
 
-	// 19.1.1 SIP and SIPS URI Components (p152)
-	// The default port value is transport and scheme dependent. The
-	// default is 5060 for sip: using UDP, TCP, or SCTP. The default is
-	// 5061 for sip: using TLS over TCP and sips: over TCP.
-#define SIP_PORT 5060
-
 // 10.2.6 Discovering a Registrar (p62)
 #define SIP_MULTICAST_HOST "sip.mcast.net"
 #define SIP_MULTICAST_ADDRESS "224.0.1.75"

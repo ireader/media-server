@@ -223,6 +223,11 @@ int sip_message_isinvite(const struct sip_message_t* msg)
 	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_INVITE) ? 1 : 0;
 }
 
+int sip_message_isregister(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_REGISTER) ? 1 : 0;
+}
+
 int sip_message_isack(const struct sip_message_t* msg)
 {
 	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_ACK) ? 1 : 0;
@@ -353,6 +358,8 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 		}
 	}
 
+	msg->size = http_get_content_length(parser);
+	msg->payload = http_get_content(parser);
 	return r;
 }
 
@@ -453,7 +460,10 @@ static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t
 	}
 	else
 	{
-		// rewrite register uri
+		// The Request-URI names the domain of the location service for 
+		// which the registration is meant (for example, "sip:chicago.com"). 
+		// The "userinfo" and "@" components of the SIP URI MUST NOT be present.
+		
 		memcpy(&uri, host, sizeof(uri));
 		phost = cstrchr(&uri.host, '@');
 		if (phost)

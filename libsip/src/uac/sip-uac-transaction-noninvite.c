@@ -7,7 +7,7 @@
 static int sip_uac_transaction_noninvite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status);
-	return t->onreply(t->param, t, reply->u.s.code);
+	return t->onreply(t->param, reply, t, reply->u.s.code);
 }
 
 static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
@@ -24,7 +24,7 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 	}
 	locker_unlock(&t->locker);
 
-	r = t->onreply(t->param, t, reply->u.s.code);
+	r = t->onreply(t->param, reply, t, reply->u.s.code);
 	
 	// wait for in-flight response
 	sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_K);
@@ -70,7 +70,7 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 	status = sip_uac_transaction_noinivte_change_state(t, reply);
 	locker_unlock(&t->locker);
 
-	r = -1;
+	r = 0;
 	switch (status)
 	{
 	case SIP_UAC_TRANSACTION_TRYING:
@@ -85,6 +85,7 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 
 	case SIP_UAC_TRANSACTION_TERMINATED:
 	default:
+		r = -1;
 		assert(0);
 		break;
 	}

@@ -1,11 +1,15 @@
 #ifndef _sip_transport_h_
 #define _sip_transport_h_
 
-#include "sip-header.h"
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+// 19.1.1 SIP and SIPS URI Components (p152)
+// The default port value is transport and scheme dependent. The
+// default is 5060 for sip: using UDP, TCP, or SCTP. The default is
+// 5061 for sip: using TLS over TCP and sips: over TCP.
+#define SIP_PORT 5060
 
 // 8.1.1.6 Max-Forwards (p39)
 #define DEFAULT_MAX_FORWARS 70
@@ -37,7 +41,7 @@ struct sip_transport_t
 	/// @param[in] destination remote host/addr
 	/// @param[out] protocol UDP/TCP/TLS/SCTP
 	/// @param[out] local local address, IPv4/IPv6 with port
-	/// @param[out] dns local host dns
+	/// @param[out] dns local host dns(with port)
 	/// @return 0-ok, other-error
 	int (*via)(void* transport, const char* destination, char protocol[16], char local[128], char dns[128]);
 

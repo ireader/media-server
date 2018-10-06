@@ -126,9 +126,9 @@ static int sip_uac_transaction_ontimeout(void* usrptr)
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
 	if (t->oninvite)
-		r = t->oninvite(t->param, t, NULL, 408/*Request Timeout*/);
+		r = t->oninvite(t->param, NULL, t, NULL, 408/*Request Timeout*/);
 	else
-		r = t->onreply(t->param, t, 408/*Request Timeout*/);
+		r = t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
 
 	sip_uac_transaction_onterminate(t);
 	return r;

@@ -128,6 +128,10 @@ static int sip_invite(struct sip_uas_t* uas)
 	struct sip_message_t* ack = req2sip(f12);
 
 	assert(0 == sip_uas_input(uas, req));
+	assert(0 == sip_uas_input(uas, req));
+	assert(0 == sip_uas_input(uas, req));
+	assert(0 == sip_uas_input(uas, ack));
+	assert(0 == sip_uas_input(uas, ack));
 	assert(0 == sip_uas_input(uas, ack));
 	
 	sip_message_destroy(req);
@@ -194,19 +198,23 @@ struct sip_session_t
 	struct sip_dialog_t* dialog;	
 };
 
-static void* sip_uas_oninvite(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
 	struct sip_session_t* session = new struct sip_session_t;
 	assert(NULL == dialog); // re-invite
 	//sip_uas_add_header(t, "To", "Bob <sip:bob@biloxi.com>;tag=a6c85cf");
 	assert(0 == sip_uas_reply(t, 100, NULL, 0));
+	assert(0 == sip_uas_reply(t, 100, NULL, 0));
+	assert(0 == sip_uas_reply(t, 180, NULL, 0));
+	assert(0 == sip_uas_reply(t, 180, NULL, 0));
 	assert(0 == sip_uas_reply(t, 180, NULL, 0));
 	assert(0 == sip_uas_reply(t, 200, NULL, 0));
+//	assert(0 == sip_uas_reply(t, 200, NULL, 0));
 	session->t = t;
 	return session;
 }
 
-static int sip_uas_onack(void* param, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	char buf[1024];
 	const char* end = buf + sizeof(buf);
@@ -238,7 +246,7 @@ static int sip_uas_onack(void* param, struct sip_uas_transaction_t* t, const voi
 	return 0;
 }
 
-static int sip_uas_onbye(void* param, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
 {
 	struct sip_session_t* s = (struct sip_session_t*)session;
 	struct sip_uas_t* uas = *(struct sip_uas_t**)param;
@@ -247,13 +255,13 @@ static int sip_uas_onbye(void* param, struct sip_uas_transaction_t* t, const voi
 	return 0;
 }
 
-static int sip_uas_oncancel(void* param, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
 {
 	assert(0);
 	return -1;
 }
 
-static int sip_uas_onregister(void* param, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
+static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
 	assert(expires == 7200);
 	assert(0 == strcmp(user, "bob"));

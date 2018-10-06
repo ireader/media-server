@@ -49,6 +49,7 @@ struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
 	}
 
+	sip_uris_init(&dialog->routers);
 	for (i = 0; i < sip_uris_count(&msg->routers); i++)
 	{
 		dialog->ptr = sip_uri_clone(dialog->ptr, end, &uri, sip_uris_get(&msg->routers, i));

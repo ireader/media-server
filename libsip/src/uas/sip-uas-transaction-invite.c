@@ -34,7 +34,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// notify user
 		t->dialog = dialog;
 		t->status = SIP_UAS_TRANSACTION_TRYING;
-		dialog->session = t->handler->oninvite(t->param, t, dialog->state == DIALOG_ERALY ? NULL : dialog, req->payload, req->size);
+		dialog->session = t->handler->oninvite(t->param, req, t, dialog->state == DIALOG_ERALY ? NULL : dialog, req->payload, req->size);
 		break;
 
 	case SIP_UAS_TRANSACTION_TRYING:
@@ -76,7 +76,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 			assert(dialog->state == DIALOG_ERALY); // re-invite
 			dialog->state = DIALOG_CONFIRMED;
 
-			r = t->handler->onack(t->param, t, dialog->session, dialog, 200, req->payload, req->size);
+			r = t->handler->onack(t->param, req, t, dialog->session, dialog, 200, req->payload, req->size);
 
 			// start timer I, wait for all inflight ACK
 			sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_I);
@@ -199,7 +199,7 @@ static int sip_uas_transaction_ontimeout(void* usrptr)
 	// SHOULD generate a BYE to terminate the dialog.
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
-	r = t->handler->onack(t->param, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
+	r = t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
 	sip_uas_transaction_release(t);
 	return r;
 }

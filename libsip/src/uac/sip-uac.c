@@ -239,9 +239,6 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 		r = transport->via(param, remote, protocol, local, dns);
 		if (0 != r)
 			return r;
-
-		if (NULL == strchr(dns, '.'))
-			snprintf(dns, sizeof(dns), "%s", local); // don't have valid dns
 	}
 
 	// 2. Via
@@ -256,7 +253,8 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	}
 	
 	// 3. Contact: <sip:bob@192.0.2.4>
-	if (0 == sip_contacts_count(&t->req->contacts) && sip_message_isinvite(t->req) && 0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote))
+	if (0 == sip_contacts_count(&t->req->contacts) && 0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote)
+		&& (sip_message_isinvite(t->req) || sip_message_isregister(t->req)))
 	{
 		// The Contact header field MUST be present and contain exactly one SIP or 
 		// SIPS URI in any request that can result in the establishment of a dialog.

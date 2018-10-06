@@ -62,6 +62,12 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 			len = sizeof(ss);
 			if(0 == socket_addr_from(&ss, &len, local, 0))
 				socket_addr_name((struct sockaddr*)&ss, len, dns, 128);
+
+			if (SIP_PORT != port)
+				snprintf(local + strlen(local), 128 - strlen(local), ":%hu", port);
+
+			if (NULL == strchr(dns, '.'))
+				snprintf(dns, 128, "%s", local); // don't have valid dns
 		}
 	}
 	
@@ -83,18 +89,18 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 	return 0;
 }
 
-static int sip_uac_message_oninvite(void* param, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
+static int sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
 {
 	s_dialog = dialog;
 	return 0;
 }
 
-static int sip_uac_message_onregister(void* param, struct sip_uac_transaction_t* t, int code)
+static int sip_uac_message_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
 	return 0;
 }
 
-static int sip_uac_message_onbye(void* param, struct sip_uac_transaction_t* t, int code)
+static int sip_uac_message_onbye(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
 	return 0;
 }
@@ -208,6 +214,11 @@ static void sip_uac_message_invite(struct sip_uac_t* uac, struct sip_transport_t
 
 	sip_uac_input(uac, reply100);
 	sip_uac_input(uac, reply180);
+	sip_uac_input(uac, reply100);
+	sip_uac_input(uac, reply180);
+	sip_uac_input(uac, reply200);
+	sip_uac_input(uac, reply180);
+	sip_uac_input(uac, reply100);
 	sip_uac_input(uac, reply200);
 
 	sip_message_destroy(req);

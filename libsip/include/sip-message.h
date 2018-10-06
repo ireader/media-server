@@ -20,6 +20,10 @@ extern "C" {
 #define SIP_METHOD_ACK			"ACK"
 #define SIP_METHOD_OPTIONS		"OPTIIONS"
 #define SIP_METHOD_REGISTER		"REGISTER"
+#define SIP_METHOD_INFO			"INFO" // rfc2976/rfc6086
+#define SIP_METHOD_MESSAGE		"MESSAGE" // rfc3248
+#define SIP_METHOD_SUBSCRIBE	"SUBSCRIBE" // rfc4660/rfc6665
+#define SIP_METHOD_NOTIFY		"NOTIFY" // rfc4660/rfc6665
 
 #define SIP_HEADER_FROM			"From"
 #define SIP_HEADER_TO			"To"
@@ -95,6 +99,7 @@ int sip_message_isbye(const struct sip_message_t* msg);
 int sip_message_iscancel(const struct sip_message_t* msg);
 /// @return 1-invite, 0-noninvite
 int sip_message_isinvite(const struct sip_message_t* msg);
+int sip_message_isregister(const struct sip_message_t* msg);
 
 int sip_message_set_uri(struct sip_message_t* msg, const char* uri);
 const struct sip_uri_t* sip_message_get_next_hop(const struct sip_message_t* msg);

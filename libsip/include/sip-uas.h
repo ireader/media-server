@@ -16,19 +16,19 @@ struct sip_uas_handler_t
 {
 	/// @param[in] dialog nil-new invite, not nil-reinvite
 	/// @return user-defined session-id, null if error
-	void* (*oninvite)(void* param, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes);
+	void* (*oninvite)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes);
 	/// @param[in] code 0-ok, other-sip status code
 	/// @return 0-ok, other-error
-	int (*onack)(void* param, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes);
+	int (*onack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes);
 	
 	/// on terminating a session(dialog)
-	int (*onbye)(void* param, struct sip_uas_transaction_t* t, const void* session);
+	int (*onbye)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session);
 	
 	/// cancel a transaction(should be an invite transaction)
-	int (*oncancel)(void* param, struct sip_uas_transaction_t* t, const void* session);
+	int (*oncancel)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session);
 	
 	/// @param[in] expires in seconds
-	int (*onregister)(void* param, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
+	int (*onregister)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
 
 	/// @return <0-error, 0-udp, 1-tcp, other-reserved
 	int (*send)(void* param, const struct cstring_t* url, const void* data, int bytes);

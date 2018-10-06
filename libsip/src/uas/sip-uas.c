@@ -224,8 +224,8 @@ static struct sip_dialog_t* sip_uas_create_dialog(struct sip_uas_transaction_t* 
 	struct sip_dialog_t* dialog;
 	struct sip_message_t msg;
 	memcpy(&msg, req, sizeof(msg));
-	memcpy(&msg.to, &req->from, sizeof(msg.to));
-	memcpy(&msg.from, &t->reply->to, sizeof(msg.from));
+	memcpy(&msg.to, &req->from, sizeof(req->from));
+	memcpy(&msg.from, &t->reply->to, sizeof(t->reply->to)); // create with to.tag
 	dialog = sip_dialog_create(&msg);
 	if (dialog)
 	{
