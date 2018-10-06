@@ -162,7 +162,8 @@ int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* c
 	for (r = 0; 0 == r && s && s < end; s = p + 1)
 	{
 		p = strchr(s, ',');
-		if (!p) p = end;
+		if (!p || p >= end)
+			p = end;
 
 		//memset(&c, 0, sizeof(c));
 		//sip_params_init(&c.params);

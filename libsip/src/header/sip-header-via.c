@@ -119,7 +119,8 @@ int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias)
 	for (r = 0; 0 == r && s && s < end; s = p + 1)
 	{
 		p = strchr(s, ',');
-		if (!p) p = end;
+		if (!p || p >= end)
+			p = end;
 
 		//memset(&v, 0, sizeof(v));
 		//sip_params_init(&v.params);
