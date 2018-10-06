@@ -49,21 +49,32 @@ enum {
 abstract aligned(8) expandable(2^28-1) class BaseDescriptor : bit(8) tag=0 {
 	// empty. To be filled by classes extending this class.
 }
+
+int sizeOfInstance = 0;
+bit(1) nextByte;
+bit(7) sizeOfInstance;
+while(nextByte) {
+	bit(1) nextByte;
+	bit(7) sizeByte;
+	sizeOfInstance = sizeOfInstance<<7 | sizeByte;
+}
 */
-static int mov_read_base_descr(struct mov_t* mov, int* tag,  int* len)
+static int mov_read_base_descr(struct mov_t* mov, int bytes, int* tag,  int* len)
 {
-	int count = 4;
+	int i;
+	uint32_t c;
 
 	*tag = mov_buffer_r8(&mov->io);
 	*len = 0;
-	while (count-- > 0)
+	c = 0x80;
+	for (i = 0; i < 4 && i + 1 < bytes && 0 != (c & 0x80); i++)
 	{
-		uint32_t c = mov_buffer_r8(&mov->io);
+		c = mov_buffer_r8(&mov->io);
 		*len = (*len << 7) | (c & 0x7F);
-		if (0 == (c & 0x80))
-			break;
+		//if (0 == (c & 0x80))
+		//	break;
 	}
-	return 1 + 4 - count;
+	return 1 + i;
 }
 
 static size_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
@@ -297,10 +308,10 @@ static int mp4_read_tag(struct mov_t* mov, uint64_t bytes)
 	int tag, len;
 	uint64_t p1, p2, offset;
 
-	for (offset = 0; offset + 5 < bytes; offset += len)
+	for (offset = 0; offset < bytes; offset += len)
 	{
 		tag = len = 0;
-		offset += mov_read_base_descr(mov, &tag, &len);
+		offset += mov_read_base_descr(mov, (int)(bytes - offset), &tag, &len);
 		if (offset + len > bytes)
 			break;
 
