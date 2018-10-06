@@ -111,7 +111,14 @@ SEND_PACKET:
 	{
 		struct media_t* m = &m_media[i];
 		if (m->track != m_frame.track)
+		{
+			if (i + 1 == m_count)
+			{
+				m_frame.bytes = 0; // unknown track, ignore
+				goto SEND_PACKET;
+			}
 			continue;
+		}
 
 		if (0 == m_clock || m_clock > clock)
 			m_clock = clock;
