@@ -20,7 +20,6 @@ struct sip_uac_t
 	//void* timerptr;
 
 	struct list_head transactions; // transaction layer handler
-	struct list_head dialogs; // early or confirmed dialogs
 };
 
 struct sip_uac_t* sip_uac_create()
@@ -32,82 +31,50 @@ struct sip_uac_t* sip_uac_create()
 
 	uac->ref = 1;
 	locker_create(&uac->locker);
-	LIST_INIT_HEAD(&uac->dialogs);
+	LIST_INIT_HEAD(sip_dialog_root());
 	LIST_INIT_HEAD(&uac->transactions);
 	return uac;
 }
 
 int sip_uac_destroy(struct sip_uac_t* uac)
 {
-	struct sip_dialog_t* dialog;
-	struct list_head *pos, *next;
-	struct sip_uac_transaction_t* t;
+//	struct list_head *pos, *next;
+//	struct sip_uac_transaction_t* t;
 
 	assert(uac->ref > 0);
 	if (0 != atomic_decrement32(&uac->ref))
 		return 0;
 
-	list_for_each_safe(pos, next, &uac->transactions)
-	{
-		t = list_entry(pos, struct sip_uac_transaction_t, link);
-		assert(t->uac == uac);
-		//sip_uac_transaction_release(t);
-	}
+	assert(list_empty(&uac->transactions));
+	//list_for_each_safe(pos, next, &uac->transactions)
+	//{
+	//	t = list_entry(pos, struct sip_uac_transaction_t, link);
+	//	assert(t->uac == uac);
+	//	sip_uac_transaction_release(t);
+	//}
 
-	list_for_each_safe(pos, next, &uac->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		sip_dialog_release(dialog);
-	}
+	//list_for_each_safe(pos, next, &uac->dialogs)
+	//{
+	//	dialog = list_entry(pos, struct sip_dialog_t, link);
+	//	sip_dialog_release(dialog);
+	//}
 
 	locker_destroy(&uac->locker);
 	free(uac);
 	return 0;
 }
 
-int sip_uac_add_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog)
-{
-	// link to tail
-	assert(uac->ref > 0);
-	locker_lock(&uac->locker);
-	list_insert_after(&dialog->link, uac->dialogs.prev);
-	locker_unlock(&uac->locker);
-	return sip_dialog_addref(dialog);
-}
-
-int sip_uac_del_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog)
-{
-	// unlink dialog
-	assert(uac->ref > 0);
-	locker_lock(&uac->locker);
-	list_remove(&dialog->link);
-	locker_unlock(&uac->locker);
-	return sip_dialog_release(dialog);
-}
-
-struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg)
-{
-	struct list_head *pos, *next;
-	struct sip_dialog_t* dialog;
-
-	list_for_each_safe(pos, next, &uac->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (sip_dialog_match(dialog, &msg->callid, &msg->from.tag, &msg->to.tag))
-			return dialog;
-	}
-	return NULL;
-}
-
 int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
 {
-	// link to tail
 	assert(uac->ref > 0);
+	atomic_increment32(&uac->ref); // ref by transaction
+
+	// link to tail
 	locker_lock(&uac->locker);
 	list_insert_after(&t->link, uac->transactions.prev);
 	locker_unlock(&uac->locker);
-	//return sip_uac_transaction_addref(t);
 	return 0;
+//	return sip_uac_transaction_addref(t);
 }
 
 int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
@@ -125,19 +92,19 @@ int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 	// Independent of the method, if a request outside of a dialog generates
 	// a non-2xx final response, any early dialogs created through
 	// provisional responses to that request are terminated.
-	list_for_each_safe(pos, next, &uac->dialogs)
+	list_for_each_safe(pos, next, sip_dialog_root())
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
 		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
-			list_remove(pos);
-			sip_dialog_release(dialog); // WARNING: release in locker
+			sip_dialog_remove(dialog); // WARNING: release in locker
 		}
 	}
 
 	locker_unlock(&uac->locker);
-	//return sip_uac_transaction_release(t);
+	sip_uac_destroy(uac);
 	return 0;
+//	return sip_uac_transaction_release(t);
 }
 
 void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr)
@@ -289,7 +256,6 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 
 	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
 	t->transportptr = param;
-	atomic_increment32(&t->uac->ref); // ref by transaction
 	return sip_uac_transaction_send(t);
 }
 

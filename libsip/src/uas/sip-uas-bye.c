@@ -16,6 +16,6 @@ int sip_uas_onbye(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, 
 	// generated to those pending requests.
 	r = t->handler->onbye(t->param, req, t, dialog ? dialog->session : NULL);
 
-	sip_uas_del_dialog(t->uas, dialog);
+	sip_dialog_remove(dialog);
 	return r;
 }

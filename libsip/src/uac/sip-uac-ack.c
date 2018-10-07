@@ -53,6 +53,9 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	// 2. The ACK for a 2xx response to an INVITE request is a separate transaction(new branch value).
 	if (newtransaction)
 	{
+		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
+		// [Sip] Branch in INVITE ,ACK,BYE
+
 		uri = sip_message_get_next_hop(t->req);
 		if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
 			return -1;

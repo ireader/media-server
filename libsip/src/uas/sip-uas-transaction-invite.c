@@ -200,6 +200,6 @@ static int sip_uas_transaction_ontimeout(void* usrptr)
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
 	r = t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
-	sip_uas_transaction_release(t);
+	sip_uas_transaction_destroy(t);
 	return r;
 }

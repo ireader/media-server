@@ -16,7 +16,7 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 			locker_unlock(&t->locker);
 			return -1;
 		}
-		sip_uac_add_dialog(t->uac, dialog);
+		sip_dialog_add(dialog);
 		locker_unlock(&t->locker);
 	}
 
@@ -87,7 +87,7 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 			locker_unlock(&t->locker);
 			return -1;
 		}
-		sip_uac_add_dialog(t->uac, dialog);
+		sip_dialog_add(dialog);
 	}
 	locker_unlock(&t->locker);
 
@@ -175,7 +175,7 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 		sip_uac_stop_timer(t->uac, t->timera);
 		t->timera = NULL;
 	}
-	dialog = sip_uac_find_dialog(t->uac, reply);
+	dialog = sip_dialog_find(&reply->callid, &reply->from.tag, &reply->to.tag);
 
 	oldstatus = t->status;
 	status = sip_uac_transaction_inivte_change_state(t, reply);
@@ -196,7 +196,11 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 		break;
 
 	case SIP_UAC_TRANSACTION_COMPLETED:
-		r = sip_uac_transaction_invite_completed(t, dialog, reply, oldstatus != status);
+		// ignore other status code (fork or misorder)
+		r = sip_uac_transaction_invite_completed(t, dialog, reply, oldstatus == status);
+		
+		// TODO: fork 2xx response
+		//if (200 <= reply->u.s.code && reply->u.s.code < 300)
 		break;
 
 	case SIP_UAC_TRANSACTION_TERMINATED:

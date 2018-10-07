@@ -11,7 +11,10 @@ uint8_t* cstring_clone(uint8_t* ptr, const uint8_t* end, struct cstring_t* clone
 	clone->n = remain >= n ? n : remain;
 
 	memcpy(ptr, s, clone->n);
-	return ptr + clone->n;
+	ptr += clone->n;
+	if (ptr < end) 
+		*ptr++ = '\0';
+	return ptr;
 }
 
 uint8_t* sip_uri_clone(uint8_t* ptr, const uint8_t* end, struct sip_uri_t* clone, const struct sip_uri_t* uri)

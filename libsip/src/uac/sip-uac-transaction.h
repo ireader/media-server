@@ -37,13 +37,14 @@ struct sip_uac_transaction_t
 
 	int status;
 	int retries;
-	int t2; // 64*T1-invite, 4s-noninvite
+	int t2; // 64*T1-invite, 4s-non-invite
 	void* timera; // retransmission timer
 	void* timerb; // timeout
 //	void* timerd;
-	void* timerk; // wait for all duplicat-reply(ack) message
+	void* timerk; // wait for all duplicate-reply(ack) message
 
 	struct sip_uac_t* uac;
+	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;
 	void* param;
@@ -55,8 +56,6 @@ struct sip_uac_transaction_t
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req);
 int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t);
-//int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
-//int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
 
@@ -66,9 +65,6 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 // wait for all inflight reply
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 
-struct sip_dialog_t* sip_uac_find_dialog(struct sip_uac_t* uac, const struct sip_message_t* msg);
-int sip_uac_add_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
-int sip_uac_del_dialog(struct sip_uac_t* uac, struct sip_dialog_t* dialog);
 int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
 int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
 

@@ -31,7 +31,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	return t;
 }
 
-int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
+static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 {
 	assert(t->ref > 0);
 	if (0 != atomic_decrement32(&t->ref))
@@ -41,9 +41,6 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 	assert(NULL == t->timerg);
 	assert(NULL == t->timerh);
 	assert(NULL == t->timerij);
-
-	// unlink from uas
-	sip_uas_del_transaction(t->uas, t);
 
 	// MUST: destroy t->reply after sip_uas_del_transaction
 	//sip_message_destroy((struct sip_message_t*)t->req);
@@ -56,9 +53,17 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 	return 0;
 }
 
-int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
+static int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
 {
 	return atomic_increment32(&t->ref);
+}
+
+int sip_uas_transaction_destroy(struct sip_uas_transaction_t* t)
+{
+	// unlink from uas
+	sip_uas_del_transaction(t->uas, t);
+
+	return sip_uas_transaction_release(t);
 }
 
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
@@ -138,7 +143,7 @@ static int sip_uas_transaction_onterminated(void* usrptr)
 	locker_unlock(&t->locker);
 
 	// all done
-	sip_uas_transaction_release(t);
+	sip_uas_transaction_destroy(t);
 	return 0;
 }
 

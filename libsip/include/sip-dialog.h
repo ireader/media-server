@@ -43,16 +43,14 @@ struct sip_dialog_t
 };
 
 struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg);
-int sip_dialog_addref(struct sip_dialog_t* dialog);
-int sip_dialog_release(struct sip_dialog_t* dialog);
-
-/// @return 1-match, 0-don't match
-int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
-
-struct sip_dialog_t* sip_dialog_find(struct list_head* dialogs, struct sip_message_t* msg);
 
 int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t* tag);
 
+// dialog management
+int sip_dialog_add(struct sip_dialog_t* dialog);
+int sip_dialog_remove(struct sip_dialog_t* dialog);
+struct sip_dialog_t* sip_dialog_find(const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
+struct list_head* sip_dialog_root();
 
 #if defined(__cplusplus)
 }

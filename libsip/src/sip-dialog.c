@@ -11,6 +11,8 @@
 // did not mandate To tags.
 static const struct cstring_t sc_null = { "", 0 };
 
+static struct list_head s_dialogs;
+
 struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 {
 	int i;
@@ -61,7 +63,7 @@ struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 	return dialog;
 }
 
-int sip_dialog_release(struct sip_dialog_t* dialog)
+static int sip_dialog_release(struct sip_dialog_t* dialog)
 {
 	if (!dialog)
 		return -1;
@@ -74,7 +76,7 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 	return 0;
 }
 
-int sip_dialog_addref(struct sip_dialog_t* dialog)
+static int sip_dialog_addref(struct sip_dialog_t* dialog)
 {
 	return atomic_increment32(&dialog->ref);
 }
@@ -87,10 +89,46 @@ int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t*
 	return 0;
 }
 
-int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
+/// @return 1-match, 0-don't match
+static int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
 {
 	assert(dialog && local);
 	if (!remote) remote = &sc_null;
 
 	return 0 == cstrcmp(callid, dialog->callid) && cstreq(local, &dialog->local.uri.tag) && cstreq(remote, &dialog->remote.uri.tag) ? 1 : 0;
+}
+
+struct sip_dialog_t* sip_dialog_find(const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
+{
+	struct list_head *pos, *next;
+	struct sip_dialog_t* dialog;
+
+	list_for_each_safe(pos, next, &s_dialogs)
+	{
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		if (sip_dialog_match(dialog, callid, local, remote))
+			return dialog;
+	}
+	return NULL;
+}
+
+int sip_dialog_add(struct sip_dialog_t* dialog)
+{
+	// link to tail
+	assert(0 == dialog->ref);
+	list_insert_after(&dialog->link, s_dialogs.prev);
+	return sip_dialog_addref(dialog);
+}
+
+int sip_dialog_remove(struct sip_dialog_t* dialog)
+{
+	// unlink dialog
+	assert(1 == dialog->ref);
+	list_remove(&dialog->link);
+	return sip_dialog_release(dialog);
+}
+
+struct list_head* sip_dialog_root()
+{
+	return &s_dialogs;
 }
