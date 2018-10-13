@@ -14,16 +14,21 @@ extern "C" {
 #define SIP_BRANCH_PREFIX		"z9hG4bK"
 #define SIP_MAX_FORWARDS		70
 
+// https://en.wikipedia.org/wiki/List_of_SIP_request_methods
 #define SIP_METHOD_INVITE		"INVITE"
 #define SIP_METHOD_CANCEL		"CANCEL"
 #define SIP_METHOD_BYE			"BYE"
 #define SIP_METHOD_ACK			"ACK"
 #define SIP_METHOD_OPTIONS		"OPTIIONS"
 #define SIP_METHOD_REGISTER		"REGISTER"
+#define SIP_METHOD_PRACK		"PRACK" // rfc3262
 #define SIP_METHOD_INFO			"INFO" // rfc2976/rfc6086
+#define SIP_METHOD_REFER		"REFER" // rfc3515
 #define SIP_METHOD_MESSAGE		"MESSAGE" // rfc3248
 #define SIP_METHOD_SUBSCRIBE	"SUBSCRIBE" // rfc4660/rfc6665
 #define SIP_METHOD_NOTIFY		"NOTIFY" // rfc4660/rfc6665
+#define SIP_METHOD_PUBLISH		"PUBLISH" // rfc3903
+#define SIP_METHOD_UPDATE		"UPDATE" // rfc3311
 
 #define SIP_HEADER_FROM			"From"
 #define SIP_HEADER_TO			"To"
@@ -86,6 +91,7 @@ struct sip_message_t
 
 struct sip_message_t* sip_message_create(int mode);
 int sip_message_destroy(struct sip_message_t* msg);
+int sip_message_clone(struct sip_message_t* msg, const struct sip_message_t* clone);
 int sip_message_init(struct sip_message_t* msg, const char* method, const char* uri, const char* from, const char* to);
 int sip_message_init2(struct sip_message_t* msg, const char* method, const struct sip_dialog_t* dialog);
 int sip_message_init3(struct sip_message_t* reply, const struct sip_message_t* req);

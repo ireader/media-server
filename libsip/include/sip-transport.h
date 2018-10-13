@@ -41,7 +41,7 @@ struct sip_transport_t
 	/// @param[in] destination remote host/addr
 	/// @param[out] protocol UDP/TCP/TLS/SCTP
 	/// @param[out] local local address, IPv4/IPv6 with port
-	/// @param[out] dns local host dns(with port)
+	/// @param[out] dns local host dns(with port && with via maddr, ttl, and sent-by parameters)
 	/// @return 0-ok, other-error
 	int (*via)(void* transport, const char* destination, char protocol[16], char local[128], char dns[128]);
 

@@ -26,5 +26,7 @@ int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialo
 	
 	// the To tag of the response to the CANCEL and the To tag
 	// in the response to the original request SHOULD be the same.
+	t->reply->ptr.ptr = cstring_clone(t->reply->ptr.ptr, t->reply->ptr.end, &t->reply->to.tag, origin->reply->to.tag.p, origin->reply->to.tag.n);
+	
 	return t->handler->oncancel(t->param, req, t, dialog ? dialog->session : NULL);
 }

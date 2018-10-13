@@ -89,10 +89,11 @@ struct sip_uri_t
 	struct sip_params_t parameters;
 	struct cstring_t transport; // udp/tcp/sctp/tls/other
 	struct cstring_t method;
-	struct cstring_t maddr;
+	struct cstring_t maddr; // the server address to be contacted for this user, overriding any address derived from the host field
 	struct cstring_t user; // phone/ip
 	int ttl;
 	int lr;
+	int rport; // 0-not found, -1-no-value, other-value
 
 	struct sip_params_t headers;
 };
@@ -166,6 +167,7 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri);
 int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r);
 int sip_uri_username(const struct sip_uri_t* uri, struct cstring_t* user);
+int sip_request_uri_write(const struct sip_uri_t* uri, char* data, const char* end);
 
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via);
 int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias);

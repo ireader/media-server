@@ -4,7 +4,7 @@
 #include "sip-uac-transaction.h"
 #include <stdio.h>
 
-// 17.1.1.3 Construction of the ACK Request(Section 13.)
+// 17.1.1.3 Construction of the ACK Request(Section 13.) (p129)
 int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction)
 {
 	int r;
@@ -48,6 +48,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	// final response was not a 2xx response.If the response was a 2xx, 
 	// the ACK is not considered part of the transaction.
 
+	// 6 Definitions: SIP Transaction (p24)
 	// 1. If the request is INVITE and the final response is a non-2xx, the transaction also
 	//	  includes an ACK to the response. 
 	// 2. The ACK for a 2xx response to an INVITE request is a separate transaction(new branch value).

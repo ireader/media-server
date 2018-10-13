@@ -163,12 +163,44 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 {
 	struct sip_uac_transaction_t* t;
 
+	// A UAC MUST treat any provisional response different than 100 that it
+	// does not recognize as 183 (Session Progress). A UAC MUST be able to
+	// process 100 and 183 responses.
+
+	// 8.1.3.3 Vias (p43)
+	// If more than one Via header field value is present in a response, the
+	// UAC SHOULD discard the message.
+	if (1 != sip_vias_count(&reply->vias))
+		return 0;
+
 	// 1. find transaction
 	t = sip_uac_find_transaction(&uac->transactions, reply);
 	if (!t)
 	{
 		// timeout response, discard
 		return 0;
+	}
+
+	// 8.1.3.4 Processing 3xx Responses (p43)
+	// Upon receipt of a redirection response (for example, a 301 response
+	// status code), clients SHOULD use the URI(s) in the Contact header
+	// field to formulate one or more new requests based on the redirected
+	// request.
+	if (300 <= reply->u.s.code && reply->u.s.code < 400)
+	{
+		// TODO or create new transaction ???
+	}
+
+	// 8.1.3.5 Processing 4xx Responses (p45)
+	switch (reply->u.s.code)
+	{
+	case 401: // Unauthorized
+	case 407: // Proxy Authentication Required
+	case 413: // Request Entity Too Large
+	case 415: // Unsupported Media Type
+	case 416: // Unsupported URI Scheme
+	case 420: // Bad Extension
+		break;
 	}
 
 	if (sip_message_isinvite(reply))
@@ -195,10 +227,11 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	if (t->transportptr)
 		return -1; // EEXIST
 
+	uri = sip_message_get_next_hop(t->req);
+
 	// 1. get transport local info
 	if (0 == sip_vias_count(&t->req->vias) || 0 == sip_contacts_count(&t->req->contacts))
 	{
-		uri = sip_message_get_next_hop(t->req);
 		if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
 			return -1;
 
@@ -211,6 +244,9 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	// 2. Via
 	if (0 == sip_vias_count(&t->req->vias))
 	{
+		// The Via header maddr, ttl, and sent-by components will be set when
+		// the request is processed by the transport layer (Section 18).
+
 		// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
 		// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
 		r = snprintf(ptr, sizeof(ptr), "SIP/2.0/%s %s;branch=%s%p", protocol, dns, SIP_BRANCH_PREFIX, t);
@@ -232,8 +268,11 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 		// future requests.
 
 		// usually composed of a username at a fully qualified domain name(FQDN)
+		// If the Request-URI or top Route header field value contains a SIPS
+		// URI, the Contact header field MUST contain a SIPS URI as well.
+		if(uri) cstrcpy(&uri->scheme, local, sizeof(local));
 		cstrcpy(&user, remote, sizeof(remote));
-		snprintf(ptr, sizeof(ptr), "<sip:%s@%s>", remote, dns);
+		snprintf(ptr, sizeof(ptr), "<%s:%s@%s>", uri ? local : "sip", remote, dns);
 		r = sip_message_add_header(t->req, "Contact", ptr);
 	}
 

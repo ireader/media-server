@@ -34,6 +34,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// notify user
 		t->dialog = dialog;
 		t->status = SIP_UAS_TRANSACTION_TRYING;
+		// re-invite: 488 (Not Acceptable Here)
 		dialog->session = t->handler->oninvite(t->param, req, t, dialog->state == DIALOG_ERALY ? NULL : dialog, req->payload, req->size);
 		break;
 

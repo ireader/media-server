@@ -61,6 +61,75 @@ int sip_message_destroy(struct sip_message_t* msg)
 	return 0;
 }
 
+int sip_message_clone(struct sip_message_t* msg, const struct sip_message_t* clone)
+{
+	int i;
+	struct sip_via_t via;
+	struct sip_uri_t uri;
+	struct sip_contact_t contact;
+	struct sip_param_t header, *p;
+
+	msg->mode = clone->mode;
+
+	// 1. request uri
+	if (clone->mode == SIP_MESSAGE_REQUEST)
+	{
+		sip_message_copy2(msg, &msg->u.c.method, &clone->u.c.method);
+		msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &clone->u.c.uri);
+	}
+	else
+	{
+		msg->u.s.code = clone->u.s.code;
+		msg->u.s.verminor = clone->u.s.verminor;
+		msg->u.s.vermajor = clone->u.s.vermajor;
+		memcpy(msg->u.s.protocol, clone->u.s.protocol, sizeof(msg->u.s.protocol));
+		sip_message_copy2(msg, &msg->u.s.reason, &clone->u.s.reason);
+	}
+
+	// 2. base headers
+	msg->cseq.id = clone->cseq.id;
+	msg->maxforwards = clone->maxforwards;
+	sip_message_copy2(msg, &msg->cseq.method, &clone->cseq.method);
+	sip_message_copy2(msg, &msg->callid, &clone->callid);
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->to, &clone->to);
+	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->from, &clone->from);
+	
+	for (i = 0; i < sip_vias_count(&clone->vias); i++)
+	{
+		msg->ptr.ptr = sip_via_clone(msg->ptr.ptr, msg->ptr.end, &via, sip_vias_get(&clone->vias, i));
+		sip_vias_push(&msg->vias, &via);
+	}
+
+	for (i = 0; i < sip_contacts_count(&clone->contacts); i++)
+	{
+		msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &contact, sip_contacts_get(&clone->contacts, i));
+		sip_contacts_push(&msg->contacts, &contact);
+	}
+
+	for (i = 0; i < sip_uris_count(&clone->routers); i++)
+	{
+		msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&clone->routers, i));
+		sip_uris_push(&msg->routers, &uri);
+	}
+
+	for (i = 0; i < sip_uris_count(&clone->record_routers); i++)
+	{
+		msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&clone->record_routers, i));
+		sip_uris_push(&msg->record_routers, &uri);
+	}
+
+	// 3. other headers
+	for (i = 0; i < sip_params_count(&clone->headers); i++)
+	{
+		p = sip_params_get(&clone->headers, i);
+		sip_message_copy2(msg, &header.name, &p->name);
+		sip_message_copy2(msg, &header.value, &p->value);
+		sip_params_push(&msg->headers, &header);
+	}
+
+	return 0;
+}
+
 // Fill From/To/Call-Id/Max-Forwards/CSeq
 // Add Via by transport ???
 int sip_message_init(struct sip_message_t* msg, const char* method, const char* uri, const char* from, const char* to)
@@ -94,6 +163,9 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 
 	// TODO: Via
 
+	// For non-REGISTER requests outside of a dialog, the sequence number 
+	// value is arbitrary. The sequence number value MUST be expressible 
+	// as a 32-bit unsigned integer and MUST be less than 2**31
 	msg->cseq.id = rand();
 	msg->maxforwards = SIP_MAX_FORWARDS;
 	return 0;
@@ -456,7 +528,7 @@ static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t
 	if (0 != cstrcasecmp(&msg->u.c.method, SIP_METHOD_REGISTER))
 	{
 		// INVITE sip:bob@biloxi.com SIP/2.0
-		if (p < end) p += sip_uri_write(host, p, end);
+		if (p < end) p += sip_request_uri_write(host, p, end);
 	}
 	else
 	{
@@ -473,7 +545,7 @@ static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t
 		}
 
 		// REGISTER sip:registrar.biloxi.com SIP/2.0
-		if (p < end) p += sip_uri_write(&uri, p, end);
+		if (p < end) p += sip_request_uri_write(&uri, p, end);
 	}
 
 	n = snprintf(p, end - p, " SIP/2.0");

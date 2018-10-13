@@ -27,7 +27,7 @@ int sip_uac_destroy(struct sip_uac_t* uac);
 int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply);
 
 struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
-struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply oncancel, void* param);
+struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param);
 struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
 struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param);
 /// @param[in] registrar register server, such as sip:registrar.biloxi.com. can be null.

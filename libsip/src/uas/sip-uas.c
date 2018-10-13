@@ -203,8 +203,67 @@ static struct sip_dialog_t* sip_uas_create_dialog(struct sip_uas_transaction_t* 
 	return dialog;
 }
 
+//static int sip_uas_check_uri(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+//{
+//	// 8.2.2.1 To and Request-URI
+//	// if the To header field does not address a known or current user of this UAS
+//	if (0 != cstrcasecmp(&msg->to.uri.host, ""))
+//		return sip_uas_reply(t, 403/*Forbidden*/, NULL, 0);
+//	// If the Request-URI uses a scheme not supported by the UAS
+//	if (0 != cstrcasecmp(&msg->u.c.uri.scheme, "sip") && 0 != cstrcasecmp(&msg->u.c.uri.scheme, "sips"))
+//		return sip_uas_reply(t, 416/*Unsupported URI Scheme*/, NULL, 0);
+//	// If the Request-URI does not identify an address that the UAS is willing to accept requests for
+//	if (0 != cstrcasecmp(&msg->u.c.uri.host, ""))
+//		return sip_uas_reply(t, 404/*Not Found*/, NULL, 0);
+//	return 0;
+//}
+//// 8.2.2.3 Require (p47)
+//static int sip_uas_check_require(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+//{
+//	const struct cstring_t* header;
+//
+//	header = sip_message_get_header_by_name(msg, "Require");
+//	sip_uas_add_header(t, "Unsupported", );
+//	return sip_uas_reply(t, 420/*Bad Extension*/, NULL, 0);
+//}
+//// 8.2.3 Content Processing (p47)
+//static int sip_uas_check_media_type(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+//{
+//	const struct cstring_t* content_type;
+//	const struct cstring_t* content_language;
+//	const struct cstring_t* content_encoding;
+//
+//	content_type = sip_message_get_header_by_name(msg, "Content-Type");
+//	content_language = sip_message_get_header_by_name(msg, "Content-Language");
+//	content_encoding = sip_message_get_header_by_name(msg, "Content-Encoding");
+//	sip_uas_add_header(t, "Accept", );
+//	sip_uas_add_header(t, "Accept-Encoding", );
+//	sip_uas_add_header(t, "Accept-Language", );
+//	return sip_uas_reply(t, 415/*Unsupported Media Type*/, NULL, 0);
+//}
+
+static int sip_uas_check_request(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+{
+	int r;
+	
+	// 8.1.1.6 Max-Forwards
+	// If the Max-Forwards value reaches 0 before the request reaches its 
+	// destination, it will be rejected with a 483(Too Many Hops) error response.
+	if (msg->maxforwards <= 0)
+		return sip_uas_reply(t, 483/*Too Many Hops*/, NULL, 0);
+
+	//r = sip_uas_check_uri(uas, t, msg);
+	//if (0 == r)
+	//	r = sip_uas_check_require(uas, t, msg);
+	//if (0 == r)
+	//	r = sip_uas_check_media_type(uas, t, msg);
+
+	return 0;
+}
+
 int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 {
+	int r;
 	struct sip_dialog_t *dialog;
 	struct sip_uas_transaction_t* t;
 
@@ -218,6 +277,9 @@ int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
 		t = sip_uas_transaction_create(uas, msg);
 		if (!t) return -1;
 	}
+
+	r = sip_uas_check_request(uas, t, msg);
+	if (0 != r) return r;
 
 	// 2. find dialog
 	dialog = sip_dialog_find(&msg->callid, &msg->to.tag, &msg->from.tag);

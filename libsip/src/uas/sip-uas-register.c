@@ -121,6 +121,11 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
 	}
 
+	// TODO:
+	// Typically, a UA that uses the REGISTER method to bind its address-of-record 
+	// to a specific contact address will see requests whose Request-URI equals 
+	// that contact address
+
 	// All registrations from a UAC SHOULD use the same Call-ID header 
 	// field value for registrations sent to a particular registrar.
 	req->callid;

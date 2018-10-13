@@ -101,6 +101,10 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 		{
 			uri->lr = 1;
 		}
+		else if (0 == cstrcasecmp(&param->name, "rport"))
+		{
+			uri->rport = cstrvalid(&param->value) ? cstrtol(&param->value, NULL, 10) : -1;
+		}
 	}
 
 	return 0;
@@ -134,6 +138,47 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
 	return p - data;
 }
 
+// 19.1.1 SIP and SIPS URI Components (p152)
+/*
+												 dialog
+								   reg./redir.  Contact/
+		  default Req.-URI	To From	 Contact	R-R/Route external
+user		--		o		o	o		o			o		o
+password	--		o		o	o		o			o		o
+host		--		m		m	m		m			m		m
+port		(1)		o		-	-		o			o		o
+user-param	ip		o		o	o		o			o		o
+method		INVITE	-		-	-		-			-		o
+maddr-param --		o		-	-		o			o		o
+ttl-param	1		o		-	-		o			-		o
+trans-param (2)		o		-	-		o			o		o
+lr-param	--		o		-	-		-			o		o
+other-param --		o		o	o		o			o		o
+headers		--		-		-	-		o			-		o
+*/
+int sip_request_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
+{
+	int i, r;
+	struct sip_uri_t v;
+	struct sip_param_t* param;
+
+	memcpy(&v, uri, sizeof(v));
+	sip_params_init(&v.parameters);
+	sip_params_init(&v.headers);
+
+	for (i = 0; i < sip_params_count(&uri->parameters); i++)
+	{
+		param = sip_params_get(&uri->parameters, i);
+		if (cstrcasecmp(&param->name, "method"))
+			continue;
+		sip_params_push(&v.parameters, param);
+	}
+	r = sip_uri_write(&v, data, end);
+
+	sip_uri_params_free(&v);
+	return r;
+}
+
 // 19.1.4 URI Comparison (p153)
 int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 {
@@ -163,6 +208,10 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 	if (l->host.n != r->host.n || 0 != strncasecmp(p1, p2, l->host.p + l->host.n - p1))
 		return 0;
 
+	// TODO:
+	// Characters other than those in the "reserved" set (see RFC 2396 [5]) 
+	// are equivalent to their ""%" HEX HEX" encoding.
+
 	// Any uri-parameter appearing in both URIs must match.
 	for (i = 0; i < sip_params_count(&l->parameters); i++)
 	{
@@ -170,7 +219,7 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 		if(0 == cstrcmp(&param1->name, "maddr"))
 			continue;
 		param2 = sip_params_find(&r->parameters, param1->name.p, param1->name.n);
-		if (!param2 || !cstreq(&param1->value, &param2->value))
+		if (param2 && !cstreq(&param1->value, &param2->value))
 			return 0;
 	}
 
@@ -289,5 +338,108 @@ void sip_uri_parse_test(void)
 	assert(0 != sip_uri_username(&uri, &usr));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
 	sip_uri_params_free(&uri);
+
+	s = "sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
+	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "alice@atlanta.com") && 2 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->name, "maddr") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 0)->value, "239.255.255.1"));
+	assert(0 == cstrcmp(&sip_params_get(&uri.parameters, 1)->name, "ttl") && 0 == cstrcmp(&sip_params_get(&uri.parameters, 1)->value, "15"));
+	assert(0 == cstrcmp(&uri.maddr, "239.255.255.1") && 15 == uri.ttl);
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "alice"));
+	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
+}
+
+void sip_uri_equal_test(void)
+{
+	const char* s;
+	struct sip_uri_t uri1;
+	struct sip_uri_t uri2;
+
+	s = "sip:%61lice@atlanta.com;transport=TCP";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:alice@AtLanTa.CoM;Transport=tcp";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(1 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	s = "sip:carol@chicago.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:carol@chicago.com;newparam=5";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(1 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	s = "sip:carol@chicago.com;security=on";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:carol@chicago.com;newparam=5";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(1 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	s = "sip:biloxi.com;transport=tcp;method=REGISTER?to=sip:bob%40biloxi.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:biloxi.com;method=REGISTER;transport=tcp?to=sip:bob%40biloxi.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(1 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	s = "sip:alice@atlanta.com?subject=project%20x&priority=urgent";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:alice@atlanta.com?priority=urgent&subject=project%20x";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(1 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	// different usernames
+	s = "SIP:ALICE@AtLanTa.CoM;Transport=udp";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:alice@AtLanTa.CoM;Transport=UDP";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(0 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	// can resolve to different ports
+	s = "sip:bob@biloxi.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:bob@biloxi.com:5060";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(0 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	// can resolve to different transports
+	s = "sip:bob@biloxi.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:bob@biloxi.com;transport=udp";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(0 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	// different header component
+	s = "sip:carol@chicago.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:carol@chicago.com?Subject=next%20meeting";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(0 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
+
+	// An IP address that is the result of a DNS lookup of a host name
+	// does not match that host name.
+	s = "sip:bob@phone21.boxesbybob.com";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri1));
+	s = "sip:bob@192.0.2.4";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri2));
+	assert(0 == sip_uri_equal(&uri1, &uri2));
+	sip_uri_params_free(&uri1);
+	sip_uri_params_free(&uri2);
 }
 #endif

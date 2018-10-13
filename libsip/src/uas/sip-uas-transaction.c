@@ -87,7 +87,8 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
 	else
 	{
 		assert(0);
-		return 405; // Method Not Allowed
+		// 8.2.1 Method Inspection (p46)
+		return sip_uas_reply(t, 405/*Method Not Allowed*/, NULL, 0);
 	}
 }
 
