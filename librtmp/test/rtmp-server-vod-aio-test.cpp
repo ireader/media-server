@@ -40,7 +40,7 @@ static int STDCALL aio_rtmp_server_worker(void* param)
         {
             assert(r < sizeof(vod->packet));
             uint64_t t = system_clock();
-            if (clock + timestamp > t)
+            if (clock + timestamp > t && clock + timestamp < t + 3 * 1000)
                 system_sleep(clock + timestamp - t);
 
             timestamp += diff;

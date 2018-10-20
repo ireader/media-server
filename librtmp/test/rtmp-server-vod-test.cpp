@@ -23,7 +23,7 @@ static int STDCALL rtmp_server_worker(void* param)
 	{
 		assert(r < sizeof(packet));
 		uint64_t clock = system_clock();
-		if (clock0 + timestamp > clock)
+		if (clock0 + timestamp > clock && clock0 + timestamp < clock + 3 * 1000)
 			system_sleep(clock0 + timestamp - clock);
 
 		if (FLV_TYPE_AUDIO == type)

@@ -32,7 +32,7 @@ static int STDCALL rtmp_client_push(void* flv)
 	while (0 == s_param.code && (r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 	{
 		uint64_t clock = system_clock();
-		if(clock0 + timestamp > clock)
+		if(clock0 + timestamp > clock && clock0 + timestamp < clock0 + 3 * 1000)
 			system_sleep(clock0 + timestamp - clock);
 
 		while (s_param.rtmp && aio_rtmp_client_get_unsend(s_param.rtmp) > 8 * 1024 * 1024)

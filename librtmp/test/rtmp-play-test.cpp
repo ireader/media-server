@@ -26,9 +26,9 @@ static int rtmp_client_onvideo(void* /*param*/, const void* data, size_t bytes, 
 	return flv_writer_input(s_flv, FLV_TYPE_VIDEO, data, bytes, timestamp);
 }
 
-static int rtmp_client_onscript(void* /*param*/, const void* /*data*/, size_t /*bytes*/, uint32_t /*timestamp*/)
+static int rtmp_client_onscript(void* /*param*/, const void* data, size_t bytes, uint32_t timestamp)
 {
-	return 0;
+	return flv_writer_input(s_flv, FLV_TYPE_SCRIPT, data, bytes, timestamp);
 }
 
 // rtmp://live.alivecdn.com/live/hello?key=xxxxxx

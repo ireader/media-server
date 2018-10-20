@@ -98,7 +98,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 		while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 		{
 			uint64_t t = system_clock();
-			if (clock + timestamp > t)
+			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000) // dts skip
 				system_sleep(clock + timestamp - t);
 			
 			timestamp += diff;

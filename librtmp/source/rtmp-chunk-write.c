@@ -67,6 +67,7 @@ static const struct rtmp_chunk_header_t* rtmp_chunk_header_zip(struct rtmp_t* rt
 	if (RTMP_CHUNK_TYPE_0 != header->fmt /* enable compress */
 		&& header->cid == pkt->header.cid /* not the first packet */
 		&& header->timestamp >= pkt->clock /* timestamp wrap */
+		&& header->timestamp - pkt->clock < 0xFFFFFF /* timestamp delta < 1 << 24 */
 		&& header->stream_id == pkt->header.stream_id /* message stream id */)
 	{
 		h.fmt = RTMP_CHUNK_TYPE_1;
