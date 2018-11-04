@@ -241,6 +241,8 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	
 	if (t->transportptr)
 		return -1; // EEXIST
+	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
+	t->transportptr = param;
 
 	r = sip_uac_transaction_via(t, via, contact);
 	if (0 != r)
@@ -295,8 +297,6 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 		return -1;
 	}
 
-	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
-	t->transportptr = param;
 	return sip_uac_transaction_send(t);
 }
 
