@@ -22,9 +22,11 @@ static int STDCALL rtmp_server_worker(void* param)
 	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
 	{
 		assert(r < sizeof(packet));
-		uint64_t clock = system_clock();
-		if (clock0 + timestamp > clock && clock0 + timestamp < clock + 3 * 1000)
-			system_sleep(clock0 + timestamp - clock);
+		uint64_t t = system_clock();
+		if (clock0 + timestamp > t && clock0 + timestamp < t + 3 * 1000)
+			system_sleep(clock0 + timestamp - t);
+		else if (clock0 + timestamp > t + 3 * 1000)
+			clock0 = t - timestamp;
 
 		if (FLV_TYPE_AUDIO == type)
 		{

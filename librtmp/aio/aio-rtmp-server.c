@@ -236,7 +236,7 @@ static int rtmp_handler_onpause(void* param, int pause, uint32_t ms)
 	session = (struct aio_rtmp_session_t*)param;
 	if(session->server->handle.onpause && session->usr)
 		return session->server->handle.onpause(session->usr, pause, ms);
-	return -1;
+	return 0;
 }
 
 static int rtmp_handler_onseek(void* param, uint32_t ms)
@@ -245,7 +245,7 @@ static int rtmp_handler_onseek(void* param, uint32_t ms)
 	session = (struct aio_rtmp_session_t*)param;
 	if(session->server->handle.onseek && session->usr)
 		return session->server->handle.onseek(session->usr, ms);
-	return -1;
+	return 0;
 }
 
 static int rtmp_handler_onpublish(void* param, const char* app, const char* stream, const char* type)
@@ -262,7 +262,7 @@ static int rtmp_handler_onscript(void* param, const void* data, size_t bytes, ui
 	session = (struct aio_rtmp_session_t*)param;
 	if (session->server->handle.onscript && session->usr)
 		return session->server->handle.onscript(session->usr, data, bytes, timestamp);
-	return -1;
+	return 0;
 }
 
 static int rtmp_handler_onvideo(void* param, const void* data, size_t bytes, uint32_t timestamp)
@@ -271,7 +271,7 @@ static int rtmp_handler_onvideo(void* param, const void* data, size_t bytes, uin
 	session = (struct aio_rtmp_session_t*)param;
 	if(session->server->handle.onvideo && session->usr)
 		return session->server->handle.onvideo(session->usr, data, bytes, timestamp);
-	return -1;
+	return 0;
 }
 
 static int rtmp_handler_onaudio(void* param, const void* data, size_t bytes, uint32_t timestamp)
@@ -280,5 +280,5 @@ static int rtmp_handler_onaudio(void* param, const void* data, size_t bytes, uin
 	session = (struct aio_rtmp_session_t*)param;
 	if(session->server->handle.onaudio && session->usr)
 		return session->server->handle.onaudio(session->usr, data, bytes, timestamp);
-	return -1;
+	return 0;
 }

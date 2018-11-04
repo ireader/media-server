@@ -42,6 +42,8 @@ static int STDCALL aio_rtmp_server_worker(void* param)
             uint64_t t = system_clock();
             if (clock + timestamp > t && clock + timestamp < t + 3 * 1000)
                 system_sleep(clock + timestamp - t);
+			else if (clock + timestamp > t + 3 * 1000)
+				clock = t - timestamp;
 
             timestamp += diff;
             s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;

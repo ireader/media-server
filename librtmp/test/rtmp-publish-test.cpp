@@ -100,6 +100,8 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 			uint64_t t = system_clock();
 			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000) // dts skip
 				system_sleep(clock + timestamp - t);
+			else if (clock + timestamp > t + 3 * 1000)
+				clock = t - timestamp;
 			
 			timestamp += diff;
 			s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
