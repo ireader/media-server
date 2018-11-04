@@ -107,16 +107,26 @@ int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 //	return sip_uac_transaction_release(t);
 }
 
-void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr)
+void* sip_uac_start_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
 {
+	void* id;
+
+	// wait for timer done
+	if (sip_uac_transaction_addref(t) < 2)
+		return NULL;
+
+	id = sip_timer_start(timeout, handler, t);
+	if (id == NULL) 
+		sip_uac_transaction_release(t);
+	return id;
 	//return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
-	return sip_timer_start(timeout, handler, usrptr);
 }
 
-void sip_uac_stop_timer(struct sip_uac_t* uac, void* id)
+void sip_uac_stop_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, void* id)
 {
-	//uac->timer.stop(uac->timerptr, id);
-	sip_timer_stop(id);
+	//if(0 == uac->timer.stop(uac->timerptr, id))
+	if (0 == sip_timer_stop(id))
+		sip_uac_transaction_release(t);
 }
 
 // RFC3261 17.1.3 Matching Responses to Client Transactions (p132)
@@ -161,6 +171,7 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 
 int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 {
+	int r;
 	struct sip_uac_transaction_t* t;
 
 	// A UAC MUST treat any provisional response different than 100 that it
@@ -174,13 +185,15 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 		return 0;
 
 	// 1. find transaction
+	locker_lock(&uac->locker);
 	t = sip_uac_find_transaction(&uac->transactions, reply);
+	locker_unlock(&uac->locker);
 	if (!t)
 	{
 		// timeout response, discard
 		return 0;
 	}
-
+	
 	// 8.1.3.4 Processing 3xx Responses (p43)
 	// Upon receipt of a redirection response (for example, a 301 response
 	// status code), clients SHOULD use the URI(s) in the Contact header
@@ -194,54 +207,49 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 	// 8.1.3.5 Processing 4xx Responses (p45)
 	switch (reply->u.s.code)
 	{
-	case 401: // Unauthorized
-	case 407: // Proxy Authentication Required
-	case 413: // Request Entity Too Large
-	case 415: // Unsupported Media Type
-	case 416: // Unsupported URI Scheme
-	case 420: // Bad Extension
-		break;
+	case 401: break; // Unauthorized
+	case 407: break; // Proxy Authentication Required
+	case 413: break; // Request Entity Too Large
+	case 415: break; // Unsupported Media Type
+	case 416: break; // Unsupported URI Scheme
+	case 420: break; // Bad Extension
+	default:  break;
 	}
 
+	if (sip_uac_transaction_addref(t) < 2)
+	{
+		assert(0);
+		return -1;
+	}
+	locker_lock(&t->locker);
+
 	if (sip_message_isinvite(reply))
-	{
-		return sip_uac_transaction_invite_input(t, reply);
-	}
+		r = sip_uac_transaction_invite_input(t, reply);
 	else
-	{
-		return sip_uac_transaction_noninvite_input(t, reply);
-	}
+		r = sip_uac_transaction_noninvite_input(t, reply);
+
+	locker_unlock(&t->locker);
+	sip_uac_transaction_release(t);
+	return r;
 }
 
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, struct sip_transport_t* transport, void* param)
 {
 	int r;
-	char ptr[1024];
-	char dns[128];
-	char local[128];
-	char remote[256]; // destination/router
-	char protocol[16];
-	struct cstring_t user;
-	const struct sip_uri_t* uri;
-
+	char via[1024];
+	char contact[1024];
+	
 	if (t->transportptr)
 		return -1; // EEXIST
 
-	uri = sip_message_get_next_hop(t->req);
-
-	// 1. get transport local info
-	if (0 == sip_vias_count(&t->req->vias) || 0 == sip_contacts_count(&t->req->contacts))
+	r = sip_uac_transaction_via(t, via, contact);
+	if (0 != r)
 	{
-		if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
-			return -1;
-
-		protocol[0] = local[0] = dns[0] = 0;
-		r = transport->via(param, remote, protocol, local, dns);
-		if (0 != r)
-			return r;
+		sip_uac_transaction_release(t);
+		return r;
 	}
 
-	// 2. Via
+	// Via
 	if (0 == sip_vias_count(&t->req->vias))
 	{
 		// The Via header maddr, ttl, and sent-by components will be set when
@@ -249,15 +257,12 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 
 		// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
 		// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
-		r = snprintf(ptr, sizeof(ptr), "SIP/2.0/%s %s;branch=%s%p", protocol, dns, SIP_BRANCH_PREFIX, t);
-		if (r < 0 || r >= sizeof(ptr))
-			return -1; // ENOMEM
-		r = sip_message_add_header(t->req, "Via", ptr);
+		r = sip_message_add_header(t->req, "Via", via);
 	}
 	
-	// 3. Contact: <sip:bob@192.0.2.4>
-	if (0 == sip_contacts_count(&t->req->contacts) && 0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote)
-		&& (sip_message_isinvite(t->req) || sip_message_isregister(t->req)))
+	// Contact: <sip:bob@192.0.2.4>
+	if (0 == sip_contacts_count(&t->req->contacts) && 
+		(sip_message_isinvite(t->req) || sip_message_isregister(t->req)))
 	{
 		// The Contact header field MUST be present and contain exactly one SIP or 
 		// SIPS URI in any request that can result in the establishment of a dialog.
@@ -270,13 +275,10 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 		// usually composed of a username at a fully qualified domain name(FQDN)
 		// If the Request-URI or top Route header field value contains a SIPS
 		// URI, the Contact header field MUST contain a SIPS URI as well.
-		if(uri) cstrcpy(&uri->scheme, local, sizeof(local));
-		cstrcpy(&user, remote, sizeof(remote));
-		snprintf(ptr, sizeof(ptr), "<%s:%s@%s>", uri ? local : "sip", remote, dns);
-		r = sip_message_add_header(t->req, "Contact", ptr);
+		r = sip_message_add_header(t->req, "Contact", contact);
 	}
 
-	// 4. get transport reliable from via protocol
+	// get transport reliable from via protocol
 	t->reliable = 0;
 	if (sip_vias_count(&t->req->vias) > 0)
 	{
@@ -289,13 +291,64 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	t->size = sip_message_write(t->req, t->data, sizeof(t->data));
 	if (t->size < 0 || t->size >= sizeof(t->data))
 	{
-		sip_uac_transaction_destroy(t);
+		sip_uac_transaction_release(t);
 		return -1;
 	}
 
 	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
 	t->transportptr = param;
 	return sip_uac_transaction_send(t);
+}
+
+int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], char contact[1024])
+{
+	int r;
+	char dns[128];
+	char local[128];
+	char remote[256]; // destination/router
+	char protocol[16];
+	struct cstring_t user;
+	const struct sip_uri_t* uri;
+
+	uri = sip_message_get_next_hop(t->req);
+	if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
+		return -1;
+
+	// rfc3263 4-Client Usage (p5)
+	// once a SIP server has successfully been contacted (success is defined below), 
+	// all retransmissions of the SIP request and the ACK for non-2xx SIP responses 
+	// to INVITE MUST be sent to the same host.
+	// Furthermore, a CANCEL for a particular SIP request MUST be sent to the same 
+	// SIP server that the SIP request was delivered to.
+	protocol[0] = local[0] = dns[0] = 0;
+	r = t->transport.via(t->param, remote, protocol, local, dns);
+	if (0 != r)
+		return r;
+
+	if (NULL == strchr(dns, '.'))
+		snprintf(dns, sizeof(dns), "%s", local); // don't have valid dns
+
+	// Via
+	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
+	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
+	r = snprintf(via, sizeof(via), "SIP/2.0/%s %s;branch=%s%pK", protocol, dns, SIP_BRANCH_PREFIX, t);
+	if (r < 0 || r >= sizeof(via))
+		return -1; // ENOMEM
+
+	// Contact
+	// usually composed of a username at a fully qualified domain name(FQDN)
+	// If the Request-URI or top Route header field value contains a SIPS
+	// URI, the Contact header field MUST contain a SIPS URI as well.
+	if (0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote))
+	{
+		cstrcpy(&user, remote, sizeof(remote));
+		cstrcpy(&uri->scheme, local, sizeof(local));
+		r = snprintf(contact, sizeof(contact), "<%s:%s@%s>", uri ? local : "sip", remote, dns);
+		if (r < 0 || r >= sizeof(contact))
+			return -1; // ENOMEM
+	}
+
+	return 0;
 }
 
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value)

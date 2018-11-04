@@ -34,6 +34,22 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 	
 	struct sip_uac_test_t *test = (struct sip_uac_test_t *)transport;
 
+	// rfc3263 4.1 Selecting a Transport Protocol
+	// 1. If the URI specifies a transport protocol in the transport parameter,
+	//    that transport protocol SHOULD be used. Otherwise, if no transport 
+	//    protocol is specified, but the TARGET(maddr) is a numeric IP address, 
+	//    the client SHOULD use UDP for a SIP URI, and TCP for a SIPS URI.
+	// 2. if no transport protocol is specified, and the TARGET is not numeric, 
+	//    but an explicit port is provided, the client SHOULD use UDP for a SIP URI, 
+	//    and TCP for a SIPS URI
+	// 3. Otherwise, if no transport protocol or port is specified, and the target 
+	//    is not a numeric IP address, the client SHOULD perform a NAPTR query for 
+	//    the domain in the URI.
+
+	// The client SHOULD try the first record. If an attempt should fail, based on 
+	// the definition of failure in Section 4.3, the next SHOULD be tried, and if 
+	// that should fail, the next SHOULD be tried, and so on.
+
 	test->addrlen = sizeof(test->addr);
 	memset(&test->addr, 0, sizeof(test->addr));
 	strcpy(protocol, "UDP");
@@ -41,6 +57,13 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)
 		return -1; // invalid uri
+
+	// rfc3263 4-Client Usage (p5)
+	// once a SIP server has successfully been contacted (success is defined below), 
+	// all retransmissions of the SIP request and the ACK for non-2xx SIP responses 
+	// to INVITE MUST be sent to the same host.
+	// Furthermore, a CANCEL for a particular SIP request MUST be sent to the same 
+	// SIP server that the SIP request was delivered to.
 
 	// TODO: sips port
 	r = socket_addr_from(&test->addr, &test->addrlen, uri->host, uri->port ? uri->port : SIP_PORT);

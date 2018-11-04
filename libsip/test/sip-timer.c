@@ -12,10 +12,12 @@ void* sip_timer_start(int timeout, sip_timer_handle handler, void* usrptr)
 	return NULL;
 }
 
-void sip_timer_stop(void* id)
+int sip_timer_stop(void* id)
 {
+	int r;
 	struct aio_timeout_t* t;
 	t = (struct aio_timeout_t*)id;
-	aio_timeout_stop(id);
+	r = aio_timeout_stop(id);
 	free(t);
+	return r;
 }

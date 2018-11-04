@@ -6,18 +6,13 @@
 
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* reply)
 {
+	// TODO: add dialog locker here
 	if (!dialog && cstrvalid(&reply->to.tag))
 	{
 		// create early dialog
-		locker_lock(&t->locker);
-		dialog = sip_dialog_create( reply);
-		if (!dialog)
-		{
-			locker_unlock(&t->locker);
-			return -1;
-		}
+		dialog = sip_dialog_create(reply);
+		if (!dialog) return -1;
 		sip_dialog_add(dialog);
-		locker_unlock(&t->locker);
 	}
 
 	// 17.1.1.2 Formal Description (p126)
@@ -77,19 +72,15 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 {
 	int r = 0;
 
-	locker_lock(&t->locker);
+	// TODO: add dialog locker here
+
 	// only create new dialog on first 2xx response
 	if (!dialog && !retransmissions)
 	{
 		dialog = sip_dialog_create(reply);
-		if (!dialog)
-		{
-			locker_unlock(&t->locker);
-			return -1;
-		}
+		if (!dialog) return -1;
 		sip_dialog_add(dialog);
 	}
-	locker_unlock(&t->locker);
 
 	if (!dialog)
 		return 0; // ignore fork response
@@ -168,18 +159,16 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 	int r, status, oldstatus;
 	struct sip_dialog_t* dialog;
 	
-	locker_lock(&t->locker);
 	// stop retry timer A
 	if (NULL != t->timera)
 	{
-		sip_uac_stop_timer(t->uac, t->timera);
+		sip_uac_stop_timer(t->uac, t, t->timera);
 		t->timera = NULL;
 	}
 	dialog = sip_dialog_find(&reply->callid, &reply->from.tag, &reply->to.tag);
 
 	oldstatus = t->status;
 	status = sip_uac_transaction_inivte_change_state(t, reply);
-	locker_unlock(&t->locker);
 
 	r = 0;
 	switch (status)

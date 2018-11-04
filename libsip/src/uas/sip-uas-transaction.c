@@ -31,12 +31,15 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	return t;
 }
 
-static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
+int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 {
 	assert(t->ref > 0);
 	if (0 != atomic_decrement32(&t->ref))
 		return 0;
 	
+	// unlink from uas
+	sip_uas_del_transaction(t->uas, t);
+
 	assert(0 == t->ref);
 	assert(NULL == t->timerg);
 	assert(NULL == t->timerh);
@@ -53,18 +56,18 @@ static int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 	return 0;
 }
 
-static int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
+int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
 {
 	return atomic_increment32(&t->ref);
 }
 
-int sip_uas_transaction_destroy(struct sip_uas_transaction_t* t)
-{
-	// unlink from uas
-	sip_uas_del_transaction(t->uas, t);
-
-	return sip_uas_transaction_release(t);
-}
+//int sip_uas_transaction_destroy(struct sip_uas_transaction_t* t)
+//{
+//	// unlink from uas
+//	sip_uas_del_transaction(t->uas, t);
+//
+//	return sip_uas_transaction_release(t);
+//}
 
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
 {
@@ -128,47 +131,44 @@ static int sip_uas_transaction_onterminated(void* usrptr)
 
 	if (t->timerh)
 	{
-		sip_uas_stop_timer(t->uas, t->timerh);
+		sip_uas_stop_timer(t->uas, t, t->timerh);
 		t->timerh = NULL;
 	}
 	if (t->timerg)
 	{
-		sip_uas_stop_timer(t->uas, t->timerg);
+		sip_uas_stop_timer(t->uas, t, t->timerg);
 		t->timerg = NULL;
 	}
 	if (t->timerij)
 	{
-		sip_uas_stop_timer(t->uas, t->timerij);
+		sip_uas_stop_timer(t->uas, t, t->timerij);
 		t->timerij = NULL;
 	}
 	locker_unlock(&t->locker);
 
 	// all done
-	sip_uas_transaction_destroy(t);
+	sip_uas_transaction_release(t);
 	return 0;
 }
 
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
 {
-	locker_lock(&t->locker);
 	if (t->timerh)
 	{
-		sip_uas_stop_timer(t->uas, t->timerh);
+		sip_uas_stop_timer(t->uas, t, t->timerh);
 		t->timerh = NULL;
 	}
 	if (t->timerg)
 	{
-		sip_uas_stop_timer(t->uas, t->timerg);
+		sip_uas_stop_timer(t->uas, t, t->timerg);
 		t->timerg = NULL;
 	}
 	if (t->timerij)
 	{
-		sip_uas_stop_timer(t->uas, t->timerij);
+		sip_uas_stop_timer(t->uas, t, t->timerij);
 		t->timerij = NULL;
 	}
 
-	t->timerij = sip_uas_start_timer(t->uas, timeout, sip_uas_transaction_onterminated, t);
-
-	locker_unlock(&t->locker);
+	t->timerij = sip_uas_start_timer(t->uas, t, timeout, sip_uas_transaction_onterminated);
 	return t->timerij ? 0 : -1;
 }

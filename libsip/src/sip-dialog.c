@@ -1,5 +1,6 @@
 #include "sip-dialog.h"
 #include "sip-message.h"
+#include "sys/locker.h"
 #include <stdlib.h>
 
 #define N 2048
@@ -12,6 +13,7 @@
 static const struct cstring_t sc_null = { "", 0 };
 
 static struct list_head s_dialogs;
+static locker_t s_locker;
 
 struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg)
 {

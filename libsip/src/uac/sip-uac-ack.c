@@ -9,14 +9,11 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 {
 	int r;
 	char ptr[1024];
-	char dns[128];
-	char local[128];
-	char remote[256]; // destination/router
-	char protocol[16];
+	char contact[1024];
 	struct sip_via_t* via;
 	struct sip_message_t* req;
-	const struct sip_uri_t* uri;
 
+	r = 0;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_ACK, dialog))
 	{
@@ -56,40 +53,32 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	{
 		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
 		// [Sip] Branch in INVITE ,ACK,BYE
-
-		uri = sip_message_get_next_hop(t->req);
-		if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
-			return -1;
-
-		protocol[0] = local[0] = dns[0] = 0;
-		r = t->transport.via(t->param, remote, protocol, local, dns);
-		if (0 != r)
-			return r;
-
-		if (NULL == strchr(dns, '.'))
-			snprintf(dns, sizeof(dns), "%s", local); // don't have valid dns
-
-		r = snprintf(ptr, sizeof(ptr), "SIP/2.0/%s %s;branch=%s%pK", protocol, dns, SIP_BRANCH_PREFIX, t);
-		if (r < 0 || r >= sizeof(ptr))
-			return -1; // ENOMEM
-		r = sip_message_add_header(t->req, "Via", ptr);
+		r = sip_uac_transaction_via(t, ptr, contact);
+		if(0 == r)
+			r = sip_message_add_header(req, "Via", ptr);
 	}
 	else
 	{
+		// rfc3263 4-Client Usage (p5)
+		// once a SIP server has successfully been contacted (success is defined below), 
+		// all retransmissions of the SIP request and the ACK for non-2xx SIP responses 
+		// to INVITE MUST be sent to the same host.
+		// Furthermore, a CANCEL for a particular SIP request MUST be sent to the same 
+		// SIP server that the SIP request was delivered to.
+
 		// The ACK MUST contain a single Via header field, and this MUST 
 		// be equal to the top Via header field of the original request.
 		via = sip_vias_get(&t->req->vias, 0);
 		if (via)
-			sip_vias_push(&req->vias, via);
+			r = sip_vias_push(&req->vias, via);
 	}
 
 	// message
 	t->size = sip_message_write(req, t->data, sizeof(t->data));
-	if (t->size < 0 || t->size >= sizeof(t->data))
-	{
-		sip_uac_transaction_destroy(t);
-		return -1;
-	}
+	// destroy sip message
+	sip_message_destroy(req);
 
+	if (0 != r || t->size <= 0 || t->size >= sizeof(t->data))
+		return 0 == r ? -1 : r; // E2BIG
 	return t->transport.send(t->transportptr, t->data, t->size);
 }

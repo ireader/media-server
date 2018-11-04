@@ -15,14 +15,12 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 	int r;
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
 
-	locker_lock(&t->locker);
 	// stop retry timer A
 	if (NULL != t->timera)
 	{
-		sip_uac_stop_timer(t->uac, t->timera);
+		sip_uac_stop_timer(t->uac, t, t->timera);
 		t->timera = NULL;
 	}
-	locker_unlock(&t->locker);
 
 	r = t->onreply(t->param, reply, t, reply->u.s.code);
 	
@@ -69,10 +67,8 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 {
 	int r, status, oldstatus;
 
-	locker_lock(&t->locker);
 	oldstatus = t->status;
 	status = sip_uac_transaction_noinivte_change_state(t, reply);
-	locker_unlock(&t->locker);
 
 	r = 0;
 	switch (status)

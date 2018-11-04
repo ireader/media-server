@@ -55,7 +55,8 @@ struct sip_uac_transaction_t
 };
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req);
-int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t);
+int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
+int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
 
@@ -65,11 +66,13 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 // wait for all inflight reply
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 
+int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], char contact[1024]);
+
 int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
 int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
 
-void* sip_uac_start_timer(struct sip_uac_t* uac, int timeout, sip_timer_handle handler, void* usrptr);
-void sip_uac_stop_timer(struct sip_uac_t* uac, void* id);
+void* sip_uac_start_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
+void sip_uac_stop_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, void* id);
 
 int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction);
 

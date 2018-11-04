@@ -22,10 +22,8 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 {
 	int r, status, oldstatus;
 
-	locker_lock(&t->locker);
 	oldstatus = t->status;
 	status = sip_uas_transaction_inivte_change_state(t, req);
-	locker_unlock(&t->locker);
 
 	r = 0;
 	switch (status)
@@ -153,9 +151,9 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// set Timer L to 64*T1
 
 		t->retries = 1;
-		t->timerh = sip_uas_start_timer(t->uas, TIMER_H, sip_uas_transaction_ontimeout, t);
+		t->timerh = sip_uas_start_timer(t->uas, t, TIMER_H, sip_uas_transaction_ontimeout);
 		if (!t->reliable) // UDP
-			t->timerg = sip_uas_start_timer(t->uas, TIMER_G, sip_uas_transaction_onretransmission, t);
+			t->timerg = sip_uas_start_timer(t->uas, t, TIMER_G, sip_uas_transaction_onretransmission);
 		assert(t->timerh && (!t->reliable || t->timerg));
 	}
 
@@ -167,22 +165,21 @@ static int sip_uas_transaction_onretransmission(void* usrptr)
 	int r;
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)usrptr;
-
 	locker_lock(&t->locker);
+
 	t->timerg = NULL;
 	r = sip_uas_transaction_dosend(t);
 	//if (0 != r)
 	//{
-	//	locker_unlock(&t->locker);
-
 	//	// 8.1.3.1 Transaction Layer Errors (p42)
 	//	r = t->handler.onack(t->param, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
-	//	locker_lock(&t->locker);
 	//}
 
 	if(!t->reliable)
-		t->timerg = sip_uas_start_timer(t->uas, min(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission, t);
+		t->timerg = sip_uas_start_timer(t->uas, t, min(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
+
 	locker_unlock(&t->locker);
+	sip_uas_transaction_release(t);
 	return r;
 }
 
@@ -193,14 +190,15 @@ static int sip_uas_transaction_ontimeout(void* usrptr)
 	t = (struct sip_uas_transaction_t*)usrptr;
 	locker_lock(&t->locker);
 	t->timerh = NULL;
-	locker_unlock(&t->locker);
-
+	
 	// TODO:
 	// If a UAS generates a 2xx response and never receives an ACK, it
 	// SHOULD generate a BYE to terminate the dialog.
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
 	r = t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
-	sip_uas_transaction_destroy(t);
+	
+	locker_unlock(&t->locker);
+	sip_uas_transaction_release(t);
 	return r;
 }

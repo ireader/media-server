@@ -26,14 +26,14 @@ int sip_uac_destroy(struct sip_uac_t* uac);
 
 int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply);
 
-struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
-struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param);
-struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
-struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param);
 /// @param[in] registrar register server, such as sip:registrar.biloxi.com. can be null.
 /// @param[in] seconds expires seconds
 struct sip_uac_transaction_t* sip_uac_register(struct sip_uac_t* uac, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
 struct sip_uac_transaction_t* sip_uac_options(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onoptins, void* param);
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
+struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param);
+struct sip_uac_transaction_t* sip_uac_bye(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
+struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param);
 struct sip_uac_transaction_t* sip_uac_info(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply oninfo, void* param);
 struct sip_uac_transaction_t* sip_uac_message(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_uac_t* uac, const char* from, const char* to, sip_uac_onreply onsubscribe, void* param);

@@ -53,7 +53,8 @@ struct sip_uas_transaction_t
 };
 
 struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, const struct sip_message_t* msg);
-int sip_uas_transaction_destroy(struct sip_uas_transaction_t* t);
+int sip_uas_transaction_addref(struct sip_uas_transaction_t* t);
+int sip_uas_transaction_release(struct sip_uas_transaction_t* t);
 
 int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
 
@@ -74,8 +75,8 @@ int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int cod
 
 int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t);
 int sip_uas_add_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t);
-void* sip_uas_start_timer(struct sip_uas_t* uas, int timeout, sip_timer_handle handler, void* usrptr);
-void sip_uas_stop_timer(struct sip_uas_t* uas, void* id);
+void* sip_uas_start_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);
+void sip_uas_stop_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, void* id);
 const char* sip_reason_phrase(int code);
 
 #endif /* !_sip_uas_transaction_h_ */

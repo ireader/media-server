@@ -26,11 +26,14 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, 
 	return t;
 }
 
-static int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
+int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 {
 	assert(t->ref > 0);
 	if (0 != atomic_decrement32(&t->ref))
 		return 0;
+
+	// unlink from uac
+	sip_uac_del_transaction(t->uac, t);
 
 	assert(0 == t->ref);
 	assert(NULL == t->timera);
@@ -46,18 +49,18 @@ static int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 	return 0;
 }
 
-static int sip_uac_transaction_addref(struct sip_uac_transaction_t* t)
+int sip_uac_transaction_addref(struct sip_uac_transaction_t* t)
 {
 	return atomic_increment32(&t->ref);
 }
 
-int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
-{
-	// unlink from uac
-	sip_uac_del_transaction(t->uac, t);
-
-	return sip_uac_transaction_release(t);
-}
+//static int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
+//{
+//	// unlink from uac
+//	sip_uac_del_transaction(t->uac, t);
+//
+//	return sip_uac_transaction_release(t);
+//}
 
 static int sip_uac_transaction_dosend(struct sip_uac_transaction_t* t)
 {
@@ -69,7 +72,8 @@ static int sip_uac_transaction_onretransmission(void* usrptr)
 	int r;
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)usrptr;
-	
+	locker_lock(&t->locker);
+
 	r = sip_uac_transaction_dosend(t);
 	if (0 != r)
 	{
@@ -82,11 +86,36 @@ static int sip_uac_transaction_onretransmission(void* usrptr)
 		//	r = t->onreply(t->param, t, 503/*Service Unavailable*/);
 	}
 	
-	locker_lock(&t->locker);
 	if (t->timera)
-		sip_uac_stop_timer(t->uac, t->timera);
-	t->timera = sip_uac_start_timer(t->uac, min(t->t2, T1 * (1 << t->retries++)), sip_uac_transaction_onretransmission, t);
+		sip_uac_stop_timer(t->uac, t, t->timera);
+	t->timera = sip_uac_start_timer(t->uac, t, min(t->t2, T1 * (1 << t->retries++)), sip_uac_transaction_onretransmission);
+
 	locker_unlock(&t->locker);
+	sip_uac_transaction_release(t);
+	return 0;
+}
+
+static int sip_uac_transaction_terminate(struct sip_uac_transaction_t* t)
+{
+	t->status = SIP_UAC_TRANSACTION_TERMINATED;
+
+	if (t->timera)
+	{
+		sip_uac_stop_timer(t->uac, t, t->timera);
+		t->timera = NULL;
+	}
+	if (t->timerb)
+	{
+		sip_uac_stop_timer(t->uac, t, t->timerb);
+		t->timerb = NULL;
+	}
+	if (t->timerk)
+	{
+		sip_uac_stop_timer(t->uac, t, t->timerk);
+		t->timerk = NULL;
+	}
+
+	sip_uac_transaction_release(t);
 	return 0;
 }
 
@@ -94,28 +123,11 @@ static int sip_uac_transaction_onterminate(void* usrptr)
 {
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)usrptr;
-
 	locker_lock(&t->locker);
-	t->status = SIP_UAC_TRANSACTION_TERMINATED;
-
-	if (t->timera)
-	{
-		sip_uac_stop_timer(t->uac, t->timera);
-		t->timera = NULL;
-	}
-	if (t->timerb)
-	{
-		sip_uac_stop_timer(t->uac, t->timerb);
-		t->timerb = NULL;
-	}
-	if (t->timerk)
-	{
-		sip_uac_stop_timer(t->uac, t->timerk);
-		t->timerk = NULL;
-	}
+	sip_uac_transaction_terminate(t);
 	locker_unlock(&t->locker);
-
-	return sip_uac_transaction_destroy(t);
+	sip_uac_transaction_release(t);
+	return 0;
 }
 
 static int sip_uac_transaction_ontimeout(void* usrptr)
@@ -123,6 +135,7 @@ static int sip_uac_transaction_ontimeout(void* usrptr)
 	int r;
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)usrptr;
+	locker_lock(&t->locker);
 
 	// 8.1.3.1 Transaction Layer Errors (p42)
 	if (t->oninvite)
@@ -130,7 +143,9 @@ static int sip_uac_transaction_ontimeout(void* usrptr)
 	else
 		r = t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
 
-	sip_uac_transaction_onterminate(t);
+	sip_uac_transaction_terminate(t);
+	locker_unlock(&t->locker);
+	sip_uac_transaction_release(t);
 	return r;
 }
 
@@ -140,13 +155,11 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
 	r = sip_uac_transaction_dosend(t);
 	if (0 == r)
 	{
-		locker_lock(&t->locker);
 		t->retries = 1; // reset retry times
-		t->timerb = sip_uac_start_timer(t->uac, TIMER_B, sip_uac_transaction_ontimeout, t);
+		t->timerb = sip_uac_start_timer(t->uac, t, TIMER_B, sip_uac_transaction_ontimeout);
 		if(!t->reliable) // UDP
-			t->timera = sip_uac_start_timer(t->uac, TIMER_A, sip_uac_transaction_onretransmission, t);
+			t->timera = sip_uac_start_timer(t->uac, t, TIMER_A, sip_uac_transaction_onretransmission);
 		assert(t->timerb && (!t->reliable || t->timera));
-		locker_unlock(&t->locker);
 	}
 	
 	// TODO: return 503/*Service Unavailable*/
@@ -155,25 +168,22 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
 
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout)
 {
-	locker_lock(&t->locker);
 	if (t->timera)
 	{
-		sip_uac_stop_timer(t->uac, t->timera);
+		sip_uac_stop_timer(t->uac, t, t->timera);
 		t->timera = NULL;
 	}
 	if (t->timerb)
 	{
-		sip_uac_stop_timer(t->uac, t->timerb);
+		sip_uac_stop_timer(t->uac, t, t->timerb);
 		t->timerb = NULL;
 	}
 	if (t->timerk)
 	{
-		sip_uac_stop_timer(t->uac, t->timerk);
+		sip_uac_stop_timer(t->uac, t, t->timerk);
 		t->timerk = NULL;
 	}
 
-	t->timerk = sip_uac_start_timer(t->uac, timeout, sip_uac_transaction_onterminate, t);
-
-	locker_unlock(&t->locker);
+	t->timerk = sip_uac_start_timer(t->uac, t, timeout, sip_uac_transaction_onterminate);
 	return t->timerk ? 0 : -1;
 }
