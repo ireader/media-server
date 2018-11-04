@@ -341,6 +341,8 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entr
 	mov_buffer_w32(&mov->io, 0); /* reserved / Data size (= 0) */
 	mov_buffer_w16(&mov->io, 1); /* Frame count (= 1) */
 
+	// ISO 14496-15:2017 AVCC \012AVC Coding
+	// ISO 14496-15:2017 HVCC \013HEVC Coding
 	//mov_buffer_w8(&mov->io, 0 /*strlen(compressor_name)*/); /* compressorname */
 	mov_buffer_write(&mov->io, compressorname, 32); // fill empty
 
