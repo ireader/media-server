@@ -33,6 +33,7 @@ int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* a
 {
 	if (bytes < 7) return -1;
 
+	memset(aac, 0, sizeof(struct mpeg4_aac_t));
 	assert(0xFF == data[0] && 0xF0 == (data[1] & 0xF0)); /* syncword */
 	aac->profile = ((data[2] >> 6) & 0x03) + 1; // 2 bits: the MPEG-2 Audio Object Type add 1
 	aac->sampling_frequency_index = (data[2] >> 2) & 0x0F; // 4 bits: MPEG-4 Sampling Frequency Index (15 is forbidden)
@@ -40,6 +41,12 @@ int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* a
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+
+	if (0 == aac->channel_configuration)
+		return mpeg4_aac_pce_raw_data_block(data, bytes, aac);
+
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_from(aac->sampling_frequency_index);
 	return 7;
 }
 
@@ -60,6 +67,10 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 	data[4] = (uint8_t)(len >> 3);
 	data[5] = ((len & 0x07) << 5) | 0x1F;
 	data[6] = 0xFC | ((len / 1024) & 0x03);
+
+	if (0 == aac->channel_configuration)
+	{
+	}
 	return 7;
 }
 
@@ -76,62 +87,12 @@ if ( samplingFrequencyIndex == 0xf ) {
 }
 channelConfiguration;							4 bslbf
 */
-/*
-4.4.1.1 Program config element (p488)
-program_config_element()
-{
-    element_instance_tag;                       4 uimsbf
-    object_type;                                2 uimsbf
-    sampling_frequency_index;                   4 uimsbf
-    num_front_channel_elements;                 4 uimsbf
-    num_side_channel_elements;                  4 uimsbf
-    num_back_channel_elements;                  4 uimsbf
-    num_lfe_channel_elements;                   2 uimsbf
-    num_assoc_data_elements;                    3 uimsbf
-    num_valid_cc_elements;                      4 uimsbf
-    mono_mixdown_present;                       1 uimsbf
-    if (mono_mixdown_present == 1 )
-        mono_mixdown_element_number;            4 uimsbf
-    stereo_mixdown_present;                     1 uimsbf
-    if (stereo_mixdown_present == 1 )
-        stereo_mixdown_element_number;          4 uimsbf
-    matrix_mixdown_idx_present;                 1 uimsbf
-    if (matrix_mixdown_idx_present == 1 ) {
-        matrix_mixdown_idx ;                    2 uimsbf
-        pseudo_surround_enable;                 1 uimsbf
-    }
-
-    for (i = 0; i < num_front_channel_elements; i++) {
-        front_element_is_cpe[i];                1 bslbf
-        front_element_tag_select[i];            4 uimsbf
-    }
-    for (i = 0; i < num_side_channel_elements; i++) {
-        side_element_is_cpe[i];                 1 bslbf
-        side_element_tag_select[i];             4 uimsbf
-    }
-    for (i = 0; i < num_back_channel_elements; i++) {
-        back_element_is_cpe[i];                 1 bslbf
-        back_element_tag_select[i];             4 uimsbf
-    }
-    for (i = 0; i < num_lfe_channel_elements; i++)
-        lfe_element_tag_select[i];              4 uimsbf
-    for ( i = 0; i < num_assoc_data_elements; i++)
-        assoc_data_element_tag_select[i];       4 uimsbf
-    for (i = 0; i < num_valid_cc_elements; i++) {
-        cc_element_is_ind_sw[i];                1 uimsbf
-        valid_cc_element_tag_select[i];         4 uimsbf
-    }
-    byte_alignment();                           Note 1
-    comment_field_bytes;                        8 uimsbf
-    for (i = 0; i < comment_field_bytes; i++)
-        comment_field_data[i];                  8 uimsbf
-}
-*/
 /// @return >=0-adts header length, <0-error
 int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
 	if (bytes < 2) return -1;
 
+	memset(aac, 0, sizeof(struct mpeg4_aac_t));
 	aac->profile = (data[0] >> 3) & 0x1F;
 	aac->sampling_frequency_index = ((data[0] & 0x7) << 1) | ((data[1] >> 7) & 0x01);
 	aac->channel_configuration = (data[1] >> 3) & 0x0F;
@@ -139,23 +100,28 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 
-    if (0 == aac->channel_configuration)
-    {
-    }
+	if (0 == aac->channel_configuration || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
+		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
+
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_from(aac->sampling_frequency_index);
 	return 2;
 }
 
 // ISO-14496-3 AudioSpecificConfig
 int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
-	if (bytes < 2) return -1;
+	uint8_t channel_configuration;
+	if (bytes < 2+aac->npce) return -1;
 
+	channel_configuration = aac->npce > 0 ? 0 : aac->channel_configuration;
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 	data[0] = (aac->profile << 3) | ((aac->sampling_frequency_index >> 1) & 0x07);
-	data[1] = ((aac->sampling_frequency_index & 0x01) << 7) | ((aac->channel_configuration & 0xF) << 3) | (0 << 2) /* frame length-1024 samples*/ | (0 << 1) /* don't depend on core */ | 0 /* not extension */;
-	return 2;
+	data[1] = ((aac->sampling_frequency_index & 0x01) << 7) | ((channel_configuration & 0xF) << 3) | (0 << 2) /* frame length-1024 samples*/ | (0 << 1) /* don't depend on core */ | 0 /* not extension */;
+	memcpy(data + 2, aac->pce, aac->npce);
+	return 2+aac->npce;
 }
 
 // ISO/IEC 14496-3:2009(E) Table 1.42 ¨C Syntax of StreamMuxConfig() (p83)

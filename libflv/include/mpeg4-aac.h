@@ -11,10 +11,16 @@ extern "C" {
 struct mpeg4_aac_t
 {
 	uint8_t profile; // 0-NULL, 1-AAC Main, 2-AAC LC, 2-AAC SSR, 3-AAC LTP
-
 	uint8_t sampling_frequency_index; // 0-96000, 1-88200, 2-64000, 3-48000, 4-44100, 5-32000, 6-24000, 7-22050, 8-16000, 9-12000, 10-11025, 11-8000, 12-7350, 13/14-reserved, 15-frequency is written explictly
-
 	uint8_t channel_configuration; // 0-AOT, 1-1channel,front-center, 2-2channels, front-left/right, 3-3channels: front center/left/right, 4-4channels: front-center/left/right, back-center, 5-5channels: front center/left/right, back-left/right, 6-6channels: front center/left/right, back left/right LFE-channel, 7-8channels
+
+//	uint32_t frequency; // play frequency
+	uint32_t sampling_frequency;  // valid only in decode
+	uint8_t channels; // valid only in decode
+	uint8_t sbr; // sbr flag, valid only in decode
+	uint8_t ps; // ps flag, valid only in decode
+	uint8_t pce[64];
+	size_t  npce; // pce bytes
 };
 
 enum mpeg2_aac_profile
