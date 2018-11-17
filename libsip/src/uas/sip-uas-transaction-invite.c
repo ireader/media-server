@@ -1,5 +1,7 @@
 #include "sip-uas-transaction.h"
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 static int sip_uas_transaction_onretransmission(void* usrptr);
 static int sip_uas_transaction_ontimeout(void* usrptr);
 

@@ -52,7 +52,7 @@ int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t by
 
 	AMF_OBJECT_ITEM_VALUE(prop[15], AMF_OBJECT, "keyframes", keyframes, 2); // FLV I-index
 
-	AMF_OBJECT_ITEM_VALUE(items[0], AMF_ECMA_ARRAY, "onMetaData", prop, sizeof(prop) / sizeof(prop[0]));
+	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "onMetaData", prop, sizeof(prop) / sizeof(prop[0]));
 #undef AMF_OBJECT_ITEM_VALUE
 
 	end = data + bytes;

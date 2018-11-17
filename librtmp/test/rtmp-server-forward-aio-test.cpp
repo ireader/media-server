@@ -14,7 +14,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "cpm/shared_ptr.h"
-#include <string.h>
+#include <string>
 #include <list>
 #include <map>
 

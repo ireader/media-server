@@ -72,7 +72,7 @@ static void rtmp_server_publish_input(rtmp_server_publish_benchmark_t* rtmp, uin
 
 static int STDCALL rtmp_server_onthread(void* param)
 {
-    int idx = (int)param;
+    int idx = (int)(intptr_t)param;
     while (1)
     {
         uint64_t now = system_clock();

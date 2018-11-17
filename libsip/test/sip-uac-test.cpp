@@ -13,6 +13,8 @@
 #include "base64.h"
 #include "md5.h"
 #include <stdint.h>
+#include <string.h>
+#include <ctype.h>
 
 struct sip_uac_test_t
 {
@@ -128,6 +130,14 @@ static void sip_uac_recv_reply(struct sip_uac_test_t *test)
 	} while (1);
 }
 
+static inline const char* strlower(char* s)
+{
+    char* p;
+    for(p = s; p && *p; p++)
+        *p = tolower(*p);
+    return s;
+}
+
 static void md5_digest(const uint8_t* data, int size, uint8_t md5[16])
 {
 	MD5_CTX ctx;
@@ -175,12 +185,12 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 			md5_digest((uint8_t*)buffer, strlen(buffer), (uint8_t*)HA2);
 			base16_encode(ha1, HA1, 16);
 			base16_encode(ha2, HA2, 16);
-			_strlwr(ha1);
-			_strlwr(ha2);
+			strlower(ha1);
+			strlower(ha2);
 			snprintf(buffer, sizeof(buffer), "%s:%s:%s", ha1, auth.nonce, ha2);
 			md5_digest((uint8_t*)buffer, strlen(buffer), (uint8_t*)HA2);
 			base16_encode(ha2, HA2, 16);
-			_strlwr(ha2);
+			strlower(ha2);
 
 			snprintf(buffer, sizeof(buffer), "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\", algorithm=MD5",
 				"34020000001320000001", auth.realm, auth.nonce, "sip:192.168.154.128", ha2);

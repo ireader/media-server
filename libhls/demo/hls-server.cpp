@@ -12,7 +12,6 @@
 #include "http-route.h"
 #include "sys/thread.h"
 #include "sys/system.h"
-#include "sys/atomic.h"
 #include "sys/path.h"
 #include "cstringext.h"
 #include "utf8codec.h"
@@ -29,7 +28,7 @@ extern "C" int http_list_dir(http_session_t* session, const char* path);
 
 struct hls_ts_t
 {
-	int32_t ref;
+    std::atomic<int> ref;
 	void* data;
 	size_t size;
 	std::string name;
@@ -82,7 +81,7 @@ static int hls_handler(void* param, const void* data, size_t bytes, int64_t pts,
 	{
 		ts = playlist->files.front();
 		playlist->files.pop_front();
-		if (0 == atomic_decrement32(&ts->ref))
+        if (0 == std::atomic_fetch_sub(&ts->ref, 1) - 1)
 		{
 			free(ts->data);
 			delete ts;
@@ -176,7 +175,7 @@ static int hls_server_m3u8(http_session_t* session, const std::string& path)
 static int hls_server_ts_onsend(void* param, int code, size_t bytes)
 {
 	hls_ts_t* ts = (hls_ts_t*)param;
-	if (0 == atomic_decrement32(&ts->ref))
+    if (0 == std::atomic_fetch_sub(&ts->ref, 1) - 1)
 	{
 		free(ts->data);
 		delete ts;
@@ -196,7 +195,7 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
 		hls_ts_t* ts = *i;
 		if(ts->name == file)
 		{
-			atomic_increment32(&ts->ref);
+            std::atomic_fetch_add(&ts->ref, 1);
 			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 			http_server_send(session, 200, ts->data, ts->size, hls_server_ts_onsend, ts);

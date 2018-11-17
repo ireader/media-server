@@ -1,6 +1,7 @@
 #include "rtsp-server-aio.h"
 #include "aio-accept.h"
 #include "sockutil.h"
+#include <stdlib.h>
 
 struct rtsp_server_listen_t
 {

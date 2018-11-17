@@ -2,7 +2,9 @@
 #include "sockutil.h"
 #include "sys/atomic.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <time.h>
 
 static unsigned short s_base_port = 30000;

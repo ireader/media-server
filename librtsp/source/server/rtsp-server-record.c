@@ -33,7 +33,7 @@ int rtsp_server_record(struct rtsp_server_t *rtsp, const char* uri)
     return rtsp->handler.onrecord(rtsp->param, rtsp, uri, rtsp->session.session, -1L == npt ? NULL : &npt, pscale ? &scale : NULL);
 }
 
-int rtsp_server_reply_record(struct rtsp_server_t *rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
+int rtsp_server_reply_record(struct rtsp_server_t *rtsp, int code, const int64_t *nptstart, const int64_t *nptend)
 {
     int len = 0;
     char header[1024] = { 0 };

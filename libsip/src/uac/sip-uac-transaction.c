@@ -2,6 +2,8 @@
 #include "sip-transport.h"
 #include "uri-parse.h"
 
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req)
 {
 	struct sip_uac_transaction_t* t;

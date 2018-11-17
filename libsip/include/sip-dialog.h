@@ -1,6 +1,7 @@
 #ifndef _sip_dialog_h_
 #define _sip_dialog_h_
 
+#include "sip-message.h"
 #include "sip-header.h"
 #include "sys/atomic.h"
 #include "cstring.h"

@@ -336,7 +336,7 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	if(scale && 0 != source->SetSpeed(*scale))
 	{
 		// set speed
-		assert(scale > 0);
+		assert(*scale > 0);
 
 		// 406 Not Acceptable
 		return rtsp_server_reply_play(rtsp, 406, NULL, NULL, NULL);
