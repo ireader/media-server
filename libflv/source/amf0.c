@@ -332,6 +332,12 @@ static const uint8_t* amf_read_item(const uint8_t* data, const uint8_t* end, enu
 	}
 }
 
+static inline int amf_read_item_type_check(uint8_t type0, uint8_t itemtype)
+{
+    // decode AMF_ECMA_ARRAY as AMF_OBJECT
+    return (type0 == itemtype || (AMF_OBJECT == itemtype && (AMF_ECMA_ARRAY == type0 || AMF_NULL == type0))) ? 1 : 0;
+}
+
 static const uint8_t* amf_read_strict_array(const uint8_t* ptr, const uint8_t* end, struct amf_object_item_t* items, size_t n)
 {
 	uint8_t type;
@@ -343,7 +349,7 @@ static const uint8_t* amf_read_strict_array(const uint8_t* ptr, const uint8_t* e
 	for (i = 0; i < count && ptr && ptr < end; i++)
 	{
 		type = *ptr++;
-		ptr = amf_read_item(ptr, end, type, (i < n && type == items[i].type) ? &items[i] : NULL);
+		ptr = amf_read_item(ptr, end, type, (i < n && amf_read_item_type_check(type, items[i].type)) ? &items[i] : NULL);
 	}
 
 	return ptr;
@@ -375,7 +381,7 @@ static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, s
 
 		for (i = 0; i < n; i++)
 		{
-			if (0 == memcmp(items[i].name, data, len) && strlen(items[i].name) == len && data[len] == items[i].type)
+			if (0 == memcmp(items[i].name, data, len) && strlen(items[i].name) == len && amf_read_item_type_check(data[len], items[i].type))
 				break;
 		}
 
@@ -396,7 +402,7 @@ const uint8_t* amf_read_items(const uint8_t* data, const uint8_t* end, struct am
 	for (i = 0; i < count && data && data < end; i++)
 	{
 		type = *data++;
-		if (type != items[i].type && !(AMF_OBJECT == items[i].type && AMF_NULL == type))
+		if (!amf_read_item_type_check(type, items[i].type))
 			return NULL;
 
 		data = amf_read_item(data, end, type, &items[i]);
