@@ -1,0 +1,475 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D72183EE5D00419E57 /* rtsp-reason.c */; };
+		46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */; };
+		46C5B4072183EE5D00419E57 /* sdp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D92183EE5D00419E57 /* sdp.c */; };
+		46C5B4082183EE5D00419E57 /* rtsp-header-session.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */; };
+		46C5B4092183EE5D00419E57 /* rtsp-header-range.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */; };
+		46C5B40A2183EE5D00419E57 /* rtsp-header-rtp-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */; };
+		46C5B40B2183EE5D00419E57 /* rtsp-server-handler.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3DE2183EE5D00419E57 /* rtsp-server-handler.c */; };
+		46C5B40C2183EE5D00419E57 /* rtsp-server-record.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3DF2183EE5D00419E57 /* rtsp-server-record.c */; };
+		46C5B4102183EE5D00419E57 /* rtsp-server-describe.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3E42183EE5D00419E57 /* rtsp-server-describe.c */; };
+		46C5B4112183EE5D00419E57 /* rtsp-server-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B3E52183EE5D00419E57 /* rtsp-server-internal.h */; };
+		46C5B4122183EE5D00419E57 /* rtsp-server-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3E62183EE5D00419E57 /* rtsp-server-options.c */; };
+		46C5B4132183EE5D00419E57 /* rtsp-server-pause.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3E72183EE5D00419E57 /* rtsp-server-pause.c */; };
+		46C5B4142183EE5D00419E57 /* rtsp-server.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3E82183EE5D00419E57 /* rtsp-server.c */; };
+		46C5B4152183EE5D00419E57 /* rtsp-server-announce.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3E92183EE5D00419E57 /* rtsp-server-announce.c */; };
+		46C5B4162183EE5D00419E57 /* rtsp-server-teardown.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3EA2183EE5D00419E57 /* rtsp-server-teardown.c */; };
+		46C5B4172183EE5D00419E57 /* rtsp-server-setup.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3EB2183EE5D00419E57 /* rtsp-server-setup.c */; };
+		46C5B4182183EE5D00419E57 /* rtsp-server-play.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3EC2183EE5D00419E57 /* rtsp-server-play.c */; };
+		46C5B4192183EE5D00419E57 /* sdp-a-fmtp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */; };
+		46C5B41A2183EE5D00419E57 /* sdp-opus.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3EF2183EE5D00419E57 /* sdp-opus.c */; };
+		46C5B41B2183EE5D00419E57 /* sdp-h264.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F02183EE5D00419E57 /* sdp-h264.c */; };
+		46C5B41C2183EE5D00419E57 /* sdp-aac.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F12183EE5D00419E57 /* sdp-aac.c */; };
+		46C5B41D2183EE5D00419E57 /* sdp-g7xx.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F22183EE5D00419E57 /* sdp-g7xx.c */; };
+		46C5B41E2183EE5D00419E57 /* sdp-h265.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F32183EE5D00419E57 /* sdp-h265.c */; };
+		46C5B41F2183EE5D00419E57 /* rtsp-header-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F42183EE5D00419E57 /* rtsp-header-transport.c */; };
+		46C5B4202183EE5D00419E57 /* rtsp-client-auth.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F62183EE5D00419E57 /* rtsp-client-auth.c */; };
+		46C5B4212183EE5D00419E57 /* rtsp-client-teardown.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F72183EE5D00419E57 /* rtsp-client-teardown.c */; };
+		46C5B4222183EE5D00419E57 /* rtsp-client-announce.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F82183EE5D00419E57 /* rtsp-client-announce.c */; };
+		46C5B4232183EE5D00419E57 /* rtsp-client.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3F92183EE5D00419E57 /* rtsp-client.c */; };
+		46C5B4242183EE5D00419E57 /* rtsp-client-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B3FA2183EE5D00419E57 /* rtsp-client-internal.h */; };
+		46C5B4252183EE5D00419E57 /* rtsp-client-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3FB2183EE5D00419E57 /* rtsp-client-options.c */; };
+		46C5B4262183EE5D00419E57 /* rtsp-client-set-parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3FC2183EE5D00419E57 /* rtsp-client-set-parameter.c */; };
+		46C5B4272183EE5D00419E57 /* rtsp-client-play.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3FD2183EE5D00419E57 /* rtsp-client-play.c */; };
+		46C5B4282183EE5D00419E57 /* rtsp-client-get-parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3FE2183EE5D00419E57 /* rtsp-client-get-parameter.c */; };
+		46C5B4292183EE5D00419E57 /* rtp-over-rtsp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3FF2183EE5D00419E57 /* rtp-over-rtsp.c */; };
+		46C5B42A2183EE5D00419E57 /* rtsp-client-describe.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4002183EE5D00419E57 /* rtsp-client-describe.c */; };
+		46C5B42B2183EE5D00419E57 /* rtsp-client-pause.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4012183EE5D00419E57 /* rtsp-client-pause.c */; };
+		46C5B42C2183EE5D00419E57 /* rtsp-client-record.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4022183EE5D00419E57 /* rtsp-client-record.c */; };
+		46C5B42E2183EE5D00419E57 /* rtsp-client-setup.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4042183EE5D00419E57 /* rtsp-client-setup.c */; };
+		46D4B765219FD3BD0042496F /* rtsp-media.c in Sources */ = {isa = PBXBuildFile; fileRef = 46D4B764219FD3BD0042496F /* rtsp-media.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46C5B2922183ECF900419E57 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46C5B3D52183EE5600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46C5B3D72183EE5D00419E57 /* rtsp-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-reason.c"; sourceTree = "<group>"; };
+		46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-a-rtpmap.c"; sourceTree = "<group>"; };
+		46C5B3D92183EE5D00419E57 /* sdp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sdp.c; sourceTree = "<group>"; };
+		46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-header-session.c"; sourceTree = "<group>"; };
+		46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-header-range.c"; sourceTree = "<group>"; };
+		46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-header-rtp-info.c"; sourceTree = "<group>"; };
+		46C5B3DE2183EE5D00419E57 /* rtsp-server-handler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-handler.c"; sourceTree = "<group>"; };
+		46C5B3DF2183EE5D00419E57 /* rtsp-server-record.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-record.c"; sourceTree = "<group>"; };
+		46C5B3E42183EE5D00419E57 /* rtsp-server-describe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-describe.c"; sourceTree = "<group>"; };
+		46C5B3E52183EE5D00419E57 /* rtsp-server-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "rtsp-server-internal.h"; sourceTree = "<group>"; };
+		46C5B3E62183EE5D00419E57 /* rtsp-server-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-options.c"; sourceTree = "<group>"; };
+		46C5B3E72183EE5D00419E57 /* rtsp-server-pause.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-pause.c"; sourceTree = "<group>"; };
+		46C5B3E82183EE5D00419E57 /* rtsp-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server.c"; sourceTree = "<group>"; };
+		46C5B3E92183EE5D00419E57 /* rtsp-server-announce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-announce.c"; sourceTree = "<group>"; };
+		46C5B3EA2183EE5D00419E57 /* rtsp-server-teardown.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-teardown.c"; sourceTree = "<group>"; };
+		46C5B3EB2183EE5D00419E57 /* rtsp-server-setup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-setup.c"; sourceTree = "<group>"; };
+		46C5B3EC2183EE5D00419E57 /* rtsp-server-play.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-play.c"; sourceTree = "<group>"; };
+		46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-a-fmtp.c"; sourceTree = "<group>"; };
+		46C5B3EF2183EE5D00419E57 /* sdp-opus.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-opus.c"; sourceTree = "<group>"; };
+		46C5B3F02183EE5D00419E57 /* sdp-h264.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-h264.c"; sourceTree = "<group>"; };
+		46C5B3F12183EE5D00419E57 /* sdp-aac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-aac.c"; sourceTree = "<group>"; };
+		46C5B3F22183EE5D00419E57 /* sdp-g7xx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-g7xx.c"; sourceTree = "<group>"; };
+		46C5B3F32183EE5D00419E57 /* sdp-h265.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-h265.c"; sourceTree = "<group>"; };
+		46C5B3F42183EE5D00419E57 /* rtsp-header-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-header-transport.c"; sourceTree = "<group>"; };
+		46C5B3F62183EE5D00419E57 /* rtsp-client-auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-auth.c"; sourceTree = "<group>"; };
+		46C5B3F72183EE5D00419E57 /* rtsp-client-teardown.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-teardown.c"; sourceTree = "<group>"; };
+		46C5B3F82183EE5D00419E57 /* rtsp-client-announce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-announce.c"; sourceTree = "<group>"; };
+		46C5B3F92183EE5D00419E57 /* rtsp-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client.c"; sourceTree = "<group>"; };
+		46C5B3FA2183EE5D00419E57 /* rtsp-client-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "rtsp-client-internal.h"; sourceTree = "<group>"; };
+		46C5B3FB2183EE5D00419E57 /* rtsp-client-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-options.c"; sourceTree = "<group>"; };
+		46C5B3FC2183EE5D00419E57 /* rtsp-client-set-parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-set-parameter.c"; sourceTree = "<group>"; };
+		46C5B3FD2183EE5D00419E57 /* rtsp-client-play.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-play.c"; sourceTree = "<group>"; };
+		46C5B3FE2183EE5D00419E57 /* rtsp-client-get-parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-get-parameter.c"; sourceTree = "<group>"; };
+		46C5B3FF2183EE5D00419E57 /* rtp-over-rtsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-over-rtsp.c"; sourceTree = "<group>"; };
+		46C5B4002183EE5D00419E57 /* rtsp-client-describe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-describe.c"; sourceTree = "<group>"; };
+		46C5B4012183EE5D00419E57 /* rtsp-client-pause.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-pause.c"; sourceTree = "<group>"; };
+		46C5B4022183EE5D00419E57 /* rtsp-client-record.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-record.c"; sourceTree = "<group>"; };
+		46C5B4042183EE5D00419E57 /* rtsp-client-setup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-setup.c"; sourceTree = "<group>"; };
+		46D4B764219FD3BD0042496F /* rtsp-media.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-media.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46C5B2902183ECF900419E57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46C5B2892183ECF900419E57 = {
+			isa = PBXGroup;
+			children = (
+				46C5B3D62183EE5D00419E57 /* source */,
+				46C5B3D52183EE5600419E57 /* include */,
+				46C5B2932183ECF900419E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46C5B2932183ECF900419E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2922183ECF900419E57 /* librtsp.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46C5B3D62183EE5D00419E57 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				46D4B764219FD3BD0042496F /* rtsp-media.c */,
+				46C5B3D72183EE5D00419E57 /* rtsp-reason.c */,
+				46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */,
+				46C5B3D92183EE5D00419E57 /* sdp.c */,
+				46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */,
+				46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */,
+				46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */,
+				46C5B3DD2183EE5D00419E57 /* server */,
+				46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */,
+				46C5B3EE2183EE5D00419E57 /* sdp */,
+				46C5B3F42183EE5D00419E57 /* rtsp-header-transport.c */,
+				46C5B3F52183EE5D00419E57 /* client */,
+			);
+			path = source;
+			sourceTree = "<group>";
+		};
+		46C5B3DD2183EE5D00419E57 /* server */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3DE2183EE5D00419E57 /* rtsp-server-handler.c */,
+				46C5B3DF2183EE5D00419E57 /* rtsp-server-record.c */,
+				46C5B3E42183EE5D00419E57 /* rtsp-server-describe.c */,
+				46C5B3E52183EE5D00419E57 /* rtsp-server-internal.h */,
+				46C5B3E62183EE5D00419E57 /* rtsp-server-options.c */,
+				46C5B3E72183EE5D00419E57 /* rtsp-server-pause.c */,
+				46C5B3E82183EE5D00419E57 /* rtsp-server.c */,
+				46C5B3E92183EE5D00419E57 /* rtsp-server-announce.c */,
+				46C5B3EA2183EE5D00419E57 /* rtsp-server-teardown.c */,
+				46C5B3EB2183EE5D00419E57 /* rtsp-server-setup.c */,
+				46C5B3EC2183EE5D00419E57 /* rtsp-server-play.c */,
+			);
+			path = server;
+			sourceTree = "<group>";
+		};
+		46C5B3EE2183EE5D00419E57 /* sdp */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3EF2183EE5D00419E57 /* sdp-opus.c */,
+				46C5B3F02183EE5D00419E57 /* sdp-h264.c */,
+				46C5B3F12183EE5D00419E57 /* sdp-aac.c */,
+				46C5B3F22183EE5D00419E57 /* sdp-g7xx.c */,
+				46C5B3F32183EE5D00419E57 /* sdp-h265.c */,
+			);
+			path = sdp;
+			sourceTree = "<group>";
+		};
+		46C5B3F52183EE5D00419E57 /* client */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3F62183EE5D00419E57 /* rtsp-client-auth.c */,
+				46C5B3F72183EE5D00419E57 /* rtsp-client-teardown.c */,
+				46C5B3F82183EE5D00419E57 /* rtsp-client-announce.c */,
+				46C5B3F92183EE5D00419E57 /* rtsp-client.c */,
+				46C5B3FA2183EE5D00419E57 /* rtsp-client-internal.h */,
+				46C5B3FB2183EE5D00419E57 /* rtsp-client-options.c */,
+				46C5B3FC2183EE5D00419E57 /* rtsp-client-set-parameter.c */,
+				46C5B3FD2183EE5D00419E57 /* rtsp-client-play.c */,
+				46C5B3FE2183EE5D00419E57 /* rtsp-client-get-parameter.c */,
+				46C5B3FF2183EE5D00419E57 /* rtp-over-rtsp.c */,
+				46C5B4002183EE5D00419E57 /* rtsp-client-describe.c */,
+				46C5B4012183EE5D00419E57 /* rtsp-client-pause.c */,
+				46C5B4022183EE5D00419E57 /* rtsp-client-record.c */,
+				46C5B4042183EE5D00419E57 /* rtsp-client-setup.c */,
+			);
+			path = client;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46C5B28E2183ECF900419E57 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B4112183EE5D00419E57 /* rtsp-server-internal.h in Headers */,
+				46C5B4242183EE5D00419E57 /* rtsp-client-internal.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46C5B2912183ECF900419E57 /* librtsp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46C5B2962183ECF900419E57 /* Build configuration list for PBXNativeTarget "librtsp" */;
+			buildPhases = (
+				46C5B28E2183ECF900419E57 /* Headers */,
+				46C5B28F2183ECF900419E57 /* Sources */,
+				46C5B2902183ECF900419E57 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = librtsp;
+			productName = librtsp;
+			productReference = 46C5B2922183ECF900419E57 /* librtsp.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46C5B28A2183ECF900419E57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46C5B2912183ECF900419E57 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = 46C5B28D2183ECF900419E57 /* Build configuration list for PBXProject "librtsp" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 46C5B2892183ECF900419E57;
+			productRefGroup = 46C5B2932183ECF900419E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46C5B2912183ECF900419E57 /* librtsp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46C5B28F2183ECF900419E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B4092183EE5D00419E57 /* rtsp-header-range.c in Sources */,
+				46C5B41F2183EE5D00419E57 /* rtsp-header-transport.c in Sources */,
+				46C5B40B2183EE5D00419E57 /* rtsp-server-handler.c in Sources */,
+				46C5B4072183EE5D00419E57 /* sdp.c in Sources */,
+				46C5B4272183EE5D00419E57 /* rtsp-client-play.c in Sources */,
+				46C5B4202183EE5D00419E57 /* rtsp-client-auth.c in Sources */,
+				46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */,
+				46C5B4082183EE5D00419E57 /* rtsp-header-session.c in Sources */,
+				46C5B4262183EE5D00419E57 /* rtsp-client-set-parameter.c in Sources */,
+				46C5B4132183EE5D00419E57 /* rtsp-server-pause.c in Sources */,
+				46C5B41A2183EE5D00419E57 /* sdp-opus.c in Sources */,
+				46D4B765219FD3BD0042496F /* rtsp-media.c in Sources */,
+				46C5B4282183EE5D00419E57 /* rtsp-client-get-parameter.c in Sources */,
+				46C5B4102183EE5D00419E57 /* rtsp-server-describe.c in Sources */,
+				46C5B4152183EE5D00419E57 /* rtsp-server-announce.c in Sources */,
+				46C5B4222183EE5D00419E57 /* rtsp-client-announce.c in Sources */,
+				46C5B40A2183EE5D00419E57 /* rtsp-header-rtp-info.c in Sources */,
+				46C5B4212183EE5D00419E57 /* rtsp-client-teardown.c in Sources */,
+				46C5B4232183EE5D00419E57 /* rtsp-client.c in Sources */,
+				46C5B4252183EE5D00419E57 /* rtsp-client-options.c in Sources */,
+				46C5B4192183EE5D00419E57 /* sdp-a-fmtp.c in Sources */,
+				46C5B42A2183EE5D00419E57 /* rtsp-client-describe.c in Sources */,
+				46C5B4182183EE5D00419E57 /* rtsp-server-play.c in Sources */,
+				46C5B42B2183EE5D00419E57 /* rtsp-client-pause.c in Sources */,
+				46C5B4162183EE5D00419E57 /* rtsp-server-teardown.c in Sources */,
+				46C5B41C2183EE5D00419E57 /* sdp-aac.c in Sources */,
+				46C5B4122183EE5D00419E57 /* rtsp-server-options.c in Sources */,
+				46C5B40C2183EE5D00419E57 /* rtsp-server-record.c in Sources */,
+				46C5B42E2183EE5D00419E57 /* rtsp-client-setup.c in Sources */,
+				46C5B4142183EE5D00419E57 /* rtsp-server.c in Sources */,
+				46C5B41E2183EE5D00419E57 /* sdp-h265.c in Sources */,
+				46C5B42C2183EE5D00419E57 /* rtsp-client-record.c in Sources */,
+				46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */,
+				46C5B41D2183EE5D00419E57 /* sdp-g7xx.c in Sources */,
+				46C5B4172183EE5D00419E57 /* rtsp-server-setup.c in Sources */,
+				46C5B41B2183EE5D00419E57 /* sdp-h264.c in Sources */,
+				46C5B4292183EE5D00419E57 /* rtp-over-rtsp.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46C5B2942183ECF900419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		46C5B2952183ECF900419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		46C5B2972183ECF900419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../libflv/include",
+					"$(SRCROOT)/../librtp/include",
+					"$(SRCROOT)/../../sdk/libhttp/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Debug;
+		};
+		46C5B2982183ECF900419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../libflv/include",
+					"$(SRCROOT)/../librtp/include",
+					"$(SRCROOT)/../../sdk/libhttp/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46C5B28D2183ECF900419E57 /* Build configuration list for PBXProject "librtsp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2942183ECF900419E57 /* Debug */,
+				46C5B2952183ECF900419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46C5B2962183ECF900419E57 /* Build configuration list for PBXNativeTarget "librtsp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2972183ECF900419E57 /* Debug */,
+				46C5B2982183ECF900419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46C5B28A2183ECF900419E57 /* Project object */;
+}

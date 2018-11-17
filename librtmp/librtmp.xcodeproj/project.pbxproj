@@ -1,0 +1,347 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		46C5B3762183EE1500419E57 /* rtmp-netstream.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3682183EE1500419E57 /* rtmp-netstream.c */; };
+		46C5B3772183EE1500419E57 /* rtmp-chunk-write.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3692183EE1500419E57 /* rtmp-chunk-write.c */; };
+		46C5B3782183EE1500419E57 /* rtmp-netconnection.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B36A2183EE1500419E57 /* rtmp-netconnection.c */; };
+		46C5B3792183EE1500419E57 /* rtmp-control-handler.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B36B2183EE1500419E57 /* rtmp-control-handler.c */; };
+		46C5B37A2183EE1500419E57 /* rtmp-client-invoke-handler.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B36C2183EE1500419E57 /* rtmp-client-invoke-handler.h */; };
+		46C5B37B2183EE1500419E57 /* rtmp-client.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B36D2183EE1500419E57 /* rtmp-client.c */; };
+		46C5B37C2183EE1500419E57 /* rtmp-event.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B36E2183EE1500419E57 /* rtmp-event.c */; };
+		46C5B37D2183EE1500419E57 /* rtmp-handshake.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B36F2183EE1500419E57 /* rtmp-handshake.c */; };
+		46C5B37E2183EE1500419E57 /* rtmp-server.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3702183EE1500419E57 /* rtmp-server.c */; };
+		46C5B37F2183EE1500419E57 /* rtmp-handler.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3712183EE1500419E57 /* rtmp-handler.c */; };
+		46C5B3802183EE1500419E57 /* rtmp-invoke-handler.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3722183EE1500419E57 /* rtmp-invoke-handler.c */; };
+		46C5B3812183EE1500419E57 /* rtmp-control-message.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3732183EE1500419E57 /* rtmp-control-message.c */; };
+		46C5B3822183EE1500419E57 /* rtmp-chunk-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3742183EE1500419E57 /* rtmp-chunk-header.c */; };
+		46C5B3832183EE1500419E57 /* rtmp-chunk-read.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3752183EE1500419E57 /* rtmp-chunk-read.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46C5B2722183ECB600419E57 /* librtmp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtmp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46C5B3662183EE0D00419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46C5B3682183EE1500419E57 /* rtmp-netstream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-netstream.c"; sourceTree = "<group>"; };
+		46C5B3692183EE1500419E57 /* rtmp-chunk-write.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-chunk-write.c"; sourceTree = "<group>"; };
+		46C5B36A2183EE1500419E57 /* rtmp-netconnection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-netconnection.c"; sourceTree = "<group>"; };
+		46C5B36B2183EE1500419E57 /* rtmp-control-handler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-control-handler.c"; sourceTree = "<group>"; };
+		46C5B36C2183EE1500419E57 /* rtmp-client-invoke-handler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "rtmp-client-invoke-handler.h"; sourceTree = "<group>"; };
+		46C5B36D2183EE1500419E57 /* rtmp-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-client.c"; sourceTree = "<group>"; };
+		46C5B36E2183EE1500419E57 /* rtmp-event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-event.c"; sourceTree = "<group>"; };
+		46C5B36F2183EE1500419E57 /* rtmp-handshake.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-handshake.c"; sourceTree = "<group>"; };
+		46C5B3702183EE1500419E57 /* rtmp-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-server.c"; sourceTree = "<group>"; };
+		46C5B3712183EE1500419E57 /* rtmp-handler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-handler.c"; sourceTree = "<group>"; };
+		46C5B3722183EE1500419E57 /* rtmp-invoke-handler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-invoke-handler.c"; sourceTree = "<group>"; };
+		46C5B3732183EE1500419E57 /* rtmp-control-message.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-control-message.c"; sourceTree = "<group>"; };
+		46C5B3742183EE1500419E57 /* rtmp-chunk-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-chunk-header.c"; sourceTree = "<group>"; };
+		46C5B3752183EE1500419E57 /* rtmp-chunk-read.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtmp-chunk-read.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46C5B2702183ECB600419E57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46C5B2692183ECB600419E57 = {
+			isa = PBXGroup;
+			children = (
+				46C5B3672183EE1500419E57 /* source */,
+				46C5B3662183EE0D00419E57 /* include */,
+				46C5B2732183ECB600419E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46C5B2732183ECB600419E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2722183ECB600419E57 /* librtmp.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46C5B3672183EE1500419E57 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3682183EE1500419E57 /* rtmp-netstream.c */,
+				46C5B3692183EE1500419E57 /* rtmp-chunk-write.c */,
+				46C5B36A2183EE1500419E57 /* rtmp-netconnection.c */,
+				46C5B36B2183EE1500419E57 /* rtmp-control-handler.c */,
+				46C5B36C2183EE1500419E57 /* rtmp-client-invoke-handler.h */,
+				46C5B36D2183EE1500419E57 /* rtmp-client.c */,
+				46C5B36E2183EE1500419E57 /* rtmp-event.c */,
+				46C5B36F2183EE1500419E57 /* rtmp-handshake.c */,
+				46C5B3702183EE1500419E57 /* rtmp-server.c */,
+				46C5B3712183EE1500419E57 /* rtmp-handler.c */,
+				46C5B3722183EE1500419E57 /* rtmp-invoke-handler.c */,
+				46C5B3732183EE1500419E57 /* rtmp-control-message.c */,
+				46C5B3742183EE1500419E57 /* rtmp-chunk-header.c */,
+				46C5B3752183EE1500419E57 /* rtmp-chunk-read.c */,
+			);
+			path = source;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46C5B26E2183ECB600419E57 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B37A2183EE1500419E57 /* rtmp-client-invoke-handler.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46C5B2712183ECB600419E57 /* librtmp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46C5B2762183ECB600419E57 /* Build configuration list for PBXNativeTarget "librtmp" */;
+			buildPhases = (
+				46C5B26E2183ECB600419E57 /* Headers */,
+				46C5B26F2183ECB600419E57 /* Sources */,
+				46C5B2702183ECB600419E57 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = librtmp;
+			productName = librtmp;
+			productReference = 46C5B2722183ECB600419E57 /* librtmp.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46C5B26A2183ECB600419E57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46C5B2712183ECB600419E57 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = 46C5B26D2183ECB600419E57 /* Build configuration list for PBXProject "librtmp" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 46C5B2692183ECB600419E57;
+			productRefGroup = 46C5B2732183ECB600419E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46C5B2712183ECB600419E57 /* librtmp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46C5B26F2183ECB600419E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B3832183EE1500419E57 /* rtmp-chunk-read.c in Sources */,
+				46C5B3782183EE1500419E57 /* rtmp-netconnection.c in Sources */,
+				46C5B3802183EE1500419E57 /* rtmp-invoke-handler.c in Sources */,
+				46C5B37B2183EE1500419E57 /* rtmp-client.c in Sources */,
+				46C5B3772183EE1500419E57 /* rtmp-chunk-write.c in Sources */,
+				46C5B37D2183EE1500419E57 /* rtmp-handshake.c in Sources */,
+				46C5B37F2183EE1500419E57 /* rtmp-handler.c in Sources */,
+				46C5B3812183EE1500419E57 /* rtmp-control-message.c in Sources */,
+				46C5B3822183EE1500419E57 /* rtmp-chunk-header.c in Sources */,
+				46C5B3762183EE1500419E57 /* rtmp-netstream.c in Sources */,
+				46C5B37E2183EE1500419E57 /* rtmp-server.c in Sources */,
+				46C5B3792183EE1500419E57 /* rtmp-control-handler.c in Sources */,
+				46C5B37C2183EE1500419E57 /* rtmp-event.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46C5B2742183ECB600419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		46C5B2752183ECB600419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		46C5B2772183ECB600419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../libflv/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Debug;
+		};
+		46C5B2782183ECB600419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../libflv/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46C5B26D2183ECB600419E57 /* Build configuration list for PBXProject "librtmp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2742183ECB600419E57 /* Debug */,
+				46C5B2752183ECB600419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46C5B2762183ECB600419E57 /* Build configuration list for PBXNativeTarget "librtmp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2772183ECB600419E57 /* Debug */,
+				46C5B2782183ECB600419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46C5B26A2183ECB600419E57 /* Project object */;
+}

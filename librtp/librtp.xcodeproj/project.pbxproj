@@ -1,0 +1,453 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		46C5B39E2183EE2C00419E57 /* rtp-h265-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3862183EE2C00419E57 /* rtp-h265-unpack.c */; };
+		46C5B39F2183EE2C00419E57 /* rtp-h264-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3872183EE2C00419E57 /* rtp-h264-unpack.c */; };
+		46C5B3A02183EE2C00419E57 /* rtp-mpeg1or2es-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3882183EE2C00419E57 /* rtp-mpeg1or2es-pack.c */; };
+		46C5B3A12183EE2C00419E57 /* rtp-payload-helper.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3892183EE2C00419E57 /* rtp-payload-helper.c */; };
+		46C5B3A22183EE2C00419E57 /* rtp-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B38A2183EE2C00419E57 /* rtp-unpack.c */; };
+		46C5B3A32183EE2C00419E57 /* rtp-mp4a-latm-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B38B2183EE2C00419E57 /* rtp-mp4a-latm-unpack.c */; };
+		46C5B3A42183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B38C2183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c */; };
+		46C5B3A52183EE2C00419E57 /* rtp-payload-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B38D2183EE2C00419E57 /* rtp-payload-internal.h */; };
+		46C5B3A62183EE2C00419E57 /* rtp-vp8-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B38E2183EE2C00419E57 /* rtp-vp8-pack.c */; };
+		46C5B3A72183EE2C00419E57 /* rtp-mp4v-es-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B38F2183EE2C00419E57 /* rtp-mp4v-es-pack.c */; };
+		46C5B3A82183EE2C00419E57 /* rtp-h264-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3902183EE2C00419E57 /* rtp-h264-pack.c */; };
+		46C5B3A92183EE2C00419E57 /* rtp-mpeg1or2es-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3912183EE2C00419E57 /* rtp-mpeg1or2es-unpack.c */; };
+		46C5B3AA2183EE2C00419E57 /* rtp-payload.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3922183EE2C00419E57 /* rtp-payload.c */; };
+		46C5B3AB2183EE2C00419E57 /* rtp-payload-helper.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B3932183EE2C00419E57 /* rtp-payload-helper.h */; };
+		46C5B3AC2183EE2C00419E57 /* rtp-ts-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3942183EE2C00419E57 /* rtp-ts-unpack.c */; };
+		46C5B3AD2183EE2C00419E57 /* rtp-vp8-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3952183EE2C00419E57 /* rtp-vp8-unpack.c */; };
+		46C5B3AE2183EE2C00419E57 /* rtp-vp9-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3962183EE2C00419E57 /* rtp-vp9-unpack.c */; };
+		46C5B3AF2183EE2C00419E57 /* rtp-ts-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3972183EE2C00419E57 /* rtp-ts-pack.c */; };
+		46C5B3B02183EE2C00419E57 /* rtp-mp4a-latm-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3982183EE2C00419E57 /* rtp-mp4a-latm-pack.c */; };
+		46C5B3B12183EE2C00419E57 /* rtp-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3992183EE2C00419E57 /* rtp-pack.c */; };
+		46C5B3B22183EE2C00419E57 /* rtp-h265-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B39A2183EE2C00419E57 /* rtp-h265-pack.c */; };
+		46C5B3B32183EE2C00419E57 /* rtp-mp4v-es-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B39B2183EE2C00419E57 /* rtp-mp4v-es-unpack.c */; };
+		46C5B3B42183EE2C00419E57 /* rtp-vp9-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B39C2183EE2C00419E57 /* rtp-vp9-pack.c */; };
+		46C5B3B52183EE2C00419E57 /* rtp-mpeg4-generic-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B39D2183EE2C00419E57 /* rtp-mpeg4-generic-pack.c */; };
+		46C5B3C62183EE4800419E57 /* rtp-ssrc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3B72183EE4800419E57 /* rtp-ssrc.c */; };
+		46C5B3C72183EE4800419E57 /* rtcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3B82183EE4800419E57 /* rtcp.c */; };
+		46C5B3C82183EE4800419E57 /* rtp-packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3B92183EE4800419E57 /* rtp-packet.c */; };
+		46C5B3C92183EE4800419E57 /* rtcp-app.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BA2183EE4800419E57 /* rtcp-app.c */; };
+		46C5B3CA2183EE4800419E57 /* rtp-member.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BB2183EE4800419E57 /* rtp-member.c */; };
+		46C5B3CB2183EE4800419E57 /* rtcp-rr.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BC2183EE4800419E57 /* rtcp-rr.c */; };
+		46C5B3CC2183EE4800419E57 /* rtp-member-list.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BD2183EE4800419E57 /* rtp-member-list.c */; };
+		46C5B3CD2183EE4800419E57 /* rtcp-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BE2183EE4800419E57 /* rtcp-bye.c */; };
+		46C5B3CE2183EE4800419E57 /* rtcp-sr.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3BF2183EE4800419E57 /* rtcp-sr.c */; };
+		46C5B3CF2183EE4800419E57 /* rtcp-sdec.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C02183EE4800419E57 /* rtcp-sdec.c */; };
+		46C5B3D02183EE4800419E57 /* rtp-queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C12183EE4800419E57 /* rtp-queue.c */; };
+		46C5B3D12183EE4800419E57 /* rtp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C22183EE4800419E57 /* rtp.c */; };
+		46C5B3D22183EE4800419E57 /* rtp-profile.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C32183EE4800419E57 /* rtp-profile.c */; };
+		46C5B3D32183EE4800419E57 /* rtp-time.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C42183EE4800419E57 /* rtp-time.c */; };
+		46C5B3D42183EE4800419E57 /* rtcp-interval.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3C52183EE4800419E57 /* rtcp-interval.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46C5B2822183ECD900419E57 /* librtp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46C5B3842183EE2300419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46C5B3862183EE2C00419E57 /* rtp-h265-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h265-unpack.c"; sourceTree = "<group>"; };
+		46C5B3872183EE2C00419E57 /* rtp-h264-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h264-unpack.c"; sourceTree = "<group>"; };
+		46C5B3882183EE2C00419E57 /* rtp-mpeg1or2es-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mpeg1or2es-pack.c"; sourceTree = "<group>"; };
+		46C5B3892183EE2C00419E57 /* rtp-payload-helper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-payload-helper.c"; sourceTree = "<group>"; };
+		46C5B38A2183EE2C00419E57 /* rtp-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-unpack.c"; sourceTree = "<group>"; };
+		46C5B38B2183EE2C00419E57 /* rtp-mp4a-latm-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mp4a-latm-unpack.c"; sourceTree = "<group>"; };
+		46C5B38C2183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mpeg4-generic-unpack.c"; sourceTree = "<group>"; };
+		46C5B38D2183EE2C00419E57 /* rtp-payload-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "rtp-payload-internal.h"; sourceTree = "<group>"; };
+		46C5B38E2183EE2C00419E57 /* rtp-vp8-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-vp8-pack.c"; sourceTree = "<group>"; };
+		46C5B38F2183EE2C00419E57 /* rtp-mp4v-es-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mp4v-es-pack.c"; sourceTree = "<group>"; };
+		46C5B3902183EE2C00419E57 /* rtp-h264-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h264-pack.c"; sourceTree = "<group>"; };
+		46C5B3912183EE2C00419E57 /* rtp-mpeg1or2es-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mpeg1or2es-unpack.c"; sourceTree = "<group>"; };
+		46C5B3922183EE2C00419E57 /* rtp-payload.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-payload.c"; sourceTree = "<group>"; };
+		46C5B3932183EE2C00419E57 /* rtp-payload-helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "rtp-payload-helper.h"; sourceTree = "<group>"; };
+		46C5B3942183EE2C00419E57 /* rtp-ts-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-ts-unpack.c"; sourceTree = "<group>"; };
+		46C5B3952183EE2C00419E57 /* rtp-vp8-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-vp8-unpack.c"; sourceTree = "<group>"; };
+		46C5B3962183EE2C00419E57 /* rtp-vp9-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-vp9-unpack.c"; sourceTree = "<group>"; };
+		46C5B3972183EE2C00419E57 /* rtp-ts-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-ts-pack.c"; sourceTree = "<group>"; };
+		46C5B3982183EE2C00419E57 /* rtp-mp4a-latm-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mp4a-latm-pack.c"; sourceTree = "<group>"; };
+		46C5B3992183EE2C00419E57 /* rtp-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-pack.c"; sourceTree = "<group>"; };
+		46C5B39A2183EE2C00419E57 /* rtp-h265-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h265-pack.c"; sourceTree = "<group>"; };
+		46C5B39B2183EE2C00419E57 /* rtp-mp4v-es-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mp4v-es-unpack.c"; sourceTree = "<group>"; };
+		46C5B39C2183EE2C00419E57 /* rtp-vp9-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-vp9-pack.c"; sourceTree = "<group>"; };
+		46C5B39D2183EE2C00419E57 /* rtp-mpeg4-generic-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-mpeg4-generic-pack.c"; sourceTree = "<group>"; };
+		46C5B3B72183EE4800419E57 /* rtp-ssrc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-ssrc.c"; sourceTree = "<group>"; };
+		46C5B3B82183EE4800419E57 /* rtcp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rtcp.c; sourceTree = "<group>"; };
+		46C5B3B92183EE4800419E57 /* rtp-packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-packet.c"; sourceTree = "<group>"; };
+		46C5B3BA2183EE4800419E57 /* rtcp-app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-app.c"; sourceTree = "<group>"; };
+		46C5B3BB2183EE4800419E57 /* rtp-member.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-member.c"; sourceTree = "<group>"; };
+		46C5B3BC2183EE4800419E57 /* rtcp-rr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-rr.c"; sourceTree = "<group>"; };
+		46C5B3BD2183EE4800419E57 /* rtp-member-list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-member-list.c"; sourceTree = "<group>"; };
+		46C5B3BE2183EE4800419E57 /* rtcp-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-bye.c"; sourceTree = "<group>"; };
+		46C5B3BF2183EE4800419E57 /* rtcp-sr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-sr.c"; sourceTree = "<group>"; };
+		46C5B3C02183EE4800419E57 /* rtcp-sdec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-sdec.c"; sourceTree = "<group>"; };
+		46C5B3C12183EE4800419E57 /* rtp-queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-queue.c"; sourceTree = "<group>"; };
+		46C5B3C22183EE4800419E57 /* rtp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rtp.c; sourceTree = "<group>"; };
+		46C5B3C32183EE4800419E57 /* rtp-profile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-profile.c"; sourceTree = "<group>"; };
+		46C5B3C42183EE4800419E57 /* rtp-time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-time.c"; sourceTree = "<group>"; };
+		46C5B3C52183EE4800419E57 /* rtcp-interval.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtcp-interval.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46C5B2802183ECD900419E57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46C5B2792183ECD900419E57 = {
+			isa = PBXGroup;
+			children = (
+				46C5B3B62183EE4800419E57 /* source */,
+				46C5B3852183EE2C00419E57 /* payload */,
+				46C5B3842183EE2300419E57 /* include */,
+				46C5B2832183ECD900419E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46C5B2832183ECD900419E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2822183ECD900419E57 /* librtp.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46C5B3852183EE2C00419E57 /* payload */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3862183EE2C00419E57 /* rtp-h265-unpack.c */,
+				46C5B3872183EE2C00419E57 /* rtp-h264-unpack.c */,
+				46C5B3882183EE2C00419E57 /* rtp-mpeg1or2es-pack.c */,
+				46C5B3892183EE2C00419E57 /* rtp-payload-helper.c */,
+				46C5B38A2183EE2C00419E57 /* rtp-unpack.c */,
+				46C5B38B2183EE2C00419E57 /* rtp-mp4a-latm-unpack.c */,
+				46C5B38C2183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c */,
+				46C5B38D2183EE2C00419E57 /* rtp-payload-internal.h */,
+				46C5B38E2183EE2C00419E57 /* rtp-vp8-pack.c */,
+				46C5B38F2183EE2C00419E57 /* rtp-mp4v-es-pack.c */,
+				46C5B3902183EE2C00419E57 /* rtp-h264-pack.c */,
+				46C5B3912183EE2C00419E57 /* rtp-mpeg1or2es-unpack.c */,
+				46C5B3922183EE2C00419E57 /* rtp-payload.c */,
+				46C5B3932183EE2C00419E57 /* rtp-payload-helper.h */,
+				46C5B3942183EE2C00419E57 /* rtp-ts-unpack.c */,
+				46C5B3952183EE2C00419E57 /* rtp-vp8-unpack.c */,
+				46C5B3962183EE2C00419E57 /* rtp-vp9-unpack.c */,
+				46C5B3972183EE2C00419E57 /* rtp-ts-pack.c */,
+				46C5B3982183EE2C00419E57 /* rtp-mp4a-latm-pack.c */,
+				46C5B3992183EE2C00419E57 /* rtp-pack.c */,
+				46C5B39A2183EE2C00419E57 /* rtp-h265-pack.c */,
+				46C5B39B2183EE2C00419E57 /* rtp-mp4v-es-unpack.c */,
+				46C5B39C2183EE2C00419E57 /* rtp-vp9-pack.c */,
+				46C5B39D2183EE2C00419E57 /* rtp-mpeg4-generic-pack.c */,
+			);
+			path = payload;
+			sourceTree = "<group>";
+		};
+		46C5B3B62183EE4800419E57 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3B72183EE4800419E57 /* rtp-ssrc.c */,
+				46C5B3B82183EE4800419E57 /* rtcp.c */,
+				46C5B3B92183EE4800419E57 /* rtp-packet.c */,
+				46C5B3BA2183EE4800419E57 /* rtcp-app.c */,
+				46C5B3BB2183EE4800419E57 /* rtp-member.c */,
+				46C5B3BC2183EE4800419E57 /* rtcp-rr.c */,
+				46C5B3BD2183EE4800419E57 /* rtp-member-list.c */,
+				46C5B3BE2183EE4800419E57 /* rtcp-bye.c */,
+				46C5B3BF2183EE4800419E57 /* rtcp-sr.c */,
+				46C5B3C02183EE4800419E57 /* rtcp-sdec.c */,
+				46C5B3C12183EE4800419E57 /* rtp-queue.c */,
+				46C5B3C22183EE4800419E57 /* rtp.c */,
+				46C5B3C32183EE4800419E57 /* rtp-profile.c */,
+				46C5B3C42183EE4800419E57 /* rtp-time.c */,
+				46C5B3C52183EE4800419E57 /* rtcp-interval.c */,
+			);
+			path = source;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46C5B27E2183ECD900419E57 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B3AB2183EE2C00419E57 /* rtp-payload-helper.h in Headers */,
+				46C5B3A52183EE2C00419E57 /* rtp-payload-internal.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46C5B2812183ECD900419E57 /* librtp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46C5B2862183ECD900419E57 /* Build configuration list for PBXNativeTarget "librtp" */;
+			buildPhases = (
+				46C5B27E2183ECD900419E57 /* Headers */,
+				46C5B27F2183ECD900419E57 /* Sources */,
+				46C5B2802183ECD900419E57 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = librtp;
+			productName = librtp;
+			productReference = 46C5B2822183ECD900419E57 /* librtp.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46C5B27A2183ECD900419E57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46C5B2812183ECD900419E57 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = 46C5B27D2183ECD900419E57 /* Build configuration list for PBXProject "librtp" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 46C5B2792183ECD900419E57;
+			productRefGroup = 46C5B2832183ECD900419E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46C5B2812183ECD900419E57 /* librtp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46C5B27F2183ECD900419E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B3B42183EE2C00419E57 /* rtp-vp9-pack.c in Sources */,
+				46C5B3CF2183EE4800419E57 /* rtcp-sdec.c in Sources */,
+				46C5B39F2183EE2C00419E57 /* rtp-h264-unpack.c in Sources */,
+				46C5B3D02183EE4800419E57 /* rtp-queue.c in Sources */,
+				46C5B3A22183EE2C00419E57 /* rtp-unpack.c in Sources */,
+				46C5B3A32183EE2C00419E57 /* rtp-mp4a-latm-unpack.c in Sources */,
+				46C5B3C92183EE4800419E57 /* rtcp-app.c in Sources */,
+				46C5B3A92183EE2C00419E57 /* rtp-mpeg1or2es-unpack.c in Sources */,
+				46C5B3B22183EE2C00419E57 /* rtp-h265-pack.c in Sources */,
+				46C5B3C82183EE4800419E57 /* rtp-packet.c in Sources */,
+				46C5B3CB2183EE4800419E57 /* rtcp-rr.c in Sources */,
+				46C5B3AF2183EE2C00419E57 /* rtp-ts-pack.c in Sources */,
+				46C5B3D12183EE4800419E57 /* rtp.c in Sources */,
+				46C5B3B12183EE2C00419E57 /* rtp-pack.c in Sources */,
+				46C5B3A42183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c in Sources */,
+				46C5B3A72183EE2C00419E57 /* rtp-mp4v-es-pack.c in Sources */,
+				46C5B3B02183EE2C00419E57 /* rtp-mp4a-latm-pack.c in Sources */,
+				46C5B3D32183EE4800419E57 /* rtp-time.c in Sources */,
+				46C5B3A82183EE2C00419E57 /* rtp-h264-pack.c in Sources */,
+				46C5B3B32183EE2C00419E57 /* rtp-mp4v-es-unpack.c in Sources */,
+				46C5B3AA2183EE2C00419E57 /* rtp-payload.c in Sources */,
+				46C5B3CC2183EE4800419E57 /* rtp-member-list.c in Sources */,
+				46C5B3C62183EE4800419E57 /* rtp-ssrc.c in Sources */,
+				46C5B3A62183EE2C00419E57 /* rtp-vp8-pack.c in Sources */,
+				46C5B3C72183EE4800419E57 /* rtcp.c in Sources */,
+				46C5B3CA2183EE4800419E57 /* rtp-member.c in Sources */,
+				46C5B3AD2183EE2C00419E57 /* rtp-vp8-unpack.c in Sources */,
+				46C5B3AE2183EE2C00419E57 /* rtp-vp9-unpack.c in Sources */,
+				46C5B3B52183EE2C00419E57 /* rtp-mpeg4-generic-pack.c in Sources */,
+				46C5B3A02183EE2C00419E57 /* rtp-mpeg1or2es-pack.c in Sources */,
+				46C5B39E2183EE2C00419E57 /* rtp-h265-unpack.c in Sources */,
+				46C5B3A12183EE2C00419E57 /* rtp-payload-helper.c in Sources */,
+				46C5B3AC2183EE2C00419E57 /* rtp-ts-unpack.c in Sources */,
+				46C5B3CE2183EE4800419E57 /* rtcp-sr.c in Sources */,
+				46C5B3D42183EE4800419E57 /* rtcp-interval.c in Sources */,
+				46C5B3CD2183EE4800419E57 /* rtcp-bye.c in Sources */,
+				46C5B3D22183EE4800419E57 /* rtp-profile.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46C5B2842183ECD900419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		46C5B2852183ECD900419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		46C5B2872183ECD900419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Debug;
+		};
+		46C5B2882183ECD900419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+					"$(SRCROOT)/../../sdk/include",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46C5B27D2183ECD900419E57 /* Build configuration list for PBXProject "librtp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2842183ECD900419E57 /* Debug */,
+				46C5B2852183ECD900419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46C5B2862183ECD900419E57 /* Build configuration list for PBXNativeTarget "librtp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2872183ECD900419E57 /* Debug */,
+				46C5B2882183ECD900419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46C5B27A2183ECD900419E57 /* Project object */;
+}

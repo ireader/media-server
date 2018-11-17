@@ -1,0 +1,427 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		46C5B31D2183EDEE00419E57 /* mov-mfhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FA2183EDEE00419E57 /* mov-mfhd.c */; };
+		46C5B31E2183EDEE00419E57 /* mov-elst.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FB2183EDEE00419E57 /* mov-elst.c */; };
+		46C5B31F2183EDEE00419E57 /* mov-mehd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FC2183EDEE00419E57 /* mov-mehd.c */; };
+		46C5B3202183EDEE00419E57 /* mov-stsz.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FD2183EDEE00419E57 /* mov-stsz.c */; };
+		46C5B3212183EDEE00419E57 /* mov-dinf.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FE2183EDEE00419E57 /* mov-dinf.c */; };
+		46C5B3222183EDEE00419E57 /* mov-tfhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FF2183EDEE00419E57 /* mov-tfhd.c */; };
+		46C5B3232183EDEE00419E57 /* mov-mdhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3002183EDEE00419E57 /* mov-mdhd.c */; };
+		46C5B3242183EDEE00419E57 /* mov-tfra.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3012183EDEE00419E57 /* mov-tfra.c */; };
+		46C5B3252183EDEE00419E57 /* mov-tx3g.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3022183EDEE00419E57 /* mov-tx3g.c */; };
+		46C5B3262183EDEE00419E57 /* mov-sidx.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3032183EDEE00419E57 /* mov-sidx.c */; };
+		46C5B3272183EDEE00419E57 /* mov-trun.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3042183EDEE00419E57 /* mov-trun.c */; };
+		46C5B3282183EDEE00419E57 /* mov-mvhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3052183EDEE00419E57 /* mov-mvhd.c */; };
+		46C5B3292183EDEE00419E57 /* mov-iods.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3062183EDEE00419E57 /* mov-iods.c */; };
+		46C5B32A2183EDEE00419E57 /* mov-writer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3072183EDEE00419E57 /* mov-writer.c */; };
+		46C5B32B2183EDEE00419E57 /* mov-tfdt.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3082183EDEE00419E57 /* mov-tfdt.c */; };
+		46C5B32C2183EDEE00419E57 /* mov-tag.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3092183EDEE00419E57 /* mov-tag.c */; };
+		46C5B32D2183EDEE00419E57 /* mov-leva.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B30A2183EDEE00419E57 /* mov-leva.c */; };
+		46C5B32E2183EDEE00419E57 /* mov-ftyp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B30B2183EDEE00419E57 /* mov-ftyp.c */; };
+		46C5B32F2183EDEE00419E57 /* mov-stss.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B30C2183EDEE00419E57 /* mov-stss.c */; };
+		46C5B3302183EDEE00419E57 /* mov-ioutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B30D2183EDEE00419E57 /* mov-ioutil.h */; };
+		46C5B3312183EDEE00419E57 /* fmp4-writer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B30E2183EDEE00419E57 /* fmp4-writer.c */; };
+		46C5B3322183EDEE00419E57 /* mov-trex.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B30F2183EDEE00419E57 /* mov-trex.c */; };
+		46C5B3332183EDEE00419E57 /* mov-reader.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3102183EDEE00419E57 /* mov-reader.c */; };
+		46C5B3342183EDEE00419E57 /* mov-hdlr.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3112183EDEE00419E57 /* mov-hdlr.c */; };
+		46C5B3352183EDEE00419E57 /* mov-minf.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3122183EDEE00419E57 /* mov-minf.c */; };
+		46C5B3362183EDEE00419E57 /* mov-hvcc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3132183EDEE00419E57 /* mov-hvcc.c */; };
+		46C5B3372183EDEE00419E57 /* mov-stsd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3142183EDEE00419E57 /* mov-stsd.c */; };
+		46C5B3382183EDEE00419E57 /* mov-stts.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3152183EDEE00419E57 /* mov-stts.c */; };
+		46C5B3392183EDEE00419E57 /* mov-avc1.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3162183EDEE00419E57 /* mov-avc1.c */; };
+		46C5B33A2183EDEE00419E57 /* mov-esds.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3172183EDEE00419E57 /* mov-esds.c */; };
+		46C5B33B2183EDEE00419E57 /* mov-tkhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3182183EDEE00419E57 /* mov-tkhd.c */; };
+		46C5B33C2183EDEE00419E57 /* mov-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B3192183EDEE00419E57 /* mov-internal.h */; };
+		46C5B33D2183EDEE00419E57 /* mov-stco.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31A2183EDEE00419E57 /* mov-stco.c */; };
+		46C5B33E2183EDEE00419E57 /* mov-track.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31B2183EDEE00419E57 /* mov-track.c */; };
+		46C5B33F2183EDEE00419E57 /* mov-stsc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31C2183EDEE00419E57 /* mov-stsc.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46C5B2522183EB6400419E57 /* libmov.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmov.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46C5B2F82183EDE600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46C5B2FA2183EDEE00419E57 /* mov-mfhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-mfhd.c"; sourceTree = "<group>"; };
+		46C5B2FB2183EDEE00419E57 /* mov-elst.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-elst.c"; sourceTree = "<group>"; };
+		46C5B2FC2183EDEE00419E57 /* mov-mehd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-mehd.c"; sourceTree = "<group>"; };
+		46C5B2FD2183EDEE00419E57 /* mov-stsz.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stsz.c"; sourceTree = "<group>"; };
+		46C5B2FE2183EDEE00419E57 /* mov-dinf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-dinf.c"; sourceTree = "<group>"; };
+		46C5B2FF2183EDEE00419E57 /* mov-tfhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tfhd.c"; sourceTree = "<group>"; };
+		46C5B3002183EDEE00419E57 /* mov-mdhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-mdhd.c"; sourceTree = "<group>"; };
+		46C5B3012183EDEE00419E57 /* mov-tfra.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tfra.c"; sourceTree = "<group>"; };
+		46C5B3022183EDEE00419E57 /* mov-tx3g.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tx3g.c"; sourceTree = "<group>"; };
+		46C5B3032183EDEE00419E57 /* mov-sidx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-sidx.c"; sourceTree = "<group>"; };
+		46C5B3042183EDEE00419E57 /* mov-trun.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-trun.c"; sourceTree = "<group>"; };
+		46C5B3052183EDEE00419E57 /* mov-mvhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-mvhd.c"; sourceTree = "<group>"; };
+		46C5B3062183EDEE00419E57 /* mov-iods.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-iods.c"; sourceTree = "<group>"; };
+		46C5B3072183EDEE00419E57 /* mov-writer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-writer.c"; sourceTree = "<group>"; };
+		46C5B3082183EDEE00419E57 /* mov-tfdt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tfdt.c"; sourceTree = "<group>"; };
+		46C5B3092183EDEE00419E57 /* mov-tag.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tag.c"; sourceTree = "<group>"; };
+		46C5B30A2183EDEE00419E57 /* mov-leva.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-leva.c"; sourceTree = "<group>"; };
+		46C5B30B2183EDEE00419E57 /* mov-ftyp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-ftyp.c"; sourceTree = "<group>"; };
+		46C5B30C2183EDEE00419E57 /* mov-stss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stss.c"; sourceTree = "<group>"; };
+		46C5B30D2183EDEE00419E57 /* mov-ioutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mov-ioutil.h"; sourceTree = "<group>"; };
+		46C5B30E2183EDEE00419E57 /* fmp4-writer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "fmp4-writer.c"; sourceTree = "<group>"; };
+		46C5B30F2183EDEE00419E57 /* mov-trex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-trex.c"; sourceTree = "<group>"; };
+		46C5B3102183EDEE00419E57 /* mov-reader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-reader.c"; sourceTree = "<group>"; };
+		46C5B3112183EDEE00419E57 /* mov-hdlr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-hdlr.c"; sourceTree = "<group>"; };
+		46C5B3122183EDEE00419E57 /* mov-minf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-minf.c"; sourceTree = "<group>"; };
+		46C5B3132183EDEE00419E57 /* mov-hvcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-hvcc.c"; sourceTree = "<group>"; };
+		46C5B3142183EDEE00419E57 /* mov-stsd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stsd.c"; sourceTree = "<group>"; };
+		46C5B3152183EDEE00419E57 /* mov-stts.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stts.c"; sourceTree = "<group>"; };
+		46C5B3162183EDEE00419E57 /* mov-avc1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-avc1.c"; sourceTree = "<group>"; };
+		46C5B3172183EDEE00419E57 /* mov-esds.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-esds.c"; sourceTree = "<group>"; };
+		46C5B3182183EDEE00419E57 /* mov-tkhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-tkhd.c"; sourceTree = "<group>"; };
+		46C5B3192183EDEE00419E57 /* mov-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mov-internal.h"; sourceTree = "<group>"; };
+		46C5B31A2183EDEE00419E57 /* mov-stco.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stco.c"; sourceTree = "<group>"; };
+		46C5B31B2183EDEE00419E57 /* mov-track.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-track.c"; sourceTree = "<group>"; };
+		46C5B31C2183EDEE00419E57 /* mov-stsc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stsc.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46C5B2502183EB6400419E57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46C5B2492183EB6300419E57 = {
+			isa = PBXGroup;
+			children = (
+				46C5B2F92183EDEE00419E57 /* source */,
+				46C5B2F82183EDE600419E57 /* include */,
+				46C5B2532183EB6400419E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46C5B2532183EB6400419E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2522183EB6400419E57 /* libmov.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46C5B2F92183EDEE00419E57 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2FA2183EDEE00419E57 /* mov-mfhd.c */,
+				46C5B2FB2183EDEE00419E57 /* mov-elst.c */,
+				46C5B2FC2183EDEE00419E57 /* mov-mehd.c */,
+				46C5B2FD2183EDEE00419E57 /* mov-stsz.c */,
+				46C5B2FE2183EDEE00419E57 /* mov-dinf.c */,
+				46C5B2FF2183EDEE00419E57 /* mov-tfhd.c */,
+				46C5B3002183EDEE00419E57 /* mov-mdhd.c */,
+				46C5B3012183EDEE00419E57 /* mov-tfra.c */,
+				46C5B3022183EDEE00419E57 /* mov-tx3g.c */,
+				46C5B3032183EDEE00419E57 /* mov-sidx.c */,
+				46C5B3042183EDEE00419E57 /* mov-trun.c */,
+				46C5B3052183EDEE00419E57 /* mov-mvhd.c */,
+				46C5B3062183EDEE00419E57 /* mov-iods.c */,
+				46C5B3072183EDEE00419E57 /* mov-writer.c */,
+				46C5B3082183EDEE00419E57 /* mov-tfdt.c */,
+				46C5B3092183EDEE00419E57 /* mov-tag.c */,
+				46C5B30A2183EDEE00419E57 /* mov-leva.c */,
+				46C5B30B2183EDEE00419E57 /* mov-ftyp.c */,
+				46C5B30C2183EDEE00419E57 /* mov-stss.c */,
+				46C5B30D2183EDEE00419E57 /* mov-ioutil.h */,
+				46C5B30E2183EDEE00419E57 /* fmp4-writer.c */,
+				46C5B30F2183EDEE00419E57 /* mov-trex.c */,
+				46C5B3102183EDEE00419E57 /* mov-reader.c */,
+				46C5B3112183EDEE00419E57 /* mov-hdlr.c */,
+				46C5B3122183EDEE00419E57 /* mov-minf.c */,
+				46C5B3132183EDEE00419E57 /* mov-hvcc.c */,
+				46C5B3142183EDEE00419E57 /* mov-stsd.c */,
+				46C5B3152183EDEE00419E57 /* mov-stts.c */,
+				46C5B3162183EDEE00419E57 /* mov-avc1.c */,
+				46C5B3172183EDEE00419E57 /* mov-esds.c */,
+				46C5B3182183EDEE00419E57 /* mov-tkhd.c */,
+				46C5B3192183EDEE00419E57 /* mov-internal.h */,
+				46C5B31A2183EDEE00419E57 /* mov-stco.c */,
+				46C5B31B2183EDEE00419E57 /* mov-track.c */,
+				46C5B31C2183EDEE00419E57 /* mov-stsc.c */,
+			);
+			path = source;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46C5B24E2183EB6400419E57 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B33C2183EDEE00419E57 /* mov-internal.h in Headers */,
+				46C5B3302183EDEE00419E57 /* mov-ioutil.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46C5B2512183EB6400419E57 /* libmov */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46C5B2562183EB6400419E57 /* Build configuration list for PBXNativeTarget "libmov" */;
+			buildPhases = (
+				46C5B24E2183EB6400419E57 /* Headers */,
+				46C5B24F2183EB6400419E57 /* Sources */,
+				46C5B2502183EB6400419E57 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libmov;
+			productName = libmov;
+			productReference = 46C5B2522183EB6400419E57 /* libmov.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46C5B24A2183EB6300419E57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46C5B2512183EB6400419E57 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = 46C5B24D2183EB6300419E57 /* Build configuration list for PBXProject "libmov" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 46C5B2492183EB6300419E57;
+			productRefGroup = 46C5B2532183EB6400419E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46C5B2512183EB6400419E57 /* libmov */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46C5B24F2183EB6400419E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B31E2183EDEE00419E57 /* mov-elst.c in Sources */,
+				46C5B32F2183EDEE00419E57 /* mov-stss.c in Sources */,
+				46C5B3232183EDEE00419E57 /* mov-mdhd.c in Sources */,
+				46C5B3212183EDEE00419E57 /* mov-dinf.c in Sources */,
+				46C5B3352183EDEE00419E57 /* mov-minf.c in Sources */,
+				46C5B31F2183EDEE00419E57 /* mov-mehd.c in Sources */,
+				46C5B3322183EDEE00419E57 /* mov-trex.c in Sources */,
+				46C5B3292183EDEE00419E57 /* mov-iods.c in Sources */,
+				46C5B33D2183EDEE00419E57 /* mov-stco.c in Sources */,
+				46C5B3332183EDEE00419E57 /* mov-reader.c in Sources */,
+				46C5B32C2183EDEE00419E57 /* mov-tag.c in Sources */,
+				46C5B3202183EDEE00419E57 /* mov-stsz.c in Sources */,
+				46C5B33B2183EDEE00419E57 /* mov-tkhd.c in Sources */,
+				46C5B3362183EDEE00419E57 /* mov-hvcc.c in Sources */,
+				46C5B3372183EDEE00419E57 /* mov-stsd.c in Sources */,
+				46C5B3392183EDEE00419E57 /* mov-avc1.c in Sources */,
+				46C5B33E2183EDEE00419E57 /* mov-track.c in Sources */,
+				46C5B3382183EDEE00419E57 /* mov-stts.c in Sources */,
+				46C5B3282183EDEE00419E57 /* mov-mvhd.c in Sources */,
+				46C5B3252183EDEE00419E57 /* mov-tx3g.c in Sources */,
+				46C5B32D2183EDEE00419E57 /* mov-leva.c in Sources */,
+				46C5B3312183EDEE00419E57 /* fmp4-writer.c in Sources */,
+				46C5B3262183EDEE00419E57 /* mov-sidx.c in Sources */,
+				46C5B32E2183EDEE00419E57 /* mov-ftyp.c in Sources */,
+				46C5B3222183EDEE00419E57 /* mov-tfhd.c in Sources */,
+				46C5B3342183EDEE00419E57 /* mov-hdlr.c in Sources */,
+				46C5B31D2183EDEE00419E57 /* mov-mfhd.c in Sources */,
+				46C5B32B2183EDEE00419E57 /* mov-tfdt.c in Sources */,
+				46C5B33F2183EDEE00419E57 /* mov-stsc.c in Sources */,
+				46C5B33A2183EDEE00419E57 /* mov-esds.c in Sources */,
+				46C5B32A2183EDEE00419E57 /* mov-writer.c in Sources */,
+				46C5B3242183EDEE00419E57 /* mov-tfra.c in Sources */,
+				46C5B3272183EDEE00419E57 /* mov-trun.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46C5B2542183EB6400419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		46C5B2552183EB6400419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		46C5B2572183EB6400419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+				);
+			};
+			name = Debug;
+		};
+		46C5B2582183EB6400419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46C5B24D2183EB6300419E57 /* Build configuration list for PBXProject "libmov" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2542183EB6400419E57 /* Debug */,
+				46C5B2552183EB6400419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46C5B2562183EB6400419E57 /* Build configuration list for PBXNativeTarget "libmov" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2572183EB6400419E57 /* Debug */,
+				46C5B2582183EB6400419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46C5B24A2183EB6300419E57 /* Project object */;
+}

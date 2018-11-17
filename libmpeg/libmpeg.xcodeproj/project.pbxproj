@@ -1,0 +1,359 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		46C5B3542183EE0100419E57 /* mpeg-psm.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3422183EE0100419E57 /* mpeg-psm.c */; };
+		46C5B3552183EE0100419E57 /* mpeg-system-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3432183EE0100419E57 /* mpeg-system-header.c */; };
+		46C5B3562183EE0100419E57 /* mpeg-packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3442183EE0100419E57 /* mpeg-packet.c */; };
+		46C5B3572183EE0100419E57 /* mpeg-pmt.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3452183EE0100419E57 /* mpeg-pmt.c */; };
+		46C5B3582183EE0100419E57 /* mpeg-util.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3462183EE0100419E57 /* mpeg-util.c */; };
+		46C5B3592183EE0100419E57 /* mpeg-ts-h264.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3472183EE0100419E57 /* mpeg-ts-h264.c */; };
+		46C5B35A2183EE0100419E57 /* mpeg-psd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3482183EE0100419E57 /* mpeg-psd.c */; };
+		46C5B35B2183EE0100419E57 /* mpeg-crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3492183EE0100419E57 /* mpeg-crc32.c */; };
+		46C5B35C2183EE0100419E57 /* mpeg-pack-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */; };
+		46C5B35D2183EE0100419E57 /* mpeg-ts-h265.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B34B2183EE0100419E57 /* mpeg-ts-h265.c */; };
+		46C5B35E2183EE0100419E57 /* mpeg-ps-dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B34C2183EE0100419E57 /* mpeg-ps-dec.c */; };
+		46C5B35F2183EE0100419E57 /* mpeg-util.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B34D2183EE0100419E57 /* mpeg-util.h */; };
+		46C5B3602183EE0100419E57 /* mpeg-pat.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B34E2183EE0100419E57 /* mpeg-pat.c */; };
+		46C5B3612183EE0100419E57 /* mpeg-ts-enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B34F2183EE0100419E57 /* mpeg-ts-enc.c */; };
+		46C5B3622183EE0100419E57 /* mpeg-element-descriptor.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3502183EE0100419E57 /* mpeg-element-descriptor.c */; };
+		46C5B3632183EE0100419E57 /* mpeg-ts-dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */; };
+		46C5B3642183EE0100419E57 /* mpeg-ps-enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */; };
+		46C5B3652183EE0100419E57 /* mpeg-pes.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3532183EE0100419E57 /* mpeg-pes.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46C5B2622183EB8F00419E57 /* libmpeg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		46C5B3402183EDFA00419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46C5B3422183EE0100419E57 /* mpeg-psm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-psm.c"; sourceTree = "<group>"; };
+		46C5B3432183EE0100419E57 /* mpeg-system-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-system-header.c"; sourceTree = "<group>"; };
+		46C5B3442183EE0100419E57 /* mpeg-packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-packet.c"; sourceTree = "<group>"; };
+		46C5B3452183EE0100419E57 /* mpeg-pmt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-pmt.c"; sourceTree = "<group>"; };
+		46C5B3462183EE0100419E57 /* mpeg-util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-util.c"; sourceTree = "<group>"; };
+		46C5B3472183EE0100419E57 /* mpeg-ts-h264.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ts-h264.c"; sourceTree = "<group>"; };
+		46C5B3482183EE0100419E57 /* mpeg-psd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-psd.c"; sourceTree = "<group>"; };
+		46C5B3492183EE0100419E57 /* mpeg-crc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-crc32.c"; sourceTree = "<group>"; };
+		46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-pack-header.c"; sourceTree = "<group>"; };
+		46C5B34B2183EE0100419E57 /* mpeg-ts-h265.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ts-h265.c"; sourceTree = "<group>"; };
+		46C5B34C2183EE0100419E57 /* mpeg-ps-dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ps-dec.c"; sourceTree = "<group>"; };
+		46C5B34D2183EE0100419E57 /* mpeg-util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mpeg-util.h"; sourceTree = "<group>"; };
+		46C5B34E2183EE0100419E57 /* mpeg-pat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-pat.c"; sourceTree = "<group>"; };
+		46C5B34F2183EE0100419E57 /* mpeg-ts-enc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ts-enc.c"; sourceTree = "<group>"; };
+		46C5B3502183EE0100419E57 /* mpeg-element-descriptor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-element-descriptor.c"; sourceTree = "<group>"; };
+		46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ts-dec.c"; sourceTree = "<group>"; };
+		46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-ps-enc.c"; sourceTree = "<group>"; };
+		46C5B3532183EE0100419E57 /* mpeg-pes.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-pes.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46C5B2602183EB8F00419E57 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46C5B2592183EB8F00419E57 = {
+			isa = PBXGroup;
+			children = (
+				46C5B3412183EE0100419E57 /* source */,
+				46C5B3402183EDFA00419E57 /* include */,
+				46C5B2632183EB8F00419E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46C5B2632183EB8F00419E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B2622183EB8F00419E57 /* libmpeg.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		46C5B3412183EE0100419E57 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				46C5B3422183EE0100419E57 /* mpeg-psm.c */,
+				46C5B3432183EE0100419E57 /* mpeg-system-header.c */,
+				46C5B3442183EE0100419E57 /* mpeg-packet.c */,
+				46C5B3452183EE0100419E57 /* mpeg-pmt.c */,
+				46C5B3462183EE0100419E57 /* mpeg-util.c */,
+				46C5B3472183EE0100419E57 /* mpeg-ts-h264.c */,
+				46C5B3482183EE0100419E57 /* mpeg-psd.c */,
+				46C5B3492183EE0100419E57 /* mpeg-crc32.c */,
+				46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */,
+				46C5B34B2183EE0100419E57 /* mpeg-ts-h265.c */,
+				46C5B34C2183EE0100419E57 /* mpeg-ps-dec.c */,
+				46C5B34D2183EE0100419E57 /* mpeg-util.h */,
+				46C5B34E2183EE0100419E57 /* mpeg-pat.c */,
+				46C5B34F2183EE0100419E57 /* mpeg-ts-enc.c */,
+				46C5B3502183EE0100419E57 /* mpeg-element-descriptor.c */,
+				46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */,
+				46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */,
+				46C5B3532183EE0100419E57 /* mpeg-pes.c */,
+			);
+			path = source;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46C5B25E2183EB8F00419E57 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B35F2183EE0100419E57 /* mpeg-util.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46C5B2612183EB8F00419E57 /* libmpeg */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46C5B2662183EB8F00419E57 /* Build configuration list for PBXNativeTarget "libmpeg" */;
+			buildPhases = (
+				46C5B25E2183EB8F00419E57 /* Headers */,
+				46C5B25F2183EB8F00419E57 /* Sources */,
+				46C5B2602183EB8F00419E57 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libmpeg;
+			productName = libmpeg;
+			productReference = 46C5B2622183EB8F00419E57 /* libmpeg.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46C5B25A2183EB8F00419E57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46C5B2612183EB8F00419E57 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = 46C5B25D2183EB8F00419E57 /* Build configuration list for PBXProject "libmpeg" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 46C5B2592183EB8F00419E57;
+			productRefGroup = 46C5B2632183EB8F00419E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46C5B2612183EB8F00419E57 /* libmpeg */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46C5B25F2183EB8F00419E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46C5B3622183EE0100419E57 /* mpeg-element-descriptor.c in Sources */,
+				46C5B35B2183EE0100419E57 /* mpeg-crc32.c in Sources */,
+				46C5B35A2183EE0100419E57 /* mpeg-psd.c in Sources */,
+				46C5B3612183EE0100419E57 /* mpeg-ts-enc.c in Sources */,
+				46C5B3602183EE0100419E57 /* mpeg-pat.c in Sources */,
+				46C5B35D2183EE0100419E57 /* mpeg-ts-h265.c in Sources */,
+				46C5B3582183EE0100419E57 /* mpeg-util.c in Sources */,
+				46C5B3552183EE0100419E57 /* mpeg-system-header.c in Sources */,
+				46C5B3562183EE0100419E57 /* mpeg-packet.c in Sources */,
+				46C5B3572183EE0100419E57 /* mpeg-pmt.c in Sources */,
+				46C5B3642183EE0100419E57 /* mpeg-ps-enc.c in Sources */,
+				46C5B3542183EE0100419E57 /* mpeg-psm.c in Sources */,
+				46C5B3592183EE0100419E57 /* mpeg-ts-h264.c in Sources */,
+				46C5B3652183EE0100419E57 /* mpeg-pes.c in Sources */,
+				46C5B35C2183EE0100419E57 /* mpeg-pack-header.c in Sources */,
+				46C5B35E2183EE0100419E57 /* mpeg-ps-dec.c in Sources */,
+				46C5B3632183EE0100419E57 /* mpeg-ts-dec.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46C5B2642183EB8F00419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		46C5B2652183EB8F00419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		46C5B2672183EB8F00419E57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+				);
+			};
+			name = Debug;
+		};
+		46C5B2682183EB8F00419E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					"$(SRCROOT)/include",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46C5B25D2183EB8F00419E57 /* Build configuration list for PBXProject "libmpeg" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2642183EB8F00419E57 /* Debug */,
+				46C5B2652183EB8F00419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46C5B2662183EB8F00419E57 /* Build configuration list for PBXNativeTarget "libmpeg" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46C5B2672183EB8F00419E57 /* Debug */,
+				46C5B2682183EB8F00419E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46C5B25A2183EB8F00419E57 /* Project object */;
+}
