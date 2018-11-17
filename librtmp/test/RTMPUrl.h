@@ -1,11 +1,11 @@
 #pragma once
 
-#include "url.h"
-#include "urlcodec.h"
-#include "cppstringext.h"
-#include <assert.h>
+#include "uri-parse.h"
 #include <vector>
 #include <string>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 struct RTMPUrl
 {
@@ -28,35 +28,21 @@ struct RTMPUrl
 private:
 	int Parse(const char* rtmp)
 	{
-		void* url = url_parse(rtmp);
-		if (NULL == url)
+		uri_t* uri = uri_parse(rtmp, strlen(rtmp));
+		if (NULL == uri)
 			return -1;
 
-		host = url_gethost(url);
-		port = url_getport(url);
-		port = port ? port : 1935; // rtmp default port
+		host = uri->host;
+		port = uri->port ? uri->port : 1935; // rtmp default port
 
-		const char* path = url_getpath(url);
-		if (NULL == path)
-		{
-			url_free(url);
-			return -1;
-		}
+		const char* p1 = strchr(rtmp + ((uri->scheme&&*uri->scheme) ? (strlen(uri->scheme) + 3) : 1), '/');
+		if (!p1) return -1;
+		const char* p2 = strchr(p1 + 1, '/');
+		if (!p2) return -1;
 
-		char p[128] = { 0 };
-		url_decode(path, -1, p, sizeof(p));
-
-		std::vector<std::string> paths;
-		Split(p, '/', paths);
-		if (paths.size() < 3 || !paths[0].empty())
-		{
-			url_free(url);
-			return -1;
-		}
-
-		app = paths[1];
-		stream = paths[2];
-
-		url_free(url);
+		app.assign(p1 + 1, p2 - p1 - 1);
+		stream.assign(p2 + 1);
+		uri_free(uri);
+		return 0;
 	}
 };
