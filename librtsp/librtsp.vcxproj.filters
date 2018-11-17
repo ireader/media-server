@@ -56,9 +56,6 @@
     <ClCompile Include="source\client\rtsp-client-play.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
-    <ClCompile Include="source\client\rtsp-client-sdp.c">
-      <Filter>Source Files\client</Filter>
-    </ClCompile>
     <ClCompile Include="source\client\rtsp-client-setup.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
@@ -113,6 +110,9 @@
     <ClCompile Include="source\server\rtsp-server-record.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
+    <ClCompile Include="source\rtsp-media.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtsp-header-range.h">
@@ -152,6 +152,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rtp-over-rtsp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp-media.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

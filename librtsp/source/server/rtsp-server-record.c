@@ -51,10 +51,5 @@ int rtsp_server_reply_record(struct rtsp_server_t *rtsp, int code, const int64_t
         len += snprintf(header + len, sizeof(header) - len, "Session: %s\r\n", rtsp->session.session);
     }
 
-    if (rtp)
-    {
-        len += snprintf(header + len, sizeof(header) - len, "RTP-Info: %s\r\n", rtp);
-    }
-
     return rtsp_server_reply2(rtsp, code, header);
 }

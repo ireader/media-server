@@ -175,6 +175,7 @@ static const char* rtsp_header_range_npt_time(const char* str, uint64_t *seconds
 	int v1, v2;
 
 	assert(str);
+	str += strspn(str, " \t");
 	p = strpbrk(str, "-\r\n");
 	if(!str || (p-str==3 && 0==strncasecmp(str, "now", 3)))
 	{

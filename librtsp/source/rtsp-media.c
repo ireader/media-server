@@ -1,7 +1,11 @@
-#include "rtsp-client-internal.h"
+#include "rtsp-media.h"
 #include "sdp.h"
 #include "sdp-a-fmtp.h"
 #include "sdp-a-rtpmap.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 static inline int rtsp_media_aggregate_control_enable(void *sdp)
 {
@@ -13,7 +17,7 @@ static inline int rtsp_media_aggregate_control_enable(void *sdp)
 	return (control && *control) ? 1 : 0;
 }
 
-static int isAbsoluteURL(char const* url) 
+static int isAbsoluteURL(char const* url)
 {
 	// Assumption: "url" is absolute if it contains a ':', before any
 	// occurrence of '/'
@@ -32,7 +36,7 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 	assert(uri && base && path);
 	n = strlen(base ? base : "");
 	n2 = strlen(path ? path : "");
-	if(n < 1 || n2 < 1 || n + n2 + 2 > bytes || !uri)
+	if (n < 1 || n2 < 1 || n + n2 + 2 > bytes || !uri)
 		return NULL;
 
 	offset = snprintf(uri, bytes, "%s", base);
@@ -50,73 +54,63 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 // 1. The RTSP Content-Base field
 // 2. The RTSP Content-Location field
 // 3. The RTSP request URL
-static int rtsp_get_session_uri(void *sdp, char* uri, size_t bytes, const char* requri, const char* baseuri, const char* location)
+int rtsp_media_set_url(struct rtsp_media_t* m, const char* base, const char* location, const char* request)
 {
-	char path[256] = {0};
-	const char* control;
+	char path[256] = { 0 };
+	char session[256] = { 0 };
 
 	// C.1.1 Control URL (p81)
 	// If this attribute contains only an asterisk (*), then the URL is
 	// treated as if it were an empty embedded URL, and thus inherits the entire base URL.
-	control = sdp_attribute_find(sdp, "control");
-	if(!control || 0==*control || '*' == *control)
-		control = "";
-	snprintf(uri, bytes, "%s", control);
+	if (*m->session_uri && '*' != *m->session_uri)
+		snprintf(session, sizeof(session), "%s", m->session_uri);
 
-	if(!isAbsoluteURL(uri) && baseuri && *baseuri)
+	if (!isAbsoluteURL(session) && base && *base)
 	{
-		if(*uri)
+		if (*session)
 		{
-			uri_join(path, sizeof(path), baseuri, uri);
-			baseuri = path;
+			uri_join(path, sizeof(path), base, session);
+			base = path;
 		}
-		snprintf(uri, bytes, "%s", baseuri);
+		snprintf(session, sizeof(session), "%s", base);
 	}
 
-	if(!isAbsoluteURL(uri) && location && *location)
+	if (!isAbsoluteURL(session) && location && *location)
 	{
-		if(*uri)
+		if (*session)
 		{
-			uri_join(path, sizeof(path), location, uri);
+			uri_join(path, sizeof(path), location, session);
 			location = path;
 		}
-		snprintf(uri, bytes, "%s", location);
+		snprintf(session, sizeof(session), "%s", location);
 	}
 
-	if(!isAbsoluteURL(uri) && requri && *requri)
+	if (!isAbsoluteURL(session) && request && *request)
 	{
-		if(*uri)
+		if (*session)
 		{
-			uri_join(path, sizeof(path), requri, uri);
-			requri = path;
+			uri_join(path, sizeof(path), request, session);
+			request = path;
 		}
-		snprintf(uri, bytes, "%s", requri);
+		snprintf(session, sizeof(session), "%s", request);
 	}
 
-	return 0;
-}
+	// update session url
+	if (*m->session_uri && *session)
+		snprintf(m->session_uri, sizeof(m->session_uri), "%s", session);
 
-static int rtsp_get_media_uri(void *sdp, int media, char* uri, size_t bytes, const char* sessionuri)
-{
-	char path[256] = {0};
-	const char* control;
-
-	// C.1.1 Control URL (p81)
-	// If this attribute contains only an asterisk (*), then the URL is
-	// treated as if it were an empty embedded URL, and thus inherits the entire base URL.
-	control = sdp_media_attribute_find(sdp, media, "control");
-	if(!control || 0==*control || '*' == *control)
-		control = "";
-	snprintf(uri, bytes, "%s", control);
-
-	if(!isAbsoluteURL(uri) && sessionuri && *sessionuri)
+	// update media url
+	if (!isAbsoluteURL(m->uri) && *session)
 	{
-		if(*uri)
+		if (*m->uri)
 		{
-			uri_join(path, sizeof(path), sessionuri, uri);
-			sessionuri = path;
+			uri_join(path, sizeof(path), session, m->uri);
+			snprintf(m->uri, sizeof(m->uri), "%s", path);
 		}
-		snprintf(uri, bytes, "%s", sessionuri);
+		else
+		{
+			snprintf(m->uri, sizeof(m->uri), "%s", session);
+		}
 	}
 
 	return 0;
@@ -137,18 +131,18 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 
 	media = (struct rtsp_media_t*)param;
 
-	if(name)
+	if (name)
 	{
-		if(0 == strcmp("rtpmap", name))
+		if (0 == strcmp("rtpmap", name))
 		{
 			int rate = 0;
 			char encoding[sizeof(media->avformats[i].encoding)];
-			if(strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
+			if (strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
 				sdp_a_rtpmap(value, &payload, encoding, &rate, NULL);
-				for(i = 0; i < media->avformat_count; i++)
+				for (i = 0; i < media->avformat_count; i++)
 				{
-					if(media->avformats[i].fmt == payload)
+					if (media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
 						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
@@ -157,14 +151,14 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 				}
 			}
 		}
-		else if(0 == strcmp("fmtp", name))
+		else if (0 == strcmp("fmtp", name))
 		{
 			payload = atoi(value);
-			for(i = 0; i < media->avformat_count; i++)
+			for (i = 0; i < media->avformat_count; i++)
 			{
-				if(media->avformats[i].fmt != payload)
+				if (media->avformats[i].fmt != payload)
 					continue;
-				
+
 				snprintf(media->avformats[i].fmtp, sizeof(media->avformats[i].fmtp), "%s", value);
 				//if(0 == strcmp("H264", media->avformats[i].encoding))
 				//{
@@ -195,6 +189,10 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 				break;
 			}
 		}
+		else if (0 == strcmp("etag", name))
+		{
+			// C.1.8 Entity Tag
+		}
 	}
 }
 
@@ -213,56 +211,77 @@ m=video 2232 RTP/AVP 31
 m=whiteboard 32416 UDP WB
 a=orient:portrait
 */
-int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* content)
+int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 {
-	int i, j, n, count;
-	int formats[N_MEDIA_FORMAT];
-	struct rtsp_media_t* media;
+	int i, j, n;
+	int formats[3];
+	const char* control;
+	const char* start, *stop;
+	const char* network, *addrtype, *address;
+	struct rtsp_media_t* m;
+	struct rtsp_header_range_t range;
 	sdp_t* sdp;
 
-	sdp = sdp_parse(content);
+	sdp = sdp_parse(s);
 	if (!sdp)
 		return -1;
 
-	count = sdp_media_count(sdp);
-	if(count > N_MEDIA)
-	{
-        media = (struct rtsp_media_t*)realloc(rtsp->media_ptr, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
-		if(!media)
-		{
-			sdp_destroy(sdp);
-			return ENOMEM;
-		}
-        rtsp->media_ptr = media;
-		memset(rtsp->media_ptr, 0, sizeof(struct rtsp_media_t)*(count-N_MEDIA));
-	}
-
-	rtsp->media_count = count;
-
 	// rfc 2326 C.1.1 Control URL (p80)
 	// If found at the session level, the attribute indicates the URL for aggregate control
-	rtsp->aggregate = rtsp_media_aggregate_control_enable(sdp);
-	rtsp_get_session_uri(sdp, rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), rtsp->uri, rtsp->baseuri, rtsp->location);
+	control = sdp_attribute_find(sdp, "control");
 
-	for(i = 0; i < count; i++)
+	// C.1.5 Range of presentation
+	// The "a=range" attribute defines the total time range of the stored session.
+	memset(&range, 0, sizeof(range));
+	s = sdp_attribute_find(sdp, "range");
+	if(s) rtsp_header_range(s, &range);
+
+	// C.1.6 Time of availability
+	start = stop = NULL;
+	for (i = 0; i < sdp_timing_count(sdp); i++)
 	{
-		media = rtsp_get_media(rtsp, i);
-		//media->cseq = rand();
-
-		// RTSP2326 C.1.1 Control URL
-		rtsp_get_media_uri(sdp, i, media->uri, sizeof(media->uri), rtsp->aggregate_uri);
-
-		n = sdp_media_formats(sdp, i, formats, N_MEDIA_FORMAT);
-		media->avformat_count = n > N_MEDIA_FORMAT ? N_MEDIA_FORMAT : n;
-		for(j = 0; j < media->avformat_count; j++)
-		{
-			media->avformats[j].fmt = formats[j];
-		}
-
-		// update media encoding
-		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, media);		
+	//	sdp_timing_get(sdp, i, &start, &stop);
 	}
 
+	// C.1.7 Connection Information
+	network = addrtype = address = NULL;
+	sdp_connection_get(sdp, &network, &addrtype, &address);
+
+	for (i = 0; i < sdp_media_count(sdp) && i < count; i++)
+	{
+		m = medias + i;
+		memset(m, 0, sizeof(struct rtsp_media_t));
+		memcpy(&m->range, &range, sizeof(m->range));
+		if (control)
+			snprintf(m->session_uri, sizeof(m->session_uri), "%s", control);
+		if (start && stop)
+		{
+			m->start = strtoull(start, NULL, 10);
+			m->stop = strtoull(stop, NULL, 10);
+		}
+		snprintf(m->network, sizeof(m->network), "%s", network);
+		snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
+		snprintf(m->address, sizeof(m->address), "%s", address);
+		//media->cseq = rand();
+
+		// media control url
+		s = sdp_media_attribute_find(sdp, i, "control");
+		if(s)
+			snprintf(m->uri, sizeof(m->uri), "%s", s);
+
+		// media format
+		j = sizeof(m->avformats) / sizeof(m->avformats[0]);
+		assert(sizeof(formats) / sizeof(formats[0]) >= j);
+		n = sdp_media_formats(sdp, i, formats, j);
+		m->avformat_count = n > j ? j : n;
+		for (j = 0; j < m->avformat_count; j++)
+			m->avformats[j].fmt = formats[j];
+
+		// update media encoding
+		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);
+	}
+
+	count = sdp_media_count(sdp);
 	sdp_destroy(sdp);
-	return 0;
+	return count; // should check return value
 }

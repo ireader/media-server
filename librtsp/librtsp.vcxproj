@@ -141,7 +141,6 @@
     <ClCompile Include="source\client\rtsp-client-pause.c" />
     <ClCompile Include="source\client\rtsp-client-play.c" />
     <ClCompile Include="source\client\rtsp-client-record.c" />
-    <ClCompile Include="source\client\rtsp-client-sdp.c" />
     <ClCompile Include="source\client\rtsp-client-set-parameter.c" />
     <ClCompile Include="source\client\rtsp-client-setup.c" />
     <ClCompile Include="source\client\rtsp-client-teardown.c" />
@@ -150,6 +149,7 @@
     <ClCompile Include="source\rtsp-header-rtp-info.c" />
     <ClCompile Include="source\rtsp-header-session.c" />
     <ClCompile Include="source\rtsp-header-transport.c" />
+    <ClCompile Include="source\rtsp-media.c" />
     <ClCompile Include="source\rtsp-reason.c" />
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
@@ -172,6 +172,7 @@
     <ClInclude Include="include\rtsp-header-rtp-info.h" />
     <ClInclude Include="include\rtsp-header-session.h" />
     <ClInclude Include="include\rtsp-header-transport.h" />
+    <ClInclude Include="include\rtsp-media.h" />
     <ClInclude Include="include\rtsp-reason.h" />
     <ClInclude Include="include\rtsp-server.h" />
     <ClInclude Include="include\sdp-a-fmtp.h" />

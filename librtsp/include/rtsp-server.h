@@ -144,9 +144,8 @@ int rtsp_server_reply_announce(rtsp_server_t* rtsp, int code);
 /// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
 /// @param[in] nptstart Range start time(ms) [optional]
 /// @param[in] nptend Range end time(ms) [optional]
-/// @param[in] rtpinfo RTP-info [optional] e.g. url=rtsp://foo.com/bar.avi/streamid=0;seq=45102,url=rtsp://foo.com/bar.avi/streamid=1;seq=30211
 /// @return 0-ok, other-error code
-int rtsp_server_reply_record(rtsp_server_t* rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtpinfo);
+int rtsp_server_reply_record(rtsp_server_t* rtsp, int code, const int64_t *nptstart, const int64_t *nptend);
 
 /// RTSP send Embedded (Interleaved) Binary Data
 /// @param[in] rtsp request handle

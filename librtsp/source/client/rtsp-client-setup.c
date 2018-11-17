@@ -29,67 +29,73 @@ static const char* sc_rtsp_udp = "SETUP %s RTSP/1.0\r\n"
 								"User-Agent: %s\r\n"
 								"\r\n";
 
-static int rtsp_client_media_setup(struct rtsp_client_t* rtsp)
+static int rtsp_client_media_setup(struct rtsp_client_t* rtsp, int i)
 {
 	int len;
-	struct rtsp_media_t *media;
-	char session[sizeof(media->session.session) + 12], *p;
+	char session[sizeof(rtsp->session[0].session) + 12], *p;
 
+	assert(i < rtsp->media_count);
 	assert(RTSP_SETUP == rtsp->state);
-	assert(rtsp->progress < rtsp->media_count);
-	media = rtsp_get_media(rtsp, rtsp->progress);
-	if (NULL == media) return -1;
+	if (i >= rtsp->media_count) return -1;
 
-	p = rtsp->media[0].session.session;
+	p = rtsp->session[0].session;
 	len = snprintf(session, sizeof(session), (rtsp->aggregate && *p) ? "Session: %s\r\n" : "", p);
 	assert(len >= 0 && len < sizeof(session));
 
 	// TODO: multicast
-	assert(0 == media->transport.multicast);
-	len = rtsp_client_authenrization(rtsp, "SETUP", media->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+	assert(0 == rtsp->transport[i].multicast);
+	len = rtsp_client_authenrization(rtsp, "SETUP", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
 	len = snprintf(rtsp->req, sizeof(rtsp->req),
-			RTSP_TRANSPORT_RTP_TCP==media->transport.transport?sc_rtsp_tcp:sc_rtsp_udp,
-			media->uri, rtsp->cseq++, session, rtsp->authenrization, media->transport.rtp.u.client_port1, media->transport.rtp.u.client_port2, USER_AGENT);
+			RTSP_TRANSPORT_RTP_TCP==rtsp->transport[i].transport?sc_rtsp_tcp:sc_rtsp_udp,
+			rtsp->media[i].uri, rtsp->cseq++, session, rtsp->authenrization, rtsp->transport[i].rtp.u.client_port1, rtsp->transport[i].rtp.u.client_port2, USER_AGENT);
 
-	return len == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, len) ? 0 : -1;
+	return len == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, len) ? 0 : -1;
 }
 
 int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
 {
 	int i, r;
-	struct rtsp_media_t *media;
+	struct rtsp_header_transport_t *t;
 
 	if (NULL == sdp || 0 == *sdp)
 		return -1;
 
-	r = rtsp_client_sdp(rtsp, sdp);
-	if (0 != r)
-		return r;
+	r = rtsp_media_sdp(sdp, rtsp->media, sizeof(rtsp->media)/sizeof(rtsp->media[0]));
+	if (r < 0 || r > sizeof(rtsp->media) / sizeof(rtsp->media[0]))
+		return r < 0 ? r : -E2BIG; // too many media stream
 
+	rtsp->media_count = r;
 	for (i = 0; i < rtsp->media_count; i++)
 	{
-		media = rtsp_get_media(rtsp, i);
-		r = rtsp->handler.rtpport(rtsp->param, i, &media->transport.rtp.u.client_port1);
+		// rfc 2326 C.1.1 Control URL (p80)
+		// If found at the session level, the attribute indicates the URL for aggregate control
+		rtsp->aggregate = rtsp->media[0].session_uri[0] ? 1 : 0;
+		rtsp_media_set_url(rtsp->media+i, rtsp->baseuri, rtsp->location, rtsp->uri);
+		if(rtsp->aggregate)
+			snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", rtsp->media[i].session_uri);
+
+		t = rtsp->transport + i;
+		r = rtsp->handler.rtpport(rtsp->param, i, &t->rtp.u.client_port1);
 		if (0 != r)
 			return r;
 
-		if (0 == media->transport.rtp.u.client_port1)
+		if (0 == t->rtp.u.client_port1)
 		{
-			media->transport.transport = RTSP_TRANSPORT_RTP_TCP;
-			media->transport.rtp.u.client_port1 = 2 * (unsigned short)i;
-			media->transport.rtp.u.client_port2 = 2 * (unsigned short)i + 1;
+			t->transport = RTSP_TRANSPORT_RTP_TCP;
+			t->rtp.u.client_port1 = 2 * (unsigned short)i;
+			t->rtp.u.client_port2 = 2 * (unsigned short)i + 1;
 		}
 		else
 		{
-			assert(0 == media->transport.rtp.u.client_port1 % 2);
-			media->transport.transport = RTSP_TRANSPORT_RTP_UDP;
-			media->transport.rtp.u.client_port2 = media->transport.rtp.u.client_port1 + 1;
+			assert(0 == t->rtp.u.client_port1 % 2);
+			t->transport = RTSP_TRANSPORT_RTP_UDP;
+			t->rtp.u.client_port2 = t->rtp.u.client_port1 + 1;
 		}
 	}
 
 	rtsp->state = RTSP_SETUP;
 	rtsp->progress = 0;
-	return rtsp_client_media_setup(rtsp);
+	return rtsp_client_media_setup(rtsp, rtsp->progress);
 }
 
 int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
@@ -106,16 +112,16 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 	{
 		session = http_get_header_by_name(parser, "Session");
 		transport = http_get_header_by_name(parser, "Transport");
-		if (!session || 0 != rtsp_header_session(session, &rtsp->media[rtsp->progress].session)
-			|| !transport || 0 != rtsp_header_transport(transport, &rtsp->media[rtsp->progress].transport))
+		if (!session || 0 != rtsp_header_session(session, &rtsp->session[rtsp->progress])
+			|| !transport || 0 != rtsp_header_transport(transport, &rtsp->transport[rtsp->progress]))
 		{
 			printf("Get rtsp transport error.\n");
 			return -EINVAL;
 		}
 
 		//assert(rtsp->media[rtsp->progress].transport.transport != RTSP_TRANSPORT_RTP_TCP || (rtsp->media[rtsp->progress].transport.rtp.u.client_port1== rtsp->media[rtsp->progress].transport.interleaved1 && rtsp->media[rtsp->progress].transport.rtp.u.client_port2 == rtsp->media[rtsp->progress].transport.interleaved2));
-		assert(strlen(session) < sizeof(rtsp->media[0].session.session));
-		assert(!rtsp->aggregate || 0 == strcmp(rtsp->media[0].session.session, rtsp->media[rtsp->progress].session.session));
+		assert(strlen(session) < sizeof(rtsp->session[0].session));
+		assert(!rtsp->aggregate || 0 == strcmp(rtsp->session[0].session, rtsp->session[rtsp->progress].session));
 
 		if (rtsp->media_count == ++rtsp->progress)
 		{
@@ -124,7 +130,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 		else
 		{
 			// setup next media
-			return rtsp_client_media_setup(rtsp);
+			return rtsp_client_media_setup(rtsp, rtsp->progress);
 		}
 	}
 	else if (401 == code)

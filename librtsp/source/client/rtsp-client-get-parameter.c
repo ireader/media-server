@@ -35,21 +35,19 @@ int rtsp_client_get_parameter(struct rtsp_client_t *rtsp, int media, const char*
 {
 	int r;
 	char session[128];
-	struct rtsp_media_t* m;
 
 	rtsp->state = RTSP_GET_PARAMETER;
 	parameter = parameter ? parameter : "";
-
-	m = rtsp_get_media(rtsp, media);
-	if (m && m->uri[0] && m->session.session[0])
+	
+	if (media < rtsp->media_count && rtsp->media[media].uri[0] && rtsp->session[media].session[0])
 	{
-		r = snprintf(session, sizeof(session), "Session: %s\r\n", m->session.session);
+		r = snprintf(session, sizeof(session), "Session: %s\r\n", rtsp->session[media].session);
 		if (r < 12 || r >= sizeof(session)) session[0] = '\0';
 
-		r = rtsp_client_authenrization(rtsp, "GET_PARAMETER", m->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
-		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, m->uri, rtsp->cseq++, session, rtsp->authenrization, USER_AGENT, strlen(parameter), parameter);
+		r = rtsp_client_authenrization(rtsp, "GET_PARAMETER", rtsp->media[media].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[media].uri, rtsp->cseq++, session, rtsp->authenrization, USER_AGENT, strlen(parameter), parameter);
 		assert(r > 0 && r < sizeof(rtsp->req));
-		return r = rtsp->handler.send(rtsp->param, m->uri, rtsp->req, r) ? 0 : -1;
+		return r = rtsp->handler.send(rtsp->param, rtsp->media[media].uri, rtsp->req, r) ? 0 : -1;
 	}
 	else
 	{

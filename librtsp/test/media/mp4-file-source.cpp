@@ -305,7 +305,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	m->dts_first = -1;
 	m->dts_last = -1;
 
-	if (MOV_OBJECT_AAC == object)
+	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LOW == object)
 	{
 		mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &self->m_aac);
 

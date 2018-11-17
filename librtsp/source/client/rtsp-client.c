@@ -39,12 +39,6 @@ void rtsp_client_destroy(struct rtsp_client_t *rtsp)
 		rtsp->parser = NULL;
 	}
 
-	if (rtsp->media_ptr)
-	{
-		free(rtsp->media_ptr);
-		rtsp->media_ptr = NULL;
-	}
-
 	if (rtsp->rtp.data)
 	{
 		assert(rtsp->rtp.capacity > 0);
@@ -123,28 +117,28 @@ const struct rtsp_header_transport_t* rtsp_client_get_media_transport(struct rts
 {
 	if(media < 0 || media >= rtsp->media_count)
 		return NULL;
-	return &rtsp_get_media(rtsp, media)->transport;
+	return rtsp->transport + media;
 }
 
 const char* rtsp_client_get_media_encoding(struct rtsp_client_t *rtsp, int media)
 {
 	if (media < 0 || media >= rtsp->media_count)
 		return NULL;
-	return rtsp_get_media(rtsp, media)->avformats[0].encoding;
+	return rtsp->media[media].avformats[0].encoding;
 }
 
 const char* rtsp_client_get_media_fmtp(struct rtsp_client_t *rtsp, int media)
 {
 	if (media < 0 || media >= rtsp->media_count)
 		return NULL;
-	return rtsp_get_media(rtsp, media)->avformats[0].fmtp;
+	return rtsp->media[media].avformats[0].fmtp;
 }
 
 int rtsp_client_get_media_payload(struct rtsp_client_t *rtsp, int media)
 {
 	if (media < 0 || media >= rtsp->media_count)
 		return -1;
-	return rtsp_get_media(rtsp, media)->avformats[0].fmt;
+	return rtsp->media[media].avformats[0].fmt;
 }
 
 int rtsp_client_get_media_rate(struct rtsp_client_t *rtsp, int media)
@@ -153,11 +147,11 @@ int rtsp_client_get_media_rate(struct rtsp_client_t *rtsp, int media)
 	if (media < 0 || media >= rtsp->media_count)
 		return -1;
 	
-	rate = rtsp_get_media(rtsp, media)->avformats[0].rate;
+	rate = rtsp->media[media].avformats[0].rate;
 	if (0 == rate)
 	{
 		const struct rtp_profile_t* profile;
-		profile = rtp_profile_find(rtsp_get_media(rtsp, media)->avformats[0].fmt);
+		profile = rtp_profile_find(rtsp->media[media].avformats[0].fmt);
 		rate = profile ? profile->frequency : 0;
 	}
 	return rate;

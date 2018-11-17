@@ -51,23 +51,19 @@ static const char* sc_format =
 	"User-Agent: %s\r\n"
 	"\r\n";
 
-static int rtsp_client_media_play(struct rtsp_client_t *rtsp)
+static int rtsp_client_media_play(struct rtsp_client_t *rtsp, int i)
 {
 	int r;
-	struct rtsp_media_t* media;
-
 	assert(0 == rtsp->aggregate);
+	assert(i < rtsp->media_count);
 	assert(RTSP_PLAY == rtsp->state);
-	assert(rtsp->progress < rtsp->media_count);
+	if (i >= rtsp->media_count) return -1;
 
-	media = rtsp_get_media(rtsp, rtsp->progress);
-	if (NULL == media) return -1;
-
-	assert(media && media->uri[0] && media->session.session[0]);
-	r = rtsp_client_authenrization(rtsp, "PLAY", media->uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, media->uri, rtsp->cseq++, media->session.session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
+	assert(rtsp->media[i].uri[0] && rtsp->session[i].session[0]);
+	r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));
-	return r == rtsp->handler.send(rtsp->param, media->uri, rtsp->req, r) ? 0 : -1;
+	return r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r) ? 0 : -1;
 }
 
 int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *speed)
@@ -85,13 +81,13 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 		assert(rtsp->media_count > 0);
 		assert(rtsp->aggregate_uri[0]);
 		r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
-		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->media[0].session.session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
 		assert(r > 0 && r < sizeof(rtsp->req));
 		return r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r) ? 0 : -1;
 	}
 	else
 	{
-		return rtsp_client_media_play(rtsp);
+		return rtsp_client_media_play(rtsp, rtsp->progress);
 	}
 }
 
@@ -144,7 +140,7 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 
 	if(0 == r && 0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
 	{
-		return rtsp_client_media_play(rtsp);
+		return rtsp_client_media_play(rtsp, rtsp->progress);
 	}
 	return r;
 }
@@ -161,7 +157,7 @@ static int rtsp_client_aggregate_play_onreply(struct rtsp_client_t* rtsp, void* 
 	if (459 == code) // 459 Aggregate operation not allowed (p26)
 	{
 		rtsp->aggregate = 0;
-		return rtsp_client_media_play(rtsp);
+		return rtsp_client_media_play(rtsp, rtsp->progress);
 	}
 	else if (200 == code)
 	{
