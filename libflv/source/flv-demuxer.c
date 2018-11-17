@@ -86,6 +86,7 @@ static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
 
 static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
 {
+	int n;
 	flv->audio.format = (data[0] & 0xF0) /*>> 4*/;
 	flv->audio.sampleRate = (data[0] & 0x0C) >> 2;
 	flv->audio.bitsPerSample = (data[0] & 0x02) >> 1;
@@ -108,15 +109,17 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 		}
 		else
 		{
-			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7))
+			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7 + 1 + flv->aac.npce))
 				return -ENOMEM;
 
 			// AAC ES stream with ADTS header
 			assert(bytes <= 0x1FFF);
 			assert(bytes > 2 && 0xFFF0 != (((data[2] << 8) | data[3]) & 0xFFF0)); // don't have ADTS
-			mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - 2, flv->ptr, 7); // 13-bits
-			memmove(flv->ptr + 7, data + 2, bytes - 2);
-			return flv->handler(flv->param, FLV_AUDIO_AAC, flv->ptr, bytes - 2 + 7, timestamp, timestamp, 0);
+			n = mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - 2, flv->ptr, 7 + 1 + flv->aac.npce); // 13-bits
+			if (n < 7) return -EINVAL; // invalid pce
+			flv->aac.npce = 0; // pce write only once
+			memmove(flv->ptr + n, data + 2, bytes - 2);
+			return flv->handler(flv->param, FLV_AUDIO_AAC, flv->ptr, bytes - 2 + n, timestamp, timestamp, 0);
 		}
 	}
 	else if (FLV_AUDIO_MP3 == flv->audio.format || FLV_AUDIO_MP3_8K == flv->audio.format)

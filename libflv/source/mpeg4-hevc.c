@@ -149,7 +149,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 	uint8_t i, j, k;
 	uint8_t *ptr, *end;
 	uint8_t *p = data;
-	uint8_t array_completeness;
+	uint8_t array_completeness = 1;
 	const uint8_t nalu[] = {H265_VPS, H265_SPS, H265_PPS, H265_PREFIX_SEI, H265_SUFFIX_SEI};
 
 	assert(hevc->lengthSizeMinusOne <= 3);

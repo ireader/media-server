@@ -17,10 +17,14 @@ struct mpeg4_bits_t
 	int error;
 };
 
-#define mpeg4_bits_read_uint8(bits, n)  (uint8_t)mpeg4_bits_read_n(bits, n)
-#define mpeg4_bits_read_uint16(bits, n) (uint16_t)mpeg4_bits_read_n(bits, n)
-#define mpeg4_bits_read_uint32(bits, n) (uint32_t)mpeg4_bits_read_n(bits, n)
-#define mpeg4_bits_read_uint64(bits, n) (uint64_t)mpeg4_bits_read_n(bits, n)
+#define mpeg4_bits_read_uint8(bits, n)		(uint8_t)mpeg4_bits_read_n(bits, n)
+#define mpeg4_bits_read_uint16(bits, n)		(uint16_t)mpeg4_bits_read_n(bits, n)
+#define mpeg4_bits_read_uint32(bits, n)		(uint32_t)mpeg4_bits_read_n(bits, n)
+#define mpeg4_bits_read_uint64(bits, n)		(uint64_t)mpeg4_bits_read_n(bits, n)
+#define mpeg4_bits_write_uint8(bits, v, n)	mpeg4_bits_write_n(bits, (uint64_t)v, n)
+#define mpeg4_bits_write_uint16(bits, v, n) mpeg4_bits_write_n(bits, (uint64_t)v, n)
+#define mpeg4_bits_write_uint32(bits, v, n) mpeg4_bits_write_n(bits, (uint64_t)v, n)
+#define mpeg4_bits_write_uint64(bits, v, n) mpeg4_bits_write_n(bits, (uint64_t)v, n)
 
 static inline void mpeg4_bits_init(struct mpeg4_bits_t* bits, void* data, size_t size)
 {
@@ -92,8 +96,9 @@ static inline uint64_t mpeg4_bits_read_n(struct mpeg4_bits_t* bits, int n)
 	}
 
 	n -= 8 - (int)(bits->bits % 8);
-	for (i = 1; n >= 8 && bits->bits/8 + i < bits->size; i++)
+	for (i = 1; n >= 8; i++)
 	{
+		assert(bits->bits / 8 + i < bits->size);
 		v <<= 8;
 		v += bits->data[bits->bits / 8 + i];
 		n -= 8;
@@ -107,6 +112,55 @@ static inline uint64_t mpeg4_bits_read_n(struct mpeg4_bits_t* bits, int n)
 
 	bits->bits += m;
 	return v;
+}
+
+/// write 1-bit
+/// @param[in] v write 0 if v value 0, other, write 1
+static inline int mpeg4_bits_write(struct mpeg4_bits_t* bits, int v)
+{
+	assert(bits && bits->data && bits->size > 0);
+	if (bits->bits >= bits->size * 8)
+	{
+		bits->error = -1;
+		return -1; // throw exception
+	}
+
+	if(v)
+		bits->data[bits->bits / 8] |= (0x80U >> (bits->bits % 8));
+	bits->bits += 1; // update offset
+	return 0;
+}
+
+static inline int mpeg4_bits_write_n(struct mpeg4_bits_t* bits, uint64_t v, int n)
+{
+	int m;
+	size_t i;
+
+	assert(n > 0 && n <= 64);
+	assert(bits && bits->data && bits->size > 0);
+	if (bits->bits + n > bits->size * 8 || n > 64 || n < 0)
+	{
+		bits->error = -1;
+		return -1; // throw exception
+	}
+
+	m = n;
+	v <<= 64 - n; // left shift to first bit
+
+	bits->data[bits->bits / 8] |= v >> (56 + (bits->bits % 8)); // remain valid value
+	v <<= 8 - (bits->bits % 8);
+	n -= 8 - (int)(bits->bits % 8);
+
+	for (i = 1; n > 0; i++)
+	{
+		assert(bits->bits / 8 + i < bits->size);
+		bits->data[bits->bits / 8 + i] = (uint8_t)(v >> 56);
+		v <<= 8;
+		n -= 8;
+	}
+
+	bits->bits += m;
+	return 0;
 }
 
 #ifdef __cplusplus

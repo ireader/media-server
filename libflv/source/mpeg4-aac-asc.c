@@ -1,6 +1,8 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-bits.h"
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Table 4.85 ¨C Syntactic elements (p533)
 enum {
@@ -67,92 +69,94 @@ program_config_element()
 		comment_field_data[i];                  8 uimsbf
 }
 */
-static int mpeg4_aac_pce_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+static inline uint64_t mpeg4_bits_copy(struct mpeg4_bits_t* dst, struct mpeg4_bits_t* src, int n)
 {
-	int cpe;
-	uint8_t i, tag;
-	uint8_t element_instance_tag;
-	uint8_t object_type;
-	uint8_t sampling_frequency_index;
-	uint8_t num_front_channel_elements;
-	uint8_t num_side_channel_elements;
-	uint8_t num_back_channel_elements;;
-	uint8_t num_lfe_channel_elements;
-	uint8_t num_assoc_data_elements;
-	uint8_t num_valid_cc_elements;
-	uint8_t mono_mixdown_element_number = 0;
-	uint8_t stereo_mixdown_element_number = 0;
-	uint8_t matrix_mixdown_idx = 0;
-	int pseudo_surround_enable = 0;
-	uint8_t comment_field_bytes;
+	uint64_t v;
+	v = mpeg4_bits_read_n(src, n);
+	mpeg4_bits_write_n(dst, v, n);
+	return v;
+}
 
-	element_instance_tag = mpeg4_bits_read_uint8(bits, 4);
-	object_type = mpeg4_bits_read_uint8(bits, 2);
-	sampling_frequency_index = mpeg4_bits_read_uint8(bits, 4);
-	num_front_channel_elements = mpeg4_bits_read_uint8(bits, 4);
-	num_side_channel_elements = mpeg4_bits_read_uint8(bits, 4);
-	num_back_channel_elements = mpeg4_bits_read_uint8(bits, 4);
-	num_lfe_channel_elements = mpeg4_bits_read_uint8(bits, 2);
-	num_assoc_data_elements = mpeg4_bits_read_uint8(bits, 3);
-	num_valid_cc_elements = mpeg4_bits_read_uint8(bits, 4);
+static int mpeg4_aac_pce_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac, struct mpeg4_bits_t* pce)
+{
+	uint64_t i, cpe, tag;
+	uint64_t element_instance_tag;
+	uint64_t object_type;
+	uint64_t sampling_frequency_index;
+	uint64_t num_front_channel_elements;
+	uint64_t num_side_channel_elements;
+	uint64_t num_back_channel_elements;;
+	uint64_t num_lfe_channel_elements;
+	uint64_t num_assoc_data_elements;
+	uint64_t num_valid_cc_elements;
+	uint64_t comment_field_bytes;
 
-	if (mpeg4_bits_read(bits))
-		mono_mixdown_element_number = mpeg4_bits_read_uint8(bits, 4);
-	if (mpeg4_bits_read(bits))
-		stereo_mixdown_element_number = mpeg4_bits_read_uint8(bits, 4);
-	if (mpeg4_bits_read(bits))
-	{
-		matrix_mixdown_idx = mpeg4_bits_read_uint8(bits, 2);
-		pseudo_surround_enable = mpeg4_bits_read(bits);
-	}
+	aac->channels = 0;
+	element_instance_tag = mpeg4_bits_copy(pce, bits, 4);
+	object_type = mpeg4_bits_copy(pce, bits, 2);
+	sampling_frequency_index = mpeg4_bits_copy(pce, bits, 4);
+	num_front_channel_elements = mpeg4_bits_copy(pce, bits, 4);
+	num_side_channel_elements = mpeg4_bits_copy(pce, bits, 4);
+	num_back_channel_elements = mpeg4_bits_copy(pce, bits, 4);
+	num_lfe_channel_elements = mpeg4_bits_copy(pce, bits, 2);
+	num_assoc_data_elements = mpeg4_bits_copy(pce, bits, 3);
+	num_valid_cc_elements = mpeg4_bits_copy(pce, bits, 4);
+
+	if (mpeg4_bits_copy(pce, bits, 1))
+		mpeg4_bits_copy(pce, bits, 4);		// MONO
+	if (mpeg4_bits_copy(pce, bits, 1))
+		mpeg4_bits_copy(pce, bits, 4);		// STEREO
+	if (mpeg4_bits_copy(pce, bits, 1))
+		mpeg4_bits_copy(pce, bits, 3);		// Matrix, Pseudo surround
 
 	for (i = 0; i < num_front_channel_elements; i++)
 	{
-		cpe = mpeg4_bits_read(bits); // front_element_is_cpe
-		tag = mpeg4_bits_read_uint8(bits, 4); // front_element_tag_select
+		cpe = mpeg4_bits_copy(pce, bits, 1); // front_element_is_cpe
+		tag = mpeg4_bits_copy(pce, bits, 4); // front_element_tag_select
 		aac->channels += (cpe || aac->ps) ? 2 : 1;
 	}
 
 	for (i = 0; i < num_side_channel_elements; i++)
 	{
-		cpe = mpeg4_bits_read(bits); // side_element_is_cpe
-		tag = mpeg4_bits_read_uint8(bits, 4); // side_element_tag_select
+		cpe = mpeg4_bits_copy(pce, bits, 1); // side_element_is_cpe
+		tag = mpeg4_bits_copy(pce, bits, 4); // side_element_tag_select
 		aac->channels += (cpe || aac->ps) ? 2 : 1;
 	}
 
 	for (i = 0; i < num_back_channel_elements; i++)
 	{
-		cpe = mpeg4_bits_read(bits); // back_element_is_cpe
-		tag = mpeg4_bits_read_uint8(bits, 4); // back_element_tag_select
+		cpe = mpeg4_bits_copy(pce, bits, 1); // back_element_is_cpe
+		tag = mpeg4_bits_copy(pce, bits, 4); // back_element_tag_select
 		aac->channels += (cpe || aac->ps) ? 2 : 1;
 	}
 
 	for (i = 0; i < num_lfe_channel_elements; i++)
 	{
-		tag = mpeg4_bits_read_uint8(bits, 4); // lfe_element_tag_select
+		tag = mpeg4_bits_copy(pce, bits, 4); // lfe_element_tag_select
 		aac->channels += 1;
 	}
 
 	for (i = 0; i < num_assoc_data_elements; i++)
 	{
-		tag = mpeg4_bits_read_uint8(bits, 4); // assoc_data_element_tag_select
+		tag = mpeg4_bits_copy(pce, bits, 4); // assoc_data_element_tag_select
 	}
 
 	for (i = 0; i < num_valid_cc_elements; i++)
 	{
-		cpe = mpeg4_bits_read(bits); // cc_element_is_ind_sw
-		tag = mpeg4_bits_read_uint8(bits, 4); // valid_cc_element_tag_select
+		cpe = mpeg4_bits_copy(pce, bits, 1); // cc_element_is_ind_sw
+		tag = mpeg4_bits_copy(pce, bits, 4); // valid_cc_element_tag_select
 	}
 
 	mpeg4_bits_aligment(bits, 8); // byte_alignment();
+	mpeg4_bits_aligment(pce, 8);
 
-	comment_field_bytes = mpeg4_bits_read_uint8(bits, 8);
-	for(i = 0; i < comment_field_bytes; i++)
-		mpeg4_bits_read_n(bits, 8); // comment_field_data
+	comment_field_bytes = mpeg4_bits_copy(pce, bits, 8);
+	for (i = 0; i < comment_field_bytes; i++)
+		mpeg4_bits_copy(pce, bits, 8); // comment_field_data
 
 	assert(aac->sampling_frequency_index == sampling_frequency_index);
-	assert(aac->profile == object_type+1);
-	return mpeg4_bits_error(bits);
+	assert(aac->profile == object_type + 1);
+	return (pce->bits + 7) / 8;
 }
 
 // 4.4.1 Decoder configuration (GASpecificConfig) (p487)
@@ -191,13 +195,18 @@ GASpecificConfig (samplingFrequencyIndex, channelConfiguration, audioObjectType)
 static int mpeg4_aac_ga_specific_config_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
 {
 	int extensionFlag;
+	struct mpeg4_bits_t pce;
+
 	mpeg4_bits_read(bits); // frameLengthFlag
 	if (mpeg4_bits_read(bits)) // dependsOnCoreCoder
 		mpeg4_bits_read_uint16(bits, 14); // coreCoderDelay
 	extensionFlag = mpeg4_bits_read(bits); // extensionFlag
 
 	if (0 == aac->channel_configuration)
-		mpeg4_aac_pce_load(bits, aac); // update channel count
+	{
+		mpeg4_bits_init(&pce, aac->pce, sizeof(aac->pce));
+		aac->npce = mpeg4_aac_pce_load(bits, aac, &pce); // update channel count
+	}
 
 	if (6 == aac->profile || 20 == aac->profile)
 		mpeg4_bits_read_uint8(bits, 3); // layerNr
@@ -347,11 +356,24 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 	return mpeg4_bits_error(&bits) ? -1 : bits.bits / 8;
 }
 
-int mpeg4_aac_pce_raw_data_block(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
+{
+	if (bytes < 2 + aac->npce)
+		return -1;
+
+	memcpy(data + 2, aac->pce, aac->npce);
+	return 2 + aac->npce;
+	//data[2 + aac->npce] = 0x56;
+	//data[2 + aac->npce + 1] = 0xe5;
+	//data[2 + aac->npce + 2] = 0x00;
+	//return 2 + aac->npce + 3;
+}
+
+int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
 	uint8_t i;
 	size_t offset = 7;
-	struct mpeg4_bits_t bits;
+	struct mpeg4_bits_t bits, pce;
 	
 	if (0 == (data[1] & 0x01)) // protection_absent
 	{
@@ -364,17 +386,28 @@ int mpeg4_aac_pce_raw_data_block(const uint8_t* data, size_t bytes, struct mpeg4
 	if (bytes <= offset)
 		return offset;
 
-	mpeg4_bits_init(&bits, (const uint8_t*)data + offset, bytes - offset);
+	mpeg4_bits_init(&bits, (uint8_t*)data + offset, bytes - offset);
 	if (ID_PCE == mpeg4_bits_read_uint8(&bits, 3))
 	{
-		mpeg4_aac_pce_load(&bits, aac);
+		mpeg4_bits_init(&pce, aac->pce, sizeof(aac->pce));
+		aac->npce = mpeg4_aac_pce_load(&bits, aac, &pce);
+		return mpeg4_bits_error(&bits) ? -1 : (7 + (pce.bits + 7) / 8);
 	}
-
-	mpeg4_bits_aligment(&bits, 8);
-	return mpeg4_bits_error(&bits) ? -1 : bits.bits / 8;
+	return 7;
 }
 
-static int mpeg4_aac_pce_copy(uint8_t* dst, size_t doff, const uint8_t* pce, size_t bytes)
+int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_t* aac)
 {
-	return 0;
+	struct mpeg4_aac_t src;
+	struct mpeg4_bits_t pce, adts;
+	if (aac->npce + 7 > bytes)
+		return 0;
+	memcpy(&src, aac, sizeof(src));
+//	assert(data[1] & 0x01); // disable protection_absent
+	mpeg4_bits_init(&pce, (uint8_t*)aac->pce, aac->npce);
+	mpeg4_bits_init(&adts, (uint8_t*)data + 7, bytes - 7);
+	mpeg4_bits_write_uint8(&adts, ID_PCE, 3);
+	mpeg4_aac_pce_load(&pce, &src, &adts);
+	assert(src.channels == aac->channels);
+	return mpeg4_bits_error(&pce) ? 0 : (7 + (adts.bits+7) / 8);
 }

@@ -2,6 +2,11 @@
 #include <assert.h>
 #include <string.h>
 
+int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
+int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_t* aac);
+int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
+int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
+
 /*
 // ISO-14496-3 adts_frame (p122)
 
@@ -41,12 +46,11 @@ int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* a
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 
 	if (0 == aac->channel_configuration)
-		return mpeg4_aac_pce_raw_data_block(data, bytes, aac);
-
-	aac->channels = aac->channel_configuration;
-	aac->sampling_frequency = mpeg4_aac_audio_frequency_from(aac->sampling_frequency_index);
+		return mpeg4_aac_adts_pce_load(data, bytes, aac);
 	return 7;
 }
 
@@ -57,6 +61,9 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 	size_t len = payload + 7;
 	if (bytes < 7 || len >= (1 << 12)) return -1;
 
+	if (0 == aac->channel_configuration && aac->npce > 0)
+		len += mpeg4_aac_adts_pce_save(data, bytes, aac);
+
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
@@ -66,14 +73,18 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 	data[3] = ((aac->channel_configuration & 0x03) << 6) | ((len >> 11) & 0x03); /*0-original_copy*/ /*0-home*/ /*0-copyright_identification_bit*/ /*0-copyright_identification_start*/
 	data[4] = (uint8_t)(len >> 3);
 	data[5] = ((len & 0x07) << 5) | 0x1F;
-	data[6] = 0xFC | ((len / 1024) & 0x03);
-
-	if (0 == aac->channel_configuration)
-	{
-	}
-	return 7;
+	data[6] = 0xFC /*| ((len / (1024 * aac->channels)) & 0x03)*/;
+	return len - payload;
 }
 
+int mpeg4_aac_adts_frame_length(const uint8_t* data, size_t bytes)
+{
+	uint16_t len;
+	if (bytes < 7) return -1;
+	assert(0xFF == data[0] && 0xF0 == (data[1] & 0xF0)); /* syncword */
+	len = ((uint16_t)(data[3] & 0x03) << 11) | ((uint16_t)data[4] << 3) | ((uint16_t)(data[5] >> 5) & 0x07);
+	return len;
+}
 
 // ISO-14496-3 AudioSpecificConfig (p52)
 /*
@@ -99,12 +110,11 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 
 	if (0 == aac->channel_configuration || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
 		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
-
-	aac->channels = aac->channel_configuration;
-	aac->sampling_frequency = mpeg4_aac_audio_frequency_from(aac->sampling_frequency_index);
 	return 2;
 }
 
@@ -120,8 +130,10 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 	data[0] = (aac->profile << 3) | ((aac->sampling_frequency_index >> 1) & 0x07);
 	data[1] = ((aac->sampling_frequency_index & 0x01) << 7) | ((channel_configuration & 0xF) << 3) | (0 << 2) /* frame length-1024 samples*/ | (0 << 1) /* don't depend on core */ | 0 /* not extension */;
-	memcpy(data + 2, aac->pce, aac->npce);
-	return 2+aac->npce;
+
+	if (0 == aac->channel_configuration && aac->npce > 0)
+		return mpeg4_aac_audio_specific_config_save2(aac, data, bytes);
+	return 2;
 }
 
 // ISO/IEC 14496-3:2009(E) Table 1.42 ¨C Syntax of StreamMuxConfig() (p83)

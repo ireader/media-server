@@ -17,8 +17,8 @@ struct mpeg4_aac_t
 //	uint32_t frequency; // play frequency
 	uint32_t sampling_frequency;  // valid only in decode
 	uint8_t channels; // valid only in decode
-	uint8_t sbr; // sbr flag, valid only in decode
-	uint8_t ps; // ps flag, valid only in decode
+	int sbr; // sbr flag, valid only in decode
+	int ps; // ps flag, valid only in decode
 	uint8_t pce[64];
 	size_t  npce; // pce bytes
 };
@@ -83,6 +83,8 @@ int mpeg4_aac_audio_frequency_to(enum mpeg4_aac_frequency index);
 /// 96000 => MPEG4_AAC_96000
 /// @return -1-error, other-frequency index
 int mpeg4_aac_audio_frequency_from(int frequency);
+
+int mpeg4_aac_adts_frame_length(const uint8_t* data, size_t bytes);
 
 #if defined(__cplusplus)
 }

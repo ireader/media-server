@@ -1,5 +1,6 @@
 #include "flv-writer.h"
 #include "flv-muxer.h"
+#include "mpeg4-aac.h"
 #include "mpeg-ts.h"
 #include "mpeg-ts-proto.h"
 #include <stdio.h>
@@ -21,7 +22,15 @@ static void on_ts_packet(void* param, int /*stream*/, int avtype, int flags, int
 	flv_muxer_t* muxer = (flv_muxer_t*)param;
 	if (PSI_STREAM_AAC == avtype)
 	{
-		flv_muxer_aac(muxer, data, bytes, (uint32_t)(pts/90), (uint32_t)(pts / 90));
+		int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		while (len > 0 && len <= bytes)
+		{
+			flv_muxer_aac(muxer, data, len, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
+			data = (const uint8_t*)data + len;
+			bytes -= len;
+			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		}
+		assert(0 == bytes);
 	}
 	else if (PSI_STREAM_MP3 == avtype)
 	{
