@@ -88,7 +88,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 			remain = (size_t)(end - p);
 			r = http_parser_input(rtsp->parser, p, &remain);
 			rtsp->parser_need_more_data = r;
-			assert(r <= 1); // 1-need more data
+			assert(r <= 2); // 1-need more data
 			if (0 == r)
 			{
 				r = rtsp_client_handle(rtsp, rtsp->parser);
