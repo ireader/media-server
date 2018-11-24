@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <map>
 #include <list>
+#include <atomic>
 #include <vector>
 #include <string>
 
