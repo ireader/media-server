@@ -263,6 +263,11 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 		snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
 		snprintf(m->address, sizeof(m->address), "%s", address);
 		//media->cseq = rand();
+		
+		m->nport = 0;
+		sdp_media_port(sdp, i, m->port, &m->nport);
+		snprintf(m->media, sizeof(m->media), "%s", sdp_media_type(sdp, i));
+		snprintf(m->proto, sizeof(m->proto), "%s", sdp_media_proto(sdp, i));
 
 		// media control url
 		s = sdp_media_attribute_find(sdp, i, "control");

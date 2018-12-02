@@ -17,6 +17,10 @@ struct rtsp_media_t
 	char network[16], addrtype[16], address[64]; // sdp c: connection
 	struct rtsp_header_range_t range;
 
+	char media[32]; //audio, video, text, application, message
+	char proto[64]; // udp, RTP/AVP, RTP/SAVP
+	int nport, port[8];
+
 	int avformat_count;
 	struct avformat_t
 	{
