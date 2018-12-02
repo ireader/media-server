@@ -53,7 +53,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	{
 		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
 		// [Sip] Branch in INVITE ,ACK,BYE
-		r = sip_uac_transaction_via(t, ptr, contact);
+		r = sip_uac_transaction_via(t, ptr, sizeof(ptr), contact, sizeof(contact));
 		if(0 == r)
 			r = sip_message_add_header(req, "Via", ptr);
 	}

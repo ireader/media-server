@@ -244,7 +244,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	memcpy(&t->transport, transport, sizeof(struct sip_transport_t));
 	t->transportptr = param;
 
-	r = sip_uac_transaction_via(t, via, contact);
+	r = sip_uac_transaction_via(t, via, sizeof(via), contact, sizeof(contact));
 	if (0 != r)
 	{
 		sip_uac_transaction_release(t);
@@ -300,7 +300,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	return sip_uac_transaction_send(t);
 }
 
-int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], char contact[1024])
+int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int nconcat)
 {
 	int r;
 	char dns[128];
@@ -331,8 +331,8 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], cha
 	// Via
 	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
 	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
-	r = snprintf(via, sizeof(via), "SIP/2.0/%s %s;branch=%s%pK", protocol, dns, SIP_BRANCH_PREFIX, t);
-	if (r < 0 || r >= sizeof(via))
+	r = snprintf(via, nvia, "SIP/2.0/%s %s;branch=%s%pK", protocol, dns, SIP_BRANCH_PREFIX, t);
+	if (r < 0 || r >= nvia)
 		return -1; // ENOMEM
 
 	// Contact
@@ -343,8 +343,8 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], cha
 	{
 		cstrcpy(&user, remote, sizeof(remote));
 		cstrcpy(&uri->scheme, local, sizeof(local));
-		r = snprintf(contact, sizeof(contact), "<%s:%s@%s>", uri ? local : "sip", remote, dns);
-		if (r < 0 || r >= sizeof(contact))
+		r = snprintf(contact, nconcat, "<%s:%s@%s>", uri ? local : "sip", remote, dns);
+		if (r < 0 || r >= nconcat)
 			return -1; // ENOMEM
 	}
 

@@ -1,6 +1,6 @@
 #include "sip-uas-transaction.h"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 static int sip_uas_transaction_onretransmission(void* usrptr);
 static int sip_uas_transaction_ontimeout(void* usrptr);
@@ -178,7 +178,7 @@ static int sip_uas_transaction_onretransmission(void* usrptr)
 	//}
 
 	if(!t->reliable)
-		t->timerg = sip_uas_start_timer(t->uas, t, min(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
+		t->timerg = sip_uas_start_timer(t->uas, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
 
 	locker_unlock(&t->locker);
 	sip_uas_transaction_release(t);

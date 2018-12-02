@@ -2,7 +2,7 @@
 #include "sip-transport.h"
 #include "uri-parse.h"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req)
 {
@@ -90,7 +90,7 @@ static int sip_uac_transaction_onretransmission(void* usrptr)
 	
 	if (t->timera)
 		sip_uac_stop_timer(t->uac, t, t->timera);
-	t->timera = sip_uac_start_timer(t->uac, t, min(t->t2, T1 * (1 << t->retries++)), sip_uac_transaction_onretransmission);
+	t->timera = sip_uac_start_timer(t->uac, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uac_transaction_onretransmission);
 
 	locker_unlock(&t->locker);
 	sip_uac_transaction_release(t);

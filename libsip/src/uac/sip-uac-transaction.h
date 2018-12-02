@@ -66,7 +66,7 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 // wait for all inflight reply
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 
-int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char via[1024], char contact[1024]);
+int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int nconcat);
 
 int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
 int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
