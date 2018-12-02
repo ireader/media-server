@@ -1426,6 +1426,31 @@ int sdp_timing_count(struct sdp_t* sdp)
 	return sdp->t.count;
 }
 
+int sdp_timing_get(sdp_t* sdp, int idx, const char** start, const char** stop)
+{
+	struct sdp_timing* t;
+	t = sdp_get_timing(sdp, idx);
+	if (NULL == t)
+		return -1;
+	*start = t->start;
+	*stop = t->stop;
+	return 0;
+}
+
+int sdp_timing_repeat_count(sdp_t* sdp, int idx)
+{
+	struct sdp_timing* t;
+	t = sdp_get_timing(sdp, idx);
+	return t ? t->r.count : -1;
+}
+
+int sdp_timing_timezone_count(sdp_t* sdp, int idx)
+{
+	struct sdp_timing* t;
+	t = sdp_get_timing(sdp, idx);
+	return t ? t->z.count : -1;
+}
+
 int sdp_media_count(struct sdp_t* sdp)
 {
 	return sdp->m.count;
@@ -1710,4 +1735,42 @@ int sdp_attribute_list(struct sdp_t* sdp, const char* name, void (*onattr)(void*
 	}
 
 	return 0;
+}
+
+static int sdp_attribute_mode(struct attributes* a)
+{
+	const int v[] = { SDP_A_SENDRECV, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE };
+	char* mode[] = { "sendrecv", "sendonly", "recvonly", "inactive" };
+
+	size_t i, j;
+	const struct sdp_attribute *attr;
+	for (i = 0; i < a->count; i++)
+	{
+		if (i < N_ATTRIBUTE)
+			attr = a->attrs + i;
+		else
+			attr = a->ptr + i - N_ATTRIBUTE;
+
+		for (j = 0; j < sizeof(mode) / sizeof(mode[0]); j++)
+		{
+			if (attr->name && 0 == strcmp(mode[j], attr->name))
+				return v[j];
+		}
+	}
+
+	return -1;
+}
+
+static int sdp_session_mode(struct sdp_t* sdp)
+{
+	return sdp_attribute_mode(&sdp->a);
+}
+
+int sdp_media_mode(struct sdp_t* sdp, int media)
+{
+	int mode;
+	struct sdp_media *m;
+	m = sdp_get_media(sdp, media);
+	mode = m ? sdp_attribute_mode(&m->a) : -1;
+	return -1 == mode ? sdp_session_mode(sdp) : mode;
 }

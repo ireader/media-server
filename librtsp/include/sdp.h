@@ -10,7 +10,7 @@ typedef struct sdp_t sdp_t;
 enum { SDP_V_VERSION_0 = 0 };
 enum { SDP_C_NETWORK_UNKNOWN=0, SDP_C_NETWORK_IN };
 enum { SDP_C_ADDRESS_UNKNOWN=0, SDP_C_ADDRESS_IP4, SDP_C_ADDRESS_IP6 };
-enum { SDP_A_SENDONLY = 0, SDP_A_RECVONLY, SDP_A_SENDRECV };
+enum { SDP_A_SENDRECV = 0, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE, };
 enum { SDP_M_FMT_UDP_AUDIO = 1001, SDP_M_FMT_UDP_VIDEO, SDP_M_FMT_UDP_TEXT, SDP_M_FMT_UDP_APPLICATION, SDP_M_FMT_UDP_MESSAGE };
 
 sdp_t* sdp_parse(const char* s);
@@ -93,6 +93,11 @@ int sdp_attribute_count(sdp_t* sdp);
 int sdp_attribute_list(sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param);
 int sdp_attribute_get(sdp_t* sdp, int idx, const char** name, const char** value);
 const char* sdp_attribute_find(sdp_t* sdp, const char* name);
+
+/// "sendrecv" SHOULD be assumed as the default for sessions that 
+/// are not of the conference type "broadcast" or "H332" (see below).
+/// return -1-not found, SDP_A_SENDRECV/SDP_A_SENDONLY/SDP_A_XXX
+int sdp_media_mode(struct sdp_t* sdp, int media);
 
 #ifdef __cplusplus
 }
