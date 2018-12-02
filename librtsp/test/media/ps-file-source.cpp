@@ -59,7 +59,7 @@ int PSFileSource::Play()
 	m_status = 1;
 
 	time64_t clock = time64_now();
-	if(0 == m_rtp_clock || m_rtp_clock + 40 < clock)
+	if(0 == m_rtp_clock || m_rtp_clock + 40 < (clock - m_ps_clock))
 	{
 		size_t bytes;
 		const uint8_t* ptr;
@@ -173,7 +173,6 @@ void PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
 	rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock * 90 /*kHz*/);
-	free(pes);
 }
 
 void* PSFileSource::RTPAlloc(void* param, int bytes)

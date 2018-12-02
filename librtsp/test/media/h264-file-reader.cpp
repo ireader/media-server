@@ -105,13 +105,14 @@ int H264FileReader::Init()
 
 	const uint8_t* end = m_ptr + m_capacity;
     const uint8_t* nalu = search_start_code(m_ptr, end);
+	const uint8_t* p = nalu;
 
-	while (nalu < end)
+	while (p < end)
 	{
-        const unsigned char* nalu2 = search_start_code(nalu + 4, end);
-		size_t bytes = nalu2 - nalu;
+        const unsigned char* pn = search_start_code(p + 4, end);
+		size_t bytes = pn - p;
 
-        int nal_unit_type = h264_nal_type(nalu);
+        int nal_unit_type = h264_nal_type(p);
         assert(0 != nal_unit_type);
         if(nal_unit_type <= 5)
         {
@@ -123,20 +124,21 @@ int H264FileReader::Init()
 			frame.time = 40 * count++;
 			frame.idr = 5 == nal_unit_type; // IDR-frame
 			m_videos.push_back(frame);
+			nalu = pn;
         }
         else if(NAL_SPS == nal_unit_type || NAL_PPS == nal_unit_type)
         {
             if(spspps)
             {
-                size_t n = 0x01 == nalu[2] ? 3 : 4;
+                size_t n = 0x01 == p[2] ? 3 : 4;
 				std::pair<const uint8_t*, size_t> pr;
-				pr.first = nalu + n;
+				pr.first = p + n;
 				pr.second = bytes;
 				m_sps.push_back(pr);
             }
         }
 
-        nalu = nalu2;
+        p = pn;
     }
 
     m_duration = 40 * count;

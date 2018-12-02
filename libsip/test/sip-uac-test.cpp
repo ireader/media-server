@@ -22,10 +22,27 @@ struct sip_uac_test_t
 	socklen_t addrlen;
 	struct sockaddr_storage addr;
 
-	http_parser_t* parser;
 	struct sip_uac_t* uac;
 	struct sip_transport_t transport;
+
+	bool running;
 };
+
+static inline const char* strlower(char* s)
+{
+	char* p;
+	for (p = s; p && *p; p++)
+		*p = tolower(*p);
+	return s;
+}
+
+static void md5_digest(const uint8_t* data, int size, uint8_t md5[16])
+{
+	MD5_CTX ctx;
+	MD5Init(&ctx);
+	MD5Update(&ctx, (unsigned char*)data, size);
+	MD5Final(md5, &ctx);
+}
 
 static int sip_uac_transport_via(void* transport, const char* destination, char protocol[16], char local[128], char dns[128])
 {
@@ -106,44 +123,29 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 	return r == bytes ? 0 : -1;
 }
 
-static void sip_uac_recv_reply(struct sip_uac_test_t *test)
+
+static int sip_uac_onmessage(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
-	uint8_t buffer[2 * 1024];
-	struct sockaddr_storage addr;
-	socklen_t addrlen = sizeof(addr);
-
-	do
-	{
-		int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen);
-
-		size_t n = r;
-		if (0 == http_parser_input(test->parser, buffer, &n))
-		{
-			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REPLY);
-			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_uac_input(test->uac, reply));
-			sip_message_destroy(reply);
-
-			http_parser_clear(test->parser);
-			break;
-		}
-	} while (1);
+	struct sip_uac_test_t *test = (struct sip_uac_test_t *)param;
+	assert(200 <= code && code < 300);
+	test->running = false;
+	return 0;
 }
 
-static inline const char* strlower(char* s)
+static void sip_uac_message_test(struct sip_uac_test_t *test)
 {
-    char* p;
-    for(p = s; p && *p; p++)
-        *p = tolower(*p);
-    return s;
-}
+	const char* msg = "<?xml version=\"1.0\"?>"
+		"<Notify>"
+		"<CmdType>Keepalive</CmdType>"
+		"<SN>478</SN>"
+		"<DeviceID>34020000001320000001</DeviceID>"
+		"<Status>OK</Status>"
+		"</Notify>";
 
-static void md5_digest(const uint8_t* data, int size, uint8_t md5[16])
-{
-	MD5_CTX ctx;
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char*)data, size);
-	MD5Final(md5, &ctx);
+	struct sip_uac_transaction_t* t;
+	t = sip_uac_message(test->uac, "sip:34020000001320000001@192.168.154.1", "sip:34020000002000000001@192.168.154.128", sip_uac_onmessage, test);
+	sip_uac_add_header(t, "Content-Type", "Application/MANSCDP+xml");
+	assert(0 == sip_uac_send(t, msg, strlen(msg), &test->transport, test));
 }
 
 static int sip_uac_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
@@ -153,17 +155,19 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 
 	if (200 <= code && code < 300)
 	{
+		// step 2
+		sip_uac_message_test(test);
 	}
 	else if (401 == code)
 	{
 		// https://blog.csdn.net/yunlianglinfeng/article/details/81109380
 		// http://www.voidcn.com/article/p-oqqbqgvd-bgn.html
-		const char* h;
+		const cstring_t* h;
 		t = sip_uac_register(test->uac, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, param);
-		h = http_get_header_by_name(test->parser, "Call-ID");
-		sip_uac_add_header(t, "Call-ID", h); // All registrations from a UAC SHOULD use the same Call-ID
-		h = http_get_header_by_name(test->parser, "CSeq");
-		snprintf(buffer, sizeof(buffer), "%u REGISTER", atoi(h) + 1);
+		h = sip_message_get_header_by_name(reply, "Call-ID");
+		sip_uac_add_header(t, "Call-ID", h->p); // All registrations from a UAC SHOULD use the same Call-ID
+		h = sip_message_get_header_by_name(reply, "CSeq");
+		snprintf(buffer, sizeof(buffer), "%u REGISTER", atoi(h->p) + 1);
 		sip_uac_add_header(t, "CSeq", buffer); // A UA MUST increment the CSeq value by one for each REGISTER request with the same Call-ID
 
 		char HA1[16], ha1[33] = { 0 };
@@ -171,8 +175,8 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 		// Unauthorized
 		struct http_header_www_authenticate_t auth;
 		memset(&auth, 0, sizeof(auth));
-		h = http_get_header_by_name(test->parser, "WWW-Authenticate");
-		assert(0 == http_header_www_authenticate(h, &auth));
+		h = sip_message_get_header_by_name(reply, "WWW-Authenticate");
+		assert(0 == http_header_www_authenticate(h->p, &auth));
 		switch (auth.scheme)
 		{
 		case HTTP_AUTHENTICATION_DIGEST:
@@ -197,17 +201,19 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 			sip_uac_add_header(t, "Authorization", buffer);
 
 			assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
-			sip_uac_recv_reply(test);
 			break;
 
 		case HTTP_AUTHENTICATION_BASIC:
+			assert(0);
 			break;
+
 		default:
 			assert(0);
 		}
 	}
 	else
 	{
+		assert(0);
 	}
 	return 0;
 }
@@ -218,33 +224,23 @@ static void sip_uac_register_test(struct sip_uac_test_t *test)
 	//t = sip_uac_register(uac, "Bob <sip:bob@biloxi.com>", "sip:registrar.biloxi.com", 7200, sip_uac_message_onregister, test);
 	t = sip_uac_register(test->uac, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, test);
 	assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
-	sip_uac_recv_reply(test);
-}
-
-static int sip_uac_onmessage(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
-{
-	return 0;
-}
-
-static void sip_uac_message_test(struct sip_uac_test_t *test)
-{
-	const char* msg = "<?xml version=\"1.0\"?>"
-						"<Notify>"
-						"<CmdType>Keepalive</CmdType>"
-						"<SN>478</SN>"
-						"<DeviceID>34020000001320000001</DeviceID>"
-						"<Status>OK</Status>"
-						"</Notify>";
-
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_message(test->uac, "sip:34020000001320000001@192.168.154.1", "sip:34020000002000000001@192.168.154.128", sip_uac_onmessage, test);
-	sip_uac_add_header(t, "Content-Type", "Application/MANSCDP+xml");
-	assert(0 == sip_uac_send(t, msg, strlen(msg), &test->transport, test));
-	sip_uac_recv_reply(test);
 }
 
 static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
 {
+	const char* ack = "v=0\n"
+		"o=34020000001320000001 0 0 IN IP4 192.168.128.1\n"
+		"s=Play\n"
+		"c=IN IP4 192.168.128.1\n"
+		"t=0 0\n"
+		"m=video 20120 RTP/AVP 96 98 97\n"
+		"a=sendonly\n"
+		"a=rtpmap:96 PS/90000\n"
+		"a=rtpmap:98 H264/90000\n"
+		"a=rtpmap:97 MPEG4/90000\n"
+		"y=0100000001\n"
+		"f=v/2/4///a///\n";
+
 	return 0;
 }
 
@@ -253,13 +249,12 @@ static void sip_uac_invite_test(struct sip_uac_test_t *test)
 	struct sip_uac_transaction_t* t;
 	t = sip_uac_invite(test->uac, "sip:34020000001320000001@192.168.154.128", "sip:34020000001320000001@192.168.154.128", sip_uac_oninvited, test);
 	assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
-	sip_uac_recv_reply(test);
 }
 
 static int STDCALL TimerThread(void* param)
 {
-	bool *running = (bool*)param;
-	while (*running)
+	struct sip_uac_test_t *test = (struct sip_uac_test_t*)param;
+	while (test->running)
 	{
 		aio_timeout_process();
 		system_sleep(5);
@@ -267,30 +262,62 @@ static int STDCALL TimerThread(void* param)
 	return 0;
 }
 
+static void sip_uac_loop(struct sip_uac_test_t *test)
+{
+	uint8_t buffer[2 * 1024];
+	struct sockaddr_storage addr;
+	socklen_t addrlen = sizeof(addr);
+
+	http_parser_t* parser;
+	http_parser_t* client = http_parser_create(HTTP_PARSER_CLIENT);
+	http_parser_t* server = http_parser_create(HTTP_PARSER_SERVER);
+
+	while(test->running)
+	{
+		int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen);
+		if(r < 8) continue;
+
+		bool replymode = 0 == strncasecmp((const char*)buffer, "SIP/", 4);
+		parser = replymode ? client : server;
+
+		size_t n = r;
+		if (0 == http_parser_input(parser, buffer, &n))
+		{
+			struct sip_message_t* reply = sip_message_create(replymode ? SIP_MESSAGE_REPLY : SIP_MESSAGE_REQUEST);
+			r = sip_message_load(reply, parser);
+			assert(0 == sip_uac_input(test->uac, reply));
+			sip_message_destroy(reply);
+
+			http_parser_clear(parser);
+		}
+	}
+
+	http_parser_destroy(client);
+	http_parser_destroy(server);
+}
+
 void sip_uac_test(void)
 {
 	struct sip_uac_test_t test;
+	test.running = true;
 	test.transport = {
 		sip_uac_transport_via,
 		sip_uac_transport_send,
 	};
 
 	pthread_t th;
-	bool running = true;
-	thread_create(&th, TimerThread, &running);
+	thread_create(&th, TimerThread, &test);
 
 	test.udp = socket_udp();
 	test.uac = sip_uac_create();
-	test.parser = http_parser_create(HTTP_PARSER_CLIENT);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uac_register_test(&test);
-	sip_uac_message_test(&test);
+	//sip_uac_message_test(&test);
 	//sip_uac_invite_test(&test);
 
-	running = false;
-	thread_destroy(th);
+	sip_uac_loop(&test);
 
+	thread_destroy(th);
 	sip_uac_destroy(test.uac);
 	socket_close(test.udp);
-	http_parser_destroy(test.parser);
 }

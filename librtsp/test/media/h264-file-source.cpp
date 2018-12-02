@@ -48,6 +48,7 @@ int H264FileSource::Play()
 {
 	m_status = 1;
 
+	uint32_t timestamp = 0;
 	time64_t clock = time64_now();
 	if (0 == m_rtp_clock)
 		m_rtp_clock = clock;
@@ -58,8 +59,9 @@ int H264FileSource::Play()
 		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_payload_encode_input(m_rtppacker, ptr, bytes, clock * 90 /*kHz*/);
+			rtp_payload_encode_input(m_rtppacker, ptr, bytes, timestamp * 90 /*kHz*/);
 			m_rtp_clock += 40;
+			timestamp += 40;
 
 			SendRTCP();
 			return 1;
