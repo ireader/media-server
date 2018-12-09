@@ -1,5 +1,6 @@
 #include "sip-dialog.h"
 #include "sip-message.h"
+#include "sys/atomic.h"
 #include "sys/locker.h"
 #include <stdlib.h>
 

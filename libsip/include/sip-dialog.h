@@ -3,10 +3,9 @@
 
 #include "sip-message.h"
 #include "sip-header.h"
-#include "sys/atomic.h"
 #include "cstring.h"
-#include "darray.h"
 #include "list.h"
+#include <stdint.h>
 
 #if defined(__cplusplus)
 extern "C" {

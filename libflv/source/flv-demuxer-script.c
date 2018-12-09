@@ -11,12 +11,12 @@ int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t by
 	const uint8_t* end;
 	char buffer[64] = { 0 };
 	double audiocodecid = 0;
-	double audiodatarate = 0;
+	double audiodatarate = 0; // bitrate / 1024
 	double audiodelay = 0;
 	double audiosamplerate = 0;
 	double audiosamplesize = 0;
 	double videocodecid = 0;
-	double videodatarate = 0;
+	double videodatarate = 0; // bitrate / 1024
 	double framerate = 0;
 	double height = 0;
 	double width = 0;

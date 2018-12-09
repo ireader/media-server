@@ -5,6 +5,7 @@
 #include "sip-timer.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sys/atomic.h"
 #include "sys/locker.h"
 #include "list.h"
 

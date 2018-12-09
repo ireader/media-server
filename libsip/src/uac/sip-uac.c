@@ -5,11 +5,7 @@
 #include "sip-dialog.h"
 #include "sip-message.h"
 #include "sip-transport.h"
-
-#include "sys/atomic.h"
-#include "sys/locker.h"
-#include "cstringext.h"
-#include "list.h"
+#include <stdio.h>
 
 struct sip_uac_t
 {
