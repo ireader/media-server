@@ -219,7 +219,7 @@ int rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 	clock = rtpclock();
 
 	// RFC3550 A.1 RTP Data Header Validity Checks
-	if(0 == rtp_seq_update(sender, (uint16_t)pkt.rtp.ssrc))
+	if(0 == rtp_seq_update(sender, (uint16_t)pkt.rtp.seq))
 		return 0; // disorder(need more data)
 
 	// RFC3550 A.8 Estimating the Interarrival Jitter
