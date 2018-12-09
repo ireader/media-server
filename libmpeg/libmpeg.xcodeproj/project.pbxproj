@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		46AC02CE21BA5907003CF43D /* mpeg-sdt.c in Sources */ = {isa = PBXBuildFile; fileRef = 46AC02CD21BA5907003CF43D /* mpeg-sdt.c */; };
 		46C5B3542183EE0100419E57 /* mpeg-psm.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3422183EE0100419E57 /* mpeg-psm.c */; };
 		46C5B3552183EE0100419E57 /* mpeg-system-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3432183EE0100419E57 /* mpeg-system-header.c */; };
 		46C5B3562183EE0100419E57 /* mpeg-packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3442183EE0100419E57 /* mpeg-packet.c */; };
@@ -28,6 +29,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		46AC02CD21BA5907003CF43D /* mpeg-sdt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mpeg-sdt.c"; sourceTree = "<group>"; };
 		46C5B2622183EB8F00419E57 /* libmpeg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3402183EDFA00419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B3422183EE0100419E57 /* mpeg-psm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-psm.c"; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */,
 				46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */,
 				46C5B3532183EE0100419E57 /* mpeg-pes.c */,
+				46AC02CD21BA5907003CF43D /* mpeg-sdt.c */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -172,6 +175,7 @@
 			files = (
 				46C5B3622183EE0100419E57 /* mpeg-element-descriptor.c in Sources */,
 				46C5B35B2183EE0100419E57 /* mpeg-crc32.c in Sources */,
+				46AC02CE21BA5907003CF43D /* mpeg-sdt.c in Sources */,
 				46C5B35A2183EE0100419E57 /* mpeg-psd.c in Sources */,
 				46C5B3612183EE0100419E57 /* mpeg-ts-enc.c in Sources */,
 				46C5B3602183EE0100419E57 /* mpeg-pat.c in Sources */,

@@ -1,5 +1,5 @@
 // ITU-T H.222.0(10/2014)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.4.8 Program map table(p68)
 
 #include "mpeg-ts-proto.h"
@@ -7,9 +7,30 @@
 #include <string.h>
 #include <assert.h>
 
+static struct pes_t* pmt_fetch(struct pmt_t* pmt, uint16_t pid)
+{
+    unsigned int i;
+    for(i = 0; i < pmt->stream_count; i++)
+    {
+        if(pmt->streams[i].pid == pid)
+            return &pmt->streams[i];
+    }
+    
+    if(pmt->stream_count >= sizeof(pmt->streams) / sizeof(pmt->streams[0]))
+    {
+        assert(0);
+        return NULL;
+    }
+    
+    // new stream
+    return &pmt->streams[pmt->stream_count++];
+}
+
 size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 {
-	uint32_t i = 0, k = 0, n = 0;
+    struct pes_t* stream;
+    uint16_t pid, len;
+	uint32_t i = 0, k = 0;
 
 	uint32_t table_id = data[0];
 	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
@@ -33,6 +54,9 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 	assert(1 == section_syntax_indicator);
 	assert(0 == sector_number);
 	assert(0 == last_sector_number);
+    if(pmt->ver != version_number)
+        pmt->stream_count = 0; // clear all streams
+
 	pmt->PCR_PID = PCR_PID;
 	pmt->pn = program_number;
 	pmt->ver = version_number;
@@ -43,26 +67,27 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 		// descriptor()
 	}
 
-    // TODO: version_number change, reload PMT streams
-
-    i = 12 + program_info_length;
 	assert(bytes >= section_length + 3); // PMT = section_length + 3
-    for (n = 0; i < section_length + 3 - 4/*CRC32*/ && n < sizeof(pmt->streams)/sizeof(pmt->streams[0]); n++) // 9: follow section_length item
+    for (i = 12 + program_info_length; i + 5 <= section_length + 3 - 4/*CRC32*/; i += len + 5) // 9: follow section_length item
 	{
-		pmt->streams[n].codecid = data[i];
-		pmt->streams[n].pid = ((data[i+1] & 0x1F) << 8) | data[i+2];
-		pmt->streams[n].esinfo_len = ((data[i+3] & 0x0F) << 8) | data[i+4];
-//		printf("PMT[%d]: sid: %0x, pid: %0x, eslen: %d\n", n, pmt->streams[n].codecid, pmt->streams[n].pid, pmt->streams[n].esinfo_len);
+        pid = ((data[i+1] & 0x1F) << 8) | data[i+2];
+        len = ((data[i+3] & 0x0F) << 8) | data[i+4];
+//        printf("PMT: pn: %0x, pid: %0x, codec: %0x, eslen: %d\n", (unsigned int)pmt->pn, (unsigned int)pid, (unsigned int)data[i], (unsigned int)len);
 
-		for(k = 0; k < pmt->streams[n].esinfo_len; k++)
+        assert(pmt->stream_count <= sizeof(pmt->streams)/sizeof(pmt->streams[0]));
+        stream = pmt_fetch(pmt, pid);
+        if(NULL == stream)
+            continue;
+        
+        stream->pn = pmt->pn;
+        stream->pid = pid;
+        stream->codecid = data[i];
+		stream->esinfo_len = len;
+		for(k = 0; k < stream->esinfo_len; k++)
 		{
 			// descriptor
 		}
-
-		i += pmt->streams[n].esinfo_len + 5;
 	}
-
-	pmt->stream_count = n;
 
 	//assert(j+4 == bytes);
 	//crc = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | data[j+3];

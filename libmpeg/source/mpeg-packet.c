@@ -36,7 +36,7 @@ static int mpeg_packet_h264_h265_hasaud(struct packet_t* pkt, int codecid, const
 	return 0 == find(data, size > 10 ? 10 : size) ? 1 : 0;
 }
 
-static int mpeg_packet_h264_h265_filter(struct packet_t* pkt, const uint8_t* data, size_t size, h2645_find_aud find, pes_packet_handler handler, void* param)
+static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, h2645_find_aud find, pes_packet_handler handler, void* param)
 {
     int i;
 
@@ -47,7 +47,7 @@ static int mpeg_packet_h264_h265_filter(struct packet_t* pkt, const uint8_t* dat
     assert(-1 == find(data + 5, size - 5));
     i = h264_find_nalu(data + 5, size - 5);
     if(-1 != i)
-        handler(param, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + i + 5, size - i - 5);
+        handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + i + 5, size - i - 5);
 
     return 0;
 }
@@ -72,7 +72,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
             return 0; // need more data
 
         p += aud;
-        r = mpeg_packet_h264_h265_filter(pkt, pkt->data, p - pkt->data, find, handler, param);
+        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, pkt->data, p - pkt->data, find, handler, param);
     }
 
     // save pts/dts
@@ -88,7 +88,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     for (p0 = p; -1 != aud; p0 = p)
     {
         p += aud + 5; // next packet
-        r = mpeg_packet_h264_h265_filter(pkt, p0, p - p0, find, handler, param);
+        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, p0, p - p0, find, handler, param);
 
         aud = find(p + 5, end - p - 5);
     }
@@ -123,7 +123,7 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         if (pkt->size > 0 && pkt->dts != pes->dts)
         {
             assert(PTS_NO_VALUE != pkt->dts);
-            handler(param, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
+            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
             pkt->size = 0; // new packet start
         }
 
@@ -149,7 +149,7 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         {
             assert(pes->pkt.size == pes->len);
             pkt->flags = pes->data_alignment_indicator ? 1 : 0; // flags
-            handler(param, pes->sid, pes->codecid, pkt->flags, pes->pts, pes->dts, pes->pkt.data, pes->len);
+            handler(param, pes->pn, pes->sid, pes->codecid, pkt->flags, pes->pts, pes->dts, pes->pkt.data, pes->len);
             pkt->size = 0; // new packet start
         }
     }

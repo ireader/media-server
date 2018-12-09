@@ -64,9 +64,12 @@ struct pmt_t
 	unsigned int PCR_PID;	// 13-bits
 	unsigned int pminfo_len;// program_info_length : 12
 	uint8_t* pminfo;	// program_info;
+    
+    char provider[64];
+    char name[64];
 
 	unsigned int stream_count;
-	struct pes_t streams[16];
+	struct pes_t streams[4];
 };
 
 struct pat_t
@@ -84,10 +87,11 @@ enum ETS_PID
 {
 	TS_PID_PAT	= 0x00, // program association table
 	TS_PID_CAT	= 0x01, // conditional access table
-	TS_PID_SDT	= 0x02, // transport stream description table
+	TS_PID_TSDT	= 0x02, // transport stream description table
 	TS_PID_IPMP	= 0x03, // IPMP control information table
 	// 0x0004-0x000F Reserved
 	// 0x0010-0x1FFE May be assigned as network_PID, Program_map_PID, elementary_PID, or for other purposes
+    TS_PID_SDT  = 0x11, // https://en.wikipedia.org/wiki/Service_Description_Table / https://en.wikipedia.org/wiki/MPEG_transport_stream
 	TS_PID_USER	= 0x0042,
 	TS_PID_NULL	= 0x1FFF, // Null packet
 };
@@ -106,6 +110,7 @@ enum EPAT_TID
 	PAT_TID_IPMP			= 0x07, // IPMP_Control_Information_section(defined in ISO/IEC 13818-11)
 	PAT_TID_H222			= 0x08, // Rec. ITU-T H.222.0 | ISO/IEC 13818-1 reserved
 	PAT_TID_USER			= 0x40,	// User private
+    PAT_TID_SDT             = 0x42, // service_description_section 
 	PAT_TID_Forbidden		= 0xFF,
 };
 
@@ -175,9 +180,11 @@ enum
     MPEG_FLAG_H264_H265_WITH_AUD = 0x8000,
 };
 
+struct pmt_t* pat_find(struct pat_t* pat, uint16_t pn);
 size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
 size_t pat_write(const struct pat_t *pat, uint8_t *data);
 size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes);
 size_t pmt_write(const struct pmt_t *pmt, uint8_t *data);
+size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
 
 #endif /* !_mpeg_ts_proto_h_ */

@@ -66,10 +66,10 @@ int ps_muxer_add_stream(struct ps_muxer_t* muxer, int codecid, const void* extra
 int ps_muxer_input(struct ps_muxer_t* muxer, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 
-typedef void (*ps_dumuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+typedef void (*ps_demuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 struct ps_demuxer_t; 
-struct ps_demuxer_t* ps_demuxer_create(ps_dumuxer_onpacket onpacket, void* param);
+struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param);
 int ps_demuxer_destroy(struct ps_demuxer_t* demuxer);
 size_t ps_demuxer_input(struct ps_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
 

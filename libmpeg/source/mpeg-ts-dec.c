@@ -17,7 +17,7 @@ struct ts_demuxer_t
 {
     struct pat_t pat;
 
-    ts_dumuxer_onpacket onpacket;
+    ts_demuxer_onpacket onpacket;
     void* param;
 };
 
@@ -142,7 +142,8 @@ size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
             }
             else
             {
-                assert(0);
+                //assert(0);
+                pes_packet(&pes->pkt, pes, NULL, 0, ts->onpacket, ts->param);
             }
         }
     }
@@ -187,16 +188,22 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 			printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
-
+    
 	if(0x01 & pkhd.adaptation_field_control)
 	{
-		if(0x00 == PID)
+		if(TS_PID_PAT == PID)
 		{
 			if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
 				i += 1; // pointer 0x00
 
 			pat_read(&ts->pat, data + i, bytes - i);
 		}
+        else if(TS_PID_SDT == PID)
+        {
+            if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
+                i += 1; // pointer 0x00
+            sdt_read(&ts->pat, data + i, bytes - i);
+        }
 		else
 		{
 			for(j = 0; j < ts->pat.pmt_count; j++)
@@ -257,7 +264,7 @@ static inline int mpeg_ts_is_idr_first_packet(const void* packet, int bytes)
 	return (payload_unit_start_indicator && pkhd.adaptation.random_access_indicator) ? 1 : 0;
 }
 
-struct ts_demuxer_t* ts_demuxer_create(ts_dumuxer_onpacket onpacket, void* param)
+struct ts_demuxer_t* ts_demuxer_create(ts_demuxer_onpacket onpacket, void* param)
 {
     struct ts_demuxer_t* ts;
     ts = calloc(1, sizeof(struct ts_demuxer_t));
@@ -285,5 +292,17 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
     }
 
     free(ts);
+    return 0;
+}
+
+int ts_demuxer_getservice(struct ts_demuxer_t* ts, int program, char* provider, int nprovider, char* name, int nname)
+{
+    struct pmt_t* pmt;
+    pmt = pat_find(&ts->pat, program);
+    if(NULL == pmt)
+        return -1;
+    
+    snprintf(provider, nprovider, "%s", pmt->provider);
+    snprintf(name, nname, "%s", pmt->name);
     return 0;
 }

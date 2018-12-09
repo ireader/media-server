@@ -59,6 +59,7 @@ struct packet_t
 
 struct pes_t
 {
+    uint16_t pn;        // TS program number(0-ps)
 	uint16_t pid;		// PES PID : 13
 	uint8_t sid;		// PES stream_id : 8
 	uint8_t codecid;	// PMT/PSM stream_type : 8
@@ -116,7 +117,7 @@ struct pes_t
 size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes);
 size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes);
 
-typedef void (*pes_packet_handler)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+typedef int (*pes_packet_handler)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, pes_packet_handler handler, void* param);
 
 #endif /* !_mpeg_pes_dec_h_ */

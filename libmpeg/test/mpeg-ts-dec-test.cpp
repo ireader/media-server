@@ -21,10 +21,10 @@ inline const char* ftimestamp(int64_t t, char* buf)
 	return buf;
 }
 
-static void on_ts_packet(void* /*param*/, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static char s_pts[64], s_dts[64];
-
+    
 	if (PSI_STREAM_AAC == avtype)
 	{
 		static int64_t a_pts = 0, a_dts = 0;
@@ -51,6 +51,7 @@ static void on_ts_packet(void* /*param*/, int /*stream*/, int avtype, int flags,
 	{
 		//assert(0);
 	}
+    return 0;
 }
 
 void mpeg_ts_dec_test(const char* file)

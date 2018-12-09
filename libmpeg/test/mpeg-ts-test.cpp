@@ -47,11 +47,11 @@ static int ts_stream(void* ts, int codecid)
     return i;
 }
 
-static void on_ts_packet(void* ts, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int on_ts_packet(void* ts, int program, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	printf("[%s] pts: %08lu, dts: %08lu%s\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts, flags ? " [I]":"");
 
-    mpeg_ts_write(ts, ts_stream(ts, avtype), flags, pts, dts, data, bytes);
+    return mpeg_ts_write(ts, ts_stream(ts, avtype), flags, pts, dts, data, bytes);
 }
 
 static void mpeg_ts_file(const char* file, void* muxer)

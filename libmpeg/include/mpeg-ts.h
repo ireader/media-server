@@ -52,13 +52,14 @@ int mpeg_ts_reset(void* ts);
 
 
 /// see more mpeg_ts_write
-typedef void (*ts_dumuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+typedef int (*ts_demuxer_onpacket)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 struct ts_demuxer_t;
-struct ts_demuxer_t* ts_demuxer_create(ts_dumuxer_onpacket onpacket, void* param);
+struct ts_demuxer_t* ts_demuxer_create(ts_demuxer_onpacket onpacket, void* param);
 int ts_demuxer_destroy(struct ts_demuxer_t* demuxer);
 size_t ts_demuxer_input(struct ts_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
 size_t ts_demuxer_flush(struct ts_demuxer_t* demuxer);
+int ts_demuxer_getservice(struct ts_demuxer_t* demuxer, int program, char* provider, int nprovider, char* name, int nname);
 
 #ifdef __cplusplus
 }

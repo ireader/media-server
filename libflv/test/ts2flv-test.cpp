@@ -11,7 +11,7 @@ static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, ui
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void on_ts_packet(void* param, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int on_ts_packet(void* param, int program, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static int64_t s_pts = 0;
 	if (0 == s_pts)
@@ -44,6 +44,8 @@ static void on_ts_packet(void* param, int /*stream*/, int avtype, int flags, int
 	{
 		flv_muxer_hevc(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
 	}
+    
+    return 0;
 }
 
 void ts2flv_test(const char* inputTS, const char* outputFLV)

@@ -19,9 +19,18 @@ struct ps_demuxer_t
     struct ps_pack_header_t pkhd;
     struct ps_system_header_t system;
 
-    ps_dumuxer_onpacket onpacket;
+    ps_demuxer_onpacket onpacket;
 	void* param;	
 };
+
+static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+    struct ps_demuxer_t* ps;
+    ps = (struct ps_demuxer_t*)param;
+    assert(0 == program); // unused(ts demux only)
+    ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
+    return 0;
+}
 
 static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 {
@@ -107,7 +116,7 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
             j = pes_read_header(pes, data + i, bytes - i);
             if (0 == j) continue;
 
-            pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->onpacket, ps->param);
+            pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps_demuxer_onpes, ps);
         }
     }
 
@@ -145,7 +154,7 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
 	return i;
 }
 
-struct ps_demuxer_t* ps_demuxer_create(ps_dumuxer_onpacket onpacket, void* param)
+struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param)
 {
 	struct ps_demuxer_t* ps;
 	ps = calloc(1, sizeof(struct ps_demuxer_t));
