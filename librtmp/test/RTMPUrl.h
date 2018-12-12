@@ -42,6 +42,7 @@ private:
 
 		app.assign(p1 + 1, p2 - p1 - 1);
 		stream.assign(p2 + 1);
+		tcurl.assign(rtmp, p2);
 		uri_free(uri);
 		return 0;
 	}
