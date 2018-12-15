@@ -54,10 +54,16 @@ static int rtpport(void* param, int media, unsigned short *rtp)
 	return 0;
 }
 
+int rtsp_client_options(rtsp_client_t *rtsp, const char* commands);
 static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes)
 {
+	static int keepalive = 0;
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
 	rtp_receiver_tcp_input(channel, data, bytes);
+	if (++keepalive % 1000 == 0)
+	{
+		rtsp_client_play(ctx->rtsp, NULL, NULL);
+	}
 }
 
 static int ondescribe(void* param, const char* sdp)
