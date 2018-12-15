@@ -37,6 +37,11 @@ struct aio_rtmp_server_handler_t
 
 	/// aio_rtmp_server_send_audio/aio_rtmp_server_send_video callback
 	void (*onsend)(aio_rtmp_userptr_t ptr, size_t bytes);
+
+	///@param[in] param aio_rtmp_server_create param
+	///@param[out] duration stream length in seconds
+	///@return 0-ok, other-error
+	int (*ongetduration)(void* param, const char* app, const char* stream, double* duration);
 };
 
 aio_rtmp_server_t* aio_rtmp_server_create(const char* ip, int port, struct aio_rtmp_server_handler_t* handler, void* param);

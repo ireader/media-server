@@ -47,7 +47,7 @@ enum rtmp_encoding_amf_t
 
 struct rtmp_connect_t
 {
-	char app[64]; // Server application name, e.g.: testapp
+	char app[128]; // Server application name, e.g.: testapp
 	char flashver[32]; // Flash Player version, FMSc/1.0
 	char swfUrl[256]; // URL of the source SWF file
 	char tcUrl[256]; // URL of the Server, rtmp://host:1935/testapp/instance1

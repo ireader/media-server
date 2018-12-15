@@ -46,6 +46,7 @@ static int rtmp_handler_onvideo(void* param, const void* data, size_t bytes, uin
 static int rtmp_handler_onplay(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset);
 static int rtmp_handler_onpause(void* param, int pause, uint32_t ms);
 static int rtmp_handler_onseek(void* param, uint32_t ms);
+static int rtmp_handler_ongetduration(void* param, const char* app, const char* stream, double* duration);
 
 static void aio_rtmp_server_ondestroy(void* param)
 {
@@ -154,6 +155,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		handler.onvideo = rtmp_handler_onvideo;
 		handler.onscript = rtmp_handler_onscript;
 		handler.onpublish = rtmp_handler_onpublish;
+		handler.ongetduration = rtmp_handler_ongetduration;
 		session->rtmp = rtmp_server_create(session, &handler);
 
 		aiohandler.onrecv = rtmp_session_onrecv;
@@ -281,4 +283,13 @@ static int rtmp_handler_onaudio(void* param, const void* data, size_t bytes, uin
 	if(session->server->handle.onaudio && session->usr)
 		return session->server->handle.onaudio(session->usr, data, bytes, timestamp);
 	return 0;
+}
+
+static int rtmp_handler_ongetduration(void* param, const char* app, const char* stream, double* duration)
+{
+	struct aio_rtmp_session_t* session;
+	session = (struct aio_rtmp_session_t*)param;
+	if (session->server->handle.ongetduration)
+		return session->server->handle.ongetduration(session->server->param, app, stream, duration);
+	return -1;
 }

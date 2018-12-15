@@ -120,6 +120,12 @@ static int aio_rtmp_server_onseek(aio_rtmp_userptr_t /*ptr*/, uint32_t ms)
 	return 0;
 }
 
+static int aio_rtmp_server_ongetduration(void* param, const char* app, const char* stream, double* duration)
+{
+	*duration = 30 * 60;
+	return 0;
+}
+
 static void aio_rtmp_server_onsend(aio_rtmp_userptr_t /*ptr*/, size_t /*bytes*/)
 {
 }
@@ -148,6 +154,7 @@ void rtmp_server_vod_aio_test(const char* flv)
 	handler.onpause = aio_rtmp_server_onpause;
 	handler.onseek = aio_rtmp_server_onseek;
 	handler.onclose = aio_rtmp_server_onclose;
+	handler.ongetduration = aio_rtmp_server_ongetduration;
 
 	aio_worker_init(8);
 

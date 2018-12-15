@@ -227,13 +227,15 @@ static int rtmp_server_onget_stream_length(void* param, int r, double transactio
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
 
-	if (0 == r)
+	if (0 == r && ctx->handler.ongetduration)
 	{
-		// TODO: get duration (seconds)
-		(void)stream_name;
-		//r = ctx->handler.onget_stream_length(ctx->param, stream_name);
-		//r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
-		//r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
+		// get duration (seconds)
+		r = ctx->handler.ongetduration(ctx->param, ctx->info.app, stream_name, &duration);
+		if (0 == r)
+		{
+			r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
+			r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
+		}
 	}
 
 	return r;

@@ -86,6 +86,12 @@ static int rtmp_server_onseek(void* param, uint32_t ms)
 	return 0;
 }
 
+static int rtmp_server_ongetduration(void* param, const char* app, const char* stream, double* duration)
+{
+	*duration = 30 * 60;
+	return 0;
+}
+
 void rtmp_server_vod_test(const char* flv)
 {
 	int r;
@@ -100,6 +106,7 @@ void rtmp_server_vod_test(const char* flv)
 	//handler.onpublish = rtmp_server_onpublish;
 	//handler.onvideo = rtmp_server_onvideo;
 	//handler.onaudio = rtmp_server_onaudio;
+	handler.ongetduration = rtmp_server_ongetduration;
 
 	socket_init();
 

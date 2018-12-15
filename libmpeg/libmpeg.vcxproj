@@ -144,6 +144,7 @@
     <ClCompile Include="source\mpeg-ps-enc.c" />
     <ClCompile Include="source\mpeg-psd.c" />
     <ClCompile Include="source\mpeg-psm.c" />
+    <ClCompile Include="source\mpeg-sdt.c" />
     <ClCompile Include="source\mpeg-system-header.c" />
     <ClCompile Include="source\mpeg-ts-dec.c" />
     <ClCompile Include="source\mpeg-ts-enc.c" />
