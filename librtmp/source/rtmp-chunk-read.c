@@ -77,7 +77,8 @@ static int rtmp_packet_alloc(struct rtmp_t* rtmp, struct rtmp_packet_t* packet)
 	// 24-bytes length
 	assert(0 == packet->bytes);
 	assert(packet->header.length < (1 << 24));
-	if (packet->capacity < packet->header.length)
+	// fixed SMS (Chinacache Smart Media Server) packet->header.length = 0
+	if (0 == packet->capacity || packet->capacity < packet->header.length)
 	{
 		p = realloc(packet->payload, packet->header.length + 1024);
 		if (NULL == p)
