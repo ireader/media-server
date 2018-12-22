@@ -2,6 +2,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define H265_NAL_AUD 35 // Access unit delimiter
+
 size_t hevc_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size)
 {
 	int r;
@@ -13,25 +15,28 @@ size_t hevc_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_
 	uint32_t nalu_size;
 	uint8_t vps_sps_pps_flag;
 
-	src = data;
-	srcend = src + bytes;
+	srcend = (uint8_t*)data + bytes;
 	dst = (uint8_t*)out;
 	dstend = dst + size;
 	vps_sps_pps_flag = 0;
 
-	while (src + hevc->lengthSizeMinusOne + 1 < srcend)
+	for(src = (uint8_t*)data; src + hevc->lengthSizeMinusOne + 1 < srcend; src += nalu_size)
 	{
 		nalu_size = 0;
 		for (i = 0; i < hevc->lengthSizeMinusOne + 1; i++)
 			nalu_size = (nalu_size << 8) | src[i];
 		src += hevc->lengthSizeMinusOne + 1;
-		if (src + nalu_size > srcend)
+		if (nalu_size < 1 || src + nalu_size > srcend)
 		{
 			assert(0);
 			return 0; // invalid
 		}
 
 		nalu_type = (src[0] >> 1) & 0x3F;
+#if defined(H2645_FILTER_AUD)
+		if (H265_NAL_AUD == nalu_type)
+			continue; // ignore AUD
+#endif
 		irap = 16 <= nalu_type && nalu_type <= 23;
 		if (irap && 0 == vps_sps_pps_flag)
 		{
@@ -48,7 +53,6 @@ size_t hevc_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_
 		memcpy(dst, startcode, 4);
 		memcpy(dst + 4, src, nalu_size);
 		dst += 4 + nalu_size;
-		src += nalu_size;
 	}
 
 	return dst - (uint8_t*)out;

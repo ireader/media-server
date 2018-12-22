@@ -2,9 +2,10 @@
 #include <string.h>
 #include <assert.h>
 
-#define H265_VPS		32
-#define H265_SPS		33
-#define H265_PPS		34
+#define H265_NAL_VPS		32
+#define H265_NAL_SPS		33
+#define H265_NAL_PPS		34
+#define H265_NAL_AUD		35
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
@@ -132,9 +133,9 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	nal_type = (nalu[0] >> 1) & 0x3f;
 	switch (nal_type)
 	{
-	case H265_VPS:
-	case H265_SPS:
-	case H265_PPS:
+	case H265_NAL_VPS:
+	case H265_NAL_SPS:
+	case H265_NAL_PPS:
 		sodb = mp4->hevc->numOfArrays > 0 ? mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].data + mp4->hevc->nalu[mp4->hevc->numOfArrays - 1].bytes : mp4->hevc->data;
 		if (mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0])
 			|| sodb + bytes >= mp4->hevc->data + sizeof(mp4->hevc->data))
@@ -145,7 +146,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 
 		sodb_bytes = hevc_rbsp_decode(nalu, bytes, sodb);
 
-		if (nal_type == H265_VPS)
+		if (nal_type == H265_NAL_VPS)
 		{
 			uint8_t vps_max_sub_layers_minus1 = (nalu[3] >> 1) & 0x07;
 			uint8_t vps_temporal_id_nesting_flag = nalu[3] & 0x01;
@@ -153,7 +154,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 			mp4->hevc->temporalIdNested = (mp4->hevc->temporalIdNested || vps_temporal_id_nesting_flag) ? 1 : 0;
 			hevc_profile_tier_level(sodb + 6, sodb_bytes - 6, vps_max_sub_layers_minus1, mp4->hevc);
 		}
-		else if (nal_type == H265_SPS)
+		else if (nal_type == H265_NAL_SPS)
 		{
 			// TODO:
 			mp4->hevc->chromaFormat; // chroma_format_idc
@@ -163,7 +164,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 			// TODO: vui_parameters
 			mp4->hevc->min_spatial_segmentation_idc; // min_spatial_segmentation_idc
 		}
-		else if (nal_type == H265_PPS)
+		else if (nal_type == H265_NAL_PPS)
 		{
 			// TODO:
 			mp4->hevc->parallelismType; // entropy_coding_sync_enabled_flag
@@ -187,6 +188,11 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	case 23: // RSV_IRAP_VCL23
 		mp4->hevc->constantFrameRate = 0x04; // irap frame
 		break;
+
+#if defined(H2645_FILTER_AUD)
+	case H265_NAL_AUD:
+		return; // ignore AUD
+#endif
 
 	default:
 		break;

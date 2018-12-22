@@ -14,6 +14,7 @@
 #define H264_NAL_IDR		5 // Coded slice of an IDR picture
 #define H264_NAL_SPS		7 // Sequence parameter set
 #define H264_NAL_PPS		8 // Picture parameter set
+#define H264_NAL_AUD		9 // Access unit delimiter
 
 struct mpeg4_handle_t
 {
@@ -215,8 +216,12 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 	}
 
 	// TODO: hack!!! idr flag
-	if(H264_NAL_IDR == nalutype)
+	if (H264_NAL_IDR == nalutype)
 		mp4->avc->chroma_format_idc = 1;
+#if defined(H2645_FILTER_AUD)
+	else if (H264_NAL_AUD == nalutype)
+		return; // ignore AUD
+#endif
 
 	if (mp4->capacity >= mp4->bytes + bytes + 4)
 	{
