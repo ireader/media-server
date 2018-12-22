@@ -158,6 +158,7 @@
     <ClCompile Include="source\server\rtsp-server-describe.c" />
     <ClCompile Include="source\server\rtsp-server-handler.c" />
     <ClCompile Include="source\server\rtsp-server-options.c" />
+    <ClCompile Include="source\server\rtsp-server-parameter.c" />
     <ClCompile Include="source\server\rtsp-server-pause.c" />
     <ClCompile Include="source\server\rtsp-server-play.c" />
     <ClCompile Include="source\server\rtsp-server-record.c" />

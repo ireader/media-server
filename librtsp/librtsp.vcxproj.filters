@@ -113,6 +113,9 @@
     <ClCompile Include="source\rtsp-media.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\server\rtsp-server-parameter.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtsp-header-range.h">

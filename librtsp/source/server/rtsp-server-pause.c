@@ -8,19 +8,16 @@
 int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 {
 	int64_t npt = -1L;
-	const char *prange, *psession;
+	const char *prange;
 	struct rtsp_header_range_t range;
 
-	prange = http_get_header_by_name(rtsp->parser, "range");
-	psession = http_get_header_by_name(rtsp->parser, "Session");
-
-	rtsp->session.session[0] = 0; // clear session value
-	if (!psession || 0 != rtsp_header_session(psession, &rtsp->session))
+	if (0 == rtsp->session.session[0])
 	{
 		// 454 Session Not Found
 		return rtsp_server_reply(rtsp, 454);
 	}
 
+	prange = http_get_header_by_name(rtsp->parser, "range");
 	if (prange && 0 == rtsp_header_range(prange, &range))
 	{
 		npt = range.from;
@@ -38,8 +35,5 @@ int rtsp_server_pause(struct rtsp_server_t* rtsp, const char* uri)
 
 int rtsp_server_reply_pause(struct rtsp_server_t *rtsp, int code)
 {
-	char header[256] = { 0 };
-	if(rtsp->session.session[0])
-		snprintf(header, sizeof(header), "Session: %s\r\n", rtsp->session.session);
-	return rtsp_server_reply2(rtsp, code, header);
+	return rtsp_server_reply(rtsp, code);
 }

@@ -6,15 +6,13 @@ int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri)
 {
 	int64_t npt = -1L;
 	double scale = 0.0f;
-	const char *pscale, *prange, *psession;
+	const char *pscale, *prange;
 	struct rtsp_header_range_t range;
 
 	pscale = http_get_header_by_name(rtsp->parser, "scale");
 	prange = http_get_header_by_name(rtsp->parser, "range");
-	psession = http_get_header_by_name(rtsp->parser, "Session");
 
-	rtsp->session.session[0] = 0; // clear session value
-	if (!psession || 0 != rtsp_header_session(psession, &rtsp->session))
+	if (0 == rtsp->session.session[0])
 	{
 		// 454 (Session Not Found)
 		return rtsp_server_reply(rtsp, 454);
@@ -35,26 +33,27 @@ int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri)
 
 int rtsp_server_reply_play(struct rtsp_server_t *rtsp, int code, const int64_t *nptstart, const int64_t *nptend, const char* rtp)
 {
-	int len = 0;
+	int n = 0;
 	char header[1024] = { 0 };
 
-	if (nptstart)
+	if (n >= 0 && nptstart)
 	{
 		if (nptend)
-			len += snprintf(header + len, sizeof(header) - len, "Range: npt=%.3f-%.3f\r\n", (float)(*nptstart / 1000.0f), (float)(*nptend / 1000.0f));
+			n += snprintf(header + n, sizeof(header) - n, "Range: npt=%.3f-%.3f\r\n", (float)(*nptstart / 1000.0f), (float)(*nptend / 1000.0f));
 		else
-			len += snprintf(header + len, sizeof(header) - len, "Range: npt=%.3f-\r\n", (float)(*nptstart / 1000.0f));
+			n += snprintf(header + n, sizeof(header) - n, "Range: npt=%.3f-\r\n", (float)(*nptstart / 1000.0f));
 	}
 
-	if (rtsp->session.session[0])
+	if (n >= 0 && rtp)
 	{
-		len += snprintf(header + len, sizeof(header) - len, "Session: %s\r\n", rtsp->session.session);
+		n += snprintf(header + n, sizeof(header) - n, "RTP-Info: %s\r\n", rtp);
 	}
 
-	if (rtp)
+	if (n < 0 || n >= sizeof(header))
 	{
-		len += snprintf(header + len, sizeof(header) - len, "RTP-Info: %s\r\n", rtp);
+		assert(0); // rtp-info too long
+		return -1;
 	}
 
-	return rtsp_server_reply2(rtsp, code, header);
+	return rtsp_server_reply2(rtsp, code, header, NULL, 0);
 }

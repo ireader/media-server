@@ -74,6 +74,20 @@ struct rtsp_handler_t
     /// @param[in] scale request scale, NULL if don't have Scale parameter
     /// @return 0-ok, other-error code
     int (*onrecord)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale);
+
+	/// RTSP OPTIONS request
+	/// @param[in] uri default is '*' 
+	/// @return 0-ok, other-error code
+	int (*onoptions)(void* ptr, rtsp_server_t* rtsp, const char* uri);
+
+	/// RTSP GET_PARAMETER/SET_PARAMETER request
+	/// use rtsp_server_get_header("content-type") to if need
+	/// @param[in] uri the presentation/stream uri
+	/// @param[in] session RTSP session
+	/// @param[in] content paramter(s), NULL for test client or server liveness ("ping")
+	/// @return 0-ok, other-error code
+	int (*ongetparameter)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const void* content, int bytes);
+	int (*onsetparameter)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const void* content, int bytes);
 };
 
 /// create (reuse-able) rtsp server
@@ -146,6 +160,22 @@ int rtsp_server_reply_announce(rtsp_server_t* rtsp, int code);
 /// @param[in] nptend Range end time(ms) [optional]
 /// @return 0-ok, other-error code
 int rtsp_server_reply_record(rtsp_server_t* rtsp, int code, const int64_t *nptstart, const int64_t *nptend);
+
+/// RTSP OPTIONS reply
+/// @return 0-ok, other-error code
+int rtsp_server_reply_options(rtsp_server_t* rtsp, int code);
+
+/// RTSP GET_PARAMETER reply(content-type/content-encoding/content-language copy from request header)
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK...)
+/// @return 0-ok, other-error code
+int rtsp_server_reply_get_parameter(rtsp_server_t* rtsp, int code, const void* content, int bytes);
+
+/// RTSP SET_PARAMETER reply
+/// @param[in] rtsp request handle
+/// @param[in] code RTSP status-code(200-OK...)
+/// @return 0-ok, other-error code
+int rtsp_server_reply_set_parameter(rtsp_server_t* rtsp, int code);
 
 /// RTSP send Embedded (Interleaved) Binary Data
 /// @param[in] rtsp request handle

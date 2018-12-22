@@ -405,6 +405,38 @@ static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri
 	return rtsp_server_reply_teardown(rtsp, 200);
 }
 
+static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* sdp)
+{
+    return rtsp_server_reply_announce(rtsp, 200);
+}
+
+static int rtsp_onrecord(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* session, const int64_t *npt, const double *scale)
+{
+    return rtsp_server_reply_record(rtsp, 200, NULL, NULL);
+}
+
+static int rtsp_onoptions(void* ptr, rtsp_server_t* rtsp, const char* uri)
+{
+	const char* require = rtsp_server_get_header(rtsp, "Require");
+	return rtsp_server_reply_options(rtsp, 200);
+}
+
+static int rtsp_ongetparameter(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const void* content, int bytes)
+{
+	const char* ctype = rtsp_server_get_header(rtsp, "Content-Type");
+	const char* encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+	const char* language = rtsp_server_get_header(rtsp, "Content-Language");
+	return rtsp_server_reply_get_parameter(rtsp, 200, NULL, 0);
+}
+
+static int rtsp_onsetparameter(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* session, const void* content, int bytes)
+{
+	const char* ctype = rtsp_server_get_header(rtsp, "Content-Type");
+	const char* encoding = rtsp_server_get_header(rtsp, "Content-Encoding");
+	const char* language = rtsp_server_get_header(rtsp, "Content-Language");
+	return rtsp_server_reply_set_parameter(rtsp, 200);
+}
+
 static int rtsp_onclose(void* /*ptr2*/)
 {
 	// TODO: notify rtsp connection lost
@@ -432,6 +464,11 @@ extern "C" void rtsp_example()
     handler.base.onpause = rtsp_onpause;
     handler.base.onteardown = rtsp_onteardown;
 	handler.base.close = rtsp_onclose;
+    handler.base.onannounce = rtsp_onannounce;
+    handler.base.onrecord = rtsp_onrecord;
+	handler.base.onoptions = rtsp_onoptions;
+	handler.base.ongetparameter = rtsp_ongetparameter;
+	handler.base.onsetparameter = rtsp_onsetparameter;
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
