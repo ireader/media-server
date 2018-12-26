@@ -155,7 +155,7 @@ static void aio_rtmp_server_onaccept(void* param, int code, socket_t socket, con
 		handler.onvideo = rtmp_handler_onvideo;
 		handler.onscript = rtmp_handler_onscript;
 		handler.onpublish = rtmp_handler_onpublish;
-		handler.ongetduration = rtmp_handler_ongetduration;
+		handler.ongetduration = server->handle.ongetduration ? rtmp_handler_ongetduration : NULL;
 		session->rtmp = rtmp_server_create(session, &handler);
 
 		aiohandler.onrecv = rtmp_session_onrecv;
