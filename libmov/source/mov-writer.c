@@ -9,7 +9,7 @@
 struct mov_writer_t
 {
 	struct mov_t mov;
-	size_t mdat_size;
+	uint64_t mdat_size;
 	uint64_t mdat_offset;
 };
 
@@ -82,6 +82,10 @@ struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* 
 	mov_writer_init(mov);
 	mov_write_ftyp(mov);
 
+	// free(reserved for 64bit mdat)
+	mov_buffer_w32(&mov->io, 8); /* size */
+	mov_buffer_write(&mov->io, "free", 4);
+
 	// mdat
 	writer->mdat_offset = mov_buffer_tell(&mov->io);
 	mov_buffer_w32(&mov->io, 0); /* size */
@@ -99,7 +103,20 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 	mov = &writer->mov;
 
 	// finish mdat box
-	mov_write_size(mov, writer->mdat_offset, writer->mdat_size+8); /* update size */
+	if (writer->mdat_size + 8 <= UINT32_MAX)
+	{
+		mov_write_size(mov, writer->mdat_offset, (uint32_t)(writer->mdat_size + 8)); /* update size */
+	}
+	else
+	{
+		offset2 = mov_buffer_tell(&mov->io);
+		writer->mdat_offset -= 8; // overwrite free box
+		mov_buffer_seek(&mov->io, writer->mdat_offset);
+		mov_buffer_w32(&mov->io, 1);
+		mov_buffer_write(&mov->io, "mdat", 4);
+		mov_buffer_w64(&mov->io, writer->mdat_size + 16);
+		mov_buffer_seek(&mov->io, offset2);
+	}
 
 	// finish sample info
 	for (i = 0; i < mov->track_count; i++)

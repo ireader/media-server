@@ -82,7 +82,7 @@ static inline uint32_t mov_buffer_r32(struct mov_ioutil_t* io)
 static inline uint64_t mov_buffer_r64(struct mov_ioutil_t* io)
 {
 	uint64_t v;
-	v = ((uint64_t)mov_buffer_r32(io)) << 16;
+	v = ((uint64_t)mov_buffer_r32(io)) << 32;
 	v |= mov_buffer_r32(io);
 	return v;
 }
