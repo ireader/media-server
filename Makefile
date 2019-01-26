@@ -34,5 +34,6 @@ clean:
 	
 .PHONY : test
 test:
+	$(MAKE) -C ../sdk
 	$(MAKE) -C test
-	./test/$(BUILD).$(PLATFORM)/test
+	ln -s ../sdk/libaio/$(BUILD).$(PLATFORM)/libaio.so . &&  ./test/$(BUILD).$(PLATFORM)/test

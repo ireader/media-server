@@ -40,6 +40,7 @@ SOURCE_FILES += $(ROOT)/source/base64.c
 SOURCE_FILES += $(ROOT)/source/unicode.c
 SOURCE_FILES += $(ROOT)/source/thread-pool.c
 SOURCE_FILES += $(ROOT)/source/app-log.c
+SOURCE_FILES += $(ROOT)/source/port/ip-route.c
 
 _SOURCE_FILES = $(ROOT)/libhttp/test/main.c
 SOURCE_FILES := $(filter-out $(_SOURCE_FILES),$(SOURCE_FILES))
