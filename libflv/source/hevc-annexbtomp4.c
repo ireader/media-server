@@ -88,8 +88,8 @@ static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
 static void hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t maxNumSubLayersMinus1, struct mpeg4_hevc_t* hevc)
 {
 	uint8_t i;
-	uint8_t sub_layer_profile_present_flag[8];
-	uint8_t sub_layer_level_present_flag[8];
+//	uint8_t sub_layer_profile_present_flag[8];
+//	uint8_t sub_layer_level_present_flag[8];
 
 	if (bytes < 12)
 		return;
@@ -117,8 +117,8 @@ static void hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t m
 	// TODO:
 	for (i = 0; i < maxNumSubLayersMinus1; i++)
 	{
-		sub_layer_profile_present_flag[i];
-		sub_layer_level_present_flag[i];
+		//sub_layer_profile_present_flag[i];
+		//sub_layer_level_present_flag[i];
 	}
 }
 
@@ -157,17 +157,17 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 		else if (nal_type == H265_NAL_SPS)
 		{
 			// TODO:
-			mp4->hevc->chromaFormat; // chroma_format_idc
-			mp4->hevc->bitDepthLumaMinus8; // bit_depth_luma_minus8
-			mp4->hevc->bitDepthChromaMinus8; // bit_depth_chroma_minus8
+			//mp4->hevc->chromaFormat; // chroma_format_idc
+			//mp4->hevc->bitDepthLumaMinus8; // bit_depth_luma_minus8
+			//mp4->hevc->bitDepthChromaMinus8; // bit_depth_chroma_minus8
 
 			// TODO: vui_parameters
-			mp4->hevc->min_spatial_segmentation_idc; // min_spatial_segmentation_idc
+			//mp4->hevc->min_spatial_segmentation_idc; // min_spatial_segmentation_idc
 		}
 		else if (nal_type == H265_NAL_PPS)
 		{
 			// TODO:
-			mp4->hevc->parallelismType; // entropy_coding_sync_enabled_flag
+			//mp4->hevc->parallelismType; // entropy_coding_sync_enabled_flag
 		}
 
 		mp4->hevc->nalu[mp4->hevc->numOfArrays].type = nal_type;

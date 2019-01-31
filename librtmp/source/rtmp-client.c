@@ -298,7 +298,7 @@ static void rtmp_client_onabort(void* param, uint32_t chunk_stream_id)
 {
 	struct rtmp_client_t* ctx;
 	ctx = (struct rtmp_client_t*)param;
-	(void)chunk_stream_id;
+	(void)ctx, (void)chunk_stream_id;
 }
 
 static int rtmp_client_onaudio(void* param, const uint8_t* data, size_t bytes, uint32_t timestamp)

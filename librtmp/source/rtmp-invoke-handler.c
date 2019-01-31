@@ -155,7 +155,7 @@ static int rtmp_command_onget_stream_length(struct rtmp_t* rtmp, double transact
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_STRING, "playpath", stream_name, sizeof(stream_name));
 
 	r = amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])) ? 0 : -1;
-	return rtmp->u.server.onget_stream_length(rtmp->param, 0, transaction, stream_name);
+	return rtmp->u.server.onget_stream_length(rtmp->param, r, transaction, stream_name);
 }
 
 /*

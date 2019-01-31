@@ -23,9 +23,9 @@ static int s_frequency_mpeg2[4] = { 22050, 24000, 16000, -1 };
 static int s_frequency_mpeg25[4] = { 11025, 12000, 8000, -1 };
 
 // layer-1, layer-2, layer-3
-static int s_frames_mpeg1[3] = { 384, 1152, 1152 };
-static int s_frames_mpeg2[3] = { 384, 1152, 576 };
-static int s_frames_mpeg25[3] = { 384, 1152, 576 };
+//static int s_frames_mpeg1[3] = { 384, 1152, 1152 };
+//static int s_frames_mpeg2[3] = { 384, 1152, 576 };
+//static int s_frames_mpeg25[3] = { 384, 1152, 576 };
 
 // layer-1 bytes = ((frames / 8 * bitrate) / frequency + padding * 4
 // layer-2/3 bytes = ((frames / 8 * bitrate) / frequency + padding

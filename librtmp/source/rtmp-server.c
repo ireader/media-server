@@ -131,7 +131,7 @@ static void rtmp_server_onabort(void* param, uint32_t chunk_stream_id)
 {
 	struct rtmp_server_t* ctx;
 	ctx = (struct rtmp_server_t*)param;
-	(void)chunk_stream_id;
+	(void)ctx, (void)chunk_stream_id;
 //	ctx->handler.onerror(ctx->param, -1, "client abort");
 }
 
