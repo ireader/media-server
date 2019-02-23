@@ -43,6 +43,15 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 
     if (psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
     {
+		// '110x xxxx'
+		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or 
+		// ISO/IEC 14496-3 or ISO/IEC 23008-3 audio stream number 'x xxxx'
+
+		// '1110 xxxx'
+		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2, 
+		// Rec. ITU-T H.264 | ISO/IEC 14496-10 or 
+		// Rec. ITU-T H.265 | ISO/IEC 23008-2 video stream number 'xxxx'
+
         // guess stream codec id
         if (0xE0 <= sid && sid <= 0xEF)
             psm->streams[psm->stream_count].codecid = PSI_STREAM_H264;
@@ -113,8 +122,12 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
                 continue;
 
             assert(PES_SID_END != data[i + 3]);
-            j = pes_read_header(pes, data + i, bytes - i);
-            if (0 == j) continue;
+			if (ps->pkhd.mpeg2)
+				j = pes_read_header(pes, data + i, bytes - i);
+			else
+				j = pes_read_mpeg1_header(pes, data + i, bytes - i);
+
+			if (0 == j) continue;
 
             pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps_demuxer_onpes, ps);
         }

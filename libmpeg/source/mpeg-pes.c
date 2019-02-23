@@ -184,3 +184,40 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 
 	return p - data;
 }
+
+size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
+{
+	size_t i;
+
+	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
+	pes->sid = data[3];
+	pes->len = (data[4] << 8) | data[5];
+
+	for (i = 6; data[i] == 0xFF && i < bytes; )
+		i++;
+
+	if (0x40 == (0xC0 & data[i]))
+	{
+		i += 2; // skip STD_buffer_scale / STD_buffer_size
+	}
+
+	if (0x20 == (0xF0 & data[i]))
+	{
+		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
+		i += 5;
+	}
+	else if (0x30 == (0xF0 & data[i]))
+	{
+		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
+		pes->dts = ((((uint64_t)data[i + 5] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 6] << 22) | ((((uint64_t)data[i + 7] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 8] << 7) | ((data[i + 9] >> 1) & 0x7F);
+		i += 10;
+	}
+	else
+	{
+		assert(0x0F == data[i]);
+		i += 1;
+	}
+
+	pes->len -= i - 6;
+	return i;
+}

@@ -11,6 +11,8 @@
 
 struct ps_pack_header_t
 {
+	int mpeg2; // 1-mpeg2, other-mpeg1
+
 	int64_t system_clock_reference_base;
 	uint32_t system_clock_reference_extension;
 
