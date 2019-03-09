@@ -1,6 +1,8 @@
 #include "rtmp-internal.h"
 #include "rtmp-msgtypeid.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 static int rtmp_audio(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
@@ -15,6 +17,11 @@ static int rtmp_video(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, c
 
 static int rtmp_script(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const uint8_t* payload)
 {
+	// filter @setDataFrame
+	const static uint8_t s_setFrameData[] = { 0x02, 0x00, 0x0d, 0x40, 0x73, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61, 0x46, 0x72, 0x61, 0x6d, 0x65 };
+	if (header->length > sizeof(s_setFrameData) && 0 == memcmp(s_setFrameData, payload, sizeof(s_setFrameData)))
+		return rtmp->onscript(rtmp->param, payload + sizeof(s_setFrameData), header->length - sizeof(s_setFrameData), header->timestamp);
+
 	return rtmp->onscript(rtmp->param, payload, header->length, header->timestamp);
 }
 
@@ -24,8 +31,8 @@ int rtmp_handler(struct rtmp_t* rtmp, struct rtmp_chunk_header_t* header, const 
 	{
 	case RTMP_TYPE_FLEX_MESSAGE:
 		// filter AMF3 0x00
-		payload += 1;
-		header->length -= 1;
+		payload += (header->length > 0) ? 1 : 0; // fix header->length = 0
+		header->length -= (header->length > 0) ? 1 : 0;
 		return rtmp_invoke_handler(rtmp, header, payload);
 
 	case RTMP_TYPE_INVOKE:
