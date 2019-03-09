@@ -381,7 +381,7 @@ static const uint8_t* amf_read_object(const uint8_t* data, const uint8_t* end, s
 
 		for (i = 0; i < n; i++)
 		{
-			if (0 == memcmp(items[i].name, data, len) && strlen(items[i].name) == len && amf_read_item_type_check(data[len], items[i].type))
+			if (strlen(items[i].name) == len && 0 == memcmp(items[i].name, data, len) && amf_read_item_type_check(data[len], items[i].type))
 				break;
 		}
 
