@@ -150,7 +150,8 @@ uint32_t mov_build_stts(struct mov_track_t* track)
 
     for (i = 0; i < track->sample_count; i++)
     {
-        delta = (uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : 0);
+		assert(track->samples[i + 1].dts > track->samples[i].dts);
+        delta = (uint32_t)(i + 1 < track->sample_count && track->samples[i + 1].dts > track->samples[i].dts ? track->samples[i + 1].dts - track->samples[i].dts : 1);
         if (NULL != sample && delta == sample->samples_per_chunk)
         {
             track->samples[i].first_chunk = 0;
