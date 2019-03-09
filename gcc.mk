@@ -37,7 +37,7 @@ ifeq ($(RELEASE),1)
 	CXXFLAGS += $(CFLAGS)
 	DEFINES += NDEBUG
 else
-	CFLAGS += -g -Wall
+	CFLAGS += -g -Wall -fsanitize=address
 	CXXFLAGS += $(CFLAGS)
 	DEFINES += DEBUG _DEBUG
 endif
