@@ -43,12 +43,8 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 
 //static struct mov_sample_entry_t* mov_track_stsd_find(struct mov_track_t* track, uint32_t sample_description_index)
 //{
-//    size_t i;
-//    for (i = 0; i < track->stsd.entry_count; i++)
-//    {
-//        if (track->stsd.entries[i].data_reference_index == sample_description_index)
-//            return &track->stsd.entries[i];
-//    }
+//    if (sample_description_index > 0 && sample_description_index <= track->stsd.entry_count)
+//        return &track->stsd.entries[sample_description_index-1];
 //    return NULL;
 //}
 
@@ -100,6 +96,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
             mov_apply_elst(mov->track);
             mov_apply_stts(mov->track);
             mov_apply_ctts(mov->track);
+			mov_apply_stss(mov->track);
 
             mov->track->tfdt_dts = mov->track->samples[mov->track->sample_count - 1].dts;
         }
@@ -187,7 +184,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
 	{ MOV_TAG('f', 'r', 'e', 'e'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('f', 't', 'y', 'p'), MOV_ROOT, mov_read_ftyp },
-	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr },
+	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr }, // Apple QuickTime minf also has hdlr
 	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2014 hvcC
 	{ MOV_TAG('l', 'e', 'v', 'a'), MOV_MVEX, mov_read_leva },
 	{ MOV_TAG('m', 'd', 'a', 't'), MOV_ROOT, mov_read_mdat },
@@ -272,9 +269,9 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		{
 			if (s_mov_parse_table[i].type == box.type)
 			{
-				assert(MOV_NULL == s_mov_parse_table[i].parent
-					|| s_mov_parse_table[i].parent == parent->type);
-				parse = s_mov_parse_table[i].parse;
+				// Apple QuickTime minf also has hdlr
+				if(!s_mov_parse_table[i].parent || s_mov_parse_table[i].parent == parent->type)
+					parse = s_mov_parse_table[i].parse;
 			}
 		}
 
@@ -415,7 +412,8 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	}
 
 	track->sample_offset++; //mark as read
-	onread(param, track->tkhd.track_ID, buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale);
+	assert(sample->sample_description_index > 0);
+	onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	return 1;
 }
 
@@ -463,16 +461,16 @@ int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_
 			switch (track->handler_type)
 			{
 			case MOV_VIDEO:
-				if(ontrack->onvideo) ontrack->onvideo(param, track->tkhd.track_ID, entry->object_type_indication, entry->u.visual.width, entry->u.visual.height, track->extra_data, track->extra_data_size);
+				if(ontrack->onvideo) ontrack->onvideo(param, track->tkhd.track_ID, entry->object_type_indication, entry->u.visual.width, entry->u.visual.height, entry->extra_data, entry->extra_data_size);
 				break;
 
 			case MOV_AUDIO:
-				if (ontrack->onaudio) ontrack->onaudio(param, track->tkhd.track_ID, entry->object_type_indication, entry->u.audio.channelcount, entry->u.audio.samplesize, entry->u.audio.samplerate >> 16, track->extra_data, track->extra_data_size);
+				if (ontrack->onaudio) ontrack->onaudio(param, track->tkhd.track_ID, entry->object_type_indication, entry->u.audio.channelcount, entry->u.audio.samplesize, entry->u.audio.samplerate >> 16, entry->extra_data, entry->extra_data_size);
 				break;
 
 			case MOV_SUBT:
 			case MOV_TEXT:
-				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, MOV_OBJECT_TEXT, track->extra_data, track->extra_data_size);
+				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, MOV_OBJECT_TEXT, entry->extra_data, entry->extra_data_size);
 				break;
 
 			default:
@@ -500,7 +498,7 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 	idx = mid = start = 0;
 	end = track->stbl.stss_count;
 	assert(track->stbl.stss_count > 0);
-	clock = *timestamp * track->mdhd.timescale / 1000; // mvhd timecale
+	clock = *timestamp * track->mdhd.timescale / 1000; // mvhd timescale
 
 	while (start < end)
 	{

@@ -29,7 +29,7 @@ static int mov_read_sample_entry(struct mov_t* mov, struct mov_box_t* box, uint1
 	box->size = mov_buffer_r32(&mov->io);
 	box->type = mov_buffer_r32(&mov->io);
 	mov_buffer_skip(&mov->io, 6); // const unsigned int(8)[6] reserved = 0;
-	*data_reference_index = (uint16_t)mov_buffer_r16(&mov->io); // ref [stsc] sample_description_index
+	*data_reference_index = (uint16_t)mov_buffer_r16(&mov->io); // ref [dref]
 	return 0;
 }
 
@@ -45,17 +45,18 @@ class AudioSampleEntry(codingname) extends SampleEntry (codingname){
 */
 static int mov_read_audio(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
+	uint16_t qtver;
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
     entry->object_type_indication = mov_tag_to_object(box.type);
     entry->stream_type = MP4_STREAM_AUDIO;
 	mov->track->tag = box.type;
 
-#if 1
+#if 0
 	// const unsigned int(32)[2] reserved = 0;
 	mov_buffer_skip(&mov->io, 8);
 #else
-	mov_buffer_r16(&mov->io); /* version */
+	qtver = mov_buffer_r16(&mov->io); /* version */
 	mov_buffer_r16(&mov->io); /* revision level */
 	mov_buffer_r32(&mov->io); /* vendor */
 #endif
@@ -63,7 +64,7 @@ static int mov_read_audio(struct mov_t* mov, struct mov_sample_entry_t* entry)
     entry->u.audio.channelcount = (uint16_t)mov_buffer_r16(&mov->io);
     entry->u.audio.samplesize = (uint16_t)mov_buffer_r16(&mov->io);
 
-#if 1
+#if 0
 	// unsigned int(16) pre_defined = 0; 
 	// const unsigned int(16) reserved = 0 ;
 	mov_buffer_skip(&mov->io, 4);
@@ -76,6 +77,31 @@ static int mov_read_audio(struct mov_t* mov, struct mov_sample_entry_t* entry)
 
 	// audio extra(avc1: ISO/IEC 14496-14:2003(E))
 	box.size -= 36;
+
+	// https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap3/qtff3.html#//apple_ref/doc/uid/TP40000939-CH205-124774
+	if (1 == qtver && box.size >= 16)
+	{
+		// Sound Sample Description (Version 1)
+		mov_buffer_r32(&mov->io); // Samples per packet
+		mov_buffer_r32(&mov->io); // Bytes per packet
+		mov_buffer_r32(&mov->io); // Bytes per frame
+		mov_buffer_r32(&mov->io); // Bytes per sample
+		box.size -= 16;
+	}
+	else if (2 == qtver && box.size >= 36)
+	{
+		// Sound Sample Description (Version 2)
+		mov_buffer_r32(&mov->io); // sizeOfStructOnly
+		mov_buffer_r64(&mov->io); // audioSampleRate
+		mov_buffer_r32(&mov->io); // numAudioChannels
+		mov_buffer_r32(&mov->io); // always7F000000
+		mov_buffer_r32(&mov->io); // constBitsPerChannel
+		mov_buffer_r32(&mov->io); // formatSpecificFlags
+		mov_buffer_r32(&mov->io); // constBytesPerAudioPacket
+		mov_buffer_r32(&mov->io); // constLPCMFramesPerAudioPacket
+		box.size -= 36;
+	}
+
 	return mp4_read_extra(mov, &box);
 }
 
@@ -255,6 +281,7 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 	for (i = 0; i < entry_count; i++)
 	{
         track->stsd.current = &track->stsd.entries[i];
+		memset(track->stsd.current, 0, sizeof(*track->stsd.current));
 		if (MOV_AUDIO == track->handler_type)
 		{
 			mov_read_audio(mov, &track->stsd.entries[i]);
@@ -282,6 +309,10 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		else if (MOV_SUBT == track->handler_type)
 		{
 			mov_read_subtitle_sample_entry(mov, &track->stsd.entries[i]);
+		}
+		else if (MOV_ALIS == track->handler_type)
+		{
+			mov_read_meta_sample_entry(mov, &track->stsd.entries[i]);
 		}
 		else
 		{
@@ -403,9 +434,8 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 {
 	size_t size;
 	uint64_t offset;
-	const struct mov_track_t* track = mov->track;
 
-	size = 8 /* Box */ + 8 /* SampleEntry */ + track->extra_data_size;
+	size = 8 /* Box */ + 8 /* SampleEntry */ + entry->extra_data_size;
 
 	offset = mov_buffer_tell(&mov->io);
 	mov_buffer_w32(&mov->io, 0); /* size */
@@ -415,8 +445,8 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 	mov_buffer_w16(&mov->io, 0); /* Reserved */
 	mov_buffer_w16(&mov->io, entry->data_reference_index); /* Data-reference index */
 
-	if (track->extra_data_size > 0)
-		mov_buffer_write(&mov->io, track->extra_data, track->extra_data_size);
+	if (entry->extra_data_size > 0)
+		mov_buffer_write(&mov->io, entry->extra_data, entry->extra_data_size);
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;

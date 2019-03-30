@@ -35,11 +35,17 @@ void mov_free_track(struct mov_track_t* track)
         if (track->samples[i].data)
             free(track->samples[i].data);
     }
-    
+	
+	for (i = 0; i < track->stsd.entry_count; i++)
+	{
+		if (track->stsd.entries[i].extra_data)
+			free(track->stsd.entries[i].extra_data);
+	}
+
     FREE(track->elst);
     FREE(track->frags);
     FREE(track->samples);
-    FREE(track->extra_data);
+//    FREE(track->extra_data);
     FREE(track->stsd.entries);
     FREE(track->stbl.stco);
     FREE(track->stbl.stsc);
@@ -109,11 +115,11 @@ int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     track->mdhd.language = 0x55c4;
     track->mdhd.duration = 0; // placeholder
 
-    track->extra_data = malloc(extra_data_size + 1);
-    if (NULL == track->extra_data)
+    audio->extra_data = malloc(extra_data_size + 1);
+    if (NULL == audio->extra_data)
         return -ENOMEM;
-    memcpy(track->extra_data, extra_data, extra_data_size);
-    track->extra_data_size = extra_data_size;
+    memcpy(audio->extra_data, extra_data, extra_data_size);
+	audio->extra_data_size = extra_data_size;
 
     return 0;
 }
@@ -155,11 +161,11 @@ int mov_add_video(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     track->mdhd.language = 0x55c4;
     track->mdhd.duration = 0; // placeholder
 
-    track->extra_data = malloc(extra_data_size + 1);
-    if (NULL == track->extra_data)
+	video->extra_data = malloc(extra_data_size + 1);
+    if (NULL == video->extra_data)
         return -ENOMEM;
-    memcpy(track->extra_data, extra_data, extra_data_size);
-    track->extra_data_size = extra_data_size;
+    memcpy(video->extra_data, extra_data, extra_data_size);
+	video->extra_data_size = extra_data_size;
 
     return 0;
 }
@@ -195,11 +201,11 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     track->mdhd.language = 0x55c4;
     track->mdhd.duration = 0; // placeholder
 
-    track->extra_data = malloc(extra_data_size + 1);
-    if (NULL == track->extra_data)
+	subtitle->extra_data = malloc(extra_data_size + 1);
+    if (NULL == subtitle->extra_data)
         return -ENOMEM;
-    memcpy(track->extra_data, extra_data, extra_data_size);
-    track->extra_data_size = extra_data_size;
+    memcpy(subtitle->extra_data, extra_data, extra_data_size);
+	subtitle->extra_data_size = extra_data_size;
 
     return 0;
 }

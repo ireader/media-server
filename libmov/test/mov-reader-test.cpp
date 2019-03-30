@@ -20,7 +20,7 @@ static uint32_t s_aac_track = 0xFFFFFFFF;
 static uint32_t s_avc_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
 
-static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	if (s_avc_track == track)
 	{
@@ -65,10 +65,11 @@ static void mov_video_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	}
 }
 
-static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* /*extra*/, size_t /*bytes*/)
+static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
 	s_afp = fopen("a.aac", "wb");
-
+	assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
+	assert(channel_count == s_aac.channels);
 	s_aac_track = track;
 	assert(MOV_OBJECT_AAC == object);
 	s_aac.profile = MPEG4_AAC_LC;

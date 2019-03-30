@@ -85,9 +85,11 @@ struct mov_mdhd_t
 
 struct mov_sample_entry_t
 {
-    uint16_t data_reference_index; // ref [stsc] sample_description_index
+    uint16_t data_reference_index; // ref [dref] Data Reference Boxes
     uint8_t object_type_indication; // H.264/AAC MOV_OBJECT_XXX (DecoderConfigDescriptor)
     uint8_t stream_type; // MP4_STREAM_XXX
+	uint8_t* extra_data; // H.264 sps/pps
+	size_t extra_data_size;
 
     union
     {

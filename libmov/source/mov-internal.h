@@ -30,6 +30,7 @@
 #define MOV_SUBT	MOV_TAG('s', 'u', 'b', 't') // ISO/IEC 14496-12:2015(E) 12.6 Subtitle media (p185)
 #define MOV_FONT	MOV_TAG('f', 'd', 's', 'm') // ISO/IEC 14496-12:2015(E) 12.7 Font media (p186)
 #define MOV_CLCP	MOV_TAG('c', 'l', 'c', 'p') // ClosedCaptionHandler
+#define MOV_ALIS	MOV_TAG('a', 'l', 'i', 's') // Apple QuickTime Macintosh alias
 
 // https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
 // Video encoding requirements 1.10: Use ¡®avc1¡¯, ¡®hvc1¡¯, or ¡®dvh1¡¯ rather than ¡®avc3¡¯, ¡®hev1¡¯, or ¡®dvhe¡¯
@@ -145,8 +146,6 @@ struct mov_track_t
 	uint32_t tag; // MOV_H264/MOV_MP4A
 	uint32_t handler_type; // MOV_VIDEO/MOV_AUDIO
 	const char* handler_descr; // VideoHandler/SoundHandler/SubtitleHandler
-	uint8_t* extra_data; // H.264 sps/pps
-	size_t extra_data_size;
 
 	struct mov_tkhd_t tkhd;
 	struct mov_mdhd_t mdhd;
@@ -266,6 +265,7 @@ void mov_apply_stco(struct mov_track_t* track);
 void mov_apply_elst(struct mov_track_t *track);
 void mov_apply_stts(struct mov_track_t* track);
 void mov_apply_ctts(struct mov_track_t* track);
+void mov_apply_stss(struct mov_track_t* track);
 void mov_apply_elst_tfdt(struct mov_track_t *track);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);

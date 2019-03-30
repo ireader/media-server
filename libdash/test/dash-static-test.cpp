@@ -26,7 +26,7 @@ static void mp4_onaudio(void* mpd, uint32_t track, uint8_t object, int channel_c
 	s_adapation_audio = dash_mpd_add_audio_adaptation_set((dash_mpd_t*)mpd, "dash-static-audio", object, channel_count, bit_per_sample, sample_rate, extra, bytes);
 }
 
-static void mp4_onread(void* mpd, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void mp4_onread(void* mpd, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	if (s_track_video == track)
 	{

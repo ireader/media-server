@@ -44,7 +44,7 @@ static int iskeyframe(const uint8_t* data, size_t bytes)
 	return 0;
 }
 
-static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	if (s_avc_track == track)
 	{
