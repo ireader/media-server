@@ -35,6 +35,9 @@ struct flv_muxer_t
 	size_t capacity;
 };
 
+int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes);
+int h265_update_hevc(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t bytes);
+
 struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
 {
 	struct flv_muxer_t* flv;
@@ -207,7 +210,6 @@ int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	return flv_muxer_h264(flv, pts, dts);
 }
 
-int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes);
 int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r;
@@ -310,30 +312,19 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 int flv_muxer_hevc_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r;
-	uint8_t* p;
-	uint8_t type = (*(const uint8_t*)nalu >> 1) & 0x3f;
+	int type;
 
 	flv->keyframe = 0; // reset keyframe flag
+
+	type = h265_update_hevc(&flv->v.hevc, (const uint8_t*)nalu, bytes);
+	if (type < 0)
+		return -1;
 
 	switch (type)
 	{
 	case 32:
 	case 33:
 	case 34:
-		p = flv->v.hevc.numOfArrays > 0 ? flv->v.hevc.nalu[flv->v.hevc.numOfArrays - 1].data + flv->v.hevc.nalu[flv->v.hevc.numOfArrays - 1].bytes : flv->v.hevc.data;
-		if (flv->v.hevc.numOfArrays >= sizeof(flv->v.hevc.nalu) / sizeof(flv->v.hevc.nalu[0])
-			|| p + bytes >= flv->v.hevc.data + sizeof(flv->v.hevc.data))
-		{
-			assert(0);
-			return -1;
-		}
-
-		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].type = type;
-		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].bytes = (uint16_t)bytes;
-		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].array_completeness = 1;
-		flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data = p;
-		memcpy(flv->v.hevc.nalu[flv->v.hevc.numOfArrays].data, nalu, bytes);
-		++flv->v.hevc.numOfArrays;
 		return 0;
 
 	case 16: // BLA_W_LP

@@ -20,20 +20,42 @@ static uint32_t s_aac_track = 0xFFFFFFFF;
 static uint32_t s_avc_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
 
+inline const char* ftimestamp(uint32_t t, char* buf)
+{
+	sprintf(buf, "%02u:%02u:%02u.%03u", t / 3600000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
+	return buf;
+}
+
 static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
+	static char s_pts[64], s_dts[64];
+	static int64_t v_pts, v_dts;
+	static int64_t a_pts, a_dts;
+
 	if (s_avc_track == track)
 	{
+		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts));
+		v_pts = pts;
+		v_dts = dts;
+
 		int n = mpeg4_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
 	else if (s_hevc_track == track)
 	{
+		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts));
+		v_pts = pts;
+		v_dts = dts;
+
 		int n = hevc_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
 	else if (s_aac_track == track)
 	{
+		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts));
+		a_pts = pts;
+		a_dts = dts;
+
 		uint8_t adts[32];
 		int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
 		fwrite(adts, 1, n, s_afp);
