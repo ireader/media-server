@@ -51,7 +51,7 @@ int rtp_payload_check(struct rtp_payload_helper_t* helper, const struct rtp_pack
 	helper->seq = (uint16_t)pkt->rtp.seq;
 
 	// check timestamp
-	if (pkt->rtp.timestamp != helper->timestamp)
+//	if (pkt->rtp.timestamp != helper->timestamp)
 	{
 		rtp_payload_onframe(helper);
 	}
