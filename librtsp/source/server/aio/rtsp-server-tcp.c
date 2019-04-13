@@ -41,6 +41,14 @@ static void rtsp_session_ondestroy(void* param)
 		session->rtsp = NULL;
 	}
 
+	if (session->rtp.data)
+	{
+		assert(session->rtp.capacity > 0);
+		free(session->rtp.data);
+		session->rtp.data = NULL;
+		session->rtp.capacity = 0;
+	}
+
 #if defined(_DEBUG) || defined(DEBUG)
 	memset(session, 0xCC, sizeof(*session));
 #endif
