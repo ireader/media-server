@@ -362,7 +362,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	self->m_sdp += (const char*)self->m_frame.buffer;
 }
 
-void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts)
+void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	struct frame_t* frame = (struct frame_t*)param;
 	assert(frame->buffer == buffer);

@@ -10,7 +10,7 @@ struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port,
 {
 	struct rtsp_server_t* rtsp;
 
-	rtsp = (struct rtsp_server_t *)malloc(sizeof(struct rtsp_server_t));
+	rtsp = (struct rtsp_server_t *)calloc(1, sizeof(struct rtsp_server_t));
 	if (NULL == rtsp) return NULL;
 
 	snprintf(rtsp->ip, sizeof(rtsp->ip), "%s", ip);
