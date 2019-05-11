@@ -121,7 +121,7 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	}
 
 	// elementary_stream_map_length 16-bits
-	nbo_w16(data+10, (uint16_t)(j-12+4));
+	nbo_w16(data+10, (uint16_t)(j-12));
 	// program_stream_map_length:16
 	nbo_w16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
