@@ -11,7 +11,7 @@
 #include "rtp.h"
 #include <assert.h>
 
-extern "C" int rtp_ssrc(void);
+extern "C" uint32_t rtp_ssrc(void);
 
 AVCodecContext* ffencoder_create(AVCodecParameters* codecpar)
 {
@@ -417,8 +417,8 @@ void FFLiveSource::OnVideo(AVCodecParameters* codecpar)
 
 	m->track = m_count-1;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = (uint32_t)rtp_ssrc();
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 4 * 1024 * 1024;
 	m->dts_last = m->dts_first = -1;
 
@@ -471,7 +471,7 @@ void FFLiveSource::OnVideo(AVCodecParameters* codecpar)
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, this, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, this, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
 	n += snprintf((char*)buffer + n, sizeof(buffer) - n, "a=control:track%d\n", m->track);
 	m_sdp += (const char*)buffer;
@@ -493,8 +493,8 @@ void FFLiveSource::OnAudio(AVCodecParameters* codecpar)
 
 	m->track = m_count-1;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = (uint32_t)rtp_ssrc();
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 128 * 1024;
 	m->dts_last = m->dts_first = -1;
 
@@ -579,7 +579,7 @@ void FFLiveSource::OnAudio(AVCodecParameters* codecpar)
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, this, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, this, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
 	n += snprintf((char*)buffer + n, sizeof(buffer) - n, "a=control:track%d\n", m->track);
 	m_sdp += (const char*)buffer;

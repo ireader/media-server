@@ -6,7 +6,7 @@
 
 #define MAX_UDP_PACKET (1450-16)
 
-extern "C" int rtp_ssrc(void);
+extern "C" uint32_t rtp_ssrc(void);
 
 PSFileSource::PSFileSource(const char *file)
 :m_reader(file)
@@ -17,7 +17,7 @@ PSFileSource::PSFileSource(const char *file)
 	m_rtp_clock = 0;
 	m_rtcp_clock = 0;
 
-	unsigned int ssrc = (unsigned int)rtp_ssrc();
+	uint32_t ssrc = rtp_ssrc();
 
 	struct ps_muxer_func_t func;
 	func.alloc = Alloc;
@@ -35,7 +35,7 @@ PSFileSource::PSFileSource(const char *file)
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, ssrc, 90000, 4*1024);
+	m_rtp = rtp_create(&event, this, ssrc, ssrc, 90000, 4*1024, 1);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 

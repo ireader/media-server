@@ -101,7 +101,7 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 		return -1;
 	}
 
-	char buffer[1024];
+	char buffer[1024] = { 0 };
 	{
 		AutoThreadLocker locker(s_locker);
 		it = s_describes.find(filename);
@@ -120,13 +120,18 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 			}
 			else
 			{
-				//source.reset(new PSFileSource(filename.c_str()));
-				//source.reset(new H264FileSource(filename.c_str()));
+				if (strendswith(filename.c_str(), ".ps"))
+					source.reset(new PSFileSource(filename.c_str()));
+				else if (strendswith(filename.c_str(), ".h264"))
+					source.reset(new H264FileSource(filename.c_str()));
+				else
+				{
 #if defined(_HAVE_FFMPEG_)
-				source.reset(new FFFileSource(filename.c_str()));
+					source.reset(new FFFileSource(filename.c_str()));
 #else
-				source.reset(new MP4FileSource(filename.c_str()));
+					source.reset(new MP4FileSource(filename.c_str()));
 #endif
+				}
 				source->GetDuration(describe.duration);
 
 				int offset = snprintf(buffer, sizeof(buffer), pattern_vod, ntp64_now(), ntp64_now(), "0.0.0.0", uri, describe.duration / 1000.0);
@@ -206,13 +211,18 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 		}
 		else
 		{
-			//item.media.reset(new PSFileSource(filename.c_str()));
-			//item.media.reset(new H264FileSource(filename.c_str()));
+			if (strendswith(filename.c_str(), ".ps"))
+				item.media.reset(new PSFileSource(filename.c_str()));
+			else if (strendswith(filename.c_str(), ".h264"))
+				item.media.reset(new H264FileSource(filename.c_str()));
+			else
+			{
 #if defined(_HAVE_FFMPEG_)
-			item.media.reset(new FFFileSource(filename.c_str()));
+				item.media.reset(new FFFileSource(filename.c_str()));
 #else
-			item.media.reset(new MP4FileSource(filename.c_str()));
+				item.media.reset(new MP4FileSource(filename.c_str()));
 #endif
+			}
 		}
 
 		char rtspsession[32];

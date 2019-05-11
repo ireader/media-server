@@ -11,7 +11,7 @@
 #include "rtp.h"
 #include <assert.h>
 
-extern "C" int rtp_ssrc(void);
+extern "C" uint32_t rtp_ssrc(void);
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 extern "C" int sdp_h264(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
 extern "C" int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
@@ -349,8 +349,8 @@ void FFFileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int /
 	struct media_t* m = &self->m_media[self->m_count++];
 	m->track = track;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = (uint32_t)rtp_ssrc();
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 4 * 1024 * 1024;
 	m->dts_last = m->dts_first = -1;
 
@@ -383,7 +383,7 @@ void FFFileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int /
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, self, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, self, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
 	n += snprintf((char*)buffer + n, sizeof(buffer) - n, "a=control:track%d\n", m->track);
 	self->m_sdp += (const char*)buffer;
@@ -397,8 +397,8 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 	struct media_t* m = &self->m_media[self->m_count++];
 	m->track = track;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = (uint32_t)rtp_ssrc();
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 128 * 1024;
 	m->dts_last = m->dts_first = -1;
 
@@ -468,7 +468,7 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, self, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, self, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
 	n += snprintf((char*)buffer + n, sizeof(buffer) - n, "a=control:track%d\n", m->track);
 	self->m_sdp += (const char*)buffer;

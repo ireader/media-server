@@ -5,7 +5,7 @@
 #include "rtp-payload.h"
 #include <assert.h>
 
-extern "C" int rtp_ssrc(void);
+extern "C" uint32_t rtp_ssrc(void);
 
 PCMFileSource::PCMFileSource(const char *file)
 {
@@ -16,7 +16,7 @@ PCMFileSource::PCMFileSource(const char *file)
 	m_rtp_clock = 0;
 	m_rtcp_clock = 0;
 
-	unsigned int ssrc = (unsigned int)rtp_ssrc();
+	uint32_t ssrc = rtp_ssrc();
 	static struct rtp_payload_t s_rtpfunc = {
 		PCMFileSource::RTPAlloc,
 		PCMFileSource::RTPFree,
@@ -26,7 +26,7 @@ PCMFileSource::PCMFileSource(const char *file)
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, ssrc, 8000, 8000);
+	m_rtp = rtp_create(&event, this, ssrc, ssrc, 8000, 8000, 1);
 	rtp_set_info(m_rtp, "RTSPServer", "test.pcm");
 }
 

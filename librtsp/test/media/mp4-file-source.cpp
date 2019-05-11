@@ -7,10 +7,11 @@
 #include "sys/path.h"
 #include <assert.h>
 
-extern "C" int rtp_ssrc(void);
+extern "C" uint32_t rtp_ssrc(void);
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 extern "C" int sdp_h264(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
 extern "C" int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_mpeg4_es(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size);
 extern "C" int sdp_aac_latm(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
 extern "C" int sdp_aac_generic(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
 extern "C" int sdp_opus(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
@@ -21,7 +22,6 @@ MP4FileSource::MP4FileSource(const char *file)
 	m_speed = 1.0;
 	m_status = 0;
 	m_clock = 0;
-	m_frame.bytes = 0;
 	m_count = 0;
 
 	m_fp = fopen(file, "rb");
@@ -55,6 +55,12 @@ MP4FileSource::~MP4FileSource()
 			rtp_payload_encode_destroy(m->packer);
 			m->packer = NULL;
 		}
+
+		if (m->pkts)
+		{
+			avpacket_queue_destroy(m->pkts);
+			m->pkts = NULL;
+		}
 	}
 
 	if (m_reader)
@@ -62,6 +68,7 @@ MP4FileSource::~MP4FileSource()
 		mov_reader_destroy(m_reader);
 		m_reader = NULL;
 	}
+
 	if (m_fp)
 		fclose(m_fp);
 }
@@ -81,94 +88,110 @@ int MP4FileSource::SetTransport(const char* track, std::shared_ptr<IRTPTransport
 	return -1;
 }
 
+struct MP4FileSource::media_t* MP4FileSource::FetchNextPacket()
+{
+	struct media_t* best = NULL;
+	int64_t timestamp = 0;
+
+	for (int i = 0; i < m_count; i++)
+	{
+		struct media_t* m = &m_media[i];
+		while (0 == avpacket_queue_count(m->pkts))
+		{
+			int r = mov_reader_read(m_reader, m_packet, sizeof(m_packet), MP4OnRead, this);
+			if (r == 0)
+			{
+				// 0-EOF
+				break;
+			}
+			else if (r < 0)
+			{
+				// error
+				return NULL;
+			}
+		}
+
+		if(0 == avpacket_queue_count(m->pkts))
+			continue;
+
+		struct avpacket_t* cur = avpacket_queue_front(m->pkts);
+		if (NULL == best || cur->dts < timestamp || cur->pts < timestamp)
+		{
+			best = m;
+			timestamp = cur->dts < cur->pts ? cur->dts : cur->pts;
+		}
+	}
+
+	//m_status = 3;
+	//SendBye();
+	return best;
+}
+
 int MP4FileSource::Play()
 {
 	bool sendframe = false;
 	if (3 == m_status)
 		return 0;
 
-SEND_PACKET:
-	if (0 == m_frame.bytes)
+	struct media_t* m = FetchNextPacket();
+	if (NULL == m)
 	{
-		int r = mov_reader_read(m_reader, m_frame.buffer, sizeof(m_frame.buffer), MP4OnRead, &m_frame);
-		if (r == 0)
-		{
-			// 0-EOF
-			m_status = 3;
-			SendBye();
-			return r;
-		}
-		else if (r < 0)
-		{
-			// error
-			return r;
-		}
+		// 0-EOF
+		m_status = 3;
+		SendBye();
+		return 0;
 	}
 
 	m_status = 1;
+	int bytes = 0;
 	uint64_t clock = system_clock();
-	for (int i = 0; i < m_count; i++)
+	struct avpacket_t* pkt = avpacket_queue_front(m->pkts);
+	int64_t dts = pkt->dts < pkt->pts ? pkt->dts : pkt->pts;
+
+	SendRTCP(clock);
+	if (0 == m_clock || m_clock > clock)
+		m_clock = clock;
+	if (-1 == m_dts)
+		m_dts = dts;
+
+	if (int64_t(clock - m_clock) + m_dts >= dts)
 	{
-		struct media_t* m = &m_media[i];
-		if (m->track != m_frame.track)
+		if (0 == strcmp("H264", m->name))
 		{
-			if (i + 1 == m_count)
-			{
-				m_frame.bytes = 0; // unknown track, ignore
-				goto SEND_PACKET;
-			}
-			continue;
+			// AVC1 -> H.264 byte stream
+			bytes = mpeg4_mp4toannexb(&m_avc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
+			//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+		}
+		else if (0 == strcmp("H265", m->name))
+		{
+			// HVC1 -> H.264 byte stream
+			bytes = hevc_mp4toannexb(&m_hevc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
+			//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+		}
+		else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
+		{
+			// add ADTS header
+			memcpy(m_packet, pkt->buffer, pkt->bytes);
+			bytes = pkt->bytes;
+			//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
+		}
+		else
+		{
+			assert(0);
 		}
 
-		if (0 == m_clock || m_clock > clock)
-			m_clock = clock;
-		if (-1 == m_dts)
-			m_dts = m_frame.dts;
+		if (-1 == m->dts_first)
+			m->dts_first = pkt->pts;
+		m->dts_last = pkt->pts;
+		uint32_t timestamp = m->timestamp + (uint32_t)((m->dts_last - m->dts_first) * (m->frequency / 1000) /*kHz*/);
+		//printf("[%d] pts: %lld, dts: %lld, clock: %u\n", pkt->stream, pkt->pts, pkt->dts, timestamp);
+		rtp_payload_encode_input(m->packer, m_packet, bytes, timestamp);
 
-		if (int64_t(clock - m_clock) + m_dts >= m_frame.dts)
-		{
-			if (0 == strcmp("H264", m->name))
-			{
-				// AVC1 -> H.264 byte stream
-				m_frame.bytes = mpeg4_mp4toannexb(&m_avc, m_frame.buffer, m_frame.bytes, m_packet, sizeof(m_packet));
-				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
-			}
-			else if (0 == strcmp("H265", m->name))
-			{
-				// HVC1 -> H.264 byte stream
-				m_frame.bytes = hevc_mp4toannexb(&m_hevc, m_frame.buffer, m_frame.bytes, m_packet, sizeof(m_packet));
-				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
-			}
-			else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
-			{
-				// add ADTS header
-				memcpy(m_packet, m_frame.buffer, m_frame.bytes);
-				//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
-			}
-			else
-			{
-				assert(0);
-			}
+		avpacket_queue_pop(m->pkts);
+		sendframe = 1;
 
-			if (-1 == m->dts_first)
-				m->dts_first = m_frame.pts;
-			m->dts_last = m_frame.pts;
-			uint32_t timestamp = m->timestamp + m->dts_last - m->dts_first;
-/*
-			if (-1 == m->dts)
-				m->dts = m_frame.dts;
-			m->timestamp += m_frame.dts - m->dts;
-			m->dts = m_frame.dts;
-*/
-			rtp_payload_encode_input(m->packer, m_packet, m_frame.bytes, (uint32_t)(timestamp * (m->frequency / 1000) /*kHz*/));
-			SendRTCP(m, clock);
-
-			m_frame.bytes = 0; // send flag
-			sendframe = 1;
-			goto SEND_PACKET;
-		}
-
-		break;
+		// preload next packet
+		FetchNextPacket();
 	}
 
 	return sendframe ? 1 : 0;
@@ -192,11 +215,11 @@ int MP4FileSource::Seek(int64_t pos)
 		if (-1 != m_media[i].dts_first)
 			m_media[i].timestamp += m_media[i].dts_last - m_media[i].dts_first + 1;
 		m_media[i].dts_first = -1;
+		avpacket_queue_clear(m_media[i].pkts); // clear buffered frame
 	}
 
 	m_dts = pos;
 	m_clock = 0;
-	m_frame.bytes = 0; // clear buffered frame
 	return mov_reader_seek(m_reader, &m_dts);
 }
 
@@ -237,7 +260,7 @@ int MP4FileSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) cons
 
 		if (i > 0)
 			rtpinfo[n++] = ',';
-		n += snprintf(rtpinfo + n, bytes - n, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m->track, seq, (unsigned int)(m->timestamp * (m->frequency / 1000) /*kHz*/));
+		n += snprintf(rtpinfo + n, bytes - n, "url=%s/track%d;seq=%hu;rtptime=%u", uri, m->track, seq, (unsigned int)m->timestamp);
 	}
 	return 0;
 }
@@ -247,10 +270,11 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 	int n = 0;
 	MP4FileSource* self = (MP4FileSource*)param;
 	struct media_t* m = &self->m_media[self->m_count++];
+	m->pkts = avpacket_queue_create(100);
 	m->track = track;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = m->ssrc;
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 4 * 1024 * 1024;
 	m->dts_first = -1;
 	m->dts_last = -1;
@@ -261,7 +285,7 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 		m->frequency = 90000;
 		m->payload = RTP_PAYLOAD_H264;
 		snprintf(m->name, sizeof(m->name), "%s", "H264");
-		n = sdp_h264(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_H264, 90000, extra, bytes);
+		n = sdp_h264(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_H264, 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
@@ -269,7 +293,14 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 		m->frequency = 90000;
 		m->payload = RTP_PAYLOAD_H265;
 		snprintf(m->name, sizeof(m->name), "%s", "H265");
-		n = sdp_h265(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_H265, 90000, extra, bytes);
+		n = sdp_h265(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_H265, 90000, extra, bytes);
+	}
+	else if (MOV_OBJECT_MP4V == object)
+	{
+		m->frequency = 90000;
+		m->payload = RTP_PAYLOAD_MP4V;
+		snprintf(m->name, sizeof(m->name), "%s", "MP4V-ES");
+		n = sdp_mpeg4_es(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_MP4V, 90000, extra, bytes);
 	}
 	else
 	{
@@ -282,14 +313,14 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 		MP4FileSource::RTPFree,
 		MP4FileSource::RTPPacket,
 	};
-	m->packer = rtp_payload_encode_create(m->payload, m->name, (uint16_t)m->ssrc, m->ssrc, &rtpfunc, m);
+	m->packer = rtp_payload_encode_create(m->payload, m->name, (uint16_t)rtp_ssrc(), m->ssrc, &rtpfunc, m);
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, self, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, self, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
-	n += snprintf((char*)self->m_frame.buffer + n, sizeof(self->m_frame.buffer) - n, "a=control:track%d\n", m->track);
-	self->m_sdp += (const char*)self->m_frame.buffer;
+	n += snprintf((char*)self->m_packet + n, sizeof(self->m_packet) - n, "a=control:track%d\n", m->track);
+	self->m_sdp += (const char*)self->m_packet;
 }
 
 void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
@@ -297,10 +328,11 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	int n = 0;
 	MP4FileSource* self = (MP4FileSource*)param;
 	struct media_t* m = &self->m_media[self->m_count++];
+	m->pkts = avpacket_queue_create(100);
 	m->track = track;
 	m->rtcp_clock = 0;
-	m->ssrc = (uint32_t)rtp_ssrc();
-	m->timestamp = m->ssrc;
+	m->ssrc = rtp_ssrc();
+	m->timestamp = rtp_ssrc();
 	m->bandwidth = 128 * 1024;
 	m->dts_first = -1;
 	m->dts_last = -1;
@@ -315,7 +347,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 			m->frequency = sample_rate;
 			m->payload = RTP_PAYLOAD_MP4A;
 			snprintf(m->name, sizeof(m->name), "%s", "MP4A-LATM");
-			n = sdp_aac_latm(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
+			n = sdp_aac_latm(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
 		}
 		else
 		{
@@ -323,7 +355,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 			m->frequency = sample_rate;
 			m->payload = RTP_PAYLOAD_MP4A;
 			snprintf(m->name, sizeof(m->name), "%s", "MPEG4-GENERIC"); 
-			n = sdp_aac_generic(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
+			n = sdp_aac_generic(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
 		}
 	}
 	else if (MOV_OBJECT_OPUS == object)
@@ -332,14 +364,14 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		m->frequency = sample_rate;
 		m->payload = RTP_PAYLOAD_OPUS;
 		snprintf(m->name, sizeof(m->name), "%s", "opus");
-		n = sdp_opus(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_OPUS, sample_rate, channel_count, extra, bytes);
+		n = sdp_opus(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_OPUS, sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_G711u == object)
 	{
 		m->frequency = sample_rate;
 		m->payload = RTP_PAYLOAD_PCMU;
 		snprintf(m->name, sizeof(m->name), "%s", "PCMU");
-		n = sdp_g711u(self->m_frame.buffer, sizeof(self->m_frame.buffer), RTP_PAYLOAD_PCMU, sample_rate, channel_count, extra, bytes);
+		n = sdp_g711u(self->m_packet, sizeof(self->m_packet), RTP_PAYLOAD_PCMU, sample_rate, channel_count, extra, bytes);
 	}
 	else
 	{
@@ -352,24 +384,40 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		MP4FileSource::RTPFree,
 		MP4FileSource::RTPPacket,
 	};
-	m->packer = rtp_payload_encode_create(m->payload, m->name, (uint16_t)m->ssrc, m->ssrc, &rtpfunc, m);
+	m->packer = rtp_payload_encode_create(m->payload, m->name, (uint16_t)rtp_ssrc(), m->ssrc, &rtpfunc, m);
 	
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m->rtp = rtp_create(&event, self, m->ssrc, m->frequency, m->bandwidth);
+	m->rtp = rtp_create(&event, self, m->ssrc, m->timestamp, m->frequency, m->bandwidth, 1);
 
-	n += snprintf((char*)self->m_frame.buffer + n, sizeof(self->m_frame.buffer) - n, "a=control:track%d\n", m->track);
-	self->m_sdp += (const char*)self->m_frame.buffer;
+	n += snprintf((char*)self->m_packet + n, sizeof(self->m_packet) - n, "a=control:track%d\n", m->track);
+	self->m_sdp += (const char*)self->m_packet;
 }
 
 void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
-	struct frame_t* frame = (struct frame_t*)param;
-	assert(frame->buffer == buffer);
-	frame->track = track;
-	frame->bytes = bytes;
-	frame->pts = pts;
-	frame->dts = dts;
+	MP4FileSource *self = (MP4FileSource *)param;
+
+	struct avpacket_t pkt;
+	memset(&pkt, 0, sizeof(pkt));
+	assert(bytes <= sizeof(pkt.buffer));
+	memcpy(pkt.buffer, buffer, bytes);
+	pkt.bytes = bytes;
+	pkt.stream = track;
+	pkt.pts = pts;
+	pkt.dts = dts;
+
+	for (int i = 0; i < self->m_count; i++)
+	{
+		struct media_t* m = &self->m_media[i];
+		if (m->track == track)
+		{
+			// TODO: overflow
+			assert(0 == avpacket_queue_push(m->pkts, &pkt));
+			//assert(0 == avpacket_queue_push_wait(m->pkts, &pkt, 1000000));
+			break;
+		}
+	}
 }
 
 void MP4FileSource::OnRTCPEvent(const struct rtcp_msg_t* msg)
@@ -399,20 +447,24 @@ int MP4FileSource::SendBye()
 	return 0;
 }
 
-int MP4FileSource::SendRTCP(struct media_t* m, uint64_t clock)
+int MP4FileSource::SendRTCP(uint64_t clock)
 {
+	char rtcp[1024] = { 0 };
+
 	// make sure have sent RTP packet
-
-	int interval = rtp_rtcp_interval(m->rtp);
-	if (0 == m->rtcp_clock || m->rtcp_clock + interval < clock)
+	for (int i = 0; i < m_count; i++)
 	{
-		char rtcp[1024] = { 0 };
-		size_t n = rtp_rtcp_report(m->rtp, rtcp, sizeof(rtcp));
+		struct media_t* m = &m_media[i];
+		int interval = rtp_rtcp_interval(m->rtp);
+		if (0 == m->rtcp_clock || m->rtcp_clock + 5000 < clock)
+		{
+			size_t n = rtp_rtcp_report(m->rtp, rtcp, sizeof(rtcp));
 
-		// send RTCP packet
-		m->transport->Send(true, rtcp, n);
+			// send RTCP packet
+			m->transport->Send(true, rtcp, n);
 
-		m->rtcp_clock = clock;
+			m->rtcp_clock = clock;
+		}
 	}
 
 	return 0;
