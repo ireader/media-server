@@ -49,7 +49,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, int payload, int sample_rate, int cha
 	// the "rate" parameter indicates the RTP timestamp "clock rate". 
 	// The default value is 90000. Other rates MAY be indicated
 	//	only if they are set to the same value as the audio sampling rate
-	sample_rate = 90000;
+	sample_rate = 0 == sample_rate ? 90000 : sample_rate;
 
 	n = snprintf((char*)data, bytes, pattern, 
 		payload, payload, sample_rate, channel_count, 
