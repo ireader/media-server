@@ -55,8 +55,12 @@ struct rtp_event_t
 	void (*on_rtcp)(void* param, const struct rtcp_msg_t* msg);
 };
 
-/// @param[in] boundwidth in byte
-void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, int frequence, int boundwidth);
+/// @param[in] ssrc RTP SSRC
+/// @param[in] timestamp base timestamp
+/// @param[in] frequence RTP frequence
+/// @param[in] bandwidth in byte
+/// @param[in] sender 1-rtp sender(SR), 0-rtp receiver(RR)
+void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, uint32_t timestamp, int frequence, int bandwidth, int sender);
 int rtp_destroy(void* rtp);
 
 /// RTP send notify

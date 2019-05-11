@@ -79,6 +79,8 @@ int rtcp_sr_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 	// NTP timestamp using the relationship between the RTP timestamp counter and real time as
 	// maintained by periodically checking the wallclock time at a sampling instant.
 	ntp = rtpclock();
+	if (0 == ctx->self->rtp_packets)
+		ctx->self->rtp_clock = ntp;
 	timestamp = (uint32_t)((ntp - ctx->self->rtp_clock) * ctx->frequence / 1000) + ctx->self->rtp_timestamp;
 
 	ntp = clock2ntp(ntp);

@@ -242,7 +242,7 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 		return; // ignore
 	
 	evthandler.on_rtcp = rtp_on_rtcp;
-	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2*1024*1024);
+	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2*1024*1024, 0);
 
 	assert(0 == socket_addr_from(&ctx->ss, &ctx->len, peer, (u_short)peerport[0]));
 	//assert(0 == socket_addr_setport((struct sockaddr*)&ss, len, (u_short)peerport[0]));
@@ -283,7 +283,7 @@ void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payloa
 		return NULL; // ignore
 
 	evthandler.on_rtcp = rtp_on_rtcp;
-	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2 * 1024 * 1024);
+	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2 * 1024 * 1024, 0);
 
 	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
 	assert(interleave1 / 2 < sizeof(s_ctx) / sizeof(s_ctx[0]));

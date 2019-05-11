@@ -9,7 +9,7 @@ enum {
 
 double rtcp_interval(int members, int senders, double rtcp_bw, int we_sent, double avg_rtcp_size, int initial);
 
-void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, int frequence, int boundwidth)
+void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, uint32_t timestamp, int frequence, int bandwidth, int sender)
 {
 	struct rtp_context *ctx;
 
@@ -25,14 +25,16 @@ void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, int fr
 		return NULL;
 	}
 
+	ctx->self->rtp_clock = rtpclock();
+	ctx->self->rtp_timestamp = timestamp;
 	rtp_member_list_add(ctx->members, ctx->self);
 
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	ctx->cbparam = param;
-	ctx->rtcp_bw = (size_t)(boundwidth * RTCP_BANDWIDTH_FRACTION);
+	ctx->rtcp_bw = (size_t)(bandwidth * RTCP_BANDWIDTH_FRACTION);
 	ctx->avg_rtcp_size = 0;
 	ctx->frequence = frequence;
-	ctx->role = RTP_RECEIVER;
+	ctx->role = sender ? RTP_SENDER : RTP_RECEIVER;
 	ctx->init = 1;
 	return ctx;
 }
@@ -57,6 +59,7 @@ int rtp_onsend(void* rtp, const void* data, int bytes)
 	struct rtp_packet_t pkt;
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
 
+	assert(RTP_SENDER == ctx->role);
 	ctx->role = RTP_SENDER;
 	// don't need add self to sender list
 	// rtp_member_list_add(ctx->senders, ctx->self);
@@ -64,8 +67,8 @@ int rtp_onsend(void* rtp, const void* data, int bytes)
 	if(0 != rtp_packet_deserialize(&pkt, data, bytes))
 		return -1; // packet error
 
-	ctx->self->rtp_clock = rtpclock();
-	ctx->self->rtp_timestamp = pkt.rtp.timestamp; // RTP timestamp
+	//ctx->self->rtp_clock = rtpclock();
+	//ctx->self->rtp_timestamp = pkt.rtp.timestamp; // RTP timestamp
 	ctx->self->rtp_bytes += pkt.payloadlen;
 	ctx->self->rtp_packets += 1;
 	return 0;
