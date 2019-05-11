@@ -10,7 +10,7 @@ struct avpacket_t
 	int64_t dts;
 
 	uint8_t buffer[512*1024];
-	size_t bytes;
+	int bytes;
 };
 
 struct avpacket_queue_t;
