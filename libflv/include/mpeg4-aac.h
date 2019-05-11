@@ -30,14 +30,68 @@ enum mpeg2_aac_profile
 	MPEG2_AAC_SSR,
 };
 
-enum mpeg4_aac_profile
+// ISO/IEC 14496-3:2009(E) Table 1.3 ¨C Audio Profiles definition (p41)
+// https://en.wikipedia.org/wiki/MPEG-4_Part_3#Audio_Profiles
+enum mpeg4_aac_object_type
 {
 	MPEG4_AAC_MAIN = 1,
 	MPEG4_AAC_LC,
 	MPEG4_AAC_SSR,
 	MPEG4_AAC_LTP,
-	MPEG4_AAC_SBR,
+	MPEG4_AAC_SBR, // (used with AAC LC in the "High Efficiency AAC Profile" (HE-AAC v1))
 	MPEG4_AAC_SCALABLE,
+	MPEG4_AAC_TWINVQ,
+	MPEG4_AAC_CELP,
+	MPEG4_AAC_HVXC,
+	MPEG4_AAC_TTSI = 12,
+	MPEG4_AAC_MAIN_SYNTHETIC,
+	MPEG4_AAC_WAVETABLE_SYNTHETIC,
+	MPEG4_AAC_GENERAL_MIDI,
+	MPEG4_AAC_ALGORITHMIC_SYNTHESIS, // Algorithmic Synthesis and Audio FX object type
+	MPEG4_AAC_ER_LC, // Error Resilient (ER) AAC Low Complexity (LC) object type
+	MPEG4_AAC_ER_LTP = 19, // Error Resilient (ER) AAC Long Term Predictor (LTP) object type
+	MPEG4_AAC_ER_SCALABLE, // Error Resilient (ER) AAC scalable object type
+	MPEG4_AAC_ER_TWINVQ, // Error Resilient (ER) TwinVQ object type
+	MPEG4_AAC_ER_BSAC, // Error Resilient (ER) BSAC object type
+	MPEG4_AAC_ER_AAC_LD, // Error Resilient (ER) AAC LD object type(used with CELP, ER CELP, HVXC, ER HVXC and TTSI in the "Low Delay Profile")
+	MPEG4_AAC_ER_CELP, // Error Resilient (ER) CELP object type
+	MPEG4_AAC_ER_HVXC, // Error Resilient (ER) HVXC object type
+	MPEG4_AAC_ER_HILN, // Error Resilient (ER) HILN object type
+	MPEG4_AAC_ER_PARAMTRIC, // Error Resilient (ER) Parametric object type
+	MPEG4_AAC_SSC, // SSC Audio object type
+	MPEG4_AAC_PS, // PS object type(used with AAC LC and SBR in the "HE-AAC v2 Profile")
+	MPEG4_AAC_MPEG_SURROUND, // MPEG Surround object type
+	MPEG4_AAC_LAYER_1 = 32, // Layer-1 Audio object type
+	MPEG4_AAC_LAYER_2, // Layer-2 Audio object type
+	MPEG4_AAC_LAYER_3, // Layer-3 Audio object type
+	MPEG4_AAC_DST,
+	MPEG4_AAC_ALS, // ALS Audio object type
+	MPEG4_AAC_SLS, // SLS Audio object type
+	MPEG4_AAC_SLS_NON_CORE, // SLS Non-Core Audio object type
+	MPEG4_AAC_ER_AAC_ELD, // Error Resilient (ER) AAC ELD object type (uses AAC-LD, AAC-ELD and AAC-ELDv2, "Low Delay AAC v2")
+	MPEG4_AAC_SMR_SIMPLE, // SMR Simple object type: MPEG-4 Part 23 standard (ISO/IEC 14496-23:2008)
+	MPEG4_AAC_SMR_MAIN, // SMR Main object type
+	MPEG4_AAC_USAC_NO_SBR, // Unified Speech and Audio Coding (no SBR)
+	MPEG4_AAC_SAOC, // Spatial Audio Object Coding: MPEG-D Part 2 standard (ISO/IEC 23003-2:2010)
+	MPEG4_AAC_LD_MEPG_SURROUND, // MPEG-D Part 2 - ISO/IEC 23003-2
+	MPEG4_AAC_USAC, // MPEG-D Part 3 ¨C ISO/IEC 23003-3
+};
+
+enum mpeg4_audio_profile
+{
+	MPEG4_AAC_PROFILE, // AAC LC
+	MPEG4_HIGH_EFFICIENCY_AAC_PROFILE, // AAC LC, SBR (<=128 kbps)
+	MPEG4_HE_AAC_V2_PROFILE, // AAC LC, SBR, PS (approx. 16 - 48 kbit/s)
+	MPEG4_MAIN_AUDIO_PROFILE, // AAC Main, AAC LC, AAC SSR, AAC LTP, AAC Scalable, TwinVQ, CELP, HVXC, TTSI, Main synthesis
+	MPEG4_SCALABLE_AUDIO_PROFILE, // AAC LC, AAC LTP, AAC Scalable, TwinVQ, CELP, HVXC, TTSI
+	MPEG4_SPEECH_AUDIO_PROFILE, // CELP, HVXC, TTSI
+	MPEG4_SYNTHETIC_AUDIO_PRIFILE, // TTSI, Main synthesis
+	MPEG4_HIGH_QUALITY_AUDIO_PROFILE, // AAC LC, AAC LTP, AAC Scalable, CELP, ER AAC LC, ER AAC LTP, ER AAC Scalable, ER CELP
+	MPEG4_LOW_DELAY_AUDIO_PROFILE, // CELP, HVXC, TTSI, ER AAC LD, ER CELP, ER HVXC
+	MPEG4_NATURAL_AUDIO_PRIFILE, // AAC Main, AAC LC, AAC SSR, AAC LTP, AAC Scalable, TwinVQ, CELP, HVXC, TTSI, ER AAC LC, ER AAC LTP, ER AAC Scalable, ER TwinVQ, ER BSAC, ER AAC LD, ER CELP, ER HVXC, ER HILN, ER Parametric
+	MPEG4_MOBILE_AUDIO_INTERNETWORKING_PROFILE, // ER AAC LC, ER AAC Scalable, ER TwinVQ, ER BSAC, ER AAC LD
+	MPEG4_HD_AAC_PROFILE, // AAC LC, SLS
+	MPEG4_ALS_SIMPLE_PROFILE, // ALS
 };
 
 enum mpeg4_aac_frequency
