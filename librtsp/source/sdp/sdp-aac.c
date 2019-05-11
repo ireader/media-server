@@ -8,18 +8,6 @@
 #include <string.h>
 #include <assert.h>
 
-static int sdp_hex(uint8_t* data, int bytes, const uint8_t* payload, int size)
-{
-	int i;
-	static const char* hex = "0123456789abcdef";
-	for (i = 0; i < size; i++)
-	{
-		data[i * 2 + 0] = hex[payload[i] >> 4];
-		data[i * 2 + 1] = hex[payload[i] & 0x0F];
-	}
-	return size * 2;
-}
-
 // RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
 int sdp_aac_latm(uint8_t *data, int bytes, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
 {
@@ -55,7 +43,9 @@ int sdp_aac_latm(uint8_t *data, int bytes, int payload, int sample_rate, int cha
 		payload, payload, sample_rate, channel_count, 
 		payload, mpeg4_aac_profile_level(&aac), aac.profile);
 
-	n += sdp_hex(data + n, bytes - n, config, r);
+	if (n + r * 2 + 1 > bytes)
+		return -1; // // don't have enough memory
+	n += base16_encode(data + n, config, r);
 
 	if (n < bytes)
 		data[n++] = '\n';
@@ -80,7 +70,7 @@ int sdp_aac_generic(uint8_t *data, int bytes, int payload, int sample_rate, int 
 
 	n = snprintf((char*)data, bytes, pattern, payload, payload, sample_rate, channel_count, payload);
 
-	if (n + extra_size * 2 > bytes)
+	if (n + extra_size * 2 + 1 > bytes)
 		return -1; // // don't have enough memory
 
 	// For MPEG-4 Audio streams, config is the audio object type specific
