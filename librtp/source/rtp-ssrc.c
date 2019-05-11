@@ -20,6 +20,7 @@ uint32_t rtp_ssrc(void)
 }
 
 #elif defined(OS_LINUX) || defined(OS_MAC)
+#include <stdio.h>
 #include <fcntl.h>
 
 static int read_random(uint32_t *dst, const char *file)
@@ -41,7 +42,7 @@ uint32_t rtp_ssrc(void)
 		return seed;
 	return (uint32_t)rand();
 }
-else
+#else
 
 uint32_t rtp_ssrc(void)
 {
