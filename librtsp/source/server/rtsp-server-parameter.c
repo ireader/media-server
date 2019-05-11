@@ -27,6 +27,7 @@ int rtsp_server_reply_get_parameter(struct rtsp_server_t *rtsp, int code, const 
 	const char* value;
 
 	// copy headers
+	buffer[0] = 0;
 	for (len = i = 0; i < sizeof(headers) / sizeof(headers[0]); i++)
 	{
 		value = http_get_header_by_name(rtsp->parser, headers[i]);
