@@ -92,9 +92,10 @@
 		46C5B5112183F26400419E57 /* rtsp-server-listen.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B50E2183F26400419E57 /* rtsp-server-listen.c */; };
 		46F4BE4821843C3700CC9B15 /* nls_cp936.c in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE4721843C3700CC9B15 /* nls_cp936.c */; };
 		46F4BE4A21843C4500CC9B15 /* http-list-dir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */; };
-		46F4BE5421843CC500CC9B15 /* aio-rtmp-server.c in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE4E21843CC400CC9B15 /* aio-rtmp-server.c */; };
-		46F4BE5521843CC500CC9B15 /* aio-rtmp-client.c in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE5021843CC400CC9B15 /* aio-rtmp-client.c */; };
-		46F4BE5621843CC500CC9B15 /* aio-rtmp-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE5121843CC500CC9B15 /* aio-rtmp-transport.c */; };
+		F423511E2287B6CC00D805B4 /* avpacket-queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F423511C2287B6CB00D805B4 /* avpacket-queue.cpp */; };
+		F423513422880C8800D805B4 /* aio-rtmp-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = F423512E22880C8700D805B4 /* aio-rtmp-transport.c */; };
+		F423513522880C8800D805B4 /* aio-rtmp-client.c in Sources */ = {isa = PBXBuildFile; fileRef = F423513022880C8700D805B4 /* aio-rtmp-client.c */; };
+		F423513622880C8800D805B4 /* aio-rtmp-server.c in Sources */ = {isa = PBXBuildFile; fileRef = F423513222880C8700D805B4 /* aio-rtmp-server.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -207,12 +208,14 @@
 		46C5B50E2183F26400419E57 /* rtsp-server-listen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-listen.c"; sourceTree = "<group>"; };
 		46F4BE4721843C3700CC9B15 /* nls_cp936.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nls_cp936.c; path = ../../sdk/source/i18n/nls_cp936.c; sourceTree = "<group>"; };
 		46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "http-list-dir.cpp"; path = "../../sdk/libhttp/test/http-list-dir.cpp"; sourceTree = "<group>"; };
-		46F4BE4E21843CC400CC9B15 /* aio-rtmp-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "aio-rtmp-server.c"; path = "../../librtmp/aio/aio-rtmp-server.c"; sourceTree = "<group>"; };
-		46F4BE4F21843CC400CC9B15 /* aio-rtmp-server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "aio-rtmp-server.h"; path = "../../librtmp/aio/aio-rtmp-server.h"; sourceTree = "<group>"; };
-		46F4BE5021843CC400CC9B15 /* aio-rtmp-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "aio-rtmp-client.c"; path = "../../librtmp/aio/aio-rtmp-client.c"; sourceTree = "<group>"; };
-		46F4BE5121843CC500CC9B15 /* aio-rtmp-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "aio-rtmp-transport.c"; path = "../../librtmp/aio/aio-rtmp-transport.c"; sourceTree = "<group>"; };
-		46F4BE5221843CC500CC9B15 /* aio-rtmp-client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "aio-rtmp-client.h"; path = "../../librtmp/aio/aio-rtmp-client.h"; sourceTree = "<group>"; };
-		46F4BE5321843CC500CC9B15 /* aio-rtmp-transport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "aio-rtmp-transport.h"; path = "../../librtmp/aio/aio-rtmp-transport.h"; sourceTree = "<group>"; };
+		F423511C2287B6CB00D805B4 /* avpacket-queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "avpacket-queue.cpp"; sourceTree = "<group>"; };
+		F423511D2287B6CB00D805B4 /* avpacket-queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "avpacket-queue.h"; sourceTree = "<group>"; };
+		F423512E22880C8700D805B4 /* aio-rtmp-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aio-rtmp-transport.c"; sourceTree = "<group>"; };
+		F423512F22880C8700D805B4 /* aio-rtmp-server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "aio-rtmp-server.h"; sourceTree = "<group>"; };
+		F423513022880C8700D805B4 /* aio-rtmp-client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aio-rtmp-client.c"; sourceTree = "<group>"; };
+		F423513122880C8700D805B4 /* aio-rtmp-transport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "aio-rtmp-transport.h"; sourceTree = "<group>"; };
+		F423513222880C8700D805B4 /* aio-rtmp-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aio-rtmp-server.c"; sourceTree = "<group>"; };
+		F423513322880C8700D805B4 /* aio-rtmp-client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "aio-rtmp-client.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -339,7 +342,7 @@
 		46C5B4882183EEEA00419E57 /* librtmp */ = {
 			isa = PBXGroup;
 			children = (
-				46F4BE4D21843CB600CC9B15 /* aio */,
+				F423512D22880C8700D805B4 /* aio */,
 				46C5B4C92183EF5700419E57 /* rtmp-chunk-test.cpp */,
 				46C5B4C52183EF5700419E57 /* rtmp-input-test.cpp */,
 				46C5B4C72183EF5700419E57 /* rtmp-play-aio-test.cpp */,
@@ -418,6 +421,8 @@
 		46C5B4A32183EF3C00419E57 /* media */ = {
 			isa = PBXGroup;
 			children = (
+				F423511C2287B6CB00D805B4 /* avpacket-queue.cpp */,
+				F423511D2287B6CB00D805B4 /* avpacket-queue.h */,
 				46C5B4A42183EF3C00419E57 /* ps-file-source.h */,
 				46C5B4A52183EF3C00419E57 /* h264-file-source.h */,
 				46C5B4A62183EF3C00419E57 /* media-source.h */,
@@ -447,17 +452,18 @@
 			path = ../librtsp/source/server/aio;
 			sourceTree = "<group>";
 		};
-		46F4BE4D21843CB600CC9B15 /* aio */ = {
+		F423512D22880C8700D805B4 /* aio */ = {
 			isa = PBXGroup;
 			children = (
-				46F4BE5021843CC400CC9B15 /* aio-rtmp-client.c */,
-				46F4BE5221843CC500CC9B15 /* aio-rtmp-client.h */,
-				46F4BE4E21843CC400CC9B15 /* aio-rtmp-server.c */,
-				46F4BE4F21843CC400CC9B15 /* aio-rtmp-server.h */,
-				46F4BE5121843CC500CC9B15 /* aio-rtmp-transport.c */,
-				46F4BE5321843CC500CC9B15 /* aio-rtmp-transport.h */,
+				F423512E22880C8700D805B4 /* aio-rtmp-transport.c */,
+				F423512F22880C8700D805B4 /* aio-rtmp-server.h */,
+				F423513022880C8700D805B4 /* aio-rtmp-client.c */,
+				F423513122880C8700D805B4 /* aio-rtmp-transport.h */,
+				F423513222880C8700D805B4 /* aio-rtmp-server.c */,
+				F423513322880C8700D805B4 /* aio-rtmp-client.h */,
 			);
-			path = aio;
+			name = aio;
+			path = ../librtmp/aio;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -516,6 +522,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F423513522880C8800D805B4 /* aio-rtmp-client.c in Sources */,
 				46C5B4972183EF2400419E57 /* sip-uac-test.cpp in Sources */,
 				46C5B4E12183EF6300419E57 /* mpeg-ps-test.cpp in Sources */,
 				46C5B4C22183EF4A00419E57 /* rtp-receiver-test.c in Sources */,
@@ -568,12 +575,11 @@
 				46C5B50F2183F26400419E57 /* rtsp-server-udp.c in Sources */,
 				46C5B4BB2183EF3C00419E57 /* h264-file-reader.cpp in Sources */,
 				468FDABA21843B560092E381 /* time64.c in Sources */,
-				46F4BE5621843CC500CC9B15 /* aio-rtmp-transport.c in Sources */,
 				46C5B4D12183EF5700419E57 /* rtmp-input-test.cpp in Sources */,
 				46C5B5092183EF9500419E57 /* dash-static-test.cpp in Sources */,
 				46C5B5022183EF8900419E57 /* h264-flv-test.cpp in Sources */,
 				46C5B4F32183EF6E00419E57 /* mov-writer-h265.cpp in Sources */,
-				46F4BE5421843CC500CC9B15 /* aio-rtmp-server.c in Sources */,
+				F423513422880C8800D805B4 /* aio-rtmp-transport.c in Sources */,
 				46C5B4832183EED100419E57 /* test.cpp in Sources */,
 				46C5B4DA2183EF5700419E57 /* rtmp-server-publish-benchmark.cpp in Sources */,
 				468FDAC021843B920092E381 /* unicode.c in Sources */,
@@ -582,6 +588,7 @@
 				46C5B49A2183EF2400419E57 /* transport-tcp.c in Sources */,
 				468FDAC821843BC10092E381 /* md5.c in Sources */,
 				46C5B4D82183EF5700419E57 /* rtmp-publish-test.cpp in Sources */,
+				F423511E2287B6CC00D805B4 /* avpacket-queue.cpp in Sources */,
 				468FDABE21843B690092E381 /* darray.c in Sources */,
 				46C5B4B62183EF3C00419E57 /* ffmpeg-live-source.cpp in Sources */,
 				46C5B4F92183EF7D00419E57 /* hls-segmenter-mp4.cpp in Sources */,
@@ -592,7 +599,7 @@
 				46C5B4F22183EF6E00419E57 /* mov-writer-h264.cpp in Sources */,
 				46C5B4842183EED100419E57 /* BinaryDiff.cpp in Sources */,
 				46C5B4B42183EF3C00419E57 /* rtsp-server-test.cpp in Sources */,
-				46F4BE5521843CC500CC9B15 /* aio-rtmp-client.c in Sources */,
+				F423513622880C8800D805B4 /* aio-rtmp-server.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
