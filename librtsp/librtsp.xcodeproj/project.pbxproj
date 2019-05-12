@@ -46,6 +46,8 @@
 		46C5B42C2183EE5D00419E57 /* rtsp-client-record.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4022183EE5D00419E57 /* rtsp-client-record.c */; };
 		46C5B42E2183EE5D00419E57 /* rtsp-client-setup.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4042183EE5D00419E57 /* rtsp-client-setup.c */; };
 		46D4B765219FD3BD0042496F /* rtsp-media.c in Sources */ = {isa = PBXBuildFile; fileRef = 46D4B764219FD3BD0042496F /* rtsp-media.c */; };
+		F42351202287B72900D805B4 /* rtsp-server-parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = F423511F2287B72900D805B4 /* rtsp-server-parameter.c */; };
+		F42351222287B77800D805B4 /* sdp-mpeg4.c in Sources */ = {isa = PBXBuildFile; fileRef = F42351212287B77800D805B4 /* sdp-mpeg4.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +92,8 @@
 		46C5B4022183EE5D00419E57 /* rtsp-client-record.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-record.c"; sourceTree = "<group>"; };
 		46C5B4042183EE5D00419E57 /* rtsp-client-setup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-client-setup.c"; sourceTree = "<group>"; };
 		46D4B764219FD3BD0042496F /* rtsp-media.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-media.c"; sourceTree = "<group>"; };
+		F423511F2287B72900D805B4 /* rtsp-server-parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-parameter.c"; sourceTree = "<group>"; };
+		F42351212287B77800D805B4 /* sdp-mpeg4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-mpeg4.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +146,7 @@
 		46C5B3DD2183EE5D00419E57 /* server */ = {
 			isa = PBXGroup;
 			children = (
+				F423511F2287B72900D805B4 /* rtsp-server-parameter.c */,
 				46C5B3DE2183EE5D00419E57 /* rtsp-server-handler.c */,
 				46C5B3DF2183EE5D00419E57 /* rtsp-server-record.c */,
 				46C5B3E42183EE5D00419E57 /* rtsp-server-describe.c */,
@@ -160,6 +165,7 @@
 		46C5B3EE2183EE5D00419E57 /* sdp */ = {
 			isa = PBXGroup;
 			children = (
+				F42351212287B77800D805B4 /* sdp-mpeg4.c */,
 				46C5B3EF2183EE5D00419E57 /* sdp-opus.c */,
 				46C5B3F02183EE5D00419E57 /* sdp-h264.c */,
 				46C5B3F12183EE5D00419E57 /* sdp-aac.c */,
@@ -261,6 +267,7 @@
 				46C5B4092183EE5D00419E57 /* rtsp-header-range.c in Sources */,
 				46C5B41F2183EE5D00419E57 /* rtsp-header-transport.c in Sources */,
 				46C5B40B2183EE5D00419E57 /* rtsp-server-handler.c in Sources */,
+				F42351202287B72900D805B4 /* rtsp-server-parameter.c in Sources */,
 				46C5B4072183EE5D00419E57 /* sdp.c in Sources */,
 				46C5B4272183EE5D00419E57 /* rtsp-client-play.c in Sources */,
 				46C5B4202183EE5D00419E57 /* rtsp-client-auth.c in Sources */,
@@ -273,6 +280,7 @@
 				46C5B4282183EE5D00419E57 /* rtsp-client-get-parameter.c in Sources */,
 				46C5B4102183EE5D00419E57 /* rtsp-server-describe.c in Sources */,
 				46C5B4152183EE5D00419E57 /* rtsp-server-announce.c in Sources */,
+				F42351222287B77800D805B4 /* sdp-mpeg4.c in Sources */,
 				46C5B4222183EE5D00419E57 /* rtsp-client-announce.c in Sources */,
 				46C5B40A2183EE5D00419E57 /* rtsp-header-rtp-info.c in Sources */,
 				46C5B4212183EE5D00419E57 /* rtsp-client-teardown.c in Sources */,
