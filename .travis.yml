@@ -19,6 +19,7 @@ addons:
       name: "ireader/media-server"
       description: "media-server"
     notification_email: tao3@outlook.com
+    build_command_prepend: "make clean"
     build_command: "make"
     branch_pattern: master
 
