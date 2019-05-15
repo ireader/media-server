@@ -5,12 +5,10 @@ before_script:
  - unzip /tmp/sdk.zip
  - echo $PWD
  - mv sdk-master ../sdk
-script: make
+
 env:
   global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "E/LcXo5yjWLJiKCwOD91hOIQ6MC2P5stfV7D9rO/kOhoYsq9rUyA8+qoTtYswO+trL1iYPW7EGiZ1mGxku8JuPR73pXLVJVNF4RAA8NHZXEzw0UVulgD1bsxYk8sMZOLFjSOvNKhRGQmQAYSNJnXrvRXCtlwET225qf8WTA2iw24vzZihYQwiOBs3vkcja3pm8/ms9RU5T7/urSY68ouj/kQHnALdbVeixFArwdBRc/M4bAXbZCtgJp4Opfen4E5o/VWyOFGxQ0/PSs60IXyoGhfJsUFbgpoef4ehYqyRDhtNgeqYkuuFSF8r17XJFvGArAewUMJwG+crdUsJ7ZztEX3bCxFtfKCEDKvkrp6bsCW0/Rp60d/UmPvMMB66ituULoBZ5Qu0TSuqJ9xUTqrVPXgtjPs6jQB4pDCWYUs8zW7A7qw/dpR5bl1ojvNVj2UB7uekesib6ggwzCfOBKyuayR6FCRCQdtorZnMR7y3PE031Azk2bL7gePg1X3QqjUSxYSYEH0GHrwvWBua8D1pXq9knD1YlrDvdieh6KiejN1w7k5rWitQEnafoyYYEgAo2pjyZGlri7NcuQyUiSH/aQb3wtG6hwOWN8kt8rZh4wgqIF/TUF37qBQtVSU3IBuAbZ5cOusrI5wanGkW2LZrjjHCJXI3BC18zS59YTjhtA="
+   - secure: "EDSZDN0TGNznJlTy+xqBYSqNSXMzLg6K0+CNmfkstQ+yBzAGA7cf8kGy5PUei8DMh5I3/2BV6mJsKmjaIVDcE4hm4W6ztUIXyFK3dRTxjkVDtEciTefJgaFNh0xzElHi+yGHGW6zYfDa09RqCv6IgIHlEHy+B3WEei/h/Z61I11yD18DdhlEZss7aMEQYci8jjBKgnUGpgyuZxJCt/T4MCZ5b9NmgO4dE+QcjXZPD8KD6lC/gtkpklsm88KvsorxjjjWNrOyalq2sW0I1c90ykyXpONgOj7beIt/qMQxUGOGvx3x1UUI9gcbr4zgmOuQhHsMQV6SAifEr8Rkz+Y7R3+Gu78E4tCiVRMM6kJefcwFtGLuUZfEfiOXT9ihkEp65fiXzi8Pw0/HPDt93167qsuSpQyQE8I78KPjM5z/ncAXMd3NtebZ50FCZSliFBzoYMZxeiYDCUbGuCNzNP7Tpjg7JkRFb3XjboRcZzeaCv3WyhnDGloCMdh2gjKnD7Z/9tMg5B1hf3vjg07x90lLAZP057c8+BJK+5PraDlAovuiH/x/iunBp73gQX7tnKrnnivM4nolsxYdMFdmjcgIhEDVfBS1XkefZI888l7uDp+pki26GfLFy9ToInMDt0a/vBHfJpR8vhIfp5LOGhjuXxF62mBM9E1/hstRK5ACJ+o="
 
 before_install:
   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
@@ -21,6 +19,7 @@ addons:
       name: "ireader/media-server"
       description: "media-server"
     notification_email: tao3@outlook.com
-    build_command_prepend: 
-    build_command: make
+    build_command: "make"
     branch_pattern: master
+
+script: make
