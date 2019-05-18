@@ -31,7 +31,7 @@ int rtcp_app_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes, const char n
 {
 	rtcp_header_t header;
 
-	if(bytes >= 8 + (len+3)/4*4)
+	if(bytes >= 12 + (len+3)/4*4)
 	{
 		header.v = 2;
 		header.p = 0;
@@ -47,5 +47,5 @@ int rtcp_app_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes, const char n
 			memcpy(ptr+12, app, len);
 	}
 
-	return 8 + (len+3)/4*4;
+	return 12 + (len+3)/4*4;
 }
