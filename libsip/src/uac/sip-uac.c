@@ -1,4 +1,5 @@
 #include "sip-uac.h"
+#include "../sip-internal.h"
 #include "sip-uac-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
@@ -7,79 +8,26 @@
 #include "sip-transport.h"
 #include <stdio.h>
 
-struct sip_uac_t
+int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
-	int32_t ref;
-	locker_t locker;
-
-	//struct sip_timer_t timer;
-	//void* timerptr;
-
-	struct list_head transactions; // transaction layer handler
-};
-
-struct sip_uac_t* sip_uac_create()
-{
-	struct sip_uac_t* uac;	
-	uac = (struct sip_uac_t*)calloc(1, sizeof(*uac));
-	if (NULL == uac)
-		return NULL;
-
-	uac->ref = 1;
-	locker_create(&uac->locker);
-	LIST_INIT_HEAD(sip_dialog_root());
-	LIST_INIT_HEAD(&uac->transactions);
-	return uac;
-}
-
-int sip_uac_destroy(struct sip_uac_t* uac)
-{
-//	struct list_head *pos, *next;
-//	struct sip_uac_transaction_t* t;
-
-	assert(uac->ref > 0);
-	if (0 != atomic_decrement32(&uac->ref))
-		return 0;
-
-	assert(list_empty(&uac->transactions));
-	//list_for_each_safe(pos, next, &uac->transactions)
-	//{
-	//	t = list_entry(pos, struct sip_uac_transaction_t, link);
-	//	assert(t->uac == uac);
-	//	sip_uac_transaction_release(t);
-	//}
-
-	//list_for_each_safe(pos, next, &uac->dialogs)
-	//{
-	//	dialog = list_entry(pos, struct sip_dialog_t, link);
-	//	sip_dialog_release(dialog);
-	//}
-
-	locker_destroy(&uac->locker);
-	free(uac);
-	return 0;
-}
-
-int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
-{
-	assert(uac->ref > 0);
-	atomic_increment32(&uac->ref); // ref by transaction
+	assert(sip->ref > 0);
+	atomic_increment32(&sip->ref); // ref by transaction
 
 	// link to tail
-	locker_lock(&uac->locker);
-	list_insert_after(&t->link, uac->transactions.prev);
-	locker_unlock(&uac->locker);
+	locker_lock(&sip->locker);
+	list_insert_after(&t->link, sip->uac.prev);
+	locker_unlock(&sip->locker);
 	return 0;
 //	return sip_uac_transaction_addref(t);
 }
 
-int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t)
+int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
 
-	assert(uac->ref > 0);
-	locker_lock(&uac->locker);
+	assert(sip->ref > 0);
+	locker_lock(&sip->locker);
 
 	// unlink transaction
 	list_remove(&t->link);
@@ -88,22 +36,22 @@ int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t*
 	// Independent of the method, if a request outside of a dialog generates
 	// a non-2xx final response, any early dialogs created through
 	// provisional responses to that request are terminated.
-	list_for_each_safe(pos, next, sip_dialog_root())
+	list_for_each_safe(pos, next, &sip->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
 		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
-			sip_dialog_remove(dialog); // WARNING: release in locker
+			sip_dialog_remove(sip, dialog); // WARNING: release in locker
 		}
 	}
 
-	locker_unlock(&uac->locker);
-	sip_uac_destroy(uac);
+	locker_unlock(&sip->locker);
+	sip_agent_destroy(sip);
 	return 0;
 //	return sip_uac_transaction_release(t);
 }
 
-void* sip_uac_start_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
+void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
 {
 	void* id;
 
@@ -118,7 +66,7 @@ void* sip_uac_start_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t
 	//return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
 }
 
-void sip_uac_stop_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, void* id)
+void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, void* id)
 {
 	//if(0 == uac->timer.stop(uac->timerptr, id))
 	if (0 == sip_timer_stop(id))
@@ -165,7 +113,7 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 	return NULL;
 }
 
-int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
+int sip_uac_input(struct sip_agent_t* sip, struct sip_message_t* reply)
 {
 	int r;
 	struct sip_uac_transaction_t* t;
@@ -181,9 +129,9 @@ int sip_uac_input(struct sip_uac_t* uac, struct sip_message_t* reply)
 		return 0;
 
 	// 1. find transaction
-	locker_lock(&uac->locker);
-	t = sip_uac_find_transaction(&uac->transactions, reply);
-	locker_unlock(&uac->locker);
+	locker_lock(&sip->locker);
+	t = sip_uac_find_transaction(&sip->uac, reply);
+	locker_unlock(&sip->locker);
 	if (!t)
 	{
 		// timeout response, discard

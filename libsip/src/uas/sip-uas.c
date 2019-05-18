@@ -1,4 +1,5 @@
 #include "sip-uas.h"
+#include "../sip-internal.h"
 #include "sip-uas-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
@@ -10,64 +11,7 @@
 #include "list.h"
 #include <stdio.h>
 
-struct sip_uas_t
-{
-	int32_t ref;
-	locker_t locker;
-
-	//struct sip_timer_t timer;
-	//void* timerptr;
-
-	struct list_head transactions; // transaction layer handler
-	struct sip_uas_handler_t handler;
-	void* param;
-};
-
-struct sip_uas_t* sip_uas_create(const char* name, struct sip_uas_handler_t* handler, void* param)
-{
-	struct sip_uas_t* uas;
-	uas = (struct sip_uas_t*)calloc(1, sizeof(*uas));
-	if (NULL == uas)
-		return NULL;
-
-	uas->ref = 1;
-	locker_create(&uas->locker);
-//	LIST_INIT_HEAD(sip_dialog_root());
-	LIST_INIT_HEAD(&uas->transactions);
-	memcpy(&uas->handler, handler, sizeof(uas->handler));
-	uas->param = param;
-	return uas;
-}
-
-int sip_uas_destroy(struct sip_uas_t* uas)
-{
-//	struct list_head *pos, *next;
-//	struct sip_uas_transaction_t* t;
-
-	assert(uas->ref > 0);
-	if (0 != atomic_decrement32(&uas->ref))
-		return 0;
-
-	assert(list_empty(&uas->transactions));
-	//list_for_each_safe(pos, next, &uas->transactions)
-	//{
-	//	t = list_entry(pos, struct sip_uas_transaction_t, link);
-	//	assert(t->uas == uas);
-	//	sip_uas_transaction_release(t);
-	//}
-
-	//list_for_each_safe(pos, next, &uas->dialogs)
-	//{
-	//	dialog = list_entry(pos, struct sip_dialog_t, link);
-	//	sip_dialog_release(dialog);
-	//}
-
-	locker_destroy(&uas->locker);
-	free(uas);
-	return 0;
-}
-
-void* sip_uas_start_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
+void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
 {
 	void* id;
 
@@ -82,36 +26,36 @@ void* sip_uas_start_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t
 	//return uas->timer.start(uas->timerptr, timeout, handler, usrptr);
 }
 
-void sip_uas_stop_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, void* id)
+void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, void* id)
 {
 	//uas->timer.stop(uas->timerptr, id);
 	if (0 == sip_timer_stop(id))
 		sip_uas_transaction_release(t);
 }
 
-int sip_uas_add_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t)
+int sip_uas_add_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
 {
-	t->param = uas->param;
-	t->handler = &uas->handler;
+	t->param = sip->param;
+	t->handler = &sip->handler;
 	
-	assert(uas->ref > 0);
-	atomic_increment32(&uas->ref); // ref by transaction
+	assert(sip->ref > 0);
+	atomic_increment32(&sip->ref); // ref by transaction
 
 	// link to tail
-	locker_lock(&uas->locker);
-	list_insert_after(&t->link, uas->transactions.prev);
-	locker_unlock(&uas->locker);
+	locker_lock(&sip->locker);
+	list_insert_after(&t->link, sip->uas.prev);
+	locker_unlock(&sip->locker);
 	return 0;
 //	return sip_uas_transaction_addref(t);
 }
 
-int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t)
+int sip_uas_del_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
 
-	assert(uas->ref > 0);
-	locker_lock(&uas->locker);
+	assert(sip->ref > 0);
+	locker_lock(&sip->locker);
 
 	// unlink transaction
 	list_remove(&t->link);
@@ -120,27 +64,27 @@ int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t*
 	// Independent of the method, if a request outside of a dialog generates
 	// a non-2xx final response, any early dialogs created through
 	// provisional responses to that request are terminated.
-	list_for_each_safe(pos, next, sip_dialog_root())
+	list_for_each_safe(pos, next, &sip->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
 		if (0 == cstrcmp(&t->reply->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
-			sip_dialog_remove(dialog); // WARNING: release in locker
+			sip_dialog_remove(sip, dialog); // WARNING: release in locker
 		}
 	}
 
-	locker_unlock(&uas->locker);
-	sip_uas_destroy(uas); // unref by transaction
+	locker_unlock(&sip->locker);
+	sip_agent_destroy(sip); // unref by transaction
 	return 0;
 //	return sip_uas_transaction_release(t);
 }
 
-static struct sip_uas_transaction_t* sip_uas_find_acktransaction(struct sip_uas_t* uas, const struct sip_message_t* req)
+static struct sip_uas_transaction_t* sip_uas_find_acktransaction(struct sip_agent_t* sip, const struct sip_message_t* req)
 {
 	struct list_head *pos, *next;
 	struct sip_uas_transaction_t* t;
 
-	list_for_each_safe(pos, next, &uas->transactions)
+	list_for_each_safe(pos, next, &sip->uas)
 	{
 		t = list_entry(pos, struct sip_uas_transaction_t, link);
 		if (cstreq(&t->reply->callid, &req->callid) && cstreq(&t->reply->from.tag, &req->from.tag) && cstreq(&t->reply->to.tag, &req->to.tag))
@@ -151,7 +95,7 @@ static struct sip_uas_transaction_t* sip_uas_find_acktransaction(struct sip_uas_
 }
 
 // RFC3261 17.2.3 Matching Requests to Server Transactions (p138)
-struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, const struct sip_message_t* req, int matchmethod)
+struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod)
 {
 	struct list_head *pos, *next;
 	struct sip_uas_transaction_t* t;
@@ -161,7 +105,7 @@ struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, co
 	if (!via) return NULL; // invalid sip message
 	assert(cstrprefix(&via->branch, SIP_BRANCH_PREFIX));
 
-	list_for_each_safe(pos, next, &uas->transactions)
+	list_for_each_safe(pos, next, &sip->uas)
 	{
 		t = list_entry(pos, struct sip_uas_transaction_t, link);
 		via2 = sip_vias_get(&t->reply->vias, 0);
@@ -194,7 +138,7 @@ struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, co
 	}
 
 	// The ACK for a 2xx response to an INVITE request is a separate transaction
-	return sip_message_isack(req) ? sip_uas_find_acktransaction(uas, req) : NULL;
+	return sip_message_isack(req) ? sip_uas_find_acktransaction(sip, req) : NULL;
 }
 
 static struct sip_dialog_t* sip_uas_create_dialog(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
@@ -252,7 +196,7 @@ static struct sip_dialog_t* sip_uas_create_dialog(struct sip_uas_transaction_t* 
 //	return sip_uas_reply(t, 415/*Unsupported Media Type*/, NULL, 0);
 //}
 
-static int sip_uas_check_request(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
 {
 	//int r;
 	
@@ -271,51 +215,51 @@ static int sip_uas_check_request(struct sip_uas_t* uas, struct sip_uas_transacti
 	return 0;
 }
 
-int sip_uas_input(struct sip_uas_t* uas, const struct sip_message_t* msg)
+int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 {
 	int r;
 	struct sip_dialog_t *dialog;
 	struct sip_uas_transaction_t* t;
 
 	// 1. find transaction
-	locker_lock(&uas->locker);
-	t = sip_uas_find_transaction(uas, msg, 1);
+	locker_lock(&sip->locker);
+	t = sip_uas_find_transaction(sip, msg, 1);
 	if (!t)
 	{
 		if (sip_message_isack(msg))
 		{
-			locker_unlock(&uas->locker);
+			locker_unlock(&sip->locker);
 			return 0; // invalid ack, discard, TODO: add log here
 		}
 
-		t = sip_uas_transaction_create(uas, msg);
+		t = sip_uas_transaction_create(sip, msg);
 		if (!t)
 		{
-			locker_unlock(&uas->locker);
+			locker_unlock(&sip->locker);
 			return -1;
 		}
 	}
-	locker_unlock(&uas->locker);
+	locker_unlock(&sip->locker);
 
-	r = sip_uas_check_request(uas, t, msg);
+	r = sip_uas_check_request(sip, t, msg);
 	if (0 != r) return r;
 
 	
 	locker_lock(&t->locker);
 
 	// 2. find dialog
-	dialog = sip_dialog_find(&msg->callid, &msg->to.tag, &msg->from.tag);
+	dialog = sip_dialog_find(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
 	if (!dialog && sip_message_isinvite(msg))
 	{
 		// 3. create early dialog
 		dialog = sip_uas_create_dialog(t, msg);
 		if (!dialog)
 		{
-			locker_unlock(&uas->locker);
+			locker_unlock(&sip->locker);
 			sip_uas_transaction_release(t);
 			return -1;
 		}
-		sip_dialog_add(dialog);
+		sip_dialog_add(sip, dialog);
 	}
 	
 	sip_uas_transaction_addref(t);

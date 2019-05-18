@@ -179,10 +179,10 @@ int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* c
 int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);
 int sip_contacts_match_any(const struct sip_contacts_t* contacts);
 
-uint8_t* cstring_clone(uint8_t* ptr, const uint8_t* end, struct cstring_t* clone, const char* s, size_t n);
-uint8_t* sip_uri_clone(uint8_t* ptr, const uint8_t* end, struct sip_uri_t* clone, const struct sip_uri_t* uri);
-uint8_t* sip_via_clone(uint8_t* ptr, const uint8_t* end, struct sip_via_t* clone, const struct sip_via_t* via);
-uint8_t* sip_contact_clone(uint8_t* ptr, const uint8_t* end, struct sip_contact_t* clone, const struct sip_contact_t* contact);
+char* cstring_clone(char* ptr, const char* end, struct cstring_t* clone, const char* s, size_t n);
+char* sip_uri_clone(char* ptr, const char* end, struct sip_uri_t* clone, const struct sip_uri_t* uri);
+char* sip_via_clone(char* ptr, const char* end, struct sip_via_t* clone, const struct sip_via_t* via);
+char* sip_contact_clone(char* ptr, const char* end, struct sip_contact_t* clone, const struct sip_contact_t* contact);
 
 void sip_uri_params_free(struct sip_uri_t* uri);
 void sip_via_params_free(struct sip_via_t* via);

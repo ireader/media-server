@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\sip-agent.h" />
     <ClInclude Include="include\sip-dialog.h" />
     <ClInclude Include="include\sip-header.h" />
     <ClInclude Include="include\sip-message.h" />
@@ -26,6 +27,7 @@
     <ClInclude Include="include\sip-transport.h" />
     <ClInclude Include="include\sip-uac.h" />
     <ClInclude Include="include\sip-uas.h" />
+    <ClInclude Include="src\sip-internal.h" />
     <ClInclude Include="src\uac\sip-uac-transaction.h" />
     <ClInclude Include="src\uas\sip-uas-transaction.h" />
   </ItemGroup>
@@ -36,6 +38,7 @@
     <ClCompile Include="src\header\sip-header-uri.c" />
     <ClCompile Include="src\header\sip-header-via.c" />
     <ClCompile Include="src\header\sip-header.c" />
+    <ClCompile Include="src\sip-agent.c" />
     <ClCompile Include="src\sip-dialog.c" />
     <ClCompile Include="src\sip-message.c" />
     <ClCompile Include="src\sip-reason.c" />
@@ -114,10 +117,10 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,9 +130,10 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -137,13 +141,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -153,13 +158,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

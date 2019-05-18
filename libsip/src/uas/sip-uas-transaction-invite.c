@@ -24,6 +24,12 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 {
 	int r, status, oldstatus;
 
+	if (!dialog)
+	{
+		assert(0);
+		return 0;
+	}
+
 	oldstatus = t->status;
 	status = sip_uas_transaction_inivte_change_state(t, req);
 
@@ -153,9 +159,9 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// set Timer L to 64*T1
 
 		t->retries = 1;
-		t->timerh = sip_uas_start_timer(t->uas, t, TIMER_H, sip_uas_transaction_ontimeout);
+		t->timerh = sip_uas_start_timer(t->agent, t, TIMER_H, sip_uas_transaction_ontimeout);
 		if (!t->reliable) // UDP
-			t->timerg = sip_uas_start_timer(t->uas, t, TIMER_G, sip_uas_transaction_onretransmission);
+			t->timerg = sip_uas_start_timer(t->agent, t, TIMER_G, sip_uas_transaction_onretransmission);
 		assert(t->timerh && (!t->reliable || t->timerg));
 	}
 
@@ -178,7 +184,7 @@ static int sip_uas_transaction_onretransmission(void* usrptr)
 	//}
 
 	if(!t->reliable)
-		t->timerg = sip_uas_start_timer(t->uas, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
+		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
 
 	locker_unlock(&t->locker);
 	sip_uas_transaction_release(t);

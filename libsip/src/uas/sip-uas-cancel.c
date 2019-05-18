@@ -7,7 +7,7 @@ int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialo
 	// 487 Request Terminated
 	// CANCEL has no effect on a request to which a UAS has already given a final response
 
-	origin = sip_uas_find_transaction(t->uas, req, 0);
+	origin = sip_uas_find_transaction(t->agent, req, 0);
 	if (!origin)
 	{
 		// 481 Call Leg/Transaction Does Not Exist

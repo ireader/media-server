@@ -1,6 +1,4 @@
 #include "sockutil.h"
-#include "sys/thread.h"
-#include "sys/system.h"
 #include "sip-uac.h"
 #include "sip-uas.h"
 #include "sip-message.h"
@@ -8,17 +6,15 @@
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
-#include "rtsp-media.h"
-#include "../test/media/ps-file-source.h"
-#include "../test/media/h264-file-source.h"
-#include "../test/rtp-socket.h"
-#include "../test/rtp-udp-transport.h"
 #include "uri-parse.h"
 #include "cstringext.h"
 #include "base64.h"
 #include "sdp.h"
 #include "md5.h"
 #include <stdint.h>
+
+#define NAME "34020000001320000001"
+#define DOMAIN "192.168.154.1"
 
 struct sip_uas_test_t
 {
@@ -27,17 +23,7 @@ struct sip_uas_test_t
 	struct sockaddr_storage addr;
 
 	http_parser_t* parser;
-	struct sip_uas_t* uas;
-};
-
-struct sip_media_t
-{
-	struct rtsp_media_t medias[3];
-	int nmedia;
-
-	std::shared_ptr<IRTPTransport> transport;
-	std::shared_ptr<IMediaSource> source;
-	unsigned short port[2];
+	struct sip_agent_t* sip;
 };
 
 static int sip_uas_transport_send(void* param, const struct cstring_t* url, const void* data, int bytes)
@@ -54,77 +40,40 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* url, cons
 
 static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
-	const char* pattern = "v=0\n"
-		"o=34020000001320000001 0 0 IN IP4 192.168.154.1\n"
+	const char* ack = "v=0\n"
+		"o=34020000001320000001 0 0 IN IP4 192.168.128.1\n"
 		"s=Play\n"
-		"c=IN IP4 192.168.154.1\n"
+		"c=IN IP4 192.168.128.1\n"
 		"t=0 0\n"
-		"m=video %hu RTP/AVP 96\n"
-		"a=recvonly\n"
+		"m=video 20120 RTP/AVP 96 98 97\n"
+		"a=sendonly\n"
 		"a=rtpmap:96 PS/90000\n"
-		//"a=fmtp:98 profile-level-id=42800D;packetization-mode=1;sprop-parameter-sets=Z0KADYiLULBLQgAAIygAAr8gCAAAAAAB,aM44gAAAAAE=\n"
-		"y=0100000001\n";
-//		"f=v/2/4///a///\n";
-	
-	char reply[1024];
+		"a=rtpmap:98 H264/90000\n"
+		"a=rtpmap:97 MPEG4/90000\n"
+		"y=0100000001\n"
+		"f=v/2/4///a///\n";
+
 	const cstring_t* h = sip_message_get_header_by_name(req, "Content-Type");
 	if (0 == cstrcasecmp(h, "Application/SDP"))
 	{
-		socklen_t len = 0;
-		struct sip_media_t* m = new sip_media_t;
-		m->transport.reset(new RTPUdpTransport());
-		m->nmedia = rtsp_media_sdp((const char*)data, m->medias, sizeof(m->medias) / sizeof(m->medias[0]));
-		assert(m->nmedia > 0);
-		assert(0 == strcasecmp("IP4", m->medias[0].addrtype) || 0 == strcasecmp("IP6", m->medias[0].addrtype));
-		m->port[0] = m->medias[0].port[0];
-		m->port[1] = m->medias[0].nport > 1 ? m->medias[0].port[1] : (m->medias[0].port[0] + 1);
-		assert(0 == ((RTPUdpTransport*)m->transport.get())->Init(m->medias[0].address, m->port));
-		m->source.reset(new PSFileSource("e:\\video\\sjz.h264"));
-		std::string sdp;
-		m->source->GetSDPMedia(sdp);
-
+		sdp_t* sdp = sdp_parse((const char*)data);
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
 		sip_uas_add_header(t, "Contact", "sip:34020000001320000001@192.168.154.1");
-		snprintf(reply, sizeof(reply), pattern, m->port[0]);
-		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
-		return m;
+		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack)));
+		sdp_destroy(sdp);
+		return t;
 	}
 	else
 	{
 		assert(0);
-		return NULL;
+		return t;
 	}
-}
-
-static int STDCALL rtsp_play_thread(void* param)
-{
-	struct sip_media_t* m = (struct sip_media_t*)param;
-	m->source->SetTransport("track1", m->transport);
-	while (1)
-	{
-		m->source->Play();
-		system_sleep(10);
-	}
-
-	delete m;
 }
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
 static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
-	struct sip_media_t* m = (struct sip_media_t*)session;
-
-	if (200 <= code && code < 300)
-	{
-		pthread_t th;
-		thread_create(&th, rtsp_play_thread, m);
-	}
-	else
-	{
-		delete m;
-		assert(0);
-	}
 	return 0;
 }
 
@@ -143,7 +92,7 @@ static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return 0;
 }
 
 static void sip_uas_loop(struct sip_uas_test_t *test)
@@ -162,7 +111,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 		{
 			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REQUEST);
 			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_uas_input(test->uas, reply));
+			assert(0 == sip_agent_input(test->sip, reply));
 			sip_message_destroy(reply);
 
 			http_parser_clear(test->parser);
@@ -182,11 +131,11 @@ void sip_uas_test(void)
 	};
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
-	test.uas = sip_uas_create("sip:34020000001320000001@192.168.154.1", &handler, &test);
+	test.sip = sip_agent_create(&handler, &test);
 	test.parser = http_parser_create(HTTP_PARSER_SERVER);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);
-	sip_uas_destroy(test.uas);
+	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
 }

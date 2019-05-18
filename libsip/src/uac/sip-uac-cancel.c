@@ -11,14 +11,14 @@ static int sip_uac_oncancel(struct sip_uac_transaction_t* t, const struct sip_me
 	struct sip_dialog_t* dialog;
 	if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
-		dialog = sip_dialog_find(&reply->callid, &reply->from.tag, &reply->to.tag);
+		dialog = sip_dialog_find(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
 		if (dialog)
-			sip_dialog_remove(dialog);
+			sip_dialog_remove(t->agent, dialog);
 	}
 	return 0;
 }
 
-struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param)
+struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param)
 {
 	char cseq[128];
 	struct sip_message_t* req;
@@ -42,7 +42,7 @@ struct sip_uac_transaction_t* sip_uac_cancel(struct sip_uac_t* uac, struct sip_u
 	sip_message_add_header(req, "CSeq", cseq);
 	memcpy(&req->u.c.method, &req->cseq.method, sizeof(req->u.c.method));
 
-	t = sip_uac_transaction_create(uac, req);
+	t = sip_uac_transaction_create(sip, req);
 	t->onhandle = sip_uac_oncancel;
 	t->onreply = oncancel;
 	t->param = param;

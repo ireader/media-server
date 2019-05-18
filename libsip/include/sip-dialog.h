@@ -1,7 +1,6 @@
 #ifndef _sip_dialog_h_
 #define _sip_dialog_h_
 
-#include "sip-message.h"
 #include "sip-header.h"
 #include "cstring.h"
 #include "list.h"
@@ -16,6 +15,8 @@ enum {
 	DIALOG_CONFIRMED,
 };
 
+struct sip_agent_t;
+struct sip_message_t;
 struct sip_dialog_t
 {
 	int state; // DIALOG_ERALY/DIALOG_CONFIRMED
@@ -38,7 +39,7 @@ struct sip_dialog_t
 	// internal use only
 	void* session; // user-defined session
 	struct list_head link;
-	uint8_t* ptr;
+	char* ptr;
 	int32_t ref;
 };
 
@@ -47,10 +48,9 @@ struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg);
 int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t* tag);
 
 // dialog management
-int sip_dialog_add(struct sip_dialog_t* dialog);
-int sip_dialog_remove(struct sip_dialog_t* dialog);
-struct sip_dialog_t* sip_dialog_find(const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
-struct list_head* sip_dialog_root();
+int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
+int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
+struct sip_dialog_t* sip_dialog_find(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
 
 #if defined(__cplusplus)
 }

@@ -12,7 +12,7 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 		// create early dialog
 		dialog = sip_dialog_create(reply);
 		if (!dialog) return -1;
-		sip_dialog_add(dialog);
+		sip_dialog_add(t->agent, dialog);
 	}
 
 	// 17.1.1.2 Formal Description (p126)
@@ -79,7 +79,7 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	{
 		dialog = sip_dialog_create(reply);
 		if (!dialog) return -1;
-		sip_dialog_add(dialog);
+		sip_dialog_add(t->agent, dialog);
 	}
 
 	if (!dialog)
@@ -162,10 +162,10 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 	// stop retry timer A
 	if (NULL != t->timera)
 	{
-		sip_uac_stop_timer(t->uac, t, t->timera);
+		sip_uac_stop_timer(t->agent, t, t->timera);
 		t->timera = NULL;
 	}
-	dialog = sip_dialog_find(&reply->callid, &reply->from.tag, &reply->to.tag);
+	dialog = sip_dialog_find(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
 
 	oldstatus = t->status;
 	status = sip_uac_transaction_inivte_change_state(t, reply);

@@ -54,6 +54,12 @@
     <ClInclude Include="src\uas\sip-uas-transaction.h">
       <Filter>Source Files\uas</Filter>
     </ClInclude>
+    <ClInclude Include="include\sip-agent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sip-internal.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c">
@@ -136,6 +142,9 @@
     </ClCompile>
     <ClCompile Include="src\uas\sip-uas-transaction-noninvite.c">
       <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sip-agent.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

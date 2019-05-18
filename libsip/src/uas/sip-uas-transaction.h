@@ -24,6 +24,7 @@ enum
 	SIP_UAS_TRANSACTION_TERMINATED,
 };
 
+struct sip_agent_t;
 struct sip_uas_transaction_t
 {
 	struct list_head link;
@@ -42,7 +43,7 @@ struct sip_uas_transaction_t
 	void* timerh; // 64*T1, timeout, same as Timer-B
 	void* timerij; // Timer-I: T4, comfirmed -> terminated, Timer-J: 64*T1, completed -> terminated
 
-	struct sip_uas_t* uas;
+	struct sip_agent_t* agent;
 	struct sip_dialog_t* dialog;
 	struct sip_uas_handler_t* handler;
 	void* param;
@@ -52,7 +53,7 @@ struct sip_uas_transaction_t
 	struct sip_message_t* reply; // for set reply sip header
 };
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, const struct sip_message_t* msg);
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* msg);
 int sip_uas_transaction_addref(struct sip_uas_transaction_t* t);
 int sip_uas_transaction_release(struct sip_uas_transaction_t* t);
 
@@ -61,7 +62,7 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
 // wait for all in-flight reply
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout);
 
-struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_uas_t* uas, const struct sip_message_t* req, int matchmethod);
+struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod);
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
 int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
@@ -73,10 +74,10 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
 int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes);
 
-int sip_uas_del_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t);
-int sip_uas_add_transaction(struct sip_uas_t* uas, struct sip_uas_transaction_t* t);
-void* sip_uas_start_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);
-void sip_uas_stop_timer(struct sip_uas_t* uas, struct sip_uas_transaction_t* t, void* id);
+int sip_uas_del_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
+int sip_uas_add_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
+void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);
+void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, void* id);
 const char* sip_reason_phrase(int code);
 
 #endif /* !_sip_uas_transaction_h_ */

@@ -1,7 +1,7 @@
 #include "sip-uas-transaction.h"
 #include "sip-transport.h"
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, const struct sip_message_t* req)
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req)
 {
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)calloc(1, sizeof(*t));
@@ -15,7 +15,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	}
 
 	t->ref = 1;
-	t->uas = uas;
+	t->agent = sip;
 	LIST_INIT_HEAD(&t->link);
 	locker_create(&t->locker);
 	t->status = SIP_UAS_TRANSACTION_INIT;
@@ -27,7 +27,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_uas_t* uas, 
 	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
 	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 
-	sip_uas_add_transaction(uas, t);
+	sip_uas_add_transaction(sip, t);
 	return t;
 }
 
@@ -38,7 +38,7 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 		return 0;
 	
 	// unlink from uas
-	sip_uas_del_transaction(t->uas, t);
+	sip_uas_del_transaction(t->agent, t);
 
 	assert(0 == t->ref);
 	assert(NULL == t->timerg);
@@ -131,17 +131,17 @@ static int sip_uas_transaction_onterminated(void* usrptr)
 
 	if (t->timerh)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerh);
+		sip_uas_stop_timer(t->agent, t, t->timerh);
 		t->timerh = NULL;
 	}
 	if (t->timerg)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerg);
+		sip_uas_stop_timer(t->agent, t, t->timerg);
 		t->timerg = NULL;
 	}
 	if (t->timerij)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerij);
+		sip_uas_stop_timer(t->agent, t, t->timerij);
 		t->timerij = NULL;
 	}
 	locker_unlock(&t->locker);
@@ -155,20 +155,20 @@ int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
 {
 	if (t->timerh)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerh);
+		sip_uas_stop_timer(t->agent, t, t->timerh);
 		t->timerh = NULL;
 	}
 	if (t->timerg)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerg);
+		sip_uas_stop_timer(t->agent, t, t->timerg);
 		t->timerg = NULL;
 	}
 	if (t->timerij)
 	{
-		sip_uas_stop_timer(t->uas, t, t->timerij);
+		sip_uas_stop_timer(t->agent, t, t->timerij);
 		t->timerij = NULL;
 	}
 
-	t->timerij = sip_uas_start_timer(t->uas, t, timeout, sip_uas_transaction_onterminated);
+	t->timerij = sip_uas_start_timer(t->agent, t, timeout, sip_uas_transaction_onterminated);
 	return t->timerij ? 0 : -1;
 }

@@ -470,7 +470,7 @@ const struct sip_uri_t* sip_message_get_next_hop(const struct sip_message_t* msg
 }
 
 // SIP/2.0 200 OK
-static uint8_t* sip_message_status_line(const struct sip_message_t* msg, uint8_t* p, const uint8_t *end)
+static char* sip_message_status_line(const struct sip_message_t* msg, char* p, const char *end)
 {
 	p += snprintf(p, end - p, "%s/2.0 %3d ", msg->u.s.protocol[0] ? msg->u.s.protocol : "SIP", msg->u.s.code);
 	if (p < end) p += cstrcpy(&msg->u.s.reason, p, end - p);
@@ -478,7 +478,7 @@ static uint8_t* sip_message_status_line(const struct sip_message_t* msg, uint8_t
 }
 
 // INVITE sip:bob@biloxi.com SIP/2.0
-static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t* p, const uint8_t *end)
+static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, const char *end)
 {
 	int n;
 	const char* phost;
@@ -550,11 +550,11 @@ static uint8_t* sip_message_request_uri(const struct sip_message_t* msg, uint8_t
 
 	n = snprintf(p, end - p, " SIP/2.0");
 	if (n < 0 || n >= end - p)
-		return (uint8_t*)end; // don't have enough space
+		return (char*)end; // don't have enough space
 	return p + n;
 }
 
-static uint8_t* sip_message_routers(const struct sip_message_t* msg, uint8_t* p, const uint8_t *end)
+static char* sip_message_routers(const struct sip_message_t* msg, char* p, const char *end)
 {
 	int i, strict_router;
 	const struct sip_uri_t *router;
@@ -584,14 +584,14 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 {
 	int i, n;
 	int content_length;
-	uint8_t* p, *end;
+	char* p, *end;
 	const struct sip_param_t* param;
 
 	// check overwrite
 	assert(data + bytes <= (uint8_t*)msg || data >= (uint8_t*)msg->ptr.end);
 
-	p = data;
-	end = data + bytes;
+	p = (char*)data;
+	end = p + bytes;
 	content_length = 0;
 
 	// Request-Line
@@ -667,7 +667,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 		p += n;
 	}
 	
-	return p - data;
+	return (uint8_t*)p - data;
 }
 
 int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value)

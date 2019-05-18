@@ -3,7 +3,7 @@
 #include "sip-message.h"
 #include "sip-uac-transaction.h"
 
-struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* name, const char* to, sip_uac_oninvite oninvite, void* param)
+struct sip_uac_transaction_t* sip_uac_invite(struct sip_agent_t* sip, const char* name, const char* to, sip_uac_oninvite oninvite, void* param)
 {
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
@@ -15,13 +15,13 @@ struct sip_uac_transaction_t* sip_uac_invite(struct sip_uac_t* uac, const char* 
 		return NULL;
 	}
 
-	t = sip_uac_transaction_create(uac, req);
+	t = sip_uac_transaction_create(sip, req);
 	t->oninvite = oninvite;
 	t->param = param;
 	return t;
 }
 
-struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param)
+struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param)
 {
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
@@ -35,7 +35,7 @@ struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_uac_t* uac, struct sip
 		return NULL;
 	}
 
-	t = sip_uac_transaction_create(uac, req);
+	t = sip_uac_transaction_create(sip, req);
 	t->oninvite = oninvite;
 	t->param = param;
 	return t;

@@ -20,14 +20,18 @@
 #include "md5.h"
 #include <stdint.h>
 
+#define NAME "tao3"
+#define HOST "192.168.3.10"
+
 struct sip_uas_test_t
 {
 	socket_t udp;
 	socklen_t addrlen;
 	struct sockaddr_storage addr;
 
-	http_parser_t* parser;
-	struct sip_uas_t* uas;
+	http_parser_t* request;
+	http_parser_t* response;
+	struct sip_agent_t* sip;
 };
 
 struct sip_media_t
@@ -55,9 +59,9 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* url, cons
 static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
 	const char* pattern = "v=0\n"
-		"o=- 0 0 IN IP4 10.2.211.141\n"
+		"o=- 0 0 IN IP4 %s\n"
 		"s=Play\n"
-		"c=IN IP4 10.2.211.141\n"
+		"c=IN IP4 %s\n"
 		"t=0 0\n"
 		"m=audio %hu RTP/AVP 8\n"
 		//"a=rtpmap:96 PS/90000\n"
@@ -82,8 +86,8 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		m->source->GetSDPMedia(sdp);
 
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
-		sip_uas_add_header(t, "Contact", "sip:123456789000000@10.2.211.141");
-		snprintf(reply, sizeof(reply), pattern, m->port[0]);
+		sip_uas_add_header(t, "Contact", "sip:" NAME "@" HOST);
+		snprintf(reply, sizeof(reply), pattern, HOST, HOST, m->port[0]);
 		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
 		return m;
 	}
@@ -147,6 +151,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 static void sip_uas_loop(struct sip_uas_test_t *test)
 {
 	uint8_t buffer[2 * 1024];
+	http_parser_t* parser;
 
 	do
 	{
@@ -155,15 +160,18 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 		int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&test->addr, &test->addrlen);
 		printf("\n%s\n", buffer);
 
+		parser = 0 == strncasecmp("SIP", (char*)buffer, 3) ? test->response : test->request;
+
 		size_t n = r;
-		if (0 == http_parser_input(test->parser, buffer, &n))
+		if (0 == http_parser_input(parser, buffer, &n))
 		{
 			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REQUEST);
-			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_uas_input(test->uas, reply));
+			r = sip_message_load(reply, parser);
+			assert(0 == sip_agent_input(test->sip, reply));
 			sip_message_destroy(reply);
 
-			http_parser_clear(test->parser);
+			http_parser_clear(parser);
+			parser = NULL;
 		}
 	} while (1);
 }
@@ -180,11 +188,13 @@ void sip_uas_test2(void)
 	};
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
-	test.uas = sip_uas_create("10.2.211.141", &handler, &test);
-	test.parser = http_parser_create(HTTP_PARSER_SERVER);
+	test.sip = sip_agent_create(&handler, &test);
+	test.request = http_parser_create(HTTP_PARSER_CLIENT);
+	test.response = http_parser_create(HTTP_PARSER_SERVER);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);
-	sip_uas_destroy(test.uas);
+	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
-	http_parser_destroy(test.parser);
+	http_parser_destroy(test.request);
+	http_parser_destroy(test.response);
 }

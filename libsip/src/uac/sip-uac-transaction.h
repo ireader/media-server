@@ -21,7 +21,7 @@ enum
 	SIP_UAC_TRANSACTION_TERMINATED,
 };
 
-struct sip_uac_t;
+struct sip_agent_t;
 struct sip_uac_transaction_t
 {
 	struct list_head link;
@@ -44,7 +44,7 @@ struct sip_uac_transaction_t
 //	void* timerd;
 	void* timerk; // wait for all duplicate-reply(ack) message
 
-	struct sip_uac_t* uac;
+	struct sip_agent_t* agent;
 	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;
@@ -55,7 +55,7 @@ struct sip_uac_transaction_t
 	void* transportptr;
 };
 
-struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_uac_t* uac, struct sip_message_t* req);
+struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip, struct sip_message_t* req);
 int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
 int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
@@ -69,11 +69,11 @@ int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 
 int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int nconcat);
 
-int sip_uac_add_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
-int sip_uac_del_transaction(struct sip_uac_t* uac, struct sip_uac_transaction_t* t);
+int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
+int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
 
-void* sip_uac_start_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
-void sip_uac_stop_timer(struct sip_uac_t* uac, struct sip_uac_transaction_t* t, void* id);
+void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
+void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, void* id);
 
 int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction);
 

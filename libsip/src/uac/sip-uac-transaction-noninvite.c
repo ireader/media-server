@@ -18,7 +18,7 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 	// stop retry timer A
 	if (NULL != t->timera)
 	{
-		sip_uac_stop_timer(t->uac, t, t->timera);
+		sip_uac_stop_timer(t->agent, t, t->timera);
 		t->timera = NULL;
 	}
 
