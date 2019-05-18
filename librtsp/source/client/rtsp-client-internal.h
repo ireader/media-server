@@ -74,10 +74,8 @@ struct rtsp_client_t
 	int auth_failed;
 	char usr[128];
 	char pwd[256];
-	char cnonce[32];
-	char nc[32];
 	char authenrization[1024];
-	struct http_header_www_authenticate_t auth;
+	struct http_header_authorization_t auth;
 };
 
 //int rtsp_client_describe(struct rtsp_client_t* rtsp);

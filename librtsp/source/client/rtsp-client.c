@@ -16,9 +16,7 @@ struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const
 	snprintf(rtsp->uri, sizeof(rtsp->uri) - 1, "%s", uri);
 	snprintf(rtsp->usr, sizeof(rtsp->usr) - 1, "%s", usr ? usr : "");
 	snprintf(rtsp->pwd, sizeof(rtsp->pwd) - 1, "%s", pwd ? pwd : "");
-	snprintf(rtsp->nc, sizeof(rtsp->nc) - 1, "%08x", 1);
-	snprintf(rtsp->cnonce, sizeof(rtsp->cnonce) - 1, "%p", rtsp);
-
+	
 	rtsp->parser = http_parser_create(HTTP_PARSER_CLIENT);
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
 	rtsp->rtp.onrtp = rtsp->handler.onrtp;
