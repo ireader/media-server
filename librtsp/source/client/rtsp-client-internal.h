@@ -75,7 +75,7 @@ struct rtsp_client_t
 	char usr[128];
 	char pwd[256];
 	char authenrization[1024];
-	struct http_header_authorization_t auth;
+	struct http_header_www_authenticate_t auth;
 };
 
 //int rtsp_client_describe(struct rtsp_client_t* rtsp);

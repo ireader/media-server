@@ -49,23 +49,13 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed)
 {
-	struct http_header_www_authenticate_t auth;
-	memset(&auth, 0, sizeof(auth));
-	if (0 != http_header_www_authenticate(filed, &auth))
+	memset(&rtsp->auth, 0, sizeof(rtsp->auth));
+	if (0 != http_header_www_authenticate(filed, &rtsp->auth))
 	{
 		assert(0);
 		return -1;
 	}
 
-	memset(&rtsp->auth, 0, sizeof(rtsp->auth));
-	rtsp->auth.scheme = auth.scheme;
-	rtsp->auth.userhash = auth.userhash;
-	snprintf(rtsp->auth.algorithm, sizeof(rtsp->auth.algorithm), "%s", auth.algorithm);
-	snprintf(rtsp->auth.realm, sizeof(rtsp->auth.realm), "%s", auth.realm);
-	snprintf(rtsp->auth.nonce, sizeof(rtsp->auth.nonce), "%s", auth.nonce);
-	snprintf(rtsp->auth.opaque, sizeof(rtsp->auth.opaque), "%s", auth.opaque);
-	snprintf(rtsp->auth.qop, sizeof(rtsp->auth.qop), "%s", auth.qop);
-	
 	if (HTTP_AUTHENTICATION_BASIC != rtsp->auth.scheme && HTTP_AUTHENTICATION_DIGEST != rtsp->auth.scheme)
 	{
 		// only Basic/Digest support
