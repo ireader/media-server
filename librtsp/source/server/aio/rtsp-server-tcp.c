@@ -84,7 +84,7 @@ static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 				{
 					// TODO: pipeline remain data
 					assert(bytes > remain);
-					assert(0 == remain);
+					assert(0 == remain || '$' == *(end - remain));
 				}
 				p = end - remain;
 			}
