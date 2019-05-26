@@ -6,7 +6,7 @@
 static int sip_uac_onbye(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	struct sip_dialog_t* dialog;
-	if (200 <= reply->u.s.code && reply->u.s.code < 300)
+	if ( (200 <= reply->u.s.code && reply->u.s.code < 300) || 481 == reply->u.s.code )
 	{
 		dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
 		if (dialog)
