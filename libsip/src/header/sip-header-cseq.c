@@ -26,7 +26,7 @@ int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end)
 
 	p = data;
 	if (p < end)
-		snprintf(p, end - p, "%ul ", (unsigned long)cseq->id);
+		snprintf(p, end - p, "%lu ", (unsigned long)cseq->id);
 
 	if (p < end)
 		p += cstrcpy(&cseq->method, p, end - p);

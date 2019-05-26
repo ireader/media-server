@@ -8,7 +8,14 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 	{
 	case SIP_UAS_TRANSACTION_INIT:
 		t->status = SIP_UAS_TRANSACTION_TRYING;
-		return sip_uas_transaction_handler(t, dialog, req);
+		r = sip_uas_transaction_handler(t, dialog, req);
+		if (0 != r && SIP_UAS_TRANSACTION_TRYING == t->status)
+		{
+			// user ignore/discard
+			t->status = SIP_UAS_TRANSACTION_TERMINATED;
+			sip_uas_transaction_timewait(t, TIMER_H);
+		}
+		return r;
 
 	case SIP_UAS_TRANSACTION_TRYING:
 		// Once in the "Trying" state, any further request
@@ -34,6 +41,8 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 		return 0;
 
 	case SIP_UAS_TRANSACTION_TERMINATED:
+		return 0;
+
 	default:
 		assert(0);
 		return -1;
@@ -42,7 +51,6 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 
 int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
 {
-	int r;
 	assert(SIP_UAS_TRANSACTION_TRYING == t->status || SIP_UAS_TRANSACTION_PROCEEDING == t->status);
 	if (SIP_UAS_TRANSACTION_TRYING != t->status && SIP_UAS_TRANSACTION_PROCEEDING != t->status)
 		return 0; // discard
@@ -71,12 +79,11 @@ int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int cod
 		return -1; // invalid code
 	}
 
-	r = sip_uas_transaction_dosend(t);
 	if (SIP_UAS_TRANSACTION_COMPLETED == t->status)
 	{
 		// start timer J
 		sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_J);
 	}
 
-	return r;
+	return sip_uas_transaction_dosend(t);
 }

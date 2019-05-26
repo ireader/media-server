@@ -35,7 +35,7 @@ static int sip_uas_get_expires(const char* expires)
 	if (0 != http_header_expires(expires, &tm))
 		return 0;
 
-	return mktime(&tm) - time(NULL);
+	return (int)(mktime(&tm) - time(NULL));
 }
 
 static int sip_register_check_request_uri(const struct uri_t* uri)

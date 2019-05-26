@@ -22,14 +22,16 @@ struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler, void* pa
 
 int sip_agent_destroy(struct sip_agent_t* sip)
 {
+    int32_t ref;
 	//struct list_head *pos, *next;
 	//struct sip_dialog_t* dialog;
 	//struct sip_uac_transaction_t* uac;
 	//struct sip_uas_transaction_t* uas;
 
 	assert(sip->ref > 0);
-	if (0 != atomic_decrement32(&sip->ref))
-		return 0;
+    ref = atomic_decrement32(&sip->ref);
+	if (0 != ref)
+		return ref;
 
 	assert(list_empty(&sip->uac));
 	assert(list_empty(&sip->uas));

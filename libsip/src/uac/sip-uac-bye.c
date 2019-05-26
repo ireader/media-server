@@ -8,9 +8,12 @@ static int sip_uac_onbye(struct sip_uac_transaction_t* t, const struct sip_messa
 	struct sip_dialog_t* dialog;
 	if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
-		dialog = sip_dialog_find(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
+		dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
 		if (dialog)
+		{
 			sip_dialog_remove(t->agent, dialog);
+			sip_dialog_release(dialog);
+		}
 	}
 	return 0;
 }

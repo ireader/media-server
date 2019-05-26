@@ -19,6 +19,7 @@
 #include "sdp.h"
 #include "md5.h"
 #include <stdint.h>
+#include <errno.h>
 
 #define NAME "tao3"
 #define HOST "192.168.3.10"
@@ -113,7 +114,7 @@ static int STDCALL rtsp_play_thread(void* param)
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	struct sip_media_t* m = (struct sip_media_t*)session;
 
@@ -127,23 +128,27 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 		delete m;
 		assert(0);
 	}
-	return 0;
 }
 
 /// on terminating a session(dialog)
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
 /// cancel a transaction(should be an invite transaction)
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
+{
+	return sip_uas_reply(t, 200, NULL, 0);
+}
+
+static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -158,21 +163,19 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 		memset(buffer, 0, sizeof(buffer));
 		test->addrlen = sizeof(test->addr);
 		int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&test->addr, &test->addrlen);
+        if(-1 == r && EINTR == errno)
+            continue;
+        
 		printf("\n%s\n", buffer);
-
 		parser = 0 == strncasecmp("SIP", (char*)buffer, 3) ? test->response : test->request;
 
-		size_t n = r;
-		if (0 == http_parser_input(parser, buffer, &n))
-		{
-			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REQUEST);
-			r = sip_message_load(reply, parser);
-			assert(0 == sip_agent_input(test->sip, reply));
-			sip_message_destroy(reply);
-
-			http_parser_clear(parser);
-			parser = NULL;
-		}
+        size_t n = r;
+        assert(0 == http_parser_input(parser, buffer, &n));
+        struct sip_message_t* msg = sip_message_create(parser==test->response? SIP_MESSAGE_REQUEST : SIP_MESSAGE_REPLY);
+        assert(0 == sip_message_load(msg, parser));
+        assert(0 == sip_agent_input(test->sip, msg));
+        sip_message_destroy(msg);
+        http_parser_clear(parser);
 	} while (1);
 }
 
@@ -184,6 +187,7 @@ void sip_uas_test2(void)
 		sip_uas_onbye,
 		sip_uas_oncancel,
 		sip_uas_onregister,
+		sip_uas_onrequest,
 		sip_uas_transport_send,
 	};
 	struct sip_uas_test_t test;

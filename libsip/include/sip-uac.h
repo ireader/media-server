@@ -33,13 +33,15 @@ struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_agent_t* sip, const c
 struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onnotify, void* param);
 struct sip_uac_transaction_t* sip_uac_custom(struct sip_agent_t* sip, const char* method, const char* from, const char* to, sip_uac_onreply onreply, void* param);
 
+int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param);
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value);
 
 /// @param[in] t sip uac transaction, create by sip_uac_invite/sip_uac_register/...
 /// @param[in] data message payload(such as SDP), maybe NULL if don't need send anything
 /// @param[in] bytes data length in byte, >=0 only
-/// @param[in] onsend udp/tcp transport, must be valid until on callback(maybe call many times)
+/// @param[in] transport udp/tcp transport, must be valid until on callback(maybe call many times)
+/// @param[in] param transport parameter
 /// @return 0-ok, other-error
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, struct sip_transport_t* transport, void* param);
 

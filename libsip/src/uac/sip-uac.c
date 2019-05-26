@@ -10,15 +10,14 @@
 
 int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
-	assert(sip->ref > 0);
 	atomic_increment32(&sip->ref); // ref by transaction
+	assert(sip->ref > 0);
 
 	// link to tail
 	locker_lock(&sip->locker);
 	list_insert_after(&t->link, sip->uac.prev);
 	locker_unlock(&sip->locker);
-	return 0;
-//	return sip_uac_transaction_addref(t);
+	return sip_uac_transaction_addref(t);
 }
 
 int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
@@ -41,14 +40,14 @@ int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 		dialog = list_entry(pos, struct sip_dialog_t, link);
 		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
-			sip_dialog_remove(sip, dialog); // WARNING: release in locker
+			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
+			sip_dialog_remove(sip, dialog); // TODO: release in locker
 		}
 	}
 
 	locker_unlock(&sip->locker);
 	sip_agent_destroy(sip);
-	return 0;
-//	return sip_uac_transaction_release(t);
+	return sip_uac_transaction_release(t);
 }
 
 void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
@@ -57,11 +56,15 @@ void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t*
 
 	// wait for timer done
 	if (sip_uac_transaction_addref(t) < 2)
+	{
+		assert(0);
 		return NULL;
+	}
 
 	id = sip_timer_start(timeout, handler, t);
 	if (id == NULL) 
 		sip_uac_transaction_release(t);
+    assert(id);
 	return id;
 	//return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
 }
@@ -107,6 +110,8 @@ static struct sip_uac_transaction_t* sip_uac_find_transaction(struct list_head* 
 		//if (p2 && (!p || !cstreq(p, p2)))
 		//	continue;
 
+		sip_uac_transaction_addref(t); // add ref
+		assert(t->ref >= 2);
 		return t;
 	}
 
@@ -128,7 +133,7 @@ int sip_uac_input(struct sip_agent_t* sip, struct sip_message_t* reply)
 	if (1 != sip_vias_count(&reply->vias))
 		return 0;
 
-	// 1. find transaction
+	// 1. fetch transaction
 	locker_lock(&sip->locker);
 	t = sip_uac_find_transaction(&sip->uac, reply);
 	locker_unlock(&sip->locker);
@@ -160,11 +165,6 @@ int sip_uac_input(struct sip_agent_t* sip, struct sip_message_t* reply)
 	default:  break;
 	}
 
-	if (sip_uac_transaction_addref(t) < 2)
-	{
-		assert(0);
-		return -1;
-	}
 	locker_lock(&t->locker);
 
 	if (sip_message_isinvite(reply))
@@ -190,10 +190,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 
 	r = sip_uac_transaction_via(t, via, sizeof(via), contact, sizeof(contact));
 	if (0 != r)
-	{
-		sip_uac_transaction_release(t);
 		return r;
-	}
 
 	// Via
 	if (0 == sip_vias_count(&t->req->vias))
@@ -225,10 +222,12 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	}
 
 	// get transport reliable from via protocol
-	t->reliable = 0;
-	if (sip_vias_count(&t->req->vias) > 0)
+	t->reliable = 1;
+	if (sip_vias_count(&t->req->vias) > 0 
+		&&  (0 == cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "UDP")
+			|| 0 == cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "DTLS")))
 	{
-		t->reliable = cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "UDP");
+		t->reliable = 0;
 	}
 
 	// message
@@ -236,10 +235,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	t->req->size = bytes;
 	t->size = sip_message_write(t->req, t->data, sizeof(t->data));
 	if (t->size < 0 || t->size >= sizeof(t->data))
-	{
-		sip_uac_transaction_release(t);
 		return -1;
-	}
 
 	return sip_uac_transaction_send(t);
 }
@@ -275,7 +271,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	// Via
 	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
 	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
-	r = snprintf(via, nvia, "SIP/2.0/%s %s;branch=%s%pK", protocol, dns, SIP_BRANCH_PREFIX, t);
+	r = snprintf(via, nvia, "SIP/2.0/%s %s;branch=%s%p%d", protocol, dns, SIP_BRANCH_PREFIX, t, rand());
 	if (r < 0 || r >= nvia)
 		return -1; // ENOMEM
 
@@ -303,4 +299,11 @@ int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const 
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value)
 {
 	return sip_message_add_header_int(t->req, name, value);
+}
+
+int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param)
+{
+    t->ondestroy = ondestroy;
+    t->ondestroyparam = param;
+    return 0;
 }

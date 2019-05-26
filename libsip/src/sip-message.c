@@ -5,6 +5,7 @@
 #include "cstringext.h"
 #include "uuid.h"
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -152,6 +153,7 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 
 	if (!cstrvalid(&msg->from.tag))
 	{
+        // TODO tag random
 		snprintf(tag, sizeof(tag), "%u", (unsigned int)system_clock());
 		sip_message_copy(msg, &msg->from.tag, tag);
 		sip_message_add_param(&msg->from.params, "tag", &msg->from.tag);
@@ -255,6 +257,7 @@ int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req
 	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->to, &req->to);
 	if (!cstrvalid(&msg->to.tag))
 	{
+        // TODO tag random
 		snprintf(tag, sizeof(tag), "%u", (unsigned int)system_clock());
 		sip_message_copy(msg, &msg->to.tag, tag);
 		sip_message_add_param(&msg->to.params, "tag", &msg->to.tag);
@@ -401,7 +404,7 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 			}
 			else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
 			{
-				msg->maxforwards = strtol(value, NULL, 10);
+				msg->maxforwards = (int)strtol(value, NULL, 10);
 			}
 			else if (0 == strcasecmp(SIP_HEADER_VIA, name))
 			{
@@ -662,12 +665,12 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	// payload
 	if (msg->size > 0 && p < end)
 	{
-		n = end - p > msg->size ? msg->size : end - p;
+		n = end - p > msg->size ? msg->size : (int)(end - p);
 		memcpy(p, msg->payload, n);
 		p += n;
 	}
 	
-	return (uint8_t*)p - data;
+	return (int)((uint8_t*)p - data);
 }
 
 int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value)
@@ -697,7 +700,7 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	}
 	else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
 	{
-		msg->maxforwards = strtol(value, NULL, 10);
+		msg->maxforwards = (int)strtol(value, NULL, 10);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
 	{
@@ -747,12 +750,32 @@ int sip_message_get_header(const struct sip_message_t* msg, int i, struct cstrin
 	const struct sip_param_t* param;
 	param = sip_params_get(&msg->headers, i);
 	if (!param) return -1;
-	memcpy(&name, &param->name, sizeof(struct cstring_t));
-	memcpy(&value, &param->value, sizeof(struct cstring_t));
+	memcpy(name, &param->name, sizeof(struct cstring_t));
+	memcpy(value, &param->value, sizeof(struct cstring_t));
 	return 0;
 }
 
 const struct cstring_t* sip_message_get_header_by_name(const struct sip_message_t* msg, const char* name)
 {
-	return sip_params_find_string(&msg->headers, name, strlen(name));
+	return sip_params_find_string(&msg->headers, name, (int)strlen(name));
+}
+
+int sip_message_set_reply_default_contact(struct sip_message_t* reply)
+{
+    struct sip_via_t* via;
+    struct sip_contact_t contact;
+    
+    assert(SIP_MESSAGE_REPLY == reply->mode);
+    memset(&contact, 0, sizeof(contact));
+    
+    // copy from TO
+    sip_contact_clone(reply->ptr.ptr, reply->ptr.end, &contact, &reply->to);
+    contact.tag.p = NULL; contact.tag.n = 0; // clear TO tag
+    
+    // update contact host by via.received
+    via = sip_vias_get(&reply->vias, 0);
+    if (via && cstrvalid(&via->received))
+        sip_message_copy2(reply, &contact.uri.host, &via->received);
+    
+    return sip_contacts_push(&reply->contacts, &contact);
 }

@@ -128,14 +128,6 @@ static void sip_uac_recv_reply(struct sip_uac_test_t *test)
 	} while (1);
 }
 
-static void md5_digest(const uint8_t* data, int size, uint8_t md5[16])
-{
-	MD5_CTX ctx;
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char*)data, size);
-	MD5Final(md5, &ctx);
-}
-
 static int sip_uac_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
 	char buffer[1024];
@@ -156,8 +148,6 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 		snprintf(buffer, sizeof(buffer), "%u REGISTER", atoi(h) + 1);
 		sip_uac_add_header(t, "CSeq", buffer); // A UA MUST increment the CSeq value by one for each REGISTER request with the same Call-ID
 
-		char HA1[16], ha1[33] = { 0 };
-		char HA2[16], ha2[33] = { 0 };
 		// Unauthorized
 		struct http_header_www_authenticate_t auth;
 		memset(&auth, 0, sizeof(auth));
@@ -169,23 +159,11 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 			//HA1=md5(username:realm:password)
 			//HA2=md5(Method:Uri)
 			//RESPONSE=md5(HA1:nonce:HA2)
-			snprintf(buffer, sizeof(buffer), "%s:%s:%s", "34020000001320000001", auth.realm, "12345678");
-			md5_digest((uint8_t*)buffer, strlen(buffer), (uint8_t*)HA1);
-			snprintf(buffer, sizeof(buffer), "%s:%s", "REGISTER", "sip:192.168.154.128");
-			md5_digest((uint8_t*)buffer, strlen(buffer), (uint8_t*)HA2);
-			base16_encode(ha1, HA1, 16);
-			base16_encode(ha2, HA2, 16);
-			_strlwr(ha1);
-			_strlwr(ha2);
-			snprintf(buffer, sizeof(buffer), "%s:%s:%s", ha1, auth.nonce, ha2);
-			md5_digest((uint8_t*)buffer, strlen(buffer), (uint8_t*)HA2);
-			base16_encode(ha2, HA2, 16);
-			_strlwr(ha2);
-
-			snprintf(buffer, sizeof(buffer), "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\", algorithm=MD5",
-				"34020000001320000001", auth.realm, auth.nonce, "sip:192.168.154.128", ha2);
-			sip_uac_add_header(t, "Authorization", buffer);
-
+            ++auth.nc;
+            snprintf(auth.uri, sizeof(auth.uri), "sip:%s", "192.168.154.128");
+            snprintf(auth.username, sizeof(auth.username), "%s", "34020000001320000001");
+            http_header_auth(&auth, "12345678", "REGISTER", NULL, 0, buffer, sizeof(buffer));
+            sip_uac_add_header(t, "Authorization", buffer);
 			assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
 			sip_uac_recv_reply(test);
 			break;

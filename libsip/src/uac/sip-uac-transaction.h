@@ -39,16 +39,17 @@ struct sip_uac_transaction_t
 	int status;
 	int retries;
 	int t2; // 64*T1-invite, 4s-non-invite
-	void* timera; // retransmission timer
-	void* timerb; // timeout
-//	void* timerd;
-	void* timerk; // wait for all duplicate-reply(ack) message
+	void* timera; // retransmission timer(timer E)
+	void* timerb; // timeout(timer F)
+	void* timerd; // wait for all duplicate-reply(ack) message(timer K)
 
 	struct sip_agent_t* agent;
 	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;
 	void* param;
+    sip_transaction_ondestroy ondestroy;
+    void* ondestroyparam;
 	
 	struct sip_transport_t transport;
 //	sip_uac_onsend onsend;

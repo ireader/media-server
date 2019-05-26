@@ -109,6 +109,7 @@ int sip_message_isregister(const struct sip_message_t* msg);
 
 int sip_message_set_uri(struct sip_message_t* msg, const char* uri);
 const struct sip_uri_t* sip_message_get_next_hop(const struct sip_message_t* msg);
+int sip_message_set_reply_default_contact(struct sip_message_t* reply);
 
 int sip_message_get_header_count(const struct sip_message_t* msg);
 int sip_message_get_header(const struct sip_message_t* msg, int i, struct cstring_t* const name, struct cstring_t* const value);

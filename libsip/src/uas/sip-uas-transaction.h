@@ -44,9 +44,12 @@ struct sip_uas_transaction_t
 	void* timerij; // Timer-I: T4, comfirmed -> terminated, Timer-J: 64*T1, completed -> terminated
 
 	struct sip_agent_t* agent;
-	struct sip_dialog_t* dialog;
+    struct sip_dialog_t* dialog;
 	struct sip_uas_handler_t* handler;
 	void* param;
+    
+    sip_transaction_ondestroy ondestroy;
+    void* ondestroyparam;
 
 	// valid only in [sip_uas_input, sip_uas_reply]
 	// create in sip_uas_input, destroy in sip_uas_reply
@@ -61,6 +64,7 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
 
 // wait for all in-flight reply
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout);
+void sip_uas_transaction_ontimeout(void* usrptr);
 
 struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod);
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);

@@ -15,10 +15,18 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 
 	r = 0;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
-	if (0 != sip_message_init2(req, SIP_METHOD_ACK, dialog))
+	r = dialog ? sip_message_init2(req, SIP_METHOD_ACK, dialog) : sip_message_clone(req, t->req);
+	if (0 != r)
 	{
 		sip_message_destroy(req);
 		return -1;
+	}
+	assert(req->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", req->u.c.uri.scheme.p, 3));
+	if (!dialog)
+	{
+		req->u.c.method.p = SIP_METHOD_ACK;
+		req->u.c.method.n = strlen(SIP_METHOD_ACK);
+		memcpy(&req->cseq.method, &req->u.c.method, sizeof(req->cseq.method));
 	}
 
 	// 8.1.1.7 Via (p39)
@@ -74,6 +82,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	}
 
 	// message
+	assert(req->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", req->u.c.uri.scheme.p, 3));
 	t->size = sip_message_write(req, t->data, sizeof(t->data));
 	// destroy sip message
 	sip_message_destroy(req);

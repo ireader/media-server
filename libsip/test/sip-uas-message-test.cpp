@@ -214,7 +214,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	return session;
 }
 
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	char buf[1024];
 	const char* end = buf + sizeof(buf);
@@ -243,10 +243,9 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 	{
 		delete s;
 	}
-	return 0;
 }
 
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
 	struct sip_session_t* s = (struct sip_session_t*)session;
 	struct sip_agent_t* uas = *(struct sip_agent_t**)param;
@@ -255,7 +254,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 	return 0;
 }
 
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
 	assert(0);
 	return -1;
@@ -267,6 +266,11 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	assert(0 == strcmp(user, "bob"));
 	assert(0 == strcmp(location, "192.0.2.4"));
 	struct sip_agent_t* uas = *(struct sip_agent_t**)param;
+	return sip_uas_reply(t, 200, NULL, 0);
+}
+
+static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+{
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
@@ -287,6 +291,7 @@ void sip_uas_message_test(void)
 		sip_uas_onbye,
 		sip_uas_oncancel,
 		sip_uas_onregister,
+		sip_uas_onrequest,
 		sip_uas_send,
 	};
 
