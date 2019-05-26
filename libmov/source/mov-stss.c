@@ -73,7 +73,7 @@ void mov_apply_stss(struct mov_track_t* track)
 	for (i = 0; i < stbl->stss_count; i++)
 	{
 		j = stbl->stss[i]; // start from 1
-		if (j > 0 && j <= track->sample_count);
+		if (j > 0 && j <= track->sample_count)
 			track->samples[j - 1].flags |= MOV_AV_FLAG_KEYFREAME;
 	}
 }
