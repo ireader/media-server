@@ -392,9 +392,7 @@ void rtmp_client_destroy(struct rtmp_client_t* ctx)
 	for (i = 0; i < N_CHUNK_STREAM; i++)
 	{
 		assert(NULL == ctx->rtmp.out_packets[i].payload);
-		if (ctx->rtmp.in_packets[i].payload
-			&& RTMP_TYPE_VIDEO != ctx->rtmp.in_packets[i].header.type
-			&& RTMP_TYPE_AUDIO != ctx->rtmp.in_packets[i].header.type)
+		if (ctx->rtmp.in_packets[i].payload)
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			memset(ctx->rtmp.in_packets[i].payload, 0xCC, ctx->rtmp.in_packets[i].capacity);
