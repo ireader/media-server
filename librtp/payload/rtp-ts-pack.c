@@ -41,7 +41,11 @@ static void* rtp_ts_pack_create(int size, uint8_t pt, uint16_t seq, uint32_t ssr
 		size -= RTP_FIXED_HEADER;
 		size = size / TS_PACKET_SIZE * TS_PACKET_SIZE;
 		size += RTP_FIXED_HEADER;
-		if (size < 64) return NULL;
+		if (size < 64)
+		{
+			free(packer);
+			return NULL;
+		}
 	}
 
 	memcpy(&packer->handler, handler, sizeof(packer->handler));

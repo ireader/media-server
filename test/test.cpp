@@ -20,18 +20,25 @@ extern "C" void http_header_host_test(void);
 extern "C" void http_header_content_type_test(void);
 extern "C" void http_header_authorization_test(void);
 extern "C" void http_header_www_authenticate_test(void);
+extern "C" void http_header_auth_test(void);
 
 extern "C" void rtsp_example();
+extern "C" void rtsp_push_server();
 extern "C" void rtsp_client_test(const char* host, const char* file);
 extern "C" void http_server_test(const char* ip, int port);
+void rtp_payload_test();
 
 void mpeg_ts_dec_test(const char* file);
-void mpeg_ts_test(const char* input, const char* output);
+void mpeg_ts_test(const char* input);
+void mpeg_ps_test(const char* input);
+void flv_2_mpeg_ps_test(const char* flv);
+void mpeg_ps_dec_test(const char* file);
 
 void flv_read_write_test(const char* flv);
 void flv2ts_test(const char* inputFLV, const char* outputTS);
 void ts2flv_test(const char* inputTS, const char* outputFLV);
 void avc2flv_test(const char* inputH264, const char* outputFLV);
+void hevc2flv_test(const char* inputH265, const char* outputFLV);
 void flv_reader_test(const char* file);
 
 void mov_2_flv_test(const char* mp4);
@@ -45,7 +52,7 @@ void mov_writer_audio(const char* audio, int type, const char* mp4);
 void hls_segmenter_flv(const char* file);
 void hls_segmenter_fmp4_test(const char* file);
 void hls_server_test(const char* ip, int port);
-void dash_dynamic_test(const char* ip, int port);
+void dash_dynamic_test(const char* ip, int port, const char* file, int width, int height);
 void dash_static_test(const char* mp4, const char* name);
 
 void rtmp_play_test(const char* host, const char* app, const char* stream, const char* flv);
@@ -58,9 +65,16 @@ void rtmp_server_vod_aio_test(const char* flv);
 void rtmp_server_publish_aio_test(const char* flv);
 void rtmp_server_forward_aio_test(const char* ip, int port);
 
-void binary_diff(const char* f1, const char* f2);
-void flv_compare(const char* f1, const char* f2);
-void rtp_payload_test();
+extern "C" void sip_header_test(void);
+extern "C" void sip_agent_test(void);
+void sip_uac_message_test(void);
+void sip_uas_message_test(void);
+void sip_uac_test(void);
+void sip_uas_test(void);
+void sip_uac_test2(void);
+void sip_uas_test2(void);
+
+int binnary_diff(const char* file1, const char* file2);
 
 int main(int argc, char* argv[])
 {
@@ -76,16 +90,21 @@ int main(int argc, char* argv[])
 	rtsp_header_rtp_info_test();
 	rtsp_header_transport_test();
 	http_header_host_test();
+	http_header_auth_test();
 	http_header_content_type_test();
 	http_header_authorization_test();
 	http_header_www_authenticate_test();
 	rtsp_client_auth_test();
-
+	sip_header_test();
+	sip_uac_message_test();
+	sip_uas_message_test();
+	
 	socket_init();
 
 	//mpeg_ts_dec_test("fileSequence0.ts");
-	//mpeg_ts_test("hevc_aac.ts", "h265_aac.h265");
-
+	//mpeg_ts_test("hevc_aac.ts");
+	//mpeg_ps_test("sjz.ps");
+	
 	//mov_2_flv_test("720p.mp4");
 	//mov_reader_test("720p.mp4");
 	//mov_writer_test(768, 432, "720p.mp4.flv", "720p.mp4.flv.mp4");
@@ -93,12 +112,14 @@ int main(int argc, char* argv[])
 	//mov_writer_h264("720p.h264", 1280, 720, "720p.h264.mp4");
 	//mov_writer_h265("720p.h265", 1280, 720, "720p.h265.mp4");
 	//fmp4_writer_test(1280, 720, "720p.flv", "720p.frag.mp4");
-	//
+
 	//flv_reader_test("720p.flv");
 	//flv_read_write_test("720p.flv");
 	//ts2flv_test("bipo.ts", "bipo.ts.flv");
 	//flv2ts_test("bipo.ts.flv", "bipo.ts.flv.ts");
 	//avc2flv_test("4k.h264", "out.flv");
+	//hevc2flv_test("BigBuckBunny-3840x2160.h265", "out.flv");
+	//flv_reader_test("out.flv");
 
 	//hls_segmenter_flv("720p.flv");
 #if defined(_HAVE_FFMPEG_)
@@ -111,6 +132,7 @@ int main(int argc, char* argv[])
 
 	//rtsp_client_test("192.168.241.129", "test.rtp");
 	//rtsp_example();
+	//rtsp_push_server();
 
 	//rtmp_play_test("192.168.241.129", "live", "hevc", "h265.flv");
 	//rtmp_publish_test("192.168.241.129", "live", "avc", "h264.flv");
@@ -121,6 +143,12 @@ int main(int argc, char* argv[])
 	//rtmp_server_vod_aio_test("720p.flv");
 	//rtmp_server_publish_aio_test("720p.flv");
 	//rtmp_server_forward_aio_test(NULL, 1935);
+
+	//sip_uac_test();
+	//sip_uas_test();
+	//sip_uas_test2();
+	//sip_uac_test2();
+	//sip_agent_test();
 
 	socket_cleanup();
 	return 0;

@@ -207,6 +207,12 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	if (0 == sip_contacts_count(&t->req->contacts) && 
 		(sip_message_isinvite(t->req) || sip_message_isregister(t->req)))
 	{
+		// 12.1.2 UAC Behavior (p71)
+		// When a UAC sends a request that can establish a dialog (such as an
+		// INVITE) it MUST provide a SIP or SIPS URI with global scope (i.e.,
+		// the same SIP URI can be used in messages outside this dialog) in the
+		// Contact header field of the request.
+
 		// The Contact header field MUST be present and contain exactly one SIP or 
 		// SIPS URI in any request that can result in the establishment of a dialog.
 		// For the methods defined in this specification, that includes only the INVITE request.

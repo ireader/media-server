@@ -16,9 +16,7 @@ int sdp_mpeg4_es(uint8_t *data, int bytes, int payload, int frequence, const voi
 		"a=rtpmap:%d MP4V-ES/90000\n"
 		"a=fmtp:%d profile-level-id=1;config=";
 
-	int r, n;
-	uint8_t i;
-
+	int n;
 	n = snprintf((char*)data, bytes, pattern, payload, payload, payload);
 
 	if (n + extra_size * 2 + 1 > bytes)

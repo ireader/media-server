@@ -51,6 +51,10 @@ int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t*
 	if (contact && cstrvalid(&contact->uri.host))
 		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
 
+	// 12.1.2 UAC Behavior (p71)
+	// The route set MUST be set to the list of URIs in the Record-Route
+	// header field from the response, taken in reverse order and preserving
+	// all URI parameters.
 	sip_uris_init(&dialog->routers);
 	for (i = sip_uris_count(&msg->routers); i > 0; i--)
 	{
@@ -84,6 +88,11 @@ int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t*
     if (contact && cstrvalid(&contact->uri.host))
         dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
     
+	// 12.1.1 UAS behavior (p70)
+	// The route set MUST be set to the list of URIs in the Record-Route
+	// header field from the request, taken in order and preserving all URI
+	// parameters. If no Record-Route header field is present in the
+	// request, the route set MUST be set to the empty set.
     sip_uris_init(&dialog->routers);
     for (i = 0; i < sip_uris_count(&msg->routers); i++)
     {

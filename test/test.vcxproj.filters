@@ -72,7 +72,25 @@
     <ClInclude Include="..\librtsp\test\rtp-socket.h">
       <Filter>librtsp</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-udp-transport.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtsp-vod.h">
+      <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\mp4-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\avpacket-queue.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
     <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
     <ClInclude Include="..\librtsp\test\media\h264-file-reader.h">
@@ -84,19 +102,10 @@
     <ClInclude Include="..\librtsp\test\media\media-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\mp4-file-source.h">
+    <ClInclude Include="..\librtsp\test\media\pcm-file-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
     <ClInclude Include="..\librtsp\test\media\ps-file-source.h">
-      <Filter>librtsp\media</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\rtp-udp-transport.h">
-      <Filter>librtsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h">
-      <Filter>librtsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
   </ItemGroup>
@@ -181,24 +190,6 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c">
       <Filter>librtsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp">
-      <Filter>librtsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp">
-      <Filter>librtsp\media</Filter>
     </ClCompile>
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp">
       <Filter>librtp</Filter>
@@ -311,9 +302,6 @@
     <ClCompile Include="..\..\sdk\source\app-log.c">
       <Filter>sdk</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sdk\source\darray.c">
       <Filter>sdk</Filter>
     </ClCompile>
@@ -340,6 +328,90 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c">
       <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-header-test.c">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-timer.c">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uac-message-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uac-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uas-message-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uas-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\transport-tcp.c">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\transport-udp.c">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\ring-buffer.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\port\ip-route.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\h265-flv-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\avpacket-queue.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\flv-2-mpeg-ps-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uas-test2.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-uac-test2.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libsip\test\sip-agent-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\channel.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\random.c">
+      <Filter>sdk</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -68,6 +68,10 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	{
 		// nothing to do
 	}
+	else if ((3 << 4) == codec)
+	{
+		fwrite(data, bytes, 1, aac);
+	}
 	else
 	{
 		// nothing to do

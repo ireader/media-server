@@ -275,6 +275,14 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
     if (0 == sip_contacts_count(&t->reply->contacts) &&
         (sip_message_isinvite(t->reply) || sip_message_isregister(t->reply)))
     {
+		// 12.1.1 UAS behavior (p70)
+		// The UAS MUST add a Contact header field to the response. The Contact 
+		// header field contains an address where the UAS would like to be 
+		// contacted for subsequent requests in the dialog (which includes the 
+		// ACK for a 2xx response in the case of an INVITE). Generally, the host 
+		// portion of this URI is the IP address or FQDN of the host. 
+		// The URI provided in the Contact header field MUST be a SIP or SIPS URI.
+
         sip_message_set_reply_default_contact(t->reply);
     }
     

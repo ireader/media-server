@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.vcxproj", "{C34CC56F-34FE-4D93-8582-5853B05442EA}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaio", "..\sdk\libaio\libaio.vcxproj", "{24239EF8-56AC-4B79-81AA-5CB49B8B1178}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "..\sdk\libhttp\libhttp.vcxproj", "{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsip", "libsip\libsip.vcxproj", "{5CDF2275-37A7-450A-B69F-2063079D6946}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +115,14 @@ Global
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|Win32.Build.0 = Release|Win32
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|x64.ActiveCfg = Release|x64
 		{B2CA3B5D-F7C6-4DAF-8F32-F8A169427A7C}.Release|x64.Build.0 = Release|x64
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Debug|Win32.Build.0 = Debug|Win32
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Debug|x64.ActiveCfg = Debug|x64
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Debug|x64.Build.0 = Debug|x64
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|Win32.ActiveCfg = Release|Win32
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|Win32.Build.0 = Release|Win32
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|x64.ActiveCfg = Release|x64
+		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

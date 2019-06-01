@@ -31,6 +31,8 @@ struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, const char* 
 struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onsubscribe, void* param);
 struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onnotify, void* param);
+struct sip_uac_transaction_t* sip_uac_update(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onnotify, void* param);
+struct sip_uac_transaction_t* sip_uac_refer(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onnotify, void* param);
 struct sip_uac_transaction_t* sip_uac_custom(struct sip_agent_t* sip, const char* method, const char* from, const char* to, sip_uac_onreply onreply, void* param);
 
 int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param);
