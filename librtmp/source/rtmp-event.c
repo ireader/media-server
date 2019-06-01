@@ -123,6 +123,7 @@ int rtmp_event_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* he
 
     case RTMP_EVENT_STREAM_EOF:
         rtmp->u.client.oneof(rtmp->param, streamId);
+		return 6;
 
 	case RTMP_EVENT_SET_BUFFER_LENGTH:
 		if (header->length < 10) return 0;
