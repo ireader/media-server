@@ -22,7 +22,7 @@ static size_t h264_sps_pps_size(const struct mpeg4_avc_t* avc)
 	return n;
 }
 
-size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size)
+int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes, void* out, int size)
 {
 	int i, n;
 	uint8_t sps_pps_flag;

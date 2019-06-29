@@ -166,7 +166,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 					return -ENOMEM;
 
 				assert(flv->v.avc.nalu <= 4);
-				n = mpeg4_mp4toannexb(&flv->v.avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
+				n = h264_mp4toannexb(&flv->v.avc, data + 5, bytes - 5, flv->ptr, flv->capacity);
 				if (n <= 0 || n > flv->capacity)
 				{
 					assert(0);
@@ -209,7 +209,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
 					return -ENOMEM;
 
-				n = hevc_mp4toannexb(&flv->v.hevc, data + 5, bytes - 5, flv->ptr, flv->capacity);
+				n = h265_mp4toannexb(&flv->v.hevc, data + 5, bytes - 5, flv->ptr, flv->capacity);
 				if (n <= 0 || n > flv->capacity)
 				{
 					assert(0);

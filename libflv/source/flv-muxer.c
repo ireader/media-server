@@ -28,15 +28,12 @@ struct flv_muxer_t
 		struct mpeg4_avc_t avc;
 		struct mpeg4_hevc_t hevc;
 	} v;
-	int keyframe;
+	int vcl; // 0-non vcl, 1-idr, 2-p/b
 
 	uint8_t* ptr;
 	size_t bytes;
 	size_t capacity;
 };
-
-int h264_update_avc(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes);
-int h265_update_hevc(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t bytes);
 
 struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
 {
@@ -157,11 +154,8 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	int r;
 	int m, compositionTime;
 
-	if (0 == flv->avc_sequence_header)
+	if (0 == flv->avc_sequence_header && flv->v.avc.nb_sps > 0 && flv->v.avc.nb_pps > 0)
 	{
-		if (flv->v.avc.nb_sps < 1 || flv->v.avc.nb_pps < 1)
-			return 0;
-
 		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
 		flv->ptr[flv->bytes + 1] = 0; // AVC sequence header
 		flv->ptr[flv->bytes + 2] = 0; // CompositionTime 0
@@ -178,10 +172,10 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	}
 
 	// has video frame
-	if (flv->bytes > 5)
+	if (flv->vcl)
 	{
 		compositionTime = pts - dts;
-		flv->ptr[0] = ((flv->keyframe ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
+		flv->ptr[0] = ((1==flv->vcl ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
 		flv->ptr[1] = 1; // AVC NALU
 		flv->ptr[2] = (compositionTime >> 16) & 0xFF;
 		flv->ptr[3] = (compositionTime >> 8) & 0xFF;
@@ -202,53 +196,11 @@ int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	}
 
 	flv->bytes = 5;
-	flv->bytes += mpeg4_annexbtomp4(&flv->v.avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
+	flv->bytes += h264_annexbtomp4(&flv->v.avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl);
 	if (flv->bytes <= 5)
 		return ENOMEM;
 
-	flv->keyframe = flv->v.avc.chroma_format_idc; // hack
 	return flv_muxer_h264(flv, pts, dts);
-}
-
-int flv_muxer_h264_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
-{
-	int r;
-	int type;
-	
-	type = h264_update_avc(&flv->v.avc, (const uint8_t*)nalu, bytes);
-	if (type < 0)
-		return -1;
-
-	switch (type)
-	{
-	case 7:
-	case 8:
-		break;
-
-	default:
-		if (flv->capacity < bytes + 2048/*AVCDecoderConfigurationRecord*/)
-		{
-			if (0 != flv_muxer_alloc(flv, bytes + 2048))
-				return ENOMEM;
-		}
-
-		flv->ptr[flv->bytes + 5] = (uint8_t)((bytes >> 24) & 0xFF);
-		flv->ptr[flv->bytes + 6] = (uint8_t)((bytes >> 16) & 0xFF);
-		flv->ptr[flv->bytes + 7] = (uint8_t)((bytes >> 8) & 0xFF);
-		flv->ptr[flv->bytes + 8] = (uint8_t)((bytes >> 0) & 0xFF);
-		memcpy(flv->ptr + 5 + flv->bytes + 4, nalu, bytes);
-		flv->bytes += bytes + 4;
-		flv->keyframe = type == 5;
-	}
-
-	if (type < 1 || type > 5)
-		return 0; // no-VCL
-
-	assert(flv->bytes > 0);
-	flv->bytes += 5;
-	r = flv_muxer_h264(flv, pts, dts);
-	flv->bytes = 0;
-	return r;
 }
 
 static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
@@ -256,11 +208,8 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	int r;
 	int m, compositionTime;
 
-	if (0 == flv->avc_sequence_header)
+	if (0 == flv->avc_sequence_header && flv->v.hevc.numOfArrays >= 3) // vps + sps + pps
 	{
-		if (flv->v.hevc.numOfArrays < 3) // vps + sps + pps
-			return 0;
-
 		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_H265 /*CodecID*/;
 		flv->ptr[flv->bytes + 1] = 0; // HEVC sequence header
 		flv->ptr[flv->bytes + 2] = 0; // CompositionTime 0
@@ -277,10 +226,10 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	}
 
 	// has video frame
-	if (flv->bytes > 5)
+	if (flv->vcl)
 	{
 		compositionTime = pts - dts;
-		flv->ptr[0] = ((flv->keyframe ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H265 /*CodecID*/;
+		flv->ptr[0] = ((1==flv->vcl ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H265 /*CodecID*/;
 		flv->ptr[1] = 1; // HEVC NALU
 		flv->ptr[2] = (compositionTime >> 16) & 0xFF;
 		flv->ptr[3] = (compositionTime >> 8) & 0xFF;
@@ -301,65 +250,11 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 	}
 
 	flv->bytes = 5;
-	flv->bytes += hevc_annexbtomp4(&flv->v.hevc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
+	flv->bytes += h265_annexbtomp4(&flv->v.hevc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl);
 	if (flv->bytes <= 5)
 		return ENOMEM;
 
-	flv->keyframe = flv->v.hevc.constantFrameRate; // hack
 	return flv_muxer_h265(flv, pts, dts);
-}
-
-int flv_muxer_hevc_nalu(struct flv_muxer_t* flv, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts)
-{
-	int r;
-	int type;
-
-	flv->keyframe = 0; // reset keyframe flag
-
-	type = h265_update_hevc(&flv->v.hevc, (const uint8_t*)nalu, bytes);
-	if (type < 0)
-		return -1;
-
-	switch (type)
-	{
-	case 32:
-	case 33:
-	case 34:
-		return 0;
-
-	case 16: // BLA_W_LP
-	case 17: // BLA_W_RADL
-	case 18: // BLA_N_LP
-	case 19: // IDR_W_RADL
-	case 20: // IDR_N_LP
-	case 21: // CRA_NUT
-	case 22: // RSV_IRAP_VCL22
-	case 23: // RSV_IRAP_VCL23
-		flv->keyframe = 1; // irap frame
-
-	default:
-		if (flv->capacity < bytes + 2048/*HEVCDecoderConfigurationRecord*/)
-		{
-			if (0 != flv_muxer_alloc(flv, bytes + 2048))
-				return ENOMEM;
-		}
-
-		flv->ptr[flv->bytes + 5] = (uint8_t)((bytes >> 24) & 0xFF);
-		flv->ptr[flv->bytes + 6] = (uint8_t)((bytes >> 16) & 0xFF);
-		flv->ptr[flv->bytes + 7] = (uint8_t)((bytes >> 8) & 0xFF);
-		flv->ptr[flv->bytes + 8] = (uint8_t)((bytes >> 0) & 0xFF);
-		memcpy(flv->ptr + 5 + flv->bytes + 4, nalu, bytes);
-		flv->bytes += bytes + 4;
-	}
-
-	if (type > 31)
-		return 0; // no-VCL
-
-	assert(flv->bytes > 0);
-	flv->bytes += 5;
-	r = flv_muxer_h265(flv, pts, dts);
-	flv->bytes = 0;
-	return r;
 }
 
 int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)

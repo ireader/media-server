@@ -49,9 +49,9 @@ int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t by
 
 int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t bytes);
 
-size_t hevc_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size);
+int h265_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, int bytes, void* out, int size, int *vcl);
 
-size_t hevc_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size);
+int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, int bytes, void* out, int size);
 
 #if defined(__cplusplus)
 }

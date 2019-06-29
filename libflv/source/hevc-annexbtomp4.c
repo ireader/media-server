@@ -9,10 +9,12 @@
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
-struct hevc_handle_t
+struct h265_annexbtomp4_handle_t
 {
 	struct mpeg4_hevc_t* hevc;
+	uint8_t* hevcptr;
 	int errcode;
+	int* vcl;
 
 	uint8_t* ptr;
 	size_t bytes;
@@ -122,96 +124,84 @@ static void hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t m
 	}
 }
 
-int h265_update_hevc(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t bytes)
+static void mpeg4_hevc_clear(struct h265_annexbtomp4_handle_t* mp4)
 {
-	uint8_t* sodb;
-	uint8_t nal_type;
-	size_t sodb_bytes;
-
-	nal_type = (nalu[0] >> 1) & 0x3f;
-	switch (nal_type)
-	{
-	case H265_NAL_VPS:
-	case H265_NAL_SPS:
-	case H265_NAL_PPS:
-		sodb = hevc->numOfArrays > 0 ? hevc->nalu[hevc->numOfArrays - 1].data + hevc->nalu[hevc->numOfArrays - 1].bytes : hevc->data;
-		if (hevc->numOfArrays >= sizeof(hevc->nalu) / sizeof(hevc->nalu[0])
-			|| sodb + bytes >= hevc->data + sizeof(hevc->data))
-		{
-			return -1;
-		}
-
-		sodb_bytes = hevc_rbsp_decode(nalu, bytes, sodb);
-
-		if (nal_type == H265_NAL_VPS)
-		{
-			uint8_t vps_max_sub_layers_minus1 = (nalu[3] >> 1) & 0x07;
-			uint8_t vps_temporal_id_nesting_flag = nalu[3] & 0x01;
-			hevc->numTemporalLayers = MAX(hevc->numTemporalLayers, vps_max_sub_layers_minus1 + 1);
-			hevc->temporalIdNested = (hevc->temporalIdNested || vps_temporal_id_nesting_flag) ? 1 : 0;
-			hevc_profile_tier_level(sodb + 6, sodb_bytes - 6, vps_max_sub_layers_minus1, hevc);
-		}
-		else if (nal_type == H265_NAL_SPS)
-		{
-			// TODO:
-			//hevc->chromaFormat; // chroma_format_idc
-			//hevc->bitDepthLumaMinus8; // bit_depth_luma_minus8
-			//hevc->bitDepthChromaMinus8; // bit_depth_chroma_minus8
-
-			// TODO: vui_parameters
-			//hevc->min_spatial_segmentation_idc; // min_spatial_segmentation_idc
-		}
-		else if (nal_type == H265_NAL_PPS)
-		{
-			// TODO:
-			//hevc->parallelismType; // entropy_coding_sync_enabled_flag
-		}
-
-		hevc->configurationVersion = 1;
-		hevc->lengthSizeMinusOne = 3;
-		hevc->nalu[hevc->numOfArrays].type = nal_type;
-		hevc->nalu[hevc->numOfArrays].bytes = (uint16_t)bytes;
-		hevc->nalu[hevc->numOfArrays].array_completeness = 1;
-		hevc->nalu[hevc->numOfArrays].data = sodb;
-		memcpy(hevc->nalu[hevc->numOfArrays].data, nalu, bytes);
-		++hevc->numOfArrays;
-		break;
-
-	case 16: // BLA_W_LP
-	case 17: // BLA_W_RADL
-	case 18: // BLA_N_LP
-	case 19: // IDR_W_RADL
-	case 20: // IDR_N_LP
-	case 21: // CRA_NUT
-	case 22: // RSV_IRAP_VCL22
-	case 23: // RSV_IRAP_VCL23
-		hevc->constantFrameRate = 0x04; // irap frame
-		break;
-
-#if defined(H2645_FILTER_AUD)
-	case H265_NAL_AUD:
-		return; // ignore AUD
-#endif
-
-	default:
-		break;
-	}
-
-	return nal_type;
+	if (NULL != mp4->hevcptr)
+		return;
+	memset(mp4->hevc, 0, sizeof(*mp4->hevc));
+	mp4->hevc->general_profile_compatibility_flags = 0xffffffff;
+	mp4->hevc->general_constraint_indicator_flags = 0xffffffffffULL;
+	mp4->hevc->chromaFormat = 1; // 4:2:0
+	mp4->hevc->numOfArrays = 0;
+	mp4->hevcptr = mp4->hevc->data;
 }
 
 static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 {
 	uint8_t nalutype;
-	struct hevc_handle_t* mp4;
-	mp4 = (struct hevc_handle_t*)param;
+	size_t sodb_bytes;
+	struct h265_annexbtomp4_handle_t* mp4;
+	mp4 = (struct h265_annexbtomp4_handle_t*)param;
 
-	nalutype = h265_update_hevc(mp4->hevc, (const uint8_t*)nalu, bytes);
-	if (nalutype < 0)
+	nalutype = (nalu[0] >> 1) & 0x3f;
+	switch (nalutype)
 	{
-		mp4->errcode = nalutype;
+	case H265_NAL_VPS:
+	case H265_NAL_SPS:
+	case H265_NAL_PPS:
+		mpeg4_hevc_clear(mp4);
+		if (mp4->hevc->numOfArrays >= sizeof(mp4->hevc->nalu) / sizeof(mp4->hevc->nalu[0])
+			|| mp4->hevcptr + bytes >= mp4->hevc->data + sizeof(mp4->hevc->data))
+		{
+			assert(0);
+			mp4->errcode = -1;
+			return;
+		}
+
+		sodb_bytes = hevc_rbsp_decode(nalu, bytes, mp4->hevcptr);
+
+		if (nalutype == H265_NAL_VPS)
+		{
+			uint8_t vps_max_sub_layers_minus1 = (nalu[3] >> 1) & 0x07;
+			uint8_t vps_temporal_id_nesting_flag = nalu[3] & 0x01;
+			mp4->hevc->numTemporalLayers = MAX(mp4->hevc->numTemporalLayers, vps_max_sub_layers_minus1 + 1);
+			mp4->hevc->temporalIdNested = (mp4->hevc->temporalIdNested || vps_temporal_id_nesting_flag) ? 1 : 0;
+			hevc_profile_tier_level(mp4->hevcptr + 6, sodb_bytes - 6, vps_max_sub_layers_minus1, mp4->hevc);
+		}
+		else if (nalutype == H265_NAL_SPS)
+		{
+			// TODO:
+			//mp4->hevc->chromaFormat; // chroma_format_idc
+			//mp4->hevc->bitDepthLumaMinus8; // bit_depth_luma_minus8
+			//mp4->hevc->bitDepthChromaMinus8; // bit_depth_chroma_minus8
+
+			// TODO: vui_parameters
+			//mp4->hevc->min_spatial_segmentation_idc; // min_spatial_segmentation_idc
+		}
+		else if (nalutype == H265_NAL_PPS)
+		{
+			// TODO:
+			//mp4->hevc->parallelismType; // entropy_coding_sync_enabled_flag
+		}
+
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].type = nalutype;
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].bytes = (uint16_t)bytes;
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].array_completeness = 1;
+		mp4->hevc->nalu[mp4->hevc->numOfArrays].data = mp4->hevcptr;
+		memcpy(mp4->hevc->nalu[mp4->hevc->numOfArrays].data, nalu, bytes);
+		mp4->hevcptr += bytes;
+		++mp4->hevc->numOfArrays;
 		return;
+
+#if defined(H2645_FILTER_AUD)
+	case H265_NAL_AUD:
+		return; // ignore AUD
+#endif
 	}
+
+	// IRAP-1, B/P-2, other-0
+	if (mp4->vcl && nalutype < H265_NAL_VPS)
+		*mp4->vcl = 16<=nalutype && nalutype<=23 ? 1 : 2;
 
 	if (mp4->capacity >= mp4->bytes + bytes + 4)
 	{
@@ -228,29 +218,22 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	}
 }
 
-size_t hevc_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size)
+int h265_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, int bytes, void* out, int size, int *vcl)
 {
-	struct hevc_handle_t h;
+	struct h265_annexbtomp4_handle_t h;
+	memset(&h, 0, sizeof(h));
 	h.hevc = hevc;
+	h.vcl = vcl;
 	h.ptr = (uint8_t*)out;
 	h.capacity = size;
-	h.bytes = 0;
-	h.errcode = 0;
+	if (vcl) *vcl = 0;
 
-	hevc->configurationVersion = 1;
-	hevc->lengthSizeMinusOne = 3; // 4 bytes
 	hevc->numTemporalLayers = 0;
 	hevc->temporalIdNested = 0;
-	hevc->general_profile_compatibility_flags = 0xffffffff;
-	hevc->general_constraint_indicator_flags = 0xffffffffffULL;
 	hevc->min_spatial_segmentation_idc = 0;
-	hevc->chromaFormat = 1; // 4:2:0
-	hevc->bitDepthLumaMinus8 = 0;
-	hevc->bitDepthChromaMinus8 = 0;
-	hevc->avgFrameRate = 0;
-	hevc->constantFrameRate = 0;
-	hevc->numOfArrays = 0;
-
+	
 	hevc_stream((const uint8_t*)data, bytes, hevc_handler, &h);
+	hevc->configurationVersion = 1;
+	hevc->lengthSizeMinusOne = 3; // 4 bytes
 	return 0 == h.errcode ? h.bytes : 0;
 }

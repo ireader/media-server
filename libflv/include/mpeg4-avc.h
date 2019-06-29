@@ -47,9 +47,12 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 
 int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes);
 
-size_t mpeg4_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
+/// @param[out] vcl 0-non VCL, 1-IDR, 2-P/B
+/// @return <=0-error, >0-output bytes
+int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void* out, int size, int* vcl);
 
-size_t mpeg4_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size);
+/// @param[out] vcl 0-non VCL, 1-IDR, 2-P/B
+int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes, void* out, int size);
 
 #if defined(__cplusplus)
 }
