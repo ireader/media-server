@@ -73,7 +73,7 @@ static void h264_read_frame(mov_writer_t* mov, int width, int height, const uint
 			// process one frame
 			size_t bytes = nalu2 - frame;
 			assert(bytes < sizeof(s_buffer));
-			size_t n = mpeg4_annexbtomp4(&avc, frame, bytes, s_buffer, sizeof(s_buffer));
+			size_t n = h264_annexbtomp4(&avc, frame, bytes, s_buffer, sizeof(s_buffer), NULL);
 			frame = nalu2; // next frame
 
 			if (!spspps)

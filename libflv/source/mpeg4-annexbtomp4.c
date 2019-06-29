@@ -28,8 +28,6 @@ struct h264_annexbtomp4_handle_t
 	size_t capacity;
 };
 
-typedef void(*h264_nalu_handler)(void* param, const void* nalu, size_t bytes);
-
 static const uint8_t* h264_startcode(const uint8_t *data, size_t bytes)
 {
 	size_t i;
@@ -43,7 +41,7 @@ static const uint8_t* h264_startcode(const uint8_t *data, size_t bytes)
 }
 
 ///@param[in] h264 H.264 byte stream format data(A set of NAL units)
-static void h264_stream(const void* h264, size_t bytes, h264_nalu_handler handler, void* param)
+void h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void* param, const void* nalu, size_t bytes), void* param)
 {
 	ptrdiff_t n;
 	const unsigned char* p, *next, *end;
@@ -175,7 +173,7 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 	h.capacity = size;
 	if (vcl) *vcl = 0;
 	
-	h264_stream(data, bytes, h264_handler, &h);
+	h264_annexb_nalu(data, bytes, h264_handler, &h);
 	avc->nalu = 4;
 	return 0 == h.errcode ? h.bytes : 0;
 }

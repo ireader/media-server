@@ -38,7 +38,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		v_pts = pts;
 		v_dts = dts;
 
-		int n = mpeg4_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
+		int n = h264_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
 	else if (s_hevc_track == track)
@@ -47,7 +47,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		v_pts = pts;
 		v_dts = dts;
 
-		int n = hevc_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
+		int n = h265_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
 	else if (s_aac_track == track)

@@ -21,52 +21,7 @@ struct h265_annexbtomp4_handle_t
 	size_t capacity;
 };
 
-typedef void(*hevc_nalu_handler)(void* param, const uint8_t* nalu, size_t bytes);
-
-static const uint8_t* hevc_startcode(const uint8_t *data, size_t bytes)
-{
-	size_t i;
-	for (i = 2; i + 1 < bytes; i++)
-	{
-		if (0x01 == data[i] && 0x00 == data[i - 1] && 0x00 == data[i - 2])
-			return data + i + 1;
-	}
-
-	return NULL;
-}
-
-///@param[in] hevc H.265 byte stream format data(A set of NAL units)
-static void hevc_stream(const uint8_t* hevc, size_t bytes, hevc_nalu_handler handler, void* param)
-{
-	ptrdiff_t n;
-	const uint8_t* p, *next, *end;
-
-	end = hevc + bytes;
-	p = hevc_startcode(hevc, bytes);
-
-	while (p)
-	{
-		next = hevc_startcode(p, end - p);
-		if (next)
-		{
-			n = next - p - 3;
-		}
-		else
-		{
-			n = end - p;
-		}
-
-		while (n > 0 && 0 == p[n - 1]) n--; // filter tailing zero
-
-		assert(n > 0);
-		if (n > 0)
-		{
-			handler(param, p, (size_t)n);
-		}
-
-		p = next;
-	}
-}
+void h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
 
 static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
 {
@@ -232,7 +187,7 @@ int h265_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, int bytes, voi
 	hevc->temporalIdNested = 0;
 	hevc->min_spatial_segmentation_idc = 0;
 	
-	hevc_stream((const uint8_t*)data, bytes, hevc_handler, &h);
+	h264_annexb_nalu((const uint8_t*)data, bytes, hevc_handler, &h);
 	hevc->configurationVersion = 1;
 	hevc->lengthSizeMinusOne = 3; // 4 bytes
 	return 0 == h.errcode ? h.bytes : 0;

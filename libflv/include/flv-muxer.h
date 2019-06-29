@@ -29,17 +29,11 @@ int flv_muxer_aac(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t p
 /// @param[in] data mp3 stream
 int flv_muxer_mp3(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
-// @param[in] data H.264 start code + H.264 NALU, 0x0000000168...
+/// @param[in] data h.264 annexb bitstream: H.264 start code + H.264 NALU, 0x0000000168...
 int flv_muxer_avc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
-// @param[in] data H.265 start code + H.265 NALU, 0x00000001...
+/// @param[in] data h.265 annexb bitstream: H.265 start code + H.265 NALU, 0x00000001...
 int flv_muxer_hevc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
-
-/// @param[in] nalu H.264 NAL unit, don't include start code, 0x68...
-int flv_muxer_h264_nalu(flv_muxer_t* muxer, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts);
-
-// @param[in] nalu H.265 NAL unit, don't include start code, ...
-int flv_muxer_hevc_nalu(flv_muxer_t* muxer, const void* nalu, size_t bytes, uint32_t pts, uint32_t dts);
 
 struct flv_metadata_t
 {
