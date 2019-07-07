@@ -159,13 +159,13 @@ int MP4FileSource::Play()
 		if (0 == strcmp("H264", m->name))
 		{
 			// AVC1 -> H.264 byte stream
-			bytes = mpeg4_mp4toannexb(&m_avc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
+			bytes = h264_mp4toannexb(&m_avc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
 			//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
 		}
 		else if (0 == strcmp("H265", m->name))
 		{
 			// HVC1 -> H.264 byte stream
-			bytes = hevc_mp4toannexb(&m_hevc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
+			bytes = h265_mp4toannexb(&m_hevc, pkt->buffer, pkt->bytes, m_packet, sizeof(m_packet));
 			//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_frame.pts, m_frame.dts, clock);
 		}
 		else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))

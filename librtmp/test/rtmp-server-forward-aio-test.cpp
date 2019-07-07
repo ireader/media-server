@@ -106,7 +106,7 @@ private:
                 assert(0);
             }
         }
-        return r;
+        return 0; // ignore error
     }
 };
 
