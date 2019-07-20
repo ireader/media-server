@@ -14,12 +14,13 @@ INCLUDES = . \
 					./include \
 					$(ROOT)/include \
 					$(ROOT)/libhttp/include \
-					../librtp/include
+					../librtp/include \
+					$(ROOT)/libaio/include
 
 #-------------------------------Source-------------------------------
 #
 #--------------------------------------------------------------------
-SOURCE_PATHS = source source/client source/server
+SOURCE_PATHS = source source/client source/server source/server/aio
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 
@@ -38,7 +39,7 @@ else
 LIBPATHS +=
 endif
 
-LIBS = 
+LIBS =
 
 STATIC_LIBS =
 
