@@ -1,5 +1,5 @@
 // ITU-T H.222.0(06/2012)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology ï¿½C Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
 #include "mpeg-ts-proto.h"
@@ -96,6 +96,24 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
     uint8_t *p = NULL;
 	uint8_t *data = NULL;
     uint8_t *header = NULL;
+
+	//check if has prefix
+	int no_prefix = 0;
+	switch(stream->codecid){
+		case PSI_STREAM_H264:
+		case PSI_STREAM_H265:{
+			if (memcmp("\x00\x00\x00\x01", payload, 4) != 0 && memcmp("\x00\x00\x01", payload, 3) != 0) {
+				no_prefix = 1;
+				//payload offset = -4
+				payload -= 4;
+				bytes += 4;
+			}
+		}
+			break;
+		default:
+			break;
+	}
+
 
 	while(bytes > 0)
 	{
@@ -224,8 +242,16 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 			len = TS_PACKET_SIZE - len;
 		}
 
+
 		// payload
-		memcpy(p, payload, len);
+		if(no_prefix){
+			//add 00 00 00 01 prefix
+			memcpy(p, "\x00\x00\x00\x01", 4);
+			memcpy(p + 4, payload + 4, len - 4);
+			no_prefix = 0;
+		} else{
+			memcpy(p, payload, len);
+		}
 
 		payload += len;
 		bytes -= len;
@@ -393,7 +419,7 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extra_data, size_t ext
     stream->esinfo = NULL;
 
     // stream id
-    // Table 2-22 ¨C Stream_id assignments
+    // Table 2-22 ï¿½C Stream_id assignments
     if (mpeg_stream_type_video(codecid))
     {
         // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
