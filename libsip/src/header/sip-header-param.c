@@ -41,12 +41,21 @@ int sip_header_params(char sep, const char* s, const char* end, struct sip_param
 	int r;
 	const char* p;
 	struct sip_param_t param;
+	char seps[3] = { '"', 0, 0 };
 
 	r = 0;
+	seps[1] = sep;
+	assert('"' != sep);
 	for (p = s; 0 == r && p && p < end; p++)
 	{
 		s = p;
-		p = strchr(s, sep);
+		p = strpbrk(s, seps);
+		while (p && p < end && '"' == *p)
+		{
+			p = strchr(p + 1, '"');
+			if (p && p < end)
+				p = strpbrk(p + 1, seps);
+		}
 		if (!p || p > end)
 			p = end;
 
@@ -152,6 +161,7 @@ void sip_header_param_test(void)
 	const char* s;
 	struct cstring_t x;
 	struct sip_param_t param;
+	struct sip_params_t params;
 	
 	x.p = "0x12345678";
 	x.n = 8;
@@ -183,5 +193,14 @@ void sip_header_param_test(void)
 	assert(0 == sip_header_param(s, s + strlen(s), &param));
 	assert(4 == param.name.n && 0 == cstrcmp(&param.name, "name"));
 	assert(0 == param.value.n && NULL == param.value.p);
+
+	s = "+sip.instance=\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\"";
+	sip_params_init(&params);
+	sip_header_params(';', s, s + strlen(s), &params);
+	assert(3 == sip_params_count(&params));
+	assert(0 == cstrcmp(&sip_params_get(&params, 0)->name, "+sip.instance") && 0 == cstrcmp(&sip_params_get(&params, 0)->value, "\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\""));
+	assert(0 == cstrcmp(&sip_params_get(&params, 1)->name, "+org.linphone.specs") && 0 == cstrcmp(&sip_params_get(&params, 1)->value, "\"groupchat,lime\""));
+	assert(0 == cstrcmp(&sip_params_get(&params, 2)->name, "pub-gruu") && 0 == cstrcmp(&sip_params_get(&params, 2)->value, "\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\""));
+	sip_params_free(&params);
 }
 #endif

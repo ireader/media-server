@@ -118,7 +118,14 @@ int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias)
 
 	for (r = 0; 0 == r && s && s < end; s = p + 1)
 	{
-		p = strchr(s, ',');
+		// filter ","
+		p = strpbrk(s, ",\"");
+		while (p && p < end && '"' == *p)
+		{
+			p = strchr(p + 1, '"');
+			if (p && p < end)
+				p = strpbrk(p + 1, ",\"");
+		}
 		if (!p || p >= end)
 			p = end;
 
