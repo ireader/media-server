@@ -34,7 +34,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 
 	if (s_avc_track == track)
 	{
-		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts));
+		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -43,7 +43,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	}
 	else if (s_hevc_track == track)
 	{
-		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts));
+		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 

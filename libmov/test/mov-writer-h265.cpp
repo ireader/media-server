@@ -91,6 +91,8 @@ void mov_writer_h265(const char* h265, int width, int height, const char* mp4)
 	struct mov_h265_test_t ctx;
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.track = -1;
+	ctx.width = width;
+	ctx.height = height;
 
 	long bytes = 0;
 	uint8_t* ptr = file_read(h265, &bytes);
