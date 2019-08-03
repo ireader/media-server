@@ -125,7 +125,7 @@ int rtsp_media_set_url(struct rtsp_media_t* m, const char* base, const char* loc
 //			 sprop-parameter-sets=<parameter sets data>
 static void rtsp_media_onattr(void* param, const char* name, const char* value)
 {
-	int i;
+	int i, n;
 	int payload = -1;
 	struct rtsp_media_t* media;
 
@@ -153,13 +153,16 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("fmtp", name))
 		{
+			n = strlen(value);
 			payload = atoi(value);
-			for (i = 0; i < media->avformat_count; i++)
+			for (i = 0; i < media->avformat_count && media->offset + n + 1 < sizeof(media->ptr); i++)
 			{
 				if (media->avformats[i].fmt != payload)
 					continue;
 
-				snprintf(media->avformats[i].fmtp, sizeof(media->avformats[i].fmtp), "%s", value);
+				media->avformats[i].fmtp = media->ptr + media->offset;
+				strcpy(media->avformats[i].fmtp, value);
+				media->offset += n + 1;
 				//if(0 == strcmp("H264", media->avformats[i].encoding))
 				//{
 				//	struct sdp_a_fmtp_h264_t h264;
@@ -214,7 +217,7 @@ a=orient:portrait
 int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 {
 	int i, j, n;
-	int formats[3];
+	int formats[16];
 	const char* control;
 	const char* start, *stop;
 	const char* network, *addrtype, *address;

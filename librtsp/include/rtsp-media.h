@@ -28,8 +28,11 @@ struct rtsp_media_t
 		int rate; // RTP payload frequency
 		int channel; // RTP payload channel
 		char encoding[64]; // RTP payload encoding
-		char fmtp[4 * 1024]; // RTP fmtp value
-	} avformats[3];
+		char *fmtp; // RTP fmtp value
+	} avformats[16];
+
+	int offset;
+	char ptr[8 * 1024]; // RTP fmtp value
 };
 
 /// @return <0-error, >count-try again, other-ok
