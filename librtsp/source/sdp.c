@@ -1071,6 +1071,7 @@ static int sdp_parse_media(struct sdp_t* sdp)
 		if(0 != ret)
 			return ret;
 	
+		sdp->offset += 1; // skip '\0'
 		sdp_skip_space(sdp);
 		fmt = sdp->raw + sdp->offset;
 		n[3] = sdp_token_word(sdp, " \t\r\n");
