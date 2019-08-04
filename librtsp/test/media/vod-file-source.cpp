@@ -5,7 +5,7 @@
 #include <assert.h>
 
 VodFileSource::VodFileSource(std::shared_ptr<IFileReader> reader, std::shared_ptr<AVPacketQueue> pkts)
-	:m_status(STOP), m_running(true), m_speed(128), m_clock(0), m_timestamp(0)
+	:m_status(STOP), m_running(true), m_speed(128), m_clock(0), m_timestamp(0), m_reader(reader), m_avpkts(pkts)
 {
 	thread_create(&m_thread, Worker, this);
 }
@@ -51,9 +51,9 @@ int VodFileSource::Worker()
 			}
 
 			int64_t diff = (int64_t)((timestamp - m_timestamp) - ((now - m_clock) * m_speed / 128));
-			if (diff <= 0 || 0 == m_event.TimeWait((int)(diff * 128 / m_speed)))
+			if (diff <= 0 || m_event.TimeWait((int)(diff * 128 / m_speed)))
 			{
-				r = m_avpkts->Push(pkt);
+                r = m_avpkts->Push(pkt);
 				avpacket_release(pkt);
 				pkt = NULL; // reset
 			}
