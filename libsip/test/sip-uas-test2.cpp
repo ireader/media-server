@@ -22,7 +22,7 @@
 #include <errno.h>
 
 #define NAME "tao3"
-#define HOST "192.168.3.10"
+#define HOST "192.168.3.34"
 
 struct sip_uas_test_t
 {
@@ -167,7 +167,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
             continue;
         
 		printf("\n%s\n", buffer);
-		parser = 0 == strncasecmp("SIP", (char*)buffer, 3) ? test->response : test->request;
+		parser = 0 == strncasecmp("SIP", (char*)buffer, 3) ? test->request: test->response;
 
         size_t n = r;
         assert(0 == http_parser_input(parser, buffer, &n));

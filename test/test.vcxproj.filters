@@ -108,6 +108,18 @@
     <ClInclude Include="..\librtsp\test\media\ps-file-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\vod-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\avbuffer.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\avpacket.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -412,6 +424,30 @@
     </ClCompile>
     <ClCompile Include="..\..\sdk\source\random.c">
       <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-chunk-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-input-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-input-test.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\sdp-test.cpp">
+      <Filter>libsip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\avbuffer.c">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\avpacket.c">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp">
+      <Filter>librtsp\media</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

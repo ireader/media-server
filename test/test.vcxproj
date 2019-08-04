@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../3rd/ffmpeg/include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -96,7 +96,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../3rd/ffmpeg/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avdevice.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -154,9 +154,13 @@
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
+    <ClInclude Include="..\librtsp\test\media\avbuffer.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket-queue.h" />
+    <ClInclude Include="..\librtsp\test\media\avpacket.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h" />
+    <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h" />
+    <ClInclude Include="..\librtsp\test\media\vod-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\media-source.h" />
@@ -224,11 +228,14 @@
     <ClCompile Include="..\librtmp\aio\aio-rtmp-client.c" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-server.c" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-transport.c" />
+    <ClCompile Include="..\librtmp\test\rtmp-chunk-test.cpp" />
+    <ClCompile Include="..\librtmp\test\rtmp-input-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-play-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-play-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-publish-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-forward-aio-test.cpp" />
+    <ClCompile Include="..\librtmp\test\rtmp-server-input-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp" />
@@ -244,19 +251,24 @@
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c" />
+    <ClCompile Include="..\librtsp\test\media\avbuffer.c" />
     <ClCompile Include="..\librtsp\test\media\avpacket-queue.cpp" />
+    <ClCompile Include="..\librtsp\test\media\avpacket.c" />
     <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\rtp-socket.c" />
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp" />
+    <ClCompile Include="..\librtsp\test\sdp-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-agent-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-header-test.c" />
     <ClCompile Include="..\libsip\test\sip-timer.c" />
