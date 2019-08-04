@@ -8,10 +8,10 @@
 #include <string.h>
 #include <assert.h>
 
-int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size)
+int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
 	static const char* pattern =
-		"m=video 0 RTP/AVP %d\n"
+		"m=video %hu RTP/AVP %d\n"
 		"a=rtpmap:%d H265/90000\n"
 		"a=fmtp:%d";
 
@@ -26,7 +26,7 @@ int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* e
 	if (r < 0) 
 		return r;
 
-	n = snprintf((char*)data, bytes, pattern, payload, payload, payload);
+	n = snprintf((char*)data, bytes, pattern, port, payload, payload, payload);
 
 	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]); i++)
 	{
