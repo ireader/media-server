@@ -16,6 +16,9 @@
 #include "rtp-profile.h"
 #include "rtp-payload.h"
 #include "mov-format.h"
+#include "mpeg4-aac.h"
+#include "mpeg4-avc.h"
+#include "mpeg4-hevc.h"
 #include "uri-parse.h"
 #include "cstringext.h"
 #include "base64.h"
@@ -44,6 +47,7 @@ extern "C" void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerpor
 
 struct sip_uac_test2_session_t
 {
+    char buffer[2 * 1024 * 1024];
 	struct rtsp_media_t medias[3];
 	int nmedia;
 
@@ -63,6 +67,13 @@ struct sip_uac_test2_session_t
         time64_t clock;
         int track;
         FILE* fp;
+        
+        union
+        {
+            struct mpeg4_aac_t aac;
+            struct mpeg4_avc_t avc;
+            struct mpeg4_hevc_t hevc;
+        } u;
 	} audio, video;
 
     pthread_t th;
@@ -228,11 +239,13 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	if (MOV_OBJECT_H264 == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_H264;
+        mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.avc);
         rtp_sender_init_video(&s->video.sender, s->video.port[0], s->video.m->avformats[s->video.fmt].fmt, s->video.m->avformats[s->video.fmt].encoding, width, height, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_H265;
+        mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.hevc);
         rtp_sender_init_video(&s->video.sender, s->video.port[0], s->video.m->avformats[s->video.fmt].fmt, s->video.m->avformats[s->video.fmt].encoding,width, height, extra, bytes);
 	}
 	else if (MOV_OBJECT_MP4V == object)
@@ -259,6 +272,7 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LOW == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
+        mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);
         rtp_sender_init_audio(&s->audio.sender, s->audio.port[0], s->audio.m->avformats[s->audio.fmt].fmt, s->audio.m->avformats[s->audio.fmt].encoding,channel_count, bit_per_sample, sample_rate, extra, bytes);
 	}
 	else if (MOV_OBJECT_OPUS == object)
@@ -466,19 +480,20 @@ static int STDCALL sip_work_thread(void* param)
         {
             if(pkt->stream == s->audio.track)
             {
-                uint32_t timestamp = s->audio.sender.timestamp + (uint32_t)(pkt->dts * (s->audio.sender.frequency / 1000) /*kHz*/);
+                uint32_t timestamp = s->audio.sender.timestamp + (uint32_t)(pkt->pts * (s->audio.sender.frequency / 1000) /*kHz*/);
                 rtp_payload_encode_input(s->audio.sender.encoder, pkt->data, pkt->size, timestamp);
-                printf("send audio packet timestamp: %u\n", timestamp);
+                printf("send audio[%d] packet pts: %u, timestamp: %u\n", s->audio.sender.frequency, pkt->pts, timestamp);
             }
             else if(pkt->stream == s->video.track)
             {
-                uint32_t timestamp = s->video.sender.timestamp + (uint32_t)(pkt->dts * (s->video.sender.frequency / 1000) /*kHz*/);
-                rtp_payload_encode_input(s->video.sender.encoder, pkt->data, pkt->size, timestamp);
-                printf("send video packet timestamp: %u\n", timestamp);
+                int n = h264_mp4toannexb(&s->video.u.avc, pkt->data, pkt->size, s->buffer, sizeof(s->buffer));
+                uint32_t timestamp = s->video.sender.timestamp + (uint32_t)(pkt->pts * (s->video.sender.frequency / 1000) /*kHz*/);
+                rtp_payload_encode_input(s->video.sender.encoder, s->buffer, n, timestamp);
+                printf("send video[%d] packet pts: %u, timestamp: %u\n", s->video.sender.frequency, pkt->pts, timestamp);
             }
             else
             {
-                //assert(0);
+                assert(0);
             }
             
             s->pkts->Pop();

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		461F0BEA22F80DC800A995BD /* sip-uas-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BE922F80DC800A995BD /* sip-uas-info.c */; };
 		46A0D4F8229790E10070E1F5 /* sip-agent.c in Sources */ = {isa = PBXBuildFile; fileRef = 46A0D4F7229790E10070E1F5 /* sip-agent.c */; };
 		46C5B4512183EE7000419E57 /* sip-uas-transaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4322183EE7000419E57 /* sip-uas-transaction.c */; };
 		46C5B4522183EE7000419E57 /* sip-uas-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4332183EE7000419E57 /* sip-uas-bye.c */; };
@@ -40,6 +41,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		461F0BE922F80DC800A995BD /* sip-uas-info.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "sip-uas-info.c"; sourceTree = "<group>"; };
 		46A0D4F7229790E10070E1F5 /* sip-agent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-agent.c"; sourceTree = "<group>"; };
 		46C5B2A22183ED2700419E57 /* libsip.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsip.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B42F2183EE6700419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 				46C5B4382183EE7000419E57 /* sip-uas-transaction.h */,
 				46C5B4392183EE7000419E57 /* sip-uas-transaction-invite.c */,
 				46C5B43A2183EE7000419E57 /* sip-uas-transaction-noninvite.c */,
+				461F0BE922F80DC800A995BD /* sip-uas-info.c */,
 			);
 			path = uas;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 				46C5B4512183EE7000419E57 /* sip-uas-transaction.c in Sources */,
 				46C5B4682183EE7000419E57 /* sip-header-contact.c in Sources */,
 				46C5B4662183EE7000419E57 /* sip-message.c in Sources */,
+				461F0BEA22F80DC800A995BD /* sip-uas-info.c in Sources */,
 				46C5B4692183EE7000419E57 /* sip-header-param.c in Sources */,
 				46C5B4582183EE7000419E57 /* sip-uas-transaction-invite.c in Sources */,
 				46C5B4592183EE7000419E57 /* sip-uas-transaction-noninvite.c in Sources */,
