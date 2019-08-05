@@ -178,6 +178,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },
 	{ MOV_TAG('c', 's', 'l', 'g'), MOV_STBL, mov_read_cslg },
 	{ MOV_TAG('d', 'i', 'n', 'f'), MOV_MINF, mov_read_default },
+    { MOV_TAG('d', 'O', 'p', 's'), MOV_NULL, mov_read_dops },
 	{ MOV_TAG('d', 'r', 'e', 'f'), MOV_DINF, mov_read_dref },
 	{ MOV_TAG('e', 'd', 't', 's'), MOV_TRAK, mov_read_default },
 	{ MOV_TAG('e', 'l', 's', 't'), MOV_EDTS, mov_read_elst },

@@ -425,6 +425,8 @@ static int mov_write_audio(const struct mov_t* mov, const struct mov_sample_entr
 
 	if(MOV_OBJECT_AAC == entry->object_type_indication)
 		size += mov_write_esds(mov);
+    else if(MOV_OBJECT_OPUS == entry->object_type_indication)
+        size += mov_write_dops(mov);
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
