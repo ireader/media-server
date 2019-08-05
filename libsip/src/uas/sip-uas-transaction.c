@@ -105,6 +105,10 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
 	{
 		return t->handler->onrequest(t->param, req, t, dialog, req->payload, req->size);
 	}
+    else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_INFO))
+    {
+        return sip_uas_oninfo(t, req);
+    }
 	else
 	{
 		assert(0);

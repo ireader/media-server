@@ -68,8 +68,9 @@ void sip_uas_transaction_ontimeout(void* usrptr);
 
 struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod);
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
-int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
+int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
+int sip_uas_oninfo(struct sip_uas_transaction_t* t, const struct sip_message_t* req);
 int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
 int sip_uas_onbye(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
 
