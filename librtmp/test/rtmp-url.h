@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "urlcodec.h"
 #include "uri-parse.h"
 
 #define URL_LENGTH 256
@@ -36,12 +37,10 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
 	const char* p1 = strchr(p, '/');
 	if (!p1) return -1;
 
-	if (p + sizeof(u->app) >= p1)
+	if (p + sizeof(u->app) - 1 < p1 || strlen(p1+1) + 1 > sizeof(u->stream) )
 		return -1;
-	memcpy(u->app, p, p1 - p);
-	u->app[p1 - p] = 0;
-
-	snprintf(u->stream, sizeof(u->stream), "%s", ++p1);
+	url_decode(p, p1 - p, u->app, sizeof(u->app));
+	url_decode(p1+1, strlen(p1+1), u->stream, sizeof(u->stream));
 	snprintf(u->tcurl, sizeof(u->tcurl), "rtmp://%s:%d/%s", u->host, u->port, u->app);
 	return 0;
 }
