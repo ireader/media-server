@@ -185,7 +185,7 @@ void rtmp_publish_test(const char* host, const char* app, const char* stream, co
 
 	while (4 != rtmp_client_getstate(rtmp) && (r = socket_recv(socket, packet, sizeof(packet), 0)) > 0)
 	{
-		r = rtmp_client_input(rtmp, packet, r);
+		assert(0 == rtmp_client_input(rtmp, packet, r));
 	}
 
 	rtmp_client_push(flv, rtmp);

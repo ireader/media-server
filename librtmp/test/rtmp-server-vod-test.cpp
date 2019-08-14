@@ -121,7 +121,7 @@ void rtmp_server_vod_test(const char* flv)
 	static unsigned char packet[2 * 1024 * 1024];
 	while ((r = socket_recv(c, packet, sizeof(packet), 0)) > 0)
 	{
-		r = rtmp_server_input(s_rtmp, packet, r);
+		assert(0 == rtmp_server_input(s_rtmp, packet, r));
 	}
 	
 	rtmp_server_destroy(s_rtmp);

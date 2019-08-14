@@ -55,7 +55,7 @@ void rtmp_play_test(const char* host, const char* app, const char* stream, const
 
 	while ((r = socket_recv(socket, packet, sizeof(packet), 0)) > 0)
 	{
-		r = rtmp_client_input(rtmp, packet, r);
+		assert(0 == rtmp_client_input(rtmp, packet, r));
 	}
 
 	rtmp_client_stop(rtmp);
