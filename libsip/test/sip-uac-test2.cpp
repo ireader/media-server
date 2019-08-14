@@ -5,6 +5,7 @@
 #include "sys/atomic.h"
 #include "sys/thread.h"
 #include "sys/system.h"
+#include "sys/pollfd.h"
 #include "sip-uac.h"
 #include "sip-uas.h"
 #include "sip-message.h"
@@ -19,6 +20,8 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
+#include "ice-agent.h"
+#include "stun-agent.h"
 #include "uri-parse.h"
 #include "cstringext.h"
 #include "base64.h"
@@ -61,8 +64,8 @@ struct sip_uac_test2_session_t
         
 		socket_t udp[2];
 		unsigned short port[2];
-        struct sockaddr_storage addr;
-        socklen_t addrlen;
+        struct sockaddr_storage addr[2];
+        socklen_t addrlen[2];
         struct rtp_sender_t sender;
         time64_t clock;
         int track;
@@ -75,6 +78,8 @@ struct sip_uac_test2_session_t
             struct mpeg4_hevc_t hevc;
         } u;
 	} audio, video;
+
+	struct ice_agent_t* ice;
 
     pthread_t th;
     std::shared_ptr<AVPacketQueue> pkts;
@@ -225,7 +230,7 @@ static void rtp_packet_onrecv(void* param, const void *packet, int bytes, uint32
 static int rtp_packet_send(void* param, const void *packet, int bytes)
 {
     sip_uac_test2_session_t::rtp_media_t* m = (sip_uac_test2_session_t::rtp_media_t*)param;
-    return socket_sendto(m->udp[0], packet, bytes, 0, (struct sockaddr*)&m->addr, m->addrlen);
+    return socket_sendto(m->udp[0], packet, bytes, 0, (struct sockaddr*)&m->addr[1], m->addrlen[0]);
 }
 
 static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes)
@@ -268,6 +273,10 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
     rtp_socket_create(HOST, s->audio.udp, s->audio.port);
     s->audio.track = track;
     s->audio.fp = fopen("sipaudio.pcm", "wb");
+	struct ice_candidate_t c;
+	memset(&c, 0, sizeof(c));
+	c.component = 0;
+	ice_add_local_candidate(s->ice, &c);
     
 	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LOW == object)
 	{
@@ -297,6 +306,31 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	}
 }
 
+static void ice_agent_test_ondata(void* param, const void* data, int bytes, int protocol, const struct sockaddr* local, const struct sockaddr* remote, const struct sockaddr* relay)
+{
+	struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
+	/// TODO: check data format(stun/turn)
+	ice_input(s->ice, protocol, local, relay ? relay : remote, data, bytes);
+}
+
+static int ice_agent_test_send(void* param, int protocol, const struct sockaddr* local, const struct sockaddr* remote, const void* data, int bytes)
+{
+	struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
+	assert(STUN_PROTOCOL_UDP == protocol);
+	//if (0 == socket_addr_compare((const struct sockaddr*)&it->second, local))
+	//{
+	//	int r = socket_sendto(it->first, data, bytes, 0, remote, socket_addr_len(remote));
+	//	assert(r == bytes || socket_geterror() == ENETUNREACH || socket_geterror() == 10051/*WSAENETUNREACH*/);
+	//	return r == bytes ? 0 : socket_geterror();
+	//}
+	return 0;
+}
+
+static void ice_agent_test_onconnected(void* param)
+{
+	struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
+}
+
 static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
 	const char* pattern = "v=0\n"
@@ -310,6 +344,17 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
     std::shared_ptr<sip_uac_test2_session_t> s(new sip_uac_test2_session_t());
     memset(&s->audio, 0, sizeof(s->audio));
     memset(&s->video, 0, sizeof(s->video));
+	s->audio.udp[0] = socket_invalid;
+	s->audio.udp[1] = socket_invalid;
+	s->video.udp[0] = socket_invalid;
+	s->video.udp[1] = socket_invalid;
+
+	struct ice_agent_handler_t handler;
+	memset(&handler, 0, sizeof(handler));
+	handler.ondata = ice_agent_test_ondata;
+	handler.send = ice_agent_test_send;
+	handler.onconnected = ice_agent_test_onconnected;
+	s->ice = ice_create(1, &handler, s.get());
 
 	char reply[1024];
 	const cstring_t* h = sip_message_get_header_by_name(req, "Content-Type");
@@ -337,7 +382,8 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 				s->audio.fmt = j;
                 s->audio.sender.send = rtp_packet_send;
                 s->audio.sender.param = &s->audio;
-                socket_addr_from(&s->audio.addr, &s->audio.addrlen, m->address, m->port[0]);
+                socket_addr_from(&s->audio.addr[0], &s->audio.addrlen[0], m->address, m->port[0]);
+				socket_addr_from(&s->audio.addr[1], &s->audio.addrlen[1], m->address, m->port[1]);
 			}
 			else if (0 == strcmp("video", m->media))
 			{
@@ -357,7 +403,8 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 				s->video.fmt = j;
                 s->video.sender.send = rtp_packet_send;
                 s->video.sender.param = &s->video;
-                socket_addr_from(&s->video.addr, &s->video.addrlen, m->address, m->port[0]);
+                socket_addr_from(&s->video.addr[0], &s->video.addrlen[0], m->address, m->port[0]);
+				socket_addr_from(&s->video.addr[1], &s->video.addrlen[1], m->address, m->port[0]);
 			}
 		}
 
@@ -391,7 +438,7 @@ static int rtp_read(struct sip_uac_test2_session_t::rtp_media_t* m)
     struct sockaddr_storage ss;
     len = sizeof(ss);
     
-    r = recvfrom(m->udp[0], m->sender.buffer, sizeof(m->sender.buffer), 0, (struct sockaddr*)&ss, &len);
+    r = socket_recvfrom(m->udp[0], m->sender.buffer, sizeof(m->sender.buffer), 0, (struct sockaddr*)&ss, &len);
     if (r < 12)
         return -1;
     assert(0 == socket_addr_compare((struct sockaddr*)&ss, (struct sockaddr*)&m->addr));
@@ -407,7 +454,7 @@ static int rtcp_read(struct sip_uac_test2_session_t::rtp_media_t* m)
     socklen_t len;
     struct sockaddr_storage ss;
     len = sizeof(ss);
-    r = recvfrom(m->udp[0], m->sender.buffer, sizeof(m->sender.buffer), 0, (struct sockaddr*)&ss, &len);
+    r = socket_recvfrom(m->udp[0], m->sender.buffer, sizeof(m->sender.buffer), 0, (struct sockaddr*)&ss, &len);
     if (r < 12)
         return -1;
     assert(0 == socket_addr_compare((struct sockaddr*)&ss, (struct sockaddr*)&m->addr));
@@ -422,7 +469,7 @@ static int rtcp_report(struct sip_uac_test2_session_t::rtp_media_t* m, time64_t 
     if (m->clock + interval < clock)
     {
         r = rtp_rtcp_report(m->sender.rtp, m->sender.buffer, sizeof(m->sender.buffer));
-        r = socket_send_all_by_time(m->udp[1], m->sender.buffer, r, 0, 2000);
+		r = socket_sendto_by_time(m->udp[1], m->sender.buffer, r, 0, (const sockaddr*)&m->addr[1], m->addrlen[1], 2000);
         m->clock = clock;
     }
     return 0;
@@ -430,40 +477,15 @@ static int rtcp_report(struct sip_uac_test2_session_t::rtp_media_t* m, time64_t 
 
 static int STDCALL sip_work_thread(void* param)
 {
-    int i, r;
+    int r;
     int interval;
     time64_t clock;
-    struct pollfd fds[4];
     
     struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
     s->source->Play();
     
     while (1)
     {
-        i = 0;
-        if(s->audio.decoder)
-        {
-            fds[i].fd = s->audio.udp[0];
-            fds[i].events = POLLIN;
-            fds[i].revents = 0;
-            i++;
-            fds[i].fd = s->audio.udp[1];
-            fds[i].events = POLLIN;
-            fds[i].revents = 0;
-            i++;
-        }
-        if(s->video.decoder)
-        {
-            fds[i].fd = s->video.udp[0];
-            fds[i].events = POLLIN;
-            fds[i].revents = 0;
-            i++;
-            fds[i].fd = s->video.udp[1];
-            fds[i].events = POLLIN;
-            fds[i].revents = 0;
-            i++;
-        }
-        
         clock = time64_now();
         
         // RTCP report
@@ -472,10 +494,7 @@ static int STDCALL sip_work_thread(void* param)
         if(s->video.sender.rtp)
             rtcp_report(&s->video, clock);
         
-        r = poll(fds, i, 10);
-        while (-1 == r && EINTR == errno)
-            r = poll(fds, i, 10);
-        
+        r = socket_poll_read(10, 4, s->audio.udp[0], s->audio.udp[1], s->video.udp[0], s->video.udp[1]);
         for(std::shared_ptr<avpacket_t> pkt(s->pkts->FrontWait(0), avpacket_release); pkt.get(); pkt.reset(s->pkts->FrontWait(0), avpacket_release))
         {
             if(pkt->stream == s->audio.track)
@@ -509,26 +528,17 @@ static int STDCALL sip_work_thread(void* param)
         }
         else
         {
-            i = 0;
-            if(s->audio.decoder)
-            {
-                if (0 != fds[i].revents)
-                    rtp_read(&s->audio);
+            if (r & (1 << 0))
+                rtp_read(&s->audio);
                 
-                if (0 != fds[i+1].revents)
-                    rtcp_read(&s->audio);
+            if (r & (1 << 1))
+                rtcp_read(&s->audio);
                 
-                i += 2;
-            }
-            
-            if(s->video.decoder)
-            {
-                if (0 != fds[i].revents)
-                    rtp_read(&s->video);
+			if (r & (1 << 2))
+				rtp_read(&s->video);
 
-                if (0 != fds[i+1].revents)
-                    rtcp_read(&s->video);
-            }
+			if (r & (1 << 3))
+                rtcp_read(&s->video);
         }
     }
     
