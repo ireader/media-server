@@ -272,6 +272,9 @@ void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payloa
 	snprintf(ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer), "tcp.%d.%s.rtp", payload, encoding);
 	ctx->fp = fopen(ctx->rtp_buffer, "wb");
 	ctx->frtp = fopen(ctx->rtcp_buffer, "wb");
+	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
+	assert(interleave1 / 2 < sizeof(s_ctx) / sizeof(s_ctx[0]));
+	s_ctx[interleave1 / 2] = ctx;
 
 	profile = rtp_profile_find(payload);
 
@@ -279,15 +282,8 @@ void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payloa
 	handler.free = NULL;
 	handler.packet = rtp_packet;
 	ctx->payload = rtp_payload_decode_create(payload, encoding, &handler, ctx);
-	if (NULL == ctx->payload)
-		return NULL; // ignore
-
 	evthandler.on_rtcp = rtp_on_rtcp;
 	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2 * 1024 * 1024, 0);
-
-	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
-	assert(interleave1 / 2 < sizeof(s_ctx) / sizeof(s_ctx[0]));
-	s_ctx[interleave1 / 2] = ctx;
 	return ctx;
 }
 
@@ -303,11 +299,15 @@ void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes)
 		fwrite(size, 1, sizeof(size), ctx->frtp);
 		fwrite(data, 1, bytes, ctx->frtp);
 
-		rtp_payload_decode_input(ctx->payload, data, bytes);
-		rtp_onreceived(ctx->rtp, data, bytes);
+		if (ctx->payload && ctx->rtp)
+		{
+			rtp_payload_decode_input(ctx->payload, data, bytes);
+			rtp_onreceived(ctx->rtp, data, bytes);
+		}
 	}
 	else
 	{
-		rtp_onreceived_rtcp(ctx->rtp, data, bytes);
+		if (ctx->rtp)
+			rtp_onreceived_rtcp(ctx->rtp, data, bytes);
 	}
 }
