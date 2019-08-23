@@ -175,6 +175,8 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 
 	for (i = 0; i < mov->track_count; i++)
         mov_free_track(mov->tracks + i);
+	if (mov->tracks)
+		free(mov->tracks);
 	free(writer);
 }
 
