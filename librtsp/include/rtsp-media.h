@@ -7,6 +7,63 @@
 extern "C" {
 #endif
 
+// RFC4585 Extended RTP Profile for Real-time Transport Control Protocol (RTCP)-Based Feedback (RTP/AVPF)
+// RFC5104 Codec Control Messages in the RTP Audio-Visual Profile with Feedback (AVPF)
+struct rtcp_fb_t
+{
+	int fb_id;
+	int trr_int;
+	char ack[8]; // rpsi,app
+	char nack[8]; // pli,sli,rpsi,app
+	char ccm[8]; // fir,tmmbr,tstr,vbcm
+};
+
+// RFC3611 RTP Control Protocol Extended Reports (RTCP XR)
+struct rtcp_xr_t
+{
+	int loss; // pkt-loss-rle
+	int dup; // pkt-dup-rle
+	int rcpt_times; // pkt-rcpt-times
+	int rcvr_rtt;
+	int rcvr_rtt_mode; // 0-sender, 1-all
+	int stat_summary; // 0x01-loss, 0x02-dup, 0x04-jitt, 0x08-TTL
+	int voip_metrics;
+};
+
+// https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39
+// https://www.tech-invite.com/fo-abnf/tinv-fo-abnf-sdpatt-rfc5245.html
+// a=candidate:3 1 UDP 1862270847 10.95.49.227 63259 typ prflx raddr 192.168.137.93 rport 7078
+struct sdp_ice_t
+{
+	char pwd[257]; // [22,256]
+	char ufrag[257]; // [4, 256]
+	int lite;
+	int pacing;
+	int mismatch;
+
+	struct candidate_t
+	{
+		char foundation[33];
+		char transport[8]; // UDP
+		char candtype[8];
+		uint16_t component; // rtp/rtcp component id, [1, 256]
+		uint16_t port;
+		uint32_t priority; // [1, 2**31 - 1]
+		char address[64];
+		char reladdr[64];
+		uint16_t relport;
+	} candidates[8];
+	int ncandidate;
+
+	struct remote_candidate_t
+	{
+		uint16_t component; // rtp/rtcp component id, [1, 256]
+		uint16_t port;
+		char address[64];
+	} remotes[4];
+	int nremote;
+};
+
 struct rtsp_media_t
 {
 	char uri[256]; // rtsp setup url
@@ -18,7 +75,7 @@ struct rtsp_media_t
 	struct rtsp_header_range_t range;
 
 	char media[32]; //audio, video, text, application, message
-	char proto[64]; // udp, RTP/AVP, RTP/SAVP
+	char proto[64]; // udp, RTP/AVP, RTP/SAVP, RTP/AVPF
 	int nport, port[8];
 
 	int avformat_count;
@@ -29,7 +86,11 @@ struct rtsp_media_t
 		int channel; // RTP payload channel
 		char encoding[64]; // RTP payload encoding
 		char *fmtp; // RTP fmtp value
+		struct rtcp_fb_t fb;
 	} avformats[16];
+
+	struct rtcp_xr_t xr;
+	struct sdp_ice_t ice;
 
 	int offset;
 	char ptr[8 * 1024]; // RTP fmtp value

@@ -196,6 +196,73 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		{
 			// C.1.8 Entity Tag
 		}
+		else if (0 == strcmp("rtcp", name))
+		{
+			// rfc3605 Real Time Control Protocol (RTCP) attribute in Session Description Protocol (SDP)
+			// "a=rtcp:" port [nettype space addrtype space connection-address] CRLF
+			// a=rtcp:53020 IN IP6 2001:2345:6789:ABCD:EF01:2345:6789:ABCD
+			if (media->nport + 1 < sizeof(media->port) / sizeof(media->port[0]))
+				media->port[media->nport++] = atoi(value);
+
+			// TODO: rtcp address
+			assert(NULL == strchr(value, ' '));
+		}
+		else if (0 == strcmp("rtcp-xr", name))
+		{
+			// rfc3605 Real Time Control Protocol (RTCP) attribute in Session Description Protocol (SDP)
+			// "a=rtcp:" port [nettype space addrtype space connection-address] CRLF
+			// a=rtcp:53020 IN IP6 2001:2345:6789:ABCD:EF01:2345:6789:ABCD
+			if (media->nport + 1 < sizeof(media->port) / sizeof(media->port[0]))
+				media->port[media->nport++] = atoi(value);
+
+			// TODO: rtcp address
+			assert(NULL == strchr(value, ' '));
+		}
+		else if (0 == strcmp("ice-pwd", name))
+		{
+			snprintf(media->ice.pwd, sizeof(media->ice.pwd) - 1, "%s", value);
+		}
+		else if (0 == strcmp("ice-ufrag", name))
+		{
+			snprintf(media->ice.ufrag, sizeof(media->ice.ufrag) - 1, "%s", value);
+		}
+		else if (0 == strcmp("ice-lite", name))
+		{
+			media->ice.lite = 1;
+		}
+		else if (0 == strcmp("ice-mismatch", name))
+		{
+			media->ice.mismatch = 1;
+		}
+		else if (0 == strcmp("ice-pacing", name))
+		{
+			media->ice.pacing = atoi(value);
+		}
+		else if (0 == strcmp("candidate", name))
+		{
+			if (media->ice.ncandidate + 1 < sizeof(media->ice.candidates) / sizeof(media->ice.candidates[0])
+				&& 7 == sscanf(value, "%32s %hu %7s %u %63s %hu typ %7s%n", 
+					media->ice.candidates[media->ice.ncandidate].foundation, 
+					&media->ice.candidates[media->ice.ncandidate].component, 
+					media->ice.candidates[media->ice.ncandidate].transport, 
+					&media->ice.candidates[media->ice.ncandidate].priority, 
+					media->ice.candidates[media->ice.ncandidate].address, 
+					&media->ice.candidates[media->ice.ncandidate].port, 
+					media->ice.candidates[media->ice.ncandidate].candtype, &n))
+			{
+				sscanf(value + n, " raddr %63s rport %hu", media->ice.candidates[media->ice.ncandidate].reladdr, &media->ice.candidates[media->ice.ncandidate].relport);
+				++media->ice.ncandidate;
+			}
+		}
+		else if (0 == strcmp("remote-candidates", name))
+		{
+			while (media->ice.nremote + 1 < sizeof(media->ice.remotes) / sizeof(media->ice.remotes[0]) 
+				&& value && 3 == sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.nremote].component, &media->ice.remotes[media->ice.nremote].address, &media->ice.remotes[media->ice.nremote].port, &n))
+			{
+				value += n;
+				++media->ice.nremote;
+			}
+		}
 	}
 }
 
