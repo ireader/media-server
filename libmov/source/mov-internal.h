@@ -103,6 +103,8 @@ enum
 #define MOV_TRUN_FLAG_SAMPLE_FLAGS_PRESENT						0x0400
 #define MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT	0x0800
 
+#define MOV_TRACK_FLAG_CTTS_V1							0x0001 //ctts version 1
+
 struct mov_stbl_t
 {
 	struct mov_stsc_t* stsc;
@@ -170,6 +172,8 @@ struct mov_track_t
     int64_t tfdt_dts; // tfdt baseMediaDecodeTime
     int64_t start_dts; // write fmp4 only
     uint64_t offset; // write only
+
+	unsigned int flags;
 };
 
 struct mov_t

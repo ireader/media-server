@@ -126,7 +126,7 @@ size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 
 	mov_buffer_w32(&mov->io, size); /* size */
 	mov_buffer_write(&mov->io, "ctts", 4);
-	mov_buffer_w8(&mov->io, 1); /* version */
+	mov_buffer_w8(&mov->io, (track->flags & MOV_TRACK_FLAG_CTTS_V1) ? 1 : 0); /* version */
 	mov_buffer_w24(&mov->io, 0); /* flags */
 	mov_buffer_w32(&mov->io, count); /* entry count */
 
@@ -134,7 +134,7 @@ size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 	{
 		sample = &track->samples[i];
 		if(0 == sample->first_chunk)
-			continue;;
+			continue;
 		mov_buffer_w32(&mov->io, sample->first_chunk); // count
 		mov_buffer_w32(&mov->io, sample->samples_per_chunk); // offset * timescale / 1000
 	}
@@ -172,14 +172,14 @@ uint32_t mov_build_stts(struct mov_track_t* track)
 uint32_t mov_build_ctts(struct mov_track_t* track)
 {
     size_t i;
-    int32_t delta;
+    uint32_t delta;
     uint32_t count = 0;
     struct mov_sample_t* sample = NULL;
 
     for (i = 0; i < track->sample_count; i++)
     {
-        delta = (int32_t)(track->samples[i].pts - track->samples[i].dts);
-        if (i > 0 && delta == (int32_t)sample->samples_per_chunk)
+        delta = (uint32_t)(track->samples[i].pts - track->samples[i].dts);
+        if (i > 0 && delta == sample->samples_per_chunk)
         {
             track->samples[i].first_chunk = 0;
             assert(sample->first_chunk > 0);
@@ -190,7 +190,11 @@ uint32_t mov_build_ctts(struct mov_track_t* track)
             sample = &track->samples[i];
             sample->first_chunk = 1;
             sample->samples_per_chunk = delta;
-            ++count;
+			++count;
+
+			// fixed: firefox version 51 don't support version 1
+			if (track->samples[i].pts < track->samples[i].dts)
+				track->flags |= MOV_TRACK_FLAG_CTTS_V1;
         }
     }
 
