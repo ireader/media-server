@@ -14,6 +14,7 @@ void rtp_socket_set_multicast_range(const char* multicast, unsigned int num);
 void rtp_socket_get_multicast_range(char multicast[SOCKET_ADDRLEN], unsigned int *num);
 
 int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2]);
+int rtp_socket_create2(const struct sockaddr* addr, socket_t rtp[2], unsigned short port[2]);
 
 #if defined(__cplusplus)
 }

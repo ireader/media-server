@@ -39,24 +39,29 @@ static inline void system_list_port()
 }
 #endif
 
-int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
+int rtp_socket_create2(const struct sockaddr* addr, socket_t rtp[2], unsigned short port[2])
 {
 	unsigned short i;
 	socket_t sock[2];
+	struct sockaddr_storage ss;
 	assert(0 == s_base_port % 2);
 	srand((unsigned int)time(NULL));
+	memset(&ss, 0, sizeof(ss));
+	memcpy(&ss, addr, socket_addr_len(addr));
 
 	do
 	{
 		i = rand() % 30000;
-		i = i/2*2 + s_base_port;
+		i = i / 2 * 2 + s_base_port;
 
-		sock[0] = socket_udp_bind(ip, i);
-		if(socket_invalid == sock[0])
+		socket_addr_setport((struct sockaddr*)&ss, socket_addr_len(addr), i);
+		sock[0] = socket_udp_bind_addr(addr, 0, 0);
+		if (socket_invalid == sock[0])
 			continue;
 
-		sock[1] = socket_udp_bind(ip, i + 1);
-		if(socket_invalid == sock[1])
+		socket_addr_setport((struct sockaddr*)&ss, socket_addr_len(addr), i+1);
+		sock[1] = socket_udp_bind_addr(addr, 0, 0);
+		if (socket_invalid == sock[1])
 		{
 			socket_close(sock[0]);
 			continue;
@@ -65,12 +70,22 @@ int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
 		rtp[0] = sock[0];
 		rtp[1] = sock[1];
 		port[0] = i;
-		port[1] = i+1;
+		port[1] = i + 1;
 		return 0;
 
-	} while(socket_invalid==sock[0] || socket_invalid==sock[1]);
+	} while (socket_invalid == sock[0] || socket_invalid == sock[1]);
 
 	return -1;
+}
+
+int rtp_socket_create(const char* ip, socket_t rtp[2], unsigned short port[2])
+{
+	socklen_t len;
+	struct sockaddr_storage ss;
+
+	if (0 != socket_addr_from(&ss, &len, ip, 0 /* placeholder */ ))
+		return -1;
+	return rtp_socket_create2((struct sockaddr*)&ss, rtp, port);
 }
 
 void rtp_socket_set_port_range(unsigned short base, unsigned short num)
