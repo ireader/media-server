@@ -61,7 +61,7 @@ extern "C" {
 											\
 	int name##s_push(struct name##s_t* p, struct name##_t* item)	\
 	{										\
-		return darray_push_back(&p->arr, item, 1);	\
+		return darray_insert(&p->arr, -1, item);	\
 	}										\
 											\
 	struct name##_t* name##s_get(const struct name##s_t* p, int index)	\

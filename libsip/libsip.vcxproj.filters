@@ -146,5 +146,8 @@
     <ClCompile Include="src\sip-agent.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-info.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -90,7 +90,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../3rd/ffmpeg/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -167,6 +167,7 @@
     <ClInclude Include="..\librtsp\test\media\mp4-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\pcm-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\ps-file-source.h" />
+    <ClInclude Include="..\librtsp\test\rtp-sender.h" />
     <ClInclude Include="..\librtsp\test\rtp-socket.h" />
     <ClInclude Include="..\librtsp\test\rtp-udp-transport.h" />
     <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h" />
@@ -180,10 +181,12 @@
     <ClCompile Include="..\..\sdk\libhttp\test\http-list-dir.cpp" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-parser-test.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp" />
+    <ClCompile Include="..\..\sdk\libice\test\ice-agent-test.cpp" />
     <ClCompile Include="..\..\sdk\source\app-log.c" />
     <ClCompile Include="..\..\sdk\source\base64.c" />
     <ClCompile Include="..\..\sdk\source\channel.c" />
     <ClCompile Include="..\..\sdk\source\darray.c" />
+    <ClCompile Include="..\..\sdk\source\digest\crc32.c" />
     <ClCompile Include="..\..\sdk\source\digest\hkdf.c" />
     <ClCompile Include="..\..\sdk\source\digest\hmac.c" />
     <ClCompile Include="..\..\sdk\source\digest\md5.c" />
@@ -193,6 +196,7 @@
     <ClCompile Include="..\..\sdk\source\digest\sha384-512.c" />
     <ClCompile Include="..\..\sdk\source\ntp-time.c" />
     <ClCompile Include="..\..\sdk\source\port\ip-route.c" />
+    <ClCompile Include="..\..\sdk\source\port\sysnetconfig.c" />
     <ClCompile Include="..\..\sdk\source\random.c" />
     <ClCompile Include="..\..\sdk\source\ring-buffer.c" />
     <ClCompile Include="..\..\sdk\source\thread-pool.c" />
@@ -263,6 +267,7 @@
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\rtp-sender.c" />
     <ClCompile Include="..\librtsp\test\rtp-socket.c" />
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
@@ -293,6 +298,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\sdk\libhttp\libhttp.vcxproj">
       <Project>{b2ca3b5d-f7c6-4daf-8f32-f8a169427a7c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\sdk\libice\libice.vcxproj">
+      <Project>{f565e04b-1e19-47f3-8923-36479c5cae4d}</Project>
     </ProjectReference>
     <ProjectReference Include="..\libdash\libdash.vcxproj">
       <Project>{a5da231f-6146-43b5-8bbe-891f7e552357}</Project>

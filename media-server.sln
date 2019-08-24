@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "..\sdk\libhttp\l
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsip", "libsip\libsip.vcxproj", "{5CDF2275-37A7-450A-B69F-2063079D6946}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libice", "..\sdk\libice\libice.vcxproj", "{F565E04B-1E19-47F3-8923-36479C5CAE4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -123,6 +125,14 @@ Global
 		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|Win32.Build.0 = Release|Win32
 		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|x64.ActiveCfg = Release|x64
 		{5CDF2275-37A7-450A-B69F-2063079D6946}.Release|x64.Build.0 = Release|x64
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Debug|Win32.Build.0 = Debug|Win32
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Debug|x64.ActiveCfg = Debug|x64
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Debug|x64.Build.0 = Debug|x64
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|Win32.ActiveCfg = Release|Win32
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|Win32.Build.0 = Release|Win32
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|x64.ActiveCfg = Release|x64
+		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

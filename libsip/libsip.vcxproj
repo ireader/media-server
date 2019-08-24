@@ -54,6 +54,7 @@
     <ClCompile Include="src\uac\sip-uac.c" />
     <ClCompile Include="src\uas\sip-uas-bye.c" />
     <ClCompile Include="src\uas\sip-uas-cancel.c" />
+    <ClCompile Include="src\uas\sip-uas-info.c" />
     <ClCompile Include="src\uas\sip-uas-options.c" />
     <ClCompile Include="src\uas\sip-uas-register.c" />
     <ClCompile Include="src\uas\sip-uas-transaction-invite.c" />

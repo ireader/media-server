@@ -58,6 +58,9 @@
     <Filter Include="librtsp\sdp">
       <UniqueIdentifier>{65f4c8fc-27c7-4b37-9c1b-de6acfc134bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libice">
+      <UniqueIdentifier>{b2cee5d5-8296-46f0-8eb8-b4055917add4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -119,6 +122,9 @@
     </ClInclude>
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h">
       <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\rtp-sender.h">
+      <Filter>librtp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -448,6 +454,18 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp">
       <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\digest\crc32.c">
+      <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtp-sender.c">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\libice\test\ice-agent-test.cpp">
+      <Filter>libice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdk\source\port\sysnetconfig.c">
+      <Filter>sdk</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

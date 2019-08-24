@@ -52,7 +52,7 @@ struct sdp_ice_t
 		char address[64];
 		char reladdr[64];
 		uint16_t relport;
-	} candidates[8];
+	} candidates[16];
 	int ncandidate;
 
 	struct remote_candidate_t
@@ -60,7 +60,7 @@ struct sdp_ice_t
 		uint16_t component; // rtp/rtcp component id, [1, 256]
 		uint16_t port;
 		char address[64];
-	} remotes[4];
+	} remotes[16];
 	int nremote;
 };
 
