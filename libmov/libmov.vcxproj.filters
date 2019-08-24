@@ -143,5 +143,8 @@
     <ClCompile Include="source\mov-track.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mov-opus.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -42,6 +42,7 @@
     <ClCompile Include="source\mov-mehd.c" />
     <ClCompile Include="source\mov-mfhd.c" />
     <ClCompile Include="source\mov-minf.c" />
+    <ClCompile Include="source\mov-opus.c" />
     <ClCompile Include="source\mov-sidx.c" />
     <ClCompile Include="source\mov-stco.c" />
     <ClCompile Include="source\mov-stsc.c" />
