@@ -4,8 +4,35 @@
 #include "sdp-a-rtpmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <assert.h>
+
+static inline int scopy(struct rtsp_media_t* medias, char** dst, const char* src)
+{
+	int n;
+	n = snprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, "%s", src);
+	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
+		return -1;
+	*dst = medias->ptr + medias->offset;
+	medias->offset += n + 1; // with '\0'
+	return 0;
+}
+
+static inline int vscopy(struct rtsp_media_t* medias, char** dst, const char* fmt, ...)
+{
+	int n;
+	va_list args;
+	va_start(args, fmt);
+	n = vsnprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, fmt, args);
+	va_end(args);
+
+	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
+		return -1;
+	*dst = medias->ptr + medias->offset;
+	medias->offset += n + 1; // with '\0'
+	return 0;
+}
 
 static inline int rtsp_media_aggregate_control_enable(void *sdp)
 {
@@ -220,11 +247,11 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("ice-pwd", name))
 		{
-			snprintf(media->ice.pwd, sizeof(media->ice.pwd) - 1, "%s", value);
+			scopy(media, &media->ice.pwd, value);
 		}
 		else if (0 == strcmp("ice-ufrag", name))
 		{
-			snprintf(media->ice.ufrag, sizeof(media->ice.ufrag) - 1, "%s", value);
+			scopy(media, &media->ice.ufrag, value);
 		}
 		else if (0 == strcmp("ice-lite", name))
 		{
@@ -240,27 +267,35 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("candidate", name))
 		{
-			if (media->ice.ncandidate + 1 < sizeof(media->ice.candidates) / sizeof(media->ice.candidates[0])
-				&& 7 == sscanf(value, "%32s %hu %7s %u %63s %hu typ %7s%n", 
-					media->ice.candidates[media->ice.ncandidate].foundation, 
-					&media->ice.candidates[media->ice.ncandidate].component, 
-					media->ice.candidates[media->ice.ncandidate].transport, 
-					&media->ice.candidates[media->ice.ncandidate].priority, 
-					media->ice.candidates[media->ice.ncandidate].address, 
-					&media->ice.candidates[media->ice.ncandidate].port, 
-					media->ice.candidates[media->ice.ncandidate].candtype, &n))
+			if (media->ice.candidate_count + 1 < sizeof(media->ice.candidates) / sizeof(media->ice.candidates[0]) && media->offset + sizeof(*media->ice.candidates[0]) <= sizeof(media->ptr))
 			{
-				sscanf(value + n, " raddr %63s rport %hu", media->ice.candidates[media->ice.ncandidate].reladdr, &media->ice.candidates[media->ice.ncandidate].relport);
-				++media->ice.ncandidate;
+				media->ice.candidates[media->ice.candidate_count] = (struct sdp_candidate_t*)(media->ptr + media->offset);
+				if (7 == sscanf(value, "%32s %hu %7s %u %63s %hu typ %7s%n",
+					media->ice.candidates[media->ice.candidate_count]->foundation,
+					&media->ice.candidates[media->ice.candidate_count]->component,
+					media->ice.candidates[media->ice.candidate_count]->transport,
+					&media->ice.candidates[media->ice.candidate_count]->priority,
+					media->ice.candidates[media->ice.candidate_count]->address,
+					&media->ice.candidates[media->ice.candidate_count]->port,
+					media->ice.candidates[media->ice.candidate_count]->candtype, &n))
+				{
+					sscanf(value + n, " raddr %63s rport %hu", media->ice.candidates[media->ice.candidate_count]->reladdr, &media->ice.candidates[media->ice.candidate_count]->relport);
+					media->offset += sizeof(*media->ice.candidates[0]);
+					++media->ice.candidate_count;
+				}
 			}
 		}
 		else if (0 == strcmp("remote-candidates", name))
 		{
-			while (media->ice.nremote + 1 < sizeof(media->ice.remotes) / sizeof(media->ice.remotes[0]) 
-				&& value && 3 == sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.nremote].component, &media->ice.remotes[media->ice.nremote].address, &media->ice.remotes[media->ice.nremote].port, &n))
+			while (media->ice.remote_count + 1 < sizeof(media->ice.remotes) / sizeof(media->ice.remotes[0]) && media->offset + sizeof(*media->ice.remotes[0]) <= sizeof(media->ptr))
 			{
+				media->ice.remotes[media->ice.remote_count] = (struct sdp_candidate_t*)(media->ptr + media->offset);
+				if (!value || 3 != sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.remote_count]->component, &media->ice.remotes[media->ice.remote_count]->address, &media->ice.remotes[media->ice.remote_count]->port, &n))
+					break;
+
 				value += n;
-				++media->ice.nremote;
+				++media->ice.remote_count;
+				media->offset += sizeof(*media->ice.remotes[0]);
 			}
 		}
 	}
@@ -287,6 +322,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	int formats[16];
 	const char* control;
 	const char* start, *stop;
+	const char* iceufrag, *icepwd;
 	const char* network, *addrtype, *address;
 	struct rtsp_media_t* m;
 	struct rtsp_header_range_t range;
@@ -316,6 +352,10 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	// C.1.7 Connection Information
 	network = addrtype = address = NULL;
 	sdp_connection_get(sdp, &network, &addrtype, &address);
+
+	// session ice-ufrag/ice-pwd
+	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
+	icepwd = sdp_attribute_find(sdp, "ice-pwd");
 
 	for (i = 0; i < sdp_media_count(sdp) && i < count; i++)
 	{
@@ -354,6 +394,12 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);
+
+		// use default ice-ufrag/pwd
+		if(NULL == m->ice.ufrag && iceufrag)
+			scopy(medias, &m->ice.ufrag, iceufrag);
+		if(NULL == m->ice.pwd && icepwd)
+			scopy(medias, &m->ice.pwd, icepwd);
 	}
 
 	count = sdp_media_count(sdp);

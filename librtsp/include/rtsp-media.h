@@ -30,38 +30,34 @@ struct rtcp_xr_t
 	int voip_metrics;
 };
 
+struct sdp_candidate_t
+{
+	char foundation[33];
+	char transport[8]; // UDP
+	char candtype[8];
+	uint16_t component; // rtp/rtcp component id, [1, 256]
+	uint16_t port;
+	uint32_t priority; // [1, 2**31 - 1]
+	char address[65];
+	char reladdr[65];
+	uint16_t relport;
+};
+
 // https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39
 // https://www.tech-invite.com/fo-abnf/tinv-fo-abnf-sdpatt-rfc5245.html
 // a=candidate:3 1 UDP 1862270847 10.95.49.227 63259 typ prflx raddr 192.168.137.93 rport 7078
 struct sdp_ice_t
 {
-	char pwd[257]; // [22,256]
-	char ufrag[257]; // [4, 256]
+	char *pwd; // [22,256]
+	char *ufrag; // [4, 256]
 	int lite;
 	int pacing;
 	int mismatch;
 
-	struct candidate_t
-	{
-		char foundation[33];
-		char transport[8]; // UDP
-		char candtype[8];
-		uint16_t component; // rtp/rtcp component id, [1, 256]
-		uint16_t port;
-		uint32_t priority; // [1, 2**31 - 1]
-		char address[64];
-		char reladdr[64];
-		uint16_t relport;
-	} candidates[16];
-	int ncandidate;
-
-	struct remote_candidate_t
-	{
-		uint16_t component; // rtp/rtcp component id, [1, 256]
-		uint16_t port;
-		char address[64];
-	} remotes[16];
-	int nremote;
+	struct sdp_candidate_t *candidates[64];
+	struct sdp_candidate_t *remotes[64];
+	int candidate_count;
+	int remote_count;
 };
 
 struct rtsp_media_t
