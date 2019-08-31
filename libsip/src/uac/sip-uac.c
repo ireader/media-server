@@ -285,11 +285,10 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	// usually composed of a username at a fully qualified domain name(FQDN)
 	// If the Request-URI or top Route header field value contains a SIPS
 	// URI, the Contact header field MUST contain a SIPS URI as well.
-	if (0 == sip_uri_username(&t->req->from.uri, &user) && user.n < sizeof(remote))
+	if (0 == sip_uri_username(&t->req->from.uri, &user))
 	{
-		cstrcpy(&user, remote, sizeof(remote));
-		cstrcpy(&uri->scheme, local, sizeof(local));
-		r = snprintf(contact, nconcat, "<%s:%s@%s>", uri ? local : "sip", remote, dns);
+		assert(user.n > 0);
+		r = snprintf(contact, nconcat, "<%.*s:%.*s@%s>", uri->scheme.n > 0 ? uri->scheme.n : 3, uri->scheme.n > 0 ? uri->scheme.p : "sip", user.n, user.p, local);
 		if (r < 0 || r >= nconcat)
 			return -1; // ENOMEM
 	}
