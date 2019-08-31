@@ -123,11 +123,15 @@ static int STDCALL hls_server_worker(void* param)
 	uint64_t clock;
 	uint32_t timestamp;
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
+
 	std::string file = playlist->file + ".flv";
+	UTF8Decode utf8(file.c_str());
+	std::string fullpath = CWD;
+	fullpath += utf8;
 
 	while (1)
 	{
-		void* flv = flv_reader_create(file.c_str());
+		void* flv = flv_reader_create(fullpath.c_str());
 		flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
 
 		clock = 0;
