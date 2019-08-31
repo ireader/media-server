@@ -1,4 +1,5 @@
 #include "sockutil.h"
+#include "sockpair.h"
 #include "sys/thread.h"
 #include "sys/system.h"
 #include "sip-uac.h"
@@ -11,7 +12,6 @@
 #include "rtsp-media.h"
 #include "../test/media/pcm-file-source.h"
 #include "../test/media/h264-file-source.h"
-#include "../test/rtp-socket.h"
 #include "../test/rtp-udp-transport.h"
 #include "uri-parse.h"
 #include "cstringext.h"

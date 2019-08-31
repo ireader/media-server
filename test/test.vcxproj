@@ -167,8 +167,6 @@
     <ClInclude Include="..\librtsp\test\media\mp4-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\pcm-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\ps-file-source.h" />
-    <ClInclude Include="..\librtsp\test\rtp-sender.h" />
-    <ClInclude Include="..\librtsp\test\rtp-socket.h" />
     <ClInclude Include="..\librtsp\test\rtp-udp-transport.h" />
     <ClInclude Include="..\librtsp\test\rtp-tcp-transport.h" />
     <ClInclude Include="..\librtsp\test\rtsp-vod.h" />
@@ -181,7 +179,7 @@
     <ClCompile Include="..\..\sdk\libhttp\test\http-list-dir.cpp" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-parser-test.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp" />
-    <ClCompile Include="..\..\sdk\libice\test\ice-agent-test.cpp" />
+    <ClCompile Include="..\..\sdk\libice\test\ice-transport.c" />
     <ClCompile Include="..\..\sdk\source\app-log.c" />
     <ClCompile Include="..\..\sdk\source\base64.c" />
     <ClCompile Include="..\..\sdk\source\channel.c" />
@@ -199,6 +197,7 @@
     <ClCompile Include="..\..\sdk\source\port\sysnetconfig.c" />
     <ClCompile Include="..\..\sdk\source\random.c" />
     <ClCompile Include="..\..\sdk\source\ring-buffer.c" />
+    <ClCompile Include="..\..\sdk\source\sockpair.c" />
     <ClCompile Include="..\..\sdk\source\thread-pool.c" />
     <ClCompile Include="..\..\sdk\source\time64.c" />
     <ClCompile Include="..\..\sdk\source\unicode.c" />
@@ -246,6 +245,7 @@
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
+    <ClCompile Include="..\librtp\test\rtp-sender.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c" />
@@ -267,8 +267,6 @@
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
-    <ClCompile Include="..\librtsp\test\rtp-sender.c" />
-    <ClCompile Include="..\librtsp\test\rtp-socket.c" />
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />

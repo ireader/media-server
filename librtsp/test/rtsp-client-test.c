@@ -4,7 +4,7 @@
 #include "rtsp-client.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "rtp-socket.h"
+#include "sockpair.h"
 #include "cstringext.h"
 #include "sys/system.h"
 #include "cpm/unuse.h"
@@ -38,7 +38,7 @@ static int rtpport(void* param, int media, unsigned short *rtp)
 	switch (ctx->transport)
 	{
 	case RTSP_TRANSPORT_RTP_UDP:
-		assert(0 == rtp_socket_create(NULL, ctx->rtp[media], ctx->port[media]));
+		assert(0 == sockpair_create(NULL, ctx->rtp[media], ctx->port[media]));
 		*rtp = ctx->port[media][0];
 		break;
 
