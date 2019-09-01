@@ -7,6 +7,7 @@
 #include "sys/system.h"
 #include "sys/pollfd.h"
 #include "port/network.h"
+#include "port/ip-route.h"
 #include "sip-uac.h"
 #include "sip-uas.h"
 #include "sip-message.h"
@@ -41,15 +42,10 @@
 #include "../test/ice-transport.h"
 #include "../test/media/mp4-file-reader.h"
 
-#define N_FOUNDATION 8
-
-#define SIP_USR "1000"
 #define SIP_PWD "1234"
 #define SIP_HOST "192.168.1.100"
 #define SIP_FROM "sip:1000@192.168.1.100"
-#define SIP_PEER "sip:1002@192.168.1.100"
 #define SIP_EXPIRED 60
-#define LOCAL_HOST "192.168.1.106"
 #define TURN_SERVER "192.168.1.100"
 #define TURN_USR "test"
 #define TURN_PWD "123456"
@@ -59,6 +55,7 @@ extern "C" void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerpor
 struct sip_uac_test2_session_t
 {
     char buffer[2 * 1024 * 1024];
+	std::string user;
 	std::string from;
 	struct sip_uas_transaction_t* t;
 	struct ice_transport_t* avt;
@@ -104,6 +101,8 @@ struct sip_uac_test2_t
 	socklen_t addrlen;
 	struct sockaddr_storage addr;
     bool running;
+	char usr[64];
+	char local[65];
 
 	struct sip_agent_t* sip;
 	struct sip_transport_t transport;
@@ -368,9 +367,16 @@ static void ice_transport_onbind(void* param, int code)
 		std::shared_ptr<VodFileSource> source(new VodFileSource(reader, s->pkts));
 		s->source = source;
 
+		// default connect address
+		u_short port;
+		char host[SOCKET_ADDRLEN];
+		struct sockaddr_storage addr;
+		ice_transport_getaddr(s->avt, 0, 1, &addr);
+		socket_addr_to((struct sockaddr*)&addr, socket_addr_len((struct sockaddr*)&addr), host, &port);
+
 		sip_uas_add_header(s->t, "Content-Type", "application/sdp");
-		sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
-		snprintf(reply, sizeof(reply), pattern, SIP_USR, LOCAL_HOST, LOCAL_HOST, s->audio.decoder ? (char*)s->audio.sender.buffer : "", s->video.decoder ? (char*)s->video.sender.buffer : "");
+		//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
+		snprintf(reply, sizeof(reply), pattern, s->user.c_str(), host, host, s->audio.decoder ? (char*)s->audio.sender.buffer : "", s->video.decoder ? (char*)s->video.sender.buffer : "");
 		assert(0 == sip_uas_reply(s->t, 200, reply, strlen(reply)));
 
 		ice_transport_connect(s->avt, s->medias, s->nmedia);
@@ -490,6 +496,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	s->avt = ice_transport_create(0, &handler, s.get());
 	memset(&s->audio, 0, sizeof(s->audio));
 	memset(&s->video, 0, sizeof(s->video));
+	s->user = ctx->usr;
 	s->t = t;
 	
 	{
@@ -665,11 +672,11 @@ static void sip_uac_invite_test(struct sip_uac_test2_t *ctx)
     t = sip_uac_invite(ctx->sip, SIP_FROM, SIP_PEER, sip_uac_oninvited, ctx);
     ++ctx->auth.nc;
     snprintf(ctx->auth.uri, sizeof(ctx->auth.uri), "%s", SIP_PEER);
-    snprintf(ctx->auth.username, sizeof(ctx->auth.username), "%s", SIP_USR);
+    snprintf(ctx->auth.username, sizeof(ctx->auth.username), "%s", ctx->usr);
     http_header_auth(&ctx->auth, SIP_PWD, "INVITE", NULL, 0, buffer, sizeof(buffer));
     sip_uac_add_header(t, "Proxy-Authorization", buffer);
 	sip_uac_add_header(t, "Content-Type", "application/sdp");
-	sip_uac_add_header(t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
+	//sip_uac_add_header(t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 
 	std::shared_ptr<sip_uac_test2_session_t> s(new sip_uac_test2_session_t());
 	s->pkts = std::shared_ptr<AVPacketQueue>(new AVPacketQueue(200));
@@ -696,7 +703,7 @@ static void sip_uac_invite_test(struct sip_uac_test2_t *ctx)
 	std::shared_ptr<VodFileSource> source(new VodFileSource(reader, s->pkts));
 	s->source = source;
 
-	int n = snprintf(buffer, sizeof(buffer), pattern, SIP_USR, LOCAL_HOST, LOCAL_HOST, s->audio.decoder ? (char*)s->audio.sender.buffer : "", s->video.decoder ? (char*)s->video.sender.buffer : "");
+	int n = snprintf(buffer, sizeof(buffer), pattern, ctx->usr, ctx->local, ctx->local, s->audio.decoder ? (char*)s->audio.sender.buffer : "", s->video.decoder ? (char*)s->video.sender.buffer : "");
 	//assert(0 == sip_uac_send(t, buffer, n, &test->transport, test));
 }
 
@@ -768,7 +775,7 @@ static void sip_uac_register_test(struct sip_uac_test2_t *test)
 		// http://www.voidcn.com/article/p-oqqbqgvd-bgn.html
 		++test->auth.nc;
 		snprintf(test->auth.uri, sizeof(test->auth.uri), "sip:%s", SIP_HOST);
-		snprintf(test->auth.username, sizeof(test->auth.username), "%s", SIP_USR);
+		snprintf(test->auth.username, sizeof(test->auth.username), "%s", test->usr);
 		http_header_auth(&test->auth, SIP_PWD, "REGISTER", NULL, 0, buffer, sizeof(buffer));
 		sip_uac_add_header(t, "Authorization", buffer);
 	}
@@ -851,10 +858,9 @@ void sip_uac_test2(void)
 		sip_uas_transport_send,
 	};
 
-	struct sockaddr_storage stun;
-	memset(&stun, 0, sizeof(stun));
-	assert(0 == socket_addr_from_ipv4((struct sockaddr_in*)&stun, TURN_SERVER, STUN_PORT));
-
+	assert(1 == sscanf(SIP_FROM, "sip:%[^@]", test.usr));
+	ip_route_get(SIP_HOST, test.local);
+	
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, &test);
     socket_bind_any(test.udp, SIP_PORT);
