@@ -267,7 +267,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	// Furthermore, a CANCEL for a particular SIP request MUST be sent to the same 
 	// SIP server that the SIP request was delivered to.
 	protocol[0] = local[0] = dns[0] = 0;
-	r = t->transport.via(t->param, remote, protocol, local, dns);
+	r = t->transport.via(t->transportptr, remote, protocol, local, dns);
 	if (0 != r)
 		return r;
 
