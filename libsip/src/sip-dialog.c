@@ -139,7 +139,7 @@ int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_mess
     end = (char*)(dialog + 1) + N;
     
     contact = sip_contacts_get(&msg->contacts, 0);
-    if(contact && 0 != sip_uri_equal(&dialog->target, &contact->uri))
+    if(contact && !sip_uri_equal(&dialog->target, &contact->uri))
         dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
     return dialog->ptr < end ? 0 : -1;
 }
