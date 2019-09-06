@@ -89,10 +89,10 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 	return 0;
 }
 
-static int sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
+static void* sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
 {
 	s_dialog = dialog;
-	return 0;
+	return NULL;
 }
 
 static int sip_uac_message_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)

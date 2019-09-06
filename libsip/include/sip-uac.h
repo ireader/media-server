@@ -11,8 +11,8 @@ extern "C" {
 struct sip_transport_t;
 struct sip_uac_transaction_t;
 
-/// @return 0-ok, other-error
-typedef int (*sip_uac_oninvite)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+/// @return user-defined session-id(valid only code=2xx)
+typedef void* (*sip_uac_oninvite)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
 /// @return 0-ok, other-error
 typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code);
 /// @return <0-error, 0-udp, 1-tcp, other-reserved

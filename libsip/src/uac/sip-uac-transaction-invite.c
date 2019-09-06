@@ -6,7 +6,6 @@
 
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
-	int r;
 	struct sip_dialog_t* dialog;
 
 	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
@@ -28,11 +27,11 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	// 17.1.1.2 Formal Description (p126)
 	// the provisional response MUST be passed to the TU. 
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
-	r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code);
+	t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
 
 	if (dialog)
 		sip_dialog_release(dialog);
-	return r;
+	return 0;
 }
 
 static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, int retransmissions)
@@ -43,19 +42,20 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
 	assert(!dialog || DIALOG_ERALY == dialog->state);
 
+	r = 0;
 	if (!retransmissions)
 	{
 		// Any retransmissions of the final response that are received while in
 		// the "Completed" state MUST cause the ACK to be re-passed to the
 		// transport layer for retransmission, but the newly received response
 		// MUST NOT be passed up to the TU
-		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code);
+		assert(!dialog || NULL == dialog->session);
+		t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
 	}
 	else
 	{
 		// 1. miss order / in-flight
 		// 2. fork invite
-		r = 0;
 	}
 
 	// 17.1.1.3 Construction of the ACK Request
@@ -124,7 +124,8 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 		// receive and pass to the TU any retransmissions of the 2xx
 		// response or any additional 2xx responses from other branches of a
 		// downstream fork of the matching request.
-		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code);
+		assert(200 <= reply->u.s.code && reply->u.s.code < 300);
+		dialog->session = t->oninvite(t->param, reply, t, dialog, reply->u.s.code);
 	}
 
 	// 17.1.1.3 Construction of the ACK Request ==> 13.2.2.4 2xx Responses 
@@ -159,7 +160,7 @@ static int sip_uac_transaction_inivte_change_state(struct sip_uac_transaction_t*
 			t->status = SIP_UAC_TRANSACTION_PROCEEDING;
 		else if (200 <= reply->u.s.code && reply->u.s.code < 300)
 			t->status = SIP_UAC_TRANSACTION_ACCEPTED;
-		else if (200 <= reply->u.s.code && reply->u.s.code < 700)
+		else if (300 <= reply->u.s.code && reply->u.s.code < 700)
 			t->status = SIP_UAC_TRANSACTION_COMPLETED;
 		break;
 

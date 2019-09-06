@@ -109,6 +109,10 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
     {
         return sip_uas_oninfo(t, req);
     }
+	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_NOTIFY))
+	{
+		return sip_uas_reply(t, 200, NULL, 0);
+	}
 	else
 	{
 		assert(0);
