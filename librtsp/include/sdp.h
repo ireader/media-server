@@ -73,7 +73,7 @@ const char* sdp_encryption_get(sdp_t* sdp);
 
 int sdp_media_count(sdp_t* sdp);
 const char* sdp_media_type(sdp_t* sdp, int media);
-int sdp_media_port(sdp_t* sdp, int media, int *port, int* num);
+int sdp_media_port(sdp_t* sdp, int media, int port[], int num); // return port count
 const char* sdp_media_proto(sdp_t* sdp, int media);
 int sdp_media_formats(sdp_t* sdp, int media, int *formats, int count); // return format count
 

@@ -72,7 +72,7 @@ struct rtsp_media_t
 
 	char media[32]; //audio, video, text, application, message
 	char proto[64]; // udp, RTP/AVP, RTP/SAVP, RTP/AVPF
-	int nport, port[8];
+	int nport, port[8]; // rtcp-mux: port[0] == port[1]
 
 	int avformat_count;
 	struct avformat_t

@@ -1464,19 +1464,21 @@ const char* sdp_media_type(struct sdp_t* sdp, int media)
 	return m ? m->media : NULL;
 }
 
-int sdp_media_port(struct sdp_t* sdp, int media, int *port, int* num)
+int sdp_media_port(struct sdp_t* sdp, int media, int port[], int num)
 {
+	int i, n;
 	const char* p;
 	struct sdp_media *m;
 	m = sdp_get_media(sdp, media);
-	if(m && port)
-	{
-		p = strchr(m->port, '/');
-		*port = atoi(m->port);
-		*num = atoi(p ? p + 1 : "1");
-		return 0;
-	}
-	return -1;
+	if (!m || !port)
+		return -1;
+
+	p = strchr(m->port, '/');
+	port[0] = atoi(m->port);
+	n = atoi(p ? p + 1 : "1");
+	for (i = 1; i < num && i < n; i++)
+		port[i] = port[0] + i;
+	return i;
 }
 
 const char* sdp_media_proto(struct sdp_t* sdp, int media)

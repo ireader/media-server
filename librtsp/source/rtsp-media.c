@@ -228,22 +228,23 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 			// rfc3605 Real Time Control Protocol (RTCP) attribute in Session Description Protocol (SDP)
 			// "a=rtcp:" port [nettype space addrtype space connection-address] CRLF
 			// a=rtcp:53020 IN IP6 2001:2345:6789:ABCD:EF01:2345:6789:ABCD
-			if (media->nport + 1 < sizeof(media->port) / sizeof(media->port[0]))
-				media->port[media->nport++] = atoi(value);
+			assert(media->nport <= 2 && sizeof(media->port)/sizeof(media->port[0]) >= 2);
+			if (1 == media->nport)
+				media->nport++;
+			media->port[1] = atoi(value);
 
 			// TODO: rtcp address
-			assert(NULL == strchr(value, ' '));
+		}
+		else if (0 == strcmp("rtcp-mux", name))
+		{
+			if (1 == media->nport)
+				media->nport++;
+			media->port[1] = media->port[0];
 		}
 		else if (0 == strcmp("rtcp-xr", name))
 		{
-			// rfc3605 Real Time Control Protocol (RTCP) attribute in Session Description Protocol (SDP)
-			// "a=rtcp:" port [nettype space addrtype space connection-address] CRLF
-			// a=rtcp:53020 IN IP6 2001:2345:6789:ABCD:EF01:2345:6789:ABCD
-			if (media->nport + 1 < sizeof(media->port) / sizeof(media->port[0]))
-				media->port[media->nport++] = atoi(value);
-
-			// TODO: rtcp address
-			assert(NULL == strchr(value, ' '));
+			// rfc3611 RTP Control Protocol Extended Reports (RTCP XR)
+			// "a=rtcp-xr:" [xr-format *(SP xr-format)] CRLF
 		}
 		else if (0 == strcmp("ice-pwd", name))
 		{
@@ -374,10 +375,11 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 		snprintf(m->address, sizeof(m->address), "%s", address);
 		//media->cseq = rand();
 		
-		m->nport = 0;
-		sdp_media_port(sdp, i, m->port, &m->nport);
+		m->nport = sdp_media_port(sdp, i, m->port, sizeof(m->port)/sizeof(m->port[0]));
 		snprintf(m->media, sizeof(m->media), "%s", sdp_media_type(sdp, i));
 		snprintf(m->proto, sizeof(m->proto), "%s", sdp_media_proto(sdp, i));
+		if (1 == m->nport && 0 == strncmp("RTP/", m->proto, 4))
+			m->port[m->nport++] = m->port[0] + 1;
 
 		// media control url
 		s = sdp_media_attribute_find(sdp, i, "control");
