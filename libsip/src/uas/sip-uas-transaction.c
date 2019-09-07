@@ -123,7 +123,6 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
 
 int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 {
-	int r;
 	const struct sip_via_t *via;
 
 	assert(t->size > 0);
@@ -141,10 +140,7 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 	via = sip_vias_get(&t->reply->vias, 0);
 	if (!via) return -1; // invalid via
 
-	r = t->handler->send(t->param, cstrvalid(&via->received) ? &via->received : &via->host, t->data, t->size);
-	if (r >= 0)
-		t->reliable = r;
-	return r;
+	return t->handler->send(t->param, cstrvalid(&via->received) ? &via->received : &via->host, t->data, t->size);
 }
 
 int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)

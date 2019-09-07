@@ -166,7 +166,7 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
     t->timerb = sip_uac_start_timer(t->agent, t, TIMER_B, sip_uac_transaction_ontimeout);
     if(!t->reliable) // UDP
         t->timera = sip_uac_start_timer(t->agent, t, TIMER_A, sip_uac_transaction_onretransmission);
-    assert(t->timerb && (!t->reliable || t->timera));
+    assert(t->timerb && (t->reliable || t->timera));
 
 	// TODO: return 503/*Service Unavailable*/
     return sip_uac_transaction_dosend(t);

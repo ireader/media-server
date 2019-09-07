@@ -206,7 +206,7 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		t->timerh = sip_uas_start_timer(t->agent, t, TIMER_H, sip_uas_transaction_ontimeout);
 		if (!t->reliable) // UDP
 			t->timerg = sip_uas_start_timer(t->agent, t, TIMER_G, sip_uas_transaction_onretransmission);
-		assert(t->timerh && (!t->reliable || t->timerg));
+		assert(t->timerh && (t->reliable || t->timerg));
 	}
 
     return sip_uas_transaction_dosend(t);

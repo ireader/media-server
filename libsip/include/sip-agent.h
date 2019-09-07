@@ -37,7 +37,7 @@ struct sip_uas_handler_t
 	/// @param[in] expires in seconds
 	int (*onrequest)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* data, int bytes);
 
-	/// @return <0-error, 0-udp, 1-tcp, other-reserved
+	/// @return 0-ok, <0-error, other-reserved
 	int (*send)(void* param, const struct cstring_t* url, const void* data, int bytes);
 };
 
