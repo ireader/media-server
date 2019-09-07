@@ -10,23 +10,23 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	int r;
 	char ptr[1024];
 	char contact[1024];
-	struct sip_via_t* via;
-	struct sip_message_t* req;
+	struct sip_via_t via;
+	struct sip_message_t* ack;
 
 	r = 0;
-	req = sip_message_create(SIP_MESSAGE_REQUEST);
-	r = dialog && cstrvalid(&dialog->target.host) ? sip_message_init2(req, SIP_METHOD_ACK, dialog) : sip_message_clone(req, t->req);
+	ack = sip_message_create(SIP_MESSAGE_REQUEST);
+	r = dialog && cstrvalid(&dialog->target.host) ? sip_message_init2(ack, SIP_METHOD_ACK, dialog) : sip_message_initack(ack, t->req);
 	if (0 != r)
 	{
-		sip_message_destroy(req);
+		sip_message_destroy(ack);
 		return -1;
 	}
-	assert(req->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", req->u.c.uri.scheme.p, 3));
+	assert(ack->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
 	if (!dialog)
 	{
-		req->u.c.method.p = SIP_METHOD_ACK;
-		req->u.c.method.n = strlen(SIP_METHOD_ACK);
-		memcpy(&req->cseq.method, &req->u.c.method, sizeof(req->cseq.method));
+		ack->u.c.method.p = SIP_METHOD_ACK;
+		ack->u.c.method.n = strlen(SIP_METHOD_ACK);
+		memcpy(&ack->cseq.method, &ack->u.c.method, sizeof(ack->cseq.method));
 	}
 
 	// 8.1.1.7 Via (p39)
@@ -59,11 +59,12 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	// 2. The ACK for a 2xx response to an INVITE request is a separate transaction(new branch value).
 	if (newtransaction)
 	{
+		assert(0 == sip_vias_count(&ack->vias));
 		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
 		// [Sip] Branch in INVITE ,ACK,BYE
 		r = sip_uac_transaction_via(t, ptr, sizeof(ptr), contact, sizeof(contact));
 		if(0 == r)
-			r = sip_message_add_header(req, "Via", ptr);
+			r = sip_message_add_header(ack, "Via", ptr);
 	}
 	else
 	{
@@ -76,16 +77,18 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 
 		// The ACK MUST contain a single Via header field, and this MUST 
 		// be equal to the top Via header field of the original request.
-		via = sip_vias_get(&t->req->vias, 0);
-		if (via)
-			r = sip_vias_push(&req->vias, via);
+		if (0 == sip_vias_count(&ack->vias) && sip_vias_count(&t->req->vias) > 0)
+		{
+			ack->ptr.ptr = sip_via_clone(ack->ptr.ptr, ack->ptr.end, &via, sip_vias_get(&t->req->vias, 0));
+			r = sip_vias_push(&ack->vias, &via);
+		}
 	}
 
 	// message
-	assert(req->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", req->u.c.uri.scheme.p, 3));
-	t->size = sip_message_write(req, t->data, sizeof(t->data));
+	assert(ack->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
+	t->size = sip_message_write(ack, t->data, sizeof(t->data));
 	// destroy sip message
-	sip_message_destroy(req);
+	sip_message_destroy(ack);
 
 	if (0 != r || t->size <= 0 || t->size >= sizeof(t->data))
 		return 0 == r ? -1 : r; // E2BIG

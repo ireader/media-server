@@ -293,6 +293,33 @@ int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req
 	return 0;
 }
 
+int sip_message_initack(struct sip_message_t* ack, const struct sip_message_t* origin)
+{
+	struct sip_via_t via;
+	assert(SIP_MESSAGE_REQUEST == ack->mode);
+
+	// 1. request uri
+	sip_message_copy2(ack, &ack->u.c.method, &origin->u.c.method);
+	ack->ptr.ptr = sip_uri_clone(ack->ptr.ptr, ack->ptr.end, &ack->u.c.uri, &origin->u.c.uri);
+
+	// 2. base headers
+	ack->cseq.id = origin->cseq.id;
+	ack->maxforwards = origin->maxforwards;
+	sip_message_copy2(ack, &ack->cseq.method, &origin->cseq.method);
+	sip_message_copy2(ack, &ack->callid, &origin->callid);
+	ack->ptr.ptr = sip_contact_clone(ack->ptr.ptr, ack->ptr.end, &ack->to, &origin->to);
+	ack->ptr.ptr = sip_contact_clone(ack->ptr.ptr, ack->ptr.end, &ack->from, &origin->from);
+
+	// 3. via
+	if (sip_vias_count(&origin->vias) > 0)
+	{
+		ack->ptr.ptr = sip_via_clone(ack->ptr.ptr, ack->ptr.end, &via, sip_vias_get(&origin->vias, 0));
+		sip_vias_push(&ack->vias, &via);
+	}
+
+	return 0;
+}
+
 int sip_message_isinvite(const struct sip_message_t* msg)
 {
 	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_INVITE) ? 1 : 0;

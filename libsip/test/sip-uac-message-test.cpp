@@ -200,10 +200,20 @@ static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport
 		"CSeq: 314159 ACK\r\n"
 		"Content-Length: 0\r\n\r\n";
 
+	const char* f13 = "SIP/2.0 603 Decline\r\n"
+		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8;received=192.0.2.1\r\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314159 INVITE\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: 0\r\n\r\n";
+
 	struct sip_message_t* req = req2sip(f1);
 	struct sip_message_t* reply100 = reply2sip(f2);
 	struct sip_message_t* reply180 = reply2sip(f8);
 	struct sip_message_t* reply200 = reply2sip(f11);
+	struct sip_message_t* reply603 = reply2sip(f13);
 	struct sip_message_t* ack = req2sip(f12);
 
 	struct sip_uac_transaction_t* t = sip_uac_invite(sip, "Alice <sip:alice@atlanta.com>;tag=1928301774", "Bob <sip:bob@biloxi.com>", sip_uac_message_oninvite, NULL);
@@ -218,6 +228,7 @@ static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport
 	sip_agent_input(sip, reply180);
 	sip_agent_input(sip, reply100);
 	sip_agent_input(sip, reply180);
+//	sip_agent_input(sip, reply603);
 	sip_agent_input(sip, reply200);
 	sip_agent_input(sip, reply180);
 	sip_agent_input(sip, reply100);
