@@ -39,6 +39,8 @@ int VodFileSource::Worker()
 			{
 				AutoThreadLocker locker(m_locker);
 				r = m_reader->Read(&pkt);
+				if (r <= 0)
+					break; // all done
 			}
 
 			uint64_t now = system_clock();
