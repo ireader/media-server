@@ -1,0 +1,15 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: ireader/sdk@master
+    - name: make
+      run: make
+    - name: make check
+      run: make tset
