@@ -30,7 +30,7 @@ int mov_read_dops(struct mov_t* mov, const struct mov_box_t* box)
 {
     struct mov_track_t* track = mov->track;
     struct mov_sample_entry_t* entry = track->stsd.current;
-    if(box->size >= 9)
+    if(box->size >= 10)
     {
         if (entry->extra_data_size < box->size + 8)
         {

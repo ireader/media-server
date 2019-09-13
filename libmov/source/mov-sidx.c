@@ -32,7 +32,8 @@ int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box)
 		mov_buffer_r32(&mov->io); /* starts_with_SAP & SAP_type & SAP_delta_time */
 	}
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset)

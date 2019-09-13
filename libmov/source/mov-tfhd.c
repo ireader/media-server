@@ -45,8 +45,8 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 		mov->track->tfhd.default_sample_flags = mov->track->trex.default_sample_flags;
 
 	if (MOV_TFHD_FLAG_DURATION_IS_EMPTY & flags)
-		; /* duration©\is©\empty*/
-	return mov_buffer_error(&mov->io); (void)box;
+		(void)box; /* duration©\is©\empty*/
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_tfhd(const struct mov_t* mov)

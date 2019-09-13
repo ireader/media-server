@@ -30,5 +30,6 @@ int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box)
 		}
 	}
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }

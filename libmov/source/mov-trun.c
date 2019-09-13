@@ -80,7 +80,8 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	track->sample_count += sample_count;
     mov->implicit_offset = data_offset;
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32_t moof)

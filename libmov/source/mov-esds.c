@@ -195,7 +195,7 @@ static int mp4_read_decoder_config_descriptor(struct mov_t* mov, int len)
 	/*uint32_t bufferSizeDB = */mov_buffer_r24(&mov->io); /* buffer size db */
 	/*uint32_t max_rate = */mov_buffer_r32(&mov->io); /* max bit-rate */
 	/*uint32_t bit_rate = */mov_buffer_r32(&mov->io); /* avg bit-rate */
-	return mp4_read_tag(mov, len - 13); // mp4_read_decoder_specific_info
+	return mp4_read_tag(mov, (uint64_t)len - 13); // mp4_read_decoder_specific_info
 }
 
 static int mp4_write_decoder_config_descriptor(const struct mov_t* mov)

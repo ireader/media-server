@@ -38,6 +38,6 @@ size_t mov_write_hdlr(const struct mov_t* mov)
 	mov_buffer_w32(&mov->io, 0); /* reserved */
 	mov_buffer_w32(&mov->io, 0); /* reserved */
 
-	mov_buffer_write(&mov->io, track->handler_descr, strlen(track->handler_descr)+1); /* name */
+	mov_buffer_write(&mov->io, track->handler_descr, (uint64_t)strlen(track->handler_descr)+1); /* name */
 	return 33 + strlen(track->handler_descr);
 }

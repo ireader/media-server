@@ -154,7 +154,7 @@ static size_t fmp4_write_sidx(struct mov_t* mov)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-        mov_write_sidx(mov, 52 * (mov->track_count - i - 1)); /* first_offset */
+        mov_write_sidx(mov, 52 * (uint64_t)(mov->track_count - i - 1)); /* first_offset */
 	}
 
 	return 52 * mov->track_count;
@@ -258,7 +258,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 
 		// hack: write sidx referenced_size
 		if (mov->flags & MOV_FLAG_SEGMENT)
-			mov_write_size(mov, mov->moof_offset - 52 * (mov->track_count - i) + 40, (0 << 31) | (refsize & 0x7fffffff));
+			mov_write_size(mov, mov->moof_offset - 52 * (uint64_t)(mov->track_count - i) + 40, (0 << 31) | (refsize & 0x7fffffff));
 
 		mov->track->offset = 0; // reset
 	}
