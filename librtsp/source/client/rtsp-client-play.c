@@ -73,8 +73,10 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;
 
-	r = snprintf(rtsp->range, sizeof(rtsp->range), npt ? "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n" : "", npt ? *npt/1000 : 0, npt ? *npt%1000 : 0);
 	r = snprintf(rtsp->speed, sizeof(rtsp->speed), speed ? "Speed: %f\r\n" : "", speed ? *speed : 0.0f);
+	r = snprintf(rtsp->range, sizeof(rtsp->range), npt ? "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n" : "", npt ? *npt/1000 : 0, npt ? *npt%1000 : 0);
+	if (r < 0 || r >= sizeof(rtsp->range))
+		return -1;
 	
 	if(rtsp->aggregate)
 	{

@@ -35,7 +35,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 	while(*p)
 	{
 		p1 = strchr(p, '=');
-		if('=' != *p1)
+		if(!p1 || '=' != *p1)
 			return -1;
 
 		p2 = strchr(p1+1, ';');
@@ -238,7 +238,7 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 	// payload type
 	*format = atoi(p);
 	p1 = strchr(p, ' ');
-	if (' ' != *p1)
+	if (!p1 || ' ' != *p1)
 		return -1;
 
 	h265->flags = 0;
@@ -247,7 +247,7 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 	while (*p)
 	{
 		p1 = strchr(p, '=');
-		if ('=' != *p1)
+		if (!p1 || '=' != *p1)
 			return -1;
 
 		p2 = strchr(p1 + 1, ';');
@@ -321,7 +321,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 	// payload type
 	*format = atoi(p);
 	p1 = strchr(p, ' ');
-	if(' ' != *p1)
+	if(!p1 || ' ' != *p1)
 		return -1;
 
 	mpeg4->flags = 0;
@@ -330,7 +330,7 @@ int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *m
 	while(*p)
 	{
 		p1 = strchr(p, '=');
-		if('=' != *p1)
+		if(!p1 || '=' != *p1)
 			return -1;
 
 		p2 = strchr(p1+1, ';');

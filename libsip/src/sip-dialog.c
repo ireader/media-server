@@ -211,6 +211,51 @@ int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 	return 0;
 }
 
+int sip_dialog_remove2(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
+{
+	struct sip_dialog_t* dialog;
+	locker_lock(&sip->locker);
+	dialog = sip_dialog_find(sip, callid, local, remote);
+	if (dialog)
+		list_remove(&dialog->link);
+	locker_unlock(&sip->locker);
+
+	if (dialog)
+	{
+		sip_dialog_release(dialog);
+		return 0;
+	}
+	return -1; // not found
+}
+
+int sip_dialog_remove_early(struct sip_agent_t* sip, const struct cstring_t* callid)
+{
+	struct sip_dialog_t* early;
+	struct sip_dialog_t* dialog;
+	struct list_head *pos, *next;
+
+	early = NULL;
+	locker_lock(&sip->locker);
+	list_for_each_safe(pos, next, &sip->dialogs)
+	{
+		dialog = list_entry(pos, struct sip_dialog_t, link);
+		if (cstreq(callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
+		{
+			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
+			list_remove(&dialog->link);
+			early = dialog;
+		}
+	}
+
+	locker_unlock(&sip->locker);
+	if (early)
+	{
+		sip_dialog_release(early);
+		return 0;
+	}
+	return -1; // not found
+}
+
 // MUST ADD LOCK !!!!! internal use only !!!!!!!!!
 struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, int uac, int* added)
 {

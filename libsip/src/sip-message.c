@@ -12,7 +12,7 @@
 
 static void sip_message_copy(struct sip_message_t* msg, struct cstring_t* str, const char* s)
 {
-	msg->ptr.ptr = cstring_clone(msg->ptr.ptr, msg->ptr.end, str, s, s ? strlen(s) : 0);
+	msg->ptr.ptr = cstring_clone(msg->ptr.ptr, msg->ptr.end, str, s ? s : "", s ? strlen(s) : 0);
 }
 static void sip_message_copy2(struct sip_message_t* msg, struct cstring_t* str, const struct cstring_t* src)
 {
@@ -140,6 +140,7 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 	struct cstring_t u, f, t;
 	struct sip_contact_t contact;
 
+	memset(callid, 0, sizeof(callid));
 	uuid_generate(callid); // TODO: callid @ host
 	sip_message_copy(msg, &u, uri);
 	sip_message_copy(msg, &t, to);
