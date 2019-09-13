@@ -1,3 +1,5 @@
+#include <memory>
+#include <string>
 #include "sockutil.h"
 #include "sockpair.h"
 #include "sys/thread.h"

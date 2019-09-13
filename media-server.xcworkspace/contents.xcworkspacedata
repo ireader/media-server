@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:../sdk/libice/libice.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:../sdk/libhttp/libhttp.xcodeproj">
    </FileRef>
    <FileRef

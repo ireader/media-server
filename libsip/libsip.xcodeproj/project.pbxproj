@@ -7,28 +7,37 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		461F0BEA22F80DC800A995BD /* sip-uas-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BE922F80DC800A995BD /* sip-uas-info.c */; };
+		461F0CA6232B404400A995BD /* sip-subscribe.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CA5232B404400A995BD /* sip-subscribe.c */; };
+		461F0CA8232B406400A995BD /* sip-header-substate.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CA7232B406400A995BD /* sip-header-substate.c */; };
+		461F0CD5232B40AE00A995BD /* sip-uac.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CC7232B40AD00A995BD /* sip-uac.c */; };
+		461F0CD6232B40AE00A995BD /* sip-uac-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CC8232B40AD00A995BD /* sip-uac-options.c */; };
+		461F0CD7232B40AE00A995BD /* sip-uac-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CC9232B40AD00A995BD /* sip-uac-bye.c */; };
+		461F0CD8232B40AE00A995BD /* sip-uac-transaction-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */; };
+		461F0CD9232B40AE00A995BD /* sip-uac-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCB232B40AD00A995BD /* sip-uac-info.c */; };
+		461F0CDA232B40AE00A995BD /* sip-uac-refer.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCC232B40AD00A995BD /* sip-uac-refer.c */; };
+		461F0CDB232B40AE00A995BD /* sip-uac-transaction.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0CCD232B40AD00A995BD /* sip-uac-transaction.h */; };
+		461F0CDC232B40AE00A995BD /* sip-uac-transaction-noninvite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCE232B40AD00A995BD /* sip-uac-transaction-noninvite.c */; };
+		461F0CDD232B40AE00A995BD /* sip-uac-subscribe.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */; };
+		461F0CDE232B40AE00A995BD /* sip-uac-transaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CD0232B40AD00A995BD /* sip-uac-transaction.c */; };
+		461F0CDF232B40AE00A995BD /* sip-uac-cancel.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CD1232B40AE00A995BD /* sip-uac-cancel.c */; };
+		461F0CE0232B40AE00A995BD /* sip-uac-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CD2232B40AE00A995BD /* sip-uac-register.c */; };
+		461F0CE1232B40AE00A995BD /* sip-uac-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CD3232B40AE00A995BD /* sip-uac-invite.c */; };
+		461F0CE2232B40AE00A995BD /* sip-uac-ack.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CD4232B40AE00A995BD /* sip-uac-ack.c */; };
+		461F0CF0232B40BF00A995BD /* sip-uas-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE3232B40BF00A995BD /* sip-uas-register.c */; };
+		461F0CF1232B40BF00A995BD /* sip-uas-transaction-noninvite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE4232B40BF00A995BD /* sip-uas-transaction-noninvite.c */; };
+		461F0CF2232B40BF00A995BD /* sip-uas-transaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE5232B40BF00A995BD /* sip-uas-transaction.c */; };
+		461F0CF3232B40BF00A995BD /* sip-uas-transaction-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE6232B40BF00A995BD /* sip-uas-transaction-invite.c */; };
+		461F0CF4232B40BF00A995BD /* sip-uas-prack.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE7232B40BF00A995BD /* sip-uas-prack.c */; };
+		461F0CF5232B40BF00A995BD /* sip-uas-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CE8232B40BF00A995BD /* sip-uas-options.c */; };
+		461F0CF6232B40BF00A995BD /* sip-uas-transaction.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0CE9232B40BF00A995BD /* sip-uas-transaction.h */; };
+		461F0CF7232B40BF00A995BD /* sip-uas-cancel.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CEA232B40BF00A995BD /* sip-uas-cancel.c */; };
+		461F0CF8232B40BF00A995BD /* sip-uas.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CEB232B40BF00A995BD /* sip-uas.c */; };
+		461F0CF9232B40BF00A995BD /* sip-uas-subscribe.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CEC232B40BF00A995BD /* sip-uas-subscribe.c */; };
+		461F0CFA232B40BF00A995BD /* sip-uas-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CED232B40BF00A995BD /* sip-uas-bye.c */; };
+		461F0CFB232B40BF00A995BD /* sip-uas-refer.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CEE232B40BF00A995BD /* sip-uas-refer.c */; };
+		461F0CFC232B40BF00A995BD /* sip-uas-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CEF232B40BF00A995BD /* sip-uas-info.c */; };
+		461F0CFE232B40F600A995BD /* sip-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0CFD232B40F600A995BD /* sip-internal.h */; };
 		46A0D4F8229790E10070E1F5 /* sip-agent.c in Sources */ = {isa = PBXBuildFile; fileRef = 46A0D4F7229790E10070E1F5 /* sip-agent.c */; };
-		46C5B4512183EE7000419E57 /* sip-uas-transaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4322183EE7000419E57 /* sip-uas-transaction.c */; };
-		46C5B4522183EE7000419E57 /* sip-uas-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4332183EE7000419E57 /* sip-uas-bye.c */; };
-		46C5B4532183EE7000419E57 /* sip-uas-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4342183EE7000419E57 /* sip-uas-register.c */; };
-		46C5B4542183EE7000419E57 /* sip-uas-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4352183EE7000419E57 /* sip-uas-options.c */; };
-		46C5B4552183EE7000419E57 /* sip-uas-cancel.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4362183EE7000419E57 /* sip-uas-cancel.c */; };
-		46C5B4562183EE7000419E57 /* sip-uas.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4372183EE7000419E57 /* sip-uas.c */; };
-		46C5B4572183EE7000419E57 /* sip-uas-transaction.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B4382183EE7000419E57 /* sip-uas-transaction.h */; };
-		46C5B4582183EE7000419E57 /* sip-uas-transaction-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4392183EE7000419E57 /* sip-uas-transaction-invite.c */; };
-		46C5B4592183EE7000419E57 /* sip-uas-transaction-noninvite.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B43A2183EE7000419E57 /* sip-uas-transaction-noninvite.c */; };
-		46C5B45A2183EE7000419E57 /* sip-uac.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B43C2183EE7000419E57 /* sip-uac.c */; };
-		46C5B45B2183EE7000419E57 /* sip-uac-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B43D2183EE7000419E57 /* sip-uac-invite.c */; };
-		46C5B45C2183EE7000419E57 /* sip-uac-transaction.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B43E2183EE7000419E57 /* sip-uac-transaction.h */; };
-		46C5B45D2183EE7000419E57 /* sip-uac-transaction-noninvite.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B43F2183EE7000419E57 /* sip-uac-transaction-noninvite.c */; };
-		46C5B45E2183EE7000419E57 /* sip-uac-ack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4402183EE7000419E57 /* sip-uac-ack.c */; };
-		46C5B45F2183EE7000419E57 /* sip-uac-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4412183EE7000419E57 /* sip-uac-bye.c */; };
-		46C5B4602183EE7000419E57 /* sip-uac-cancel.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4422183EE7000419E57 /* sip-uac-cancel.c */; };
-		46C5B4612183EE7000419E57 /* sip-uac-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4432183EE7000419E57 /* sip-uac-options.c */; };
-		46C5B4622183EE7000419E57 /* sip-uac-transaction-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4442183EE7000419E57 /* sip-uac-transaction-invite.c */; };
-		46C5B4632183EE7000419E57 /* sip-uac-register.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4452183EE7000419E57 /* sip-uac-register.c */; };
-		46C5B4642183EE7000419E57 /* sip-uac-transaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4462183EE7000419E57 /* sip-uac-transaction.c */; };
 		46C5B4652183EE7000419E57 /* sip-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4472183EE7000419E57 /* sip-reason.c */; };
 		46C5B4662183EE7000419E57 /* sip-message.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4482183EE7000419E57 /* sip-message.c */; };
 		46C5B4672183EE7000419E57 /* sip-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B4492183EE7000419E57 /* sip-dialog.c */; };
@@ -41,30 +50,39 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		461F0BE922F80DC800A995BD /* sip-uas-info.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "sip-uas-info.c"; sourceTree = "<group>"; };
+		461F0CA5232B404400A995BD /* sip-subscribe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-subscribe.c"; sourceTree = "<group>"; };
+		461F0CA7232B406400A995BD /* sip-header-substate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-header-substate.c"; sourceTree = "<group>"; };
+		461F0CC7232B40AD00A995BD /* sip-uac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac.c"; sourceTree = "<group>"; };
+		461F0CC8232B40AD00A995BD /* sip-uac-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-options.c"; sourceTree = "<group>"; };
+		461F0CC9232B40AD00A995BD /* sip-uac-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-bye.c"; sourceTree = "<group>"; };
+		461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-invite.c"; sourceTree = "<group>"; };
+		461F0CCB232B40AD00A995BD /* sip-uac-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-info.c"; sourceTree = "<group>"; };
+		461F0CCC232B40AD00A995BD /* sip-uac-refer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-refer.c"; sourceTree = "<group>"; };
+		461F0CCD232B40AD00A995BD /* sip-uac-transaction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-uac-transaction.h"; sourceTree = "<group>"; };
+		461F0CCE232B40AD00A995BD /* sip-uac-transaction-noninvite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-noninvite.c"; sourceTree = "<group>"; };
+		461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-subscribe.c"; sourceTree = "<group>"; };
+		461F0CD0232B40AD00A995BD /* sip-uac-transaction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction.c"; sourceTree = "<group>"; };
+		461F0CD1232B40AE00A995BD /* sip-uac-cancel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-cancel.c"; sourceTree = "<group>"; };
+		461F0CD2232B40AE00A995BD /* sip-uac-register.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-register.c"; sourceTree = "<group>"; };
+		461F0CD3232B40AE00A995BD /* sip-uac-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-invite.c"; sourceTree = "<group>"; };
+		461F0CD4232B40AE00A995BD /* sip-uac-ack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-ack.c"; sourceTree = "<group>"; };
+		461F0CE3232B40BF00A995BD /* sip-uas-register.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-register.c"; sourceTree = "<group>"; };
+		461F0CE4232B40BF00A995BD /* sip-uas-transaction-noninvite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction-noninvite.c"; sourceTree = "<group>"; };
+		461F0CE5232B40BF00A995BD /* sip-uas-transaction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction.c"; sourceTree = "<group>"; };
+		461F0CE6232B40BF00A995BD /* sip-uas-transaction-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction-invite.c"; sourceTree = "<group>"; };
+		461F0CE7232B40BF00A995BD /* sip-uas-prack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-prack.c"; sourceTree = "<group>"; };
+		461F0CE8232B40BF00A995BD /* sip-uas-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-options.c"; sourceTree = "<group>"; };
+		461F0CE9232B40BF00A995BD /* sip-uas-transaction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-uas-transaction.h"; sourceTree = "<group>"; };
+		461F0CEA232B40BF00A995BD /* sip-uas-cancel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-cancel.c"; sourceTree = "<group>"; };
+		461F0CEB232B40BF00A995BD /* sip-uas.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas.c"; sourceTree = "<group>"; };
+		461F0CEC232B40BF00A995BD /* sip-uas-subscribe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-subscribe.c"; sourceTree = "<group>"; };
+		461F0CED232B40BF00A995BD /* sip-uas-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-bye.c"; sourceTree = "<group>"; };
+		461F0CEE232B40BF00A995BD /* sip-uas-refer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-refer.c"; sourceTree = "<group>"; };
+		461F0CEF232B40BF00A995BD /* sip-uas-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-info.c"; sourceTree = "<group>"; };
+		461F0CFD232B40F600A995BD /* sip-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-internal.h"; sourceTree = "<group>"; };
 		46A0D4F7229790E10070E1F5 /* sip-agent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-agent.c"; sourceTree = "<group>"; };
 		46C5B2A22183ED2700419E57 /* libsip.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsip.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B42F2183EE6700419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
-		46C5B4322183EE7000419E57 /* sip-uas-transaction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction.c"; sourceTree = "<group>"; };
-		46C5B4332183EE7000419E57 /* sip-uas-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-bye.c"; sourceTree = "<group>"; };
-		46C5B4342183EE7000419E57 /* sip-uas-register.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-register.c"; sourceTree = "<group>"; };
-		46C5B4352183EE7000419E57 /* sip-uas-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-options.c"; sourceTree = "<group>"; };
-		46C5B4362183EE7000419E57 /* sip-uas-cancel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-cancel.c"; sourceTree = "<group>"; };
-		46C5B4372183EE7000419E57 /* sip-uas.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas.c"; sourceTree = "<group>"; };
-		46C5B4382183EE7000419E57 /* sip-uas-transaction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-uas-transaction.h"; sourceTree = "<group>"; };
-		46C5B4392183EE7000419E57 /* sip-uas-transaction-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction-invite.c"; sourceTree = "<group>"; };
-		46C5B43A2183EE7000419E57 /* sip-uas-transaction-noninvite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uas-transaction-noninvite.c"; sourceTree = "<group>"; };
-		46C5B43C2183EE7000419E57 /* sip-uac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac.c"; sourceTree = "<group>"; };
-		46C5B43D2183EE7000419E57 /* sip-uac-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-invite.c"; sourceTree = "<group>"; };
-		46C5B43E2183EE7000419E57 /* sip-uac-transaction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-uac-transaction.h"; sourceTree = "<group>"; };
-		46C5B43F2183EE7000419E57 /* sip-uac-transaction-noninvite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-noninvite.c"; sourceTree = "<group>"; };
-		46C5B4402183EE7000419E57 /* sip-uac-ack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-ack.c"; sourceTree = "<group>"; };
-		46C5B4412183EE7000419E57 /* sip-uac-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-bye.c"; sourceTree = "<group>"; };
-		46C5B4422183EE7000419E57 /* sip-uac-cancel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-cancel.c"; sourceTree = "<group>"; };
-		46C5B4432183EE7000419E57 /* sip-uac-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-options.c"; sourceTree = "<group>"; };
-		46C5B4442183EE7000419E57 /* sip-uac-transaction-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-invite.c"; sourceTree = "<group>"; };
-		46C5B4452183EE7000419E57 /* sip-uac-register.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-register.c"; sourceTree = "<group>"; };
-		46C5B4462183EE7000419E57 /* sip-uac-transaction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction.c"; sourceTree = "<group>"; };
 		46C5B4472183EE7000419E57 /* sip-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-reason.c"; sourceTree = "<group>"; };
 		46C5B4482183EE7000419E57 /* sip-message.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-message.c"; sourceTree = "<group>"; };
 		46C5B4492183EE7000419E57 /* sip-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-dialog.c"; sourceTree = "<group>"; };
@@ -110,9 +128,11 @@
 				46C5B4312183EE7000419E57 /* uas */,
 				46C5B43B2183EE7000419E57 /* uac */,
 				46C5B4472183EE7000419E57 /* sip-reason.c */,
+				461F0CFD232B40F600A995BD /* sip-internal.h */,
 				46C5B4482183EE7000419E57 /* sip-message.c */,
 				46C5B4492183EE7000419E57 /* sip-dialog.c */,
 				46A0D4F7229790E10070E1F5 /* sip-agent.c */,
+				461F0CA5232B404400A995BD /* sip-subscribe.c */,
 				46C5B44A2183EE7000419E57 /* header */,
 			);
 			path = src;
@@ -121,16 +141,19 @@
 		46C5B4312183EE7000419E57 /* uas */ = {
 			isa = PBXGroup;
 			children = (
-				46C5B4322183EE7000419E57 /* sip-uas-transaction.c */,
-				46C5B4332183EE7000419E57 /* sip-uas-bye.c */,
-				46C5B4342183EE7000419E57 /* sip-uas-register.c */,
-				46C5B4352183EE7000419E57 /* sip-uas-options.c */,
-				46C5B4362183EE7000419E57 /* sip-uas-cancel.c */,
-				46C5B4372183EE7000419E57 /* sip-uas.c */,
-				46C5B4382183EE7000419E57 /* sip-uas-transaction.h */,
-				46C5B4392183EE7000419E57 /* sip-uas-transaction-invite.c */,
-				46C5B43A2183EE7000419E57 /* sip-uas-transaction-noninvite.c */,
-				461F0BE922F80DC800A995BD /* sip-uas-info.c */,
+				461F0CED232B40BF00A995BD /* sip-uas-bye.c */,
+				461F0CEA232B40BF00A995BD /* sip-uas-cancel.c */,
+				461F0CEF232B40BF00A995BD /* sip-uas-info.c */,
+				461F0CE8232B40BF00A995BD /* sip-uas-options.c */,
+				461F0CE7232B40BF00A995BD /* sip-uas-prack.c */,
+				461F0CEE232B40BF00A995BD /* sip-uas-refer.c */,
+				461F0CE3232B40BF00A995BD /* sip-uas-register.c */,
+				461F0CEC232B40BF00A995BD /* sip-uas-subscribe.c */,
+				461F0CE6232B40BF00A995BD /* sip-uas-transaction-invite.c */,
+				461F0CE4232B40BF00A995BD /* sip-uas-transaction-noninvite.c */,
+				461F0CE5232B40BF00A995BD /* sip-uas-transaction.c */,
+				461F0CE9232B40BF00A995BD /* sip-uas-transaction.h */,
+				461F0CEB232B40BF00A995BD /* sip-uas.c */,
 			);
 			path = uas;
 			sourceTree = "<group>";
@@ -138,17 +161,20 @@
 		46C5B43B2183EE7000419E57 /* uac */ = {
 			isa = PBXGroup;
 			children = (
-				46C5B43C2183EE7000419E57 /* sip-uac.c */,
-				46C5B43D2183EE7000419E57 /* sip-uac-invite.c */,
-				46C5B43E2183EE7000419E57 /* sip-uac-transaction.h */,
-				46C5B43F2183EE7000419E57 /* sip-uac-transaction-noninvite.c */,
-				46C5B4402183EE7000419E57 /* sip-uac-ack.c */,
-				46C5B4412183EE7000419E57 /* sip-uac-bye.c */,
-				46C5B4422183EE7000419E57 /* sip-uac-cancel.c */,
-				46C5B4432183EE7000419E57 /* sip-uac-options.c */,
-				46C5B4442183EE7000419E57 /* sip-uac-transaction-invite.c */,
-				46C5B4452183EE7000419E57 /* sip-uac-register.c */,
-				46C5B4462183EE7000419E57 /* sip-uac-transaction.c */,
+				461F0CD4232B40AE00A995BD /* sip-uac-ack.c */,
+				461F0CC9232B40AD00A995BD /* sip-uac-bye.c */,
+				461F0CD1232B40AE00A995BD /* sip-uac-cancel.c */,
+				461F0CCB232B40AD00A995BD /* sip-uac-info.c */,
+				461F0CD3232B40AE00A995BD /* sip-uac-invite.c */,
+				461F0CC8232B40AD00A995BD /* sip-uac-options.c */,
+				461F0CCC232B40AD00A995BD /* sip-uac-refer.c */,
+				461F0CD2232B40AE00A995BD /* sip-uac-register.c */,
+				461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */,
+				461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */,
+				461F0CCE232B40AD00A995BD /* sip-uac-transaction-noninvite.c */,
+				461F0CD0232B40AD00A995BD /* sip-uac-transaction.c */,
+				461F0CCD232B40AD00A995BD /* sip-uac-transaction.h */,
+				461F0CC7232B40AD00A995BD /* sip-uac.c */,
 			);
 			path = uac;
 			sourceTree = "<group>";
@@ -157,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				46C5B44B2183EE7000419E57 /* sip-header-contact.c */,
+				461F0CA7232B406400A995BD /* sip-header-substate.c */,
 				46C5B44C2183EE7000419E57 /* sip-header-param.c */,
 				46C5B44D2183EE7000419E57 /* sip-header-cseq.c */,
 				46C5B44E2183EE7000419E57 /* sip-header-uri.c */,
@@ -173,8 +200,9 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46C5B45C2183EE7000419E57 /* sip-uac-transaction.h in Headers */,
-				46C5B4572183EE7000419E57 /* sip-uas-transaction.h in Headers */,
+				461F0CF6232B40BF00A995BD /* sip-uas-transaction.h in Headers */,
+				461F0CFE232B40F600A995BD /* sip-internal.h in Headers */,
+				461F0CDB232B40AE00A995BD /* sip-uac-transaction.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,34 +262,42 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46C5B4532183EE7000419E57 /* sip-uas-register.c in Sources */,
-				46C5B45B2183EE7000419E57 /* sip-uac-invite.c in Sources */,
-				46C5B4602183EE7000419E57 /* sip-uac-cancel.c in Sources */,
+				461F0CF3232B40BF00A995BD /* sip-uas-transaction-invite.c in Sources */,
 				46C5B46B2183EE7000419E57 /* sip-header-uri.c in Sources */,
+				461F0CD6232B40AE00A995BD /* sip-uac-options.c in Sources */,
+				461F0CF1232B40BF00A995BD /* sip-uas-transaction-noninvite.c in Sources */,
 				46A0D4F8229790E10070E1F5 /* sip-agent.c in Sources */,
-				46C5B45A2183EE7000419E57 /* sip-uac.c in Sources */,
-				46C5B45D2183EE7000419E57 /* sip-uac-transaction-noninvite.c in Sources */,
-				46C5B4642183EE7000419E57 /* sip-uac-transaction.c in Sources */,
-				46C5B4542183EE7000419E57 /* sip-uas-options.c in Sources */,
-				46C5B4512183EE7000419E57 /* sip-uas-transaction.c in Sources */,
+				461F0CE2232B40AE00A995BD /* sip-uac-ack.c in Sources */,
+				461F0CD9232B40AE00A995BD /* sip-uac-info.c in Sources */,
+				461F0CFB232B40BF00A995BD /* sip-uas-refer.c in Sources */,
+				461F0CDE232B40AE00A995BD /* sip-uac-transaction.c in Sources */,
+				461F0CE0232B40AE00A995BD /* sip-uac-register.c in Sources */,
+				461F0CFA232B40BF00A995BD /* sip-uas-bye.c in Sources */,
+				461F0CD7232B40AE00A995BD /* sip-uac-bye.c in Sources */,
+				461F0CD5232B40AE00A995BD /* sip-uac.c in Sources */,
 				46C5B4682183EE7000419E57 /* sip-header-contact.c in Sources */,
 				46C5B4662183EE7000419E57 /* sip-message.c in Sources */,
-				461F0BEA22F80DC800A995BD /* sip-uas-info.c in Sources */,
 				46C5B4692183EE7000419E57 /* sip-header-param.c in Sources */,
-				46C5B4582183EE7000419E57 /* sip-uas-transaction-invite.c in Sources */,
-				46C5B4592183EE7000419E57 /* sip-uas-transaction-noninvite.c in Sources */,
-				46C5B4632183EE7000419E57 /* sip-uac-register.c in Sources */,
-				46C5B45E2183EE7000419E57 /* sip-uac-ack.c in Sources */,
-				46C5B4612183EE7000419E57 /* sip-uac-options.c in Sources */,
-				46C5B45F2183EE7000419E57 /* sip-uac-bye.c in Sources */,
+				461F0CA6232B404400A995BD /* sip-subscribe.c in Sources */,
+				461F0CF9232B40BF00A995BD /* sip-uas-subscribe.c in Sources */,
+				461F0CDA232B40AE00A995BD /* sip-uac-refer.c in Sources */,
+				461F0CF2232B40BF00A995BD /* sip-uas-transaction.c in Sources */,
+				461F0CF5232B40BF00A995BD /* sip-uas-options.c in Sources */,
+				461F0CA8232B406400A995BD /* sip-header-substate.c in Sources */,
+				461F0CFC232B40BF00A995BD /* sip-uas-info.c in Sources */,
 				46C5B4672183EE7000419E57 /* sip-dialog.c in Sources */,
-				46C5B4552183EE7000419E57 /* sip-uas-cancel.c in Sources */,
+				461F0CDC232B40AE00A995BD /* sip-uac-transaction-noninvite.c in Sources */,
+				461F0CF4232B40BF00A995BD /* sip-uas-prack.c in Sources */,
+				461F0CF7232B40BF00A995BD /* sip-uas-cancel.c in Sources */,
+				461F0CD8232B40AE00A995BD /* sip-uac-transaction-invite.c in Sources */,
 				46C5B46C2183EE7000419E57 /* sip-header-via.c in Sources */,
+				461F0CF8232B40BF00A995BD /* sip-uas.c in Sources */,
 				46C5B4652183EE7000419E57 /* sip-reason.c in Sources */,
-				46C5B4562183EE7000419E57 /* sip-uas.c in Sources */,
 				46C5B46A2183EE7000419E57 /* sip-header-cseq.c in Sources */,
-				46C5B4622183EE7000419E57 /* sip-uac-transaction-invite.c in Sources */,
-				46C5B4522183EE7000419E57 /* sip-uas-bye.c in Sources */,
+				461F0CE1232B40AE00A995BD /* sip-uac-invite.c in Sources */,
+				461F0CDD232B40AE00A995BD /* sip-uac-subscribe.c in Sources */,
+				461F0CF0232B40BF00A995BD /* sip-uas-register.c in Sources */,
+				461F0CDF232B40AE00A995BD /* sip-uac-cancel.c in Sources */,
 				46C5B46D2183EE7000419E57 /* sip-header.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -31,6 +31,7 @@ void sip_via_params_free(struct sip_via_t* via)
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 {
 	int i, j, k, r;
+    int i1, j1, k1, r1;
 	const char* p;
 	const struct sip_param_t* param;
 	memset(via, 0, sizeof(*via));
@@ -38,25 +39,25 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 	sip_params_init(&via->params);
 
 	// SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
-	sscanf(s, " %n%*[^/ \t]%n / %n%*[^/ \t]%n / %n%*[^/ \t]%n %n%*[^; \t\r\n]%n ", &i, &via->protocol.n, &j, &via->version.n, &k, &via->transport.n, &r, &via->host.n);
-	if (0 == via->host.n || s + via->host.n > end)
+	sscanf(s, " %n%*[^/ \t]%n / %n%*[^/ \t]%n / %n%*[^/ \t]%n %n%*[^; \t\r\n]%n ", &i, &i1, &j, &j1, &k, &k1, &r, &r1);
+	if (0 == r1 || s + r1 > end)
 		return EINVAL;
 
 	// protocol-name
 	via->protocol.p = s + i;
-	via->protocol.n -= i;
+	via->protocol.n = i1 - i;
 
 	// protocol-version
 	via->version.p = s + j;
-	via->version.n -= j;
+	via->version.n = j1 - j;
 	
 	// transport
 	via->transport.p = s + k;
-	via->transport.n -= k;
+	via->transport.n = k1 - k;
 
 	// sent-by
 	via->host.p = s + r;
-	via->host.n -= r;
+	via->host.n = r1 - r;
 
 	// via-params
 	p = strchr(via->host.p + via->host.n, ';');
@@ -93,7 +94,7 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 			}
 			else if (0 == cstrcmp(&param->name, "rport"))
 			{
-				via->rport = cstrvalid(&param->value) ? cstrtol(&param->value, NULL, 10) : -1;
+				via->rport = cstrvalid(&param->value) ? (int)cstrtol(&param->value, NULL, 10) : -1;
 			}
 		}
 	}
