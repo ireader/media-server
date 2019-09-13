@@ -214,7 +214,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	return session;
 }
 
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	char buf[1024];
 	const char* end = buf + sizeof(buf);
@@ -235,7 +235,7 @@ static void sip_uas_onack(void* param, const struct sip_message_t* req, struct s
 		assert(0 == cstrcmp(&ptr, "Alice <sip:alice@atlanta.com>;tag=1928301774"));
 		ptr.n = sip_uri_write(&dialog->target, buf, end);
 		assert(0 == cstrcmp(&ptr, "sip:alice@pc33.atlanta.com"));
-		assert(0 == strcmp(dialog->callid, "a84b4c76e66710"));
+		assert(0 == cstrcmp(&dialog->callid, "a84b4c76e66710"));
 		assert(0 == sip_uris_count(&dialog->routers));
 		s->dialog = dialog;
 	}
@@ -243,6 +243,7 @@ static void sip_uas_onack(void* param, const struct sip_message_t* req, struct s
 	{
 		delete s;
 	}
+	return 0;
 }
 
 static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
@@ -269,7 +270,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -285,15 +286,14 @@ static int sip_uas_send(void* param, const struct cstring_t* url, const void* da
 // 24 Examples (p213)
 void sip_uas_message_test(void)
 {
-	struct sip_uas_handler_t handler = {
-		sip_uas_oninvite,
-		sip_uas_onack,
-		sip_uas_onbye,
-		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_send,
-	};
+	struct sip_uas_handler_t handler;
+	handler.onregister = sip_uas_onregister;
+	handler.oninvite = sip_uas_oninvite;
+	handler.onack = sip_uas_onack;
+	handler.onbye = sip_uas_onbye;
+	handler.oncancel = sip_uas_oncancel;
+	handler.onmessage = sip_uas_onmessage;
+	handler.send = sip_uas_send;
 
 	struct sip_agent_t* sip;
 	sip = sip_agent_create(&handler, &sip);

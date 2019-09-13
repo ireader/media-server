@@ -195,7 +195,7 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->from, &dialog->local.uri);
 	msg->ptr.ptr = sip_contact_clone(msg->ptr.ptr, msg->ptr.end, &msg->to, &dialog->remote.uri);
 	sip_message_copy(msg, &msg->cseq.method, method);
-	sip_message_copy(msg, &msg->callid, dialog->callid);
+	sip_message_copy2(msg, &msg->callid, &dialog->callid);
 	//sip_message_copy(msg, &msg->to.tag, dialog->remote.tag);
 	//sip_message_copy(msg, &msg->from.tag, dialog->local.tag);
 
@@ -345,19 +345,33 @@ int sip_message_iscancel(const struct sip_message_t* msg)
 	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_CANCEL) ? 1 : 0;
 }
 
+int sip_message_isrefer(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_REFER) ? 1 : 0;
+}
+
+int sip_message_isnotify(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_NOTIFY) ? 1 : 0;
+}
+
+int sip_message_issubscribe(const struct sip_message_t* msg)
+{
+	return 0 == cstrcasecmp(&msg->cseq.method, SIP_METHOD_SUBSCRIBE) ? 1 : 0;
+}
+
 int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* parser)
 {
-	int i, r = 0;
+	int i, r;
 	const char* name;
 	const char* value;
-	struct sip_uri_t uri;
-	struct sip_param_t param;
+	struct cstring_t param;
 
-	http_get_version(parser, msg->u.s.protocol, &msg->u.s.vermajor, &msg->u.s.verminor);
+	r = http_get_version(parser, msg->u.s.protocol, &msg->u.s.vermajor, &msg->u.s.verminor);
 	if (SIP_MESSAGE_REQUEST == msg->mode)
 	{
-		sip_message_copy(msg, &param.name, http_get_request_uri(parser));
-		r = sip_header_uri(param.name.p, param.name.p + param.name.n, &msg->u.c.uri);
+		sip_message_copy(msg, &param, http_get_request_uri(parser));
+		r = sip_header_uri(param.p, param.p + param.n, &msg->u.c.uri);
 		if (0 != r) return r;
 		sip_message_copy(msg, &msg->u.c.method, http_get_request_method(parser));
 	}
@@ -373,91 +387,7 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 		if(0 != http_get_header(parser, i, &name, &value))
 			continue;
 
-		memset(&param, 0, sizeof(param));
-		sip_message_copy(msg, &param.name, name);
-		sip_message_copy(msg, &param.value, value);
-		if (!cstrvalid(&param.name) || !cstrvalid(&param.value))
-			return -1; // ENOMEM
-
-		r = sip_params_push(&msg->headers, &param);		
-
-		if (1 == strlen(name))
-		{
-			switch (tolower(name[0]))
-			{
-			case SIP_HEADER_ABBR_FROM:
-				r = sip_header_contact(param.value.p, param.value.p + param.value.n, &msg->from);
-				break;
-
-			case SIP_HEADER_ABBR_TO:
-				r = sip_header_contact(param.value.p, param.value.p + param.value.n, &msg->to);
-				break;
-
-			case SIP_HEADER_ABBR_CALLID:
-				msg->callid.p = param.value.p;
-				msg->callid.n = param.value.n;
-				break;
-
-			case SIP_HEADER_ABBR_VIA:
-				r = sip_header_vias(param.value.p, param.value.p + param.value.n, &msg->vias);
-				break;
-
-			case SIP_HEADER_ABBR_CONTACT:
-				r = sip_header_contacts(param.value.p, param.value.p + param.value.n, &msg->contacts);
-				break;
-
-			default:
-				break;
-			}
-		}
-		else
-		{
-			if (0 == strcasecmp(SIP_HEADER_FROM, name))
-			{
-				r = sip_header_contact(param.value.p, param.value.p + param.value.n, &msg->from);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_TO, name))
-			{
-				r = sip_header_contact(param.value.p, param.value.p + param.value.n, &msg->to);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
-			{
-				msg->callid.p = param.value.p;
-				msg->callid.n = param.value.n;
-			}
-			else if (0 == strcasecmp(SIP_HEADER_CSEQ, name))
-			{
-				r = sip_header_cseq(param.value.p, param.value.p + param.value.n, &msg->cseq);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
-			{
-				msg->maxforwards = (int)strtol(value, NULL, 10);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_VIA, name))
-			{
-				r = sip_header_vias(param.value.p, param.value.p + param.value.n, &msg->vias);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
-			{
-				r = sip_header_contacts(param.value.p, param.value.p + param.value.n, &msg->contacts);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_ROUTE, name))
-			{
-				r = sip_header_uri(param.value.p, param.value.p + param.value.n, &uri);
-				if (0 == r)
-					sip_uris_push(&msg->routers, &uri);
-			}
-			else if (0 == strcasecmp(SIP_HEADER_RECORD_ROUTE, name))
-			{
-				r = sip_header_uri(param.value.p, param.value.p + param.value.n, &uri);
-				if (0 == r)
-					sip_uris_push(&msg->record_routers, &uri);
-			}
-			else
-			{
-				// ignore
-			}
-		}
+		r = sip_message_add_header(msg, name, value);
 	}
 
 	msg->size = http_get_content_length(parser);
@@ -610,13 +540,14 @@ static char* sip_message_routers(const struct sip_message_t* msg, char* p, const
 	return p;
 }
 
+static inline int sip_message_skip_header(const struct cstring_t* name);
 int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 {
 	int i, n;
 	int content_length;
 	char* p, *end;
 	const struct sip_param_t* param;
-
+	
 	// check overwrite
 	assert(data + bytes <= (uint8_t*)msg || data >= (uint8_t*)msg->ptr.end);
 
@@ -635,11 +566,10 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	if (p < end) p += sip_contact_write(&msg->to, p, end);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_FROM);
 	if (p < end) p += sip_contact_write(&msg->from, p, end);
-	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_CALLID);
-	if (p < end) p += cstrcpy(&msg->callid, p, end - p);
+	if (p < end) p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_CALLID, msg->callid.n, msg->callid.p);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: %u ", SIP_HEADER_CSEQ, (unsigned int)msg->cseq.id);
 	if (p < end) p += sip_cseq_write(&msg->cseq, p, end);
-	if (p < end) p += snprintf(p, end - p, "\r\n%s: %u", SIP_HEADER_MAX_FORWARDS, msg->maxforwards);
+	if (p < end) p += snprintf(p, end - p, "\r\n%s: %d", SIP_HEADER_MAX_FORWARDS, msg->maxforwards);
 	for (i = 0; i < sip_vias_count((struct sip_vias_t*)&msg->vias); i++)
 	{
 		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_VIA);
@@ -663,6 +593,27 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 		if (p < end) p += sip_uri_write(sip_uris_get((struct sip_uris_t*)&msg->record_routers, i), p, end);
 	}
 
+	// PRACK
+	if (0 != msg->rseq && p < end)
+		p += snprintf(p, end - p, "\r\n%s: %u", SIP_HEADER_RSEQ, (unsigned int)msg->rseq);
+
+	// INFO: recv-info/info-package
+	if (cstrvalid(&msg->recv_info) && p < end)
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_RECV_INFO, msg->recv_info.n, msg->recv_info.p);
+	if (cstrvalid(&msg->info_package) && p < end)
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_INFO_PACKAGE, msg->info_package.n, msg->info_package.p);
+
+	// Subscribe/Notify
+	if (cstrvalid(&msg->event) && p < end)
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_EVENT, msg->event.n, msg->event.p);
+	if (cstrvalid(&msg->allow_events) && p < end)
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_ALLOW_EVENTS, msg->allow_events.n, msg->allow_events.p);
+	if (cstrvalid(&msg->substate.state))
+	{
+		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_SUBSCRIBE_STATE);
+		if (p < end) p += sip_substate_write(&msg->substate, p, end);
+	}
+
 	// other headers
 	for (i = 0; i < sip_params_count((struct sip_params_t*)&msg->headers); i++)
 	{
@@ -670,16 +621,17 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 		if (!cstrvalid(&param->name) || !cstrvalid(&param->value))
 			continue;
 
-		if (0 == cstrcasecmp(&param->name, "Content-Length"))
+		if(sip_message_skip_header(&param->name))
+			continue;
+
+		if (0 == cstrcasecmp(&param->name, "Content-Length") || 0 == cstrcasecmp(&param->name, SIP_HEADER_ABBR_CONTENT_LENGTH))
 		{
 			assert(msg->size == atoi(param->value.p));
 			content_length = 1; // has content length
 		}
 
-		if (p < end) p += snprintf(p, end - p, "\r\n");
-		if (p < end) p += cstrcpy(&param->name, p, end - p);
-		if (p < end) p += snprintf(p, end - p, ": ");
-		if (p < end) p += cstrcpy(&param->value, p, end - p);
+		if (p < end)
+			p += snprintf(p, end - p, "\r\n%.*s: %.*s", param->name.n, param->name.p, param->value.n, param->value.p);
 	}
 
 	// add Content-Length header
@@ -700,23 +652,48 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	return (int)((uint8_t*)p - data);
 }
 
+static inline int sip_message_skip_header(const struct cstring_t* name)
+{
+	int i;
+	const char* s_headers[] = {
+		SIP_HEADER_FROM, SIP_HEADER_TO, SIP_HEADER_CALLID, SIP_HEADER_CSEQ, SIP_HEADER_MAX_FORWARDS, SIP_HEADER_VIA,
+		SIP_HEADER_CONTACT, SIP_HEADER_ROUTE, SIP_HEADER_RECORD_ROUTE, SIP_HEADER_RSEQ, SIP_HEADER_RECV_INFO,
+		SIP_HEADER_INFO_PACKAGE, SIP_HEADER_EVENT, SIP_HEADER_ALLOW_EVENTS, SIP_HEADER_SUBSCRIBE_STATE, //SIP_HEADER_REFER_TO,
+		SIP_HEADER_ABBR_FROM, SIP_HEADER_ABBR_TO, SIP_HEADER_ABBR_CALLID, SIP_HEADER_ABBR_VIA, SIP_HEADER_ABBR_CONTACT, //SIP_HEADER_ABBR_REFER_TO,
+	};
+
+	for (i = 0; i < sizeof(s_headers) / sizeof(s_headers[0]); i++)
+	{
+		if (0 == cstrcasecmp(name, s_headers[i]))
+			return 1;
+	}
+	return 0;
+}
+
 int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value)
 {
 	int r;
 	struct sip_uri_t uri;
 	struct sip_param_t header;
 
-	sip_message_copy(msg, &header.value, value);
+	if (!name || !*name)
+		return -1; // EINVAL
 
-	if (0 == strcasecmp(SIP_HEADER_FROM, name))
+	sip_message_copy(msg, &header.name, name);
+	sip_message_copy(msg, &header.value, value ? value : "");
+	r = sip_params_push(&msg->headers, &header);
+	if (0 != r)
+		return r;
+
+	if (0 == strcasecmp(SIP_HEADER_FROM, name) || 0 == strcasecmp(SIP_HEADER_ABBR_FROM, name))
 	{
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->from);
 	}
-	else if (0 == strcasecmp(SIP_HEADER_TO, name))
+	else if (0 == strcasecmp(SIP_HEADER_TO, name) || 0 == strcasecmp(SIP_HEADER_ABBR_TO, name))
 	{
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->to);
 	}
-	else if (0 == strcasecmp(SIP_HEADER_CALLID, name))
+	else if (0 == strcasecmp(SIP_HEADER_CALLID, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CALLID, name))
 	{
 		msg->callid.p = header.value.p;
 		msg->callid.n = header.value.n;
@@ -729,11 +706,11 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	{
 		msg->maxforwards = (int)strtol(value, NULL, 10);
 	}
-	else if (0 == strcasecmp(SIP_HEADER_VIA, name))
+	else if (0 == strcasecmp(SIP_HEADER_VIA, name) || 0 == strcasecmp(SIP_HEADER_ABBR_VIA, name))
 	{
 		r = sip_header_vias(header.value.p, header.value.p + header.value.n, &msg->vias);
 	}
-	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name))
+	else if (0 == strcasecmp(SIP_HEADER_CONTACT, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CONTACT, name))
 	{
 		r = sip_header_contacts(header.value.p, header.value.p + header.value.n, &msg->contacts);
 	}
@@ -751,13 +728,41 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 		if (0 == r)
 			sip_uris_push(&msg->record_routers, &uri);
 	}
+	else if (0 == strcasecmp(SIP_HEADER_RECV_INFO, name))
+	{
+		msg->recv_info.p = header.value.p;
+		msg->recv_info.n = header.value.n;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_INFO_PACKAGE, name))
+	{
+		msg->info_package.p = header.value.p;
+		msg->info_package.n = header.value.n;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_EVENT, name))
+	{
+		msg->event.p = header.value.p;
+		msg->event.n = header.value.n;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_ALLOW_EVENTS, name))
+	{
+		msg->allow_events.p = header.value.p;
+		msg->allow_events.n = header.value.n;
+	}
+	else if (0 == strcasecmp(SIP_HEADER_SUBSCRIBE_STATE, name))
+	{
+		memset(&msg->substate, 0, sizeof(msg->substate));
+		r = sip_header_substate(header.value.p, header.value.p + header.value.n, &msg->substate);
+	}
+	else if (0 == strcasecmp(SIP_HEADER_RSEQ, name))
+	{
+		msg->rseq = atoi(header.value.p);
+	}
 	else
 	{
-		sip_message_copy(msg, &header.name, name);
-		return sip_params_push(&msg->headers, &header);
+		// do nothing
 	}
 
-	return 0;
+	return r;
 }
 
 int sip_message_add_header_int(struct sip_message_t* msg, const char* name, int value)

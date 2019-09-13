@@ -87,7 +87,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 
 	case SIP_UAS_TRANSACTION_PROCEEDING:
 		// send last 1xx reply
-		sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t);
 		// ignore transport error(client will retransmission request)
 		break;
 
@@ -97,7 +97,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// until recv ack
 		
 		// send last 3xx-6xx reply
-		sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t);
 		break;
 
 	case SIP_UAS_TRANSACTION_ACCEPTED:
@@ -107,7 +107,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// retransmissions are not passed onto the TU.
 
 		// send last 2xx reply
-		sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t);
 		break;
 
 	case SIP_UAS_TRANSACTION_CONFIRMED:
@@ -119,7 +119,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
             
 			if(t->dialog->state == DIALOG_ERALY) // re-invite
                 t->dialog->state = DIALOG_CONFIRMED;
-			t->handler->onack(t->param, req, t, t->dialog->session, t->dialog, 200, req->payload, req->size);
+			r = t->handler->onack(t->param, req, t, t->dialog->session, t->dialog, 200, req->payload, req->size);
 
 			// start timer I, wait for all inflight ACK
 			sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_I);
@@ -144,7 +144,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		assert(0);
 	}
 
-	return 0;
+	return r;
 }
 
 int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)

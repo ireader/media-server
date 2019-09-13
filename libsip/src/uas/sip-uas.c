@@ -67,7 +67,7 @@ int sip_uas_del_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_
 	list_for_each_safe(pos, next, &sip->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (0 == cstrcmp(&t->reply->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
+		if (cstreq(&t->reply->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker

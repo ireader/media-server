@@ -22,10 +22,11 @@ struct sip_dialog_t
 {
 	int state; // DIALOG_ERALY/DIALOG_CONFIRMED
 
-	char callid[128];
+	struct cstring_t callid;
 	struct 
 	{
 		uint32_t id; // local/remote sequence number
+		uint32_t rseq; // rfc3262 PRACK, [1, 2**31 - 1]
 		struct sip_contact_t uri; // local/remote URI(From/To Field)
 		//char tag[128]; //local/remote tag
 		//char nickname[128]; //local/remote nickname
@@ -60,8 +61,6 @@ int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
 
 /// call sip_dialog_release
 struct sip_dialog_t* sip_dialog_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
-
-struct sip_dialog_t* sip_dialog_fetch_or_add(struct sip_agent_t* sip, const struct sip_message_t* msg);
 
 #if defined(__cplusplus)
 }

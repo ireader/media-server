@@ -211,22 +211,13 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 {
 	int n;
 	char* p;
+	const char* quote;
 
 	p = data;
-	if (c->nickname.p && c->nickname.n > 0)
+	if (cstrvalid(&c->nickname) && p < end)
 	{
-		if (sip_nickname_check(&c->nickname))
-		{
-			if (p < end) p += cstrcpy(&c->nickname, p, end - p);
-		}
-		else
-		{
-			if (p < end) *p++ = '\"';
-			if (p < end) p += cstrcpy(&c->nickname, p, end - p - 1);
-			if (p < end) *p++ = '\"';
-		}
-
-		if (p < end) *p++ = ' ';
+		quote = sip_nickname_check(&c->nickname) ? "" : "\"";
+		p += snprintf(p, end - p, "%s%.*s%s ", quote, c->nickname.n, c->nickname.p, quote);
 	}
 
 	if (0 == cstrcmp(&c->uri.host, "*"))

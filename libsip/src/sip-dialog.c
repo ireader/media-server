@@ -40,11 +40,13 @@ int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t*
 	assert(cstrvalid(&msg->from.tag) && cstrvalid(&msg->to.tag));
 	end = dialog->ptr + N;
 
-	cstrcpy(&msg->callid, dialog->callid, sizeof(dialog->callid));
+	dialog->ptr = cstring_clone(dialog->ptr, end, &dialog->callid, msg->callid.p, msg->callid.n);
 	dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->local.uri, &msg->from);
 	dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->remote.uri, &msg->to);
 	dialog->local.id = msg->cseq.id;
+	dialog->local.rseq = rand();
 	dialog->remote.id = rand();
+	dialog->remote.rseq = rand();
 
 	//assert(1 == sip_contacts_count(&msg->contacts));
 	contact = sip_contacts_get(&msg->contacts, 0);
@@ -76,12 +78,14 @@ int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t*
     assert(SIP_MESSAGE_REQUEST == msg->mode);
     assert(cstrvalid(&msg->from.tag));
     end = dialog->ptr + N;
-    
-    cstrcpy(&msg->callid, dialog->callid, sizeof(dialog->callid));
+
+	dialog->ptr = cstring_clone(dialog->ptr, end, &dialog->callid, msg->callid.p, msg->callid.n);
     dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->local.uri, &msg->to);
     dialog->ptr = sip_contact_clone(dialog->ptr, end, &dialog->remote.uri, &msg->from);
     dialog->local.id = rand();
+	dialog->local.rseq = rand();
     dialog->remote.id = msg->cseq.id;
+	dialog->remote.rseq = 0==msg->rseq ? rand() : msg->rseq;
     
     //assert(1 == sip_contacts_count(&msg->contacts));
     contact = sip_contacts_get(&msg->contacts, 0);
@@ -150,7 +154,7 @@ static int sip_dialog_match(const struct sip_dialog_t* dialog, const struct cstr
 	assert(dialog && local);
 	if (!remote) remote = &sc_null;
 
-	return 0 == cstrcmp(callid, dialog->callid) && cstreq(local, &dialog->local.uri.tag) && cstreq(remote, &dialog->remote.uri.tag) ? 1 : 0;
+	return cstreq(callid, &dialog->callid) && cstreq(local, &dialog->local.uri.tag) && cstreq(remote, &dialog->remote.uri.tag) ? 1 : 0;
 }
 
 static struct sip_dialog_t* sip_dialog_find(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote)
@@ -181,12 +185,8 @@ struct sip_dialog_t* sip_dialog_fetch(struct sip_agent_t* sip, const struct cstr
 
 int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 {
-	struct cstring_t callid;
-	callid.p = dialog->callid;
-	callid.n = strlen(dialog->callid);
-
 	locker_lock(&sip->locker);
-	if (NULL != sip_dialog_find(sip, &callid, &dialog->local.uri.tag, &dialog->remote.uri.tag))
+	if (NULL != sip_dialog_find(sip, &dialog->callid, &dialog->local.uri.tag, &dialog->remote.uri.tag))
 	{
 		locker_unlock(&sip->locker);
 		return -1; // exist
@@ -211,13 +211,27 @@ int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 	return 0;
 }
 
-struct sip_dialog_t* sip_dialog_fetch_or_add(struct sip_agent_t* sip, const struct sip_message_t* msg)
+// MUST ADD LOCK !!!!! internal use only !!!!!!!!!
+struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, int uac, int* added)
 {
 	struct sip_dialog_t* dialog;
-	locker_lock(&sip->locker);
+
+	*added = 0;
 	dialog = sip_dialog_find(sip, &msg->callid, &msg->from.tag, &msg->to.tag);
-	if (dialog)
-		sip_dialog_addref(dialog);
-	locker_unlock(&sip->locker);
+	if (!dialog)
+	{
+		dialog = sip_dialog_create();
+		if (!dialog || 0 != (uac ? sip_dialog_init_uac(dialog, msg) : sip_dialog_init_uas(dialog, msg)))
+		{
+			sip_dialog_release(dialog);
+			return NULL;
+		}
+
+		// link to sip dialogs(add ref later)
+		list_insert_after(&dialog->link, sip->dialogs.prev);
+		*added = 1;
+	}
+
+	sip_dialog_addref(dialog); // for sip link dialog / fetch
 	return dialog;
 }

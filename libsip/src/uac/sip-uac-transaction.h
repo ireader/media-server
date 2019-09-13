@@ -45,6 +45,7 @@ struct sip_uac_transaction_t
 
 	struct sip_agent_t* agent;
 	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+	sip_uac_onsubscribe onsubscribe;
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;
 	void* param;
@@ -77,5 +78,8 @@ void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t*
 void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, void* id);
 
 int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction);
+
+int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 
 #endif /* !_sip_uac_transaction_h_ */

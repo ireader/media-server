@@ -39,17 +39,29 @@ extern "C" {
 #define SIP_HEADER_CONTACT		"Contact"
 #define SIP_HEADER_ROUTE		"Route"
 #define SIP_HEADER_RECORD_ROUTE "Record-Route"
+#define SIP_HEADER_RSEQ			"RSeq" // rfc3262
+#define SIP_HEADER_RACK			"RAck" // rfc3262
+#define SIP_HEADER_REFER_TO		"Refer-To" // rfc3515
+#define SIP_HEADER_RECV_INFO	"Recv-Info" // rfc2976/rfc6086
+#define SIP_HEADER_INFO_PACKAGE	"Info-Package" // rfc2976/rfc6086
+#define SIP_HEADER_EVENT		"Event" // rfc3265/rfc6665
+#define SIP_HEADER_ALLOW_EVENTS	"Allow-Events" // rfc3265/rfc6665
+#define SIP_HEADER_SUBSCRIBE_STATE "Subscription-State" // rfc3265/rfc6665
 
-#define SIP_HEADER_ABBR_FROM				'f'
-#define SIP_HEADER_ABBR_TO					't'
-#define SIP_HEADER_ABBR_CALLID				'i'
-#define SIP_HEADER_ABBR_VIA					'v'
-#define SIP_HEADER_ABBR_CONTACT				'm'
-#define SIP_HEADER_ABBR_SUPPORTED			'k'
-#define SIP_HEADER_ABBR_SUBJECT				's'
-#define SIP_HEADER_ABBR_CONTENT_TYPE		'c'
-#define SIP_HEADER_ABBR_CONTENT_LENGTH		'l'
-#define SIP_HEADER_ABBR_CONTENT_ENCODING	'e'
+#define SIP_HEADER_ABBR_FROM				"f"
+#define SIP_HEADER_ABBR_TO					"t"
+#define SIP_HEADER_ABBR_CALLID				"i"
+#define SIP_HEADER_ABBR_VIA					"v"
+#define SIP_HEADER_ABBR_CONTACT				"m"
+#define SIP_HEADER_ABBR_SUPPORTED			"k"
+#define SIP_HEADER_ABBR_SUBJECT				"s"
+#define SIP_HEADER_ABBR_CONTENT_TYPE		"c"
+#define SIP_HEADER_ABBR_CONTENT_LENGTH		"l"
+#define SIP_HEADER_ABBR_CONTENT_ENCODING	"e"
+#define SIP_HEADER_ABBR_REFER_TO			"r"
+
+
+#define SIP_OPTION_TAG_100REL	"100rel"  // rfc3262
 
 enum { SIP_MESSAGE_REQUEST = 0, SIP_MESSAGE_REPLY = 1 };
 struct sip_message_t
@@ -74,8 +86,15 @@ struct sip_message_t
 	struct sip_contacts_t contacts;
 	struct sip_uris_t routers;
 	struct sip_uris_t record_routers; // Record-Route
-
+	
 	// other headers
+	uint32_t rseq; // [1, 2**31 - 1] PRACK
+	struct cstring_t recv_info; // Info Method (invite)
+	struct cstring_t info_package; // Info Method
+	struct sip_contact_t referto; // Refer Method
+	struct cstring_t event; // Subscribe/Notify Method
+	struct cstring_t allow_events; // Subscribe/Notify Method
+	struct sip_substate_t substate; // Subscribe/Notify Method (invite)
 	struct sip_params_t headers;
 
 	const void *payload;
@@ -107,6 +126,9 @@ int sip_message_iscancel(const struct sip_message_t* msg);
 /// @return 1-invite, 0-noninvite
 int sip_message_isinvite(const struct sip_message_t* msg);
 int sip_message_isregister(const struct sip_message_t* msg);
+int sip_message_isrefer(const struct sip_message_t* msg);
+int sip_message_isnotify(const struct sip_message_t* msg);
+int sip_message_issubscribe(const struct sip_message_t* msg);
 
 int sip_message_set_uri(struct sip_message_t* msg, const char* uri);
 const struct sip_uri_t* sip_message_get_next_hop(const struct sip_message_t* msg);

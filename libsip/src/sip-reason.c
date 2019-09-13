@@ -12,6 +12,7 @@ const char* sip_reason_phrase(int code)
 
 	static const char *reason48x[] =
 	{
+		// 469 Bad Info Package // rfc6086
 		"Temporarily Unavailable", // 480
 		"Call/Transaction Does Not Exist", // 481
 		"Loop Detected", // 482

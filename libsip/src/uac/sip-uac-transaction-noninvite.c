@@ -7,13 +7,18 @@
 static int sip_uac_transaction_noninvite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status);
-	return t->onreply(t->param, reply, t, reply->u.s.code);
+	if(sip_message_issubscribe(t->req))
+		return sip_uac_subscribe_onreply(t, reply);
+	else if (sip_message_isnotify(t->req))
+		return sip_uac_notify_onreply(t, reply);
+	else
+		return t->onreply(t->param, reply, t, reply->u.s.code);
 }
 
 static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
-	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
+	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
 
 	// stop retry timer A
 	if (NULL != t->timera)
@@ -22,7 +27,12 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 		t->timera = NULL;
 	}
 
-	r = t->onreply(t->param, reply, t, reply->u.s.code);
+	if(sip_message_issubscribe(t->req))
+		r = sip_uac_subscribe_onreply(t, reply);
+	else if (sip_message_isnotify(t->req))
+		r = sip_uac_notify_onreply(t, reply);
+	else
+		r = t->onreply(t->param, reply, t, reply->u.s.code);
 	
 	// post-handle
 	if (t->onhandle)

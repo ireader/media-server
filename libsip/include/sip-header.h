@@ -1,6 +1,7 @@
 #ifndef _sip_header_h_
 #define _sip_header_h_
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -139,7 +140,8 @@ struct sip_via_t
 	struct cstring_t maddr; // host
 	struct cstring_t received; // IPv4address / IPv6address
 	int ttl; // 0-255
-	struct sip_params_t params; // include branch/maddr/received/ttl
+	int rport; // 0-not found, -1-no-value, other-value
+	struct sip_params_t params; // include branch/maddr/received/ttl/rport
 };
 DARRAY_DECLARE(sip_via);
 
@@ -147,6 +149,17 @@ struct sip_cseq_t
 {
 	uint32_t id;
 	struct cstring_t method;
+};
+
+struct sip_substate_t
+{
+	struct cstring_t state;
+
+	// parameters
+	struct cstring_t reason;
+	uint32_t expires; // expires
+	uint32_t retry; // retry-after
+	struct sip_params_t params; // include reason/expires/retry
 };
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
@@ -188,6 +201,11 @@ char* sip_contact_clone(char* ptr, const char* end, struct sip_contact_t* clone,
 void sip_uri_params_free(struct sip_uri_t* uri);
 void sip_via_params_free(struct sip_via_t* via);
 void sip_contact_params_free(struct sip_contact_t* contact);
+
+/// @return 0-ok, other-error
+int sip_header_substate(const char* s, const char* end, struct sip_substate_t* substate);
+/// @return write length, >0-ok, <0-error
+int sip_substate_write(const struct sip_substate_t* substate, char* data, const char* end);
 
 #if defined(__cplusplus)
 }

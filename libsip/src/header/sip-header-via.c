@@ -30,52 +30,39 @@ void sip_via_params_free(struct sip_via_t* via)
 
 int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 {
-	int i, r;
+	int i, j, k, r;
 	const char* p;
 	const struct sip_param_t* param;
 	memset(via, 0, sizeof(*via));
+	via->rport = -1;
 	sip_params_init(&via->params);
 
-	p = strchr(s, '/');
-	if (!p || p > end)
+	// SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
+	sscanf(s, " %n%*[^/ \t]%n / %n%*[^/ \t]%n / %n%*[^/ \t]%n %n%*[^; \t\r\n]%n ", &i, &via->protocol.n, &j, &via->version.n, &k, &via->transport.n, &r, &via->host.n);
+	if (0 == via->host.n || s + via->host.n > end)
 		return EINVAL;
 
 	// protocol-name
-	via->protocol.p = s;
-	via->protocol.n = p - s;
-	cstrtrim(&via->protocol, " \t");
-
-	s = p + 1;
-	p = strchr(s, '/');
-	if (!p || p > end)
-		return EINVAL;
+	via->protocol.p = s + i;
+	via->protocol.n -= i;
 
 	// protocol-version
-	via->version.p = s;
-	via->version.n = p - s;
-	cstrtrim(&via->version, " \t");
-
-	s = p + 1;
-	p = strpbrk(s, " \t");
-	if (!p || p > end)
-		return EINVAL;
-
+	via->version.p = s + j;
+	via->version.n -= j;
+	
 	// transport
-	via->transport.p = s;
-	via->transport.n = p - s;
-	cstrtrim(&via->transport, " \t");
+	via->transport.p = s + k;
+	via->transport.n -= k;
 
-	s = p + 1;
-	p = strchr(s, ';');
+	// sent-by
+	via->host.p = s + r;
+	via->host.n -= r;
+
+	// via-params
+	p = strchr(via->host.p + via->host.n, ';');
 	if (!p || p > end)
 		p = end;
 
-	// sent-by
-	via->host.p = s;
-	via->host.n = p - s;
-	cstrtrim(&via->host, " \t");
-
-	// via-params
 	r = 0;
 	if (p && p < end && ';' == *p)
 	{
@@ -103,6 +90,10 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 			else if (0 == cstrcmp(&param->name, "ttl"))
 			{
 				via->ttl = atoi(param->value.p);
+			}
+			else if (0 == cstrcmp(&param->name, "rport"))
+			{
+				via->rport = cstrvalid(&param->value) ? cstrtol(&param->value, NULL, 10) : -1;
 			}
 		}
 	}
@@ -148,13 +139,8 @@ int sip_via_write(const struct sip_via_t* via, char* data, const char* end)
 		return -1;
 
 	p = data;
-	if (p < end) p += cstrcpy(&via->protocol, p, end - p);
-	if (p < end) *p++ = '/';
-	if (p < end) p += cstrcpy(&via->version, p, end - p);
-	if (p < end) *p++ = '/';
-	if (p < end) p += cstrcpy(&via->transport, p, end - p);
-	if (p < end) *p++ = ' ';
-	if (p < end) p += cstrcpy(&via->host, p, end - p);
+	if (p < end)
+		p += snprintf(p, end - p, "%.*s/%.*s/%.*s %.*s", via->protocol.n, via->protocol.p, via->version.n, via->version.p, via->transport.n, via->transport.p, via->host.n, via->host.p);
 
 	if (sip_params_count(&via->params) > 0)
 	{

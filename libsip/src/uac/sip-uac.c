@@ -38,7 +38,7 @@ int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 	list_for_each_safe(pos, next, &sip->dialogs)
 	{
 		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (0 == cstrcmp(&t->req->callid, dialog->callid) && DIALOG_ERALY == dialog->state)
+		if (cstreq(&t->req->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker
@@ -205,7 +205,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	
 	// Contact: <sip:bob@192.0.2.4>
 	if (0 == sip_contacts_count(&t->req->contacts) && 
-		(sip_message_isinvite(t->req) || sip_message_isregister(t->req)))
+		(sip_message_isinvite(t->req) || sip_message_isregister(t->req) || sip_message_isrefer(t->req)))
 	{
 		// 12.1.2 UAC Behavior (p71)
 		// When a UAC sends a request that can establish a dialog (such as an
@@ -229,9 +229,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 
 	// get transport reliable from via protocol
 	t->reliable = 1;
-	if (sip_vias_count(&t->req->vias) > 0 
-		&&  (0 == cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "UDP")
-			|| 0 == cstrcmp(&(sip_vias_get(&t->req->vias, 0)->transport), "DTLS")))
+	if (sip_vias_count(&t->req->vias) > 0 && !sip_transport_isreliable(&(sip_vias_get(&t->req->vias, 0)->transport)))
 	{
 		t->reliable = 0;
 	}
@@ -246,7 +244,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	return sip_uac_transaction_send(t);
 }
 
-int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int nconcat)
+int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int ncontact)
 {
 	int r;
 	char dns[128];
@@ -277,7 +275,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	// Via
 	// Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
 	// Via: SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1
-	r = snprintf(via, nvia, "SIP/2.0/%s %s;branch=%s%p%d", protocol, dns, SIP_BRANCH_PREFIX, t, rand());
+	r = snprintf(via, nvia, "SIP/2.0/%s %s;branch=%s%p%d%s", protocol, dns, SIP_BRANCH_PREFIX, t, rand(), sip_transport_isreliable2(protocol)?"":";rport");
 	if (r < 0 || r >= nvia)
 		return -1; // ENOMEM
 
@@ -288,8 +286,8 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	if (0 == sip_uri_username(&t->req->from.uri, &user))
 	{
 		assert(user.n > 0);
-		r = snprintf(contact, nconcat, "<%.*s:%.*s@%s>", uri->scheme.n > 0 ? uri->scheme.n : 3, uri->scheme.n > 0 ? uri->scheme.p : "sip", user.n, user.p, local);
-		if (r < 0 || r >= nconcat)
+		r = snprintf(contact, ncontact, "<%.*s:%.*s@%s>", uri->scheme.n > 0 ? uri->scheme.n : 3, uri->scheme.n > 0 ? uri->scheme.p : "sip", user.n, user.p, local);
+		if (r < 0 || r >= ncontact)
 			return -1; // ENOMEM
 	}
 

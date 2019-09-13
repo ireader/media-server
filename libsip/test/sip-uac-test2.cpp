@@ -43,8 +43,8 @@
 #include "../test/media/mp4-file-reader.h"
 
 #define SIP_PWD "1234"
-#define SIP_HOST "192.168.1.100"
-#define SIP_FROM "sip:1000@192.168.1.100"
+#define SIP_HOST "119.23.15.234"
+#define SIP_FROM "sip:1002@119.23.15.234"
 #define SIP_PEER "sip:1001@192.168.1.100"
 #define SIP_EXPIRED 60
 #define TURN_SERVER NULL
@@ -428,6 +428,14 @@ static void ice_transport_onbind(void* param, int code)
 		ice_transport_getaddr(s->avt, 0, 1, &addr);
 		socket_addr_to((struct sockaddr*)&addr, socket_addr_len((struct sockaddr*)&addr), host, &port);
 
+		// TODO: PRACK add 100rel/precondiation
+		//sip_uac_add_header(s->tuac, "Supported", "100ref");
+		//sip_uac_add_header(s->tuac, "Supported", "precondition");
+		// TODO: add Recv-Info
+		//sip_uac_add_header(s->tuac, "Recv-Info", "");
+		// TODO: add Allow-Events
+		//sip_uac_add_header(s->tuac, "Allow-Events", "");
+
 		sip_uas_add_header(s->t, "Content-Type", "application/sdp");
 		//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 		snprintf(reply, sizeof(reply), pattern, s->user.c_str(), host, host, s->audio.m ? (char*)s->audio.sender.buffer : "", s->video.m ? (char*)s->video.sender.buffer : "");
@@ -576,6 +584,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	}
 
 	std::shared_ptr<sip_uac_test2_session_t> s(new sip_uac_test2_session_t());
+	s->from = std::string(req->from.uri.host.p, req->from.uri.host.n);
 	{
 		sip_uac_test2_t::TSessions::iterator it;
 		AutoThreadLocker locker(ctx->locker);
@@ -597,7 +606,6 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		ice_transport_onconnected,
 	};
 
-	s->from = std::string(req->from.uri.host.p, req->from.uri.host.n);
 	s->pkts = std::shared_ptr<AVPacketQueue>(new AVPacketQueue(200));
 	s->avt = ice_transport_create(0, &handler, s.get());
 	memset(&s->audio, 0, sizeof(s->audio));
@@ -683,7 +691,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	struct sip_uac_test2_t* ctx = (struct sip_uac_test2_t*)param; assert(ctx);
 	sip_uac_test2_session_t* s = (sip_uac_test2_session_t*)session; assert(s);
@@ -704,6 +712,7 @@ static void sip_uas_onack(void* param, const struct sip_message_t* req, struct s
 		AutoThreadLocker locker(ctx->locker);
 		ctx->sessions.erase(s->from);
 	}
+	return 0;
 }
 
 /// on terminating a session(dialog)
@@ -743,7 +752,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -775,8 +784,15 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 		ice_transport_getaddr(s->avt, 0, 1, &addr);
 		socket_addr_to((struct sockaddr*)&addr, socket_addr_len((struct sockaddr*)&addr), host, &port);
 
+		// TODO: PRACK add 100rel/precondiation
+		//sip_uac_add_header(s->tuac, "Supported", "100ref");
+		//sip_uac_add_header(s->tuac, "Supported", "precondition");
+		// TODO: add Recv-Info
+		//sip_uac_add_header(s->tuac, "Recv-Info", "");
+		// TODO: add Allow-Events
+		//sip_uac_add_header(s->tuac, "Allow-Events", "");
+
 		sip_uac_add_header(s->tuac, "Content-Type", "application/sdp");
-		//sip_uac_add_header(s->tuac, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 		int n = snprintf(buffer, sizeof(buffer), pattern, s->user.c_str(), host, host, (char*)s->audio.sender.buffer, (char*)s->video.sender.buffer);
 
 		struct sip_transport_t t = {
@@ -797,7 +813,7 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 	std::shared_ptr<struct sip_uac_test2_session_t> s;
 	struct sip_uac_test2_t *ctx = (struct sip_uac_test2_t*)param;
 
-	if(reply)
+	if (reply)
 	{
 		sip_uac_test2_t::TSessions::iterator it;
 		AutoThreadLocker locker(ctx->locker);
@@ -806,6 +822,8 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 			return NULL; // ignore
 		s = it->second;
 	}
+
+	// TODO: handle reply->recv_info
 
 	if (200 == code)
 	{
@@ -870,6 +888,21 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 		s->running = true;
 		thread_create(&s->th, sip_work_thread, s.get());
 		return s.get();
+	}
+	else if (code == 183)
+	{
+		h = sip_message_get_header_by_name(reply, "Require");
+		if (!h || (0 != cstrcasecmp(h, "100rel") && 0 != cstrcasecmp(h, "precondition")))
+		{
+			assert(0);
+			return NULL;
+		}
+
+		assert(dialog);
+		//struct sip_uac_transaction_t* prack = sip_uac_prack(ctx->sip, dialog, sip_uac_onprack, ctx);
+		//sip_uac_add_header(prack, "Supported", "precondition");
+		//sip_uac_send(prack, sdp, 0, transport, param);
+		return NULL;
 	}
 	else if (code >= 300)
 	{
@@ -948,7 +981,7 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 	if (200 <= code && code < 300)
 	{
 		printf("Register OK\n");
-		sip_uac_invite_test(test);
+		//sip_uac_invite_test(test);
 	}
 	else if (401 == code)
 	{
@@ -1051,7 +1084,7 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
 		if (-1 == r && EINTR == errno)
 			continue;
 
-		//printf("\n%s\n", buffer);
+		printf("\n%s\n", buffer);
 		parser = 0 == strncasecmp("SIP", (char*)buffer, 3) ? request : response;
 
 		size_t n = r;
@@ -1068,6 +1101,39 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
     return 0;
 }
 
+static void* sip_uas_onsubscribe(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, sip_subscribe_t* subscribe)
+{
+	return NULL;
+}
+static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct cstring_t* event)
+{
+	return 0;
+}
+static int sip_uas_onpublish(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* event)
+{
+	return 0;
+}
+
+static int sip_uas_oninfo(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+{
+	return 0;
+}
+
+static int sip_uas_onrefer(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+{
+	return 0;
+}
+
+static int sip_uas_onprack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes)
+{
+	return 0;
+}
+
+static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes)
+{
+	return 0;
+}
+
 void sip_uac_test2(void)
 {
 	socket_init();
@@ -1075,22 +1141,30 @@ void sip_uac_test2(void)
 	test.running = true;
 	test.callid[0] = 0;
     struct sip_uas_handler_t handler = {
+		sip_uas_transport_send,
+		sip_uas_onregister,
 		sip_uas_oninvite,
 		sip_uas_onack,
+		sip_uas_onprack,
+		sip_uas_onupdate,
 		sip_uas_onbye,
 		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_transport_send,
+		sip_uas_onsubscribe,
+		sip_uas_onnotify,
+		sip_uas_onpublish,
+		sip_uas_oninfo,
+		sip_uas_onmessage,
+		sip_uas_onrefer,
 	};
 
 	assert(1 == sscanf(SIP_FROM, "sip:%[^@]", test.usr));
 	ip_route_get(SIP_HOST, test.local);
 	
 	test.udp = socket_udp();
-	test.tcp = socket_connect_host(SIP_HOST, SIP_PORT, 2000);
-	if(socket_invalid != test.tcp)
-		socket_setnonblock(test.tcp, 0);
+	//test.tcp = socket_connect_host(SIP_HOST, SIP_PORT, 2000);
+	//if(socket_invalid != test.tcp)
+	//	socket_setnonblock(test.tcp, 0);
+	test.tcp = socket_invalid;
 	test.sip = sip_agent_create(&handler, &test);
     socket_bind_any(test.udp, SIP_PORT);
 	test.transport.udp = test.udp;

@@ -114,7 +114,7 @@ static int STDCALL rtsp_play_thread(void* param)
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
 	struct sip_media_t* m = (struct sip_media_t*)session;
 
@@ -128,6 +128,7 @@ static void sip_uas_onack(void* param, const struct sip_message_t* req, struct s
 		delete m;
 		assert(0);
 	}
+	return 0;
 }
 
 /// on terminating a session(dialog)
@@ -144,11 +145,6 @@ static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct
 
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
-{
-	return sip_uas_reply(t, 200, NULL, 0);
-}
-
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -181,15 +177,14 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 
 void sip_uas_test2(void)
 {
-	struct sip_uas_handler_t handler = {
-		sip_uas_oninvite,
-		sip_uas_onack,
-		sip_uas_onbye,
-		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_transport_send,
-	};
+	struct sip_uas_handler_t handler;
+	handler.onregister = sip_uas_onregister;
+	handler.oninvite = sip_uas_oninvite;
+	handler.onack = sip_uas_onack;
+	handler.onbye = sip_uas_onbye;
+	handler.oncancel = sip_uas_oncancel;
+	handler.send = sip_uas_transport_send;
+
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, &test);

@@ -118,9 +118,8 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
 		return -1; // error
 
 	p = data;
-	if (p < end) p += cstrcpy(&uri->scheme, p, end - p);
-	if (p < end) *p++ = ':';
-	if (p < end) p += cstrcpy(&uri->host, p, end - p);
+	if(p < end)
+		p += snprintf(p, end - p, "%.*s:%.*s", uri->scheme.n, uri->scheme.p, uri->host.n, uri->host.p);
 
 	if (sip_params_count(&uri->parameters) > 0)
 	{
@@ -237,7 +236,7 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 	// that contains no maddr parameter
 	param1 = sip_params_find(&l->parameters, "maddr", 5);
 	param2 = sip_params_find(&r->parameters, "maddr", 5);
-	if ((param1 && !param2) || (!param1 && param2) || !cstreq(&param1->value, &param2->value))
+	if ((param1 && !param2) || (!param1 && param2) || (param1 && param2 && 0==cstreq(&param1->value, &param2->value)))
 		return 0;
 
 	// URI header components are never ignored.

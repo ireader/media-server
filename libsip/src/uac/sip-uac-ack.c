@@ -94,3 +94,55 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 		return 0 == r ? -1 : r; // E2BIG
 	return t->transport.send(t->transportptr, t->data, t->size);
 }
+
+struct sip_uac_transaction_t* sip_uac_prack(struct sip_agent_t* sip, const struct sip_message_t* req100rel, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param)
+{
+	char rack[64];
+	struct sip_message_t* req;
+	struct sip_uac_transaction_t* t;
+	const struct cstring_t* rseq;
+
+	rseq = sip_message_get_header_by_name(req100rel, SIP_HEADER_RSEQ);
+	if (!sip || !dialog || !rseq)
+		return NULL;
+
+	snprintf(rack, sizeof(rack), "%u %u %.*s", (unsigned int)req100rel->rseq, (unsigned int)req100rel->cseq.id, req100rel->cseq.method.n, req100rel->cseq.method.p);
+
+	++dialog->local.id;
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
+	if (0 != sip_message_init2(req, SIP_METHOD_INFO, dialog)
+		|| 0 != sip_message_add_header(req, SIP_HEADER_RACK, rack))
+	{
+		--dialog->local.id;
+		sip_message_destroy(req);
+		return NULL;
+	}
+
+	t = sip_uac_transaction_create(sip, req);
+	t->onreply = onreply;
+	t->param = param;
+	return t;
+}
+
+struct sip_uac_transaction_t* sip_uac_update(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param)
+{
+	struct sip_message_t* req;
+	struct sip_uac_transaction_t* t;
+
+	if (!sip || !dialog)
+		return NULL;
+
+	++dialog->local.id;
+	req = sip_message_create(SIP_MESSAGE_REQUEST);
+	if (0 != sip_message_init2(req, SIP_METHOD_UPDATE, dialog))
+	{
+		--dialog->local.id;
+		sip_message_destroy(req);
+		return NULL;
+	}
+
+	t = sip_uac_transaction_create(sip, req);
+	t->onreply = onreply;
+	t->param = param;
+	return t;
+}

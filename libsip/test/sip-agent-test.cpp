@@ -358,8 +358,9 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
+	return 0;
 }
 
 /// on terminating a session(dialog)
@@ -389,7 +390,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->terminated);
@@ -460,15 +461,14 @@ extern "C" void sip_agent_test(void)
     };
     s_sip.running = true;
 
-	struct sip_uas_handler_t handler = {
-		sip_uas_oninvite,
-		sip_uas_onack,
-		sip_uas_onbye,
-		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_transport_send,
-	};
+	struct sip_uas_handler_t handler;
+	handler.onregister = sip_uas_onregister;
+	handler.oninvite = sip_uas_oninvite;
+	handler.onack = sip_uas_onack;
+	handler.onbye = sip_uas_onbye;
+	handler.oncancel = sip_uas_oncancel;
+	handler.onmessage = sip_uas_onmessage;
+	handler.send = sip_uas_transport_send;
 
 	s_sip.udp = socket_udp();
 	s_sip.alice.sip = sip_agent_create(&handler, &s_sip.alice);
