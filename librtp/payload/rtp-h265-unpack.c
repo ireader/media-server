@@ -204,16 +204,13 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 
 static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 {
-	int n;
 	int nal, lid, tid;
 	const uint8_t* ptr;
 	struct rtp_packet_t pkt;
 	struct rtp_decode_h265_t *unpacker;
 
 	unpacker = (struct rtp_decode_h265_t *)p;
-	n = unpacker->using_donl_field ? 4 : 2;
-	
-	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < n)
+	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < (unpacker->using_donl_field ? 4 : 2))
 		return -EINVAL;
 
 	if (-1 == unpacker->flags)
