@@ -566,7 +566,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	if (p < end) p += sip_contact_write(&msg->to, p, end);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_FROM);
 	if (p < end) p += sip_contact_write(&msg->from, p, end);
-	if (p < end) p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_CALLID, msg->callid.n, msg->callid.p);
+	if (p < end) p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_CALLID, (int)msg->callid.n, msg->callid.p);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: %u ", SIP_HEADER_CSEQ, (unsigned int)msg->cseq.id);
 	if (p < end) p += sip_cseq_write(&msg->cseq, p, end);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: %d", SIP_HEADER_MAX_FORWARDS, msg->maxforwards);
@@ -599,15 +599,15 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 
 	// INFO: recv-info/info-package
 	if (cstrvalid(&msg->recv_info) && p < end)
-		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_RECV_INFO, msg->recv_info.n, msg->recv_info.p);
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_RECV_INFO, (int)msg->recv_info.n, msg->recv_info.p);
 	if (cstrvalid(&msg->info_package) && p < end)
-		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_INFO_PACKAGE, msg->info_package.n, msg->info_package.p);
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_INFO_PACKAGE, (int)msg->info_package.n, msg->info_package.p);
 
 	// Subscribe/Notify
 	if (cstrvalid(&msg->event) && p < end)
-		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_EVENT, msg->event.n, msg->event.p);
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_EVENT, (int)msg->event.n, msg->event.p);
 	if (cstrvalid(&msg->allow_events) && p < end)
-		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_ALLOW_EVENTS, msg->allow_events.n, msg->allow_events.p);
+		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_ALLOW_EVENTS, (int)msg->allow_events.n, msg->allow_events.p);
 	if (cstrvalid(&msg->substate.state))
 	{
 		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_SUBSCRIBE_STATE);
@@ -631,7 +631,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 		}
 
 		if (p < end)
-			p += snprintf(p, end - p, "\r\n%.*s: %.*s", param->name.n, param->name.p, param->value.n, param->value.p);
+			p += snprintf(p, end - p, "\r\n%.*s: %.*s", (int)param->name.n, param->name.p, (int)param->value.n, param->value.p);
 	}
 
 	// add Content-Length header

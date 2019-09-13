@@ -106,7 +106,7 @@ struct sip_uac_transaction_t* sip_uac_prack(struct sip_agent_t* sip, const struc
 	if (!sip || !dialog || !rseq)
 		return NULL;
 
-	snprintf(rack, sizeof(rack), "%u %u %.*s", (unsigned int)req100rel->rseq, (unsigned int)req100rel->cseq.id, req100rel->cseq.method.n, req100rel->cseq.method.p);
+	snprintf(rack, sizeof(rack), "%u %u %.*s", (unsigned int)req100rel->rseq, (unsigned int)req100rel->cseq.id, (int)req100rel->cseq.method.n, req100rel->cseq.method.p);
 
 	++dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);

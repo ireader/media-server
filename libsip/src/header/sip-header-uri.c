@@ -119,7 +119,7 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
 
 	p = data;
 	if(p < end)
-		p += snprintf(p, end - p, "%.*s:%.*s", uri->scheme.n, uri->scheme.p, uri->host.n, uri->host.p);
+		p += snprintf(p, end - p, "%.*s:%.*s", (int)uri->scheme.n, uri->scheme.p, (int)uri->host.n, uri->host.p);
 
 	if (sip_params_count(&uri->parameters) > 0)
 	{

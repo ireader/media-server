@@ -123,9 +123,9 @@ int sip_param_write(const struct sip_param_t* param, char* data, const char* end
 		return -1;
 
 	if (cstrvalid(&param->value))
-		return snprintf(data, end - data, "%.*s=%.*s", param->name.n, param->name.p, param->value.n, param->value.p);
+		return snprintf(data, end - data, "%.*s=%.*s", (int)param->name.n, param->name.p, (int)param->value.n, param->value.p);
 	else
-		return snprintf(data, end - data, "%.*s", param->name.n, param->name.p);
+		return snprintf(data, end - data, "%.*s", (int)param->name.n, param->name.p);
 }
 
 int sip_params_write(const struct sip_params_t* params, char* data, const char* end, char sep)

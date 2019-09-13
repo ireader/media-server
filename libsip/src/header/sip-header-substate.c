@@ -59,7 +59,7 @@ int sip_substate_write(const struct sip_substate_t* substate, char* data, const 
 
 	p = data;
 	if (p < end)
-		p += snprintf(p, end - p, "%.*s", substate->state.n, substate->state.p);
+		p += snprintf(p, end - p, "%.*s", (int)substate->state.n, substate->state.p);
 
 	if (sip_params_count(&substate->params) > 0)
 	{

@@ -217,7 +217,7 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 	if (cstrvalid(&c->nickname) && p < end)
 	{
 		quote = sip_nickname_check(&c->nickname) ? "" : "\"";
-		p += snprintf(p, end - p, "%s%.*s%s ", quote, c->nickname.n, c->nickname.p, quote);
+		p += snprintf(p, end - p, "%s%.*s%s ", quote, (int)c->nickname.n, c->nickname.p, quote);
 	}
 
 	if (0 == cstrcmp(&c->uri.host, "*"))

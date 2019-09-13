@@ -22,7 +22,7 @@ int sip_cseq_write(const struct sip_cseq_t* cseq, char* data, const char* end)
 {
 	if (!cstrvalid(&cseq->method))
 		return -1;
-	return snprintf(data, end-data, "%u %.*s", (unsigned int)cseq->id, cseq->method.n, cseq->method.p);
+	return snprintf(data, end-data, "%u %.*s", (unsigned int)cseq->id, (int)cseq->method.n, cseq->method.p);
 }
 
 #if defined(DEBUG) || defined(_DEBUG)

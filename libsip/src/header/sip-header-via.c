@@ -140,7 +140,7 @@ int sip_via_write(const struct sip_via_t* via, char* data, const char* end)
 
 	p = data;
 	if (p < end)
-		p += snprintf(p, end - p, "%.*s/%.*s/%.*s %.*s", via->protocol.n, via->protocol.p, via->version.n, via->version.p, via->transport.n, via->transport.p, via->host.n, via->host.p);
+		p += snprintf(p, end - p, "%.*s/%.*s/%.*s %.*s", (int)via->protocol.n, via->protocol.p, (int)via->version.n, via->version.p, (int)via->transport.n, via->transport.p, (int)via->host.n, via->host.p);
 
 	if (sip_params_count(&via->params) > 0)
 	{
