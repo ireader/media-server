@@ -26,7 +26,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 	// payload type
 	*format = atoi(p);
 	p1 = strchr(p, ' ');
-	if(' ' != *p1)
+	if(!p1 || ' ' != *p1)
 		return -1;
 
 	h264->flags = 0;
