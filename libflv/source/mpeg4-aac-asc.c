@@ -309,7 +309,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 			// TODO: ErrorProtectionSpecificConfig();
 			assert(0);
 		}
-		else if (3 == epConfig)
+		if (3 == epConfig)
 		{
 			if (mpeg4_bits_read(&bits)) // directMapping
 			{

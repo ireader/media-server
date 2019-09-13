@@ -145,7 +145,7 @@ static inline int mpeg4_bits_write_n(struct mpeg4_bits_t* bits, uint64_t v, int 
 	}
 
 	m = n;
-	v <<= 64 - n; // left shift to first bit
+	v = v << (64 - n); // left shift to first bit
 
 	bits->data[bits->bits / 8] |= v >> (56 + (bits->bits % 8)); // remain valid value
 	v <<= 8 - (bits->bits % 8);
