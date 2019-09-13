@@ -74,6 +74,8 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
         len = ((data[i+3] & 0x0F) << 8) | data[i+4];
 //        printf("PMT: pn: %0x, pid: %0x, codec: %0x, eslen: %d\n", (unsigned int)pmt->pn, (unsigned int)pid, (unsigned int)data[i], (unsigned int)len);
 
+		if (i + len + 5 > section_length + 3 - 4/*CRC32*/)
+			break;
         assert(pmt->stream_count <= sizeof(pmt->streams)/sizeof(pmt->streams[0]));
         stream = pmt_fetch(pmt, pid);
         if(NULL == stream)
