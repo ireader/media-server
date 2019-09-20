@@ -568,7 +568,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_FROM);
 	if (p < end) p += sip_contact_write(&msg->from, p, end);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_CALLID, (int)msg->callid.n, msg->callid.p);
-	if (p < end) p += snprintf(p, end - p, "\r\n%s: %u ", SIP_HEADER_CSEQ, (unsigned int)msg->cseq.id);
+	if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_CSEQ);
 	if (p < end) p += sip_cseq_write(&msg->cseq, p, end);
 	if (p < end) p += snprintf(p, end - p, "\r\n%s: %d", SIP_HEADER_MAX_FORWARDS, msg->maxforwards);
 	for (i = 0; i < sip_vias_count((struct sip_vias_t*)&msg->vias); i++)

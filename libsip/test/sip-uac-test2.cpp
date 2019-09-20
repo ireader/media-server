@@ -387,7 +387,7 @@ static void ice_transport_onconnected(void* param, int64_t streams)
 
 	for (int stream = 0; stream < 2; stream++)
 	{
-		sip_uac_test2_session_t::av_media_t* av = 0 == stream ? &s->video : &s->audio;
+		sip_uac_test2_session_t::av_media_t* av = s->video.stream == stream ? &s->video : &s->audio;
 		av->connected = (streams & ((int64_t)1 << stream)) ? 1 : 0;
 		//for (int component = 0; component < 2; component++)
 		//{
