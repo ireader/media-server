@@ -164,7 +164,7 @@ static int dash_server_mpd(http_session_t* session, dash_playlist_t* dash)
 
 static int dash_server_onlive(void* dash, http_session_t* session, const char* /*method*/, const char* path)
 {
-    char fullpath[PATH_MAX];
+    char fullpath[1024];
     int r = path_concat(path + 6 /* /live/ */, LOCALPATH, fullpath);
 	printf("live: %s\n", fullpath);
 
@@ -186,7 +186,7 @@ static int dash_server_onlive(void* dash, http_session_t* session, const char* /
 
 static int dash_server_onvod(void* /*dash*/, http_session_t* session, const char* /*method*/, const char* path)
 {
-    char fullpath[PATH_MAX];
+    char fullpath[1024];
     int r = path_concat(path + 5 /* /vod/ */, LOCALPATH, fullpath);
 	printf("vod: %s\n", fullpath);
 
