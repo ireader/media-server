@@ -69,6 +69,8 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 {
 	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	if (descriptor_len + 2 > bytes)
+		return bytes;
 
 	switch(descriptor_tag)
 	{
@@ -313,19 +315,20 @@ size_t avc_timing_hrd_descriptor(const uint8_t* data, size_t bytes)
 	memset(&desc, 0, sizeof(desc));
 	desc.hrd_management_valid_flag = (data[i] >> 7) & 0x01;
 	desc.picture_and_timing_info_present = (data[i] >> 0) & 0x01;
+	++i;
 	if(desc.picture_and_timing_info_present)
 	{
-		desc._90kHZ_flag = (data[i+1] >> 7) & 0x01;
+		desc._90kHZ_flag = (data[i] >> 7) & 0x01;
 		if(0 == desc._90kHZ_flag)
 		{
-			desc.N = (data[i+2] << 24) | (data[i+3] << 16) | (data[i+4] << 8) | data[i+5];
-			i += 4;
+			desc.N = (data[i+1] << 24) | (data[i+2] << 16) | (data[i+3] << 8) | data[i+4];
+			desc.K = (data[i+5] << 24) | (data[i+6] << 16) | (data[i+7] << 8) | data[i+8];
+			i += 8;
 		}
-		desc.num_unit_in_tick = (data[i+2] << 24) | (data[i+3] << 16) | (data[i+4] << 8) | data[i+5];
+		desc.num_unit_in_tick = (data[i+1] << 24) | (data[i+2] << 16) | (data[i+3] << 8) | data[i+4];
 		i += 5;
 	}
 
-	++i;
 	desc.fixed_frame_rate_flag = (data[i] >> 7) & 0x01;
 	desc.temporal_poc_flag = (data[i] >> 6) & 0x01;
 	desc.picture_to_display_conversion_flag = (data[i] >> 5) & 0x01;
