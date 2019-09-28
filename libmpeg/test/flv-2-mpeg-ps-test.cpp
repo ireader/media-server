@@ -27,7 +27,7 @@ static void ps_write(void* param, int stream, void* packet, size_t bytes)
 	fwrite(packet, bytes, 1, (FILE*)param);
 }
 
-inline const char* ps_type(int type)
+static inline const char* ps_type(int type)
 {
 	switch (type)
 	{
