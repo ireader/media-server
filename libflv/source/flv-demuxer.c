@@ -144,6 +144,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 
 	if (FLV_VIDEO_H264 == flv->video.codecid)
 	{
+		if (bytes < 5)
+			return 0; // ignore
 		packetType = data[1];
 		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
 		//if (compositionTime >= (1 << 23)) compositionTime -= (1 << 24);
@@ -188,6 +190,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	}
 	else if (FLV_VIDEO_H265 == flv->video.codecid)
 	{
+		if (bytes < 5)
+			return 0; // ignore
 		packetType = data[1];
 		compositionTime = (data[2] << 16) | (data[3] << 8) | data[4];
 		//if (compositionTime >= (1 << 23)) compositionTime -= (1 << 24);
