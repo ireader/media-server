@@ -174,6 +174,7 @@ struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param
 	if(!ps)
 		return NULL;
 
+	ps->pkhd.mpeg2 = 1;
     ps->onpacket = onpacket;
 	ps->param = param;
 	return ps;
