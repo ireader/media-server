@@ -172,7 +172,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	}
 
 	// has video frame
-	if (flv->vcl)
+	if (flv->vcl && flv->avc_sequence_header)
 	{
 		compositionTime = pts - dts;
 		flv->ptr[0] = ((1==flv->vcl ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
@@ -226,7 +226,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	}
 
 	// has video frame
-	if (flv->vcl)
+	if (flv->vcl && flv->avc_sequence_header)
 	{
 		compositionTime = pts - dts;
 		flv->ptr[0] = ((1==flv->vcl ? 1 : 2) << 4) /*FrameType*/ | FLV_VIDEO_H265 /*CodecID*/;
