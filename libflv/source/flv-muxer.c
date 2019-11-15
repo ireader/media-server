@@ -29,6 +29,7 @@ struct flv_muxer_t
 		struct mpeg4_hevc_t hevc;
 	} v;
 	int vcl; // 0-non vcl, 1-idr, 2-p/b
+	int update; // avc/hevc sequence header update
 
 	uint8_t* ptr;
 	size_t bytes;
@@ -62,7 +63,7 @@ void flv_muxer_destroy(struct flv_muxer_t* flv)
 
 int flv_muxer_reset(struct flv_muxer_t* flv)
 {
-	flv->v.avc.nalu = 4;
+	memset(&flv->v, 0, sizeof(flv->v));
 	flv->aac_sequence_header = 0;
 	flv->avc_sequence_header = 0;
 	return 0;
@@ -154,7 +155,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	int r;
 	int m, compositionTime;
 
-	if (0 == flv->avc_sequence_header && flv->v.avc.nb_sps > 0 && flv->v.avc.nb_pps > 0)
+	if ( /*0 == flv->avc_sequence_header &&*/ flv->update && flv->v.avc.nb_sps > 0 && flv->v.avc.nb_pps > 0)
 	{
 		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_H264 /*CodecID*/;
 		flv->ptr[flv->bytes + 1] = 0; // AVC sequence header
@@ -196,7 +197,7 @@ int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	}
 
 	flv->bytes = 5;
-	flv->bytes += h264_annexbtomp4(&flv->v.avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl);
+	flv->bytes += h264_annexbtomp4(&flv->v.avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return ENOMEM;
 
@@ -208,7 +209,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	int r;
 	int m, compositionTime;
 
-	if (0 == flv->avc_sequence_header && flv->v.hevc.numOfArrays >= 3) // vps + sps + pps
+	if ( /*0 == flv->avc_sequence_header &&*/ flv->v.hevc.numOfArrays >= 3) // vps + sps + pps
 	{
 		flv->ptr[flv->bytes + 0] = (1 << 4) /*FrameType*/ | FLV_VIDEO_H265 /*CodecID*/;
 		flv->ptr[flv->bytes + 1] = 0; // HEVC sequence header
