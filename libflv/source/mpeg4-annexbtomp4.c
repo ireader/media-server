@@ -264,11 +264,11 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 			mp4->avc->compatibility = ((uint8_t*)nalu)[2];
 			mp4->avc->level = ((uint8_t*)nalu)[3];
 		}
-		return;
+        break;
 
 	case H264_NAL_PPS:
 		h264_pps_copy(mp4, nalu, bytes);
-		return;
+        break;
 
 #if defined(H2645_FILTER_AUD)
 	case H264_NAL_AUD:
