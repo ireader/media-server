@@ -268,6 +268,7 @@ int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t byte
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
+void hevc_annexbtomp4_test(void);
 void mpeg4_hevc_test(void)
 {
 	const unsigned char src[] = {
@@ -303,5 +304,7 @@ void mpeg4_hevc_test(void)
 
 	assert(sizeof(nalu) == mpeg4_hevc_to_nalu(&hevc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));
+
+	hevc_annexbtomp4_test();
 }
 #endif

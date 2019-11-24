@@ -7,7 +7,7 @@
 #include <assert.h>
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
-extern "C" void h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
+extern "C" void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
 
 #define H264_NAL(v)	(v & 0x1F)
 
@@ -103,7 +103,7 @@ void mov_writer_h264(const char* h264, int width, int height, const char* mp4)
 
 	FILE* fp = fopen(mp4, "wb+");
 	ctx.mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
-	h264_annexb_nalu(ptr, bytes, h264_handler, &ctx);
+	mpeg4_h264_annexb_nalu(ptr, bytes, h264_handler, &ctx);
 	mov_writer_destroy(ctx.mov);
 
 	fclose(fp);

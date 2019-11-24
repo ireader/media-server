@@ -223,6 +223,7 @@ int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes)
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
+void mpeg4_annexbtomp4_test(void);
 void mpeg4_avc_test(void)
 {
 	const unsigned char src[] = {
@@ -248,5 +249,7 @@ void mpeg4_avc_test(void)
 
 	assert(sizeof(nalu) == mpeg4_avc_to_nalu(&avc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));
+
+	mpeg4_annexbtomp4_test();
 }
 #endif

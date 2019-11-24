@@ -24,7 +24,7 @@ struct h264_annexbtomp4_handle_t
 	int* update; // avc sps/pps update flags
 	int* vcl;
 
-	uint8_t* ptr;
+	uint8_t* out;
 	size_t bytes;
 	size_t capacity;
 };
@@ -42,7 +42,7 @@ static const uint8_t* h264_startcode(const uint8_t *data, size_t bytes)
 }
 
 ///@param[in] h264 H.264 byte stream format data(A set of NAL units)
-void h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void* param, const void* nalu, size_t bytes), void* param)
+void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void* param, const void* nalu, size_t bytes), void* param)
 {
 	ptrdiff_t n;
 	const unsigned char* p, *next, *end;
@@ -74,7 +74,7 @@ void h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void* para
 	}
 }
 
-static uint8_t h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset)
+uint8_t mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset)
 {
 	int bit, i;
 	int leadingZeroBits = -1;
@@ -129,12 +129,12 @@ static int h264_sps_copy(struct h264_annexbtomp4_handle_t* mp4, const uint8_t* n
 	}
 
 	offset = 4 * 8; // 1-NALU + 3-profile+flags+level
-	spsid = h264_read_ue(nalu, bytes, &offset);
+	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
 
 	for (i = 0; i < mp4->avc->nb_sps; i++)
 	{
 		offset = 4 * 8; // reset offset
-		if (spsid == h264_read_ue(mp4->avc->sps[i].data, mp4->avc->sps[i].bytes, &offset))
+		if (spsid == mpeg4_h264_read_ue(mp4->avc->sps[i].data, mp4->avc->sps[i].bytes, &offset))
 		{
 			if (bytes == mp4->avc->sps[i].bytes && 0 == memcmp(nalu, mp4->avc->sps[i].data, bytes))
 				return 0; // do nothing
@@ -192,13 +192,13 @@ static int h264_pps_copy(struct h264_annexbtomp4_handle_t* mp4, const uint8_t* n
 	}
 
 	offset = 1 * 8; // 1-NALU
-	spsid = h264_read_ue(nalu, bytes, &offset);
-	ppsid = h264_read_ue(nalu, bytes, &offset);
+	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
+	ppsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
 
 	for (i = 0; i < mp4->avc->nb_pps; i++)
 	{
 		offset = 1 * 8; // reset offset
-		if (spsid == h264_read_ue(mp4->avc->pps[i].data, mp4->avc->pps[i].bytes, &offset) && ppsid == h264_read_ue(mp4->avc->pps[i].data, mp4->avc->pps[i].bytes, &offset))
+		if (spsid == mpeg4_h264_read_ue(mp4->avc->pps[i].data, mp4->avc->pps[i].bytes, &offset) && ppsid == mpeg4_h264_read_ue(mp4->avc->pps[i].data, mp4->avc->pps[i].bytes, &offset))
 		{
 			if (bytes == mp4->avc->pps[i].bytes && 0 == memcmp(nalu, mp4->avc->pps[i].data, bytes))
 				return 0; // do nothing
@@ -282,11 +282,11 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 
 	if (mp4->capacity >= mp4->bytes + bytes + 4)
 	{
-		mp4->ptr[mp4->bytes + 0] = (uint8_t)((bytes >> 24) & 0xFF);
-		mp4->ptr[mp4->bytes + 1] = (uint8_t)((bytes >> 16) & 0xFF);
-		mp4->ptr[mp4->bytes + 2] = (uint8_t)((bytes >> 8) & 0xFF);
-		mp4->ptr[mp4->bytes + 3] = (uint8_t)((bytes >> 0) & 0xFF);
-		memcpy(mp4->ptr + mp4->bytes + 4, nalu, bytes);
+		mp4->out[mp4->bytes + 0] = (uint8_t)((bytes >> 24) & 0xFF);
+		mp4->out[mp4->bytes + 1] = (uint8_t)((bytes >> 16) & 0xFF);
+		mp4->out[mp4->bytes + 2] = (uint8_t)((bytes >> 8) & 0xFF);
+		mp4->out[mp4->bytes + 3] = (uint8_t)((bytes >> 0) & 0xFF);
+		memcpy(mp4->out + mp4->bytes + 4, nalu, bytes);
 		mp4->bytes += bytes + 4;
 	}
 	else
@@ -304,7 +304,7 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 	h.avc = avc;
 	h.vcl = vcl;
 	h.update = update;
-	h.ptr = (uint8_t*)out;
+	h.out = (uint8_t*)out;
 	h.capacity = size;
 	if (vcl) *vcl = 0;
 	if (update) *update = 0;
@@ -321,7 +321,7 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 			h.avcptr = avc->pps[i].data + avc->pps[i].bytes;
 	}
 	
-	h264_annexb_nalu(data, bytes, h264_handler, &h);
+	mpeg4_h264_annexb_nalu(data, bytes, h264_handler, &h);
 	avc->nalu = 4;
 	return 0 == h.errcode ? h.bytes : 0;
 }

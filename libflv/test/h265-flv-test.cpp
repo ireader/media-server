@@ -12,7 +12,7 @@ struct h264_raw_t
 	const uint8_t* ptr;
 };
 
-extern "C" void h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
+extern "C" void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
 
 static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
@@ -46,7 +46,7 @@ void hevc2flv_test(const char* inputH265, const char* outputFLV)
 	static uint8_t buffer[4 * 1024 * 1024];
 	size_t n = fread(buffer, 1, sizeof(buffer), fp);
 	ctx.ptr = buffer;
-	h264_annexb_nalu(buffer, n, h265_handler, &ctx);
+	mpeg4_h264_annexb_nalu(buffer, n, h265_handler, &ctx);
 	fclose(fp);
 
 	flv_muxer_destroy(ctx.flv);

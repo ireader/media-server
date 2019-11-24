@@ -7,7 +7,7 @@
 #include <assert.h>
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
-extern "C" void h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
+extern "C" void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
 
 #define H265_NAL(v)	((v >> 1) & 0x3F)
 
@@ -58,7 +58,8 @@ static uint8_t* file_read(const char* file, long* size)
 static int h265_write(struct mov_h265_test_t* ctx, const void* data, int bytes)
 {
 	int vcl = 0;
-	int n = h265_annexbtomp4(&ctx->hevc, data, bytes, s_buffer, sizeof(s_buffer), &vcl);
+	int update = 0;
+	int n = h265_annexbtomp4(&ctx->hevc, data, bytes, s_buffer, sizeof(s_buffer), &vcl, &update);
 
 	if (ctx->track < 0)
 	{
@@ -141,7 +142,7 @@ void mov_writer_h265(const char* h265, int width, int height, const char* mp4)
 
 	FILE* fp = fopen(mp4, "wb+");
 	ctx.mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
-	h264_annexb_nalu(ptr, bytes, h265_handler, &ctx);
+	mpeg4_h264_annexb_nalu(ptr, bytes, h265_handler, &ctx);
 	mov_writer_destroy(ctx.mov);
 
 	fclose(fp);
