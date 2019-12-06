@@ -99,8 +99,9 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 
 static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moof)
 {
-	size_t size, i;
+	size_t size, i, j;
 	uint64_t offset;
+	uint64_t n;
 
 	size = 8 /* Box */;
 	offset = mov_buffer_tell(&mov->io);
@@ -109,9 +110,19 @@ static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moo
 
 	size += mov_write_mfhd(mov, fragment);
 
+	n = 0;
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
+
+		// rewrite offset, write only one trun
+		// 2017/10/17 Dale Curtis SHA-1: a5fd8aa45b11c10613e6e576033a6b5a16b9cbb9 (libavformat/mov.c)
+		for (j = 0; j < mov->track->sample_count; j++)
+		{
+			mov->track->samples[j].offset = n;
+			n += mov->track->samples[j].bytes;
+		}
+
 		if (mov->track->sample_count > 0)
 			size += fmp4_write_traf(mov, moof);
 	}
