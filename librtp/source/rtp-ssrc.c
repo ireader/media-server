@@ -5,6 +5,7 @@
 
 #if defined(OS_WINDOWS) || defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#include <wincrypt.h>
 
 uint32_t rtp_ssrc(void)
 {
