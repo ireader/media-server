@@ -31,7 +31,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 
 	// program stream descriptor
 	program_stream_info_length = (data[8] << 8) | data[9];
-	if (program_stream_info_length + 6 > bytes)
+	if ((size_t)program_stream_info_length + 6 > bytes)
 		return bytes; // TODO: error
 
 	// TODO: parse descriptor

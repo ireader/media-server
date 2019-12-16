@@ -116,7 +116,7 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
 
         return mpeg_packet_h264_h265(pkt, pes, size, handler, param);
     }
-    else if (0 == pes->len)
+    else if (0 == pes->len || PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
     {
         // use timestamp to split packet
         assert(PTS_NO_VALUE != pes->dts);
