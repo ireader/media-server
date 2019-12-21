@@ -3,6 +3,7 @@
 #include "mpeg4-hevc.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-aac.h"
+#include "aom-av1.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,8 +17,10 @@ static FILE *s_vfp, *s_afp;
 static struct mpeg4_hevc_t s_hevc;
 static struct mpeg4_avc_t s_avc;
 static struct mpeg4_aac_t s_aac;
+static struct aom_av1_t s_av1;
 static uint32_t s_aac_track = 0xFFFFFFFF;
 static uint32_t s_avc_track = 0xFFFFFFFF;
+static uint32_t s_av1_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
 
 inline const char* ftimestamp(uint32_t t, char* buf)
@@ -50,6 +53,15 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		int n = h265_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
+	else if (s_av1_track == track)
+	{
+		printf("[AV1] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
+		v_pts = pts;
+		v_dts = dts;
+
+		//int n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
+		//fwrite(s_packet, 1, n, s_vfp);
+	}
 	else if (s_aac_track == track)
 	{
 		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts));
@@ -80,6 +92,12 @@ static void mov_video_info(void* /*param*/, uint32_t track, uint8_t object, int 
 		s_vfp = fopen("v.h265", "wb");
 		s_hevc_track = track;
 		mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_hevc);
+	}
+	else if (MOV_OBJECT_AV1 == object)
+	{
+		s_vfp = fopen("v.obus", "wb");
+		s_av1_track = track;
+		aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1);
 	}
 	else
 	{

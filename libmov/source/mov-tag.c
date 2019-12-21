@@ -21,6 +21,7 @@ static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'e', 't', 't') },
 	{ MOV_OBJECT_TEXT,	MOV_TAG('c', '6', '0', '8') },
     { MOV_OBJECT_OPUS,  MOV_OPUS },
+	{ MOV_OBJECT_AV1,	MOV_AV1 },
 };
 
 uint32_t mov_object_to_tag(uint8_t object)

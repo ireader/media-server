@@ -23,6 +23,7 @@
 #define MOV_OBJECT_OPUS		0xAD // Opus audio
 #define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
 #define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
+#define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001

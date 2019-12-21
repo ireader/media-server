@@ -172,6 +172,7 @@ static int mov_read_default(struct mov_t* mov, const struct mov_box_t* box)
 }
 
 static struct mov_parse_t s_mov_parse_table[] = {
+	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_av1c }, // av1-isobmff
 	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },

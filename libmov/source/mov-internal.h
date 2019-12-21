@@ -40,6 +40,7 @@
 #define MOV_MP4A MOV_TAG('m', 'p', '4', 'a') // AAC
 #define MOV_MP4S MOV_TAG('m', 'p', '4', 's') // ISO/IEC 14496-14:2003(E) 5.6 Sample Description Boxes (p14)
 #define MOV_OPUS MOV_TAG('O', 'p', 'u', 's') // http://www.opus-codec.org/docs/opus_in_isobmff.html
+#define MOV_AV1  MOV_TAG('a', 'v', '0', '1') // https://aomediacodec.github.io/av1-isobmff
 
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor
 // Table 6 - streamType Values (p51)
@@ -215,6 +216,7 @@ int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_av1c(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tx3g(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box);
@@ -249,6 +251,7 @@ size_t mov_write_stsz(const struct mov_t* mov);
 size_t mov_write_esds(const struct mov_t* mov);
 size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
+size_t mov_write_av1c(const struct mov_t* mov);
 size_t mov_write_tx3g(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);

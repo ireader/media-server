@@ -30,6 +30,7 @@
     <ClInclude Include="source\mov-ioutil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\mov-av1.c" />
     <ClCompile Include="source\mov-avc1.c" />
     <ClCompile Include="source\mov-dinf.c" />
     <ClCompile Include="source\mov-elst.c" />
