@@ -29,23 +29,23 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 		break;
 
 	case FLV_VIDEO_H264:
-		return mov_writer_write(mov, s_avc_track, data, bytes, pts, dts, flags);
-	
 	case FLV_VIDEO_H265:
+	case FLV_VIDEO_AV1:
 		return mov_writer_write(mov, s_avc_track, data, bytes, pts, dts, flags);
 
 	case FLV_VIDEO_AVCC:
 		if (-1 == s_avc_track)
-		{
 			 s_avc_track = mov_writer_add_video(mov, MOV_OBJECT_H264, s_width, s_height, data, bytes);
-		}
 		break;
 
 	case FLV_VIDEO_HVCC:
 		if (-1 == s_avc_track)
-		{
 			s_avc_track = mov_writer_add_video(mov, MOV_OBJECT_HEVC, s_width, s_height, data, bytes);
-		}
+		break;
+
+	case FLV_VIDEO_AV1C:
+		if (-1 == s_avc_track)
+			s_avc_track = mov_writer_add_video(mov, MOV_OBJECT_AV1, s_width, s_height, data, bytes);
 		break;
 
 	case FLV_AUDIO_ASC:

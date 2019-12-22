@@ -11,6 +11,9 @@
 #define N_TAG_HEADER		11		// StreamID included
 #define N_TAG_SIZE			4		// previous tag size
 
+#define FLV_VIDEO_CODEC_NAME(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_AVCC : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_HVCC : FLV_VIDEO_AV1C))
+#define FLV_VIDEO_CODEC_TYPE(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_H264 : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_H265 : FLV_VIDEO_AV1))
+
 struct flv_audio_tag_t
 {
 	uint8_t format; // 1-ADPCM, 2-MP3, 10-AAC, 14-MP3 8kHz
@@ -99,7 +102,7 @@ static int flv_parser_video(struct flv_parser_t* flv, const uint8_t* data, size_
 	flv->video.frame = (data[0] & 0xF0) >> 4;
 	flv->video.codecid = (data[0] & 0x0F);
 
-	if (FLV_VIDEO_H264 == flv->video.codecid || FLV_VIDEO_H265 == flv->video.codecid)
+	if (FLV_VIDEO_H264 == flv->video.codecid || FLV_VIDEO_H265 == flv->video.codecid || FLV_VIDEO_AV1 == flv->video.codecid)
 	{
 		if (bytes < 5) return -EINVAL;
 
@@ -112,11 +115,11 @@ static int flv_parser_video(struct flv_parser_t* flv, const uint8_t* data, size_
 		{
 			// AVCDecoderConfigurationRecord
 			assert(bytes > 5 + 7);
-			return flv->handler(flv->param, FLV_VIDEO_H264 == flv->video.codecid ? FLV_VIDEO_AVCC : FLV_VIDEO_HVCC, data + 5, bytes - 5, timestamp, timestamp, 0);
+			return flv->handler(flv->param, FLV_VIDEO_CODEC_NAME(flv->video.codecid), data + 5, bytes - 5, timestamp, timestamp, 0);
 		}
 		else if (1 == packetType)
 		{
-			return flv->handler(flv->param, FLV_VIDEO_H264 == flv->video.codecid ? FLV_VIDEO_H264 : FLV_VIDEO_H265, data + 5, bytes - 5, timestamp + compositionTime, timestamp, (FLV_VIDEO_KEY_FRAME == flv->video.frame) ? 1 : 0);
+			return flv->handler(flv->param, FLV_VIDEO_CODEC_TYPE(flv->video.codecid), data + 5, bytes - 5, timestamp + compositionTime, timestamp, (FLV_VIDEO_KEY_FRAME == flv->video.frame) ? 1 : 0);
 		}
 		else if (2 == packetType)
 		{

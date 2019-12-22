@@ -57,6 +57,9 @@
     <ClInclude Include="include\aom-av1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\flv-tag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">

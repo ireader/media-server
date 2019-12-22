@@ -27,6 +27,7 @@
     <ClInclude Include="include\flv-parser.h" />
     <ClInclude Include="include\flv-proto.h" />
     <ClInclude Include="include\flv-reader.h" />
+    <ClInclude Include="include\flv-tag.h" />
     <ClInclude Include="include\flv-writer.h" />
     <ClInclude Include="include\mp3-header.h" />
     <ClInclude Include="include\mpeg4-aac.h" />
