@@ -47,6 +47,7 @@ struct rtp_payload_decode_t
 struct rtp_payload_encode_t *rtp_ts_encode();
 struct rtp_payload_encode_t *rtp_vp8_encode();
 struct rtp_payload_encode_t *rtp_vp9_encode();
+struct rtp_payload_encode_t *rtp_av1_encode();
 struct rtp_payload_encode_t *rtp_h264_encode();
 struct rtp_payload_encode_t *rtp_h265_encode();
 struct rtp_payload_encode_t *rtp_common_encode();
@@ -58,6 +59,7 @@ struct rtp_payload_encode_t *rtp_mpeg1or2es_encode();
 struct rtp_payload_decode_t *rtp_ts_decode();
 struct rtp_payload_decode_t *rtp_vp8_decode();
 struct rtp_payload_decode_t *rtp_vp9_decode();
+struct rtp_payload_decode_t *rtp_av1_decode();
 struct rtp_payload_decode_t *rtp_h264_decode();
 struct rtp_payload_decode_t *rtp_h265_decode();
 struct rtp_payload_decode_t *rtp_common_decode();
