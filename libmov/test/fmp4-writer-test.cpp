@@ -64,18 +64,16 @@ void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	FILE* fp = fopen(outmp4, "wb+");
 	void* flv = flv_reader_create(inflv);
 	fmp4_writer_t* mov = fmp4_writer_create(mov_file_buffer(), fp, 0);
-	flv_parser_t* parser = flv_parser_create(onFLV, mov);
-
+	
 	s_width = w;
 	s_height = h;
 	while ((r = flv_reader_read(flv, &type, &timestamp, s_buffer, sizeof(s_buffer))) > 0)
 	{
-		r = flv_parser_input(parser, type, s_buffer, r, timestamp);
+		r = flv_parser_input(type, s_buffer, r, timestamp, onFLV, mov);
 		assert(r >= 0);
 	}
 
 	fmp4_writer_destroy(mov);
 	flv_reader_destroy(flv);
-	flv_parser_destroy(parser);
 	fclose(fp);
 }

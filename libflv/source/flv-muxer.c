@@ -1,6 +1,6 @@
 #include "flv-muxer.h"
 #include "flv-proto.h"
-#include "flv-tag.h"
+#include "flv-header.h"
 #include "amf0.h"
 #include <stdio.h>
 #include <errno.h>
@@ -22,8 +22,6 @@ struct flv_muxer_t
 
 	uint8_t audio_sequence_header;
 	uint8_t video_sequence_header;
-	struct flv_audio_tag_header_t audio;
-	struct flv_video_tag_header_t video;
 
 	struct mpeg4_aac_t aac;
 	union
@@ -87,6 +85,7 @@ static int flv_muxer_alloc(struct flv_muxer_t* flv, size_t bytes)
 int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	struct mp3_header_t mp3;
+	struct flv_audio_tag_header_t audio;
 	(void)pts;
 
 	if (0 == mp3_header_load(&mp3, data, bytes))
@@ -95,14 +94,14 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	}
 	else
 	{
-		flv->audio.channels = 3 == mp3.mode ? 0 : 1;
+		audio.channels = 3 == mp3.mode ? 0 : 1;
 		switch (mp3_get_frequency(&mp3))
 		{
-		case 5500: flv->audio.rate = 0; break;
-		case 11000: flv->audio.rate = 1; break;
-		case 22000: flv->audio.rate = 2; break;
-		case 44100: flv->audio.rate = 3; break;
-		default: flv->audio.rate = 3;
+		case 5500: audio.rate = 0; break;
+		case 11000: audio.rate = 1; break;
+		case 22000: audio.rate = 2; break;
+		case 44100: audio.rate = 3; break;
+		default: audio.rate = 3;
 		}
 	}
 
@@ -112,9 +111,10 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 			return ENOMEM;
 	}
 
-	flv->audio.bits = 1; // 16-bit samples
-	flv->audio.codecid = FLV_AUDIO_MP3;
-	flv_audio_tag_header(&flv->audio, 0, flv->ptr, 1);
+	audio.bits = 1; // 16-bit samples
+	audio.codecid = FLV_AUDIO_MP3;
+	audio.avpacket = FLV_AVPACKET;
+	flv_audio_tag_header_write(&audio, flv->ptr, 1);
 	memcpy(flv->ptr + 1, data, bytes); // MP3
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
 }
@@ -122,6 +122,7 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
 	int r, n, m;
+	struct flv_audio_tag_header_t audio;
 	(void)pts;
 
 	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
@@ -135,23 +136,25 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	if (n <= 0)
 		return -1; // invalid data
 
-	flv->audio.codecid = FLV_AUDIO_AAC;
-	flv->audio.rate = 3; // 44k-SoundRate
-	flv->audio.bits = 1; // 16-bit samples
-	flv->audio.channels = 1; // Stereo sound
+	audio.codecid = FLV_AUDIO_AAC;
+	audio.rate = 3; // 44k-SoundRate
+	audio.bits = 1; // 16-bit samples
+	audio.channels = 1; // Stereo sound
 	if (0 == flv->audio_sequence_header)
 	{
 		flv->audio_sequence_header = 1; // once only
+		audio.avpacket = FLV_SEQUENCE_HEADER;
 
 		// AudioSpecificConfig(AAC sequence header)
-		flv_audio_tag_header(&flv->audio, 0, flv->ptr, flv->capacity);
+		flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
 		m = mpeg4_aac_audio_specific_config_save(&flv->aac, flv->ptr + 2, flv->capacity - 2);
 		assert(m + 2 <= (int)flv->capacity);
 		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + 2, dts);
 		if (0 != r) return r;
 	}
 
-	flv_audio_tag_header(&flv->audio, 1, flv->ptr, flv->capacity);
+	audio.avpacket = FLV_AVPACKET;
+	flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
 	memcpy(flv->ptr + 2, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
 	assert(bytes - n + 2 <= (int)flv->capacity);
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
@@ -160,13 +163,16 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 {
 	int r;
-	int m, compositionTime;
+	int m;
+	struct flv_video_tag_header_t video;
 
-	flv->video.codecid = FLV_VIDEO_H264;
+	video.codecid = FLV_VIDEO_H264;
 	if ( /*0 == flv->video_sequence_header &&*/ flv->update && flv->v.avc.nb_sps > 0 && flv->v.avc.nb_pps > 0)
 	{
-		flv->video.keyframe = 1; // keyframe
-		flv_video_tag_header(&flv->video, 0, 0, flv->ptr, flv->capacity);
+		video.cts = 0;
+		video.keyframe = 1; // keyframe
+		video.avpacket = FLV_SEQUENCE_HEADER;
+		flv_video_tag_header_write(&video, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
 		m = mpeg4_avc_decoder_configuration_record_save(&flv->v.avc, flv->ptr + flv->bytes + 5, flv->capacity - flv->bytes - 5);
 		if (m <= 0)
 			return -1; // invalid data
@@ -180,9 +186,10 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	// has video frame
 	if (flv->vcl && flv->video_sequence_header)
 	{
-		compositionTime = pts - dts;
-		flv->video.keyframe = 1 == flv->vcl ? 1 : 2;
-		flv_video_tag_header(&flv->video, 1, compositionTime, flv->ptr, flv->capacity);
+		video.cts = pts - dts;
+		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.avpacket = FLV_AVPACKET;
+		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
@@ -208,13 +215,16 @@ int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 {
 	int r;
-	int m, compositionTime;
+	int m;
+	struct flv_video_tag_header_t video;
 
-	flv->video.codecid = FLV_VIDEO_H265;
+	video.codecid = FLV_VIDEO_H265;
 	if ( /*0 == flv->avc_sequence_header &&*/ flv->update && flv->v.hevc.numOfArrays >= 3) // vps + sps + pps
 	{
-		flv->video.keyframe = 1; // keyframe
-		flv_video_tag_header(&flv->video, 0, 0, flv->ptr, flv->capacity);
+		video.cts = 0;
+		video.keyframe = 1; // keyframe
+		video.avpacket = FLV_SEQUENCE_HEADER;
+		flv_video_tag_header_write(&video, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
 		m = mpeg4_hevc_decoder_configuration_record_save(&flv->v.hevc, flv->ptr + flv->bytes + 5, flv->capacity - flv->bytes - 5);
 		if (m <= 0)
 			return -1; // invalid data
@@ -228,9 +238,10 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	// has video frame
 	if (flv->vcl && flv->video_sequence_header)
 	{
-		compositionTime = pts - dts;
-		flv->video.keyframe = 1 == flv->vcl ? 1 : 2;
-		flv_video_tag_header(&flv->video, 1, compositionTime, flv->ptr, flv->capacity);
+		video.cts = pts - dts;
+		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.avpacket = FLV_AVPACKET;
+		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}

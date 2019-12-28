@@ -41,6 +41,7 @@
     <ClCompile Include="source\aom-av1.c" />
     <ClCompile Include="source\flv-demuxer-script.c" />
     <ClCompile Include="source\flv-demuxer.c" />
+    <ClCompile Include="source\flv-header.c" />
     <ClCompile Include="source\flv-muxer.c" />
     <ClCompile Include="source\flv-parser.c" />
     <ClCompile Include="source\flv-reader.c" />

@@ -177,7 +177,7 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     subtitle = &track->stsd.entries[0];
     subtitle->data_reference_index = 1;
     subtitle->object_type_indication = object;
-    subtitle->stream_type = MP4_STREAM_VISUAL; // Visually composed tracks including video and text are layered using the ¡®layer¡¯ value.
+    subtitle->stream_type = MP4_STREAM_VISUAL; // Visually composed tracks including video and text are layered using the 'layer' value.
 
     assert(0 != mov_object_to_tag(object));
     track->tag = mov_object_to_tag(object);

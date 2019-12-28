@@ -119,8 +119,6 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
     uint32_t diff = 0;
     uint64_t clock;
 
-    flv_parser_t* parser = flv_parser_create(dash_live_onflv, dash);
-
     while (1)
     {
         void* f = flv_reader_create(file);
@@ -136,7 +134,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
 
             timestamp += diff;
             s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
-            r = flv_parser_input(parser, type, dash->packet, r, timestamp);
+            r = flv_parser_input(type, dash->packet, r, timestamp, dash_live_onflv, dash);
             if (0 != r)
             {
                 assert(0);
@@ -148,8 +146,6 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
 
         diff = s_timestamp + 30;
     }
-
-    flv_parser_destroy(parser);
 }
 
 static int dash_server_mpd(http_session_t* session, dash_playlist_t* dash)

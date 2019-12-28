@@ -93,7 +93,7 @@ void flv_reader_test(const char* file)
 
 	int type, r = 0;
 	uint32_t timestamp;
-	while ((r = flv_reader_read(reader, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while ((r = flv_reader_read(reader, &type, &timestamp, packet, sizeof(packet))) >= 0)
 	{
 		r = flv_demuxer_input(flv, type, packet, r, timestamp);
 		if (r < 0)

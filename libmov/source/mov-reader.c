@@ -485,7 +485,7 @@ int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_
 
 uint64_t mov_reader_getduration(struct mov_reader_t* reader)
 {
-	return reader->mov.mvhd.duration * 1000 / reader->mov.mvhd.timescale;
+	return 0 != reader->mov.mvhd.timescale ? reader->mov.mvhd.duration * 1000 / reader->mov.mvhd.timescale : 0;
 }
 
 #define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))

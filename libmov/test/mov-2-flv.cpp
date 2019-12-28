@@ -3,9 +3,9 @@
 #include "mpeg4-avc.h"
 #include "mpeg4-aac.h"
 #include "flv-proto.h"
+#include "flv-header.h"
 #include "flv-writer.h"
 #include "flv-muxer.h"
-#include "flv-tag.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,17 +52,19 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	if (s_avc_track == track)
 	{
 		int keyframe = (FLV_VIDEO_H264 == s_video_type || FLV_VIDEO_H265 == s_video_type) ? iskeyframe((const uint8_t*)buffer, bytes) : flags;
-		int compositionTime = (int)(pts - dts);
 		printf("[V] pts: %08lld, dts: %08lld%s\n", pts, dts, keyframe ? " [I]" : "");
 		s_video_tag.keyframe = (keyframe ? 1 : 2);
-		flv_video_tag_header(&s_video_tag, 1, compositionTime, s_packet, sizeof(s_packet));
+		s_video_tag.avpacket = FLV_AVPACKET;
+		s_video_tag.cts = (int32_t)(pts - dts);
+		flv_video_tag_header_write(&s_video_tag, s_packet, sizeof(s_packet));
 		memcpy(s_packet + 5, buffer, bytes);
 		flv_writer_input(flv, 9, s_packet, bytes + 5, (uint32_t)dts);
 	}
 	else if (s_aac_track == track)
 	{
 		printf("[A] pts: %08lld, dts: %08lld\n", pts, dts);
-		flv_audio_tag_header(&s_audio_tag, 1, s_packet, sizeof(s_packet));
+		s_audio_tag.avpacket = FLV_AVPACKET;
+		flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
 		memcpy(s_packet + 2, buffer, bytes); // AAC exclude ADTS
 		flv_writer_input(flv, 8, s_packet, bytes + 2, (uint32_t)dts);
 	}
@@ -79,7 +81,9 @@ static void mov_video_info(void* flv, uint32_t track, uint8_t object, int /*widt
 	s_video_type = MOV_OBJECT_H264 == object ? FLV_VIDEO_H264 : (MOV_OBJECT_HEVC == object ? FLV_VIDEO_H265 : FLV_VIDEO_AV1);
 	s_video_tag.codecid = s_video_type;
 	s_video_tag.keyframe = 1;
-	flv_video_tag_header(&s_video_tag, 0, 0, s_packet, sizeof(s_packet));
+	s_video_tag.avpacket = FLV_SEQUENCE_HEADER;
+	s_video_tag.cts = 0;
+	flv_video_tag_header_write(&s_video_tag, s_packet, sizeof(s_packet));
 	memcpy(s_packet + 5, extra, bytes);
 	flv_writer_input(flv, FLV_TYPE_VIDEO, s_packet, bytes + 5, 0);
 }
@@ -92,7 +96,8 @@ static void mov_audio_info(void* flv, uint32_t track, uint8_t object, int channe
 	s_audio_tag.rate = 3; // 44k-SoundRate
 	s_audio_tag.bits = 1; // 16-bit samples
 	s_audio_tag.channels = 1; // Stereo sound
-	flv_audio_tag_header(&s_audio_tag, 0, s_packet, sizeof(s_packet));
+	s_audio_tag.avpacket = FLV_SEQUENCE_HEADER;
+	flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
 
 #if 1
 	struct mpeg4_aac_t aac;

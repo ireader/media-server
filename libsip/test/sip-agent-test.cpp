@@ -407,6 +407,7 @@ static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
 	{
 		//int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen);
 		sip_packet_t pkt;
+		memset(&pkt, 0, sizeof(pkt));
 		assert(0 == (sip_packet_t*)channel_pop(tu->q[idx], &pkt));
         if(pkt.ptr == CHANNEL_DONE)
             continue;

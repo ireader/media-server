@@ -49,18 +49,18 @@ void flv_read_write_test(const char* flv)
 	flv_muxer_t* e = flv_muxer_create(flv_onmuxer, w);
 	flv_demuxer_t* d = flv_demuxer_create(flv_ondemuxer, e);
 
-	struct flv_metadata_t metadata;
-	metadata.audiocodecid = 4;
-	metadata.audiodatarate = 16.1;
-	metadata.audiosamplerate = 48000;
-	metadata.audiosamplesize = 16;
-	metadata.stereo = true;
-	metadata.videocodecid = 7;
-	metadata.videodatarate = 64.0;
-	metadata.framerate = 25;
-	metadata.width = 1920;
-	metadata.height = 1080;
-	flv_muxer_metadata(e, &metadata);
+	//struct flv_metadata_t metadata;
+	//metadata.audiocodecid = 4;
+	//metadata.audiodatarate = 16.1;
+	//metadata.audiosamplerate = 48000;
+	//metadata.audiosamplesize = 16;
+	//metadata.stereo = true;
+	//metadata.videocodecid = 7;
+	//metadata.videodatarate = 64.0;
+	//metadata.framerate = 25;
+	//metadata.width = 1920;
+	//metadata.height = 1080;
+	//flv_muxer_metadata(e, &metadata);
 
 	int ret, tag;
 	uint32_t timestamp;

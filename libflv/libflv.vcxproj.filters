@@ -116,5 +116,8 @@
     <ClCompile Include="source\aom-av1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\flv-header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

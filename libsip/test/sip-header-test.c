@@ -6,6 +6,7 @@ void sip_header_via_test(void);
 void sip_header_cseq_test(void);
 void sip_header_substate_test(void);
 
+#if defined(_DEBUG) || defined(DEBUG)
 void sip_header_test(void)
 {
 	sip_header_param_test();
@@ -16,3 +17,4 @@ void sip_header_test(void)
 	sip_header_cseq_test();
 	sip_header_substate_test();
 }
+#endif
