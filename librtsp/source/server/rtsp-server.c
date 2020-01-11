@@ -18,7 +18,7 @@ struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port,
 	rtsp->param = ptr;
 	rtsp->sendparam = ptr2;
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
-	rtsp->parser = http_parser_create(HTTP_PARSER_SERVER);
+	rtsp->parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	return rtsp;
 }
 

@@ -14,6 +14,7 @@ H264FileSource::H264FileSource(const char *file)
 	m_status = 0;
 	m_rtp_clock = 0;
 	m_rtcp_clock = 0;
+	m_timestamp = 0;
 
 	uint32_t ssrc = rtp_ssrc();
 	static struct rtp_payload_t s_rtpfunc = {
@@ -25,7 +26,7 @@ H264FileSource::H264FileSource(const char *file)
 
 	struct rtp_event_t event;
 	event.on_rtcp = OnRTCPEvent;
-	m_rtp = rtp_create(&event, this, ssrc, ssrc, 90000, 4*1024, 1);
+	m_rtp = rtp_create(&event, this, ssrc, m_timestamp, 90000, 4*1024, 1);
 	rtp_set_info(m_rtp, "RTSPServer", "szj.h264");
 }
 
@@ -48,7 +49,7 @@ int H264FileSource::Play()
 {
 	m_status = 1;
 
-	uint32_t timestamp = 0;
+	//uint32_t timestamp = 0;
 	time64_t clock = time64_now();
 	if (0 == m_rtp_clock)
 		m_rtp_clock = clock;
@@ -59,9 +60,9 @@ int H264FileSource::Play()
 		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_payload_encode_input(m_rtppacker, ptr, bytes, timestamp * 90 /*kHz*/);
+			rtp_payload_encode_input(m_rtppacker, ptr, bytes, m_timestamp * 90 /*kHz*/);
 			m_rtp_clock += 40;
-			timestamp += 40;
+			m_timestamp += 40;
 
 			SendRTCP();
 			return 1;

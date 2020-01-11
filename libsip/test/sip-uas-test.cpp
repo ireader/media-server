@@ -132,7 +132,7 @@ void sip_uas_test(void)
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, &test);
-	test.parser = http_parser_create(HTTP_PARSER_SERVER);
+	test.parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);
 	sip_agent_destroy(test.sip);

@@ -400,8 +400,8 @@ static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struc
 
 static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
 {
-	http_parser_t* request = http_parser_create(HTTP_PARSER_CLIENT);
-	http_parser_t* response = http_parser_create(HTTP_PARSER_SERVER);
+	http_parser_t* request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
+	http_parser_t* response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 
 	while(channel_count(tu->q[idx]) > 0 || s_sip.running)
 	{

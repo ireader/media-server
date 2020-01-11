@@ -8,10 +8,6 @@
 #include <string>
 #include <stdio.h>
 
-#ifndef MAX_UDP_PACKET
-#define MAX_UDP_PACKET (1450-16)
-#endif
-
 class PCMFileSource : public IMediaSource
 {
 public:

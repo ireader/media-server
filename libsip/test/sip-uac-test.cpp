@@ -251,7 +251,7 @@ void sip_uac_test(void)
 
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, NULL);
-	test.parser = http_parser_create(HTTP_PARSER_CLIENT);
+	test.parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uac_register_test(&test);
 	sip_uac_message_test(&test);

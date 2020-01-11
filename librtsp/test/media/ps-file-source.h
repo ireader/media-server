@@ -9,10 +9,6 @@
 #include "rtp.h"
 #include <string>
 
-#ifndef MAX_UDP_PACKET
-#define MAX_UDP_PACKET (1450-16)
-#endif
-
 class PSFileSource : public IMediaSource
 {
 public:

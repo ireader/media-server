@@ -4,8 +4,6 @@
 #include "rtp-payload.h"
 #include <assert.h>
 
-#define MAX_UDP_PACKET (1450-16)
-
 extern "C" uint32_t rtp_ssrc(void);
 
 PSFileSource::PSFileSource(const char *file)

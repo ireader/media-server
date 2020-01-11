@@ -1071,8 +1071,8 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
 	http_parser_t* request;
 	http_parser_t* response;
 
-	request = http_parser_create(HTTP_PARSER_CLIENT);
-	response = http_parser_create(HTTP_PARSER_SERVER);
+	request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
+	response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 
     do
     {

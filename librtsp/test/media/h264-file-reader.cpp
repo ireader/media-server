@@ -96,7 +96,27 @@ static inline int h264_nal_type(const unsigned char* ptr)
     return H264_NAL(ptr[i+1]);
 }
 
-#define toOffset(ptr) (n - (m_bytes - (ptr - m_ptr)))
+static inline int h264_nal_new_access(const unsigned char* ptr, const uint8_t* end)
+{
+	int i = 2;
+	if (end - ptr < 4)
+		return 1;
+	assert(0x00 == ptr[0] && 0x00 == ptr[1]);
+	if (0x00 == ptr[2])
+		++i;
+	assert(0x01 == ptr[i]);
+	int nal_unit_type = H264_NAL(ptr[i + 1]);
+	if (nal_unit_type < 1 || nal_unit_type > 5)
+		return 1;
+
+	if (ptr + i + 2 > end)
+		return 1;
+
+	// Live555 H264or5VideoStreamParser::parse
+	// The high-order bit of the byte after the "nal_unit_header" tells us whether it's
+	// the start of a new 'access unit' (and thus the current NAL unit ends an 'access unit'):
+	return (ptr[i + 2] & 0x80) != 0 ? 1 : 0;
+}
 
 int H264FileReader::Init()
 {
@@ -110,11 +130,11 @@ int H264FileReader::Init()
 	while (p < end)
 	{
         const unsigned char* pn = search_start_code(p + 4, end);
-		size_t bytes = pn - p;
+		size_t bytes = pn - nalu;
 
         int nal_unit_type = h264_nal_type(p);
-        assert(0 != nal_unit_type);
-        if(nal_unit_type <= 5)
+		assert(0 != nal_unit_type);
+        if(nal_unit_type <= 5 && h264_nal_new_access(pn, end))
         {
             if(m_sps.size() > 0) spspps = false; // don't need more sps/pps
 

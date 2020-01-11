@@ -14,7 +14,7 @@ static struct sip_message_t* req2sip(const char* req)
 	msg = sip_message_create(SIP_MESSAGE_REQUEST);
 
 	size_t n = strlen(req);
-	http_parser_t* parser = http_parser_create(HTTP_PARSER_SERVER);
+	http_parser_t* parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	assert(0 == http_parser_input(parser, req, &n) && 0 == n);
 	assert(0 == sip_message_load(msg, parser));
 	http_parser_destroy(parser);
@@ -27,7 +27,7 @@ static struct sip_message_t* reply2sip(const char* reply)
 	msg = sip_message_create(SIP_MESSAGE_REPLY);
 
 	size_t n = strlen(reply);
-	http_parser_t* parser = http_parser_create(HTTP_PARSER_CLIENT);
+	http_parser_t* parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	assert(0 == http_parser_input(parser, reply, &n) && 0 == n);
 	assert(0 == sip_message_load(msg, parser));
 	http_parser_destroy(parser);
