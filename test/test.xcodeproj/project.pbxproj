@@ -14,7 +14,6 @@
 		461F0C5E231A23C700A995BD /* crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C5D231A23C700A995BD /* crc32.c */; };
 		461F0C66231A23D100A995BD /* hkdf.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C5F231A23D100A995BD /* hkdf.c */; };
 		461F0C67231A23D100A995BD /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C60231A23D100A995BD /* hmac.c */; };
-		461F0C68231A23D100A995BD /* md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C61231A23D100A995BD /* md5.c */; };
 		461F0C69231A23D100A995BD /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C62231A23D100A995BD /* sha1.c */; };
 		461F0C6A231A23D100A995BD /* sha.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C63231A23D100A995BD /* sha.c */; };
 		461F0C6B231A23D100A995BD /* sha224-256.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C64231A23D100A995BD /* sha224-256.c */; };
@@ -573,7 +572,7 @@
 		46C5B46F2183EEA800419E57 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1110;
 				ORGANIZATIONNAME = ireader;
 				TargetAttributes = {
 					46C5B4762183EEA800419E57 = {
@@ -587,6 +586,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 46C5B46E2183EEA800419E57;
 			productRefGroup = 46C5B4782183EEA800419E57 /* Products */;
@@ -698,7 +698,6 @@
 				46C5B4E02183EF6300419E57 /* mpeg-ps-dec-test.cpp in Sources */,
 				46C5B4B32183EF3C00419E57 /* rtp-udp-transport.cpp in Sources */,
 				46C5B4F22183EF6E00419E57 /* mov-writer-h264.cpp in Sources */,
-				461F0C68231A23D100A995BD /* md5.c in Sources */,
 				46A0D4FA229791040070E1F5 /* sip-agent-test.cpp in Sources */,
 				46C5B4842183EED100419E57 /* BinaryDiff.cpp in Sources */,
 				46C5B4B42183EF3C00419E57 /* rtsp-server-test.cpp in Sources */,
@@ -824,6 +823,7 @@
 		46C5B47F2183EEA800419E57 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -855,6 +855,7 @@
 		46C5B4802183EEA800419E57 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_PREPROCESSOR_DEFINITIONS = OS_MAC;
 				PRODUCT_NAME = "$(TARGET_NAME)";

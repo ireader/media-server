@@ -49,8 +49,8 @@ static inline int sip_register_check_to_domain(const struct sip_message_t* req)
 	int r;
 	struct uri_t* to;
 	struct uri_t* uri;
-	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
-	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
+	to = uri_parse(req->to.uri.host.p, (int)req->to.uri.host.n);
+	uri = uri_parse(req->u.c.uri.host.p, (int)req->u.c.uri.host.n);
 
 	r = (!uri || !uri->host || !to || !to->host || 0 != strcasecmp(to->host, uri->host)) ? 0 : 1;
 
@@ -76,7 +76,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// 1. Request-URI
 
 	// Request-URI: The "userinfo" and "@" components of the SIP URI MUST NOT be present
-	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
+	uri = uri_parse(req->u.c.uri.host.p, (int)req->u.c.uri.host.n);
 	if (!uri || !uri->host)
 	{
 		uri_free(uri);
@@ -100,7 +100,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// 4. authorized modify registrations(403 Forbidden)
 
 	// 5. To domain check (404 Not Found)
-	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
+	to = uri_parse(req->to.uri.host.p, (int)req->to.uri.host.n);
 	if (!to || !to->host /*|| 0 != strcasecmp(to->host, uri->host)*/)
 	{
 		uri_free(to);
@@ -137,7 +137,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 
 	// zero or more values containing address bindings
 	contact = sip_contacts_get(&req->contacts, 0);
-	uri = contact ? uri_parse(contact->uri.host.p, contact->uri.host.n) : NULL;
+	uri = contact ? uri_parse(contact->uri.host.p, (int)contact->uri.host.n) : NULL;
 	if(contact && contact->expires > 0)
 		expires = (int)contact->expires;
 

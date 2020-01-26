@@ -972,7 +972,7 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 		h = sip_message_get_header_by_name(reply, "Call-ID");
 		if (h)
 		{
-			snprintf(test->callid, sizeof(test->callid), "%.*s", h->n, h->p);
+			snprintf(test->callid, sizeof(test->callid), "%.*s", (int)h->n, h->p);
 			h = sip_message_get_header_by_name(reply, "CSeq");
 			test->cseq = atoi(h->p);
 		}
