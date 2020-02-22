@@ -78,9 +78,9 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
         i += pes_packet_length + 6) 
     {
         pes_packet_length = (data[i + 4] << 8) | data[i + 5];
-        assert(i + 6 + pes_packet_length <= bytes);
+        //assert(i + 6 + pes_packet_length <= bytes);
         if (i + 6 + pes_packet_length > bytes)
-            return 0;
+            return i;
 
         // stream id
         switch (data[i+3])

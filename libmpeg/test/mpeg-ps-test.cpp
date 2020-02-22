@@ -41,11 +41,22 @@ static void on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t p
 
     int i;
     static std::map<int, int> streams;
-    std::map<int, int>::const_iterator it = streams.find(stream);
+    if (0 == streams.size())
+    {
+        i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_AAC, NULL, 0);
+        streams[PSI_STREAM_AAC] = i;
+        i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H264, NULL, 0);
+        streams[PSI_STREAM_H264] = i;
+        //i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H265, NULL, 0);
+        //streams[PSI_STREAM_H265] = i;
+    }
+
+    std::map<int, int>::const_iterator it = streams.find(codecid);
     if (streams.end() == it)
     {
+        assert(0);
         i = ps_muxer_add_stream((ps_muxer_t*)ps, codecid, NULL, 0);
-        streams[stream] = i;
+        streams[codecid] = i;
     }
     else
     {
