@@ -51,7 +51,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_index_build(struct mov_track_t* track)
 {
 	void* p;
-	size_t i, j;
+	uint32_t i, j;
 	struct mov_stbl_t* stbl = &track->stbl;
 
 	if (stbl->stss_count > 0 || MOV_VIDEO != track->handler_type)

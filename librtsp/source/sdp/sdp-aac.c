@@ -45,7 +45,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int
 
 	if (n + r * 2 + 1 > bytes)
 		return -1; // // don't have enough memory
-	n += base16_encode(data + n, config, r);
+	n += base16_encode((char*)data + n, config, r);
 
 	if (n < bytes)
 		data[n++] = '\n';

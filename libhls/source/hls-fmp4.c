@@ -230,7 +230,7 @@ int hls_fmp4_init_segment(hls_fmp4_t* hls, void* data, size_t bytes)
 	hls->maxsize = bytes;
 
 	r = fmp4_writer_init_segment(hls->mp4);
-	r = 0 ==  r ? hls->bytes : -1;
+	r = 0 ==  r ? (int)hls->bytes : -1;
 
 	// restore
 	hls->ptr = ptr;

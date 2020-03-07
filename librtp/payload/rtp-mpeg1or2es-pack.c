@@ -281,7 +281,7 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 		size_t nalu_size;
 
 		mpeg2vh.begin_of_sequence = 0;
-		mpeg2_video_header_parse(&mpeg2vh, p, pend - p);
+		mpeg2_video_header_parse(&mpeg2vh, p, (int)(pend - p));
 		
 		if (pend - p + N_MPEG12_HEADER + RTP_FIXED_HEADER <= packer->size)
 		{
@@ -302,12 +302,12 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 					break;
 
 				// merge and get information
-				mpeg2_video_header_parse(&mpeg2vh, pnext, pend - pnext);
+				mpeg2_video_header_parse(&mpeg2vh, pnext, (int)(pend - pnext));
 				pnext = pnextnext;
 			}
 		}
 
-		r = rtp_mpeg2es_pack_slice(packer, p, pnext - p, &mpeg2vh, (pnext == pend) ? 1 : 0);
+		r = rtp_mpeg2es_pack_slice(packer, p, (int)(pnext - p), &mpeg2vh, (pnext == pend) ? 1 : 0);
 	}
 
 	return r;

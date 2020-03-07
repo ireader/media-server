@@ -242,7 +242,7 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 	}
 	
 	if (p < end) *p = '\0';
-	return p - data;
+	return (int)(p - data);
 }
 
 //const struct cstring_t* sip_contact_tag(const struct sip_contact_t* contact)

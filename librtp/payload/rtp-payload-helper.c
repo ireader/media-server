@@ -65,7 +65,7 @@ int rtp_payload_write(struct rtp_payload_helper_t* helper, const struct rtp_pack
 	if (helper->size + pkt->payloadlen > helper->capacity)
 	{
 		void *ptr;
-		size_t size;
+		int size;
 
 		size = helper->size + pkt->payloadlen + 8000;
 		ptr = realloc(helper->ptr, size);

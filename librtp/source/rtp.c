@@ -31,7 +31,7 @@ void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, uint32
 
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	ctx->cbparam = param;
-	ctx->rtcp_bw = (size_t)(bandwidth * RTCP_BANDWIDTH_FRACTION);
+	ctx->rtcp_bw = bandwidth * RTCP_BANDWIDTH_FRACTION;
 	ctx->avg_rtcp_size = 0;
 	ctx->frequence = frequence;
 	ctx->role = sender ? RTP_SENDER : RTP_RECEIVER;
@@ -155,7 +155,7 @@ const char* rtp_get_name(void* rtp, uint32_t ssrc)
 int rtp_set_info(void* rtp, const char* cname, const char* name)
 {
 	struct rtp_context *ctx = (struct rtp_context *)rtp;
-	rtp_member_setvalue(ctx->self, RTCP_SDES_CNAME, (const uint8_t*)cname, strlen(cname));
-	rtp_member_setvalue(ctx->self, RTCP_SDES_NAME, (const uint8_t*)name, strlen(name));
+	rtp_member_setvalue(ctx->self, RTCP_SDES_CNAME, (const uint8_t*)cname, (int)strlen(cname));
+	rtp_member_setvalue(ctx->self, RTCP_SDES_NAME, (const uint8_t*)name, (int)strlen(name));
 	return 0;
 }

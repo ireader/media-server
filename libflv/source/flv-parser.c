@@ -8,7 +8,7 @@
 
 #define FLV_VIDEO_CODEC_NAME(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_AVCC : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_HVCC : FLV_VIDEO_AV1C))
 
-static int flv_parser_audio(const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_audio(const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	int n;
 	struct flv_audio_tag_header_t audio;
@@ -21,7 +21,7 @@ static int flv_parser_audio(const uint8_t* data, size_t bytes, uint32_t timestam
 		return handler(param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
 }
 
-static int flv_parser_video(const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_video(const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	int n;
 	struct flv_video_tag_header_t video;
@@ -58,7 +58,7 @@ static int flv_parser_video(const uint8_t* data, size_t bytes, uint32_t timestam
 
 // http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
 // metadata keyframes/filepositions
-static int flv_parser_script(const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_script(const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	int n;
 	n = flv_data_tag_header_read(data, bytes);
@@ -74,13 +74,13 @@ int flv_parser_input(int type, const void* data, size_t bytes, uint32_t timestam
 	switch (type)
 	{
 	case FLV_TYPE_AUDIO:
-		return flv_parser_audio(data, bytes, timestamp, handler, param);
+		return flv_parser_audio(data, (int)bytes, timestamp, handler, param);
 
 	case FLV_TYPE_VIDEO:
-		return flv_parser_video(data, bytes, timestamp, handler, param);
+		return flv_parser_video(data, (int)bytes, timestamp, handler, param);
 
 	case FLV_TYPE_SCRIPT:
-		return flv_parser_script(data, bytes, timestamp, handler, param);
+		return flv_parser_script(data, (int)bytes, timestamp, handler, param);
 
 	default:
 		assert(0);

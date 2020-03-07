@@ -42,7 +42,8 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extradata, size_t extr
 /// Muxer audio/video stream data
 /// @param[in] stream stream id by mpeg_ts_add_stream
 /// @param[in] flags 0x0001-video IDR frame, 0x8000-H.264/H.265 with AUD
-/// @param[in] pts/dts audio/video stream timestamp in 90*ms
+/// @param[in] pts audio/video stream timestamp in 90*ms
+/// @param[in] dts audio/video stream timestamp in 90*ms
 /// @param[in] data H.264/H.265-AnnexB stream(include 00 00 00 01), AAC-ADTS stream
 /// @return 0-ok, other-error
 int mpeg_ts_write(void* ts, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);

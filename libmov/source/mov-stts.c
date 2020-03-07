@@ -93,7 +93,7 @@ int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_stts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -118,7 +118,7 @@ size_t mov_write_stts(const struct mov_t* mov, uint32_t count)
 
 size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 

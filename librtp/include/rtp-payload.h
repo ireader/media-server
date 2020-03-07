@@ -32,10 +32,8 @@ void rtp_payload_encode_destroy(void* encoder);
 
 /// Get rtp last packet sequence number and timestamp
 /// @param[in] encoder RTP packet encoder(create by rtp_payload_encode_create)
-/// @param[in] data stream data
-/// @param[in] bytes stream length in bytes
+/// @param[in] seq RTP header sequence number
 /// @param[in] timestamp RTP header timestamp
-/// @return 0-ok, ENOMEM-alloc failed, <0-failed
 void rtp_payload_encode_getinfo(void* encoder, uint16_t* seq, uint32_t* timestamp);
 
 /// Encode RTP packet
@@ -65,7 +63,7 @@ int rtp_payload_decode_input(void* decoder, const void* packet, int bytes);
 
 /// Set/Get rtp encode packet size(include rtp header)
 void rtp_packet_setsize(int bytes);
-int rtp_packet_getsize();
+int rtp_packet_getsize(void);
 
 #ifdef __cplusplus
 }

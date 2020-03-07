@@ -194,11 +194,11 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 		if(nalu_size + RTP_FIXED_HEADER <= (size_t)packer->size)
 		{
 			// single NAl unit packet 
-			r = rtp_h264_pack_nalu(packer, p1, nalu_size);
+			r = rtp_h264_pack_nalu(packer, p1, (int)nalu_size);
 		}
 		else
 		{
-			r = rtp_h264_pack_fu_a(packer, p1, nalu_size);
+			r = rtp_h264_pack_fu_a(packer, p1, (int)nalu_size);
 		}
 	}
 

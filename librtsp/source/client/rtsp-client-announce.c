@@ -38,7 +38,7 @@ int rtsp_client_announce(struct rtsp_client_t* rtsp, const char* sdp)
 	rtsp->state = RTSP_ANNOUNCE;
     rtsp->announce = sdp; // hijack
 
-	r = rtsp_client_authenrization(rtsp, "ANNOUNCE", rtsp->uri, sdp, strlen(sdp), rtsp->authenrization, sizeof(rtsp->authenrization));
+	r = rtsp_client_authenrization(rtsp, "ANNOUNCE", rtsp->uri, sdp, (int)strlen(sdp), rtsp->authenrization, sizeof(rtsp->authenrization));
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->uri, rtsp->cseq++, rtsp->session[0].session, rtsp->authenrization, (unsigned int)strlen(sdp), sdp);
 	assert(r > 0 && r < sizeof(rtsp->req));
 	return r == rtsp->handler.send(rtsp->param, rtsp->uri, rtsp->req, r) ? 0 : -1;

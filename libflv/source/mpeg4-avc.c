@@ -84,7 +84,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
         p += len;
 	}
 
-	if (j >= bytes || data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
+	if (j >= bytes || (unsigned int)data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
 	{
 		assert(0);
 		return -1;

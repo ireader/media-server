@@ -48,7 +48,7 @@ void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint
 void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
 void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
 
-uint64_t rtpclock();
+uint64_t rtpclock(void);
 uint64_t ntp2clock(uint64_t ntp);
 uint64_t clock2ntp(uint64_t clock);
 

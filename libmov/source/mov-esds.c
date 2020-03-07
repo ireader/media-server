@@ -149,7 +149,7 @@ abstract class DecoderSpecificInfo extends BaseDescriptor : bit(8)
 	// empty. To be filled by classes extending this class.
 }
 */
-static int mp4_read_decoder_specific_info(struct mov_t* mov, size_t len)
+static int mp4_read_decoder_specific_info(struct mov_t* mov, int len)
 {
 	struct mov_track_t* track = mov->track;
 	struct mov_sample_entry_t* entry = track->stsd.current;
@@ -201,7 +201,7 @@ static int mp4_read_decoder_config_descriptor(struct mov_t* mov, int len)
 static int mp4_write_decoder_config_descriptor(const struct mov_t* mov)
 {
 	const struct mov_sample_entry_t* entry = mov->track->stsd.current;
-	size_t size = 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0);
+	int size = 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0);
 	mov_write_base_descr(mov, ISO_DecoderConfigDescrTag, size);
 	mov_buffer_w8(&mov->io, entry->object_type_indication);
 	mov_buffer_w8(&mov->io, 0x01/*reserved*/ | (entry->stream_type << 2));
@@ -359,7 +359,7 @@ int mov_read_esds(struct mov_t* mov, const struct mov_box_t* box)
 
 static size_t mp4_write_es_descriptor(const struct mov_t* mov)
 {
-	size_t size = 3; // mp4_write_decoder_config_descriptor
+	uint32_t size = 3; // mp4_write_decoder_config_descriptor
 	const struct mov_sample_entry_t* entry = mov->track->stsd.current;
 	size += 5 + 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0); // mp4_write_decoder_config_descriptor
 	size += 5 + 1; // mp4_write_sl_config_descriptor

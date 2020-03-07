@@ -55,5 +55,5 @@ int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, int byte
 		dst += 4 + nalu_size;
 	}
 
-	return dst - (uint8_t*)out;
+	return (int)(dst - (uint8_t*)out);
 }

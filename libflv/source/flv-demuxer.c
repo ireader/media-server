@@ -25,7 +25,7 @@ struct flv_demuxer_t
 	void* param;
 
 	uint8_t* ptr;
-	uint32_t capacity;
+	int capacity;
 };
 
 struct flv_demuxer_t* flv_demuxer_create(flv_demuxer_handler handler, void* param)
@@ -52,7 +52,7 @@ void flv_demuxer_destroy(struct flv_demuxer_t* flv)
 	free(flv);
 }
 
-static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
+static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, int bytes)
 {
 	if (bytes > flv->capacity)
 	{
@@ -65,7 +65,7 @@ static int flv_demuxer_check_and_alloc(struct flv_demuxer_t* flv, size_t bytes)
 	return 0;
 }
 
-static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
+static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int bytes, uint32_t timestamp)
 {
 	int r, n;
 	struct flv_audio_tag_header_t audio;
@@ -111,9 +111,9 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, siz
 	}
 }
 
-static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes, uint32_t timestamp)
+static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int bytes, uint32_t timestamp)
 {
-	size_t n;
+	int n;
 	struct flv_video_tag_header_t video;
 	n = flv_video_tag_header_read(&video, data, bytes);
 	if (n < 0)
@@ -235,10 +235,10 @@ int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, siz
 	switch (type)
 	{
 	case FLV_TYPE_AUDIO:
-		return flv_demuxer_audio(flv, data, bytes, timestamp);
+		return flv_demuxer_audio(flv, data, (int)bytes, timestamp);
 
 	case FLV_TYPE_VIDEO:
-		return flv_demuxer_video(flv, data, bytes, timestamp);
+		return flv_demuxer_video(flv, data, (int)bytes, timestamp);
 
 	case FLV_TYPE_SCRIPT:
 		//return flv_demuxer_script(flv, data, bytes);

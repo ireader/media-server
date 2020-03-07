@@ -99,7 +99,6 @@ int rtsp_media_sdp(const char* sdp, struct rtsp_media_t* medias, int count);
 /// @param[in] base The RTSP Content-Base field
 /// @param[in] location The RTSP Content-Location field
 /// @param[in] request The RTSP request URL
-/// @param[out] uri media control uri
 /// return 0-ok, other-error
 int rtsp_media_set_url(struct rtsp_media_t* media, const char* base, const char* location, const char* request);
 

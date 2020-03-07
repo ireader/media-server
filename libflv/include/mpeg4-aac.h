@@ -20,7 +20,7 @@ struct mpeg4_aac_t
 	int sbr; // sbr flag, valid only in decode
 	int ps; // ps flag, valid only in decode
 	uint8_t pce[64];
-	size_t  npce; // pce bytes
+	int  npce; // pce bytes
 };
 
 enum mpeg2_aac_profile

@@ -49,7 +49,7 @@ static int flv_write_eos(struct flv_writer_t* flv)
 
 static int file_write(void* param, const void* buf, int len)
 {
-	return fwrite(buf, 1, len, (FILE*)param);
+	return (int)fwrite(buf, 1, len, (FILE*)param);
 }
 
 void* flv_writer_create(const char* file)
@@ -111,14 +111,14 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	flv = (struct flv_writer_t*)p;
 
 	memset(&tag, 0, sizeof(tag));
-	tag.size = bytes;
+	tag.size = (int)bytes;
 	tag.type = (uint8_t)type;
 	tag.timestamp = timestamp;
 	flv_tag_header_write(&tag, buf, FLV_TAG_HEADER_SIZE);
 	be_write_uint32(buf + FLV_TAG_HEADER_SIZE, (uint32_t)bytes + FLV_TAG_HEADER_SIZE);
 
 	if(FLV_TAG_HEADER_SIZE != flv->write(flv->param, buf, FLV_TAG_HEADER_SIZE) // FLV Tag Header
-		|| bytes != (size_t)flv->write(flv->param, data, bytes)
+		|| bytes != (size_t)flv->write(flv->param, data, (int)bytes)
 		|| 4 != flv->write(flv->param, buf + FLV_TAG_HEADER_SIZE, 4)) // TAG size
 		return -1;
 	return 0;

@@ -64,7 +64,6 @@ const char* rtsp_client_get_header(rtsp_client_t* rtsp, const char* name);
 int rtsp_client_describe(struct rtsp_client_t* rtsp);
 
 /// rtsp setup
-/// @param[in] uri media resource uri
 /// @param[in] sdp resource info. it can be null, sdp will get by describe command
 /// @return 0-ok, -EACCESS-auth required, try again, other-error.
 int rtsp_client_setup(rtsp_client_t* rtsp, const char* sdp);

@@ -41,7 +41,7 @@ static size_t fmp4_write_mvex(struct mov_t* mov)
 
 static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 {
-	size_t i, start, size;
+	uint32_t i, start, size;
 	uint64_t offset;
     struct mov_track_t* track;
 
@@ -134,7 +134,7 @@ static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moo
 static size_t fmp4_write_moov(struct mov_t* mov)
 {
 	size_t size;
-	size_t i, count;
+	uint32_t i, count;
 	uint64_t offset;
 
 	size = 8 /* Box */;
@@ -257,7 +257,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	refsize = fmp4_write_moof(mov, ++writer->fragment_id, 0); // start from 1
     // rewrite moof with trun data offset
     mov_buffer_seek(&mov->io, mov->moof_offset);
-    fmp4_write_moof(mov, writer->fragment_id, refsize+8);
+    fmp4_write_moof(mov, writer->fragment_id, (uint32_t)refsize+8);
     refsize += writer->mdat_size + 8/*mdat box*/;
 
 	// add mfra entry
@@ -275,8 +275,17 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	}
 
 	// mdat
-	mov_buffer_w32(&mov->io, writer->mdat_size + 8); /* size */
-	mov_buffer_write(&mov->io, "mdat", 4);
+    if (writer->mdat_size + 8 <= UINT32_MAX)
+    {
+        mov_buffer_w32(&mov->io, (uint32_t)writer->mdat_size + 8); /* size */
+        mov_buffer_write(&mov->io, "mdat", 4);
+    }
+    else
+    {
+        mov_buffer_w32(&mov->io, 1);
+        mov_buffer_write(&mov->io, "mdat", 4);
+        mov_buffer_w64(&mov->io, writer->mdat_size + 16);
+    }
 
 	// interleave write samples
     n = 0;
@@ -388,7 +397,7 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 	{
 		void* ptr = realloc(track->samples, sizeof(struct mov_sample_t) * (track->sample_offset + 1024));
 		if (NULL == ptr) return -ENOMEM;
-		track->samples = ptr;
+		track->samples = (struct mov_sample_t*)ptr;
 		track->sample_offset += 1024;
 	}
 
@@ -397,7 +406,7 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 
 	sample = &track->samples[track->sample_count];
 	sample->sample_description_index = 1;
-	sample->bytes = bytes;
+	sample->bytes = (uint32_t)bytes;
 	sample->flags = flags;
 	sample->pts = pts;
 	sample->dts = dts;

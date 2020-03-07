@@ -119,7 +119,7 @@ int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     if (NULL == audio->extra_data)
         return -ENOMEM;
     memcpy(audio->extra_data, extra_data, extra_data_size);
-	audio->extra_data_size = extra_data_size;
+	audio->extra_data_size = (int)extra_data_size;
 
     return 0;
 }
@@ -165,7 +165,7 @@ int mov_add_video(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     if (NULL == video->extra_data)
         return -ENOMEM;
     memcpy(video->extra_data, extra_data, extra_data_size);
-	video->extra_data_size = extra_data_size;
+	video->extra_data_size = (int)extra_data_size;
 
     return 0;
 }
@@ -205,7 +205,7 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     if (NULL == subtitle->extra_data)
         return -ENOMEM;
     memcpy(subtitle->extra_data, extra_data, extra_data_size);
-	subtitle->extra_data_size = extra_data_size;
+	subtitle->extra_data_size = (int)extra_data_size;
 
     return 0;
 }

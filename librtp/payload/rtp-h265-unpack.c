@@ -152,7 +152,7 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 	if (unpacker->size + bytes - n - 1 + 2 /*NALU*/ > unpacker->capacity)
 	{
 		void* p = NULL;
-		size_t size = unpacker->size + bytes + 256000 + 2;
+		int size = unpacker->size + bytes + 256000 + 2;
 		p = realloc(unpacker->ptr, size);
 		if (!p)
 		{

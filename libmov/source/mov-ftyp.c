@@ -21,7 +21,7 @@ int mov_read_ftyp(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_ftyp(const struct mov_t* mov)
 {
-	size_t size, i;
+	int size, i;
 
 	size = 8/* box */ + 8/* item */ + mov->ftyp.brands_count * 4 /* compatible brands */;
 
@@ -38,7 +38,7 @@ size_t mov_write_ftyp(const struct mov_t* mov)
 
 size_t mov_write_styp(const struct mov_t* mov)
 {
-	size_t size, i;
+	int size, i;
 
 	size = 8/* box */ + 8/* item */ + mov->ftyp.brands_count * 4 /* compatible brands */;
 

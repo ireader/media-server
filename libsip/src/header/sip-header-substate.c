@@ -70,7 +70,7 @@ int sip_substate_write(const struct sip_substate_t* substate, char* data, const 
 	}
 
 	if (p < end) *p = '\0';
-	return p - data;
+	return (int)(p - data);
 }
 
 #if defined(DEBUG) || defined(_DEBUG)

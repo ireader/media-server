@@ -33,7 +33,7 @@ struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_agent_t* sip, struct s
 struct sip_uac_transaction_t* sip_uac_prack(struct sip_agent_t* sip, const struct sip_message_t* req100rel, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
 struct sip_uac_transaction_t* sip_uac_update(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
 
-/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
+
 /// @param[in] from valid only dialog is null
 /// @param[in] to valid only dialog is null
 /// @param[in] event subscribe event type
@@ -44,6 +44,7 @@ struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, struct sip
 struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, int expires, sip_uac_onsubscribe onsubscribe, void* param);
 struct sip_uac_transaction_t* sip_uac_publish(struct sip_agent_t* sip, const char* from, const char* to, const char* event, sip_uac_onreply onreply, void* param);
 
+/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
 struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param);
 struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 struct sip_uac_transaction_t* sip_uac_refer(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onreply, void* param);

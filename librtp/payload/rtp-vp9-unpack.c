@@ -199,7 +199,7 @@ static int rtp_decode_vp9(void* p, const void* packet, int bytes)
 	}
 
 	pkt.payload = ptr;
-	pkt.payloadlen = pend - ptr;
+	pkt.payloadlen = (int)(pend - ptr);
 	rtp_payload_write(helper, &pkt);
 
 	if (pkt.rtp.m)

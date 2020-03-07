@@ -12,9 +12,9 @@
 #define H264_NAL_PPS		8 // Picture parameter set
 #define H264_NAL_AUD		9 // Access unit delimiter
 
-static size_t h264_sps_pps_size(const struct mpeg4_avc_t* avc)
+static int h264_sps_pps_size(const struct mpeg4_avc_t* avc)
 {
-	size_t i, n = 0;
+	int i, n = 0;
 	for (i = 0; i < avc->nb_sps; i++)
 		n += avc->sps[i].bytes + 4;
 	for (i = 0; i < avc->nb_pps; i++)
@@ -41,7 +41,7 @@ int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes,
 #if defined(DEBUG) || defined(_DEBUG)
 		// fix 0x00 00 00 01 => flv nalu size
 		if (1 == n && (3 == avc->nalu || 4 == avc->nalu))
-			n = (end - src) - avc->nalu;
+			n = (int)(end - src) - avc->nalu;
 #endif
 
 		if (n <= 0 || src + n + avc->nalu > end)
@@ -90,5 +90,5 @@ int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes,
 	}
 
 	assert(src == end);
-	return dst - (uint8_t*)out;
+	return (int)(dst - (uint8_t*)out);
 }

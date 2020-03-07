@@ -47,7 +47,7 @@ static int flv_read_header(struct flv_reader_t* flv)
 
 static int file_read(void* param, void* buf, int len)
 {
-	return fread(buf, 1, len, (FILE*)param);
+	return (int)fread(buf, 1, len, (FILE*)param);
 }
 
 void* flv_reader_create(const char* file)

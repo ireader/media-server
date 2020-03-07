@@ -112,7 +112,7 @@ struct mov_stbl_t
 	size_t stsc_count;
 
 	uint64_t* stco;
-	size_t stco_count;
+	uint32_t stco_count;
 
 	struct mov_stts_t* stts;
 	size_t stts_count;
@@ -132,7 +132,7 @@ struct mov_sample_t
 
 	void* data;
 	uint64_t offset; // is a 32 or 64 bit integer that gives the offset of the start of a chunk into its containing media file.
-	size_t bytes;
+	uint32_t bytes;
 
 	uint32_t sample_description_index;
 	uint32_t samples_per_chunk; // write only
@@ -159,7 +159,7 @@ struct mov_track_t
 	struct mov_trex_t trex;
 	struct mov_tfhd_t tfhd;
 	struct mov_fragment_t* frags;
-	size_t frag_count, frag_capacity;
+	uint32_t frag_count, frag_capacity;
 
 	struct mov_stsd_t stsd;
 
@@ -167,7 +167,7 @@ struct mov_track_t
 	size_t elst_count;
 	
 	struct mov_sample_t* samples;
-	size_t sample_count;
+	uint32_t sample_count;
 	size_t sample_offset; // sample_capacity
 
     int64_t tfdt_dts; // tfdt baseMediaDecodeTime
@@ -191,7 +191,7 @@ struct mov_t
 
 	struct mov_track_t* track; // current stream
 	struct mov_track_t* tracks;
-	size_t track_count;
+	int track_count;
 };
 
 int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent);
@@ -255,7 +255,7 @@ size_t mov_write_av1c(const struct mov_t* mov);
 size_t mov_write_tx3g(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);
-size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32_t offset);
+size_t mov_write_trun(const struct mov_t* mov, uint32_t from, uint32_t count, uint32_t offset);
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
 size_t mov_write_tfdt(const struct mov_t* mov);

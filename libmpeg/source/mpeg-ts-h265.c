@@ -17,7 +17,7 @@ int find_h265_access_unit_delimiter(const uint8_t* p, size_t bytes)
             {
                 // filter trailing zero
             }
-            return i;
+            return (int)i;
 		}
 	}
 

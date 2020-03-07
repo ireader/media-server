@@ -95,7 +95,7 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 		}
 		else if (0 == cstrcasecmp(&param->name, "ttl"))
 		{
-			uri->ttl = cstrtol(&param->value, NULL, 10);
+			uri->ttl = (int)cstrtol(&param->value, NULL, 10);
 		}
 		else if (0 == cstrcasecmp(&param->name, "lr"))
 		{
@@ -103,7 +103,7 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 		}
 		else if (0 == cstrcasecmp(&param->name, "rport"))
 		{
-			uri->rport = cstrvalid(&param->value) ? cstrtol(&param->value, NULL, 10) : -1;
+			uri->rport = cstrvalid(&param->value) ? (int)cstrtol(&param->value, NULL, 10) : -1;
 		}
 	}
 
@@ -134,7 +134,7 @@ int sip_uri_write(const struct sip_uri_t* uri, char* data, const char* end)
 	}
 
 	if (p < end) *p = '\0';
-	return p - data;
+	return (int)(p - data);
 }
 
 // 19.1.1 SIP and SIPS URI Components (p152)
@@ -217,7 +217,7 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 		param1 = sip_params_get(&l->parameters, i);
 		if(0 == cstrcmp(&param1->name, "maddr"))
 			continue;
-		param2 = sip_params_find(&r->parameters, param1->name.p, param1->name.n);
+		param2 = sip_params_find(&r->parameters, param1->name.p, (int)param1->name.n);
 		if (param2 && !cstreq(&param1->value, &param2->value))
 			return 0;
 	}
@@ -226,8 +226,8 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 	// never matches, even if it contains the default value
 	for (i = 0; i < sizeof(uriparameters) / sizeof(uriparameters[0]); i++)
 	{
-		param1 = sip_params_find(&l->parameters, uriparameters[i], strlen(uriparameters[i]));
-		param2 = sip_params_find(&r->parameters, uriparameters[i], strlen(uriparameters[i]));
+		param1 = sip_params_find(&l->parameters, uriparameters[i], (int)strlen(uriparameters[i]));
+		param2 = sip_params_find(&r->parameters, uriparameters[i], (int)strlen(uriparameters[i]));
 		if (param2 && !param1) // eq(param1, param2) already checked
 			return 0;
 	}
@@ -247,7 +247,7 @@ int sip_uri_equal(const struct sip_uri_t* l, const struct sip_uri_t* r)
 	for (i = 0; i < sip_params_count(&l->headers); i++)
 	{
 		param1 = sip_params_get(&l->headers, i);
-		param2 = sip_params_find(&r->headers, param1->name.p, param1->name.n);
+		param2 = sip_params_find(&r->headers, param1->name.p, (int)param1->name.n);
 		if (!param2 || !cstreq(&param1->value, &param2->value))
 			return 0;
 	}

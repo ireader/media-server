@@ -27,7 +27,7 @@ size_t mov_write_hdlr(const struct mov_t* mov)
 {
 	const struct mov_track_t* track = mov->track;
 
-	mov_buffer_w32(&mov->io, 33 + strlen(track->handler_descr)); /* size */
+	mov_buffer_w32(&mov->io, 33 + (uint32_t)strlen(track->handler_descr)); /* size */
 	mov_buffer_write(&mov->io, "hdlr", 4);
 	mov_buffer_w32(&mov->io, 0); /* Version & flags */
 

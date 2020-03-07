@@ -140,7 +140,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 		}
 	}
 
-	return p - data;
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes)
@@ -220,7 +220,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 
 	data[22] = k;
 
-	return p - data;
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes)
@@ -243,7 +243,7 @@ int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t by
 		p += 4 + hevc->nalu[i].bytes;
 	}
 
-	return p - data;
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t bytes)

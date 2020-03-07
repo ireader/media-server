@@ -157,7 +157,7 @@ static int rtp_av1_pack_append(struct rtp_encode_av1_t *packer, const uint8_t* o
 		ptr += n;
 		obu += n;
 		bytes -= n;
-		packer->offset = ptr - packer->ptr;
+		packer->offset = (int)(ptr - packer->ptr);
 
 		if (bytes > 0)
 		{
@@ -171,8 +171,8 @@ static int rtp_av1_pack_append(struct rtp_encode_av1_t *packer, const uint8_t* o
 
 /// https://aomediacodec.github.io/av1-spec/av1-spec.pd
 /// Annex B: Length delimited bitstream format
-/// @param[in] data: temporal_unit
-/// @param[in] bytes: temporal_unit_sizetemporal_unit_size
+/// @param[in] data temporal_unit
+/// @param[in] bytes temporal_unit_sizetemporal_unit_size
 static int rtp_av1_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
 	uint8_t obu_has_size_field;

@@ -12,7 +12,7 @@ struct mov_ftyp_t
 	uint32_t minor_version;
 
 	uint32_t compatible_brands[N_BRAND];
-	size_t brands_count;
+	int brands_count;
 };
 
 // A.4 Temporal structure of the media (p148)
@@ -89,7 +89,7 @@ struct mov_sample_entry_t
     uint8_t object_type_indication; // H.264/AAC MOV_OBJECT_XXX (DecoderConfigDescriptor)
     uint8_t stream_type; // MP4_STREAM_XXX
 	uint8_t* extra_data; // H.264 sps/pps
-	size_t extra_data_size;
+	int extra_data_size;
 
     union
     {
@@ -129,7 +129,7 @@ struct mov_stsd_t
 {
     struct mov_sample_entry_t *current; // current entry, read only
     struct mov_sample_entry_t *entries;
-    size_t entry_count;
+    uint32_t entry_count;
 };
 
 struct mov_stts_t

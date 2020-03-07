@@ -46,7 +46,7 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_elst(const struct mov_t* mov)
 {
-	size_t size;
+	uint32_t size;
 	int64_t time;
 	int64_t delay;
 	uint8_t version;

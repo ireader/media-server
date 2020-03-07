@@ -59,7 +59,7 @@ int aom_av1_codec_configuration_record_load(const uint8_t* data, size_t bytes, s
 
 	av1->bytes = (uint16_t)(bytes - 4);
 	memcpy(av1->data, data + 4, av1->bytes);
-	return bytes;
+	return (int)bytes;
 }
 
 int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t* data, size_t bytes)

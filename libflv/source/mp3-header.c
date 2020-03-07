@@ -73,7 +73,7 @@ int mp3_header_load(struct mp3_header_t* mp3, const void* data, int bytes)
 	mp3->original = (p[3] >> 2) & 0x01;
 	mp3->emphasis = p[3] & 0x03;
 
-	return (p - (uint8_t*)data) + 4;
+	return (int)(p - (uint8_t*)data) + 4;
 }
 
 int mp3_header_save(const struct mp3_header_t* mp3, void* data, int bytes)

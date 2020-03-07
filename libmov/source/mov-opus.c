@@ -52,7 +52,7 @@ int mov_read_dops(struct mov_t* mov, const struct mov_box_t* box)
         entry->extra_data[17] = mov_buffer_r8(&mov->io); // OutputGain (LSB -> MSB)
         entry->extra_data[16] = mov_buffer_r8(&mov->io);
         mov_buffer_read(&mov->io, entry->extra_data + 18, (size_t)box->size - 10);
-        entry->extra_data_size = (size_t)box->size + 8;
+        entry->extra_data_size = (int)box->size + 8;
     }
     return mov_buffer_error(&mov->io);
 }

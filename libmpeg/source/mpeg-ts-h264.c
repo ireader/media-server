@@ -17,7 +17,7 @@ int h264_find_nalu(const uint8_t* p, size_t bytes)
             {
                 // filter trailing zero
             }
-            return i;
+            return (int)i;
         }
     }
 
@@ -36,7 +36,7 @@ int find_h264_access_unit_delimiter(const uint8_t* p, size_t bytes)
             {
                 // filter trailing zero
             }
-            return i;
+            return (int)i;
 		}
 	}
 

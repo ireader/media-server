@@ -14,8 +14,9 @@ typedef struct hls_media_t hls_media_t;
 
 /// @param[in] param user-defined parameter(hls_media_create)
 /// @param[in] data ts file content
-/// @param[in] byts ts file length in byte
-/// @param[in] pts/dts ts file first pts/dts(ms)
+/// @param[in] bytes ts file length in byte
+/// @param[in] pts ts file first pts/dts(ms)
+/// @param[in] dts ts file first pts/dts(ms)
 /// @param[in] duration file duration(ms)
 /// @return 0-ok, other-error
 typedef int (*hls_media_handler)(void* param, const void* data, size_t bytes, int64_t pts, int64_t dts, int64_t duration);

@@ -61,7 +61,7 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 {
 	int co64;
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -145,7 +145,7 @@ uint32_t mov_build_stco(struct mov_track_t* track)
 
 void mov_apply_stco(struct mov_track_t* track)
 {
-    size_t i, j, k;
+    uint32_t i, j, k;
     uint64_t n, chunk_offset;
     struct mov_stbl_t* stbl = &track->stbl;
 

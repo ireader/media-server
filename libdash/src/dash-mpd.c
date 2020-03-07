@@ -310,7 +310,7 @@ int dash_mpd_add_video_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	char name[N_NAME + 16];
 	struct dash_adaptation_set_t* track;
 
-	r = strlen(prefix);
+	r = (int)strlen(prefix);
 	if (mpd->count + 1 >= N_TRACK || extra_data_size < 4 || r >= N_NAME)
 		return -1;
 
@@ -358,7 +358,7 @@ int dash_mpd_add_audio_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	char name[N_NAME + 16];
 	struct dash_adaptation_set_t* track;
 
-	r = strlen(prefix);
+	r = (int)strlen(prefix);
 	if (mpd->count + 1 >= N_TRACK || extra_data_size < 2 || r >= N_NAME)
 		return -1;
 

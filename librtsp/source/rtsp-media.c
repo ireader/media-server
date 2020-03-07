@@ -19,30 +19,30 @@ static inline int scopy(struct rtsp_media_t* medias, char** dst, const char* src
 	return 0;
 }
 
-static inline int vscopy(struct rtsp_media_t* medias, char** dst, const char* fmt, ...)
-{
-	int n;
-	va_list args;
-	va_start(args, fmt);
-	n = vsnprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, fmt, args);
-	va_end(args);
-
-	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
-		return -1;
-	*dst = medias->ptr + medias->offset;
-	medias->offset += n + 1; // with '\0'
-	return 0;
-}
-
-static inline int rtsp_media_aggregate_control_enable(void *sdp)
-{
-	const char* control;
-
-	// rfc 2326 C.1.1 Control URL (p80)
-	// If found at the session level, the attribute indicates the URL for aggregate control
-	control = sdp_attribute_find(sdp, "control");
-	return (control && *control) ? 1 : 0;
-}
+//static inline int vscopy(struct rtsp_media_t* medias, char** dst, const char* fmt, ...)
+//{
+//	int n;
+//	va_list args;
+//	va_start(args, fmt);
+//	n = vsnprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, fmt, args);
+//	va_end(args);
+//
+//	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
+//		return -1;
+//	*dst = medias->ptr + medias->offset;
+//	medias->offset += n + 1; // with '\0'
+//	return 0;
+//}
+//
+//static inline int rtsp_media_aggregate_control_enable(void *sdp)
+//{
+//	const char* control;
+//
+//	// rfc 2326 C.1.1 Control URL (p80)
+//	// If found at the session level, the attribute indicates the URL for aggregate control
+//	control = sdp_attribute_find(sdp, "control");
+//	return (control && *control) ? 1 : 0;
+//}
 
 static int isAbsoluteURL(char const* url)
 {
@@ -180,7 +180,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("fmtp", name))
 		{
-			n = strlen(value);
+			n = (int)strlen(value);
 			payload = atoi(value);
 			for (i = 0; i < media->avformat_count && media->offset + n + 1 < sizeof(media->ptr); i++)
 			{
