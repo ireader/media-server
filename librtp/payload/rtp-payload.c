@@ -170,8 +170,12 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			codec->encoder = rtp_av1_encode();
 			codec->decoder = rtp_av1_decode();
 		}
-		else if (0 == strcasecmp(encoding, "MP2P") // MPEG-2 Program Streams video (RFC 2250)
-			|| 0 == strcasecmp(encoding, "MP1S"))  // MPEG-1 Systems Streams video (RFC 2250)
+        else if (0 == strcasecmp(encoding, "MP2P")) // MPEG-2 Program Streams video (RFC 2250)
+        {
+            codec->encoder = rtp_ts_encode();
+            codec->decoder = rtp_ps_decode();
+        }
+		else if (0 == strcasecmp(encoding, "MP1S"))  // MPEG-1 Systems Streams video (RFC 2250)
 		{
 			codec->encoder = rtp_ts_encode();
 			codec->decoder = rtp_ts_decode();

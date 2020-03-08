@@ -71,7 +71,7 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
     size_t pes_packet_length;
     struct pes_t* pes;
 
-    // MPEG_program_end_code = 0x000000B9
+    // MPEG_program_end_code = 0x000001B9
     for (i = 0; i + 5 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]
         && PES_SID_END != data[i + 3]
         && PES_SID_START != data[i + 3];

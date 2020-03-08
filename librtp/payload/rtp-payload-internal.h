@@ -57,6 +57,7 @@ struct rtp_payload_encode_t *rtp_mpeg4_generic_encode(void);
 struct rtp_payload_encode_t *rtp_mpeg1or2es_encode(void);
 
 struct rtp_payload_decode_t *rtp_ts_decode(void);
+struct rtp_payload_decode_t *rtp_ps_decode(void);
 struct rtp_payload_decode_t *rtp_vp8_decode(void);
 struct rtp_payload_decode_t *rtp_vp9_decode(void);
 struct rtp_payload_decode_t *rtp_av1_decode(void);
