@@ -326,6 +326,35 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 	return 0 == h.errcode ? h.bytes : 0;
 }
 
+/// h264_is_new_access_unit H.264 new access unit(frame)
+/// @return 1-new access, 0-not a new access
+int h264_is_new_access_unit(const uint8_t* nalu, size_t bytes)
+{
+    enum { NAL_NIDR = 1, NAL_PARTITION_A = 2, NAL_IDR = 5, NAL_SEI = 6, NAL_SPS = 7, NAL_PPS = 8, NAL_AUD = 9, };
+    
+    uint8_t nal_type;
+    
+    if(bytes < 2)
+        return 0;
+    
+    nal_type = nalu[0] & 0x1f;
+    
+    // 7.4.1.2.3 Order of NAL units and coded pictures and association to access units
+    if(NAL_AUD == nal_type || NAL_SPS == nal_type || NAL_PPS == nal_type || NAL_SEI == nal_type || (14 <= nal_type && nal_type <= 18))
+        return 1;
+    
+    // 7.4.1.2.4 Detection of the first VCL NAL unit of a primary coded picture
+    if(NAL_NIDR == nal_type || NAL_PARTITION_A == nal_type || NAL_IDR == nal_type)
+    {
+        // Live555 H264or5VideoStreamParser::parse
+        // The high-order bit of the byte after the "nal_unit_header" tells us whether it's
+        // the start of a new 'access unit' (and thus the current NAL unit ends an 'access unit'):
+        return (nalu[1] & 0x80) ? 1 : 0; // first_mb_in_slice
+    }
+    
+    return 0;
+}
+
 #if defined(_DEBUG) || defined(DEBUG)
 static void mpeg4_annexbtomp4_test2(void)
 {

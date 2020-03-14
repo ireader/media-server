@@ -54,6 +54,13 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 /// @return <=0-error, >0-output bytes
 int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes, void* out, int size);
 
+/// h264_is_new_access_unit H.264 new access unit(frame)
+/// @return 1-new access, 0-not a new access
+int h264_is_new_access_unit(const uint8_t* nalu, size_t bytes);
+
+/// H.264 nal unit split
+void mpeg4_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param);
+
 #if defined(__cplusplus)
 }
 #endif

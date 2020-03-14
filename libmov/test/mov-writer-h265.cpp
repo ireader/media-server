@@ -1,23 +1,14 @@
 #include "mov-writer.h"
 #include "mov-format.h"
 #include "mpeg4-hevc.h"
+#include "mpeg4-avc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
-extern "C" void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
-
 #define H265_NAL(v)	((v >> 1) & 0x3F)
-
-#define H265_VPS_NUT		32
-#define H265_SPS_NUT		33
-#define H265_PPS_NUT		34
-#define H265_PREFIX_SEI_NUT 39
-#define H265_SUFFIX_SEI_NUT 40
-
-#define H265_FIRST_SLICE_SEGMENT_IN_PIC_FLAG 0x80
 
 static uint8_t s_buffer[2 * 1024 * 1024];
 static uint8_t s_extra_data[64 * 1024];
@@ -89,42 +80,26 @@ static int h265_write(struct mov_h265_test_t* ctx, const void* data, int bytes)
 	return 0;
 }
 
-static void h265_handler(void* param, const void* nalu, size_t bytes)
+static void h265_handler(void* param, const uint8_t* nalu, int bytes)
 {
 	struct mov_h265_test_t* ctx = (struct mov_h265_test_t*)param;
 	assert(ctx->ptr < nalu);
 
-	const uint8_t* ptr = (uint8_t*)nalu - 3;
-	const uint8_t* end = (const uint8_t*)nalu + bytes;
-	uint8_t nalutype = (*(uint8_t*)nalu >> 1) & 0x3f;
+	const uint8_t* ptr = nalu - 3;
+//	const uint8_t* end = (const uint8_t*)nalu + bytes;
+	uint8_t nalutype = (nalu[0] >> 1) & 0x3f;
+    if (ctx->vcl > 0 && h265_is_new_access_unit((const uint8_t*)nalu, bytes))
+    {
+        int r = h265_write(ctx, ctx->ptr, ptr - ctx->ptr);
+        if (-1 == r)
+            return; // wait for more data
+
+        ctx->ptr = ptr;
+        ctx->vcl = 0;
+    }
+
 	if (nalutype <= 31)
-	{
-		if (bytes >= 3 && (H265_FIRST_SLICE_SEGMENT_IN_PIC_FLAG & ((uint8_t*)nalu)[2]) && ctx->vcl > 0)
-		{
-			int r = h265_write(ctx, ctx->ptr, ptr - ctx->ptr);
-			if (-1 == r)
-				return; // wait for more data
-
-			ctx->ptr = ptr;
-			ctx->vcl = 0;
-		}
-
-		++ctx->vcl;
-	}
-	else
-	{
-		// VPS/SPS/PPS/SEI/...
-
-		if (ctx->vcl > 0 && H265_SUFFIX_SEI_NUT != nalutype)
-		{
-			int r = h265_write(ctx, ctx->ptr, ptr - ctx->ptr);
-			if (-1 == r)
-				return; // wait for more data
-
-			ctx->ptr = ptr;
-			ctx->vcl = 0; // clear all vcl
-		}
-	}
+        ++ctx->vcl;
 }
 
 void mov_writer_h265(const char* h265, int width, int height, const char* mp4)

@@ -1,4 +1,5 @@
 #include "mpeg4-hevc.h"
+#include "mpeg4-avc.h"
 #include <string.h>
 #include <assert.h>
 
@@ -26,7 +27,6 @@ struct h265_annexbtomp4_handle_t
 	int capacity;
 };
 
-void mpeg4_h264_annexb_nalu(const void* h264, int bytes, void(*handler)(void* param, const uint8_t* nalu, int bytes), void* param);
 uint8_t mpeg4_h264_read_ue(const uint8_t* data, int bytes, int* offset);
 
 static int hevc_rbsp_decode(const uint8_t* nalu, int bytes, uint8_t* sodb)
@@ -415,6 +415,34 @@ int h265_annexbtomp4(struct mpeg4_hevc_t* hevc, const void* data, int bytes, voi
 	hevc->configurationVersion = 1;
 	hevc->lengthSizeMinusOne = 3; // 4 bytes
 	return 0 == h.errcode ? h.bytes : 0;
+}
+
+int h265_is_new_access_unit(const uint8_t* nalu, size_t bytes)
+{
+    enum { NAL_VPS = 32, NAL_SPS = 33, NAL_PPS = 34, NAL_AUD = 35, NAL_PREFIX_SEI = 39, };
+    
+    uint8_t nal_type;
+    uint8_t nuh_layer_id;
+    
+    if(bytes < 3)
+        return 0;
+    
+    nal_type = (nalu[0] >> 1) & 0x3f;
+    nuh_layer_id = ((nalu[0] & 0x01) << 5) | ((nalu[1] >> 3) &0x1F);
+    
+    // 7.4.2.4.4 Order of NAL units and coded pictures and their association to access units
+    if(NAL_VPS == nal_type || NAL_SPS == nal_type || NAL_PPS == nal_type ||
+       (nuh_layer_id == 0 && (NAL_AUD == nal_type || NAL_PREFIX_SEI == nal_type || (41 <= nal_type && nal_type <= 44) || (48 <= nal_type && nal_type <= 55))))
+        return 1;
+        
+    // 7.4.2.4.5 Order of VCL NAL units and association to coded pictures
+    if (nal_type <= 31)
+    {
+        //first_slice_segment_in_pic_flag 0x80
+        return (nalu[2] & 0x80) ? 1 : 0;
+    }
+    
+    return 0;
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
