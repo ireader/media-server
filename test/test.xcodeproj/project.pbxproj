@@ -8,17 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		461F0BEE231A1B5800A995BD /* rtp-sender.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BED231A1B5800A995BD /* rtp-sender.c */; };
-		461F0BF0231A1B7600A995BD /* sockpair.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BEF231A1B7500A995BD /* sockpair.c */; };
 		461F0BF2231A1E5D00A995BD /* ice-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BF1231A1E5D00A995BD /* ice-transport.c */; };
 		461F0BF4231A1EEC00A995BD /* libice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 461F0BF3231A1EEC00A995BD /* libice.a */; };
-		461F0C5E231A23C700A995BD /* crc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C5D231A23C700A995BD /* crc32.c */; };
-		461F0C66231A23D100A995BD /* hkdf.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C5F231A23D100A995BD /* hkdf.c */; };
-		461F0C67231A23D100A995BD /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C60231A23D100A995BD /* hmac.c */; };
-		461F0C69231A23D100A995BD /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C62231A23D100A995BD /* sha1.c */; };
-		461F0C6A231A23D100A995BD /* sha.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C63231A23D100A995BD /* sha.c */; };
-		461F0C6B231A23D100A995BD /* sha224-256.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C64231A23D100A995BD /* sha224-256.c */; };
-		461F0C6C231A23D100A995BD /* sha384-512.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C65231A23D100A995BD /* sha384-512.c */; };
-		461F0C6E231A242900A995BD /* sysnetconfig.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C6D231A242900A995BD /* sysnetconfig.c */; };
 		461F0C70231A25A800A995BD /* tools.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C6F231A25A800A995BD /* tools.c */; };
 		461F0D00232B412300A995BD /* sip-message-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CFF232B412300A995BD /* sip-message-test.cpp */; };
 		468FDA9B21843A560092E381 /* libaio.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 468FDA9A21843A560092E381 /* libaio.dylib */; };
@@ -32,17 +23,6 @@
 		468FDAAB21843A560092E381 /* librtp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 468FDAAA21843A560092E381 /* librtp.a */; };
 		468FDAAD21843A560092E381 /* librtsp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 468FDAAC21843A560092E381 /* librtsp.a */; };
 		468FDAAF21843A560092E381 /* libsip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 468FDAAE21843A560092E381 /* libsip.a */; };
-		468FDAB421843B360092E381 /* uri-parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAB321843B360092E381 /* uri-parse.c */; };
-		468FDAB621843B3F0092E381 /* urlcodec.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAB521843B3F0092E381 /* urlcodec.c */; };
-		468FDAB821843B4E0092E381 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAB721843B4D0092E381 /* uuid.c */; };
-		468FDABA21843B560092E381 /* time64.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAB921843B560092E381 /* time64.c */; };
-		468FDABC21843B610092E381 /* ntp-time.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDABB21843B610092E381 /* ntp-time.c */; };
-		468FDABE21843B690092E381 /* darray.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDABD21843B690092E381 /* darray.c */; };
-		468FDAC021843B920092E381 /* unicode.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDABF21843B920092E381 /* unicode.c */; };
-		468FDAC221843B9F0092E381 /* ip-route.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAC121843B9F0092E381 /* ip-route.c */; };
-		468FDAC421843BAA0092E381 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAC321843BAA0092E381 /* base64.c */; };
-		468FDAC621843BB00092E381 /* app-log.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAC521843BB00092E381 /* app-log.c */; };
-		468FDAC821843BC10092E381 /* md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 468FDAC721843BC10092E381 /* md5.c */; };
 		46A0D4FA229791040070E1F5 /* sip-agent-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46A0D4F9229791040070E1F5 /* sip-agent-test.cpp */; };
 		46A0D4FD229791100070E1F5 /* sip-uac-test2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46A0D4FB229791100070E1F5 /* sip-uac-test2.cpp */; };
 		46A0D4FE229791100070E1F5 /* sip-uas-test2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46A0D4FC229791100070E1F5 /* sip-uas-test2.cpp */; };
@@ -107,13 +87,11 @@
 		46C5B50F2183F26400419E57 /* rtsp-server-udp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B50C2183F26400419E57 /* rtsp-server-udp.c */; };
 		46C5B5102183F26400419E57 /* rtsp-server-tcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B50D2183F26400419E57 /* rtsp-server-tcp.c */; };
 		46C5B5112183F26400419E57 /* rtsp-server-listen.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B50E2183F26400419E57 /* rtsp-server-listen.c */; };
-		46E2E7FE229A5F9A00BADEF9 /* random.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E7FD229A5F9A00BADEF9 /* random.c */; };
-		46E2E800229ABA0A00BADEF9 /* channel.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E7FF229ABA0A00BADEF9 /* channel.c */; };
+		46CA25B2241BBAA600AF5BAF /* libsdk.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 46CA25B1241BBAA600AF5BAF /* libsdk.a */; };
 		46E2E81922F6963100BADEF9 /* avbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E81122F6963000BADEF9 /* avbuffer.c */; };
 		46E2E81A22F6963100BADEF9 /* avpacket.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E81422F6963000BADEF9 /* avpacket.c */; };
 		46E2E81B22F6963100BADEF9 /* mp4-file-reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E81522F6963000BADEF9 /* mp4-file-reader.cpp */; };
 		46E2E81C22F6963100BADEF9 /* vod-file-source.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46E2E81622F6963100BADEF9 /* vod-file-source.cpp */; };
-		46F4BE4821843C3700CC9B15 /* nls_cp936.c in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE4721843C3700CC9B15 /* nls_cp936.c */; };
 		46F4BE4A21843C4500CC9B15 /* http-list-dir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */; };
 		F423511E2287B6CC00D805B4 /* avpacket-queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F423511C2287B6CB00D805B4 /* avpacket-queue.cpp */; };
 		F423513422880C8800D805B4 /* aio-rtmp-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = F423512E22880C8700D805B4 /* aio-rtmp-transport.c */; };
@@ -135,18 +113,8 @@
 
 /* Begin PBXFileReference section */
 		461F0BED231A1B5800A995BD /* rtp-sender.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtp-sender.c"; path = "../librtp/test/rtp-sender.c"; sourceTree = "<group>"; };
-		461F0BEF231A1B7500A995BD /* sockpair.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sockpair.c; path = ../../sdk/source/sockpair.c; sourceTree = "<group>"; };
 		461F0BF1231A1E5D00A995BD /* ice-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "ice-transport.c"; path = "../../sdk/libice/test/ice-transport.c"; sourceTree = "<group>"; };
 		461F0BF3231A1EEC00A995BD /* libice.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libice.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		461F0C5D231A23C700A995BD /* crc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = crc32.c; path = ../../sdk/source/digest/crc32.c; sourceTree = "<group>"; };
-		461F0C5F231A23D100A995BD /* hkdf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hkdf.c; path = ../../sdk/source/digest/hkdf.c; sourceTree = "<group>"; };
-		461F0C60231A23D100A995BD /* hmac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hmac.c; path = ../../sdk/source/digest/hmac.c; sourceTree = "<group>"; };
-		461F0C61231A23D100A995BD /* md5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md5.c; path = ../../sdk/source/digest/md5.c; sourceTree = "<group>"; };
-		461F0C62231A23D100A995BD /* sha1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sha1.c; path = ../../sdk/source/digest/sha1.c; sourceTree = "<group>"; };
-		461F0C63231A23D100A995BD /* sha.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sha.c; path = ../../sdk/source/digest/sha.c; sourceTree = "<group>"; };
-		461F0C64231A23D100A995BD /* sha224-256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sha224-256.c"; path = "../../sdk/source/digest/sha224-256.c"; sourceTree = "<group>"; };
-		461F0C65231A23D100A995BD /* sha384-512.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sha384-512.c"; path = "../../sdk/source/digest/sha384-512.c"; sourceTree = "<group>"; };
-		461F0C6D231A242900A995BD /* sysnetconfig.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sysnetconfig.c; path = ../../sdk/source/port/sysnetconfig.c; sourceTree = "<group>"; };
 		461F0C6F231A25A800A995BD /* tools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tools.c; path = ../../sdk/deprecated/tools.c; sourceTree = "<group>"; };
 		461F0CFF232B412300A995BD /* sip-message-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sip-message-test.cpp"; path = "../libsip/test/sip-message-test.cpp"; sourceTree = "<group>"; };
 		468FDA9A21843A560092E381 /* libaio.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libaio.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -160,17 +128,6 @@
 		468FDAAA21843A560092E381 /* librtp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = librtp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		468FDAAC21843A560092E381 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		468FDAAE21843A560092E381 /* libsip.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libsip.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		468FDAB321843B360092E381 /* uri-parse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "uri-parse.c"; path = "../../sdk/source/uri-parse.c"; sourceTree = "<group>"; };
-		468FDAB521843B3F0092E381 /* urlcodec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = urlcodec.c; path = ../../sdk/source/urlcodec.c; sourceTree = "<group>"; };
-		468FDAB721843B4D0092E381 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uuid.c; path = ../../sdk/source/uuid.c; sourceTree = "<group>"; };
-		468FDAB921843B560092E381 /* time64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = time64.c; path = ../../sdk/source/time64.c; sourceTree = "<group>"; };
-		468FDABB21843B610092E381 /* ntp-time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "ntp-time.c"; path = "../../sdk/source/ntp-time.c"; sourceTree = "<group>"; };
-		468FDABD21843B690092E381 /* darray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = darray.c; path = ../../sdk/source/darray.c; sourceTree = "<group>"; };
-		468FDABF21843B920092E381 /* unicode.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = unicode.c; path = ../../sdk/source/unicode.c; sourceTree = "<group>"; };
-		468FDAC121843B9F0092E381 /* ip-route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "ip-route.c"; path = "../../sdk/source/port/ip-route.c"; sourceTree = "<group>"; };
-		468FDAC321843BAA0092E381 /* base64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = base64.c; path = ../../sdk/source/base64.c; sourceTree = "<group>"; };
-		468FDAC521843BB00092E381 /* app-log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "app-log.c"; path = "../../sdk/source/app-log.c"; sourceTree = "<group>"; };
-		468FDAC721843BC10092E381 /* md5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md5.c; path = ../../sdk/source/digest/md5.c; sourceTree = "<group>"; };
 		46A0D4F9229791040070E1F5 /* sip-agent-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sip-agent-test.cpp"; path = "../libsip/test/sip-agent-test.cpp"; sourceTree = "<group>"; };
 		46A0D4FB229791100070E1F5 /* sip-uac-test2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sip-uac-test2.cpp"; path = "../libsip/test/sip-uac-test2.cpp"; sourceTree = "<group>"; };
 		46A0D4FC229791100070E1F5 /* sip-uas-test2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sip-uas-test2.cpp"; path = "../libsip/test/sip-uas-test2.cpp"; sourceTree = "<group>"; };
@@ -247,8 +204,7 @@
 		46C5B50C2183F26400419E57 /* rtsp-server-udp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-udp.c"; sourceTree = "<group>"; };
 		46C5B50D2183F26400419E57 /* rtsp-server-tcp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-tcp.c"; sourceTree = "<group>"; };
 		46C5B50E2183F26400419E57 /* rtsp-server-listen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-server-listen.c"; sourceTree = "<group>"; };
-		46E2E7FD229A5F9A00BADEF9 /* random.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = random.c; path = ../../sdk/source/random.c; sourceTree = "<group>"; };
-		46E2E7FF229ABA0A00BADEF9 /* channel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = channel.c; path = ../../sdk/source/channel.c; sourceTree = "<group>"; };
+		46CA25B1241BBAA600AF5BAF /* libsdk.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libsdk.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46E2E81122F6963000BADEF9 /* avbuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = avbuffer.c; sourceTree = "<group>"; };
 		46E2E81222F6963000BADEF9 /* avbuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avbuffer.h; sourceTree = "<group>"; };
 		46E2E81322F6963000BADEF9 /* vod-file-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "vod-file-source.h"; sourceTree = "<group>"; };
@@ -257,7 +213,6 @@
 		46E2E81622F6963100BADEF9 /* vod-file-source.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "vod-file-source.cpp"; sourceTree = "<group>"; };
 		46E2E81722F6963100BADEF9 /* avpacket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avpacket.h; sourceTree = "<group>"; };
 		46E2E81822F6963100BADEF9 /* mp4-file-reader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mp4-file-reader.h"; sourceTree = "<group>"; };
-		46F4BE4721843C3700CC9B15 /* nls_cp936.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nls_cp936.c; path = ../../sdk/source/i18n/nls_cp936.c; sourceTree = "<group>"; };
 		46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "http-list-dir.cpp"; path = "../../sdk/libhttp/test/http-list-dir.cpp"; sourceTree = "<group>"; };
 		F423511C2287B6CB00D805B4 /* avpacket-queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "avpacket-queue.cpp"; sourceTree = "<group>"; };
 		F423511D2287B6CB00D805B4 /* avpacket-queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "avpacket-queue.h"; sourceTree = "<group>"; };
@@ -274,6 +229,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46CA25B2241BBAA600AF5BAF /* libsdk.a in Frameworks */,
 				461F0BF4231A1EEC00A995BD /* libice.a in Frameworks */,
 				468FDA9B21843A560092E381 /* libaio.dylib in Frameworks */,
 				468FDA9D21843A560092E381 /* libdash.a in Frameworks */,
@@ -295,6 +251,7 @@
 		468FDA9921843A560092E381 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				46CA25B1241BBAA600AF5BAF /* libsdk.a */,
 				461F0BF3231A1EEC00A995BD /* libice.a */,
 				468FDA9A21843A560092E381 /* libaio.dylib */,
 				468FDA9C21843A560092E381 /* libdash.a */,
@@ -314,32 +271,6 @@
 		46C5B46E2183EEA800419E57 = {
 			isa = PBXGroup;
 			children = (
-				461F0C6F231A25A800A995BD /* tools.c */,
-				461F0C6D231A242900A995BD /* sysnetconfig.c */,
-				461F0C5D231A23C700A995BD /* crc32.c */,
-				461F0C5F231A23D100A995BD /* hkdf.c */,
-				461F0C60231A23D100A995BD /* hmac.c */,
-				461F0C61231A23D100A995BD /* md5.c */,
-				461F0C63231A23D100A995BD /* sha.c */,
-				461F0C62231A23D100A995BD /* sha1.c */,
-				461F0C64231A23D100A995BD /* sha224-256.c */,
-				461F0C65231A23D100A995BD /* sha384-512.c */,
-				461F0BEF231A1B7500A995BD /* sockpair.c */,
-				46E2E7FF229ABA0A00BADEF9 /* channel.c */,
-				46E2E7FD229A5F9A00BADEF9 /* random.c */,
-				46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */,
-				46F4BE4721843C3700CC9B15 /* nls_cp936.c */,
-				468FDAC721843BC10092E381 /* md5.c */,
-				468FDAC521843BB00092E381 /* app-log.c */,
-				468FDAC321843BAA0092E381 /* base64.c */,
-				468FDAC121843B9F0092E381 /* ip-route.c */,
-				468FDABD21843B690092E381 /* darray.c */,
-				468FDABB21843B610092E381 /* ntp-time.c */,
-				468FDAB921843B560092E381 /* time64.c */,
-				468FDAB721843B4D0092E381 /* uuid.c */,
-				468FDABF21843B920092E381 /* unicode.c */,
-				468FDAB321843B360092E381 /* uri-parse.c */,
-				468FDAB521843B3F0092E381 /* urlcodec.c */,
 				46C5B48D2183EF0C00419E57 /* libdash */,
 				46C5B48C2183EF0600419E57 /* libflv */,
 				46C5B48B2183EEFB00419E57 /* libhls */,
@@ -350,6 +281,8 @@
 				46C5B4862183EEE000419E57 /* librtsp */,
 				46C5B4852183EED800419E57 /* libsip */,
 				46C5B4822183EED100419E57 /* BinaryDiff.cpp */,
+				46F4BE4921843C4500CC9B15 /* http-list-dir.cpp */,
+				461F0C6F231A25A800A995BD /* tools.c */,
 				46C5B4812183EED100419E57 /* test.cpp */,
 				46C5B4782183EEA800419E57 /* Products */,
 				468FDA9921843A560092E381 /* Frameworks */,
@@ -604,7 +537,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F423513522880C8800D805B4 /* aio-rtmp-client.c in Sources */,
-				461F0C6C231A23D100A995BD /* sha384-512.c in Sources */,
 				46A0D507229793860070E1F5 /* pcm-file-source.cpp in Sources */,
 				46C5B4972183EF2400419E57 /* sip-uac-test.cpp in Sources */,
 				46C5B4E12183EF6300419E57 /* mpeg-ps-test.cpp in Sources */,
@@ -614,40 +546,26 @@
 				46C5B4F02183EF6E00419E57 /* mov-writer-test.cpp in Sources */,
 				46C5B5052183EF8900419E57 /* flv-read-write-test.cpp in Sources */,
 				46C5B4C02183EF4A00419E57 /* rtp-payload-test.cpp in Sources */,
-				468FDAB621843B3F0092E381 /* urlcodec.c in Sources */,
 				46C5B4E32183EF6300419E57 /* mpeg-ts-test.cpp in Sources */,
 				46C5B4D22183EF5700419E57 /* rtmp-server-vod-test.cpp in Sources */,
-				461F0C6B231A23D100A995BD /* sha224-256.c in Sources */,
 				46C5B4F72183EF7D00419E57 /* hls-segmenter-flv.cpp in Sources */,
 				46C5B4EC2183EF6E00419E57 /* mov-file-buffer.c in Sources */,
 				46C5B4DB2183EF5700419E57 /* rtmp-server-forward-aio-test.cpp in Sources */,
-				468FDAB821843B4E0092E381 /* uuid.c in Sources */,
 				46C5B49C2183EF2400419E57 /* sip-uac-message-test.cpp in Sources */,
-				461F0C6A231A23D100A995BD /* sha.c in Sources */,
-				46F4BE4821843C3700CC9B15 /* nls_cp936.c in Sources */,
-				461F0BF0231A1B7600A995BD /* sockpair.c in Sources */,
 				46C5B5042183EF8900419E57 /* flv2ts-test.cpp in Sources */,
 				46C5B49D2183EF2400419E57 /* sip-uas-test.cpp in Sources */,
 				46E2E81922F6963100BADEF9 /* avbuffer.c in Sources */,
 				46C5B49B2183EF2400419E57 /* sip-header-test.c in Sources */,
 				46C5B4ED2183EF6E00419E57 /* mov-2-flv.cpp in Sources */,
 				46F4BE4A21843C4500CC9B15 /* http-list-dir.cpp in Sources */,
-				468FDAB421843B360092E381 /* uri-parse.c in Sources */,
 				46C5B4D72183EF5700419E57 /* rtmp-server-publish-test.cpp in Sources */,
-				461F0C6E231A242900A995BD /* sysnetconfig.c in Sources */,
 				46C5B4B82183EF3C00419E57 /* h264-file-source.cpp in Sources */,
 				461F0C70231A25A800A995BD /* tools.c in Sources */,
-				46E2E800229ABA0A00BADEF9 /* channel.c in Sources */,
-				461F0C67231A23D100A995BD /* hmac.c in Sources */,
 				46C5B4D52183EF5700419E57 /* rtmp-chunk-test.cpp in Sources */,
 				46C5B5032183EF8900419E57 /* flv-reader-test.cpp in Sources */,
 				46C5B4982183EF2400419E57 /* sip-timer.c in Sources */,
-				461F0C5E231A23C700A995BD /* crc32.c in Sources */,
 				46C5B4C12183EF4A00419E57 /* rtp-sender-test.cpp in Sources */,
-				468FDABC21843B610092E381 /* ntp-time.c in Sources */,
 				46C5B4992183EF2400419E57 /* sip-uas-message-test.cpp in Sources */,
-				468FDAC221843B9F0092E381 /* ip-route.c in Sources */,
-				468FDAC421843BAA0092E381 /* base64.c in Sources */,
 				46C5B4D62183EF5700419E57 /* rtmp-publish-aio-test.cpp in Sources */,
 				46C5B4F82183EF7D00419E57 /* hls-server.cpp in Sources */,
 				46E2E81C22F6963100BADEF9 /* vod-file-source.cpp in Sources */,
@@ -656,9 +574,7 @@
 				46C5B4BA2183EF3C00419E57 /* mp4-file-source.cpp in Sources */,
 				46C5B4EF2183EF6E00419E57 /* mov-reader-test.cpp in Sources */,
 				46C5B4EE2183EF6E00419E57 /* fmp4-writer-test.cpp in Sources */,
-				468FDAC621843BB00092E381 /* app-log.c in Sources */,
 				46C5B4B72183EF3C00419E57 /* ffmpeg-file-source.cpp in Sources */,
-				461F0C69231A23D100A995BD /* sha1.c in Sources */,
 				46C5B5002183EF8900419E57 /* amf0-test.c in Sources */,
 				46C5B4D32183EF5700419E57 /* rtmp-play-aio-test.cpp in Sources */,
 				46C5B4E22183EF6300419E57 /* mpeg-ts-dec-test.cpp in Sources */,
@@ -671,7 +587,6 @@
 				46A0D4FD229791100070E1F5 /* sip-uac-test2.cpp in Sources */,
 				461F0D00232B412300A995BD /* sip-message-test.cpp in Sources */,
 				46C5B4BB2183EF3C00419E57 /* h264-file-reader.cpp in Sources */,
-				468FDABA21843B560092E381 /* time64.c in Sources */,
 				46C5B4D12183EF5700419E57 /* rtmp-input-test.cpp in Sources */,
 				46C5B5092183EF9500419E57 /* dash-static-test.cpp in Sources */,
 				46C5B5022183EF8900419E57 /* h264-flv-test.cpp in Sources */,
@@ -679,18 +594,13 @@
 				F423513422880C8800D805B4 /* aio-rtmp-transport.c in Sources */,
 				46C5B4832183EED100419E57 /* test.cpp in Sources */,
 				461F0BEE231A1B5800A995BD /* rtp-sender.c in Sources */,
-				46E2E7FE229A5F9A00BADEF9 /* random.c in Sources */,
 				46C5B4DA2183EF5700419E57 /* rtmp-server-publish-benchmark.cpp in Sources */,
-				468FDAC021843B920092E381 /* unicode.c in Sources */,
 				46C5B5102183F26400419E57 /* rtsp-server-tcp.c in Sources */,
 				46C5B4B52183EF3C00419E57 /* rtsp-client-test.c in Sources */,
 				46C5B49A2183EF2400419E57 /* transport-tcp.c in Sources */,
-				468FDAC821843BC10092E381 /* md5.c in Sources */,
 				46C5B4D82183EF5700419E57 /* rtmp-publish-test.cpp in Sources */,
-				461F0C66231A23D100A995BD /* hkdf.c in Sources */,
 				461F0BF2231A1E5D00A995BD /* ice-transport.c in Sources */,
 				F423511E2287B6CC00D805B4 /* avpacket-queue.cpp in Sources */,
-				468FDABE21843B690092E381 /* darray.c in Sources */,
 				46C5B4B62183EF3C00419E57 /* ffmpeg-live-source.cpp in Sources */,
 				46C5B4F92183EF7D00419E57 /* hls-segmenter-mp4.cpp in Sources */,
 				46C5B4F12183EF6E00419E57 /* mov-writer-audio.cpp in Sources */,

@@ -139,8 +139,19 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
 size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
 {
 	size_t i, n;
+    const uint8_t* p, *pend;
 	
-    for (i = 0; i + 3 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]; )
+    // location ps start
+    p = data;
+    pend = data + bytes;
+    while(p && pend - p > 3)
+    {
+        p = memchr(p + 3, PES_SID_START, pend - p - 3);
+        if(p && 0x01 == *(p-1) && 0x00 == *(p - 2) && 0x00 == *(p-3))
+            break;
+    }
+    
+    for (i = (p && p >= data+3) ? p - data - 3 : 0; i + 3 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]; )
     {
         if (PES_SID_START == data[i + 3])
         {
