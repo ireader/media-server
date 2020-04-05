@@ -9,7 +9,8 @@
 // FLV Audio Type
 #define FLV_AUDIO_ADPCM		(1 << 4)
 #define FLV_AUDIO_MP3		(2 << 4)
-#define FLV_AUDIO_G711		(7 << 4)
+#define FLV_AUDIO_G711A		(7 << 4) // G711 A-law
+#define FLV_AUDIO_G711U     (8 << 4) // G711 mu-law
 #define FLV_AUDIO_AAC		(10 << 4)
 #define FLV_AUDIO_MP3_8K	(14 << 4)
 #define FLV_AUDIO_ASC		0x100 // AudioSpecificConfig(ISO-14496-3)

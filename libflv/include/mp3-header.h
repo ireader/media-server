@@ -97,6 +97,7 @@ struct mp3_header_t
 int mp3_header_load(struct mp3_header_t* mp3, const void* data, int bytes);
 int mp3_header_save(const struct mp3_header_t* mp3, void* data, int bytes);
 
+int mp3_get_channel(const struct mp3_header_t* mp3);
 int mp3_get_bitrate(const struct mp3_header_t* mp3);
 int mp3_set_bitrate(struct mp3_header_t* mp3, int bitrate);
 int mp3_get_frequency(const struct mp3_header_t* mp3);
