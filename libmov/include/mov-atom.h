@@ -114,6 +114,12 @@ struct mov_sample_entry_t
             uint32_t vertresolution; // 0x00480000 - 72dpi
             uint16_t frame_count; // default 1
             uint16_t depth; // 0x0018
+
+			struct mov_pixel_aspect_ratio_t
+			{
+				uint32_t h_spacing;
+				uint32_t v_spacing;
+			} pasp;
         } visual;
 
         struct mov_audio_sample_t

@@ -5,14 +5,14 @@
 
 // 8.7.5 Chunk Offset Box (p58)
 /*
-aligned(8) class ChunkOffsetBox extends FullBox(¡®stco¡¯, version = 0, 0) { 
+aligned(8) class ChunkOffsetBox extends FullBox('stco', version = 0, 0) { 
 	unsigned int(32) entry_count; 
 	for (i=1; i <= entry_count; i++) { 
 		unsigned int(32) chunk_offset; 
 	} 
 }
 
-aligned(8) class ChunkLargeOffsetBox extends FullBox(¡®co64¡¯, version = 0, 0) { 
+aligned(8) class ChunkLargeOffsetBox extends FullBox('co64', version = 0, 0) { 
 	unsigned int(32) entry_count; 
 	for (i=1; i <= entry_count; i++) { 
 		unsigned int(64) chunk_offset; 

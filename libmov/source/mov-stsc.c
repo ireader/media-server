@@ -5,7 +5,7 @@
 
 // 8.7.4 Sample To Chunk Box (p57)
 /*
-aligned(8) class SampleToChunkBox extends FullBox(¡®stsc¡¯, version = 0, 0) { 
+aligned(8) class SampleToChunkBox extends FullBox('stsc', version = 0, 0) { 
 	unsigned int(32) entry_count; 
 	for (i=1; i <= entry_count; i++) { 
 		unsigned int(32) first_chunk; 

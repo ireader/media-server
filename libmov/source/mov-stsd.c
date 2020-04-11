@@ -123,12 +123,12 @@ class VisualSampleEntry(codingname) extends SampleEntry (codingname){
 	CleanApertureBox clap; // optional 
 	PixelAspectRatioBox pasp; // optional 
 }
-class AVCSampleEntry() extends VisualSampleEntry (¡®avc1¡¯){
+class AVCSampleEntry() extends VisualSampleEntry ('avc1'){
 	AVCConfigurationBox config;
 	MPEG4BitRateBox (); // optional
 	MPEG4ExtensionDescriptorsBox (); // optional
 }
-class AVC2SampleEntry() extends VisualSampleEntry (¡®avc2¡¯){
+class AVC2SampleEntry() extends VisualSampleEntry ('avc2'){
 	AVCConfigurationBox avcconfig;
 	MPEG4BitRateBox bitrate; // optional
 	MPEG4ExtensionDescriptorsBox descr; // optional
@@ -176,6 +176,21 @@ static int mov_read_video(struct mov_t* mov, struct mov_sample_entry_t* entry)
 	return mp4_read_extra(mov, &box);
 }
 
+/*
+class PixelAspectRatioBox extends Box(‘pasp’){
+	unsigned int(32) hSpacing;
+	unsigned int(32) vSpacing;
+}
+*/
+int mov_read_pasp(struct mov_t* mov, const struct mov_box_t* box)
+{
+	mov_buffer_r32(&mov->io);
+	mov_buffer_r32(&mov->io);
+
+	(void)box;
+	return 0;
+}
+
 static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_sample_entry_t* entry)
 {
 	struct mov_box_t box;
@@ -198,7 +213,7 @@ static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_sample_entry
 /*
 class PlainTextSampleEntry(codingname) extends SampleEntry (codingname) {
 }
-class SimpleTextSampleEntry(codingname) extends PlainTextSampleEntry (¡®stxt¡¯) {
+class SimpleTextSampleEntry(codingname) extends PlainTextSampleEntry ('stxt') {
 	string content_encoding; // optional
 	string mime_format;
 	BitRateBox (); // optional
@@ -209,7 +224,31 @@ static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_sample_entry
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
-	mov_buffer_skip(&mov->io, box.size - 16);
+	if (MOV_TEXT == box.type)
+	{
+		// https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap3/qtff3.html#//apple_ref/doc/uid/TP40000939-CH205-69835
+		//mov_buffer_r32(&mov->io); /* display flags */
+		//mov_buffer_r32(&mov->io); /* text justification */
+		//mov_buffer_r16(&mov->io); /* background color: 48-bit RGB color */
+		//mov_buffer_r16(&mov->io);
+		//mov_buffer_r16(&mov->io);
+		//mov_buffer_r64(&mov->io); /* default text box (top, left, bottom, right) */
+		//mov_buffer_r64(&mov->io); /* reserved */
+		//mov_buffer_r16(&mov->io); /* font number */
+		//mov_buffer_r16(&mov->io); /* font face */
+		//mov_buffer_r8(&mov->io); /* reserved */
+		//mov_buffer_r16(&mov->io); /* reserved */
+		//mov_buffer_r16(&mov->io); /* foreground  color: 48-bit RGB color */
+		//mov_buffer_r16(&mov->io);
+		//mov_buffer_r16(&mov->io);
+		////mov_buffer_r16(&mov->io); /* text name */
+		mov_buffer_skip(&mov->io, box.size - 16);
+	}
+	else
+	{
+		mov_buffer_skip(&mov->io, box.size - 16);
+	}
+
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
@@ -218,20 +257,20 @@ static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_sample_entry
 /*
 class SubtitleSampleEntry(codingname) extends SampleEntry (codingname) {
 }
-class XMLSubtitleSampleEntry() extends SubtitleSampleEntry (¡¯stpp¡®) {
+class XMLSubtitleSampleEntry() extends SubtitleSampleEntry('stpp') {
 	string namespace;
 	string schema_location; // optional
 	string auxiliary_mime_types;
 	// optional, required if auxiliary resources are present
 	BitRateBox (); // optional
 }
-class TextSubtitleSampleEntry() extends SubtitleSampleEntry (¡®sbtt¡¯) {
+class TextSubtitleSampleEntry() extends SubtitleSampleEntry('sbtt') {
 	string content_encoding; // optional
 	string mime_format;
 	BitRateBox (); // optional
 	TextConfigBox (); // optional
 }
-class TextSampleEntry() extends SampleEntry (¡®tx3g¡¯) {
+class TextSampleEntry() extends SampleEntry('tx3g') {
 	unsigned int(32) displayFlags;
 	signed int(8) horizontal-justification;
 	signed int(8) vertical-justification;

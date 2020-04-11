@@ -54,8 +54,8 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 	track->tfhd.flags = MOV_TFHD_FLAG_DEFAULT_FLAGS /*| MOV_TFHD_FLAG_BASE_DATA_OFFSET*/;
     track->tfhd.flags |= MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX;
     // ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
-	// The ¡®moof¡¯ boxes shall use movie-fragment relative addressing for media data that 
-	// does not use external data references, the flag ¡®default-base-is-moof¡¯ shall be set, 
+	// The 'moof' boxes shall use movie-fragment relative addressing for media data that 
+	// does not use external data references, the flag 'default-base-is-moof' shall be set, 
 	// and data-offset shall be used, i.e. base-data-offset-present shall not be used.
 	//if (mov->flags & MOV_FLAG_SEGMENT)
 	{
@@ -80,7 +80,7 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 
 	size += mov_write_tfhd(mov);
 	// ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
-	// Each ¡®traf¡¯ box shall contain a ¡®tfdt¡¯ box.
+	// Each 'traf' box shall contain a 'tfdt' box.
     size += mov_write_tfdt(mov);
 
 	for (start = 0, i = 1; i < track->sample_count; i++)
@@ -246,8 +246,8 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	if (mov->flags & MOV_FLAG_SEGMENT)
 	{
 		// ISO/IEC 23009-1:2014(E) 6.3.4.2 General format type (p93)
-		// Each Media Segment may contain one or more ¡®sidx¡¯ boxes. 
-		// If present, the first ¡®sidx¡¯ box shall be placed before any ¡®moof¡¯ box 
+		// Each Media Segment may contain one or more 'sidx' boxes. 
+		// If present, the first 'sidx' box shall be placed before any 'moof' box 
 		// and the first Segment Index box shall document the entire Segment.
 		fmp4_write_sidx(mov);
 	}

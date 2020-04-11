@@ -77,8 +77,8 @@ static int mov_index_build(struct mov_track_t* track)
 }
 
 // 8.3.1 Track Box (p31)
-// Box Type : ¡®trak¡¯ 
-// Container : Movie Box(¡®moov¡¯) 
+// Box Type : 'trak' 
+// Container : Movie Box('moov') 
 // Mandatory : Yes 
 // Quantity : One or more
 static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
@@ -90,7 +90,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 	if (0 == r)
 	{
         mov->track->tfdt_dts = 0;
-        if (mov->track->sample_count > 1)
+        if (mov->track->sample_count > 0)
         {
             mov_apply_stco(mov->track);
             mov_apply_elst(mov->track);
@@ -186,6 +186,8 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
 	{ MOV_TAG('f', 'r', 'e', 'e'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('f', 't', 'y', 'p'), MOV_ROOT, mov_read_ftyp },
+	{ MOV_TAG('g', 'm', 'i', 'n'), MOV_GMHD, mov_read_gmin }, // Apple QuickTime gmin
+	{ MOV_TAG('g', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // Apple QuickTime gmhd
 	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr }, // Apple QuickTime minf also has hdlr
 	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2014 hvcC
 	{ MOV_TAG('l', 'e', 'v', 'a'), MOV_MVEX, mov_read_leva },
@@ -202,6 +204,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
 //	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
+	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
@@ -214,6 +217,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('s', 't', 's', 'z'), MOV_STBL, mov_read_stsz },
 	{ MOV_TAG('s', 't', 't', 's'), MOV_STBL, mov_read_stts },
 	{ MOV_TAG('s', 't', 'z', '2'), MOV_STBL, mov_read_stz2 },
+	{ MOV_TAG('t', 'e', 'x', 't'), MOV_GMHD, mov_read_text },
 	{ MOV_TAG('t', 'f', 'd', 't'), MOV_TRAF, mov_read_tfdt },
 	{ MOV_TAG('t', 'f', 'h', 'd'), MOV_TRAF, mov_read_tfhd },
 	{ MOV_TAG('t', 'f', 'r', 'a'), MOV_MFRA, mov_read_tfra },

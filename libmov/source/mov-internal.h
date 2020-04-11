@@ -15,6 +15,7 @@
 #define MOV_MDIA MOV_TAG('m', 'd', 'i', 'a')
 #define MOV_EDTS MOV_TAG('e', 'd', 't', 's')
 #define MOV_MINF MOV_TAG('m', 'i', 'n', 'f')
+#define MOV_GMHD MOV_TAG('g', 'm', 'h', 'd') // Apple QuickTime gmhd(text media)
 #define MOV_DINF MOV_TAG('d', 'i', 'n', 'f')
 #define MOV_STBL MOV_TAG('s', 't', 'b', 'l')
 #define MOV_MVEX MOV_TAG('m', 'v', 'e', 'x')
@@ -33,7 +34,7 @@
 #define MOV_ALIS	MOV_TAG('a', 'l', 'i', 's') // Apple QuickTime Macintosh alias
 
 // https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
-// Video encoding requirements 1.10: Use ¡®avc1¡¯, ¡®hvc1¡¯, or ¡®dvh1¡¯ rather than ¡®avc3¡¯, ¡®hev1¡¯, or ¡®dvhe¡¯
+// Video encoding requirements 1.10: Use 'avc1', 'hvc1', or 'dvh1' rather than 'avc3', 'hev1', or 'dvhe'
 #define MOV_H264 MOV_TAG('a', 'v', 'c', '1') // H.264 ISO/IEC 14496-15:2010(E) 5.3.4 AVC Video Stream Definition (18)
 #define MOV_HEVC MOV_TAG('h', 'v', 'c', '1') // H.265
 #define MOV_MP4V MOV_TAG('m', 'p', '4', 'v') // MPEG-4 Video
@@ -228,6 +229,9 @@ int mov_read_mfhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tfdt(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_dops(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_pasp(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_gmin(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_text(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);

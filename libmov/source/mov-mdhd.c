@@ -2,13 +2,13 @@
 #include <assert.h>
 
 // 8.4.2 Media Header Box (p35)
-// Box Type: ¡®mdhd¡¯ 
-// Container: Media Box (¡®mdia¡¯) 
+// Box Type: 'mdhd'
+// Container: Media Box ('mdia') 
 // Mandatory: Yes 
 // Quantity: Exactly one
 
 /*
-aligned(8) class MediaHeaderBox extends FullBox(¡®mdhd¡¯, version, 0) { 
+aligned(8) class MediaHeaderBox extends FullBox('mdhd', version, 0) { 
 	if (version==1) { 
 		unsigned int(64) creation_time; 
 		unsigned int(64) modification_time; 

@@ -3,8 +3,8 @@
 #include <assert.h>
 
 // 8.4.3 Handler Reference Box (p36)
-// Box Type: ¡®hdlr¡¯ 
-// Container: Media Box (¡®mdia¡¯) or Meta Box (¡®meta¡¯) 
+// Box Type: 'hdlr'
+// Container: Media Box ('mdia') or Meta Box ('meta')
 // Mandatory: Yes 
 // Quantity: Exactly one
 int mov_read_hdlr(struct mov_t* mov, const struct mov_box_t* box)

@@ -3,13 +3,13 @@
 
 // ISO/IEC 14496-12:2012(E)
 // 8.2.2.1 Movie Header Box (p30)
-// Box Type : ¡®mvhd¡¯ 
-// Container : Movie Box(¡®moov¡¯) 
+// Box Type : 'mvhd' 
+// Container : Movie Box('moov') 
 // Mandatory : Yes 
 // Quantity : Exactly one
 
 /*
-aligned(8) class MovieHeaderBox extends FullBox(¡®mvhd¡¯, version, 0) { 
+aligned(8) class MovieHeaderBox extends FullBox('mvhd', version, 0) { 
 	if (version==1) { 
 		unsigned int(64) creation_time; 
 		unsigned int(64) modification_time; 

@@ -3,13 +3,13 @@
 
 // ISO/IEC 14496-12:2012(E)
 // 8.3.2 Track Header Box (p31)
-// Box Type : ¡®tkhd¡¯ 
-// Container : Movie Box(¡®trak¡¯) 
+// Box Type : 'tkhd' 
+// Container : Movie Box('trak') 
 // Mandatory : Yes 
 // Quantity : Exactly one
 
 /*
-aligned(8) class TrackHeaderBox extends FullBox(¡®tkhd¡¯, version, flags){ 
+aligned(8) class TrackHeaderBox extends FullBox('tkhd', version, flags){ 
 	if (version==1) { 
 		unsigned int(64) creation_time; 
 		unsigned int(64) modification_time; 
