@@ -54,9 +54,6 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
 	p1 = strchr(p, '/');
 	if (!p1) return -1;
 
-	if (p + sizeof(u->app) - 1 < p1 || strlen(p1+1) + 1 > sizeof(u->stream) )
-		return -1;
-    
     u->app = u->__ptr + n;
 	r = url_decode(p, (int)(p1 - p), u->app, sizeof(u->__ptr) - n);
     if(r <= 0 || r >= sizeof(u->__ptr) - n)
