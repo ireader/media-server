@@ -202,6 +202,8 @@ static int dash_adaptation_set_segment(struct dash_mpd_t* mpd, struct dash_adapt
 		return r;
 
 	seg = (struct dash_segment_t*)calloc(1, sizeof(*seg));
+    if(!seg)
+        return -1; // ENOMEM
 	seg->timestamp = track->dts;
 	seg->duration = track->dts_last - track->dts;
 

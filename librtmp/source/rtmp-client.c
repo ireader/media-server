@@ -1,4 +1,4 @@
-/* Adobe¡¯s Real Time Messaging Protocol
+/* Adobe's Real Time Messaging Protocol
 
 1. handshake (p10)
 C -> S: C0/C1

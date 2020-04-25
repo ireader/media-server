@@ -16,19 +16,11 @@ struct flv_writer_t
 	void* param;
 };
 
-static void be_write_uint32(uint8_t* ptr, uint32_t val)
-{
-	ptr[0] = (uint8_t)((val >> 24) & 0xFF);
-	ptr[1] = (uint8_t)((val >> 16) & 0xFF);
-	ptr[2] = (uint8_t)((val >> 8) & 0xFF);
-	ptr[3] = (uint8_t)(val & 0xFF);
-}
-
 static int flv_write_header(struct flv_writer_t* flv)
 {
 	uint8_t header[FLV_HEADER_SIZE + 4];
 	flv_header_write(1, 1, header, FLV_HEADER_SIZE);
-	be_write_uint32(header + FLV_HEADER_SIZE, 0); // PreviousTagSize0(Always 0)
+    flv_tag_size_write(header + FLV_HEADER_SIZE, 4, 0); // PreviousTagSize0(Always 0)
 	return sizeof(header) == flv->write(flv->param, header, sizeof(header)) ? 0 : -1;
 }
 
@@ -115,7 +107,7 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	tag.type = (uint8_t)type;
 	tag.timestamp = timestamp;
 	flv_tag_header_write(&tag, buf, FLV_TAG_HEADER_SIZE);
-	be_write_uint32(buf + FLV_TAG_HEADER_SIZE, (uint32_t)bytes + FLV_TAG_HEADER_SIZE);
+	flv_tag_size_write(buf + FLV_TAG_HEADER_SIZE, 4, (uint32_t)bytes + FLV_TAG_HEADER_SIZE);
 
 	if(FLV_TAG_HEADER_SIZE != flv->write(flv->param, buf, FLV_TAG_HEADER_SIZE) // FLV Tag Header
 		|| bytes != (size_t)flv->write(flv->param, data, (int)bytes)

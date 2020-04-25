@@ -49,8 +49,11 @@ static int dash_mpd_onsegment(void* param, int /*track*/, const void* data, size
 {
     app_log(LOG_DEBUG, "dash_mpd_onsegment %s\n", name);
 	FILE* fp = fopen(name, "wb");
-	fwrite(data, 1, bytes, fp);
-    fclose(fp);
+    if(fp)
+    {
+        fwrite(data, 1, bytes, fp);
+        fclose(fp);
+    }
 
     dash_playlist_t* dash = (dash_playlist_t*)param;
     if(!strendswith(name, "-init.m4v") && !strendswith(name, "-init.m4a"))

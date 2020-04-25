@@ -115,6 +115,11 @@ int flv_data_tag_header_read(const uint8_t* buf, int len);
 /// @return >=0-header length in byte, <0-error
 int flv_data_tag_header_write(uint8_t* buf, int len);
 
+
+/// Read/Write FLV previous tag size
+int flv_tag_size_read(const uint8_t* buf, int len, uint32_t* size);
+int flv_tag_size_write(uint8_t* buf, int len, uint32_t size);
+
 #if defined(__cplusplus)
 }
 #endif

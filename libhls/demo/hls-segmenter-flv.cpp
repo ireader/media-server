@@ -22,8 +22,11 @@ static int hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, 
 	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, discontinue);
 
 	FILE* fp = fopen(name, "wb");
-	fwrite(data, 1, bytes, fp);
-	fclose(fp);
+    if(fp)
+    {
+        fwrite(data, 1, bytes, fp);
+        fclose(fp);
+    }
 
 	return 0;
 }
@@ -71,8 +74,11 @@ void hls_segmenter_flv(const char* file)
 	hls_media_input(hls, STREAM_VIDEO_H264, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, data, sizeof(data));
 	FILE* fp = fopen("playlist.m3u8", "wb");
-	fwrite(data, 1, strlen(data), fp);
-	fclose(fp);
+    if(fp)
+    {
+        fwrite(data, 1, strlen(data), fp);
+        fclose(fp);
+    }
 
 	flv_demuxer_destroy(demuxer);
 	flv_reader_destroy(flv);

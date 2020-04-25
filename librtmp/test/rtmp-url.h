@@ -7,42 +7,79 @@
 #include "urlcodec.h"
 #include "uri-parse.h"
 
-#define URL_LENGTH 256
-
 struct rtmp_url_t
 {
 	unsigned short port; // default 1935
-	char scheme[32];
-	char host[URL_LENGTH];
-	char app[URL_LENGTH];
-	char stream[URL_LENGTH];
-	char tcurl[URL_LENGTH];
+	char* scheme;
+	char* host;
+	char* app;
+	char* stream;
+    char* tcurl;
+    char __ptr[1024];
 };
 
 static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
 {
-	struct uri_t* uri = uri_parse(url, strlen(url));
+    int r, n;
+    const char* p;
+    const char* p1;
+    struct uri_t* uri;
+    uri = uri_parse(url, (int)strlen(url));
 	if (!uri) return -1;
-	u->port = 0 == uri->port ? 1935 : uri->port;
-	snprintf(u->host, sizeof(u->host), "%s", uri->host);
-	snprintf(u->scheme, sizeof(u->scheme), "%s", uri->scheme);
+    
+    n = 0;
+    memset(u, 0, sizeof(*u));
+    u->port = 0 == uri->port ? 1935 : uri->port;
+    
+    u->host = u->__ptr + n;
+    r = snprintf(u->host, sizeof(u->__ptr) - n, "%s", uri->host);
+    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+        goto FAILED_PARSE_RTMP_URL;
+    n += r + 1;
+    
+    u->scheme = u->__ptr + n;
+	r = snprintf(u->scheme, sizeof(u->__ptr) - n, "%s", uri->scheme);
+    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+        goto FAILED_PARSE_RTMP_URL;
+    n += r + 1;
+    
 	uri_free(uri);
-
-	const char* p = strstr(url, "://");
+    
+	p = strstr(url, "://");
 	p = p ? p + 3 : url;
 	p = strchr(p, '/');
 	if (!p) return -1;
 	p += 1;
 
-	const char* p1 = strchr(p, '/');
+	p1 = strchr(p, '/');
 	if (!p1) return -1;
 
 	if (p + sizeof(u->app) - 1 < p1 || strlen(p1+1) + 1 > sizeof(u->stream) )
 		return -1;
-	url_decode(p, p1 - p, u->app, sizeof(u->app));
-	url_decode(p1+1, strlen(p1+1), u->stream, sizeof(u->stream));
-	snprintf(u->tcurl, sizeof(u->tcurl), "rtmp://%s:%d/%s", u->host, u->port, u->app);
-	return 0;
+    
+    u->app = u->__ptr + n;
+	r = url_decode(p, (int)(p1 - p), u->app, sizeof(u->__ptr) - n);
+    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+        return -1;
+    n += r + 1;
+    
+    u->stream = u->__ptr + n;
+	r = url_decode(p1+1, (int)strlen(p1+1), u->stream, sizeof(u->__ptr) - n);
+    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+        return -1;
+    n += r + 1;
+    
+    u->tcurl = u->__ptr + n;
+	r = snprintf(u->tcurl, sizeof(u->__ptr) - n, "rtmp://%s:%d/%s", u->host, u->port, u->app);
+    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+        return -1;
+    n += r + 1;
+    
+    return 0;
+    
+FAILED_PARSE_RTMP_URL:
+    uri_free(uri);
+    return -1;
 }
 
 #endif /* !_rtmp_url_h_ */

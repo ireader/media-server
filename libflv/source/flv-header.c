@@ -218,3 +218,19 @@ int flv_data_tag_header_write(uint8_t* buf, int len)
     (void)len;
 	return 0;
 }
+
+int flv_tag_size_read(const uint8_t* buf, int len, uint32_t* size)
+{
+    if(len < 4)
+        return -1;
+    *size = be_read_uint32(buf);
+    return 4;
+}
+
+int flv_tag_size_write(uint8_t* buf, int len, uint32_t size)
+{
+    if(len < 4)
+        return -1;
+    be_write_uint32(buf, size);
+    return 4;
+}

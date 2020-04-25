@@ -16,13 +16,9 @@ struct flv_reader_t
 	void* param;
 };
 
-static uint32_t be_read_uint32(const uint8_t* ptr)
-{
-	return (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | ptr[3];
-}
-
 static int flv_read_header(struct flv_reader_t* flv)
 {
+    uint32_t sz;
 	uint8_t data[FLV_HEADER_SIZE];
 	struct flv_header_t h;
 	int n;
@@ -41,8 +37,9 @@ static int flv_read_header(struct flv_reader_t* flv)
 	if (4 != flv->read(flv->param, data, 4))
 		return -1;
 
-	assert(be_read_uint32(data) == 0);
-	return be_read_uint32(data) == 0 ? 0 : -1;
+	flv_tag_size_read(data, 4, &sz);
+    assert(0 == sz);
+	return 0 == sz ? 0 : -1;
 }
 
 static int file_read(void* param, void* buf, int len)
@@ -101,6 +98,7 @@ void flv_reader_destroy(void* p)
 
 int flv_reader_read(void* p, int* tagtype, uint32_t* timestamp, void* buffer, size_t bytes)
 {
+    uint32_t sz;
 	uint8_t header[FLV_TAG_HEADER_SIZE];
 	struct flv_tag_header_t tag;
 	struct flv_reader_t* flv;
@@ -125,7 +123,8 @@ int flv_reader_read(void* p, int* tagtype, uint32_t* timestamp, void* buffer, si
 
 	*tagtype = tag.type;
 	*timestamp = tag.timestamp;
-	assert(0 == tag.streamId); // StreamID Always 0
-	assert(be_read_uint32(header) == tag.size + FLV_TAG_HEADER_SIZE);
-	return (be_read_uint32(header) == tag.size + FLV_TAG_HEADER_SIZE) ? tag.size : -1;
+	flv_tag_size_read(header, 4, &sz);
+    assert(0 == tag.streamId); // StreamID Always 0
+    assert(sz == tag.size + FLV_TAG_HEADER_SIZE);
+	return (sz == tag.size + FLV_TAG_HEADER_SIZE) ? tag.size : -1;
 }
