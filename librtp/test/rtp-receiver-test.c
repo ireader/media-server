@@ -167,7 +167,7 @@ static void rtp_onpacket(void* param, const void *packet, int bytes, uint32_t ti
 		// add ADTS header
 	}
 	fwrite(packet, 1, bytes, ctx->fp);
-	(void)time;
+	(void)timestamp;
 	(void)flags;
 
 	if (0 == strcmp("H264", ctx->encoding))

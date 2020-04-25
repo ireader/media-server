@@ -8,7 +8,7 @@
 
 #define MAX_PACKET 3000
 
-#define RTP_MISORDER 1000
+#define RTP_MISORDER 300
 #define RTP_DROPOUT  1000
 #define RTP_SEQUENTIAL 3
 #define RTP_SEQMOD	 (1 << 16)
@@ -192,7 +192,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 		}
 		else if (delta < (uint16_t)(q->first_seq - q->last_seq))
 		{
-			// too late
+			// too late: pkt->req.seq < q->first_seq
 			return 0;
 		}
 		else if (delta <= RTP_SEQMOD - RTP_MISORDER)
@@ -214,7 +214,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 				q->bad_count = 0;
 			}
 
-			q->bad_seq = (pkt->rtp.seq + 1) % RTP_SEQMOD;
+			q->bad_seq = (pkt->rtp.seq + 1) % (RTP_SEQMOD-1);
 			return 0;
 		}
 		else

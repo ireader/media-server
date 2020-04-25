@@ -7,6 +7,7 @@
 #include "mpeg-ts-proto.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
+#include "cstringext.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
