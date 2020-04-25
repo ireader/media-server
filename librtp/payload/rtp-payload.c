@@ -213,7 +213,7 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			codec->decoder = rtp_common_decode();
 			break;
 
-		case RTP_PAYLOAD_MPA: // MPEG-1 or MPEG-2 audio only (RFC 3551, RFC 2250)
+		case RTP_PAYLOAD_MP3: // MPEG-1 or MPEG-2 audio only (RFC 3551, RFC 2250)
 		case RTP_PAYLOAD_MPV: // MPEG-1 and MPEG-2 video (RFC 2250)
 			codec->encoder = rtp_mpeg1or2es_encode();
 			codec->decoder = rtp_mpeg1or2es_decode();

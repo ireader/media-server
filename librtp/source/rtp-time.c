@@ -5,24 +5,41 @@
 #include <Windows.h>
 #else
 #include <sys/time.h>
+
+#if defined(OS_MAC)
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <mach/mach_time.h>
+#endif
+
 #endif
 
 uint64_t rtpclock()
 {
-	uint64_t v;
 #if defined(OS_WINDOWS)
-	FILETIME ft;
-	GetSystemTimeAsFileTime((FILETIME*)&ft);
-	v = (((__int64)ft.dwHighDateTime << 32) | (__int64)ft.dwLowDateTime) / 10000; // to ms
-	v -= 0xA9730B66800; /* 11644473600000LL */ // January 1, 1601 (UTC) -> January 1, 1970 (UTC).
+    LARGE_INTEGER freq;
+    LARGE_INTEGER count;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+    return (uint64_t)count.QuadPart * 1000 / freq.QuadPart;
+#elif defined(OS_MAC)
+    uint64_t tick;
+    mach_timebase_info_data_t timebase;
+    tick = mach_absolute_time();
+    mach_timebase_info(&timebase);
+    return tick * timebase.numer / timebase.denom / 1000000;
 #else
-	struct timeval tv;	
-	gettimeofday(&tv, NULL);
-	v = tv.tv_sec;
-	v *= 1000;
-	v += tv.tv_usec / 1000;
+#if defined(CLOCK_MONOTONIC)
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    return (uint64_t)tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
+#else
+    // POSIX.1-2008 marks gettimeofday() as obsolete, recommending the use of clock_gettime(2) instead.
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
 #endif
-	return v;
+#endif
 }
 
 uint64_t clock2ntp(uint64_t clock)

@@ -127,18 +127,18 @@
 		46C5B3D62183EE5D00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
-				46D4B764219FD3BD0042496F /* rtsp-media.c */,
-				46C5B3D72183EE5D00419E57 /* rtsp-reason.c */,
-				46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */,
-				46C5B3D92183EE5D00419E57 /* sdp.c */,
-				46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */,
 				46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */,
 				46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */,
-				46C5B3DD2183EE5D00419E57 /* server */,
-				46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */,
-				46C5B3EE2183EE5D00419E57 /* sdp */,
+				46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */,
 				46C5B3F42183EE5D00419E57 /* rtsp-header-transport.c */,
+				46D4B764219FD3BD0042496F /* rtsp-media.c */,
+				46C5B3D72183EE5D00419E57 /* rtsp-reason.c */,
+				46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */,
+				46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */,
+				46C5B3D92183EE5D00419E57 /* sdp.c */,
 				46C5B3F52183EE5D00419E57 /* client */,
+				46C5B3EE2183EE5D00419E57 /* sdp */,
+				46C5B3DD2183EE5D00419E57 /* server */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -365,6 +365,14 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+					../libflv/include,
+					../librtp/include,
+					../../sdk/libhttp/include,
+					../../sdk/include,
+				);
 			};
 			name = Debug;
 		};
@@ -417,6 +425,14 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+					../libflv/include,
+					../librtp/include,
+					../../sdk/libhttp/include,
+					../../sdk/include,
+				);
 			};
 			name = Release;
 		};
@@ -425,16 +441,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../libflv/include",
-					"$(SRCROOT)/../librtp/include",
-					"$(SRCROOT)/../../sdk/libhttp/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Debug;
 		};
@@ -443,16 +453,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../libflv/include",
-					"$(SRCROOT)/../librtp/include",
-					"$(SRCROOT)/../../sdk/libhttp/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Release;
 		};

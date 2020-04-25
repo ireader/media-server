@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4643D901244A894B00572339 /* rtp-demuxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D900244A894B00572339 /* rtp-demuxer.c */; };
 		468B916523B8AEAE00EA99A3 /* rtp-av1-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916323B8AEAE00EA99A3 /* rtp-av1-unpack.c */; };
 		468B916623B8AEAE00EA99A3 /* rtp-av1-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916423B8AEAE00EA99A3 /* rtp-av1-pack.c */; };
 		46C5B39E2183EE2C00419E57 /* rtp-h265-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3862183EE2C00419E57 /* rtp-h265-unpack.c */; };
@@ -52,6 +53,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4643D900244A894B00572339 /* rtp-demuxer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-demuxer.c"; sourceTree = "<group>"; };
 		468B916323B8AEAE00EA99A3 /* rtp-av1-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-av1-unpack.c"; sourceTree = "<group>"; };
 		468B916423B8AEAE00EA99A3 /* rtp-av1-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-av1-pack.c"; sourceTree = "<group>"; };
 		46C5B2822183ECD900419E57 /* librtp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtp.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -171,6 +173,7 @@
 				46C5B3C02183EE4800419E57 /* rtcp-sdec.c */,
 				46C5B3BF2183EE4800419E57 /* rtcp-sr.c */,
 				46C5B3B82183EE4800419E57 /* rtcp.c */,
+				4643D900244A894B00572339 /* rtp-demuxer.c */,
 				46C5B3BD2183EE4800419E57 /* rtp-member-list.c */,
 				46C5B3BB2183EE4800419E57 /* rtp-member.c */,
 				46C5B3B92183EE4800419E57 /* rtp-packet.c */,
@@ -270,6 +273,7 @@
 				46C5B3A42183EE2C00419E57 /* rtp-mpeg4-generic-unpack.c in Sources */,
 				46C5B3A72183EE2C00419E57 /* rtp-mp4v-es-pack.c in Sources */,
 				46C5B3B02183EE2C00419E57 /* rtp-mp4a-latm-pack.c in Sources */,
+				4643D901244A894B00572339 /* rtp-demuxer.c in Sources */,
 				46C5B3D32183EE4800419E57 /* rtp-time.c in Sources */,
 				46C5B3A82183EE2C00419E57 /* rtp-h264-pack.c in Sources */,
 				46C5B3B32183EE2C00419E57 /* rtp-mp4v-es-unpack.c in Sources */,
@@ -341,6 +345,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
+					OS_MAC,
 					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -354,6 +359,10 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+				);
 			};
 			name = Debug;
 		};
@@ -396,6 +405,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = OS_MAC;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -406,6 +416,10 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+				);
 			};
 			name = Release;
 		};
@@ -414,13 +428,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Debug;
 		};
@@ -429,13 +440,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Release;
 		};

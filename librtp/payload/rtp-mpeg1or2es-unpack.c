@@ -21,7 +21,7 @@ static int rtp_decode_mpeg2es(void* p, const void* packet, int bytes)
 	if (!helper || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 4)
 		return -EINVAL;
 
-	if (RTP_PAYLOAD_MPA != pkt.rtp.pt && RTP_PAYLOAD_MPV != pkt.rtp.pt)
+	if (RTP_PAYLOAD_MP3 != pkt.rtp.pt && RTP_PAYLOAD_MPV != pkt.rtp.pt)
 	{
 		assert(0);
 		return -EINVAL;

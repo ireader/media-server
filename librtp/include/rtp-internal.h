@@ -52,4 +52,6 @@ uint64_t rtpclock(void);
 uint64_t ntp2clock(uint64_t ntp);
 uint64_t clock2ntp(uint64_t clock);
 
+uint32_t rtp_ssrc(void);
+
 #endif /* !_rtp_internal_h_ */

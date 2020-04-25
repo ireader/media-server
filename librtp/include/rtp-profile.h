@@ -18,7 +18,7 @@ struct rtp_profile_t
 	{ 0, "PCMU",	8000,	1 }, // G711 mu-law
 	{ 1, "",		0,		0 }, // reserved
 	{ 2, "",		0,		0 }, // reserved
-	{ 3, "GSM",		8000,	1 },
+	{ 3, "GSM",	8000,	1 },
 	{ 4, "G723",	8000,	1 },
 	{ 5, "DVI4",	8000,	1 },
 	{ 6, "DVI4",	16000,	1 },
@@ -29,7 +29,7 @@ struct rtp_profile_t
 	{11, "L16",		44100,	1 },
 	{12, "QCELP",	8000,	1 },
 	{13, "CN",		8000,	1 },
-	{14, "MPA",		90000,	0 }, // MPEG-1/MPEG-2 audio
+	{14, "MPA",	90000,	0 }, // MPEG-1/MPEG-2 audio
 	{15, "G728",	8000,	1 },
 	{16, "DVI4",	11025,	1 },
 	{17, "DVI4",	22050,	1 },
@@ -57,7 +57,7 @@ struct rtp_profile_t
 	{29, "",		0,		0 }, // unassigned
 	{30, "",		0,		0 }, // unassigned
 	{31, "H261",	90000,	0 },
-	{32, "MPV",		90000,	0 }, // MPEG-1/MPEG-2 video
+	{32, "MPV",	90000,	0 }, // MPEG-1/MPEG-2 video
 	{33, "MP2T",	90000,	0 }, // MPEG-2 TS
 	{34, "H263",	90000,	0 },
 	//{ 0, "H263-1998",90000,	0 },
@@ -78,7 +78,7 @@ enum
 	RTP_PAYLOAD_PCMA		= 8,  // ITU-T G.711 PCM A-Law audio 64 kbit/s (rfc3551)
 	RTP_PAYLOAD_G722		= 9,  // ITU-T G.722 audio 64 kbit/s (rfc3551)
 	RTP_PAYLOAD_G729		= 18, // ITU-T G.729 and G.729a audio 8 kbit/s (rfc3551)
-	RTP_PAYLOAD_MPA			= 14, // MPEG-1/MPEG-2 audio (rfc2250)
+	RTP_PAYLOAD_MP3			= 14, // MPEG-1/MPEG-2 audio (rfc2250)
 
 	RTP_PAYLOAD_JPEG		= 26, // JPEG video (rfc2435)
 	RTP_PAYLOAD_MPV			= 32, // MPEG-1 and MPEG-2 video (rfc2250)
