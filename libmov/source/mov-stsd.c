@@ -380,9 +380,9 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 //	return size;
 //}
 
-static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
+static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
-	int size;
+	size_t size;
 	uint64_t offset;
     char compressorname[32];
     memset(compressorname, 0, sizeof(compressorname));
@@ -436,9 +436,9 @@ static int mov_write_video(const struct mov_t* mov, const struct mov_sample_entr
 	return size;
 }
 
-static int mov_write_audio(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
+static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
-	int size;
+	size_t size;
 	uint64_t offset;
 
 	size = 8 /* Box */ + 8 /* SampleEntry */ + 20 /* AudioSampleEntry */;
@@ -497,7 +497,8 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 
 size_t mov_write_stsd(const struct mov_t* mov)
 {
-	uint32_t i, size;
+	uint32_t i;
+	size_t size;
 	uint64_t offset;
 	const struct mov_track_t* track = mov->track;
 

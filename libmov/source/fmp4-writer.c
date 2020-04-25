@@ -19,7 +19,8 @@ struct fmp4_writer_t
 
 static size_t fmp4_write_mvex(struct mov_t* mov)
 {
-	size_t size, i;
+	int i;
+	size_t size;
 	uint64_t offset;
 
 	size = 8 /* Box */;
@@ -41,7 +42,8 @@ static size_t fmp4_write_mvex(struct mov_t* mov)
 
 static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 {
-	uint32_t i, start, size;
+	uint32_t i, start;
+	size_t size;
 	uint64_t offset;
     struct mov_track_t* track;
 
@@ -99,7 +101,8 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 
 static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moof)
 {
-	size_t size, i, j;
+	int i;
+	size_t size, j;
 	uint64_t offset;
 	uint64_t n;
 
@@ -133,8 +136,9 @@ static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moo
 
 static size_t fmp4_write_moov(struct mov_t* mov)
 {
+	int i;
 	size_t size;
-	uint32_t i, count;
+	uint32_t count;
 	uint64_t offset;
 
 	size = 8 /* Box */;
@@ -161,7 +165,7 @@ static size_t fmp4_write_moov(struct mov_t* mov)
 
 static size_t fmp4_write_sidx(struct mov_t* mov)
 {
-	size_t i;
+	int i;
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
@@ -173,7 +177,7 @@ static size_t fmp4_write_sidx(struct mov_t* mov)
 
 static int fmp4_write_mfra(struct mov_t* mov)
 {
-	size_t i;
+	int i;
 	uint64_t mfra_offset;
 	uint64_t mfro_offset;
 
@@ -218,7 +222,8 @@ static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uin
 
 static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 {
-	size_t i, n;
+	int i;
+	size_t n;
 	size_t refsize;
 	struct mov_t* mov;
 	mov = &writer->mov;
@@ -368,7 +373,7 @@ struct fmp4_writer_t* fmp4_writer_create(const struct mov_buffer_t *buffer, void
 
 void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 {
-	size_t i;
+	int i;
 	struct mov_t* mov;
 	mov = &writer->mov;
 
@@ -477,7 +482,7 @@ int fmp4_writer_add_subtitle(struct fmp4_writer_t* writer, uint8_t object, const
 
 int fmp4_writer_save_segment(fmp4_writer_t* writer)
 {
-	size_t i;
+	int i;
 	struct mov_t* mov;
 	mov = &writer->mov;
 

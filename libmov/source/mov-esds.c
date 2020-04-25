@@ -77,7 +77,7 @@ static int mov_read_base_descr(struct mov_t* mov, int bytes, int* tag,  int* len
 	return 1 + i;
 }
 
-static size_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
+static uint32_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
 {
 	mov_buffer_w8(&mov->io, tag);
 	mov_buffer_w8(&mov->io, (uint8_t)(0x80 | (len >> 21)));

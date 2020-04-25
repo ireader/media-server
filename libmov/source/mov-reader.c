@@ -304,8 +304,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 static int mov_reader_init(struct mov_t* mov)
 {
-	int r;
-	size_t i;
+	int i, r;
 	struct mov_box_t box;
 	struct mov_track_t* track;
 
@@ -359,7 +358,7 @@ struct mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* 
 
 void mov_reader_destroy(struct mov_reader_t* reader)
 {
-	size_t i;
+	int i;
 	for (i = 0; i < reader->mov.track_count; i++)
         mov_free_track(reader->mov.tracks + i);
     if (reader->mov.tracks)
@@ -369,7 +368,7 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 
 static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 {
-	size_t i;
+	int i;
 	int64_t dts, best_dts = 0;
 	struct mov_track_t* track = NULL;
 	struct mov_track_t* track2;
@@ -425,7 +424,7 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 
 int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 {
-	size_t i;
+	int i;
 	struct mov_track_t* track;
 
 	// seek video track(s)
@@ -454,7 +453,8 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 
 int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_t *ontrack, void* param)
 {
-	size_t i, j;
+	int i;
+	uint32_t j;
 	struct mov_track_t* track;
     struct mov_sample_entry_t* entry;
 

@@ -15,7 +15,8 @@ struct mov_writer_t
 
 static size_t mov_write_moov(struct mov_t* mov)
 {
-	size_t size, i;
+	int i;
+	size_t size;
 	uint64_t offset;
 
 	size = 8 /* Box */;
@@ -97,7 +98,7 @@ struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* 
 static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t bytes);
 void mov_writer_destroy(struct mov_writer_t* writer)
 {
-	size_t i;
+	int i;
 	uint64_t offset, offset2;
 	struct mov_t* mov;
 	struct mov_track_t* track;

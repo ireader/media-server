@@ -56,7 +56,7 @@ void mov_free_track(struct mov_track_t* track)
 
 struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track)
 {
-    size_t i;
+    int i;
     for (i = 0; i < mov->track_count; i++)
     {
         if (mov->tracks[i].tkhd.track_ID == track)
