@@ -114,7 +114,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 	return adp->adaptation_field_length + 1;
 }
 
-#define TS_SYNC_BYTE(data)						(data[0] == 0x47)
+#define TS_IS_SYNC_BYTE(data)					(data[0] == TS_SYNC_BYTE)
 #define TS_TRANSPORT_ERROR_INDICATOR(data)		(data[1] & 0x80)
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)

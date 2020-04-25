@@ -6,6 +6,8 @@
 
 #define TS_PACKET_SIZE		188
 
+#define TS_SYNC_BYTE        0x47
+
 struct ts_adaptation_field_t
 {
 	unsigned int adaptation_field_length : 8;
@@ -163,12 +165,14 @@ enum EPSI_STREAM_TYPE
 	// 0x80-0xFF User Private
 	PSI_STREAM_VIDEO_CAVS		= 0x42, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_AUDIO_AC3		= 0x81, // ffmpeg/libavformat/mpegts.h
+    PSI_STREAM_AUDIO_EAC3       = 0x87, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_AUDIO_DTS		= 0x8a, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_DIRAC		= 0xd1, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_SVAC		= 0x80, // GBT 25724-2010 SVAC(2014)
 	PSI_STREAM_AUDIO_SVAC		= 0x9B, // GBT 25724-2010 SVAC(2014)
-	PSI_STREAM_AUDIO_G711		= 0x90,
+	PSI_STREAM_AUDIO_G711A		= 0x90,
+    PSI_STREAM_AUDIO_G711U      = 0x91,
 	PSI_STREAM_AUDIO_G722		= 0x92,
 	PSI_STREAM_AUDIO_G723		= 0x93,
 	PSI_STREAM_AUDIO_G729		= 0x99,
