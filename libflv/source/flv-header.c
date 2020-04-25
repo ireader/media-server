@@ -34,7 +34,7 @@ int flv_header_read(struct flv_header_t* flv, const uint8_t* buf, int len)
 	flv->version = buf[3];
 
 	assert(0x00 == (buf[4] & 0xF8) && 0x00 == (buf[4] & 0x20));
-	flv->audio = (buf[4] >> 3) & 0x01;
+	flv->audio = (buf[4] >> 2) & 0x01;
 	flv->video = buf[4] & 0x01;
 	flv->offset = be_read_uint32(buf + 5);
 

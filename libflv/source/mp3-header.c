@@ -61,7 +61,7 @@ int mp3_header_load(struct mp3_header_t* mp3, const void* data, int bytes)
 		return 0;
 	}
 
-	mp3->version = (p[1] >> 3) & 0x01;
+	mp3->version = (p[1] >> 3) & 0x03;
 	mp3->layer = (p[1] >> 1) & 0x03;
 	mp3->protection = p[1] & 0x01;
 	mp3->bitrate_index = (p[2] >> 4) & 0x0F;

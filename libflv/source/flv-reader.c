@@ -29,8 +29,8 @@ static int flv_read_header(struct flv_reader_t* flv)
 	if(FLV_HEADER_SIZE != flv_header_read(&h, data, FLV_HEADER_SIZE))
 		return -1;
 
-	assert(h.offset >= FLV_HEADER_SIZE);
-	for(n = (int)(h.offset - FLV_HEADER_SIZE); n > 0; n -= sizeof(data))
+	assert(h.offset >= FLV_HEADER_SIZE && h.offset < FLV_HEADER_SIZE + 4096);
+	for(n = (int)(h.offset - FLV_HEADER_SIZE); n > 0 && n < 4096; n -= sizeof(data))
 		flv->read(flv->param, data, n >= sizeof(data) ? sizeof(data) : n); // skip
 
 	// PreviousTagSize0
