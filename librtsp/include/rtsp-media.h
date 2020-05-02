@@ -67,7 +67,7 @@ struct rtsp_media_t
 	
 	//unsigned int cseq; // rtsp sequence, unused if aggregate control available
 	int64_t start, stop; // sdp t: NTP time since 1900
-	char network[16], addrtype[16], address[64]; // sdp c: connection
+	char network[16], addrtype[16], address[64], source[64]; // sdp c: connection, address: unicast-source address, mulitcast-multicast address(RFC4566 4.1.  Media and Transport Information)
 	struct rtsp_header_range_t range;
 
 	char media[32]; //audio, video, text, application, message

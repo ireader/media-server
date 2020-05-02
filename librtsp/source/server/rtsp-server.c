@@ -82,7 +82,7 @@ int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header,
 	// session header
 	if (len > 0 && rtsp->session.session[0])
 	{
-		len += snprintf(rtsp->reply + len, sizeof(rtsp->reply) - len, "Session: %s\r\n", rtsp->session.session);
+		len += snprintf(rtsp->reply + len, sizeof(rtsp->reply) - len, "Session: %s;timeout=%d\r\n", rtsp->session.session, rtsp->session.timeout/1000);
 	}
 
 	// other headers

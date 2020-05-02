@@ -1535,6 +1535,28 @@ int sdp_media_formats(struct sdp_t* sdp, int media, int *formats, int count)
 	return (int)m->fmt.count;
 }
 
+int sdp_media_get_connection(sdp_t* sdp, int media, const char** network, const char** addrtype, const char** address)
+{
+    struct sdp_media *m;
+    struct sdp_connection *conn;
+
+    m = sdp_get_media(sdp, media);
+    if(m && m->c.count > 0)
+        conn = &m->c.connections[0];
+    else
+        conn = &sdp->c;
+    
+    if(conn && conn->network && conn->addrtype && conn->address)
+    {
+        *network = conn->network;
+        *addrtype = conn->addrtype;
+        *address = conn->address;
+        return 0;
+    }
+    
+    return -1;
+}
+
 int sdp_media_get_connection_address(struct sdp_t* sdp, int media, char* ip, int bytes)
 {
 	const char* p;

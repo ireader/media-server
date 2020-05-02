@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4643D91E245712A400572339 /* rtsp-multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D91D245712A400572339 /* rtsp-multicast.c */; };
 		46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D72183EE5D00419E57 /* rtsp-reason.c */; };
 		46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */; };
 		46C5B4072183EE5D00419E57 /* sdp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D92183EE5D00419E57 /* sdp.c */; };
@@ -51,6 +52,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4643D91D245712A400572339 /* rtsp-multicast.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "rtsp-multicast.c"; sourceTree = "<group>"; };
 		46C5B2922183ECF900419E57 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3D52183EE5600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B3D72183EE5D00419E57 /* rtsp-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-reason.c"; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 		46C5B3D62183EE5D00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				4643D91D245712A400572339 /* rtsp-multicast.c */,
 				46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */,
 				46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */,
 				46C5B3DA2183EE5D00419E57 /* rtsp-header-session.c */,
@@ -277,6 +280,7 @@
 				46C5B4132183EE5D00419E57 /* rtsp-server-pause.c in Sources */,
 				46C5B41A2183EE5D00419E57 /* sdp-opus.c in Sources */,
 				46D4B765219FD3BD0042496F /* rtsp-media.c in Sources */,
+				4643D91E245712A400572339 /* rtsp-multicast.c in Sources */,
 				46C5B4282183EE5D00419E57 /* rtsp-client-get-parameter.c in Sources */,
 				46C5B4102183EE5D00419E57 /* rtsp-server-describe.c in Sources */,
 				46C5B4152183EE5D00419E57 /* rtsp-server-announce.c in Sources */,

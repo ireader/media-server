@@ -291,7 +291,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 			while (media->ice.remote_count + 1 < sizeof(media->ice.remotes) / sizeof(media->ice.remotes[0]) && media->offset + sizeof(*media->ice.remotes[0]) <= sizeof(media->ptr))
 			{
 				media->ice.remotes[media->ice.remote_count] = (struct sdp_candidate_t*)(media->ptr + media->offset);
-				if (!value || 3 != sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.remote_count]->component, &media->ice.remotes[media->ice.remote_count]->address, &media->ice.remotes[media->ice.remote_count]->port, &n))
+				if (!value || 3 != sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.remote_count]->component, media->ice.remotes[media->ice.remote_count]->address, &media->ice.remotes[media->ice.remote_count]->port, &n))
 					break;
 
 				value += n;
@@ -324,7 +324,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	const char* control;
 	const char* start, *stop;
 	const char* iceufrag, *icepwd;
-	const char* network, *addrtype, *address;
+	const char* network, *addrtype, *address, *source;
 	struct rtsp_media_t* m;
 	struct rtsp_header_range_t range;
 	sdp_t* sdp;
@@ -352,7 +352,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 
 	// C.1.7 Connection Information
 	network = addrtype = address = NULL;
-	sdp_connection_get(sdp, &network, &addrtype, &address);
+	sdp_connection_get(sdp, &network, &addrtype, &source);
 
 	// session ice-ufrag/ice-pwd
 	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
@@ -370,9 +370,14 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 			m->start = strtoull(start, NULL, 10);
 			m->stop = strtoull(stop, NULL, 10);
 		}
-		snprintf(m->network, sizeof(m->network), "%s", network);
-		snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
-		snprintf(m->address, sizeof(m->address), "%s", address);
+        
+        if(0 == sdp_media_get_connection(sdp, i, &network, &addrtype, &address))
+        {
+            snprintf(m->source, sizeof(m->source), "%s", source && *source ? source : "");
+            snprintf(m->network, sizeof(m->network), "%s", network);
+            snprintf(m->address, sizeof(m->address), "%s", address);
+            snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
+        }
 		//media->cseq = rand();
 		
 		m->nport = sdp_media_port(sdp, i, m->port, sizeof(m->port)/sizeof(m->port[0]));

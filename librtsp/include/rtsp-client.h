@@ -24,8 +24,14 @@ struct rtsp_client_handler_t
 	///network implementation
 	///@return >0-sent bytes, <0-error
 	int (*send)(void* param, const char* uri, const void* req, size_t bytes);
-	///create rtp/rtcp port 
-	int (*rtpport)(void* param, int media, unsigned short *rtp); // udp only(rtp%2=0 and rtcp=rtp+1), rtp=0 if you want to use RTP over RTSP(tcp mode)
+    
+	///create rtp/rtcp port
+    /// @param[in] source media source address
+    /// @param[in,out] port [INPUT] media port, [OUTPUT] udp: bind local port for rtp/rtcp(port[0] % 2 == 0), tcp: channel interleaved id
+    /// @param[in,out] ip [INPUT] media address, [OUTPUT] udp bind local ip address, 224~239.x.x.x for multicast udp transport
+    /// @param[in] len ip buffer length in byte
+    /// @return <0-error, other-RTSP_TRANSPORT_XXX
+	int (*rtpport)(void* param, int media, const char* source, unsigned short port[2], char* ip, int len);
 
 	/// rtsp_client_announce callback only
 	int (*onannounce)(void* param);
@@ -104,6 +110,7 @@ int rtsp_client_media_count(rtsp_client_t* rtsp);
 const struct rtsp_header_transport_t* rtsp_client_get_media_transport(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_encoding(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_fmtp(rtsp_client_t* rtsp, int media);
+
 int rtsp_client_get_media_payload(rtsp_client_t* rtsp, int media);
 int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media); // return 0 if unknown rate
 
