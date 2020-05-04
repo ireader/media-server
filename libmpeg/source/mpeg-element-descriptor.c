@@ -1,5 +1,5 @@
 // ITU-T H.222.0(06/2012)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.6 Program and program element descriptors(p83)
 
 #include "mpeg-ps-proto.h"
@@ -10,7 +10,7 @@
 /*
 2.6 Program and program element descriptors
 2.6.1 Semantic definition of fields in program and program element descriptors
-Table 2-45 ¨C Program and program element descriptors
+Table 2-45 - Program and program element descriptors
 tag		TS	PS	Identification
 0		n/a n/a reserved
 1		n/a X	forbidden

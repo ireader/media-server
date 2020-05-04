@@ -84,7 +84,7 @@ struct pat_t
 	struct pmt_t pmts[4];
 };
 
-// Table 2-3 ¨C PID table(p36)
+// Table 2-3 - PID table(p36)
 enum ETS_PID
 {
 	TS_PID_PAT	= 0x00, // program association table
@@ -99,7 +99,7 @@ enum ETS_PID
 };
 
 // 2.4.4.4 Table_id assignments
-// Table 2-31 ¨C table_id assignment values(p66/p39)
+// Table 2-31 - table_id assignment values(p66/p39)
 enum EPAT_TID
 {
 	PAT_TID_PAS				= 0x00, // program_association_section
@@ -118,7 +118,7 @@ enum EPAT_TID
 
 // ISO/IEC 13818-1:2015 (E)
 // 2.4.4.9 Semantic definition of fields in transport stream program map section
-// Table 2-34 ¨C Stream type assignments(p69)
+// Table 2-34 - Stream type assignments(p69)
 enum EPSI_STREAM_TYPE
 {
 	PSI_STREAM_RESERVED			= 0x00, // ITU-T | ISO/IEC Reserved
@@ -171,7 +171,7 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_SVAC		= 0x80, // GBT 25724-2010 SVAC(2014)
 	PSI_STREAM_AUDIO_SVAC		= 0x9B, // GBT 25724-2010 SVAC(2014)
-	PSI_STREAM_AUDIO_G711A		= 0x90,
+	PSI_STREAM_AUDIO_G711A		= 0x90,	// GBT 25724-2010 SVAC(2014)
     PSI_STREAM_AUDIO_G711U      = 0x91,
 	PSI_STREAM_AUDIO_G722		= 0x92,
 	PSI_STREAM_AUDIO_G723		= 0x93,

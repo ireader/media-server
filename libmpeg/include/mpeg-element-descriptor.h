@@ -6,7 +6,7 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes);
 typedef struct _video_stream_descriptor_t
 {
 	uint32_t multiple_frame_rate_flag : 1;
-	// Table 2-47 ¨C Frame rate code
+	// Table 2-47 - Frame rate code
 	// 23.976/24.0/25.0/29.97/30.0/50.0/59.94/60.0
 	uint32_t frame_rate_code : 4; 
 	uint32_t MPEG_1_only_flag : 1;
@@ -32,7 +32,7 @@ typedef struct _audio_stream_descriptor_t
 size_t audio_stream_descriptor(const uint8_t* data, size_t bytes);
 
 /*
-Table 2-50 ¨C Hierarchy_type field values
+Table 2-50 - Hierarchy_type field values
 Value Description
 0 Reserved
 1 Spatial Scalability

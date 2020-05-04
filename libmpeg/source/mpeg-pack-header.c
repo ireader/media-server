@@ -3,8 +3,8 @@
 #include <assert.h>
 
 // 2.5.3.3 Pack layer of program stream (p78)
-// Table 2-38 ¨C Program stream pack
-// Table 2-39 ¨C Program stream pack header
+// Table 2-38 - Program stream pack
+// Table 2-39 - Program stream pack header
 size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t bytes)
 {
     uint8_t stuffing_length;

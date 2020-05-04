@@ -1,5 +1,5 @@
 // ITU-T H.222.0(06/2012)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
 #include "mpeg-ts-proto.h"
@@ -393,7 +393,7 @@ int mpeg_ts_add_stream(void* ts, int codecid, const void* extra_data, size_t ext
     stream->esinfo = NULL;
 
     // stream id
-    // Table 2-22 ¨C Stream_id assignments
+    // Table 2-22 - Stream_id assignments
     if (mpeg_stream_type_video(codecid))
     {
         // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 

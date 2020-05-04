@@ -3,7 +3,7 @@
 #include <assert.h>
 
 // 2.5.3.5 System header (p79)
-// Table 2-40 ¨C Program stream system header
+// Table 2-40 - Program stream system header
 size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, size_t bytes)
 {
     size_t i, j;

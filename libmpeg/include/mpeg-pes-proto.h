@@ -5,7 +5,7 @@
 
 // ISO/IEC 13818-1:2015 (E)
 // 2.4.3.7 Semantic definition of fields in PES packet
-// Table 2-22 ¨C Stream_id assignments(p54)
+// Table 2-22 - Stream_id assignments(p54)
 // In transport streams, the stream_id may be set to any valid value which correctly describes the elementary stream type as defined in Table 2-22. 
 // In transport streams, the elementary stream type is specified in the program-specific information as specified in 2.4.4
 enum EPES_STREAM_ID
