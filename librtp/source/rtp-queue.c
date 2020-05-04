@@ -136,13 +136,19 @@ static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_pack
 			return -E2BIG;
 
 		capacity = q->capacity + 250;
-		p = realloc(q->items, capacity);
+		p = realloc(q->items, capacity * sizeof(struct rtp_item_t*));
 		if (NULL == p)
 			return -ENOMEM;
 
 		q->items = (struct rtp_item_t*)p;
-		for (i = q->capacity; i < q->pos + q->size; i++)
-			memcpy(&q->items[i % capacity], &q->items[i % q->capacity], sizeof(struct rtp_item_t));
+		if (q->pos + q->size > q->capacity)
+		{
+			// move to tail
+			assert(q->pos < q->capacity);
+			memmove(&q->items[q->pos + capacity - q->capacity], &q->items[q->pos], q->capacity - q->pos);
+			q->pos += capacity - q->capacity;
+		}
+
 		q->capacity = capacity;
 	}
 
@@ -231,23 +237,26 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 
 struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
 {
-	uint32_t threshold;
+	int threshold;
 	struct rtp_packet_t* pkt;
 	if (q->size < 1 || q->probation)
 		return NULL;
 
+	assert(q->pos < q->capacity);
 	pkt = q->items[q->pos].pkt;
 	if (q->first_seq == pkt->rtp.seq)
 	{
 		q->first_seq++;
 		q->size--;
 		q->pos = (q->pos + 1) % q->capacity;
+		if (0 == q->pos)
+			return pkt;
 		return pkt;
 	}
 	else
 	{
-		threshold = (q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp) / (q->frequency / 1000);
-		if (threshold < (uint32_t)q->threshold)
+		threshold = (int)(q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp) / (q->frequency / 1000);
+		if (threshold < q->threshold)
 			return NULL;
 
 		q->first_seq = (uint16_t)pkt->rtp.seq + 1;
