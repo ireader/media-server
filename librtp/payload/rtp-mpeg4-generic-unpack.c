@@ -28,7 +28,7 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 
 	if (helper->lost)
 	{
-		assert(0 == helper->size);
+		//assert(0 == helper->size);
 		return 0; // packet discard
 	}
 

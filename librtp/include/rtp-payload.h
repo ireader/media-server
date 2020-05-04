@@ -10,7 +10,8 @@ extern "C" {
 #endif
 
 /// RTP packet lost(miss packet before this frame)
-#define RTP_PAYLOAD_FLAG_PACKET_LOST 1
+#define RTP_PAYLOAD_FLAG_PACKET_LOST	0x0100 // some packets lost before the packet
+#define RTP_PAYLOAD_FLAG_PACKET_CORRUPT 0x0200 // the packet data is corrupt
 
 struct rtp_payload_t
 {

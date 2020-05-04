@@ -77,7 +77,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	}
 
 	// ISO/IEC 14496-3:200X(E)
-	// Table 1.44 ¨C Syntax of PayloadLengthInfo() (p84)
+	// Table 1.44 - Syntax of PayloadLengthInfo() (p84)
 	len = bytes / 255 + 1;
 	if (len > sizeof(hd))
 	{

@@ -26,7 +26,7 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 
 	if (helper->lost)
 	{
-		assert(0 == helper->size);
+		//assert(0 == helper->size);
 		return 0; // packet discard
 	}
 
@@ -37,8 +37,8 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 		for (pend = ptr + pkt.payloadlen; ptr < pend; ptr += len)
 		{
 			// ISO/IEC 14496-3:200X(E)
-			// Table 1.44 ¨C Syntax of PayloadLengthInfo() (p84)
-			// Table 1.45 ¨C Syntax of PayloadMux()
+			// Table 1.44 - Syntax of PayloadLengthInfo() (p84)
+			// Table 1.45 - Syntax of PayloadMux()
 			for (len = 0; ptr < pend; ptr++)
 			{
 				len += *ptr;

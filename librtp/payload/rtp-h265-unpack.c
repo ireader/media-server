@@ -26,12 +26,15 @@ NUH temporal ID plus 1 (TID) : 3 bits
 #define FU_END(v)	(v & 0x40)
 #define FU_NAL(v)	(v & 0x3F)
 
+#define H265_MAX_SIZE (200 * 1024 * 1024)
+
 struct rtp_decode_h265_t
 {
 	struct rtp_payload_t handler;
 	void* cbparam;
 
 	uint16_t seq; // rtp seq
+	uint32_t timestamp;
 
 	uint8_t* ptr;
 	int size, capacity;
@@ -94,13 +97,19 @@ static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t*
 {
 	int n;
 	int len;
+	//uint16_t donl;
+	//uint16_t dond;
 
-	n = unpacker->using_donl_field ? 4 : 2;
-	for (bytes -= 2; bytes > n; bytes -= len + n)
+	//donl = unpacker->using_donl_field ? nbo_r16(ptr + 2) : 0;
+	ptr += 2; // PayloadHdr
+	n = 2 /*LEN*/ + (unpacker->using_donl_field ? 2 : 0);
+
+	for (bytes -= 2 /*PayloadHdr*/; bytes > n; bytes -= len + 2)
 	{
+		bytes -= n - 2; // skip DON
 		ptr += n - 2; // skip DON
 		len = nbo_r16(ptr);
-		if (len + n > bytes)
+		if (len + 2 > bytes)
 		{
 			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
@@ -108,12 +117,13 @@ static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t*
 			return -EINVAL; // error
 		}
 
-		assert(H265_TYPE(ptr[n]) >= 0 && H265_TYPE(ptr[n]) <= 40);
+		assert(H265_TYPE(ptr[2]) >= 0 && H265_TYPE(ptr[2]) < 48);
 		unpacker->handler.packet(unpacker->cbparam, ptr + 2, len, timestamp, unpacker->flags);
 		unpacker->flags = 0;
 		unpacker->size = 0;
 
 		ptr += len + 2; // next NALU
+		n = 2 /*LEN*/ + (unpacker->using_donl_field ? 1 : 0);
 	}
 
 	return 1; // packet handled
@@ -145,14 +155,18 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 	int n;
 	uint8_t fuheader;
 
-	n = unpacker->using_donl_field ? 4 : 2;
-	if (bytes < n + 1 /*FU header*/)
+	n = 1 /*FU header*/ + (unpacker->using_donl_field ? 4 : 2);
+	if (bytes < n || unpacker->size + bytes - n > H265_MAX_SIZE)
+	{
+		assert(0);
 		return -EINVAL;
+	}
 
-	if (unpacker->size + bytes - n - 1 + 2 /*NALU*/ > unpacker->capacity)
+	if (unpacker->size + bytes - n + 2 /*NALU*/ > unpacker->capacity)
 	{
 		void* p = NULL;
-		int size = unpacker->size + bytes + 256000 + 2;
+		int size = unpacker->size + bytes + 2;
+		size += size / 4 > 128000 ? size / 4 : 128000;
 		p = realloc(unpacker->ptr, size);
 		if (!p)
 		{
@@ -168,28 +182,38 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 	fuheader = ptr[2];
 	if (FU_START(fuheader))
 	{
-		assert(0 == unpacker->size);
+#if 0
+		if (unpacker->size > 0)
+		{
+			unpacker->flags |= RTP_PAYLOAD_FLAG_PACKET_CORRUPT;
+			unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, unpacker->timestamp, unpacker->flags);
+			unpacker->flags = 0;
+			unpacker->size = 0; // reset
+		}
+#endif
+
 		assert(unpacker->capacity > 2);
 		unpacker->size = 2; // NAL unit type byte
-		unpacker->ptr[0] = FU_NAL(fuheader) << 1;
-		unpacker->ptr[1] = 1;
+		unpacker->ptr[0] = (FU_NAL(fuheader) << 1) | (ptr[0] & 0x81); // replace NAL Unit Type Bits
+		unpacker->ptr[1] = ptr[1];
+		assert(H265_TYPE(unpacker->ptr[0]) > 0 && H265_TYPE(unpacker->ptr[0]) < 48);
 	}
 	else
 	{
 		if (0 == unpacker->size)
 		{
-			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;
 			return 0; // packet discard
 		}
 		assert(unpacker->size > 0);
 	}
 
-	if (bytes > n + 1)
+	unpacker->timestamp = timestamp;
+	if (bytes > n)
 	{
-		assert(unpacker->capacity >= unpacker->size + bytes - n - 1);
-		memmove(unpacker->ptr + unpacker->size, ptr + n + 1, bytes - n - 1);
-		unpacker->size += bytes - n - 1;
+		assert(unpacker->capacity >= unpacker->size + bytes - n);
+		memmove(unpacker->ptr + unpacker->size, ptr + n, bytes - n);
+		unpacker->size += bytes - n;
 	}
 
 	if (FU_END(fuheader))
@@ -204,13 +228,13 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 
 static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 {
-	int nal, lid, tid;
+	int nal;
 	const uint8_t* ptr;
 	struct rtp_packet_t pkt;
 	struct rtp_decode_h265_t *unpacker;
 
 	unpacker = (struct rtp_decode_h265_t *)p;
-	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < (unpacker->using_donl_field ? 4 : 2))
+	if (!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < (unpacker->using_donl_field ? 5 : 3))
 		return -EINVAL;
 
 	if (-1 == unpacker->flags)
@@ -229,9 +253,6 @@ static int rtp_h265_unpack_input(void* p, const void* packet, int bytes)
 	assert(pkt.payloadlen > 2);
 	ptr = (const uint8_t*)pkt.payload;
 	nal = H265_TYPE(ptr[0]);
-	lid = ((ptr[0] & 0x01) << 5) | ((ptr[1] >> 3) & 0x1f);
-	tid = ptr[1] & 0x07;
-	assert(0 == lid && 0 != tid);
 
 	if (nal > 50)
 		return 0; // packet discard, Unsupported (HEVC) NAL type
