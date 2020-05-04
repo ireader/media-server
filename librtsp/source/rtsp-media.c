@@ -324,6 +324,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	const char* control;
 	const char* start, *stop;
 	const char* iceufrag, *icepwd;
+	const char* username, *session, *version;
 	const char* network, *addrtype, *address, *source;
 	struct rtsp_media_t* m;
 	struct rtsp_header_range_t range;
@@ -347,12 +348,13 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	start = stop = NULL;
 	for (i = 0; i < sdp_timing_count(sdp); i++)
 	{
-	//	sdp_timing_get(sdp, i, &start, &stop);
+		sdp_timing_get(sdp, i, &start, &stop);
 	}
 
 	// C.1.7 Connection Information
-	network = addrtype = address = NULL;
-	sdp_connection_get(sdp, &network, &addrtype, &source);
+	network = addrtype = source = NULL;
+	if (0 != sdp_connection_get(sdp, &network, &addrtype, &source))
+		sdp_origin_get(sdp, &username, &session, &version, &network, &addrtype, &source);
 
 	// session ice-ufrag/ice-pwd
 	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
@@ -371,8 +373,10 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 			m->stop = strtoull(stop, NULL, 10);
 		}
         
-        if(0 == sdp_media_get_connection(sdp, i, &network, &addrtype, &address))
+		if(0 == sdp_media_get_connection(sdp, i, &network, &addrtype, &address))
         {
+			if (0 == strcmp("IP4", addrtype) && 0 == strcmp("0.0.0.0", address) && source && *source)
+				address = source;
             snprintf(m->source, sizeof(m->source), "%s", source && *source ? source : "");
             snprintf(m->network, sizeof(m->network), "%s", network);
             snprintf(m->address, sizeof(m->address), "%s", address);
