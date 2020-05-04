@@ -1,11 +1,10 @@
 #include "rtp-demuxer.h"
 #include "rtp-internal.h"
-#include "rtp-profile.h"
 #include "rtp-payload.h"
-#include "rtcp-header.h"
 #include "rtp-packet.h"
 #include "rtp-queue.h"
 #include "rtp.h"
+#include "rtcp-header.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -55,18 +54,20 @@ static struct rtp_packet_t* rtp_demuxer_alloc(struct rtp_demuxer_t* rtp, const v
     uint8_t* ptr;
     struct rtp_packet_t* pkt;
     
-    if(rtp->cap < bytes + sizeof(struct rtp_packet_t))
+    if(rtp->cap < bytes + (int)sizeof(struct rtp_packet_t))
     {
-        ptr = (uint8_t*)realloc(rtp->ptr, bytes + sizeof(struct rtp_packet_t) + 1500 + sizeof(uint32_t));
+        r = bytes + sizeof(struct rtp_packet_t);
+        r = r > 1500 ? r : 1500;
+        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(int));
         if(!ptr)
             return NULL;
         
-        rtp->cap = bytes + sizeof(struct rtp_packet_t) + 1500;
-        *(uint32_t*)ptr = rtp->cap;
-        rtp->ptr = ptr + sizeof(uint32_t);
+        rtp->cap = r;
+        rtp->ptr = ptr;
+        *(int*)ptr = r;
     }
 
-    pkt = (struct rtp_packet_t*)rtp->ptr;
+    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(int));
     memcpy(pkt + 1, data, bytes);
     
     r = rtp_packet_deserialize(pkt, pkt + 1, bytes);
@@ -84,7 +85,6 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     uint8_t* ptr;
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
-    
     ptr = (uint8_t*)pkt - sizeof(int);
     cap = *(int*)ptr;
     
@@ -97,7 +97,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     if(rtp->cap > 0 && rtp->ptr)
         free(rtp->ptr);
     rtp->cap = cap;
-    rtp->ptr = (uint8_t*)pkt;
+    rtp->ptr = ptr;
 }
 
 static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payload, const char* encoding)
@@ -119,7 +119,7 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payloa
     evthandler.on_rtcp = rtp_on_rtcp;
     rtp->rtp = rtp_create(&evthandler, rtp, rtp->ssrc, timestamp, frequency ? frequency : 90000, 2 * 1024 * 1024, 0);
     
-    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp->queue);
+    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp->param);
     
     return rtp->payload && rtp->rtp && rtp->queue? 0 : -1;
 }
@@ -170,34 +170,36 @@ int rtp_demuxer_destroy(struct rtp_demuxer_t** pprtp)
 int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
 {
     int r;
+    uint8_t pt;
     struct rtp_packet_t* pkt;
     
-    pkt = rtp_demuxer_alloc(rtp, data, bytes);
-    if(!pkt)
+    if (bytes < 12)
         return -1;
-    
-    if(pkt->rtp.pt < RTCP_FIR || pkt->rtp.pt > RTCP_TOKEN)
+    pt = ((uint8_t*)data)[1];
+
+    if(pt < RTCP_FIR || pt > RTCP_TOKEN)
     {
+        pkt = rtp_demuxer_alloc(rtp, data, bytes);
+        if (!pkt)
+            return -1;
+
         r = rtp_queue_write(rtp->queue, pkt);
-        if(0 != r)
+        if(r < 0)
         {
             rtp_demuxer_freepkt(rtp, pkt);
             return r > 0 ? -r : r;
         }
         
         // re-order packet
-        rtp_demuxer_freepkt(rtp, pkt);
+        pkt = rtp_queue_read(rtp->queue);
         while(pkt)
         {
             bytes = (int)((uint8_t*)pkt->payload - (uint8_t*)(pkt+1)) + pkt->payloadlen;
-            
+
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
             r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
-            if(0 != r)
-            {
-                r = r > 0 ? -r : r;
+            if(r < 0)
                 break;
-            }
     
             rtp_demuxer_freepkt(rtp, pkt);
             pkt = rtp_queue_read(rtp->queue);
@@ -205,9 +207,8 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     }
     else
     {
-        r = rtp_onreceived_rtcp(rtp->rtp, pkt + 1, bytes);
-        r = pkt->rtp.pt; // rtcp message type
-        rtp_demuxer_freepkt(rtp, pkt);
+        r = rtp_onreceived_rtcp(rtp->rtp, data, bytes);
+        r = pt; // rtcp message type
     }
     
     return r;
