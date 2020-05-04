@@ -37,6 +37,7 @@ struct mpeg4_avc_t
 	uint8_t bit_depth_chroma_minus8;
 
     uint8_t data[4 * 1024];
+	int off;
 };
 
 int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc);

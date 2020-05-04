@@ -140,6 +140,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 		}
 	}
 
+	hevc->off = dst - hevc->data;
 	return (int)(p - data);
 }
 

@@ -107,6 +107,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
         p += len;
 	}
 
+	avc->off = p - avc->data;
 	return j;
 }
 
@@ -219,6 +220,8 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 
 int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes)
 {
+	// https://tools.ietf.org/html/rfc6381#section-3.3
+	// https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter
     return snprintf(codecs, bytes, "avc1.%02x%02x%02x", avc->profile, avc->compatibility, avc->level);
 }
 
