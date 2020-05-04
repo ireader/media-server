@@ -136,7 +136,24 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 	return 2;
 }
 
-// ISO/IEC 14496-3:2009(E) Table 1.42 每 Syntax of StreamMuxConfig() (p83)
+// ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
+int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+{
+	if (bytes < 6) return -1;
+	assert(0 == (0x80 & data[0])); // audioMuxVersion: 0
+	// [0] 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
+	aac->profile = ((data[1] & 0x01) << 4) | (data[2] >> 4); // 0-numProgram(4), 0-numLayer(3), 1-ASC(1)
+	aac->sampling_frequency_index = data[2] & 0x0F;
+	aac->channel_configuration = data[3] >> 4;
+	assert(aac->profile > 0 && aac->profile < 31);
+	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
+	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	return 6;
+}
+
+// ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
 	if (bytes < 6) return -1;
@@ -155,7 +172,7 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	return 6;
 }
 
-// ISO/IEC 14496-3:2009(E)  Table 1.14 每 audioProfileLevelIndication values (p51)
+// ISO/IEC 14496-3:2009(E)  Table 1.14 - audioProfileLevelIndication values (p51)
 int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
 {
 	int frequency;
@@ -163,8 +180,8 @@ int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
 	// profile: MPEG4_AAC_LC only
 	// TODO:
 
-	// Table 1.10 每 Levels for the AAC Profile (p49)
-	// Table 1.14 每 audioProfileLevelIndication values (p51)
+	// Table 1.10 - Levels for the AAC Profile (p49)
+	// Table 1.14 - audioProfileLevelIndication values (p51)
 	frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 	if (frequency <=24000)
 	{

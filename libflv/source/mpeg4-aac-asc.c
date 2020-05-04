@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Table 4.85 ¨C Syntactic elements (p533)
+// Table 4.85 - Syntactic elements (p533)
 enum {
 	ID_SCE = 0x0, // single channel element()
 	ID_CPE = 0x1, // channel_pair_element()
@@ -358,7 +358,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 
 int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
-	if (bytes < 2 + aac->npce)
+	if (bytes < 2 + (size_t)aac->npce)
 		return -1;
 
 	memcpy(data + 2, aac->pce, aac->npce);
@@ -400,7 +400,7 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 {
 	struct mpeg4_aac_t src;
 	struct mpeg4_bits_t pce, adts;
-	if (aac->npce + 7 > bytes)
+	if ((size_t)aac->npce + 7 > bytes)
 		return 0;
 	memcpy(&src, aac, sizeof(src));
 //	assert(data[1] & 0x01); // disable protection_absent
