@@ -33,6 +33,8 @@ struct aom_av1_t
 int aom_av1_codec_configuration_record_load(const uint8_t* data, size_t bytes, struct aom_av1_t* av1);
 int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t* data, size_t bytes);
 
+int aom_av1_codecs(const struct aom_av1_t* av1, char* codecs, size_t bytes);
+
 #if defined(__cplusplus)
 }
 #endif

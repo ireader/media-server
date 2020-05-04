@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 // https://aomediacodec.github.io/av1-isobmff
 // https://aomediacodec.github.io/av1-avif/
@@ -90,6 +91,22 @@ static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* 
 	return data + i;
 }
 
+int aom_av1_codecs(const struct aom_av1_t* av1, char* codecs, size_t bytes)
+{
+	unsigned int bitdepth;
+
+	// AV1 5.5.2.Color config syntax
+	if (2 == av1->seq_profile && av1->high_bitdepth)
+		bitdepth = av1->twelve_bit ? 12 : 10;
+	else
+		bitdepth = av1->high_bitdepth ? 10 : 8;
+
+	// https://aomediacodec.github.io/av1-isobmff/#codecsparam
+	// https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter
+	// <sample entry 4CC>.<profile>.<level><tier>.<bitDepth>.<monochrome>.<chromaSubsampling>.<colorPrimaries>.<transferCharacteristics>.<matrixCoefficients>.<videoFullRangeFlag>
+	return snprintf(codecs, bytes, "av01.%u.%02u%c.%02u", (unsigned int)av1->seq_profile, (unsigned int)av1->seq_level_idx_0, av1->seq_tier_0 ? 'H' : 'M', (unsigned int)bitdepth);
+}
+
 #if defined(_DEBUG) || defined(DEBUG)
 void aom_av1_test(void)
 {
@@ -106,5 +123,8 @@ void aom_av1_test(void)
 	assert(13 == av1.bytes);
 	assert(sizeof(src) == aom_av1_codec_configuration_record_save(&av1, data, sizeof(data)));
 	assert(0 == memcmp(src, data, sizeof(src)));
+
+	aom_av1_codecs(&av1, (char*)data, sizeof(data));
+	assert(0 == memcmp("av01.0.04M.08", data, 13));
 }
 #endif
