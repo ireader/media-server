@@ -39,7 +39,8 @@ struct rtsp_client_handler_t
 	/// call rtsp_client_setup
 	int (*ondescribe)(void* param, const char* sdp);
 
-	int (*onsetup)(void* param);
+	/// @param[in] duration -1-unknown or live stream, other-rtsp stream duration in MS
+	int (*onsetup)(void* param, int64_t duration);
 	int (*onplay)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
     int (*onrecord)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // record
 	int (*onpause)(void* param);
@@ -65,6 +66,10 @@ int rtsp_client_input(rtsp_client_t* rtsp, const void* data, size_t bytes);
 /// @return header value, NULL if not found.
 /// NOTICE: call in rtsp_client_handler_t callback only
 const char* rtsp_client_get_header(rtsp_client_t* rtsp, const char* name);
+
+/// rtsp options (optional)
+/// @param[in] commands optional required command, NULL if none
+int rtsp_client_options(struct rtsp_client_t* rtsp, const char* commands);
 
 /// rtsp describe (optional)
 int rtsp_client_describe(struct rtsp_client_t* rtsp);
@@ -110,7 +115,6 @@ int rtsp_client_media_count(rtsp_client_t* rtsp);
 const struct rtsp_header_transport_t* rtsp_client_get_media_transport(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_encoding(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_fmtp(rtsp_client_t* rtsp, int media);
-
 int rtsp_client_get_media_payload(rtsp_client_t* rtsp, int media);
 int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media); // return 0 if unknown rate
 

@@ -44,7 +44,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int
 		payload, mpeg4_aac_profile_level(&aac), aac.profile);
 
 	if (n + r * 2 + 1 > bytes)
-		return -1; // // don't have enough memory
+		return -1; // don't have enough memory
 	n += base16_encode((char*)data + n, config, r);
 
 	if (n < bytes)
@@ -71,13 +71,40 @@ int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, 
 	n = snprintf((char*)data, bytes, pattern, port, payload, payload, sample_rate, channel_count, payload);
 
 	if (n + extra_size * 2 + 1 > bytes)
-		return -1; // // don't have enough memory
+		return -1; // don't have enough memory
 
 	// For MPEG-4 Audio streams, config is the audio object type specific
 	// decoder configuration data AudioSpecificConfig()
-	n += base64_encode((char*)data + n, extra, extra_size);
+	n += base16_encode((char*)data + n, extra, extra_size);
 
 	if (n < bytes)
 		data[n++] = '\n';
 	return n;
+}
+
+/// @return >0-ok, <=0-error
+int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config)
+{
+	int n;
+	uint8_t buf[128];
+	struct mpeg4_aac_t aac;
+
+	n = strlen(config);
+	if (n / 2 > sizeof(buf))
+		return -1;
+
+	n = base16_decode(buf, config, n);
+	n = mpeg4_aac_stream_mux_config_load(buf, n, &aac);
+	return n <= 0 ? n : mpeg4_aac_audio_specific_config_save(&aac, data, bytes);
+}
+
+/// @return >0-ok, <=0-error
+int sdp_aac_mpeg4_load(uint8_t* data, int bytes, const char* config)
+{
+	int n;
+	n = strlen(config);
+	if (n / 2 > bytes)
+		return -1;
+	
+	return base16_decode(data, config, n);
 }

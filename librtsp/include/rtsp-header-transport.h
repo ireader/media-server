@@ -48,7 +48,7 @@ struct rtsp_header_transport_t
 		{
 			unsigned short client_port1, client_port2; // unicast RTP/RTCP port pair, RTP only
 			unsigned short server_port1, server_port2; // unicast RTP/RTCP port pair, RTP only
-			int ssrc; // RTP only(synchronization source (SSRC) identifier) 4-bytes
+			unsigned int ssrc; // RTP only(synchronization source (SSRC) identifier) 4-bytes
 		} u;
 	} rtp;
 };

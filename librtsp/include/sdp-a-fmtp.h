@@ -71,6 +71,7 @@ struct sdp_a_fmtp_h265_t
 	char sprop_vps[1];
 	char sprop_sps[1];
 	char sprop_pps[1];
+	char sprop_sei[1];
 };
 
 int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h265);

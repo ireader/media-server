@@ -99,8 +99,8 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
 		if(rtsp->aggregate)
 			snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", m->session_uri);
 
-        port[0] = m->port[0];
-        port[1] = m->port[1];
+        port[0] = (unsigned short)m->port[0];
+        port[1] = (unsigned short)m->port[1];
         snprintf(t->source, sizeof(t->source), "%s", m->source);
         snprintf(t->destination, sizeof(t->destination), "%s", m->address);
         r = rtsp->handler.rtpport(rtsp->param, i, t->source, port, t->destination, sizeof(t->destination));
@@ -147,6 +147,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 	int code;
 	const char *session;
 	const char *transport;
+	struct rtsp_header_range_t* range;
 
 	assert(RTSP_SETUP == rtsp->state);
 	assert(rtsp->progress < rtsp->media_count);
@@ -169,7 +170,9 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 
 		if (rtsp->media_count == ++rtsp->progress)
 		{
-			return rtsp->handler.onsetup(rtsp->param);
+			assert(rtsp->media_count > 0);
+			range = &rtsp->media[0].range;
+			return rtsp->handler.onsetup(rtsp->param, RTSP_RANGE_TIME_NORMAL==range->from_value && RTSP_RANGE_TIME_NORMAL==range->to_value ? range->to - range->from : -1);
 		}
 		else
 		{

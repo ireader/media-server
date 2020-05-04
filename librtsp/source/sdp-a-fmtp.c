@@ -515,9 +515,9 @@ static void sdp_a_fmtp_mpeg4_test(void)
 {
 	int format = 0;
 	struct sdp_a_fmtp_mpeg4_t mpeg4;
-	const char* fmtp1 = "96 streamType=3;profile-level-id=1807; mode=generic;objectType=2; config=0842237F24001FB400094002C0;sizeLength=10;CTSDeltaLength=16;randomAccessIndication=1;streamStateIndication=4";
-
-	assert(0 == sdp_a_fmtp_mpeg4(fmtp1, &format, &mpeg4));
+	const char* fmtp = "96 streamType=3;profile-level-id=1807; mode=generic;objectType=2; config=0842237F24001FB400094002C0;sizeLength=10;CTSDeltaLength=16;randomAccessIndication=1;streamStateIndication=4";
+	
+	assert(0 == sdp_a_fmtp_mpeg4(fmtp, &format, &mpeg4));
 	assert(96 == format);
 	assert(mpeg4.flags == (SDP_A_FMTP_MPEG4_OBJECTTYPE|SDP_A_FMTP_MPEG4_SIZELENGTH|SDP_A_FMTP_MPEG4_CTSDELTALENGTH|SDP_A_FMTP_MPEG4_RANDOMACCESSINDICATION|SDP_A_FMTP_MPEG4_STREAMSTATEINDICATION));
 	assert(3 == mpeg4.streamType);
@@ -531,9 +531,28 @@ static void sdp_a_fmtp_mpeg4_test(void)
 	assert(4 == mpeg4.streamStateIndication);
 }
 
+static void sdp_a_fmtp_mpeg4_aac_test(void)
+{
+	int format = 0;
+	struct sdp_a_fmtp_mpeg4_t mpeg4;
+	const char* fmtp = "97 streamtype=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=131056E59D4800";
+
+	assert(0 == sdp_a_fmtp_mpeg4(fmtp, &format, &mpeg4));
+	assert(97 == format);
+	assert(mpeg4.flags == (SDP_A_FMTP_MPEG4_SIZELENGTH | SDP_A_FMTP_MPEG4_INDEXLENGTH | SDP_A_FMTP_MPEG4_INDEXDELTALENGTH));
+	assert(5 == mpeg4.streamType);
+	assert(0 == strcmp("1", mpeg4.profile_level_id));
+	assert(5 == mpeg4.mode);
+	assert(0 == strcmp(mpeg4.config, "131056E59D4800"));
+	assert(13 == mpeg4.sizeLength);
+	assert(3 == mpeg4.indexLength);
+	assert(3 == mpeg4.indexDeltaLength);
+}
+
 void sdp_a_fmtp_test(void)
 {
 	sdp_a_fmtp_h264_test();
 	sdp_a_fmtp_mpeg4_test();
+	sdp_a_fmtp_mpeg4_aac_test();
 }
 #endif
