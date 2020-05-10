@@ -11,7 +11,8 @@ OUTFILE = libhls.a
 INCLUDES = . \
 					./include \
 					../libmov/include \
-					../libmpeg/include
+					../libmpeg/include \
+					../../sdk/include
 
 #-------------------------------Source-------------------------------
 #
