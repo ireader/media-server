@@ -30,7 +30,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 {
     struct pes_t* stream;
     uint16_t pid, len;
-	uint32_t i = 0, k = 0;
+	uint32_t i;
 
 	uint32_t table_id = data[0];
 	uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
@@ -62,9 +62,9 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 	pmt->ver = version_number;
 	pmt->pminfo_len = program_info_length;
 
-	if(program_info_length)
+	if(program_info_length > 2)
 	{
-		// descriptor()
+		// descriptor(data + 12, program_info_length)
 	}
 
 	assert(bytes >= section_length + 3); // PMT = section_length + 3
@@ -85,9 +85,9 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
         stream->pid = pid;
         stream->codecid = data[i];
 		stream->esinfo_len = len;
-		for(k = 0; k < stream->esinfo_len; k++)
+		if (stream->esinfo_len > 2)
 		{
-			// descriptor
+			// descriptor(data + i + 5, len)
 		}
 	}
 

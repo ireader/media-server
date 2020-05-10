@@ -89,6 +89,34 @@ typedef struct _mpeg4_video_descriptor_t
 
 size_t mpeg4_video_descriptor(const uint8_t* data, size_t bytes);
 
+typedef struct _metadata_pointer_descriptor
+{
+	uint32_t metadata_application_format_identifier;
+	uint32_t metadata_format_identifier;
+	uint8_t metadata_service_id;
+	uint8_t metadata_locator_record_length;
+	uint8_t MPEG_carriage_flags;
+	uint16_t program_number;
+	uint16_t transport_stream_location;
+	uint16_t transport_stream_id;
+} metadata_pointer_descriptor_t;
+
+size_t metadata_pointer_descriptor(const uint8_t* data, size_t bytes);
+
+typedef struct _metadata_descriptor_t
+{
+	uint32_t metadata_application_format_identifier;
+	uint32_t metadata_format_identifier;
+	uint8_t metadata_service_id;
+	uint8_t service_identification_length;
+	uint8_t decoder_config_flags;
+	uint8_t decoder_config_length;
+	uint8_t dec_config_identification_record_length;
+	uint8_t decoder_config_metadata_service_id;
+} metadata_descriptor_t;
+
+size_t metadata_descriptor(const uint8_t* data, size_t bytes);
+
 typedef struct _mpeg4_audio_descriptor_t
 {
 	uint8_t profile_and_level;

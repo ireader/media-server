@@ -4,6 +4,7 @@
 
 #include "mpeg-ps-proto.h"
 #include "mpeg-element-descriptor.h"
+#include "mpeg-util.h"
 #include <string.h>
 #include <assert.h>
 
@@ -69,7 +70,7 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 {
 	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
-	if (descriptor_len + 2 > bytes)
+	if ((size_t)descriptor_len + 2 > bytes)
 		return bytes;
 
 	switch(descriptor_tag)
@@ -100,6 +101,14 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 
 	case 28:
 		mpeg4_audio_descriptor(data, bytes);
+		break;
+
+	case 37:
+		metadata_pointer_descriptor(data, bytes);
+		break;
+
+	case 38:
+		metadata_descriptor(data, bytes);
 		break;
 
 	case 40:
@@ -272,6 +281,101 @@ size_t mpeg4_audio_descriptor(const uint8_t* data, size_t bytes)
 
 	assert(1 == descriptor_len);
 	return descriptor_len+2;
+}
+
+size_t metadata_pointer_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.58 Metadata pointer descriptor(p112)
+	
+	uint8_t flags;
+	struct mpeg_bits_t bits;
+	metadata_pointer_descriptor_t desc;
+	size_t descriptor_len;
+
+	mpeg_bits_init(&bits, data, bytes);
+	mpeg_bits_read8(&bits); // descriptor_tag
+	descriptor_len = mpeg_bits_read8(&bits);
+	assert(descriptor_len + 2 <= bytes);
+
+	desc.metadata_application_format_identifier = mpeg_bits_read16(&bits);
+	if (0xFFFF == desc.metadata_application_format_identifier)
+		desc.metadata_application_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_format_identifier = mpeg_bits_read8(&bits);
+	if (0xFF == desc.metadata_format_identifier)
+		desc.metadata_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_service_id = mpeg_bits_read8(&bits);
+	flags = mpeg_bits_read8(&bits);
+	desc.MPEG_carriage_flags = (flags >> 5) & 0x03;
+
+	if (flags & 0x80) // metadata_locator_record_flag
+	{
+		desc.metadata_locator_record_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.metadata_locator_record_length); // metadata_locator_record_byte
+	}
+
+	if (desc.MPEG_carriage_flags <= 2)
+		desc.program_number = mpeg_bits_read16(&bits);
+
+	if (1 == desc.MPEG_carriage_flags)
+	{
+		desc.transport_stream_location = mpeg_bits_read16(&bits);
+		desc.transport_stream_id = mpeg_bits_read16(&bits);
+	}
+
+	assert(0 == mpeg_bits_error(&bits));
+	return descriptor_len + 2;
+}
+
+size_t metadata_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.60 Metadata descriptor(p115)
+
+	uint8_t flags;
+	struct mpeg_bits_t bits;
+	metadata_descriptor_t desc;
+	size_t descriptor_len;
+
+	mpeg_bits_init(&bits, data, bytes);
+	mpeg_bits_read8(&bits); // descriptor_tag
+	descriptor_len = mpeg_bits_read8(&bits);
+	assert(descriptor_len + 2 <= bytes);
+
+	desc.metadata_application_format_identifier = mpeg_bits_read16(&bits);
+	if (0xFFFF == desc.metadata_application_format_identifier)
+		desc.metadata_application_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_format_identifier = mpeg_bits_read8(&bits);
+	if (0xFF == desc.metadata_format_identifier)
+		desc.metadata_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_service_id = mpeg_bits_read8(&bits);
+	flags = mpeg_bits_read8(&bits);
+	desc.decoder_config_flags = (flags >> 5) & 0x07;
+	if (flags & 0x10) // DSM-CC_flag
+	{
+		desc.service_identification_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.service_identification_length); // service_identification_record_byte
+	}
+
+	if (0x01 == desc.decoder_config_flags)
+	{
+		desc.decoder_config_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.decoder_config_length); // decoder_config_byte
+	}
+	else if (0x03 == desc.decoder_config_flags)
+	{
+		desc.dec_config_identification_record_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.dec_config_identification_record_length); // dec_config_identification_record_byte
+	}
+	else if (0x04 == desc.decoder_config_flags)
+	{
+		desc.decoder_config_metadata_service_id = mpeg_bits_read8(&bits);
+	}
+
+	assert(0 == mpeg_bits_error(&bits));
+	return descriptor_len + 2;
 }
 
 size_t avc_video_descriptor(const uint8_t* data, size_t bytes)
