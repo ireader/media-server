@@ -431,6 +431,8 @@ static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_e
 		size += mov_write_hvcc(mov);
 	else if (MOV_OBJECT_AV1 == entry->object_type_indication)
 		size += mov_write_av1c(mov);
+    else if (MOV_OBJECT_VP8 == entry->object_type_indication || MOV_OBJECT_VP9 == entry->object_type_indication)
+        size += mov_write_vpcc(mov);
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;

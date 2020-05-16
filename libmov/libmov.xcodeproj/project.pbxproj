@@ -44,6 +44,8 @@
 		46C5B33D2183EDEE00419E57 /* mov-stco.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31A2183EDEE00419E57 /* mov-stco.c */; };
 		46C5B33E2183EDEE00419E57 /* mov-track.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31B2183EDEE00419E57 /* mov-track.c */; };
 		46C5B33F2183EDEE00419E57 /* mov-stsc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B31C2183EDEE00419E57 /* mov-stsc.c */; };
+		46E55E4F24694AAE00D8BDBA /* mov-vpcc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E4E24694AAE00D8BDBA /* mov-vpcc.c */; };
+		46E55E5124694BC400D8BDBA /* mov-hdr.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E5024694BC400D8BDBA /* mov-hdr.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -86,6 +88,8 @@
 		46C5B31A2183EDEE00419E57 /* mov-stco.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stco.c"; sourceTree = "<group>"; };
 		46C5B31B2183EDEE00419E57 /* mov-track.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-track.c"; sourceTree = "<group>"; };
 		46C5B31C2183EDEE00419E57 /* mov-stsc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-stsc.c"; sourceTree = "<group>"; };
+		46E55E4E24694AAE00D8BDBA /* mov-vpcc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mov-vpcc.c"; sourceTree = "<group>"; };
+		46E55E5024694BC400D8BDBA /* mov-hdr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mov-hdr.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +160,8 @@
 				46C5B3042183EDEE00419E57 /* mov-trun.c */,
 				46C5B3022183EDEE00419E57 /* mov-tx3g.c */,
 				46C5B3072183EDEE00419E57 /* mov-writer.c */,
+				46E55E4E24694AAE00D8BDBA /* mov-vpcc.c */,
+				46E55E5024694BC400D8BDBA /* mov-hdr.c */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -239,10 +245,12 @@
 				46C5B3322183EDEE00419E57 /* mov-trex.c in Sources */,
 				46C5B3292183EDEE00419E57 /* mov-iods.c in Sources */,
 				46C5B33D2183EDEE00419E57 /* mov-stco.c in Sources */,
+				46E55E4F24694AAE00D8BDBA /* mov-vpcc.c in Sources */,
 				46C5B3332183EDEE00419E57 /* mov-reader.c in Sources */,
 				46C5B32C2183EDEE00419E57 /* mov-tag.c in Sources */,
 				46C5B3202183EDEE00419E57 /* mov-stsz.c in Sources */,
 				46C5B33B2183EDEE00419E57 /* mov-tkhd.c in Sources */,
+				46E55E5124694BC400D8BDBA /* mov-hdr.c in Sources */,
 				46C5B3362183EDEE00419E57 /* mov-hvcc.c in Sources */,
 				46C5B3372183EDEE00419E57 /* mov-stsd.c in Sources */,
 				46C5B3392183EDEE00419E57 /* mov-avc1.c in Sources */,

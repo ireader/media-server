@@ -9,19 +9,19 @@
 
 #define MOV_TAG(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
-#define MOV_MOOV MOV_TAG('m', 'o', 'o', 'v')
-#define MOV_ROOT MOV_TAG('r', 'o', 'o', 't')
-#define MOV_TRAK MOV_TAG('t', 'r', 'a', 'k')
-#define MOV_MDIA MOV_TAG('m', 'd', 'i', 'a')
-#define MOV_EDTS MOV_TAG('e', 'd', 't', 's')
-#define MOV_MINF MOV_TAG('m', 'i', 'n', 'f')
-#define MOV_GMHD MOV_TAG('g', 'm', 'h', 'd') // Apple QuickTime gmhd(text media)
-#define MOV_DINF MOV_TAG('d', 'i', 'n', 'f')
-#define MOV_STBL MOV_TAG('s', 't', 'b', 'l')
-#define MOV_MVEX MOV_TAG('m', 'v', 'e', 'x')
-#define MOV_MOOF MOV_TAG('m', 'o', 'o', 'f')
-#define MOV_TRAF MOV_TAG('t', 'r', 'a', 'f')
-#define MOV_MFRA MOV_TAG('m', 'f', 'r', 'a')
+#define MOV_MOOV    MOV_TAG('m', 'o', 'o', 'v')
+#define MOV_ROOT    MOV_TAG('r', 'o', 'o', 't')
+#define MOV_TRAK    MOV_TAG('t', 'r', 'a', 'k')
+#define MOV_MDIA    MOV_TAG('m', 'd', 'i', 'a')
+#define MOV_EDTS    MOV_TAG('e', 'd', 't', 's')
+#define MOV_MINF    MOV_TAG('m', 'i', 'n', 'f')
+#define MOV_GMHD    MOV_TAG('g', 'm', 'h', 'd') // Apple QuickTime gmhd(text media)
+#define MOV_DINF    MOV_TAG('d', 'i', 'n', 'f')
+#define MOV_STBL    MOV_TAG('s', 't', 'b', 'l')
+#define MOV_MVEX    MOV_TAG('m', 'v', 'e', 'x')
+#define MOV_MOOF    MOV_TAG('m', 'o', 'o', 'f')
+#define MOV_TRAF    MOV_TAG('t', 'r', 'a', 'f')
+#define MOV_MFRA    MOV_TAG('m', 'f', 'r', 'a')
 
 #define MOV_VIDEO	MOV_TAG('v', 'i', 'd', 'e') // ISO/IEC 14496-12:2015(E) 12.1 Video media (p169)
 #define MOV_AUDIO	MOV_TAG('s', 'o', 'u', 'n') // ISO/IEC 14496-12:2015(E) 12.2 Audio media (p173)
@@ -35,13 +35,20 @@
 
 // https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
 // Video encoding requirements 1.10: Use 'avc1', 'hvc1', or 'dvh1' rather than 'avc3', 'hev1', or 'dvhe'
-#define MOV_H264 MOV_TAG('a', 'v', 'c', '1') // H.264 ISO/IEC 14496-15:2010(E) 5.3.4 AVC Video Stream Definition (18)
-#define MOV_HEVC MOV_TAG('h', 'v', 'c', '1') // H.265
-#define MOV_MP4V MOV_TAG('m', 'p', '4', 'v') // MPEG-4 Video
-#define MOV_MP4A MOV_TAG('m', 'p', '4', 'a') // AAC
-#define MOV_MP4S MOV_TAG('m', 'p', '4', 's') // ISO/IEC 14496-14:2003(E) 5.6 Sample Description Boxes (p14)
-#define MOV_OPUS MOV_TAG('O', 'p', 'u', 's') // http://www.opus-codec.org/docs/opus_in_isobmff.html
-#define MOV_AV1  MOV_TAG('a', 'v', '0', '1') // https://aomediacodec.github.io/av1-isobmff
+#define MOV_H264    MOV_TAG('a', 'v', 'c', '1') // H.264 ISO/IEC 14496-15:2010(E) 5.3.4 AVC Video Stream Definition (18)
+#define MOV_HEVC    MOV_TAG('h', 'v', 'c', '1') // H.265
+#define MOV_MP4V    MOV_TAG('m', 'p', '4', 'v') // MPEG-4 Video
+#define MOV_MP4A    MOV_TAG('m', 'p', '4', 'a') // AAC
+#define MOV_MP4S    MOV_TAG('m', 'p', '4', 's') // ISO/IEC 14496-14:2003(E) 5.6 Sample Description Boxes (p14)
+#define MOV_OPUS    MOV_TAG('O', 'p', 'u', 's') // http://www.opus-codec.org/docs/opus_in_isobmff.html
+#define MOV_VP8     MOV_TAG('v', 'p', '0', '8')
+#define MOV_VP9     MOV_TAG('v', 'p', '0', '9') // https://www.webmproject.org/vp9/mp4/
+#define MOV_VP10    MOV_TAG('v', 'p', '1', '0')
+#define MOV_AV1     MOV_TAG('a', 'v', '0', '1') // https://aomediacodec.github.io/av1-isobmff
+#define MOV_VC1     MOV_TAG('v', 'c', '-', '1')
+#define MOV_DIRAC   MOV_TAG('d', 'r', 'a', 'c')
+#define MOV_AC3     MOV_TAG('a', 'c', '-', '3')
+#define MOV_DTS     MOV_TAG('d', 't', 's', 'c') // DTS-HD
 
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor
 // Table 6 - streamType Values (p51)
@@ -218,6 +225,7 @@ int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_av1c(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_vpcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tx3g(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box);
@@ -232,6 +240,8 @@ int mov_read_dops(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_pasp(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_gmin(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_text(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_coll(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -256,6 +266,7 @@ size_t mov_write_esds(const struct mov_t* mov);
 size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
 size_t mov_write_av1c(const struct mov_t* mov);
+size_t mov_write_vpcc(const struct mov_t* mov);
 size_t mov_write_tx3g(const struct mov_t* mov);
 size_t mov_write_trex(const struct mov_t* mov);
 size_t mov_write_tfhd(const struct mov_t* mov);

@@ -149,8 +149,8 @@ static int mov_read_uuid(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_read_moof(struct mov_t* mov, const struct mov_box_t* box)
 {
     // 8.8.7 Track Fragment Header Box (p71)
-    // If base©\data©\offset©\present not provided and if the default©\base©\is©\moof flag is not set, 
-    // the base©\data©\offset for the first track in the movie fragment is the position of 
+    // If base-data-offset-present not provided and if the default-base-is-moof flag is not set,
+    // the base-data-offset for the first track in the movie fragment is the position of
     // the first byte of the enclosing Movie Fragment Box, for second and subsequent track fragments, 
     // the default is the end of the data defined by the preceding track fragment.
 	mov->moof_offset = mov->implicit_offset = mov_buffer_tell(&mov->io) - 8 /*box size */;
@@ -176,6 +176,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
+    { MOV_TAG('C', 'o', 'L', 'L'), MOV_STBL, mov_read_coll },
 	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },
 	{ MOV_TAG('c', 's', 'l', 'g'), MOV_STBL, mov_read_cslg },
 	{ MOV_TAG('d', 'i', 'n', 'f'), MOV_MINF, mov_read_default },
@@ -207,6 +208,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
+    { MOV_TAG('S', 'm', 'D', 'm'), MOV_MINF, mov_read_smdm },
 	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
 	{ MOV_TAG('s', 't', 'b', 'l'), MOV_MINF, mov_read_default },
 	{ MOV_TAG('s', 't', 'c', 'o'), MOV_STBL, mov_read_stco },
@@ -228,6 +230,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('t', 'r', 'u', 'n'), MOV_TRAF, mov_read_trun },
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
+    { MOV_TAG('v', 'p', 'c', 'C'), MOV_NULL, mov_read_vpcc },
 
 	{ 0, 0, NULL } // last
 };

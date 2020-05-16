@@ -77,7 +77,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 static void mov_video_info(void* flv, uint32_t track, uint8_t object, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
 	s_avc_track = track;
-	assert(MOV_OBJECT_H264 == object || MOV_OBJECT_HEVC == object || MOV_OBJECT_AV1 == object);
+	assert(MOV_OBJECT_H264 == object || MOV_OBJECT_HEVC == object || MOV_OBJECT_AV1 == object || MOV_OBJECT_VP9 == object);
 	s_video_type = MOV_OBJECT_H264 == object ? FLV_VIDEO_H264 : (MOV_OBJECT_HEVC == object ? FLV_VIDEO_H265 : FLV_VIDEO_AV1);
 	s_video_tag.codecid = s_video_type;
 	s_video_tag.keyframe = 1;
