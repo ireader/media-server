@@ -26,6 +26,7 @@
 		46C5B2E82183EDA200419E57 /* flv-muxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2D82183EDA200419E57 /* flv-muxer.c */; };
 		46C5B2E92183EDA200419E57 /* mpeg4-avc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2D92183EDA200419E57 /* mpeg4-avc.c */; };
 		46C5B2EA2183EDA200419E57 /* hevc-mp4toannexb.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2DA2183EDA200419E57 /* hevc-mp4toannexb.c */; };
+		46E55E5324694DE000D8BDBA /* webm-vpx.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E5224694DE000D8BDBA /* webm-vpx.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		46C5B2D92183EDA200419E57 /* mpeg4-avc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-avc.c"; sourceTree = "<group>"; };
 		46C5B2DA2183EDA200419E57 /* hevc-mp4toannexb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hevc-mp4toannexb.c"; sourceTree = "<group>"; };
 		46C5B2EB2183EDB400419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46E55E5224694DE000D8BDBA /* webm-vpx.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "webm-vpx.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +104,7 @@
 				46C5B2D92183EDA200419E57 /* mpeg4-avc.c */,
 				46C5B2D02183EDA200419E57 /* mpeg4-hevc.c */,
 				46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */,
+				46E55E5224694DE000D8BDBA /* webm-vpx.c */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -191,6 +194,7 @@
 				46C5B2E22183EDA200419E57 /* amf3.c in Sources */,
 				46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */,
 				46C5B2DE2183EDA200419E57 /* amf0.c in Sources */,
+				46E55E5324694DE000D8BDBA /* webm-vpx.c in Sources */,
 				46C5B2E32183EDA200419E57 /* mpeg4-aac.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

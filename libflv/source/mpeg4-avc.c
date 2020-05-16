@@ -107,7 +107,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
         p += len;
 	}
 
-	avc->off = p - avc->data;
+	avc->off = (int)(p - avc->data);
 	return j;
 }
 

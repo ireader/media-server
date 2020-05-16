@@ -168,6 +168,7 @@ static uint8_t hevc_pps_id(const uint8_t* rbsp, int bytes, struct mpeg4_hevc_t* 
 {
 	// TODO:
 	//hevc->parallelismType; // entropy_coding_sync_enabled_flag
+	(void)hevc;
 
 	int sodb;
 	int offset = 2 * 8;  // 2-nalu type

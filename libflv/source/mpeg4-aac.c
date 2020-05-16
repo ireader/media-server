@@ -122,7 +122,7 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
 	uint8_t channel_configuration;
-	if (bytes < 2+aac->npce) return -1;
+	if (bytes < 2+ (size_t)aac->npce) return -1;
 
 	channel_configuration = aac->npce > 0 ? 0 : aac->channel_configuration;
 	assert(aac->profile > 0 && aac->profile < 31);

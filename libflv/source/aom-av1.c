@@ -77,19 +77,19 @@ int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t
 	return av1->bytes + 4;
 }
 
-static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* v)
-{
-	size_t i;
-	int64_t b;
-
-	b = 0x80;
-	for (*v = i = 0; i < 8 && i < bytes && 0 != (b & 0x80); i++)
-	{
-		b = data[i];
-		*v |= (b & 0x7F) << (i * 7);
-	}
-	return data + i;
-}
+//static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* v)
+//{
+//	size_t i;
+//	int64_t b;
+//
+//	b = 0x80;
+//	for (*v = i = 0; i < 8 && i < bytes && 0 != (b & 0x80); i++)
+//	{
+//		b = data[i];
+//		*v |= (b & 0x7F) << (i * 7);
+//	}
+//	return data + i;
+//}
 
 int aom_av1_codecs(const struct aom_av1_t* av1, char* codecs, size_t bytes)
 {
