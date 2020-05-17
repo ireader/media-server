@@ -91,11 +91,12 @@ void flv_reader_test(const char* file)
 	void* reader = flv_reader_create(file);
 	flv_demuxer_t* flv = flv_demuxer_create(onFLV, NULL);
 
-	int type, r = 0;
+	int type, r;
+	size_t taglen;
 	uint32_t timestamp;
-	while ((r = flv_reader_read(reader, &type, &timestamp, packet, sizeof(packet))) >= 0)
+	while (1 == flv_reader_read(reader, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
-		r = flv_demuxer_input(flv, type, packet, r, timestamp);
+		r = flv_demuxer_input(flv, type, packet, taglen, timestamp);
 		if (r < 0)
 		{
 			assert(0);

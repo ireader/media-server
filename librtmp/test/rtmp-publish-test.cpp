@@ -82,8 +82,9 @@ static int rtmp_client_send(void* param, const void* header, size_t len, const v
 static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 {
 	int r, type;
-    int avcrecord = 0;
+	int avcrecord = 0;
     int aacconfig = 0;
+	size_t taglen;
 	uint32_t timestamp;
 	uint32_t s_timestamp = 0;
 	uint32_t diff = 0;
@@ -95,7 +96,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 		void* f = flv_reader_create(flv);
 
 		clock = system_clock(); // timestamp start from 0
-		while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
+		while (1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 		{
 			uint64_t t = system_clock();
 			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000) // dts skip
@@ -114,7 +115,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
                         continue;
                     aacconfig = 1;
                 }
-				r = rtmp_client_push_audio(rtmp, packet, r, timestamp);
+				r = rtmp_client_push_audio(rtmp, packet, taglen, timestamp);
 			}
 			else if (FLV_TYPE_VIDEO == type)
 			{
@@ -137,11 +138,11 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 				//	r = rtmp_client_push_video(rtmp, header, 5, timestamp);
 				//	system_sleep(600 * 1000);
 				//}
-				r = rtmp_client_push_video(rtmp, packet, r, timestamp);
+				r = rtmp_client_push_video(rtmp, packet, taglen, timestamp);
 			}
 			else if (FLV_TYPE_SCRIPT == type)
 			{
-				r = rtmp_client_push_script(rtmp, packet, r, timestamp);
+				r = rtmp_client_push_script(rtmp, packet, taglen, timestamp);
 			}
 			else
 			{

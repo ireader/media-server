@@ -117,6 +117,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
     int r, type;
     int avcrecord = 0;
     int aacconfig = 0;
+    size_t taglen;
     uint32_t timestamp;
     uint32_t s_timestamp = 0;
     uint32_t diff = 0;
@@ -127,7 +128,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
         void* f = flv_reader_create(file);
 
         clock = system_clock(); // timestamp start from 0
-        while ((r = flv_reader_read(f, &type, &timestamp, dash->packet, sizeof(dash->packet))) > 0)
+        while (1 == flv_reader_read(f, &type, &timestamp, &taglen, dash->packet, sizeof(dash->packet)))
         {
 			uint64_t t = system_clock();
 			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000)
@@ -137,7 +138,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
 
             timestamp += diff;
             s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
-            r = flv_parser_input(type, dash->packet, r, timestamp, dash_live_onflv, dash);
+            r = flv_parser_input(type, dash->packet, taglen, timestamp, dash_live_onflv, dash);
             if (0 != r)
             {
                 assert(0);

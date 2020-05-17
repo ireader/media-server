@@ -24,12 +24,13 @@ static struct
 static int STDCALL rtmp_client_push(void* flv)
 {
 	int r, type;
+	size_t taglen;
 	uint32_t timestamp;
 	uint64_t clock0 = system_clock();
 	void* f = flv_reader_create((const char*)flv);
 
 	static char packet[2 * 1024 * 1024];
-	while (0 == s_param.code && (r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (0 == s_param.code && 1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
 		uint64_t t = system_clock();
 		if(clock0 + timestamp > t && clock0 + timestamp < t + 3 * 1000)
@@ -43,15 +44,15 @@ static int STDCALL rtmp_client_push(void* flv)
 		switch (type)
 		{
 		case FLV_TYPE_AUDIO:
-			r = aio_rtmp_client_send_audio(s_param.rtmp, packet, r, timestamp);
+			r = aio_rtmp_client_send_audio(s_param.rtmp, packet, taglen, timestamp);
 			break;
 
 		case FLV_TYPE_VIDEO:
-			r = aio_rtmp_client_send_video(s_param.rtmp, packet, r, timestamp);
+			r = aio_rtmp_client_send_video(s_param.rtmp, packet, taglen, timestamp);
 			break;
 
 		case FLV_TYPE_SCRIPT:
-			r = aio_rtmp_client_send_script(s_param.rtmp, packet, r, timestamp);
+			r = aio_rtmp_client_send_script(s_param.rtmp, packet, taglen, timestamp);
 			break;
 
 		default:

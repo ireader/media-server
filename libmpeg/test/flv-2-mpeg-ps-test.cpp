@@ -94,11 +94,13 @@ void flv_2_mpeg_ps_test(const char* flv)
 	flv_demuxer_t* demuxer = flv_demuxer_create(flv_ondemux, ps);
 
 	int r, type;
+	size_t taglen;
 	uint32_t timestamp;
 	static uint8_t packet[2 * 1024 * 1024];
-	while ((r = flv_reader_read(f, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
-		assert(0 == flv_demuxer_input(demuxer, type, packet, r, timestamp));
+		r = flv_demuxer_input(demuxer, type, packet, taglen, timestamp);
+		assert(0 == r);
 	}
 
 	flv_demuxer_destroy(demuxer);

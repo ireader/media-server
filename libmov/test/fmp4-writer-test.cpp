@@ -60,6 +60,7 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4)
 {
 	int r, type;
+	size_t taglen;
 	uint32_t timestamp;
 	FILE* fp = fopen(outmp4, "wb+");
 	void* flv = flv_reader_create(inflv);
@@ -67,9 +68,9 @@ void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	
 	s_width = w;
 	s_height = h;
-	while ((r = flv_reader_read(flv, &type, &timestamp, s_buffer, sizeof(s_buffer))) > 0)
+	while (1 == flv_reader_read(flv, &type, &timestamp, &taglen, s_buffer, sizeof(s_buffer)))
 	{
-		r = flv_parser_input(type, s_buffer, r, timestamp, onFLV, mov);
+		r = flv_parser_input(type, s_buffer, taglen, timestamp, onFLV, mov);
 		assert(r >= 0);
 	}
 

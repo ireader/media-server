@@ -14,9 +14,11 @@ void flv_reader_destroy(void* flv);
 
 ///@param[out] tagtype 8-audio, 9-video, 18-script data
 ///@param[out] timestamp FLV timestamp
+///@param[out] taglen flv tag length(0 is ok but should be silently discard)
 ///@param[out] buffer FLV stream
-///@return >=0-flv tag length(0 is ok but should be silently discard), <0-error
-int flv_reader_read(void* flv, int* tagtype, uint32_t* timestamp, void* buffer, size_t bytes);
+///@param[in] bytes buffer size
+///@return 1-got a packet, 0-EOF, other-error
+int flv_reader_read(void* flv, int* tagtype, uint32_t* timestamp, size_t* taglen, void* buffer, size_t bytes);
 
 #if defined(__cplusplus)
 }
