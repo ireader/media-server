@@ -81,7 +81,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
         if(NULL == stream)
             continue;
         
-        stream->pn = pmt->pn;
+        stream->pn = (uint16_t)pmt->pn;
         stream->pid = pid;
         stream->codecid = data[i];
 		stream->esinfo_len = len;

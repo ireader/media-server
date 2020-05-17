@@ -160,6 +160,12 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 			//HA2=md5(Method:Uri)
 			//RESPONSE=md5(HA1:nonce:HA2)
             ++auth.nc;
+			if(!auth.algorithm[0])
+				snprintf(auth.algorithm, sizeof(auth.algorithm), "MD5");
+			if (!auth.qop[0])
+				snprintf(auth.qop, sizeof(auth.qop), "auth");
+			else if (strchr(auth.qop, ','))
+				*strchr(auth.qop, ',') = '\0'; // replace auth,auth-int -> auth
             snprintf(auth.uri, sizeof(auth.uri), "sip:%s", "192.168.154.128");
             snprintf(auth.username, sizeof(auth.username), "%s", "34020000001320000001");
             http_header_auth(&auth, "12345678", "REGISTER", NULL, 0, buffer, sizeof(buffer));

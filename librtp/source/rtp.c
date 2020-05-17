@@ -31,7 +31,7 @@ void* rtp_create(struct rtp_event_t *handler, void* param, uint32_t ssrc, uint32
 
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
 	ctx->cbparam = param;
-	ctx->rtcp_bw = bandwidth * RTCP_BANDWIDTH_FRACTION;
+	ctx->rtcp_bw = (int)(bandwidth * RTCP_BANDWIDTH_FRACTION);
 	ctx->avg_rtcp_size = 0;
 	ctx->frequence = frequence;
 	ctx->role = sender ? RTP_SENDER : RTP_RECEIVER;
