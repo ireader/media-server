@@ -27,6 +27,12 @@
     <ClCompile Include="source\hls-parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\hls-playlist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hls-master.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\hls-param.h">

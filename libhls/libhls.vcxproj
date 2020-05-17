@@ -134,8 +134,10 @@
   <ItemGroup>
     <ClCompile Include="source\hls-fmp4.c" />
     <ClCompile Include="source\hls-m3u8.c" />
+    <ClCompile Include="source\hls-master.c" />
     <ClCompile Include="source\hls-media.c" />
     <ClCompile Include="source\hls-parser.c" />
+    <ClCompile Include="source\hls-playlist.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\hls-fmp4.h" />

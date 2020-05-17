@@ -2,6 +2,7 @@
 #define _hls_parser_h_
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,7 @@ enum
 // #EXT-X-MEDIA
 struct hls_media_t
 {
-	char* type; // audio/video/subtile/closed-captions
+	char* type; // audio/video/subtitle/closed-captions
 	char* uri; // Media Playlist file, If the TYPE is CLOSED-CAPTIONS, the URI attribute MUST NOT be present.
 
 	char* group_id;
@@ -46,7 +47,7 @@ struct hls_media_t
 
 	int autoselect; // 1-YES, 0-NO
 	int is_default; // 1-YES, 0-NO
-	int forced; // 1-YES, 0-NO
+	int forced; // 1-YES, 0-NO, SUBTITLES only
 };
 
 // #EXT-X-STREAM-INF
@@ -180,12 +181,19 @@ int hls_master_parse(struct hls_master_t** master, const char* m3u8, size_t len)
 
 int hls_master_free(struct hls_master_t** master);
 
+int hls_master_best_variant(const struct hls_master_t* master);
+
+int hls_master_rendition(const struct hls_master_t* master, int variant, int type, const char* name);
+
 /// Parse m3u8 media playlist
 /// @param[out] playlist m3u8 media playlist(free by hls_playlist_free)
 /// @return 0-ok, other-error
 int hls_playlist_parse(struct hls_playlist_t** playlist, const char* m3u8, size_t len);
 
 int hls_playlist_free(struct hls_playlist_t** playlist);
+
+/// @return total duration in MS
+int64_t hls_playlist_duration(const struct hls_playlist_t* playlist);
 
 #ifdef __cplusplus
 }

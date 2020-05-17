@@ -14,7 +14,7 @@ http://media.example.com/fileSequence52-B.ts
 http://media.example.com/fileSequence52-C.ts
 
 #EXT-X-DATERANGE:ID="splice-6FFFFFF0",DURATION=59.993,SCTE35-IN=0xFC002A0000000000FF00000F056FFFFFF000401162802E6100000000000A0008029896F50000008700000000
-#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=53"
+#EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=53",IV=0xaa3dcf6a7acb92ff4fb08d9b3b3d6f51
 
 #EXTINF:15.0,
 http://media.example.com/fileSequence53-A.ts

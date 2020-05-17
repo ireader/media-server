@@ -605,7 +605,7 @@ static int hls_parser_ontag(struct hls_parser_t* parser, const char* tag, size_t
 	int r;
 	size_t i;
 
-	printf("%.*s : %.*s\n", (int)len, tag, (int)bytes, attrs);
+	//printf("%.*s: %.*s\n", (int)len, tag, (int)bytes, attrs);
 	r = parser->playlist ? hls_parser_fetch_segment(parser) : hls_parser_fetch_variant(parser);
 	if (0 != r)
 		return r;
