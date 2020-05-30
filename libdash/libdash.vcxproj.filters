@@ -18,12 +18,27 @@
     <ClCompile Include="src\dash-mpd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\dash-parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\xs-duration.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dash-playlist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dash-mpd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\dash-proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dash-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\xs-datatype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
