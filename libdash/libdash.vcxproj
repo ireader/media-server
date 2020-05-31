@@ -25,9 +25,12 @@
     <ClInclude Include="include\xs-datatype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\dash-adaptation.c" />
     <ClCompile Include="src\dash-mpd.c" />
     <ClCompile Include="src\dash-parser.c" />
-    <ClCompile Include="src\dash-playlist.c" />
+    <ClCompile Include="src\dash-period.c" />
+    <ClCompile Include="src\dash-representation.c" />
+    <ClCompile Include="src\dash-segment.c" />
     <ClCompile Include="src\xs-duration.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -1,3 +1,5 @@
+// https://standards.iso.org/iso-iec/23009/-1/ed-3/en/DASH-MPD.xsd
+
 #include "dash-parser.h"
 #include "xs-datatype.h"
 #include <errno.h>
@@ -297,6 +299,7 @@ static int dash_tag_period(struct dash_parser_t* parser, void* ptr, const char* 
 static int dash_tag_representation_base(struct dash_representation_base_t* base, const char* attr, size_t len)
 {
 	struct dash_tag_attr_t attrs[16];
+	base->selection_priority = 1; // default 1
 	DASH_TAG_ATTR_VALUE(attrs[0], ATTR_VALUE_TYPE_STRING, "profiles", &base->profiles);
 	DASH_TAG_ATTR_VALUE(attrs[1], ATTR_VALUE_TYPE_UINT32, "width", &base->width);
 	DASH_TAG_ATTR_VALUE(attrs[2], ATTR_VALUE_TYPE_UINT32, "height", &base->height);
@@ -361,6 +364,9 @@ static int dash_tag_adaptation_set(struct dash_parser_t* parser, void* ptr, cons
 	adaptation_set = &period->adaptation_sets[period->adaptation_set_count];
 	adaptation_set->parent = period;
 	adaptation_set->actuate = "onRequest"; // default
+	adaptation_set->segment_alignment = 0; // default
+	adaptation_set->subsegment_aligment = 0; // default
+	adaptation_set->subsegment_start_with_sap = 0; // default
 	DASH_TAG_ATTR_VALUE(attrs[0], ATTR_VALUE_TYPE_STRING, "xlink:href", &adaptation_set->href);
 	DASH_TAG_ATTR_VALUE(attrs[1], ATTR_VALUE_TYPE_STRING, "xlink:actuate", &adaptation_set->actuate);
 	DASH_TAG_ATTR_VALUE(attrs[2], ATTR_VALUE_TYPE_UINT32, "id", &adaptation_set->id);
