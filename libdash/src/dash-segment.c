@@ -42,7 +42,7 @@ int dash_segment_timeline(const struct dash_segment_timeline_t* timeline, size_t
 			*number = timeline->S[i].n + (index - j);
 			*start = (timeline->S[i].t ? timeline->S[i].t : t) + (index - j) * timeline->S[i].d;
 			*duration = timeline->S[i].d;
-			break;
+			return 0;
 		}
 
 		j += step;
@@ -134,6 +134,8 @@ int dash_segment_information(const struct dash_segment_t* segment, size_t index,
 		if (segment->segment_timeline.count > 0)
 		{
 			r = dash_segment_timeline(&segment->segment_timeline, index, number, start, duration);
+			if (0 != r)
+				return -1;
 		}
 		else
 		{

@@ -43,7 +43,7 @@ const struct dash_segment_t* dash_representation_get_segment(const struct dash_r
 	return &representation->segment;
 }
 
-int dash_representation_find(const struct dash_representation_t* representation, int64_t start)
+int dash_representation_find(const struct dash_representation_t* representation, int64_t time)
 {
 	int r, n, i, mid;
 	int64_t number, t, d;
@@ -62,9 +62,9 @@ int dash_representation_find(const struct dash_representation_t* representation,
 		if (0 != r)
 			return r;
 
-		if (start < t)
+		if (time < t)
 			n = mid;
-		else if (start > t + d)
+		else if (time > t + d)
 			i = mid + 1;
 		else
 			break;

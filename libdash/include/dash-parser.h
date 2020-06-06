@@ -428,9 +428,9 @@ int dash_mpd_free(struct dash_mpd_t** mpd);
 /// Period
 
 /// location period by time
-/// @param[in] now play time
-/// @return NULL if don't find period
-const struct dash_period_t* dash_period_find(const struct dash_mpd_t* mpd, int64_t now);
+/// @param[in] time from previous period end to current perid end, range: (period-m-end, period-n-end]
+/// @return >=0-period index, -1-if don't find, other-undefined
+int dash_period_find(const struct dash_mpd_t* mpd, int64_t time);
 
 /// @param[in] media DASH_MEDIA_AUDIO/DASH_MEDIA_VIDEO/xxx
 /// @param[in] id adaptation set id, 0 if unknown
@@ -454,9 +454,9 @@ const struct dash_url_t* dash_representation_get_base_url(const struct dash_repr
 const struct dash_segment_t* dash_representation_get_segment(const struct dash_representation_t* representation);
 
 /// Find segment by start time
-/// @param[in] start segment start time
-/// @return -1-not found, >=0-segment item index
-int dash_representation_find(const struct dash_representation_t* representation, int64_t start);
+/// @param[in] time segment time, range: (previous segment end, segment start + duration)
+/// @return -1-not found, >=0-segment item index(index is not the startnumber)
+int dash_representation_find(const struct dash_representation_t* representation, int64_t time);
 
 /// @return -1-segment template, >=0-segment count
 int dash_segment_count(const struct dash_segment_t* segment);

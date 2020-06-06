@@ -4,16 +4,38 @@
 #include <assert.h>
 #include "cstringext.h"
 
-const struct dash_period_t* dash_period_find(const struct dash_mpd_t* mpd, int64_t now)
+int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 {
 	size_t i;
 	int64_t t, start;
 	const struct dash_period_t* period;
 
+	if (1 == mpd->period_count)
+		return 0; // only one period
+
 	t = 0;
 	for (i = 0; i < mpd->period_count; i++)
 	{
 		// 5.3.2.1 Overview (p27)
+		// 1. If the attribute @start is present in the Period, then the Period 
+		//    is a regular Period or an earlyterminated Period and the PeriodStart 
+		//    is equal to the value of this attribute.
+		// 2. If the @start attribute is absent, but the previous Period element 
+		//    contains a @duration attributethen this new Period is also a regular 
+		//    Period or an early terminated Period. The start time of the new Period 
+		//    PeriodStart is the sum of the start time of the previous Period PeriodStart 
+		//    and the value of the attribute @duration of the previous Period.
+		// 3. If (i) @start attribute is absent, and (ii) the Period element is the 
+		//    first in the MPD, and (iii) the MPD@type is 'static', then the PeriodStart 
+		//    time shall be set to zero
+		// 4. If (i) @start attribute is absent, and (ii) the previous Period element does 
+		//    not contain a @durationattribute or the Period element is the first in the 
+		//    MPD, and (iii) the MPD@type is 'dynamic', then thisPeriod is an Early Available 
+		//    Period (see below for details)
+		// 5. If (i) @duration attribute is present, and (ii) the next Period element contains 
+		//    a @start attribute orthe @minimumUpdatePeriod is present, then this Period 
+		//    is an Early Terminated Period (see below for details)
+		
 		period = &mpd->periods[i];
 		if (period->start > 0)
 		{
@@ -59,11 +81,11 @@ const struct dash_period_t* dash_period_find(const struct dash_mpd_t* mpd, int64
 			t = start; // ???
 		}
 
-		if (start <= now && now <= t)
+		if (time < t)
 			return period;
 	}
 
-	return mpd->period_count > 0 ? &mpd->periods[mpd->period_count - 1] : NULL;
+	return -1; // not found
 }
 
 const struct dash_adaptation_set_t* dash_period_select(const struct dash_period_t* period, int media, unsigned int id, unsigned int group, const char* lang, const char* codecs)

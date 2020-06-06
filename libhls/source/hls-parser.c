@@ -686,7 +686,7 @@ int hls_master_parse(struct hls_master_t** master, const char* m3u8, size_t len)
 	r = hls_parser_input(&parser, ptr, len);
 	if (0 != r)
 	{
-		free(parser.master);
+		hls_master_free(&parser.master);
 		return r;
 	}
 
@@ -711,7 +711,7 @@ int hls_playlist_parse(struct hls_playlist_t** playlist, const char* m3u8, size_
 	r = hls_parser_input(&parser, ptr, len);
 	if (0 != r)
 	{
-		free(parser.playlist);
+		hls_playlist_free(&parser.playlist);
 		return r;
 	}
 
