@@ -258,29 +258,29 @@ static inline uint8_t mpeg4_aac_get_sampling_frequency(struct mpeg4_bits_t* bits
 int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
 	uint16_t syncExtensionType;
-	uint8_t audioObjectType;
+//	uint8_t audioObjectType;
 	uint8_t extensionAudioObjectType = 0;
-	uint8_t samplingFrequencyIndex = 0;
+//	uint8_t samplingFrequencyIndex = 0;
 	uint8_t extensionSamplingFrequencyIndex = 0;
-	uint8_t channelConfiguration = 0;
+//	uint8_t channelConfiguration = 0;
 	uint8_t extensionChannelConfiguration = 0;
 	uint8_t epConfig;
 	struct mpeg4_bits_t bits;
 	mpeg4_bits_init(&bits, (void*)data, bytes);
 
-	audioObjectType = mpeg4_aac_get_audio_object_type(&bits);
-	samplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-	channelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
+	aac->profile = mpeg4_aac_get_audio_object_type(&bits);
+	aac->sampling_frequency_index = mpeg4_aac_get_sampling_frequency(&bits);
+	aac->channel_configuration = mpeg4_bits_read_uint8(&bits, 4);
 
-	if (5 == audioObjectType || 29 == audioObjectType)
+	if (5 == aac->profile || 29 == aac->profile)
 	{
 		extensionAudioObjectType = 5;
 		aac->sbr = 1;
-		if (29 == audioObjectType)
+		if (29 == aac->profile)
 			aac->ps = 1;
 		extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-		audioObjectType = mpeg4_aac_get_audio_object_type(&bits);
-		if (22 == audioObjectType)
+		aac->profile = mpeg4_aac_get_audio_object_type(&bits);
+		if (22 == aac->profile)
 			extensionChannelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
 	}
 	else
@@ -288,7 +288,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		extensionAudioObjectType = 0;
 	}
 
-	switch (audioObjectType)
+	switch (aac->profile)
 	{
 	case 1: case 2: case 3: case 4: case 6: case 7:
 	case 17: case 19: case 20: case 21: case 22: case 23:
@@ -298,7 +298,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		assert(0);
 	}
 
-	switch (audioObjectType)
+	switch (aac->profile)
 	{
 	case 17: case 19: case 20: case 21: case 22:
 	case 23: case 24: case 25: case 26: case 27: case 39:

@@ -30,8 +30,8 @@
 #define UDP_MULTICAST_ADDR "239.0.0.2"
 #define UDP_MULTICAST_PORT 6000
 
-//static const char* s_workdir = "e:\\";
-static const char* s_workdir = "/Users/ireader/video/";
+static const char* s_workdir = "e:\\";
+//static const char* s_workdir = "/Users/ireader/video/";
 
 static ThreadLocker s_locker;
 
@@ -490,10 +490,10 @@ static int rtsp_onclose(void* /*ptr2*/)
 	return 0;
 }
 
-static int rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
+static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
 {
 	printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
-    return 0;
+    //return 0;
 }
 
 #define N_AIO_THREAD 4

@@ -705,7 +705,7 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	}
 	else if (0 == strcasecmp(SIP_HEADER_MAX_FORWARDS, name))
 	{
-		msg->maxforwards = (int)strtol(value, NULL, 10);
+		msg->maxforwards = (int)strtol(value ? value : "", NULL, 10);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_VIA, name) || 0 == strcasecmp(SIP_HEADER_ABBR_VIA, name))
 	{

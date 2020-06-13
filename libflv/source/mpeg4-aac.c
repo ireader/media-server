@@ -113,7 +113,7 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	aac->channels = aac->channel_configuration;
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 
-	if (0 == aac->channel_configuration || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
+	if (0 == aac->channel_configuration || 5 == aac->profile || 29 == aac->profile || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
 		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
 	return 2;
 }
@@ -231,7 +231,14 @@ void mpeg4_aac_test(void)
 	const unsigned char asc[] = { 0x13, 0x88 };
 	const unsigned char adts[] = { 0xFF, 0xF1, 0x5C, 0x40, 0x01, 0x1F, 0xFC };
 //	const unsigned char ascsbr[] = { 0x13, 0x10, 0x56, 0xe5, 0x9d, 0x48, 0x00 };
+	const unsigned char ascsbr[] = { 0x2b, 0x92, 0x08, 0x00 };
+	
 	unsigned char data[8];
+
+	assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_load(ascsbr, sizeof(ascsbr), &aac));
+	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 2 == aac.channel_configuration);
+	//assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_save(&aac, data, sizeof(data)));
+	//assert(0 == memcmp(ascsbr, data, sizeof(ascsbr)));
 
 	assert(sizeof(asc) == mpeg4_aac_audio_specific_config_load(asc, sizeof(asc), &aac));
 	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 1 == aac.channel_configuration);
