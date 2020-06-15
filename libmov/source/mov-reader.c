@@ -521,7 +521,7 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 			return -1;
 		}
 		idx -= 1;
-		sample = &track->samples[idx - 1];
+		sample = &track->samples[idx];
 		
 		if (sample->dts > clock)
 			end = mid;
