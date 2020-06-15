@@ -533,10 +533,13 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 
 	prev = track->stbl.stss[mid > 0 ? mid - 1 : mid] - 1;
 	next = track->stbl.stss[mid + 1 < track->stbl.stss_count ? mid + 1 : mid] - 1;
-	if (DIFF(track->samples[prev].dts, clock) < DIFF(track->samples[idx].dts, clock))
+	if (DIFF(track->samples[prev].dts, clock) < DIFF(track->samples[idx].dts, clock)) {
 		idx = prev;
-	if (DIFF(track->samples[next].dts, clock) < DIFF(track->samples[idx].dts, clock))
+	} else if (DIFF(track->samples[next].dts, clock) < DIFF(track->samples[idx].dts, clock)) {
 		idx = next;
+	} else {
+		idx--;
+	}
 
 	*timestamp = track->samples[idx].dts * 1000 / track->mdhd.timescale;
 	track->sample_offset = idx;
