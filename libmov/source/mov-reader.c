@@ -520,7 +520,7 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 			assert(0);
 			return -1;
 		}
-
+		idx -= 1;
 		sample = &track->samples[idx - 1];
 		
 		if (sample->dts > clock)
