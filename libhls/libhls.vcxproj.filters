@@ -33,6 +33,9 @@
     <ClCompile Include="source\hls-master.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\hls-string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\hls-param.h">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\hls-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hls-string.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

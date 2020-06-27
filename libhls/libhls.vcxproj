@@ -77,7 +77,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include;..\..\sdk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include;..\..\sdk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -106,7 +106,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include;..\..\sdk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -120,7 +120,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include;..\..\sdk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;..\libmpeg\include;..\libmov\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -138,6 +138,7 @@
     <ClCompile Include="source\hls-media.c" />
     <ClCompile Include="source\hls-parser.c" />
     <ClCompile Include="source\hls-playlist.c" />
+    <ClCompile Include="source\hls-string.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\hls-fmp4.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="include\hls-media.h" />
     <ClInclude Include="include\hls-param.h" />
     <ClInclude Include="include\hls-parser.h" />
+    <ClInclude Include="include\hls-string.h" />
     <ClInclude Include="source\hls-h264.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

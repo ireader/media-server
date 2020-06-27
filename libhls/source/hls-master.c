@@ -1,5 +1,5 @@
 #include "hls-parser.h"
-#include "cstringext.h"
+#include "hls-string.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
