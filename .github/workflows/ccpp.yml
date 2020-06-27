@@ -22,6 +22,6 @@ jobs:
         run: make
         working-directory: media-server
 
-      - name: Make check
-        run: make tset
-        working-directory: media-server
+#      - name: Make check
+#        run: make tset
+#        working-directory: media-server
