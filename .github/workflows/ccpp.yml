@@ -7,10 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     
   steps:
-    - name: checkout
-      uses: actions/checkout@v2
-      with:
-        path: media-server
+    - uses: actions/checkout@v2
     
     - name: checkout sdk
       uses: actions/checkout@v2
