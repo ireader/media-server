@@ -89,11 +89,11 @@ int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config)
 	uint8_t buf[128];
 	struct mpeg4_aac_t aac;
 
-	n = strlen(config);
+	n = (int)strlen(config);
 	if (n / 2 > sizeof(buf))
 		return -1;
 
-	n = base16_decode(buf, config, n);
+	n = (int)base16_decode(buf, config, n);
 	n = mpeg4_aac_stream_mux_config_load(buf, n, &aac);
 	return n <= 0 ? n : mpeg4_aac_audio_specific_config_save(&aac, data, bytes);
 }
@@ -102,9 +102,9 @@ int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config)
 int sdp_aac_mpeg4_load(uint8_t* data, int bytes, const char* config)
 {
 	int n;
-	n = strlen(config);
+	n = (int)strlen(config);
 	if (n / 2 > bytes)
 		return -1;
 	
-	return base16_decode(data, config, n);
+	return (int)base16_decode(data, config, n);
 }

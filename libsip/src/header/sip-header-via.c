@@ -197,5 +197,16 @@ void sip_header_via_test(void)
 	assert(1 == sip_params_count(&v->params) && 0 == cstrcmp(&sip_params_get(&v->params, 0)->name, "branch") && 0 == cstrcmp(&sip_params_get(&v->params, 0)->value, "z9hG4bK87asdks7"));
 	assert(0 == cstrcmp(&v->branch, "z9hG4bK87asdks7"));
 	sip_vias_free(&vias);
+
+	sip_vias_init(&vias);
+	s = "SIP/2.0/UDP [2001:db8::9:1];received=[2001:db8::9:255];branch=z9hG4bKas3-111";
+	assert(0 == sip_header_vias(s, s + strlen(s), &vias) && 1 == sip_vias_count(&vias));
+	v = sip_vias_get(&vias, 0);
+	assert(0 == cstrcmp(&v->protocol, "SIP") && 0 == cstrcmp(&v->version, "2.0") && 0 == cstrcmp(&v->transport, "UDP") && 0 == cstrcmp(&v->host, "[2001:db8::9:1]"));
+	assert(2 == sip_params_count(&v->params));
+	assert(0 == cstrcmp(&sip_params_get(&v->params, 0)->name, "received") && 0 == cstrcmp(&sip_params_get(&v->params, 0)->value, "[2001:db8::9:255]"));
+	assert(0 == cstrcmp(&sip_params_get(&v->params, 1)->name, "branch") && 0 == cstrcmp(&sip_params_get(&v->params, 1)->value, "z9hG4bKas3-111"));
+	assert(0 == cstrcmp(&v->received, "[2001:db8::9:255]") && 0 == cstrcmp(&v->branch, "z9hG4bKas3-111"));
+	sip_vias_free(&vias);
 }
 #endif

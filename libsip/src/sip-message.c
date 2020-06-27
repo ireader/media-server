@@ -391,7 +391,7 @@ int sip_message_load(struct sip_message_t* msg, const struct http_parser_t* pars
 		r = sip_message_add_header(msg, name, value);
 	}
 
-	msg->size = http_get_content_length(parser);
+	msg->size = (int)http_get_content_length(parser);
 	msg->payload = http_get_content(parser);
 	return r;
 }

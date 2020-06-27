@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librtsp", "librtsp\librtsp.vcxproj", "{C34CC56F-34FE-4D93-8582-5853B05442EA}"
 EndProject
@@ -28,6 +28,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsip", "libsip\libsip.vcxproj", "{5CDF2275-37A7-450A-B69F-2063079D6946}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libice", "..\sdk\libice\libice.vcxproj", "{F565E04B-1E19-47F3-8923-36479C5CAE4D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sdk", "..\sdk\sdk.vcxproj", "{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -133,6 +135,14 @@ Global
 		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|Win32.Build.0 = Release|Win32
 		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|x64.ActiveCfg = Release|x64
 		{F565E04B-1E19-47F3-8923-36479C5CAE4D}.Release|x64.Build.0 = Release|x64
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Debug|Win32.ActiveCfg = Debug|Win32
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Debug|Win32.Build.0 = Debug|Win32
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Debug|x64.ActiveCfg = Debug|x64
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Debug|x64.Build.0 = Debug|x64
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|Win32.ActiveCfg = Release|Win32
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|Win32.Build.0 = Release|Win32
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|x64.ActiveCfg = Release|x64
+		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

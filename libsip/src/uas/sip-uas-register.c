@@ -128,12 +128,12 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 
 	// All registrations from a UAC SHOULD use the same Call-ID header 
 	// field value for registrations sent to a particular registrar.
-	req->callid;
+	//req->callid;
 
 	// A UA MUST increment the CSeq value by one for each
 	// REGISTER request with the same Call-ID.
 	assert(0 == cstrcasecmp(&req->cseq.method, "REGISTER"));
-	req->cseq.id;
+	//req->cseq.id;
 
 	// zero or more values containing address bindings
 	contact = sip_contacts_get(&req->contacts, 0);

@@ -347,6 +347,21 @@ void sip_uri_parse_test(void)
 	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "alice"));
 	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
 	sip_uri_params_free(&uri);
+
+	// ipv6
+	s = "sip:user@[::ffff:192.0.2.10]:19823";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
+	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "user@[::ffff:192.0.2.10]:19823") && 0 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "user"));
+	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
+
+	s = "sip:user@fe80::204:75ff:fe4d:19d9";
+	assert(0 == sip_header_uri(s, s + strlen(s), &uri));
+	assert(0 == cstrcmp(&uri.scheme, "sip") && 0 == cstrcmp(&uri.host, "user@fe80::204:75ff:fe4d:19d9") && 0 == sip_params_count(&uri.parameters) && 0 == sip_params_count(&uri.headers));
+	assert(0 == sip_uri_username(&uri, &usr) && 0 == cstrcmp(&usr, "user"));
+	assert(sip_uri_write(&uri, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
+	sip_uri_params_free(&uri);
 }
 
 void sip_uri_equal_test(void)

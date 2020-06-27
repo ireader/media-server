@@ -70,7 +70,7 @@ int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, co
 		while (p)
 		{
 			next = strchr(p, ',');
-			len = next ? next - p : strlen(p);
+			len = next ? (int)(next - p) : (int)strlen(p);
 			if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
 				return -1; // don't have enough space
 

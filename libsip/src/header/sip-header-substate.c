@@ -83,7 +83,7 @@ void sip_header_substate_test(void)
 	s = "active;expires=600000";
 	assert(0 == sip_header_substate(s, s + strlen(s), &substate));
 	assert(0 == cstrcmp(&substate.state, "active") && substate.expires == 600000);
-	assert(strlen(s) == sip_substate_write(&substate, buf, buf + sizeof(buf)));
+	assert((int)strlen(s) == sip_substate_write(&substate, buf, buf + sizeof(buf)));
 	assert(0 == strcmp(s, buf));
 }
 #endif

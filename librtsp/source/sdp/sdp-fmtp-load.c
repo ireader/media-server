@@ -18,7 +18,7 @@ int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t*
 
 	memset(avc, 0, sizeof(*avc));
 	avc->nalu = 4;
-	if (3 != sscanf(fmtp->profile_level_id, "%2hhX%2hhX%2hhX", &avc->profile, &avc->compatibility, &avc->level))
+	if (3 != sscanf(fmtp->profile_level_id, "%2hhx%2hhx%2hhx", &avc->profile, &avc->compatibility, &avc->level))
 		return -1;
 
 	off = 0;
@@ -26,7 +26,7 @@ int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t*
 	while (p)
 	{
 		next = strchr(p, ',');
-		n = next ? next - p : strlen(p);
+		n = next ? next - p : (int)strlen(p);
 		if (off + (n + 3) / 4 * 3 > sizeof(avc->data))
 			return -1; // don't have enough space
 
@@ -79,7 +79,7 @@ int mpeg4_hevc_from_fmtp(struct mpeg4_hevc_t* hevc, const struct sdp_a_fmtp_h265
 		while (p)
 		{
 			next = strchr(p, ',');
-			n = next ? next - p : strlen(p);
+			n = next ? next - p : (int)strlen(p);
 			if (off + (n + 3) / 4 * 3 > sizeof(hevc->data))
 				return -1; // don't have enough space
 
@@ -103,11 +103,11 @@ int aac_from_sdp_latm_config(struct mpeg4_aac_t* aac, struct sdp_a_fmtp_mpeg4_t*
 	int n;
 	uint8_t buf[128];
 
-	n = strlen(fmtp->config);
+	n = (int)strlen(fmtp->config);
 	if (n / 2 > sizeof(buf))
 		return -1;
 
-	n = base16_decode(buf, fmtp->config, n);
+	n = (int)base16_decode(buf, fmtp->config, n);
 	return mpeg4_aac_stream_mux_config_load(buf, n, aac);
 }
 
@@ -117,10 +117,10 @@ int aac_from_sdp_mpeg4_config(struct mpeg4_aac_t* aac, struct sdp_a_fmtp_mpeg4_t
 	int n;
 	uint8_t buf[128];
 
-	n = strlen(fmtp->config);
+	n = (int)strlen(fmtp->config);
 	if ((n + 3) / 4 * 3 > sizeof(buf))
 		return -1;
 
-	n = base64_decode(buf, fmtp->config, n);
+	n = (int)base64_decode(buf, fmtp->config, n);
 	return mpeg4_aac_audio_specific_config_load(buf, n, aac);
 }

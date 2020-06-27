@@ -23,32 +23,32 @@
     <ProjectGuid>{35027F2F-FD70-47C0-BDDE-7B4F0C7DD595}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>test</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -90,13 +90,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../3rd/ffmpeg/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avdevice.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rd/openssl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -180,29 +180,6 @@
     <ClCompile Include="..\..\sdk\libhttp\test\http-parser-test.c" />
     <ClCompile Include="..\..\sdk\libhttp\test\http-server-test.cpp" />
     <ClCompile Include="..\..\sdk\libice\test\ice-transport.c" />
-    <ClCompile Include="..\..\sdk\source\app-log.c" />
-    <ClCompile Include="..\..\sdk\source\base64.c" />
-    <ClCompile Include="..\..\sdk\source\channel.c" />
-    <ClCompile Include="..\..\sdk\source\darray.c" />
-    <ClCompile Include="..\..\sdk\source\digest\crc32.c" />
-    <ClCompile Include="..\..\sdk\source\digest\hkdf.c" />
-    <ClCompile Include="..\..\sdk\source\digest\hmac.c" />
-    <ClCompile Include="..\..\sdk\source\digest\md5.c" />
-    <ClCompile Include="..\..\sdk\source\digest\sha.c" />
-    <ClCompile Include="..\..\sdk\source\digest\sha1.c" />
-    <ClCompile Include="..\..\sdk\source\digest\sha224-256.c" />
-    <ClCompile Include="..\..\sdk\source\digest\sha384-512.c" />
-    <ClCompile Include="..\..\sdk\source\ntp-time.c" />
-    <ClCompile Include="..\..\sdk\source\port\ip-route.c" />
-    <ClCompile Include="..\..\sdk\source\port\sysnetconfig.c" />
-    <ClCompile Include="..\..\sdk\source\random.c" />
-    <ClCompile Include="..\..\sdk\source\ring-buffer.c" />
-    <ClCompile Include="..\..\sdk\source\sockpair.c" />
-    <ClCompile Include="..\..\sdk\source\thread-pool.c" />
-    <ClCompile Include="..\..\sdk\source\time64.c" />
-    <ClCompile Include="..\..\sdk\source\unicode.c" />
-    <ClCompile Include="..\..\sdk\source\uri-parse.c" />
-    <ClCompile Include="..\..\sdk\source\urlcodec.c" />
     <ClCompile Include="..\libdash\test\dash-dynamic-test.cpp" />
     <ClCompile Include="..\libdash\test\dash-static-test.cpp" />
     <ClCompile Include="..\libflv\test\amf0-test.c" />
@@ -228,6 +205,7 @@
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-encrypt-test.cpp" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-client.c" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-server.c" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-transport.c" />
@@ -247,6 +225,7 @@
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
     <ClCompile Include="..\librtp\test\rtp-sender.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-fmtp-load.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h265.c" />
@@ -274,6 +253,7 @@
     <ClCompile Include="..\librtsp\test\sdp-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-agent-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-header-test.c" />
+    <ClCompile Include="..\libsip\test\sip-message-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-timer.c" />
     <ClCompile Include="..\libsip\test\sip-uac-message-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-uac-test.cpp" />
@@ -299,6 +279,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\sdk\libice\libice.vcxproj">
       <Project>{f565e04b-1e19-47f3-8923-36479c5cae4d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\sdk\sdk.vcxproj">
+      <Project>{11b5e9d8-cee3-4f4a-9df6-370ec4d71639}</Project>
     </ProjectReference>
     <ProjectReference Include="..\libdash\libdash.vcxproj">
       <Project>{a5da231f-6146-43b5-8bbe-891f7e552357}</Project>

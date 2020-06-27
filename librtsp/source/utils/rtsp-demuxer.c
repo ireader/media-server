@@ -67,7 +67,7 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
     for (i = 0; i < sizeof(s_mpeg2) / sizeof(s_mpeg2[0]); i++)
     {
         if (codecid == s_mpeg2[i])
-            return demuxer->onpacket(demuxer->param, track, s_payload[i], s_encoding[i], pts, dts, data, bytes, flags);
+            return demuxer->onpacket(demuxer->param, track, s_payload[i], s_encoding[i], pts, dts, data, (int)bytes, flags);
     }
 
     (void)program; //ignore
@@ -82,7 +82,7 @@ static inline void rtsp_demuxer_mpegps_onpacket(void* param, int track, int code
     assert(0 == demuxer->error);
 }
 
-static int rtsp_demuxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const void* data, int bytes, int flags)
+static int rtsp_demuxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const uint8_t* data, int bytes, int flags)
 {
     struct rtsp_demuxer_t* demuxer;
     demuxer = (struct rtsp_demuxer_t*)param;
