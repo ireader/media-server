@@ -15,6 +15,7 @@
 #define RTMP_LEVEL_WARNING	"warning"
 #define RTMP_LEVEL_STATUS	"status"
 #define RTMP_LEVEL_ERROR	"error"
+#define RTMP_LEVEL_FINISH	"finish" // ksyun cdn
 
 // Chunk Stram Id
 enum rtmp_channel_t
