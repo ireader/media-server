@@ -5,14 +5,14 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
   steps:
-    - name: checkout
+    - name: Checkout
       uses: actions/checkout@v2
       with:
         path: media-server
-    
-    - name: checkout sdk
+
+    - name: Sdk
       uses: actions/checkout@v2
       with:
         repository: ireader/sdk
