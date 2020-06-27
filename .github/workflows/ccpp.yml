@@ -13,14 +13,14 @@ jobs:
     
     - name: checkout sdk
       uses: actions/checkout@v2
-        with:
-          repository: ireader/sdk
-          path: sdk
-            
+      with:
+        repository: ireader/sdk
+        path: sdk
+
     - name: make
       run: make
       working-directory: media-server
-            
+
     - name: make check
       run: make tset
       working-directory: media-server
