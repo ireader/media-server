@@ -2,12 +2,12 @@
 
 #include "dash-parser.h"
 #include "xs-datatype.h"
+#include "hls-string.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "cstringext.h"
 
 #ifndef offsetof
 #define offsetof(s, m)   (size_t)&(((s*)0)->m)
@@ -36,26 +36,6 @@
 
 #define SEGMENT_URL_INCR 8
 #define SEGMENT_URL_CAPACITY(count) ((count+SEGMENT_URL_INCR-1)/SEGMENT_URL_INCR*SEGMENT_URL_INCR)
-
-enum 
-{
-	DASH_ROOT				= 0x0001, 
-	DASH_MPD				= 0x0002,
-	DASH_PERIOD				= 0x0004,
-	DASH_PRESELECTION		= 0x0008, 
-	DASH_ADAPTATION_SET		= 0x0010, 
-	DASH_REPRESENTATION		= 0x0020, 
-	DASH_SUBREPRESENTATION	= 0x0040,
-
-	DASH_SEGMENT			= 0x0100,
-	DASH_SEGMENT_TIMELINE	= 0x0400,
-	DASH_PROGRAM_INFORMATION= 0x1000,
-	DASH_METRICS			= 0x2000,
-	DASH_EVENT_STREAM		= 0x4000,
-	DASH_CONTENT_COMPONENT	= 0x8000,
-
-#define DASH_ANY 0xFF
-};
 
 enum 
 { 
@@ -89,11 +69,6 @@ struct dash_tag_t
 struct dash_parser_t
 {
 	size_t period_capacity;
-	//struct dash_subrepresentation_t* subrepresentation;
-	//struct dash_representation_t* representation;
-	//struct dash_adaptation_set_t* adaptation_set;
-	//struct dash_preselection_t* preselection;
-	//struct dash_period_t* period; // last segment has key
 	struct dash_mpd_t* mpd;
 	char* content;
 	void* tag; // dash tag object
@@ -189,12 +164,12 @@ static int dash_parse_attrs(const char* data, size_t bytes, struct dash_tag_attr
 	r = 0;
 	for (ptr = data; ptr && ptr < data + bytes && 0 == r; ptr = next)
 	{
-		n = strsplit(ptr, data + bytes, " \r\n", "\"", &next);
+		n = hls_strsplit(ptr, data + bytes, " \r\n", "\"", &next);
 
-		nn = strsplit(ptr, ptr + n, "=", "", &value);
-		name = strtrim(ptr, &nn, " \t\r\n", " \t\r\n"); // trim SP/HTAB
+		nn = hls_strsplit(ptr, ptr + n, "=", "", &value);
+		name = hls_strtrim(ptr, &nn, " \t\r\n", " \t\r\n"); // trim SP/HTAB
 		nv = ptr + n - value;
-		value = strtrim(value, &nv, " \t\r\n'\"", " \t\r\n'\""); // trim SP/HTAB/'/"
+		value = hls_strtrim(value, &nv, " \t\r\n'\"", " \t\r\n'\""); // trim SP/HTAB/'/"
 
 		for (i = 0; i < nattrs; i++)
 		{
@@ -244,7 +219,7 @@ static int dash_tag_mpd(struct dash_parser_t* parser, void* ptr, const char* att
 	DASH_TAG_ATTR_VALUE(attrs[3], ATTR_VALUE_TYPE_DATETIME, "availabilityStartTime", &mpd->availability_start_time);
 	DASH_TAG_ATTR_VALUE(attrs[4], ATTR_VALUE_TYPE_DATETIME, "availabilityEndTime", &mpd->availability_end_time);
 	DASH_TAG_ATTR_VALUE(attrs[5], ATTR_VALUE_TYPE_DATETIME, "publishTime", &mpd->publish_time);
-	DASH_TAG_ATTR_VALUE(attrs[6], ATTR_VALUE_TYPE_DURATION, "mediaPresentationDruation", &mpd->media_presentation_duration);
+	DASH_TAG_ATTR_VALUE(attrs[6], ATTR_VALUE_TYPE_DURATION, "mediaPresentationDuration", &mpd->media_presentation_duration);
 	DASH_TAG_ATTR_VALUE(attrs[7], ATTR_VALUE_TYPE_DURATION, "minimumUpdatePeriod", &mpd->minimum_update_period);
 	DASH_TAG_ATTR_VALUE(attrs[8], ATTR_VALUE_TYPE_DURATION, "minBufferTime", &mpd->min_buffer_time);
 	DASH_TAG_ATTR_VALUE(attrs[9], ATTR_VALUE_TYPE_DURATION, "timeShiftBufferDepath", &mpd->time_shift_buffer_depth);
@@ -1172,7 +1147,7 @@ static const char* dash_parser_tag(struct dash_tag_t* tag, const char* data, con
 		return end; // all done
 
 	tag->nlen = end - tag->ptr - 1;
-	tag->name = strtrim(tag->ptr + 1 /* skip '<' */, &tag->nlen, " \t\r\n", NULL); // trim SP/HTAB
+	tag->name = hls_strtrim(tag->ptr + 1 /* skip '<' */, &tag->nlen, " \t\r\n", NULL); // trim SP/HTAB
 	switch (*tag->name)
 	{
 	case '?':
@@ -1219,9 +1194,9 @@ static const char* dash_parser_tag(struct dash_tag_t* tag, const char* data, con
 		break;
 	}
 
-	tag->nlen = strsplit(tag->name, end, ">", "\'\"", &next);
+	tag->nlen = hls_strsplit(tag->name, end, ">", "\'\"", &next);
 	tag->end = tag->name + tag->nlen;
-	tag->name = strtrim(tag->name, &tag->nlen, " \t\r\n", " \t\r\n"); // trim SP/HTAB
+	tag->name = hls_strtrim(tag->name, &tag->nlen, " \t\r\n", " \t\r\n"); // trim SP/HTAB
 	if (tag->nlen > 0 && '/' == tag->name[tag->nlen - 1])
 	{
 		// line-break
@@ -1235,7 +1210,7 @@ static const char* dash_parser_tag(struct dash_tag_t* tag, const char* data, con
 	assert(tag->attr <= tag->name + tag->nlen);
 	tag->nattr = tag->nlen - (tag->attr - tag->name);
 	tag->nlen = tag->attr ? tag->attr - tag->name : tag->nlen;
-	tag->attr = strtrim(tag->attr, &tag->nattr, " \t\r\n", " \t\r\n"); // trim SP/HTAB
+	tag->attr = hls_strtrim(tag->attr, &tag->nattr, " \t\r\n", " \t\r\n"); // trim SP/HTAB
 
 	if (tag->nlen < 1)
 	{
@@ -1285,7 +1260,7 @@ static int dash_parser_input(struct dash_parser_t* parser, const char* data, siz
 			if (0 == (DASH_TAG_FLAG_LINBREAK & tag.flags))
 			{
 				ncontent = tag2.ptr - ptr;
-				parser->content = (char*)strtrim(ptr, &ncontent, " \t\r\n", " \t\r\n"); // trim SP/HTAB
+				parser->content = (char*)hls_strtrim(ptr, &ncontent, " \t\r\n", " \t\r\n"); // trim SP/HTAB
 				parser->content[ncontent] = '\0';
 			}
 			else

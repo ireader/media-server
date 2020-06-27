@@ -7,6 +7,7 @@ LOCAL_LDLIBS +=
 LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../libmov/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../libhls/include
 
 LOCAL_SRC_FILES := $(wildcard src/*.c)
 LOCAL_SRC_FILES += $(wildcard src/*.cpp)

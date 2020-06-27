@@ -1,11 +1,49 @@
 #include "dash-parser.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <inttypes.h>
+#include <limits.h>
 
-int dash_segment_timeline(const struct dash_segment_timeline_t* timeline, size_t index, int64_t* number, int64_t* start, int64_t* duration)
+int dash_segment_count(const struct dash_segment_t* segment)
+{
+	int n;
+	size_t i;
+
+	switch (segment->type)
+	{
+	case DASH_SEGMENT_BASE:
+		return 1;
+
+	case DASH_SEGMENT_LIST:
+		return segment->segment_url_count;
+
+	case DASH_SEGMENT_TEMPLATE:
+		if (segment->segment_timeline.count < 1)
+			return INT_MAX; // dynamic + infinite
+
+		// static + timeline
+		for (i = n = 0; i < segment->segment_timeline.count; i++)
+			n += 1 + segment->segment_timeline.S[i].r;
+		return n;
+
+	default:
+		return 0; // none
+	}
+}
+
+const char* dash_segment_initialization(const struct dash_segment_t* segment)
+{
+	if (segment->initialization.source_url && *segment->initialization.source_url)
+		return segment->initialization.source_url;
+
+	if (DASH_SEGMENT_TEMPLATE == segment->type && segment->initialization_url && *segment->initialization_url)
+		return segment->initialization_url;
+
+	return NULL;
+}
+
+/// @return 0-ok, <0-error
+static int dash_segment_timeline(const struct dash_segment_timeline_t* timeline, size_t index, int64_t* number, int64_t* start, int64_t* duration)
 {
 	int64_t t;
 	size_t i, j, step;
@@ -52,42 +90,17 @@ int dash_segment_timeline(const struct dash_segment_timeline_t* timeline, size_t
 	return -1;
 }
 
-int dash_segment_count(const struct dash_segment_t* segment)
-{
-	int n;
-	size_t i;
-
-	switch (segment->type)
-	{
-	case DASH_SEGMENT_BASE:
-		return 1;
-
-	case DASH_SEGMENT_LIST:
-		return segment->segment_url_count;
-
-	case DASH_SEGMENT_TEMPLATE:
-		if (segment->segment_timeline.count < 1)
-			return -1; // dynamic + infinite
-
-		// static + timeline
-		for(i = n = 0; i < segment->segment_timeline.count; i++)
-			n += 1 + segment->segment_timeline.S[i].r;
-		return n;
-		
-	default:
-		return 0; // none
-	}
-}
-
 /// @param[out] number start number of representation
 /// @param[out] start start time of representation(MUST add period.start)
 /// @param[out] duration segment duration, 0 if unknown
 /// @param[out] url segment url(MUST resolve with representation base url)
 /// @param[out] range url range, NULL if don't have range
 /// @return 0-ok, <0-error, >0-undefined
-int dash_segment_information(const struct dash_segment_t* segment, size_t index, int64_t* number, int64_t* start, int64_t* duration, const char** url, const char** range)
+int dash_segment_information(const struct dash_segment_t* segment, int index, int64_t* number, int64_t* start, int64_t* duration, const char** url, const char** range)
 {
 	int r;
+	int64_t timescale;
+	static const char* sc_empty = "";
 
 	// 5.3.9.2 Segment base information
 	// 1. If the Representation contains more than one Media Segment, then either 
@@ -116,6 +129,7 @@ int dash_segment_information(const struct dash_segment_t* segment, size_t index,
 	// result in Media Segment List with consecutive numbers.
 
 	r = 0;
+	
 	if (DASH_SEGMENT_BASE == segment->type)
 	{
 		if (0 != index)
@@ -124,11 +138,11 @@ int dash_segment_information(const struct dash_segment_t* segment, size_t index,
 		*number = 0;
 		*start = 0 - segment->presentation_time_offset;
 		*duration = segment->presentation_duration;
-		*url = '\0';
+		*url = sc_empty;
 	}
 	else
 	{
-		if (index < 0 || (DASH_SEGMENT_LIST == segment->type && index >= segment->segment_url_count))
+		if (index < 0 || (DASH_SEGMENT_LIST == segment->type && index >= (int)segment->segment_url_count))
 			return -1;
 
 		if (segment->segment_timeline.count > 0)
@@ -161,89 +175,36 @@ int dash_segment_information(const struct dash_segment_t* segment, size_t index,
 		}
 	}
 
+	timescale = segment->timescale > 0 ? segment->timescale : 1;
+	*start = *start / timescale;
+	*duration = *duration / timescale;
 	return r;
 }
 
-int dash_segment_template_replace(const struct dash_representation_t* representation, const char* url, int64_t number, int64_t start, char* ptr, size_t len)
+int dash_segment_find(const struct dash_segment_t* segment, int64_t time)
 {
-	// Each identifier may be suffixed, within the enclosing '$' characters, 
-	// with an additional format tag aligned with the printf format tag:
-	//	%0[width]d
-	//const char* patterns[] = { "RepresentationID", "Number", "Bandwidth", "Time", "SubNumber" };
-	size_t i, j;
-	int width, off;
-	char format[16];
+	int r, n, i, mid;
+	int64_t number, t, d;
+	const char* url, * range;
 
-	for (j = i = 0; i < strlen(url) && j < len; i++)
+	n = dash_segment_count(segment);
+	i = 0;
+	mid = -1;
+
+	while (i < n)
 	{
-		if ('$' == url[i])
-		{
-			off = 0;
-			width = 1;
+		mid = (i + n) / 2;
+		r = dash_segment_information(segment, mid, &number, &t, &d, &url, &range);
+		if (0 != r)
+			return r;
 
-			// Identifier matching is case-sensitive.
-			if ('$' == url[i + 1])
-			{
-				// skip
-				ptr[j++] = url[i++];
-				continue;
-			}
-			else if (0 == strncmp("$RepresentationID$", url + i, 18))
-			{
-				j += snprintf(ptr + j, len - j, "%s", representation->id ? representation->id : "");
-				i += 17;
-			}
-			else if (0 == strncmp("$Number", url + i, 7) && ('$' == url[i + 7] || ('%' == url[i + 7] && 1 == sscanf(url + i + 7 + 1, "%dd$%n", &width, &off) && '$' == url[i + 7 + off])))
-			{
-				snprintf(format, sizeof(format), "%%0%d" PRId64, width);
-				j += snprintf(ptr + j, len - j, format, number);
-				i += 7 + off;
-			}
-			else if (0 == strncmp("$Bandwidth", url + i, 10) && ('$' == url[i + 10] || ('%' == url[i + 10] && 1 == sscanf(url + i + 10 + 1, "%dd$%n", &width, &off) && '$' == url[i + 10 + off])))
-			{
-				snprintf(format, sizeof(format), "%%0%du", width);
-				j += snprintf(ptr + j, len - j, format, representation->bandwidth);
-				i += 10 + off;
-			}
-			else if (0 == strncmp("$Time", url + i, 5) && ('$' == url[i + 5] || ('%' == url[i + 5] && 1 == sscanf(url + i + 5 + 1, "%dd$%n", &width, &off) && '$' == url[i + 5 + off])))
-			{
-				snprintf(format, sizeof(format), "%%0%d" PRId64, width);
-				j += snprintf(ptr + j, len - j, format, start);
-				i += 5 + off;
-			}
-			else if (0 == strncmp("$SubNumber", url + i, 10) && ('$' == url[i + 10] || '%' == url[i + 10]))
-			{
-				// TODO:
-				assert(0);
-			}
-			else
-			{
-				assert(0); // ignore
-				ptr[j++] = url[i];
-			}
-		}
+		if (time < t)
+			n = mid;
+		else if (time > t + d)
+			i = mid + 1;
 		else
-		{
-			ptr[j++] = url[i];
-		}
+			break;
 	}
 
-	if(j < len)
-		ptr[j] = '\0';
-	return j < len ? 0 : -1;
+	return mid;
 }
-
-#if defined(_DEBUG) || defined(DEBUG)
-void dash_segment_test(void)
-{
-	char ptr[128];
-	struct dash_representation_t r;
-	memset(&r, 0, sizeof(r));
-	r.id = "0";
-	r.bandwidth = 19200;
-	assert(0 == dash_segment_template_replace(&r, "dash-$$$$$RepresentationID$$Bandwidth$$Number$$Time$-", 1, 19700101, ptr, sizeof(ptr)));
-	assert(0 == strcmp(ptr, "dash-$$019200119700101-"));
-	assert(0 == dash_segment_template_replace(&r, "dash-$Bandwidth%03d$$Number%03d$$Time%03d$-", 1, 19700101, ptr, sizeof(ptr)));
-	assert(0 == strcmp(ptr, "dash-1920000119700101-"));
-}
-#endif

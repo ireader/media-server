@@ -425,6 +425,9 @@ int dash_mpd_parse(struct dash_mpd_t** mpd, const char* data, size_t bytes);
 
 int dash_mpd_free(struct dash_mpd_t** mpd);
 
+/// @return -1-live, >=0-duration(ms), other-error
+int64_t dash_get_duration(const struct dash_mpd_t* mpd);
+
 /// Period
 
 /// location period by time
@@ -449,25 +452,30 @@ int dash_adaptation_set_media_type(const struct dash_adaptation_set_t* set);
 /// @return >=0-representation index, -1-error
 int dash_adaptation_set_best_representation(const struct dash_adaptation_set_t* set);
 
+/// Representation
+
 const struct dash_url_t* dash_representation_get_base_url(const struct dash_representation_t* representation);
 
-const struct dash_segment_t* dash_representation_get_segment(const struct dash_representation_t* representation);
+/// Get initialization segment url(MUST use with dash_representation_get_base_url)
+/// @return >0-ok with url length, =0-don't have initialization segment, <0-error
+int dash_representation_get_initialization(const struct dash_representation_t* representation, char* url, size_t size);
 
 /// Find segment by start time
 /// @param[in] time segment time, range: (previous segment end, segment start + duration)
 /// @return -1-not found, >=0-segment item index(index is not the startnumber)
-int dash_representation_find(const struct dash_representation_t* representation, int64_t time);
+int dash_representation_find_segment(const struct dash_representation_t* representation, int64_t time);
 
-/// @return -1-segment template, >=0-segment count
-int dash_segment_count(const struct dash_segment_t* segment);
+/// @return <0-error, >=0-segment count(INT_MAX for segment template)
+int dash_representation_segment_count(const struct dash_representation_t* representation);
 
-int dash_segment_information(const struct dash_segment_t* segment, size_t index, int64_t* number, int64_t* start, int64_t* duration, const char** url, const char** range);
-
-/// @return 0-ok, other-error
-int dash_segment_template_replace(const struct dash_representation_t* representation, const char* url, int64_t number, int64_t start, char* ptr, size_t len);
-
-/// @return 0-ok, <0-error
-int dash_segment_timeline(const struct dash_segment_timeline_t* timeline, size_t index, int64_t* number, int64_t* start, int64_t* duration);
+/// Get segment url(MUST use with dash_representation_get_base_url)
+/// @param[in] index segment index(!= start number)
+/// @param[out] number start number of representation
+/// @param[out] start start time of representation(MUST add period.start)
+/// @param[out] duration segment duration, 0 if unknown
+/// @param[out] range url range, NULL if don't have range
+/// @return >=0-ok with url length, <0-error
+int dash_representation_segment_url(const struct dash_representation_t* representation, int index, int64_t* number, int64_t* start, int64_t* duration, const char** range, char* url, size_t size);
 
 #ifdef __cplusplus
 }

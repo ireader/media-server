@@ -1,8 +1,72 @@
 #include "dash-parser.h"
+#include "hls-string.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "cstringext.h"
+
+int64_t dash_get_duration(const struct dash_mpd_t* mpd)
+{
+	size_t i;
+	int64_t t, start;
+	const struct dash_period_t* period;
+
+	if (DASH_DYNAMIC == mpd->type)
+		return -1;
+
+	if (mpd->media_presentation_duration > 0)
+		return mpd->media_presentation_duration;
+
+	t = 0;
+	for (i = 0; i < mpd->period_count; i++)
+	{
+		period = &mpd->periods[i];
+		if (period->start > 0)
+		{
+			// a regular Period or an early terminated Period
+			start = period->start;
+		}
+		else if (i > 0 && mpd->periods[i - 1].duration > 0)
+		{
+			start = t;
+		}
+		else if (0 == i && DASH_STATIC == mpd->type)
+		{
+			start = 0;
+		}
+		else if ((0 == i || mpd->periods[i - 1].duration == 0) && DASH_DYNAMIC == mpd->type)
+		{
+			continue; // Early Available Period
+		}
+		else
+		{
+			start = t;
+		}
+
+		if (period->duration > 0)
+		{
+			t = start + period->duration;
+		}
+		else if (i + 1 < mpd->period_count)
+		{
+			assert(0 != mpd->periods[i + 1].start);
+			t = mpd->periods[i + 1].start;
+		}
+		else if (DASH_DYNAMIC == mpd->type)
+		{
+			// MPD@mediaPresentationDuration shall be present when neither 
+			// the attribute MPD@minimumUpdatePeriod nor the Period@duration 
+			// of the last Period are present.
+			assert(mpd->media_presentation_duration > 0 || mpd->minimum_update_period > 0);
+			t = mpd->media_presentation_duration > 0 ? mpd->media_presentation_duration : (start + mpd->minimum_update_period);
+		}
+		else
+		{
+			t = start; // ???
+		}
+	}
+
+	return t;
+}
 
 int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 {
@@ -18,7 +82,7 @@ int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 	{
 		// 5.3.2.1 Overview (p27)
 		// 1. If the attribute @start is present in the Period, then the Period 
-		//    is a regular Period or an earlyterminated Period and the PeriodStart 
+		//    is a regular Period or an early terminated Period and the PeriodStart 
 		//    is equal to the value of this attribute.
 		// 2. If the @start attribute is absent, but the previous Period element 
 		//    contains a @duration attributethen this new Period is also a regular 
@@ -39,7 +103,7 @@ int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 		period = &mpd->periods[i];
 		if (period->start > 0)
 		{
-			// a regular Period or an earlyterminated Period
+			// a regular Period or an early terminated Period
 			start = period->start;
 		}
 		else if (i > 0 && mpd->periods[i - 1].duration > 0)
@@ -82,7 +146,7 @@ int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 		}
 
 		if (time < t)
-			return period;
+			return i;
 	}
 
 	return -1; // not found
