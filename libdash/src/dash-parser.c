@@ -135,7 +135,7 @@ static int dash_attr_read(const char* value, size_t n, int cls, void* ptr)
 		break;
 
 	case ATTR_VALUE_TYPE_DURATION:
-		return xs_duration_read((int64_t*)ptr, value, n);
+		return xs_duration_read((int64_t*)ptr, value, (int)n);
 
 	//case ATTR_VALUE_TYPE_FRAME_RATE:
 	//	// [0-9]*[0-9](/[0-9]*[0-9])?
@@ -1527,7 +1527,7 @@ void dash_parser_test(const char* xml)
 {
 	static char data[2 * 1024 * 1024];
 	FILE* fp = fopen(xml, "rb");
-	int n = fread(data, 1, sizeof(data), fp);
+	int n = (int)fread(data, 1, sizeof(data), fp);
 	fclose(fp);
 
 	struct dash_mpd_t* mpd;

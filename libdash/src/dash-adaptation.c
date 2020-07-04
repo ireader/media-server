@@ -70,7 +70,7 @@ int dash_adaptation_set_best_representation(const struct dash_adaptation_set_t* 
 			|| v->base.selection_priority > set->representations[best].base.selection_priority
 			|| v->quality_ranking < set->representations[best].quality_ranking
 			|| v->bandwidth > set->representations[best].bandwidth)
-			best = i;
+			best = (int)i;
 	}
 
 	return best;

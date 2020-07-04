@@ -26,7 +26,7 @@ int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t*
 	while (p)
 	{
 		next = strchr(p, ',');
-		n = next ? next - p : (int)strlen(p);
+		n = next ? (int)(next - p) : (int)strlen(p);
 		if (off + (n + 3) / 4 * 3 > sizeof(avc->data))
 			return -1; // don't have enough space
 
@@ -79,7 +79,7 @@ int mpeg4_hevc_from_fmtp(struct mpeg4_hevc_t* hevc, const struct sdp_a_fmtp_h265
 		while (p)
 		{
 			next = strchr(p, ',');
-			n = next ? next - p : (int)strlen(p);
+			n = next ? (int)(next - p) : (int)strlen(p);
 			if (off + (n + 3) / 4 * 3 > sizeof(hevc->data))
 				return -1; // don't have enough space
 

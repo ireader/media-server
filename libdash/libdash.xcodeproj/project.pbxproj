@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		46C5B2AF2183ED6100419E57 /* list.h in Headers */ = {isa = PBXBuildFile; fileRef = 46C5B2AC2183ED6100419E57 /* list.h */; };
 		46C5B2B02183ED6100419E57 /* dash-mpd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2AD2183ED6100419E57 /* dash-mpd.c */; };
+		46E55E6824A7395F00D8BDBA /* xs-duration.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6224A7395F00D8BDBA /* xs-duration.c */; };
+		46E55E6924A7395F00D8BDBA /* dash-period.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6324A7395F00D8BDBA /* dash-period.c */; };
+		46E55E6A24A7395F00D8BDBA /* dash-adaptation.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6424A7395F00D8BDBA /* dash-adaptation.c */; };
+		46E55E6B24A7395F00D8BDBA /* dash-representation.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6524A7395F00D8BDBA /* dash-representation.c */; };
+		46E55E6C24A7395F00D8BDBA /* dash-parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6624A7395F00D8BDBA /* dash-parser.c */; };
+		46E55E6D24A7395F00D8BDBA /* dash-segment.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6724A7395F00D8BDBA /* dash-segment.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,6 +22,12 @@
 		46C5B2A92183ED5400419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B2AC2183ED6100419E57 /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
 		46C5B2AD2183ED6100419E57 /* dash-mpd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-mpd.c"; sourceTree = "<group>"; };
+		46E55E6224A7395F00D8BDBA /* xs-duration.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "xs-duration.c"; sourceTree = "<group>"; };
+		46E55E6324A7395F00D8BDBA /* dash-period.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-period.c"; sourceTree = "<group>"; };
+		46E55E6424A7395F00D8BDBA /* dash-adaptation.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-adaptation.c"; sourceTree = "<group>"; };
+		46E55E6524A7395F00D8BDBA /* dash-representation.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-representation.c"; sourceTree = "<group>"; };
+		46E55E6624A7395F00D8BDBA /* dash-parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-parser.c"; sourceTree = "<group>"; };
+		46E55E6724A7395F00D8BDBA /* dash-segment.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "dash-segment.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +62,12 @@
 			isa = PBXGroup;
 			children = (
 				46C5B2AC2183ED6100419E57 /* list.h */,
+				46E55E6424A7395F00D8BDBA /* dash-adaptation.c */,
+				46E55E6624A7395F00D8BDBA /* dash-parser.c */,
+				46E55E6324A7395F00D8BDBA /* dash-period.c */,
+				46E55E6524A7395F00D8BDBA /* dash-representation.c */,
+				46E55E6724A7395F00D8BDBA /* dash-segment.c */,
+				46E55E6224A7395F00D8BDBA /* xs-duration.c */,
 				46C5B2AD2183ED6100419E57 /* dash-mpd.c */,
 			);
 			path = src;
@@ -123,7 +141,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46E55E6B24A7395F00D8BDBA /* dash-representation.c in Sources */,
+				46E55E6A24A7395F00D8BDBA /* dash-adaptation.c in Sources */,
+				46E55E6C24A7395F00D8BDBA /* dash-parser.c in Sources */,
+				46E55E6824A7395F00D8BDBA /* xs-duration.c in Sources */,
 				46C5B2B02183ED6100419E57 /* dash-mpd.c in Sources */,
+				46E55E6924A7395F00D8BDBA /* dash-period.c in Sources */,
+				46E55E6D24A7395F00D8BDBA /* dash-segment.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,7 +214,7 @@
 					.,
 					./include,
 					../libmov/include,
-					../../sdk/include,
+					../libhls/include,
 				);
 			};
 			name = Debug;
@@ -248,7 +272,7 @@
 					.,
 					./include,
 					../libmov/include,
-					../../sdk/include,
+					../libhls/include,
 				);
 			};
 			name = Release;

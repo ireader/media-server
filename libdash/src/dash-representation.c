@@ -118,7 +118,7 @@ static int dash_representation_template_replace(const struct dash_representation
 
 	if (j < len)
 		ptr[j] = '\0';
-	return j < len ? j : -1;
+	return j < len ? (int)j : -1;
 }
 
 int dash_representation_get_initialization(const struct dash_representation_t* representation, char* url, size_t size)

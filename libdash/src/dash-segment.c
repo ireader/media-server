@@ -15,7 +15,7 @@ int dash_segment_count(const struct dash_segment_t* segment)
 		return 1;
 
 	case DASH_SEGMENT_LIST:
-		return segment->segment_url_count;
+		return (int)segment->segment_url_count;
 
 	case DASH_SEGMENT_TEMPLATE:
 		if (segment->segment_timeline.count < 1)

@@ -146,7 +146,7 @@ int dash_period_find(const struct dash_mpd_t* mpd, int64_t time)
 		}
 
 		if (time < t)
-			return i;
+			return (int)i;
 	}
 
 	return -1; // not found

@@ -46,14 +46,14 @@ int hls_master_rendition(const struct hls_master_t* master, int variant, int typ
 		if (name)
 		{
 			if(m->name && 0 == strcmp(name, m->name))
-				return i;
+				return (int)i;
 		}
 		else
 		{
 			if (m->is_default)
-				is_default = i;
+				is_default = (int)i;
 			else if(m->autoselect)
-				autoselect = i;
+				autoselect = (int)i;
 		}
 	}
 
@@ -71,7 +71,7 @@ int hls_master_best_variant(const struct hls_master_t* master)
 	{
 		v = &master->variants[i];
 		if (-1 == best || v->bandwidth > master->variants[best].bandwidth)
-			best = i;
+			best = (int)i;
 	}
 
 	return best;

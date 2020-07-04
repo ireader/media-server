@@ -12,6 +12,10 @@
 		46C5B2F52183EDDB00419E57 /* hls-fmp4.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2F02183EDDB00419E57 /* hls-fmp4.c */; };
 		46C5B2F62183EDDB00419E57 /* hls-m3u8.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2F12183EDDB00419E57 /* hls-m3u8.c */; };
 		46C5B2F72183EDDB00419E57 /* hls-media.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2F22183EDDB00419E57 /* hls-media.c */; };
+		46E55E4D24681D8400D8BDBA /* hls-parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E4C24681D8400D8BDBA /* hls-parser.c */; };
+		46E55E5C247384DE00D8BDBA /* hls-master.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E5A247384DE00D8BDBA /* hls-master.c */; };
+		46E55E5D247384DF00D8BDBA /* hls-playlist.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E5B247384DE00D8BDBA /* hls-playlist.c */; };
+		46E55E6124A7393F00D8BDBA /* hls-string.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E6024A7393F00D8BDBA /* hls-string.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +26,10 @@
 		46C5B2F02183EDDB00419E57 /* hls-fmp4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-fmp4.c"; sourceTree = "<group>"; };
 		46C5B2F12183EDDB00419E57 /* hls-m3u8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-m3u8.c"; sourceTree = "<group>"; };
 		46C5B2F22183EDDB00419E57 /* hls-media.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-media.c"; sourceTree = "<group>"; };
+		46E55E4C24681D8400D8BDBA /* hls-parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-parser.c"; sourceTree = "<group>"; };
+		46E55E5A247384DE00D8BDBA /* hls-master.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-master.c"; sourceTree = "<group>"; };
+		46E55E5B247384DE00D8BDBA /* hls-playlist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-playlist.c"; sourceTree = "<group>"; };
+		46E55E6024A7393F00D8BDBA /* hls-string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hls-string.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,11 +63,15 @@
 		46C5B2ED2183EDDB00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				46E55E6024A7393F00D8BDBA /* hls-string.c */,
+				46E55E5A247384DE00D8BDBA /* hls-master.c */,
+				46E55E5B247384DE00D8BDBA /* hls-playlist.c */,
 				46C5B2EE2183EDDB00419E57 /* list.h */,
 				46C5B2EF2183EDDB00419E57 /* hls-h264.h */,
 				46C5B2F02183EDDB00419E57 /* hls-fmp4.c */,
 				46C5B2F12183EDDB00419E57 /* hls-m3u8.c */,
 				46C5B2F22183EDDB00419E57 /* hls-media.c */,
+				46E55E4C24681D8400D8BDBA /* hls-parser.c */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -135,7 +147,11 @@
 			files = (
 				46C5B2F62183EDDB00419E57 /* hls-m3u8.c in Sources */,
 				46C5B2F52183EDDB00419E57 /* hls-fmp4.c in Sources */,
+				46E55E4D24681D8400D8BDBA /* hls-parser.c in Sources */,
+				46E55E5D247384DF00D8BDBA /* hls-playlist.c in Sources */,
 				46C5B2F72183EDDB00419E57 /* hls-media.c in Sources */,
+				46E55E5C247384DE00D8BDBA /* hls-master.c in Sources */,
+				46E55E6124A7393F00D8BDBA /* hls-string.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,6 +202,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					OS_MAC,
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -247,6 +264,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = OS_MAC;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
