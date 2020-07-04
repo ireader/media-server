@@ -29,11 +29,21 @@ typedef int (*h2645_find_aud)(const uint8_t* p, size_t bytes);
 static int mpeg_packet_h264_h265_hasaud(struct packet_t* pkt, int codecid, const uint8_t* data, size_t size)
 {
 	h2645_find_aud find;
-	find = PSI_STREAM_H264 == codecid ? find_h264_access_unit_delimiter : find_h265_access_unit_delimiter;
+	find = PSI_STREAM_H264 == codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
 
 	if (pkt->size >= 4)
 		return 0 == find(pkt->data, pkt->size > 10 ? 10 : pkt->size) ? 1 : 0;
 	return 0 == find(data, size > 10 ? 10 : size) ? 1 : 0;
+}
+
+static int mpeg_packet_h264_h265_is_new_access(int codecid, const uint8_t* data, size_t size)
+{
+    h2645_find_aud find;
+    find = PSI_STREAM_H264 == codecid ? mpeg_h264_is_new_access_unit : mpeg_h265_is_new_access_unit;
+
+    if (size > 4 && 0x00 == data[0] && 0x00 == data[1] && (0x01 == data[2] || (0x00 == data[2] && 0x01 == data[3])))
+        return find(data + (0x01==data[2] ? 3 : 4), size - ((0x01==data[2] ? 3 : 4)));
+    return 0;
 }
 
 static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, h2645_find_aud find, pes_packet_handler handler, void* param)
@@ -45,7 +55,7 @@ static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, 
     // filter AUD
     assert(0 == find(data, size));
     assert(-1 == find(data + 5, size - 5));
-    i = h264_find_nalu(data + 5, size - 5);
+    i = mpeg_h264_find_nalu(data + 5, size - 5);
     if(-1 != i)
         handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + i + 5, size - i - 5);
 
@@ -60,7 +70,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 
     p = pkt->data;
     end = pkt->data + pkt->size;
-    find = PSI_STREAM_H264 == pes->codecid ? find_h264_access_unit_delimiter : find_h265_access_unit_delimiter;
+    find = PSI_STREAM_H264 == pes->codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
 
     // previous packet
     if (pkt->size > size)
@@ -81,7 +91,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     pkt->sid = pes->sid;
     pkt->codecid = pes->codecid;
     pkt->flags = pes->data_alignment_indicator ? 1 : 0;
-    assert(0 == find(p, end - p)); // start with AUD
+//    assert(0 == find(p, end - p)); // start with AUD
 
     // PES contain multiple packet
     aud = find(p + 5, end - p - 5);
@@ -110,6 +120,15 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
 	// split H.264/H.265 by AUD
     if ( (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && mpeg_packet_h264_h265_hasaud(pkt, pes->codecid, data, size) )
     {
+#if 1 // for some stream only has an AUD in IDR frame
+        if(pkt->size > 0 && mpeg_packet_h264_h265_is_new_access(pes->codecid, data, size))
+        {
+            assert(PTS_NO_VALUE != pkt->dts);
+            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
+            pkt->size = 0; // new packet start
+        }
+#endif
+        
         r = mpeg_packet_append(pkt, data, size);
         if (0 != r)
             return r;

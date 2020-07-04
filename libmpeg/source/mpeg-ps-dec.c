@@ -41,6 +41,8 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
             return &psm->streams[i];
     }
 
+    
+#if defined(MPEG_GUESS_STREAM)
     if (psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
     {
 		// '110x xxxx'
@@ -60,6 +62,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 
         return &psm->streams[psm->stream_count++];
     }
+#endif
 
     return NULL;
 }
@@ -173,6 +176,9 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
             if (0 == n)
                 break;
         }
+
+        while (i + 3 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x00 == data[i + 2])
+            i++; // skip 0x00
     }
 
 	return i;
