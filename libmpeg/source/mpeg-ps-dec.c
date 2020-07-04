@@ -141,7 +141,7 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
 
 size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
 {
-	size_t i, n;
+	size_t i, n, start;
     const uint8_t* p, *pend;
 	
     // location ps start
@@ -154,10 +154,11 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
             break;
     }
     
-    for (i = (p && p >= data+3) ? p - data - 3 : 0; i + 3 < bytes && data && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]; )
+    for (start = i = (p && p >= data+3) ? p - data - 3 : 0; i + 3 < bytes && data && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]; )
     {
         if (PES_SID_START == data[i + 3])
         {
+            start = i;
             i += pack_header_read(&ps->pkhd, data + i, bytes - i);
         }
         else if (PES_SID_SYS == data[i + 3])
@@ -174,7 +175,7 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
             i += n;
 
             if (0 == n)
-                break;
+                return start;
         }
 
         while (i + 3 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x00 == data[i + 2])

@@ -26,14 +26,11 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
 
 typedef int (*h2645_find_aud)(const uint8_t* p, size_t bytes);
 
-static int mpeg_packet_h264_h265_hasaud(struct packet_t* pkt, int codecid, const uint8_t* data, size_t size)
+static int mpeg_packet_h264_h265_start_width_aud(int codecid, const uint8_t* data, size_t size)
 {
 	h2645_find_aud find;
 	find = PSI_STREAM_H264 == codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
-
-	if (pkt->size >= 4)
-		return 0 == find(pkt->data, pkt->size > 10 ? 10 : pkt->size) ? 1 : 0;
-	return 0 == find(data, size > 10 ? 10 : size) ? 1 : 0;
+	return -1 != find(data, size > 9 ? 9 : size) ? 1 : 0;
 }
 
 static int mpeg_packet_h264_h265_is_new_access(int codecid, const uint8_t* data, size_t size)
@@ -75,9 +72,9 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     // previous packet
     if (pkt->size > size)
     {
-        p = end - size - 3; // handle trailing AUD, <0, 0, 1, AUD>
+        p = end - size - 7; // handle trailing AUD, <0, 0, 1, AUD>
 
-        aud = p < pkt->data + 3 ? -1 : find(p, end - p);
+        aud = p < pkt->data + 4 ? -1 : find(p, end - p);
         if (-1 == aud)
             return 0; // need more data
 
@@ -116,19 +113,21 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, pes_packet_handler handler, void* param)
 {
     int r;
-
+    static uint8_t h264aud[] = { 0, 0, 0, 1, 0x09, 0xE0 };
+    static uint8_t h265aud[] = { 0, 0, 0, 1, 0x46, 0x01, 0x50 };
+    
 	// split H.264/H.265 by AUD
-    if ( (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && mpeg_packet_h264_h265_hasaud(pkt, pes->codecid, data, size) )
+    if ( (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && mpeg_packet_h264_h265_start_width_aud(pes->codecid, pkt->data, pkt->size))
     {
 #if 1 // for some stream only has an AUD in IDR frame
-        if(pkt->size > 0 && mpeg_packet_h264_h265_is_new_access(pes->codecid, data, size))
+        if(mpeg_packet_h264_h265_is_new_access(pes->codecid, data, size) && 0 == mpeg_packet_h264_h265_start_width_aud(pes->codecid, data, size))
         {
             assert(PTS_NO_VALUE != pkt->dts);
-            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
-            pkt->size = 0; // new packet start
+            r = PSI_STREAM_H264 == pes->codecid ? mpeg_packet_append(pkt, h264aud, sizeof(h264aud)) : mpeg_packet_append(pkt, h265aud, sizeof(h265aud));
+            if (0 != r)
+                return r;
         }
 #endif
-        
         r = mpeg_packet_append(pkt, data, size);
         if (0 != r)
             return r;

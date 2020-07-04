@@ -42,7 +42,7 @@ static void onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int
     {
         static int64_t v_pts = 0, v_dts = 0;
         assert(0 == v_dts || dts >= v_dts);
-        printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90);
+        printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, size: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, bytes);
         v_pts = pts;
         v_dts = dts;
 
@@ -69,6 +69,12 @@ void mpeg_ps_dec_test(const char* file)
         size_t r = ps_demuxer_input(ps, s_packet, n + i);
         memmove(s_packet, s_packet + r, n + i - r);
         i = n + i - r;
+    }
+    while (i > 0)
+    {
+        size_t r = ps_demuxer_input(ps, s_packet, i);
+        memmove(s_packet, s_packet + r, i - r);
+        i -= r;
     }
     ps_demuxer_destroy(ps);
 
