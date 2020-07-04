@@ -18,6 +18,7 @@ struct mov_track_t* mov_add_track(struct mov_t* mov)
     track = &mov->tracks[mov->track_count];
     memset(track, 0, sizeof(struct mov_track_t));
     track->start_dts = INT64_MIN;
+    track->last_dts = INT64_MIN;
 
     track->stsd.entries = calloc(1, sizeof(struct mov_sample_entry_t));
     if (NULL == track->stsd.entries)

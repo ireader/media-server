@@ -70,7 +70,7 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
     if (track->sample_count > 0)
     {
         track->tfhd.flags |= MOV_TFHD_FLAG_DEFAULT_DURATION | MOV_TFHD_FLAG_DEFAULT_SIZE;
-        track->tfhd.default_sample_duration = track->sample_count > 1 ? (uint32_t)(track->samples[1].dts - track->samples[0].dts) : 0;
+        track->tfhd.default_sample_duration = track->sample_count > 1 ? (uint32_t)(track->samples[1].dts - track->samples[0].dts) : track->turn_last_duration;
         track->tfhd.default_sample_size = track->samples[0].bytes;
     }
     else
@@ -388,6 +388,7 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 
 int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
+    int64_t duration;
 	struct mov_track_t* track;
 	struct mov_sample_t* sample;
 
@@ -395,7 +396,15 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 		return -ENOENT;
 
 	track = &writer->mov.tracks[idx];
-	if (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME))
+
+    duration = dts > track->last_dts && INT64_MIN != track->last_dts ? dts - track->last_dts : 0;
+#if 1
+    track->turn_last_duration = duration;
+#else
+    track->turn_last_duration = track->turn_last_duration > 0 ? track->turn_last_duration * 7 / 8 + duration / 8 : duration;
+#endif
+    
+	if (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME) )
 		fmp4_write_fragment(writer); // fragment per video keyframe
 
 	if (track->sample_count + 1 >= track->sample_offset)
@@ -426,6 +435,7 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
         track->start_dts = sample->dts;
 	writer->mdat_size += bytes; // update media data size
 	track->sample_count += 1;
+    track->last_dts = sample->dts;
 	return 0;
 }
 

@@ -181,6 +181,8 @@ struct mov_track_t
     int64_t tfdt_dts; // tfdt baseMediaDecodeTime
     int64_t start_dts; // write fmp4 only
     uint64_t offset; // write only
+    int64_t last_dts; // write fmp4 only
+    int64_t turn_last_duration; // write fmp4 only
 
 	unsigned int flags;
 };
