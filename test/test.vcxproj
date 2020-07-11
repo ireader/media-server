@@ -154,6 +154,8 @@
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
+    <ClInclude Include="..\librtp\test\rtp-dump.h" />
+    <ClInclude Include="..\librtp\test\rtp-sender.h" />
     <ClInclude Include="..\librtsp\test\media\avbuffer.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket-queue.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket.h" />
@@ -221,8 +223,12 @@
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-test.cpp" />
+    <ClCompile Include="..\librtp\test\mov-rtp-test.cpp" />
+    <ClCompile Include="..\librtp\test\rtp-dump-test.cpp" />
+    <ClCompile Include="..\librtp\test\rtp-dump.c" />
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
+    <ClCompile Include="..\librtp\test\rtp-sender-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-sender.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-fmtp-load.c" />

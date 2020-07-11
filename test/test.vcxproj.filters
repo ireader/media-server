@@ -114,6 +114,12 @@
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtp\test\rtp-dump.h">
+      <Filter>librtp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtp\test\rtp-sender.h">
+      <Filter>librtp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -394,6 +400,18 @@
     </ClCompile>
     <ClCompile Include="..\libmpeg\test\mpeg-ts-encrypt-test.cpp">
       <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\mov-rtp-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-dump.c">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-dump-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-sender-test.cpp">
+      <Filter>librtp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

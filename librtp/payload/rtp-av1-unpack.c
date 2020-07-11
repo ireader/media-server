@@ -68,12 +68,6 @@ static int rtp_decode_av1(void* p, const void* packet, int bytes)
 
 	rtp_payload_check(helper, &pkt);
 
-	if (helper->lost)
-	{
-		//assert(0 == helper->size);
-		return 0; // packet discard
-	}
-
 	ptr = (const uint8_t *)pkt.payload;
 	pend = ptr + pkt.payloadlen;
 
@@ -102,9 +96,9 @@ static int rtp_decode_av1(void* p, const void* packet, int bytes)
 	if (ptr >= pend)
 	{
 		assert(0);
-		helper->size = 0;
+		//helper->size = 0;
 		helper->lost = 1;
-		helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+        //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 		return -1; // invalid packet
 	}
 

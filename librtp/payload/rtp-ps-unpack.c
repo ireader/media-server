@@ -21,15 +21,11 @@ static int rtp_decode_ps(void* p, const void* packet, int bytes)
     if (!helper || 0 != rtp_packet_deserialize(&pkt, packet, bytes))
         return -EINVAL;
 
-    if(-1 == helper->flags || (RTP_PAYLOAD_FLAG_PACKET_LOST & helper->flags))
-    {
-        if(pkt.payloadlen < sizeof(s_mpeg2_packet_start) + 2 || 0 != memcmp(s_mpeg2_packet_start, pkt.payload, sizeof(s_mpeg2_packet_start)))
-           return 0; // packet discard
-    }
-    
-    // ignore RTP M bit
-   if (pkt.payloadlen > sizeof(s_mpeg2_packet_start)  && 0 == memcmp(s_mpeg2_packet_start, pkt.payload, sizeof(s_mpeg2_packet_start)))
-       rtp_payload_onframe(helper);
+//    if(-1 == helper->flags)
+//    {
+//        if(pkt.payloadlen < sizeof(s_mpeg2_packet_start) + 2 || 0 != memcmp(s_mpeg2_packet_start, pkt.payload, sizeof(s_mpeg2_packet_start)))
+//           return 0; // packet discard, wait for first packet
+//    }
 
     // 2.1 RTP header usage(p4)
     // M bit: Set to 1 whenever the timestamp is discontinuous. (such as
@@ -52,14 +48,13 @@ static int rtp_decode_ps(void* p, const void* packet, int bytes)
     {
         rtp_payload_check(helper, &pkt);
     }
-
-    if (helper->lost)
-    {
-        return 0; // packet discard;
-    }
+    
+    // ignore RTP M bit
+    if (pkt.payloadlen > sizeof(s_mpeg2_packet_start)  && 0 == memcmp(s_mpeg2_packet_start, pkt.payload, sizeof(s_mpeg2_packet_start)))
+        rtp_payload_onframe(helper); // new frame/access start
 
     rtp_payload_write(helper, &pkt);
-    return 1; // packet handled
+    return helper->lost ? 0 : 1; // packet handled
 }
 
 struct rtp_payload_decode_t *rtp_ps_decode(void)

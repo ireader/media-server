@@ -82,6 +82,11 @@ static int rtp_h264_unpack_stap(struct rtp_decode_h264_t *unpacker, const uint8_
 	uint16_t don;
 
 	n = stap_b ? 3 : 1;
+    if (bytes < n)
+    {
+        assert(0);
+        return -EINVAL; // error
+    }
 	don = stap_b ? nbo_r16(ptr + 1) : 0;
 	ptr += n; // STAP-A / STAP-B HDR + DON
 
@@ -139,6 +144,12 @@ static int rtp_h264_unpack_mtap(struct rtp_decode_h264_t *unpacker, const uint8_
 	uint16_t len;
 	uint32_t ts;
 
+    if (bytes < 3)
+    {
+        assert(0);
+        return -EINVAL; // error
+    }
+    
 	donb = nbo_r16(ptr + 1);
 	ptr += 3; // MTAP16/MTAP24 HDR + DONB
 
@@ -256,7 +267,8 @@ static int rtp_h264_unpack_fu(struct rtp_decode_h264_t *unpacker, const uint8_t*
 
 	if(FU_END(fuheader))
 	{
-		unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, timestamp, unpacker->flags);
+        if(unpacker->size > 0)
+            unpacker->handler.packet(unpacker->cbparam, unpacker->ptr, unpacker->size, timestamp, unpacker->flags);
 		unpacker->flags = 0;
 		unpacker->size = 0; // reset
 	}
@@ -271,7 +283,7 @@ static int rtp_h264_unpack_input(void* p, const void* packet, int bytes)
 	struct rtp_decode_h264_t *unpacker;
 
 	unpacker = (struct rtp_decode_h264_t *)p;
-	if(!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 4)
+	if(!unpacker || 0 != rtp_packet_deserialize(&pkt, packet, bytes) || pkt.payloadlen < 1)
 		return -EINVAL;
 	
 	if (-1 == unpacker->flags)
