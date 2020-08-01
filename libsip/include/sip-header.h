@@ -171,7 +171,7 @@ const struct cstring_t* sip_params_find_string(const struct sip_params_t* params
 int sip_params_find_int(const struct sip_params_t* params, const char* name, int bytes, int* value);
 int sip_params_find_int64(const struct sip_params_t* params, const char* name, int bytes, int64_t* value);
 int sip_params_find_double(const struct sip_params_t* params, const char* name, int bytes, double* value);
-int sip_params_add_or_update(struct sip_params_t* params, const char* name, int bytes, struct cstring_t* value);
+int sip_params_add_or_update(struct sip_params_t* params, const char* name, int bytes, const struct cstring_t* value);
 
 /// @return 0-ok, other-error
 int sip_header_cseq(const char* s, const char* end, struct sip_cseq_t* cseq);
