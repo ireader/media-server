@@ -95,7 +95,7 @@ static int pmt_write_descriptor(const struct pes_t* stream, uint8_t* data, int b
 		*p++ = 0x7f; // DVB-Service Information: 6.1 Descriptor identification and location (p38)
 		*p++ = 2;
 		*p++ = OPUS_EXTENSION_DESCRIPTOR_TAG;
-		*p++ = stream->esinfo_len > 8 ? stream->esinfo[9] : 0xFF;
+		*p++ = stream->esinfo_len > 8 ? stream->esinfo[9] : 2 /*0xFF*/ ; // default 2-channels
 	}
 
 	return (int)(p - data);
@@ -227,7 +227,7 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 
 		len = 0;
 		// fill elementary stream info
-		if(pmt->streams[i].esinfo_len > 0 && pmt->streams[i].esinfo)
+		if(PSI_STREAM_AUDIO_OPUS == pmt->streams[i].codecid || (pmt->streams[i].esinfo_len > 0 && pmt->streams[i].esinfo))
 		{
 			//assert(pmt->streams[i].esinfo);
 			//memcpy(p, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
