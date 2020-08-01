@@ -4,6 +4,7 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
+#include "opus-head.h"
 #include "aom-av1.h"
 #include "amf0.h"
 #include <stdlib.h>
@@ -13,7 +14,12 @@
 
 struct flv_demuxer_t
 {
-	struct mpeg4_aac_t aac;
+	union
+	{
+		struct mpeg4_aac_t aac;
+		struct opus_head_t opus;
+	} a;
+
 	union
 	{
 		struct aom_av1_t av1;
@@ -82,22 +88,34 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int
 		//assert(3 == audio.bitrate && 1 == audio.channel);
 		if (FLV_SEQUENCE_HEADER == audio.avpacket)
 		{
-			mpeg4_aac_audio_specific_config_load(data + n, bytes - n, &flv->aac);
+			mpeg4_aac_audio_specific_config_load(data + n, bytes - n, &flv->a.aac);
 			return flv->handler(flv->param, FLV_AUDIO_ASC, data + n, bytes - n, timestamp, timestamp, 0);
 		}
 		else
 		{
-			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7 + 1 + flv->aac.npce))
+			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7 + 1 + flv->a.aac.npce))
 				return -ENOMEM;
 
 			// AAC ES stream with ADTS header
 			assert(bytes <= 0x1FFF);
 			assert(bytes > 2 && 0xFFF0 != (((data[2] << 8) | data[3]) & 0xFFF0)); // don't have ADTS
-			r = mpeg4_aac_adts_save(&flv->aac, (uint16_t)bytes - n, flv->ptr, 7 + 1 + flv->aac.npce); // 13-bits
+			r = mpeg4_aac_adts_save(&flv->a.aac, (uint16_t)bytes - n, flv->ptr, 7 + 1 + flv->a.aac.npce); // 13-bits
 			if (r < 7) return -EINVAL; // invalid pce
-			flv->aac.npce = 0; // pce write only once
+			flv->a.aac.npce = 0; // pce write only once
 			memmove(flv->ptr + r, data + n, bytes - n);
 			return flv->handler(flv->param, FLV_AUDIO_AAC, flv->ptr, bytes - n + r, timestamp, timestamp, 0);
+		}
+	}
+	else if (FLV_AUDIO_OPUS == audio.codecid)
+	{
+		if (FLV_SEQUENCE_HEADER == audio.avpacket)
+		{
+			opus_head_load(data + n, bytes - n, &flv->a.opus);
+			return flv->handler(flv->param, FLV_AUDIO_OPUS_HEAD, data + n, bytes - n, timestamp, timestamp, 0);
+		}
+		else
+		{
+			return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
 		}
 	}
 	else if (FLV_AUDIO_MP3 == audio.codecid || FLV_AUDIO_MP3_8K == audio.codecid)

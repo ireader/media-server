@@ -12,6 +12,7 @@
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
 #include "mp3-header.h"
+#include "opus-head.h"
 
 #define FLV_MUXER "libflv"
 
@@ -23,7 +24,12 @@ struct flv_muxer_t
 	uint8_t audio_sequence_header;
 	uint8_t video_sequence_header;
 
-	struct mpeg4_aac_t aac;
+	union
+	{
+		struct mpeg4_aac_t aac;
+		struct opus_head_t opus;
+	} a;
+
 	union
 	{
 		struct mpeg4_avc_t avc;
@@ -135,7 +141,7 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 	}
 
 	/* ADTS */
-	n = mpeg4_aac_adts_load(data, bytes, &flv->aac);
+	n = mpeg4_aac_adts_load(data, bytes, &flv->a.aac);
 	if (n <= 0)
 		return -1; // invalid data
 
@@ -150,7 +156,7 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 
 		// AudioSpecificConfig(AAC sequence header)
 		flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
-		m = mpeg4_aac_audio_specific_config_save(&flv->aac, flv->ptr + 2, flv->capacity - 2);
+		m = mpeg4_aac_audio_specific_config_save(&flv->a.aac, flv->ptr + 2, flv->capacity - 2);
 		assert(m + 2 <= (int)flv->capacity);
 		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + 2, dts);
 		if (0 != r) return r;
@@ -161,6 +167,47 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 	memcpy(flv->ptr + 2, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
 	assert(bytes - n + 2 <= (int)flv->capacity);
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
+}
+
+int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, uint32_t dts)
+{
+	int r, m, bytes;
+	struct flv_audio_tag_header_t audio;
+	(void)pts;
+
+	bytes = (int)sz;
+	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + 4))
+			return ENOMEM;
+	}
+
+	audio.codecid = FLV_AUDIO_OPUS;
+	audio.rate = 3; // 44k-SoundRate
+	audio.bits = 1; // 16-bit samples
+	audio.channels = 1; // Stereo sound
+
+	if (0 == flv->audio_sequence_header)
+	{
+		if (opus_head_load(data, bytes, &flv->a.opus) < 0)
+			return -1;
+
+		flv->audio_sequence_header = 1; // once only
+		audio.avpacket = FLV_SEQUENCE_HEADER;
+		
+		// Opus Head
+		m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
+		assert(m + bytes <= (int)flv->capacity);
+		memcpy(flv->ptr + m, data, bytes);
+		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + bytes, dts);
+		return r;
+	}
+
+	audio.avpacket = FLV_AVPACKET;
+	m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
+	memcpy(flv->ptr + m, (uint8_t*)data, bytes);
+	assert(bytes - m <= (int)flv->capacity);
+	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + m, dts);
 }
 
 static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)

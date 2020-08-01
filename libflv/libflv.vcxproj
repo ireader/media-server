@@ -27,13 +27,13 @@
     <ClInclude Include="include\flv-parser.h" />
     <ClInclude Include="include\flv-proto.h" />
     <ClInclude Include="include\flv-reader.h" />
-    <ClInclude Include="include\flv-tag.h" />
     <ClInclude Include="include\flv-writer.h" />
     <ClInclude Include="include\mp3-header.h" />
     <ClInclude Include="include\mpeg4-aac.h" />
     <ClInclude Include="include\mpeg4-avc.h" />
     <ClInclude Include="include\mpeg4-bits.h" />
     <ClInclude Include="include\mpeg4-hevc.h" />
+    <ClInclude Include="include\opus-head.h" />
     <ClInclude Include="include\webm-vpx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +56,7 @@
     <ClCompile Include="source\mpeg4-avc.c" />
     <ClCompile Include="source\mpeg4-hevc.c" />
     <ClCompile Include="source\mpeg4-mp4toannexb.c" />
+    <ClCompile Include="source\opus-head.c" />
     <ClCompile Include="source\webm-vpx.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

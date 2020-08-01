@@ -57,10 +57,10 @@
     <ClInclude Include="include\aom-av1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\flv-tag.h">
+    <ClInclude Include="include\webm-vpx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\webm-vpx.h">
+    <ClInclude Include="include\opus-head.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -123,6 +123,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\webm-vpx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\opus-head.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

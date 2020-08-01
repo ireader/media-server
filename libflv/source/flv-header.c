@@ -75,7 +75,7 @@ int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_
 	audio->bits = (buf[0] & 0x02) >> 1;
 	audio->channels = buf[0] & 0x01;
 
-	if (FLV_AUDIO_AAC == audio->codecid)
+	if (FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)
 	{
 		if (len < 2)
 		{
@@ -172,13 +172,13 @@ int flv_tag_header_write(const struct flv_tag_header_t* tag, uint8_t* buf, int l
 
 int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8_t* buf, int len)
 {
-	if (len < 1 + (FLV_AUDIO_AAC == audio->codecid ? 1 : 0))
+	if (len < 1 + ((FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)? 1 : 0))
 		return -1;
 
-	if (FLV_AUDIO_AAC == audio->codecid)
+	if (FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)
 	{
 		assert(FLV_SEQUENCE_HEADER == audio->avpacket || FLV_AVPACKET == audio->avpacket);
-		buf[0] = (FLV_AUDIO_AAC /* <<4 */) /* SoundFormat */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
+		buf[0] = (audio->codecid /* <<4 */) /* SoundFormat */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 		buf[1] = audio->avpacket; // AACPacketType
 		return 2;
 	}

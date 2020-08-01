@@ -15,8 +15,8 @@ static int flv_parser_audio(const uint8_t* data, int bytes, uint32_t timestamp, 
 	n = flv_audio_tag_header_read(&audio, data, bytes);
 	if (n < 0)
 		return n;
-	if (FLV_AUDIO_AAC == audio.codecid && FLV_SEQUENCE_HEADER == audio.avpacket)
-		return handler(param, FLV_AUDIO_ASC, data + n, bytes - n, timestamp, timestamp, 0);
+	if (FLV_SEQUENCE_HEADER == audio.avpacket)
+		return handler(param, FLV_AUDIO_AAC == audio.codecid ? FLV_AUDIO_ASC : FLV_AUDIO_OPUS_HEAD, data + n, bytes - n, timestamp, timestamp, 0);
 	else
 		return handler(param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
 }
