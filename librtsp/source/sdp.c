@@ -1149,6 +1149,9 @@ void sdp_destroy(struct sdp_t* sdp)
 
 		if(m->c.count > N_CONNECTION)
 			free(m->c.ptr);
+
+		if (m->b.count > N_BANDWIDTH)
+			free(m->b.ptr);
 	}
 
 	if(sdp->m.count > N_MEDIA)
