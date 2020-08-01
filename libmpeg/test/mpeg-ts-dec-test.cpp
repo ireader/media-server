@@ -25,7 +25,7 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
 {
 	static char s_pts[64], s_dts[64];
     
-	if (PSI_STREAM_AAC == avtype)
+	if (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_OPUS == avtype)
 	{
 		static int64_t a_pts = 0, a_dts = 0;
         if (PTS_NO_VALUE == dts)
@@ -49,6 +49,11 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
 	}
 	else
 	{
+		static int64_t x_pts = 0, x_dts = 0;
+		assert(0 == x_dts || dts >= x_dts);
+		printf("[%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s\n", avtype, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts) / 90, (int)(dts - x_dts) / 90, flags ? " [I]" : "");
+		x_pts = pts;
+		x_dts = dts;
 		//assert(0);
 	}
     return 0;

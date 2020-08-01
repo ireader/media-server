@@ -3,7 +3,9 @@
 // 2.4.4.8 Program map table(p68)
 
 #include "mpeg-ts-proto.h"
+#include "mpeg-ts-opus.h"
 #include "mpeg-util.h"
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -24,6 +26,79 @@ static struct pes_t* pmt_fetch(struct pmt_t* pmt, uint16_t pid)
     
     // new stream
     return &pmt->streams[pmt->stream_count++];
+}
+
+static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16_t bytes)
+{
+	uint8_t tag;
+	uint8_t len;
+	uint8_t channels;
+
+	// Registration descriptor
+	while (bytes > 2)
+	{
+		tag = data[0];
+		len = data[1];
+		if (len + 2 > bytes)
+			return -1; // invalid len
+
+		// ISO/IEC 13818-1:2018 (E) Table 2-45 – Program and program element descriptors (p90)
+		switch (tag)
+		{
+		case 0x05: // 2.6.8 Registration descriptor(p94)
+			if ('O' == data[2] && 'p' == data[3] && 'u' == data[4] && 's' == data[5])
+			{
+				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
+				stream->codecid = PSI_STREAM_AUDIO_OPUS;
+			}
+			break;
+
+		case 0x7f: // DVB-Service Information: 6.1 Descriptor identification and location (p38)
+			// 2.6.90 Extension descriptor
+			if (PSI_STREAM_AUDIO_OPUS == stream->codecid && OPUS_EXTENSION_DESCRIPTOR_TAG == data[2]) // User defined (provisional Opus)
+			{
+				channels = data[3];
+				stream->esinfo = (uint8_t*)calloc(1, sizeof(opus_default_extradata));
+				if (stream->esinfo)
+				{
+					stream->esinfo_len = sizeof(opus_default_extradata);
+					memcpy(stream->esinfo, opus_default_extradata, stream->esinfo_len);
+					stream->esinfo[9] = channels ? channels : 2;
+					stream->esinfo[18] = channels ? (channels > 2 ? 1 : 0) : /* Dual Mono */ 255;
+					stream->esinfo[19] = opus_stream_cnt[channels];
+					stream->esinfo[20] = opus_coupled_stream_cnt[channels];
+					memcpy(stream->esinfo + 21, opus_channel_map[(channels ? channels : 2) - 1], channels ? channels : 2);
+				}
+			}
+		}
+
+		data += len + 2;
+		bytes -= len + 2;
+	}
+	assert(0 == bytes);
+
+	return 0;
+}
+
+static int pmt_write_descriptor(const struct pes_t* stream, uint8_t* data, int bytes)
+{
+	uint8_t* p;
+
+	p = data;
+	if (PSI_STREAM_AUDIO_OPUS == stream->codecid && bytes > 2 + 4 /*fourcc*/ + 4 /*DVI OPUS*/ )
+	{
+		*p++ = 0x05; // 2.6.8 Registration descriptor(p94)
+		*p++ = 4;
+		memcpy(p, "Opus", 4);
+		p += 4;
+
+		*p++ = 0x7f; // DVB-Service Information: 6.1 Descriptor identification and location (p38)
+		*p++ = 2;
+		*p++ = OPUS_EXTENSION_DESCRIPTOR_TAG;
+		*p++ = stream->esinfo_len > 8 ? stream->esinfo[9] : 0xFF;
+	}
+
+	return (int)(p - data);
 }
 
 size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
@@ -84,10 +159,11 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
         stream->pn = (uint16_t)pmt->pn;
         stream->pid = pid;
         stream->codecid = data[i];
-		stream->esinfo_len = len;
-		if (stream->esinfo_len > 2)
+		stream->esinfo_len = 0; // default nothing
+		if (len > 2)
 		{
-			// descriptor(data + i + 5, len)
+			//descriptor(data + i + 5, len)
+			pmt_read_descriptor(stream, data + i + 5, len);
 		}
 	}
 
@@ -143,24 +219,26 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 	for(i = 0; i < pmt->stream_count && p - data < 1021 - 4 - 5 - pmt->streams[i].esinfo_len; i++)
 	{
 		// stream_type
-		*p = (uint8_t)pmt->streams[i].codecid;
+		*p = (uint8_t)(PSI_STREAM_AUDIO_OPUS == pmt->streams[i].codecid) ? PSI_STREAM_PRIVATE_DATA : pmt->streams[i].codecid;
 
 		// reserved '111'
 		// elementary_PID 13-bits
 		nbo_w16(p + 1, 0xE000 | pmt->streams[i].pid);
 
+		len = 0;
+		// fill elementary stream info
+		if(pmt->streams[i].esinfo_len > 0 && pmt->streams[i].esinfo)
+		{
+			//assert(pmt->streams[i].esinfo);
+			//memcpy(p, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
+			//p += pmt->streams[i].esinfo_len;
+			len = pmt_write_descriptor(&pmt->streams[i], p + 5, 1021 - (p + 5- data));
+		}
+			
 		// reserved '1111'
 		// ES_info_lengt 12-bits
-		nbo_w16(p + 3, 0xF000 | pmt->streams[i].esinfo_len);
-
-		// fill elementary stream info
-		if(pmt->streams[i].esinfo_len > 0)
-		{
-			assert(pmt->streams[i].esinfo);
-			memcpy(p + 5, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
-		}
-
-		p += 5 + pmt->streams[i].esinfo_len;
+		nbo_w16(p + 3, 0xF000 | len);
+		p += 5 + len;
 	}
 
 	// section_length

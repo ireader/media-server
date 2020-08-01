@@ -50,6 +50,7 @@ int mpeg_stream_type_audio(int codecid)
     case PSI_STREAM_AUDIO_G722:
     case PSI_STREAM_AUDIO_G723:
     case PSI_STREAM_AUDIO_G729:
+    case PSI_STREAM_AUDIO_OPUS:
         return 1;
     default:
         return 0;

@@ -22,6 +22,7 @@ enum
 	STREAM_AUDIO_G723	= 0x93,
 	STREAM_AUDIO_G729	= 0x99,
 	STREAM_AUDIO_SVAC	= 0x9B,
+	STREAM_AUDIO_OPUS   = 0x9C,
 };
 
 struct ps_muxer_func_t

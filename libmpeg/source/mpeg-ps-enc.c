@@ -209,54 +209,54 @@ int ps_muxer_destroy(struct ps_muxer_t* ps)
 
 int ps_muxer_add_stream(struct ps_muxer_t* ps, int codecid, const void* extradata, size_t bytes)
 {
-    struct psm_t *psm;
-    struct pes_t *pes;
+	struct psm_t* psm;
+	struct pes_t* pes;
 
 	assert(bytes < 512);
-	if(!ps || ps->psm.stream_count >= sizeof(ps->psm.streams)/sizeof(ps->psm.streams[0]))
+	if (!ps || ps->psm.stream_count >= sizeof(ps->psm.streams) / sizeof(ps->psm.streams[0]))
 	{
 		assert(0);
 		return -1;
 	}
 
 	psm = &ps->psm;
-    pes = &psm->streams[psm->stream_count];
+	pes = &psm->streams[psm->stream_count];
 
 	if (mpeg_stream_type_video(codecid))
-    {
-        pes->sid = (uint8_t)(PES_SID_VIDEO + ps->system.video_bound);
+	{
+		pes->sid = (uint8_t)(PES_SID_VIDEO + ps->system.video_bound);
 
-        assert(ps->system.video_bound + 1 < 16);
-        ++ps->system.video_bound; // [0,16] max active video streams
-        ps->system.streams[ps->system.stream_count].buffer_bound_scale = 1;
-        /* FIXME -- VCD uses 46, SVCD uses 230, ffmpeg has 230 with a note that it is small */
-        ps->system.streams[ps->system.stream_count].buffer_size_bound = 400 /* 8191-13 bits max value */;
-    }
-    else if (mpeg_stream_type_audio(codecid))
-    {
-        pes->sid = (uint8_t)(PES_SID_AUDIO + ps->system.audio_bound);
+		assert(ps->system.video_bound + 1 < 16);
+		++ps->system.video_bound; // [0,16] max active video streams
+		ps->system.streams[ps->system.stream_count].buffer_bound_scale = 1;
+		/* FIXME -- VCD uses 46, SVCD uses 230, ffmpeg has 230 with a note that it is small */
+		ps->system.streams[ps->system.stream_count].buffer_size_bound = 400 /* 8191-13 bits max value */;
+	}
+	else if (mpeg_stream_type_audio(codecid))
+	{
+		pes->sid = (uint8_t)(PES_SID_AUDIO + ps->system.audio_bound);
 
-        assert(ps->system.audio_bound + 1 < 32);
-        ++ps->system.audio_bound; // [0,32] max active audio streams
-        ps->system.streams[ps->system.stream_count].buffer_bound_scale = 0;
-        /* This value HAS to be used for VCD (see VCD standard, p. IV-7).
-        * Right now it is also used for everything else. */
-        ps->system.streams[ps->system.stream_count].buffer_size_bound = 32 /* 4 * 1024 / 128 */;
-    }
-    else
-    {
-        assert(0);
+		assert(ps->system.audio_bound + 1 < 32);
+		++ps->system.audio_bound; // [0,32] max active audio streams
+		ps->system.streams[ps->system.stream_count].buffer_bound_scale = 0;
+		/* This value HAS to be used for VCD (see VCD standard, p. IV-7).
+		* Right now it is also used for everything else. */
+		ps->system.streams[ps->system.stream_count].buffer_size_bound = 32 /* 4 * 1024 / 128 */;
+	}
+	else
+	{
+		assert(0);
 		return -1;
 	}
 
-    if (bytes > 0)
-    {
-        pes->esinfo = (uint8_t*)malloc(bytes);
-        if (!pes->esinfo)
-            return -1;
-        memcpy(pes->esinfo, extradata, bytes);
-        pes->esinfo_len = (uint16_t)bytes;
-    }
+	if (bytes > 0)
+	{
+		pes->esinfo = (uint8_t*)malloc(bytes);
+		if (!pes->esinfo)
+			return -1;
+		memcpy(pes->esinfo, extradata, bytes);
+		pes->esinfo_len = (uint16_t)bytes;
+	}
 
     assert(psm->stream_count == ps->system.stream_count);
     ps->system.streams[ps->system.stream_count].stream_id = pes->sid;

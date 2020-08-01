@@ -62,17 +62,17 @@ void mpeg_ps_dec_test(const char* file)
     vfp = fopen("v.h264", "wb");
     afp = fopen("a.aac", "wb");
 
-    size_t n, i= 0;
+    size_t n, i = 0, r = 0;
     ps_demuxer_t* ps = ps_demuxer_create(onpacket, NULL);
     while ((n = fread(s_packet + i, 1, sizeof(s_packet) - i, fp)) > 0)
     {
-        size_t r = ps_demuxer_input(ps, s_packet, n + i);
+        r = ps_demuxer_input(ps, s_packet, n + i);
         memmove(s_packet, s_packet + r, n + i - r);
         i = n + i - r;
     }
-    while (i > 0)
+    while (i > 0 && r > 0)
     {
-        size_t r = ps_demuxer_input(ps, s_packet, i);
+        r = ps_demuxer_input(ps, s_packet, i);
         memmove(s_packet, s_packet + r, i - r);
         i -= r;
     }

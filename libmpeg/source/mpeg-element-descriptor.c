@@ -87,6 +87,10 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 		hierarchy_descriptor(data, bytes);
 		break;
 
+	case 5:
+		registration_descriptor(data, bytes);
+		break;
+
 	case 10:
 		language_descriptor(data, bytes);
 		break;
@@ -208,6 +212,17 @@ size_t hierarchy_descriptor(const uint8_t* data, size_t bytes)
 
 	assert(4 == descriptor_len);
 	return descriptor_len+2;
+}
+
+size_t registration_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.8 Registration descriptor(p94)
+	size_t fourcc;
+	//	uint8_t descriptor_tag = data[0];
+	size_t descriptor_len = data[1];
+	assert(descriptor_len + 2 + 4 <= bytes);
+	fourcc = (data[5] << 24) | (data[4] << 16) | (data[3] << 8) | data[2];
+	return descriptor_len + 2;
 }
 
 size_t language_descriptor(const uint8_t* data, size_t bytes)
