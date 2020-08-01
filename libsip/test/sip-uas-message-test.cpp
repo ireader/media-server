@@ -275,11 +275,9 @@ static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struc
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
-static int sip_uas_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* url, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
-	((char*)data)[bytes] = 0;
-	((char*)url->p)[url->n] = 0;
-	printf("==> %s\n%s\n", url->p, (const char*)data);
+	printf("==> %.*s\n%.*s\n", (int)url->n, url->p, (int)bytes, (const char*)data);
 	return 0;
 }
 

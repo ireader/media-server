@@ -19,8 +19,11 @@ typedef void (*sip_transaction_ondestroy)(void* param);
     
 struct sip_uas_handler_t
 {
+	/// @param[in] protocol UDP/TCP/TLS/SCTP
+	/// @param[in] received replace url host address if has valid value
+	/// @param[in] rport valid only rport > 0, if rport <= 0, then use url host port; if host port is empty, then use default sip port
 	/// @return 0-ok, <0-error, other-reserved
-	int(*send)(void* param, const struct cstring_t* url, const void* data, int bytes);
+	int(*send)(void* param, const struct cstring_t* protocol, const struct cstring_t* url, const struct cstring_t *received, int rport, const void* data, int bytes);
 
 	/// @param[in] expires in seconds
 	int(*onregister)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
@@ -55,6 +58,8 @@ int sip_agent_destroy(struct sip_agent_t* sip);
 
 /// @param[in] msg sip request/response message
 int sip_agent_input(struct sip_agent_t* sip, struct sip_message_t* msg);
+
+int sip_agent_set_rport(struct sip_message_t* msg, const char* peer, int port);
 
 #if defined(__cplusplus)
 }

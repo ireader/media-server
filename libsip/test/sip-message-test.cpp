@@ -130,7 +130,7 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 	return 0;
 }
 
-static int sip_uas_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* url, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
 	printf("==> %.*s\n%.*s\n", (int)url->n, url->p, (int)bytes, (const char*)data);
 	return 0;

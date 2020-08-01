@@ -117,6 +117,24 @@ int sip_params_find_double(const struct sip_params_t* params, const char* name, 
 	return 0;
 }
 
+int sip_params_add_or_update(struct sip_params_t* params, const char* name, int bytes, const struct cstring_t* value)
+{
+	struct sip_param_t* param, item;
+	param = (struct sip_param_t*)sip_params_find(params, name, bytes);
+	if (param)
+	{
+		param->value.p = value->p;
+		param->value.n = value->n;
+		return 0;
+	}
+
+	item.name.p = name;
+	item.name.n = bytes;
+	item.value.p = value->p;
+	item.value.n = value->n;
+	return sip_params_push(params, &item);
+}
+
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end)
 {
 	if (!cstrvalid(&param->name))

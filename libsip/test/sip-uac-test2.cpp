@@ -210,7 +210,7 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 	return r == bytes ? 0 : -1;
 }
 
-static int sip_uas_transport_send(void* param, const struct cstring_t* peer, const void* data, int bytes)
+static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* peer, const struct cstring_t* received, int rport, const void* data, int bytes)
 {
 	struct sip_uac_test2_t *test = (struct sip_uac_test2_t *)param;
 
@@ -220,7 +220,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* peer, con
 
 	socklen_t addrlen;
 	struct sockaddr_storage addr;
-	int r = socket_addr_from(&addr, &addrlen, uri->host, uri->port ? uri->port : SIP_PORT);
+	int r = socket_addr_from(&addr, &addrlen, cstrvalid(received) ? received->p : uri->host, rport > 0 ? rport : (uri->port ? uri->port : SIP_PORT));
 	if (0 != r)
 		return -1; // invalid
 

@@ -160,7 +160,7 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 	via = sip_vias_get(&t->reply->vias, 0);
 	if (!via) return -1; // invalid via
 
-	return t->handler->send(t->param, cstrvalid(&via->received) ? &via->received : &via->host, t->data, t->size);
+	return t->handler->send(t->param, &via->protocol, &via->host, &via->received, via->rport, t->data, t->size);
 }
 
 int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)

@@ -48,14 +48,13 @@ struct sip_media_t
 	unsigned short port[2];
 };
 
-static int sip_uas_transport_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* /*url*/, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
 	struct sip_uas_test_t *test = (struct sip_uas_test_t *)param;
 
 	//char p1[1024];
 	//char p2[1024];
-	((char*)data)[bytes] = 0;
-	printf("%s\n\n", (const char*)data);
+	printf("%.*s\n\n", (int)bytes, (const char*)data);
 	int r = socket_sendto(test->udp, data, bytes, 0, (struct sockaddr*)&test->addr, test->addrlen);
 	return r == bytes ? 0 : -1;
 }

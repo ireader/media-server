@@ -812,3 +812,25 @@ int sip_message_set_reply_default_contact(struct sip_message_t* reply)
     
     return sip_contacts_push(&reply->contacts, &contact);
 }
+
+int sip_message_set_rport(struct sip_message_t* request, const char* addr, int port)
+{
+	char v[32];
+	struct cstring_t rport;
+	struct sip_via_t* via;
+
+	if (SIP_MESSAGE_REQUEST != request->mode)
+		return 0; // ignore
+
+	via = sip_vias_get(&request->vias, 0);
+	if (!via || cstrvalid(&via->received) /*|| via->rport != 0*/ )
+		return -1;
+
+	via->rport = port;
+	snprintf(v, sizeof(v), "%d", port);
+	sip_message_copy(request, &rport, v);
+	sip_message_copy(request, &via->received, addr);
+	sip_params_add_or_update(&via->params, "rport", 5, &rport);
+	sip_params_add_or_update(&via->params, "received", 8, &via->received);
+	return 0;
+}

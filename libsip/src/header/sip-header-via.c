@@ -38,8 +38,8 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 	sip_params_init(&via->params);
 
 	// SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7
-	sscanf(s, " %n%*[^/ \t]%n / %n%*[^/ \t]%n / %n%*[^/ \t]%n %n%*[^; \t\r\n]%n ", &i, (int*)&via->protocol.n, &j, (int*)&via->version.n, &k, (int*)&via->transport.n, &r, (int*)&via->host.n);
-	if (0 == via->host.n || s + via->host.n > end)
+	if (0 > sscanf(s, " %n%*[^/ \t]%n / %n%*[^/ \t]%n / %n%*[^/ \t]%n %n%*[^; \t\r\n]%n ", &i, (int*)&via->protocol.n, &j, (int*)&via->version.n, &k, (int*)&via->transport.n, &r, (int*)&via->host.n)
+		|| 0 == via->host.n || s + via->host.n > end)
 		return EINVAL;
 
 	// protocol-name

@@ -71,3 +71,8 @@ int sip_agent_input(struct sip_agent_t* sip, struct sip_message_t* msg)
 {
 	return SIP_MESSAGE_REPLY == msg->mode ? sip_uac_input(sip, msg) : sip_uas_input(sip, msg);
 }
+
+int sip_agent_set_rport(struct sip_message_t* msg, const char* peer, int port)
+{
+	return sip_message_set_rport(msg, peer, port);
+}

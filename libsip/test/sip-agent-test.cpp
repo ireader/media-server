@@ -158,7 +158,7 @@ static int sip_uac_transport_send(void* param, const void* data, size_t bytes)
 	return 0;
 }
 
-static int sip_uas_transport_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* /*url*/, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
     assert(param == &s_sip.alice || param == &s_sip.bob);
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
