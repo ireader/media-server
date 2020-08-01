@@ -65,6 +65,8 @@ typedef struct _hierarchy_descriptor_t
 
 size_t hierarchy_descriptor(const uint8_t* data, size_t bytes);
 
+size_t registration_descriptor(const uint8_t* data, size_t bytes);
+
 typedef struct _language_descriptor_t
 {
 	uint32_t code : 24;
