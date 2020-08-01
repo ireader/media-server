@@ -97,7 +97,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 		}
 	} while (p < end && r >= 0);
 
-	assert(r <= 1);
+	assert(r <= 2);
 	return r >= 0 ? 0 : r;
 }
 
