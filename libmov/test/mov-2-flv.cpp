@@ -24,13 +24,13 @@ static struct flv_video_tag_header_t s_video_tag;
 
 static int iskeyframe(const uint8_t* data, size_t bytes)
 {
-	int nalu_length = 4;
+	size_t nalu_length = 4;
 	uint32_t len;
 
 	while (bytes >= nalu_length + 1)
 	{
 		len = 0;
-		for (int i = 0; i < nalu_length; i++)
+		for (size_t i = 0; i < nalu_length; i++)
 			len = (len << 8) | data[i];
 
 		if (len + nalu_length > bytes)
@@ -58,15 +58,15 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		s_video_tag.cts = (int32_t)(pts - dts);
 		flv_video_tag_header_write(&s_video_tag, s_packet, sizeof(s_packet));
 		memcpy(s_packet + 5, buffer, bytes);
-		flv_writer_input(flv, 9, s_packet, bytes + 5, (uint32_t)dts);
+		flv_writer_input(flv, FLV_TYPE_VIDEO, s_packet, bytes + 5, (uint32_t)dts);
 	}
 	else if (s_aac_track == track)
 	{
 		printf("[A] pts: %08lld, dts: %08lld\n", pts, dts);
 		s_audio_tag.avpacket = FLV_AVPACKET;
-		flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
-		memcpy(s_packet + 2, buffer, bytes); // AAC exclude ADTS
-		flv_writer_input(flv, 8, s_packet, bytes + 2, (uint32_t)dts);
+		int m = flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
+		memcpy(s_packet + m, buffer, bytes); // AAC exclude ADTS
+		flv_writer_input(flv, FLV_TYPE_AUDIO, s_packet, bytes + m, (uint32_t)dts);
 	}
 	else
 	{
@@ -90,28 +90,19 @@ static void mov_video_info(void* flv, uint32_t track, uint8_t object, int /*widt
 
 static void mov_audio_info(void* flv, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
-	s_aac_track = track;
-	assert(MOV_OBJECT_AAC == object);
-	s_audio_tag.codecid = FLV_AUDIO_AAC;
-	s_audio_tag.rate = 3; // 44k-SoundRate
-	s_audio_tag.bits = 1; // 16-bit samples
-	s_audio_tag.channels = 1; // Stereo sound
-	s_audio_tag.avpacket = FLV_SEQUENCE_HEADER;
-	flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
+	if (MOV_OBJECT_AAC == object || MOV_OBJECT_OPUS == object)
+	{
+		s_aac_track = track;
+		s_audio_tag.codecid = MOV_OBJECT_AAC == object ? FLV_AUDIO_AAC : FLV_AUDIO_OPUS;
+		s_audio_tag.rate = 3; // 44k-SoundRate
+		s_audio_tag.bits = 1; // 16-bit samples
+		s_audio_tag.channels = 1; // Stereo sound
+		s_audio_tag.avpacket = FLV_SEQUENCE_HEADER;
+		int m = flv_audio_tag_header_write(&s_audio_tag, s_packet, sizeof(s_packet));
 
-#if 1
-	struct mpeg4_aac_t aac;
-	memset(&aac, 0, sizeof(aac));
-	aac.profile = MPEG4_AAC_LC;
-	aac.channel_configuration = channel_count;
-	aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
-	mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &aac);
-	int n = mpeg4_aac_audio_specific_config_save(&aac, s_packet + 2, sizeof(s_packet) - 2);
-	flv_writer_input(flv, FLV_TYPE_AUDIO, s_packet, n + 2, 0);
-#else
-	memcpy(s_packet + 2, extra, bytes);
-	flv_writer_input(flv, FLV_TYPE_AUDIO, s_packet, bytes + 2, 0);
-#endif
+		memcpy(s_packet + m, extra, bytes);
+		flv_writer_input(flv, FLV_TYPE_AUDIO, s_packet, bytes + m, 0);
+	}
 }
 
 static int mov_meta_info(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)

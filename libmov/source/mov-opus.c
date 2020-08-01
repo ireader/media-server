@@ -71,7 +71,7 @@ size_t mov_write_dops(const struct mov_t* mov)
     mov_buffer_w8(&mov->io, entry->extra_data[9]); // channel count
     mov_buffer_w16(&mov->io, (entry->extra_data[11]<<8) | entry->extra_data[10]); // PreSkip (LSB -> MSB)
     mov_buffer_w32(&mov->io, (entry->extra_data[15]<<8) | (entry->extra_data[14]<<8) | (entry->extra_data[13]<<8) | entry->extra_data[12]); // InputSampleRate (LSB -> MSB)
-    mov_buffer_w32(&mov->io, (entry->extra_data[17]<<8) | entry->extra_data[16]); // OutputGain (LSB -> MSB)
+    mov_buffer_w16(&mov->io, (entry->extra_data[17]<<8) | entry->extra_data[16]); // OutputGain (LSB -> MSB)
     mov_buffer_write(&mov->io, entry->extra_data + 18, entry->extra_data_size - 18);
     return entry->extra_data_size;
 }

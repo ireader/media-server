@@ -464,6 +464,11 @@ static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_e
 	mov_buffer_w16(&mov->io, 0); /* pre_defined */
 	mov_buffer_w16(&mov->io, 0); /* reserved / packet size (= 0) */
 
+	// https://www.opus-codec.org/docs/opus_in_isobmff.html
+	// 4.3 Definitions of Opus sample
+	// OpusSampleEntry: 
+	// 1. The samplesize field shall be set to 16.
+	// 2. The samplerate field shall be set to 48000<<16.
 	mov_buffer_w32(&mov->io, entry->u.audio.samplerate); /* samplerate */
 
 	if(MOV_OBJECT_AAC == entry->object_type_indication)

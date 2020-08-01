@@ -3,6 +3,7 @@
 #include "mpeg4-hevc.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-aac.h"
+#include "opus-head.h"
 #include "webm-vpx.h"
 #include "aom-av1.h"
 #include <stdio.h>
@@ -19,12 +20,14 @@ static struct mpeg4_hevc_t s_hevc;
 static struct mpeg4_avc_t s_avc;
 static struct mpeg4_aac_t s_aac;
 static struct webm_vpx_t s_vpx;
+static struct opus_head_t s_opus;
 static struct aom_av1_t s_av1;
 static uint32_t s_aac_track = 0xFFFFFFFF;
 static uint32_t s_avc_track = 0xFFFFFFFF;
 static uint32_t s_av1_track = 0xFFFFFFFF;
 static uint32_t s_vpx_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
+static uint32_t s_opus_track = 0xFFFFFFFF;
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
@@ -40,7 +43,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 
 	if (s_avc_track == track)
 	{
-		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
+		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -49,7 +52,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	}
 	else if (s_hevc_track == track)
 	{
-		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
+		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -58,7 +61,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	}
 	else if (s_av1_track == track)
 	{
-		printf("[AV1] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
+		printf("[AV1] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -67,7 +70,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	}
     else if (s_vpx_track == track)
     {
-        printf("[VP9] pts: %s, dts: %s, diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
+        printf("[VP9] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
         v_pts = pts;
         v_dts = dts;
 
@@ -76,7 +79,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
     }
 	else if (s_aac_track == track)
 	{
-		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts));
+		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
 
@@ -84,6 +87,12 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		//int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
 		//fwrite(adts, 1, n, s_afp);
 		//fwrite(buffer, 1, bytes, s_afp);
+	}
+	else if (s_opus_track == track)
+	{
+		printf("[OPUS] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
+		a_pts = pts;
+		a_dts = dts;
 	}
 	else
 	{
@@ -129,14 +138,19 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	s_afp = fopen("a.aac", "wb");
 	if (MOV_OBJECT_AAC == object)
 	{
-		mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac);
-		//assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
-		assert(channel_count == s_aac.channels);
 		s_aac_track = track;
+		assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
+		assert(channel_count == s_aac.channels);
 		assert(MOV_OBJECT_AAC == object);
 		s_aac.profile = MPEG4_AAC_LC;
 		s_aac.channel_configuration = channel_count;
 		s_aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
+	}
+	else if (MOV_OBJECT_OPUS == object)
+	{
+		s_opus_track = track;
+		assert(bytes == opus_head_load((const uint8_t*)extra, bytes, &s_opus));
+		assert(s_opus.input_sample_rate == 48000);
 	}
 	else
 	{

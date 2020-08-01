@@ -1,6 +1,7 @@
 #include "mov-writer.h"
 #include "mov-format.h"
 #include "mpeg4-aac.h"
+#include "opus-head.h"
 #include "flv-proto.h"
 #include "flv-reader.h"
 #include "flv-parser.h"
@@ -18,11 +19,15 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 	mov_writer_t* mov = (mov_writer_t*)param;
 	static int s_aac_track = -1;
 	static int s_avc_track = -1;
+	static int s_opus_track = -1;
 
 	switch(codec)
 	{
 	case FLV_AUDIO_AAC:
 		return mov_writer_write(mov, s_aac_track, data, bytes, pts, dts, 1==flags ? MOV_AV_FLAG_KEYFREAME : 0);
+	
+	case FLV_AUDIO_OPUS:
+		return mov_writer_write(mov, s_opus_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
 
 	case FLV_AUDIO_MP3:
 		assert(0);
@@ -57,7 +62,14 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 			s_aac_track = mov_writer_add_audio(mov, MOV_OBJECT_AAC, aac.channel_configuration, 16, rate, data, bytes);
 		}
 		break;
-
+	case FLV_AUDIO_OPUS_HEAD:
+		if (-1 == s_opus_track)
+		{
+			struct opus_head_t opus;
+			opus_head_load((const uint8_t*)data, bytes, &opus);
+			s_opus_track = mov_writer_add_audio(mov, MOV_OBJECT_OPUS, opus.channels, 16, opus.input_sample_rate, data, bytes);
+		}
+		break;
 	default:
 		// nothing to do
 		assert(0);
