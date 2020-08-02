@@ -7,7 +7,7 @@
 3. H.264/H.265 AnnexB to/from MP4 stream
 4. AAC ADTS to/from ASC/MUX
 5. FLV with H.264/H.264/AV1/VPX(vp8/vp9/vp10)
-6. FLV with AAC/mp3/G.711
+6. FLV with AAC/mp3/G.711/Opus
 
 # librtmp
 1. rtmp-client: RTMP publish/play
@@ -16,12 +16,12 @@
 # libmpeg
 1. MPEG-2 PS packer/unpacker
 2. MPEG-2 TS packer/unpacker
-3. ps/ts with H.264/H.265/AAC/MP3/G.711
+3. ps/ts with H.264/H.265/AAC/MP3/G.711/Opus
 
 # librtp
 1. RFC3550 RTP/RTCP
 2. RTP with H.264/H.265/MPEG-2/MPEG-4/VP8/VP9/AV1
-2. RTP with G.711/G.726/G.729/MP3/AAC/OPUS
+2. RTP with G.711/G.726/G.729/MP3/AAC/Opus
 3. RTP with MPEG-2 PS/TS
 
 # librtsp
@@ -29,7 +29,7 @@
 2. RFC 2326 RTSP Server
 3. RTSP parser
 4. RFC 4566 SDP parser
-5. SDP with H.264/H.265/AAC/OPUS/G.711 fmtp
+5. SDP with H.264/H.265/AAC/Opus/G.711 fmtp
 
 # libhls
 1. HLS Media: TS segmenter
@@ -47,7 +47,7 @@
 2. MP4 faststart(moov box before mdat)
 3. Fragment MP4 writer
 4. MP4 with H.264/H.265/AV1/VP9
-5. MP4 with AAC/OPUS/MP3/G.711
+5. MP4 with AAC/Opus/MP3/G.711
 
 # libsip
 1. sip user-agent (UAC/UAS)
