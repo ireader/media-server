@@ -140,6 +140,8 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
 	if (bytes < 6) return -1;
+
+	memset(aac, 0, sizeof(*aac));
 	assert(0 == (0x80 & data[0])); // audioMuxVersion: 0
 	// [0] 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
 	aac->profile = ((data[1] & 0x01) << 4) | (data[2] >> 4); // 0-numProgram(4), 0-numLayer(3), 1-ASC(1)

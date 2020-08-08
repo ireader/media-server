@@ -15,6 +15,8 @@ typedef int (*rtsp_demuxer_onpacket)(void* param, int track, int payload, const 
 struct rtsp_demuxer_t* rtsp_demuxer_create(int frequency, int payload, const char* encoding, const char* fmtp, rtsp_demuxer_onpacket onpkt, void* param);
 int rtsp_demuxer_destroy(struct rtsp_demuxer_t* demuxer);
 
+int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int payload, const char* encoding, const char* fmtp);
+
 /// Set RTP-Info
 int rtsp_demuxer_rtpinfo(struct rtsp_demuxer_t* demuxer, uint16_t seq, uint32_t timestamp);
 
