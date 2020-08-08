@@ -113,7 +113,7 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	aac->channels = aac->channel_configuration;
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 
-	if (0 == aac->channel_configuration || 5 == aac->profile || 29 == aac->profile || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
+	if (bytes > 2)
 		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
 	return 2;
 }

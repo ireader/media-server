@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4605125A24D6B4D500B04B70 /* opus-head.c in Sources */ = {isa = PBXBuildFile; fileRef = 4605125924D6B4D500B04B70 /* opus-head.c */; };
 		46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46733798219B2315009F658F /* mpeg4-aac-asc.c */; };
 		468B915C23B8ADAA00EA99A3 /* aom-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B915B23B8ADAA00EA99A3 /* aom-av1.c */; };
 		468B916023B8AE3100EA99A3 /* flv-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B915F23B8AE3100EA99A3 /* flv-header.c */; };
@@ -30,6 +31,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4605125924D6B4D500B04B70 /* opus-head.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "opus-head.c"; sourceTree = "<group>"; };
 		46733798219B2315009F658F /* mpeg4-aac-asc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-aac-asc.c"; sourceTree = "<group>"; };
 		468B915B23B8ADAA00EA99A3 /* aom-av1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aom-av1.c"; sourceTree = "<group>"; };
 		468B915F23B8AE3100EA99A3 /* flv-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "flv-header.c"; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 				46C5B2D92183EDA200419E57 /* mpeg4-avc.c */,
 				46C5B2D02183EDA200419E57 /* mpeg4-hevc.c */,
 				46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */,
+				4605125924D6B4D500B04B70 /* opus-head.c */,
 				46E55E5224694DE000D8BDBA /* webm-vpx.c */,
 			);
 			path = source;
@@ -195,6 +198,7 @@
 				46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */,
 				46C5B2DE2183EDA200419E57 /* amf0.c in Sources */,
 				46E55E5324694DE000D8BDBA /* webm-vpx.c in Sources */,
+				4605125A24D6B4D500B04B70 /* opus-head.c in Sources */,
 				46C5B2E32183EDA200419E57 /* mpeg4-aac.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

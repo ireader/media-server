@@ -55,7 +55,7 @@ int webm_vpx_codec_configuration_record_load(const uint8_t* data, size_t bytes, 
 
 int webm_vpx_codec_configuration_record_save(const struct webm_vpx_t* vpx, uint8_t* data, size_t bytes)
 {
-    if (bytes < 8 + vpx->codec_intialization_data_size)
+    if (bytes < 8 + (size_t)vpx->codec_intialization_data_size)
         return 0; // don't have enough memory
 
     data[0] = vpx->profile;

@@ -70,7 +70,7 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
     if (track->sample_count > 0)
     {
         track->tfhd.flags |= MOV_TFHD_FLAG_DEFAULT_DURATION | MOV_TFHD_FLAG_DEFAULT_SIZE;
-        track->tfhd.default_sample_duration = track->sample_count > 1 ? (uint32_t)(track->samples[1].dts - track->samples[0].dts) : track->turn_last_duration;
+        track->tfhd.default_sample_duration = track->sample_count > 1 ? (uint32_t)(track->samples[1].dts - track->samples[0].dts) : (uint32_t)track->turn_last_duration;
         track->tfhd.default_sample_size = track->samples[0].bytes;
     }
     else
