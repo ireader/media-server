@@ -58,7 +58,7 @@ static struct rtp_packet_t* rtp_demuxer_alloc(struct rtp_demuxer_t* rtp, const v
     {
         r = bytes + sizeof(struct rtp_packet_t);
         r = r > 1500 ? r : 1500;
-        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(int));
+        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(void*));
         if(!ptr)
             return NULL;
         
@@ -67,7 +67,7 @@ static struct rtp_packet_t* rtp_demuxer_alloc(struct rtp_demuxer_t* rtp, const v
         *(int*)ptr = r;
     }
 
-    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(int));
+    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(void*));
     memcpy(pkt + 1, data, bytes);
     
     r = rtp_packet_deserialize(pkt, pkt + 1, bytes);
@@ -85,7 +85,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     uint8_t* ptr;
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
-    ptr = (uint8_t*)pkt - sizeof(int);
+    ptr = (uint8_t*)pkt - sizeof(void*);
     cap = *(int*)ptr;
     
     if(cap <= rtp->cap)

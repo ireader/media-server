@@ -103,7 +103,7 @@ static inline void rtsp_demuxer_onpspacket(void* param, const void* packet, int 
     struct rtsp_demuxer_t* demuxer;
     demuxer = (struct rtsp_demuxer_t*)param;
     demuxer->error = (int)ps_demuxer_input(demuxer->ps, packet, bytes);
-    assert(0 == demuxer->error);
+    assert(demuxer->error == bytes);
     (void)timestamp, (void)flags; //ignore
 }
 

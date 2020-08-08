@@ -92,7 +92,7 @@ static int ondescribe(void* param, const char* sdp)
 	return rtsp_client_setup(ctx->rtsp, sdp);
 }
 
-static int onsetup(void* param)
+static int onsetup(void* param, int64_t duration)
 {
 	int i;
 	uint64_t npt = 0;
