@@ -237,7 +237,7 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 			
 		// reserved '1111'
 		// ES_info_lengt 12-bits
-		nbo_w16(p + 3, 0xF000 | len);
+		nbo_w16(p + 3, 0xF000 | (uint16_t)len);
 		p += 5 + len;
 	}
 

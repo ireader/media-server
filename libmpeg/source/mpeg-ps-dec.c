@@ -41,7 +41,6 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
             return &psm->streams[i];
     }
 
-    
 #if defined(MPEG_GUESS_STREAM)
     if (psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
     {
@@ -139,47 +138,63 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
     return i;
 }
 
-size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
+static size_t ps_demuxer_find_startcode(const uint8_t* data, size_t bytes)
 {
-	size_t i, n, start;
     const uint8_t* p, *pend;
-	
-    // location ps start
-    p = data;
     pend = data + bytes;
-    while(p && pend - p > 3)
+    p = data;
+
+    // find ps start
+    for(p = data; data && p + 2 < pend; p++)
     {
-        p = memchr(p + 3, PES_SID_START, pend - p - 3);
-        if(p && 0x01 == *(p-1) && 0x00 == *(p - 2) && 0x00 == *(p-3))
+        if(0x00 != p[0])
+            continue;
+        
+        if(0x00 != p[1])
+        {
+            p++;
+            continue;
+        }
+        
+        if(0x01 == p[2])
             break;
+        else if(0x00 != p[2])
+            p+=2;
     }
     
-    for (start = i = (p && p >= data+3) ? p - data - 3 : 0; i + 3 < bytes && data && 0x00 == data[i] && 0x00 == data[i + 1] && 0x01 == data[i + 2]; )
+    return p - data;
+}
+
+size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
+{
+	size_t i, n;
+    
+    for (i = ps_demuxer_find_startcode(data, bytes); data && i + 3 < bytes; i += ps_demuxer_find_startcode(data + i, bytes - i))
     {
-        if (PES_SID_START == data[i + 3])
+        switch (data[i + 3])
         {
-            start = i;
-            i += pack_header_read(&ps->pkhd, data + i, bytes - i);
-        }
-        else if (PES_SID_SYS == data[i + 3])
-        {
-            i += system_header_read(&ps->system, data + i, bytes - i);
-        }
-        else if (PES_SID_END == data[i + 3])
-        {
-            i += 4;
-        }
-        else
-        {
+        case PES_SID_START:
+            n = pack_header_read(&ps->pkhd, data + i, bytes - i);
+            break;
+            
+        case PES_SID_SYS:
+            n = system_header_read(&ps->system, data + i, bytes - i);
+            break;
+            
+        case PES_SID_END:
+            n = 4;
+            break;
+                
+        default:
             n = pes_packet_read(ps, data + i, bytes - i);
-            i += n;
-
-            if (0 == n)
-                return start;
+            break;
         }
 
-        while (i + 3 < bytes && 0x00 == data[i] && 0x00 == data[i + 1] && 0x00 == data[i + 2])
-            i++; // skip 0x00
+        assert(i + n <= bytes);
+        if (0 == n || i + n > bytes)
+            break;
+        
+        i += n;
     }
 
 	return i;

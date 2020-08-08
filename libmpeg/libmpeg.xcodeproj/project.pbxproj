@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4605125C24D6B4F300B04B70 /* mpeg-ts-opus.h in Headers */ = {isa = PBXBuildFile; fileRef = 4605125B24D6B4F300B04B70 /* mpeg-ts-opus.h */; };
 		46AC02CE21BA5907003CF43D /* mpeg-sdt.c in Sources */ = {isa = PBXBuildFile; fileRef = 46AC02CD21BA5907003CF43D /* mpeg-sdt.c */; };
 		46C5B3542183EE0100419E57 /* mpeg-psm.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3422183EE0100419E57 /* mpeg-psm.c */; };
 		46C5B3552183EE0100419E57 /* mpeg-system-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3432183EE0100419E57 /* mpeg-system-header.c */; };
@@ -29,6 +30,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4605125B24D6B4F300B04B70 /* mpeg-ts-opus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mpeg-ts-opus.h"; sourceTree = "<group>"; };
 		46AC02CD21BA5907003CF43D /* mpeg-sdt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mpeg-sdt.c"; sourceTree = "<group>"; };
 		46C5B2622183EB8F00419E57 /* libmpeg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3402183EDFA00419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
@@ -83,25 +85,26 @@
 		46C5B3412183EE0100419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
-				46C5B3422183EE0100419E57 /* mpeg-psm.c */,
-				46C5B3432183EE0100419E57 /* mpeg-system-header.c */,
-				46C5B3442183EE0100419E57 /* mpeg-packet.c */,
-				46C5B3452183EE0100419E57 /* mpeg-pmt.c */,
-				46C5B3462183EE0100419E57 /* mpeg-util.c */,
-				46C5B3472183EE0100419E57 /* mpeg-ts-h264.c */,
-				46C5B3482183EE0100419E57 /* mpeg-psd.c */,
 				46C5B3492183EE0100419E57 /* mpeg-crc32.c */,
-				46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */,
-				46C5B34B2183EE0100419E57 /* mpeg-ts-h265.c */,
-				46C5B34C2183EE0100419E57 /* mpeg-ps-dec.c */,
-				46C5B34D2183EE0100419E57 /* mpeg-util.h */,
-				46C5B34E2183EE0100419E57 /* mpeg-pat.c */,
-				46C5B34F2183EE0100419E57 /* mpeg-ts-enc.c */,
 				46C5B3502183EE0100419E57 /* mpeg-element-descriptor.c */,
-				46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */,
-				46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */,
+				46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */,
+				46C5B3442183EE0100419E57 /* mpeg-packet.c */,
+				46C5B34E2183EE0100419E57 /* mpeg-pat.c */,
 				46C5B3532183EE0100419E57 /* mpeg-pes.c */,
+				46C5B3452183EE0100419E57 /* mpeg-pmt.c */,
+				46C5B34C2183EE0100419E57 /* mpeg-ps-dec.c */,
+				46C5B3522183EE0100419E57 /* mpeg-ps-enc.c */,
+				46C5B3482183EE0100419E57 /* mpeg-psd.c */,
+				46C5B3422183EE0100419E57 /* mpeg-psm.c */,
 				46AC02CD21BA5907003CF43D /* mpeg-sdt.c */,
+				46C5B3432183EE0100419E57 /* mpeg-system-header.c */,
+				46C5B3512183EE0100419E57 /* mpeg-ts-dec.c */,
+				46C5B34F2183EE0100419E57 /* mpeg-ts-enc.c */,
+				46C5B3472183EE0100419E57 /* mpeg-ts-h264.c */,
+				46C5B34B2183EE0100419E57 /* mpeg-ts-h265.c */,
+				4605125B24D6B4F300B04B70 /* mpeg-ts-opus.h */,
+				46C5B3462183EE0100419E57 /* mpeg-util.c */,
+				46C5B34D2183EE0100419E57 /* mpeg-util.h */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -114,6 +117,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				46C5B35F2183EE0100419E57 /* mpeg-util.h in Headers */,
+				4605125C24D6B4F300B04B70 /* mpeg-ts-opus.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
