@@ -1,11 +1,13 @@
 #include "rtsp-demuxer.h"
 #include "rtp-demuxer.h"
 #include "rtp-profile.h"
+#include "rtcp-header.h"
 #include "sdp-a-fmtp.h"
 #include "mpeg-ts-proto.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "avbsf.h" // https://github.com/ireader/avcodec
+#include "mpeg4-aac.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -43,6 +45,8 @@ struct rtp_payload_info_t
         struct sdp_a_fmtp_h264_t h264;
         struct sdp_a_fmtp_h265_t h265;
         struct sdp_a_fmtp_mpeg4_t mpeg4;
+
+        struct mpeg4_aac_t aac;
     } fmtp;
 
     struct avbsf_t* bsf;
@@ -74,14 +78,40 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
     static const int s_payload[] = { RTP_PAYLOAD_H264, RTP_PAYLOAD_H265, RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP3, };
     static const char* s_encoding[] = { "H264", "H265", "MP4A-LATM", "", };
 
-    int i;
+    int i, r, len;
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
 
     for (i = 0; i < sizeof(s_mpeg2) / sizeof(s_mpeg2[0]); i++)
     {
         if (codecid == s_mpeg2[i])
-            return pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts, dts, data, (int)bytes, flags);
+        {
+            if (PSI_STREAM_AAC == codecid)
+            {
+                if (0 == pt->fmtp.aac.sampling_frequency)
+                    mpeg4_aac_adts_load((const uint8_t*)data, bytes, &pt->fmtp.aac);
+
+                len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+                while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && len <= bytes)
+                {
+                    r = pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, len, flags);
+                    if (0 != r)
+                        return r;
+
+                    pts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
+                    dts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
+                    bytes -= len;
+                    data = (const uint8_t*)data + len;
+                    len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+                }
+
+                return bytes > 0 ? pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, len, flags) : 0;
+            }
+            else
+            {
+                return pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, (int)bytes, flags);
+            }
+        }
     }
 
     (void)program; //ignore
@@ -92,7 +122,7 @@ static inline void rtsp_demuxer_mpegps_onpacket(void* param, int track, int code
 {
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
-    pt->ctx->error = rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts, dts, data, bytes);
+    pt->ctx->error = rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts / 90, dts / 90, data, bytes);
     assert(0 == pt->ctx->error);
 }
 
@@ -107,8 +137,14 @@ static inline void rtsp_demuxer_ontspacket(void* param, const void* packet, int 
 {
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
-    pt->ctx->error = (int)ts_demuxer_input(pt->ts, packet, bytes);
-    assert(0 == pt->ctx->error);
+    
+    while (bytes >= 188)
+    {
+        pt->ctx->error = (int)ts_demuxer_input(pt->ts, packet, 188);
+        assert(0 == pt->ctx->error);
+        bytes -= 188;
+        packet = (const uint8_t*)packet + 188;
+    }
     (void)timestamp, (void)flags; //ignore
 }
 
@@ -302,11 +338,11 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
     uint8_t id;
     struct rtp_payload_info_t* pt;
 
-    id = bytes > 1 ? (((const uint8_t*)data)[1] & 0x7F) : 255;
+    id = bytes > 1 ? ((const uint8_t*)data)[1] : 255;
     for (i = demuxer->idx; i < demuxer->count + demuxer->idx; i++)
     {
         pt = &demuxer->pt[i % demuxer->count];
-        if (id == pt->payload)
+        if (id == pt->payload || (id >= RTCP_FIR && id <= RTCP_TOKEN))
         {
             demuxer->idx = i % demuxer->count;
             return rtp_demuxer_input(pt->rtp, data, bytes);
