@@ -42,7 +42,7 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 		if (len + 2 > bytes)
 			return -1; // invalid len
 
-		// ISO/IEC 13818-1:2018 (E) Table 2-45 – Program and program element descriptors (p90)
+		// ISO/IEC 13818-1:2018 (E) Table 2-45 ?Program and program element descriptors (p90)
 		switch (tag)
 		{
 		case 0x05: // 2.6.8 Registration descriptor(p94)
@@ -169,7 +169,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 
 	//assert(j+4 == bytes);
 	//crc = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | data[j+3];
-	assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
+//	assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
 	return 0;
 }
 
@@ -227,14 +227,14 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 
 		len = 0;
 		// fill elementary stream info
-		if(PSI_STREAM_AUDIO_OPUS == pmt->streams[i].codecid || (pmt->streams[i].esinfo_len > 0 && pmt->streams[i].esinfo))
+		//if(PSI_STREAM_AUDIO_OPUS == pmt->streams[i].codecid || (pmt->streams[i].esinfo_len > 0 && pmt->streams[i].esinfo))
 		{
 			//assert(pmt->streams[i].esinfo);
 			//memcpy(p, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
 			//p += pmt->streams[i].esinfo_len;
 			len = pmt_write_descriptor(&pmt->streams[i], p + 5, 1021 - (p + 5- data));
 		}
-			
+
 		// reserved '1111'
 		// ES_info_lengt 12-bits
 		nbo_w16(p + 3, 0xF000 | (uint16_t)len);

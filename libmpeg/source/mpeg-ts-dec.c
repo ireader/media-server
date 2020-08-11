@@ -16,6 +16,7 @@
 struct ts_demuxer_t
 {
     struct pat_t pat;
+	uint8_t cc;
 
     ts_demuxer_onpacket onpacket;
     void* param;
@@ -172,6 +173,13 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
+	
+	if (((ts->cc + 1) % 15) != pkhd.continuity_counter)
+	{
+		// 1. PAT/PMT reset
+		// 2. pes packet corrupt
+	}
+	ts->cc = pkhd.continuity_counter;
 
 //	printf("-----------------------------------------------\n");
 //	printf("PID[%u]: Error: %u, Start:%u, Priority:%u, Scrambler:%u, AF: %u, CC: %u\n", PID, pkhd.transport_error_indicator, pkhd.payload_unit_start_indicator, pkhd.transport_priority, pkhd.transport_scrambling_control, pkhd.adaptation_field_control, pkhd.continuity_counter);
@@ -185,7 +193,7 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 		{
             int64_t t;
 			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
+			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
     
@@ -230,6 +238,10 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
                             n = pes_read_header(pes, data + i, bytes - i);
                             assert(n > 0);
                             i += n;
+						}
+						else if (0 == pes->sid)
+						{
+							continue; // don't have pes header yet
 						}
 
                         r = pes_packet(&pes->pkt, pes, data + i, bytes - i, ts->onpacket, ts->param);

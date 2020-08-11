@@ -74,7 +74,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	}
 
 //	assert(j+4 == program_stream_map_length+6);
-	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
+//	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
 
