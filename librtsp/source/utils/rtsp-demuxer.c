@@ -92,7 +92,7 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
                     mpeg4_aac_adts_load((const uint8_t*)data, bytes, &pt->fmtp.aac);
 
                 len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-                while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && len <= bytes)
+                while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && (size_t)len <= bytes)
                 {
                     r = pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, len, flags);
                     if (0 != r)
@@ -122,7 +122,7 @@ static inline void rtsp_demuxer_mpegps_onpacket(void* param, int track, int code
 {
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
-    pt->ctx->error = rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts / 90, dts / 90, data, bytes);
+    pt->ctx->error = rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts, dts, data, bytes);
     assert(0 == pt->ctx->error);
 }
 
@@ -342,7 +342,7 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
     for (i = demuxer->idx; i < demuxer->count + demuxer->idx; i++)
     {
         pt = &demuxer->pt[i % demuxer->count];
-        if (id == pt->payload || (id >= RTCP_FIR && id <= RTCP_TOKEN))
+        if ( (id & 0x7F) == pt->payload || id > 0x80 )
         {
             demuxer->idx = i % demuxer->count;
             return rtp_demuxer_input(pt->rtp, data, bytes);

@@ -136,7 +136,7 @@ static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_pack
 			return -E2BIG;
 
 		capacity = q->capacity + 250;
-		p = realloc(q->items, capacity * sizeof(struct rtp_item_t*));
+		p = realloc(q->items, capacity * sizeof(struct rtp_item_t));
 		if (NULL == p)
 			return -ENOMEM;
 
@@ -145,7 +145,7 @@ static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_pack
 		{
 			// move to tail
 			assert(q->pos < q->capacity);
-			memmove(&q->items[q->pos + capacity - q->capacity], &q->items[q->pos], q->capacity - q->pos);
+			memmove(&q->items[q->pos + capacity - q->capacity], &q->items[q->pos], (q->capacity - q->pos) * sizeof(struct rtp_item_t));
 			q->pos += capacity - q->capacity;
 		}
 
