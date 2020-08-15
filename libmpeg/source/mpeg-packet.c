@@ -110,7 +110,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     return 0;
 }
 
-int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, pes_packet_handler handler, void* param)
+int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, int start, pes_packet_handler handler, void* param)
 {
     int r;
     static uint8_t h264aud[] = { 0, 0, 0, 1, 0x09, 0xE0 };
@@ -134,11 +134,11 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
 
         return mpeg_packet_h264_h265(pkt, pes, size, handler, param);
     }
-    else if (0 == pes->len || PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
+    else
     {
         // use timestamp to split packet
         assert(PTS_NO_VALUE != pes->dts);
-        if (pkt->size > 0 && pkt->dts != pes->dts)
+        if (pkt->size > 0 && (pkt->dts != pes->dts || start))
         {
             assert(PTS_NO_VALUE != pkt->dts);
             handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
@@ -155,19 +155,12 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         pkt->sid = pes->sid;
         pkt->codecid = pes->codecid;
         pkt->flags = pes->data_alignment_indicator ? 1 : 0;
-    }
-    else
-    {
-        r = mpeg_packet_append(pkt, data, size);
-        if (0 != r)
-            return r;
 
-        assert(pes->len > 0);
-        if (pes->pkt.size >= pes->len && pes->len > 0)
+        // for audio packet only, H.264/H.265 pes->len maybe incorrect
+        if (pes->len > 0 && pes->pkt.size >= pes->len && PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid)
         {
-            assert(pes->pkt.size == pes->len);
-            pkt->flags = pes->data_alignment_indicator ? 1 : 0; // flags
-            handler(param, pes->pn, pes->sid, pes->codecid, pkt->flags, pes->pts, pes->dts, pes->pkt.data, pes->len);
+            assert(pes->pkt.size == pes->len); // packet lost
+            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
             pkt->size = 0; // new packet start
         }
     }

@@ -119,6 +119,6 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes);
 size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t bytes);
 
 typedef int (*pes_packet_handler)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
-int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, pes_packet_handler handler, void* param);
+int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, int start, pes_packet_handler handler, void* param);
 
 #endif /* !_mpeg_pes_dec_h_ */

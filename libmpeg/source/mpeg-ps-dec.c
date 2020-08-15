@@ -19,6 +19,8 @@ struct ps_demuxer_t
     struct ps_pack_header_t pkhd;
     struct ps_system_header_t system;
 
+    int start;
+
     ps_demuxer_onpacket onpacket;
 	void* param;	
 };
@@ -131,7 +133,8 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
 
 			if (0 == j) continue;
 
-            pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps_demuxer_onpes, ps);
+            pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
+            ps->start = 0; // clear start flag
         }
     }
 
@@ -174,6 +177,7 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
         switch (data[i + 3])
         {
         case PES_SID_START:
+            ps->start = 1;
             n = pack_header_read(&ps->pkhd, data + i, bytes - i);
             break;
             
