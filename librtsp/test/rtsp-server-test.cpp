@@ -392,6 +392,11 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	char rtpinfo[512] = { 0 };
 	source->GetRTPInfo(uri, rtpinfo, sizeof(rtpinfo));
 
+	// for vlc 2.2.2
+	MP4FileSource* mp4 = dynamic_cast<MP4FileSource*>(source.get());
+	if(mp4)
+		mp4->SendRTCP(system_clock());
+
 	it->second.status = 1;
     return rtsp_server_reply_play(rtsp, 200, npt, NULL, rtpinfo);
 }

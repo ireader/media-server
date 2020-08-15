@@ -119,7 +119,7 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payloa
     evthandler.on_rtcp = rtp_on_rtcp;
     rtp->rtp = rtp_create(&evthandler, rtp, rtp->ssrc, timestamp, frequency ? frequency : 90000, 2 * 1024 * 1024, 0);
     
-    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp->param);
+    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp);
     
     return rtp->payload && rtp->rtp && rtp->queue? 0 : -1;
 }
@@ -223,7 +223,7 @@ int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)
     r = 0;
     clock = rtpclock();
     interval = rtp_rtcp_interval(rtp->rtp);
-    if (rtp->clock + interval < clock)
+    if (rtp->clock + interval * 1000 < clock)
     {
         // RTCP report
         r = rtp_rtcp_report(rtp->rtp, buf, len);

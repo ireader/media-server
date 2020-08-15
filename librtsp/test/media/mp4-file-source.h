@@ -26,13 +26,15 @@ public:
 	virtual int GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const;
 	virtual int SetTransport(const char* track, std::shared_ptr<IRTPTransport> transport);
 
+	int SendRTCP(uint64_t clock);
+
 private:
 	struct media_t;
 	struct media_t* FetchNextPacket();
 
 	static void OnRTCPEvent(void* param, const struct rtcp_msg_t* msg);
 	void OnRTCPEvent(const struct rtcp_msg_t* msg);
-	int SendRTCP(uint64_t clock);
+	
 	int SendBye();
 
 	static void* RTPAlloc(void* param, int bytes);

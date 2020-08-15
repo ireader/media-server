@@ -9,7 +9,7 @@
 #include "sys/system.h"
 #include "cpm/unuse.h"
 
-#define UDP_MULTICAST_ADDR "239.0.0.2"
+//#define UDP_MULTICAST_ADDR "239.0.0.2"
 
 void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes);
 void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int payload, const char* encoding);
@@ -42,7 +42,8 @@ static int rtpport(void* param, int media, const char* source, unsigned short rt
 	switch (ctx->transport)
 	{
 	case RTSP_TRANSPORT_RTP_UDP:
-        assert(0 == sockpair_create(NULL, ctx->rtp[media], ctx->port[media]));
+		// TODO: ipv6
+		assert(0 == sockpair_create("0.0.0.0", ctx->rtp[media], ctx->port[media]));
         rtp[0] = ctx->port[media][0];
         rtp[1] = ctx->port[media][1];
         

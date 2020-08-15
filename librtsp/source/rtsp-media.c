@@ -72,6 +72,8 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 		path += 1;
 	if ('/' == uri[offset - 1] || '\\' == uri[offset - 1])
 		offset -= 1;
+
+	// TODO: check uri parameters '?'
 	offset += snprintf(uri + offset, bytes - offset, "/%s", path);
 	return uri;
 }
@@ -353,7 +355,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 
 	// C.1.7 Connection Information
 	network = addrtype = source = NULL;
-	if (0 != sdp_connection_get(sdp, &network, &addrtype, &source))
+	if (0 != sdp_connection_get(sdp, &network, &addrtype, &source) || 0 == strcmp("0.0.0.0", source))
 		sdp_origin_get(sdp, &username, &session, &version, &network, &addrtype, &source);
 
 	// session ice-ufrag/ice-pwd

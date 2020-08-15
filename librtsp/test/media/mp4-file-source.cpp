@@ -454,7 +454,7 @@ int MP4FileSource::SendRTCP(uint64_t clock)
 	{
 		struct media_t* m = &m_media[i];
 		int interval = rtp_rtcp_interval(m->rtp);
-		if (0 == m->rtcp_clock || m->rtcp_clock + 5000 < clock)
+		if (0 == m->rtcp_clock || m->rtcp_clock + interval < clock)
 		{
 			size_t n = rtp_rtcp_report(m->rtp, rtcp, sizeof(rtcp));
 
