@@ -227,7 +227,7 @@ int rtcp_input_rtp(struct rtp_context *ctx, const void* data, int bytes)
 	if(0 != sender->rtp_packets)
 	{
 		int D;
-		D = (int)((unsigned int)((clock - sender->rtp_clock)*ctx->frequence/1000) - (pkt.rtp.timestamp - sender->rtp_timestamp));
+		D = (int)((unsigned int)((clock - sender->rtp_clock)*ctx->frequence/1000000) - (pkt.rtp.timestamp - sender->rtp_timestamp));
 		if(D < 0) D = -D;
 		sender->jitter += (D - sender->jitter)/16.0;
 	}

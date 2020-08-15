@@ -129,7 +129,7 @@ int rtp_rtcp_interval(void* rtp)
 	interval = rtcp_interval(rtp_member_list_count(ctx->members),
 		rtp_member_list_count(ctx->senders) + ((RTP_SENDER==ctx->role) ? 1 : 0),
 		ctx->rtcp_bw, 
-		(ctx->self->rtp_clock + 2*RTCP_REPORT_INTERVAL > rtpclock()) ? 1 : 0,
+		(ctx->self->rtp_clock + 2*RTCP_REPORT_INTERVAL*1000 > rtpclock()) ? 1 : 0,
 		ctx->avg_rtcp_size,
 		ctx->init);
 
