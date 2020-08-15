@@ -174,36 +174,85 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	return 6;
 }
 
+// Table 1.6 ¨C Levels for the High Quality Audio Profile
+static int mpeg4_aac_high_quality_level(const struct mpeg4_aac_t* aac)
+{
+	if (aac->sampling_frequency <= 22050)
+	{
+		if (aac->channel_configuration <= 2)
+			return 1; // Level 1/5
+	}
+	else if (aac->sampling_frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 2; // Level 2/6
+		else if (aac->channel_configuration <= 5)
+			return 3; // Level 3/4/7/8
+	}
+
+	return 8;
+}
+
+// Table 1.10 ¨C Levels for the AAC Profile
+static int mpeg4_aac_level(const struct mpeg4_aac_t* aac)
+{
+	if (aac->sampling_frequency <= 24000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 1; // AAC Profile, Level 1
+	}
+	else if (aac->sampling_frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 2; // Level 2
+		else if (aac->channel_configuration <= 5)
+			return 4; // Level 4
+	}
+	else if (aac->sampling_frequency <= 96000)
+	{
+		if (aac->channel_configuration <= 5)
+			return 5; // Level 5
+	}
+
+	return 5;
+}
+
+static int mpeg4_aac_he_level(const struct mpeg4_aac_t* aac)
+{
+	if (aac->sampling_frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return aac->sbr ? 3 : 2; // Level 2/3
+		else if (aac->channel_configuration <= 5)
+			return 4; // Level 4
+	}
+	else if (aac->sampling_frequency <= 96000)
+	{
+		if (aac->channel_configuration <= 5)
+			return 5; // Level 5
+	}
+
+	return 5;
+}
+
 // ISO/IEC 14496-3:2009(E)  Table 1.14 - audioProfileLevelIndication values (p51)
 int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
 {
-	int frequency;
-
-	// profile: MPEG4_AAC_LC only
-	// TODO:
-
 	// Table 1.10 - Levels for the AAC Profile (p49)
 	// Table 1.14 - audioProfileLevelIndication values (p51)
-	frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
-	if (frequency <=24000)
+	switch (aac->profile)
 	{
-		if (aac->channel_configuration <= 2)
-			return 0x28; // AAC Profile, Level 1
+	case MPEG4_AAC_LC:
+		return mpeg4_aac_level(aac) - 1 + 0x28; // AAC Profile
+	case MPEG4_AAC_SBR:
+		return mpeg4_aac_he_level(aac) - 2 + 0x2C; // High Efficiency AAC Profile
+	case MPEG4_AAC_PS:
+		return mpeg4_aac_he_level(aac) - 2 + 0x30; // High Efficiency AAC v2 Profile
+	case MPEG4_AAC_CELP:
+		return mpeg4_aac_high_quality_level(aac) - 1 + 0x0E; // High Quality Audio Profile
+	default:
+		return 1; // Main Audio Profile, Level 1
 	}
-	else if (frequency <= 48000)
-	{
-		if (aac->channel_configuration <= 2)
-			return 0x29; // AAC Profile, Level 2
-		else if (aac->channel_configuration <= 5)
-			return 0x2A; // AAC Profile, Level 4
-	}
-	else if (frequency <= 96000)
-	{
-		if (aac->channel_configuration <= 5)
-			return 0x2B; // AAC Profile, Level 5
-	}
-
-	return 0x2B;
 }
 
 #define ARRAYOF(arr) sizeof(arr)/sizeof(arr[0])

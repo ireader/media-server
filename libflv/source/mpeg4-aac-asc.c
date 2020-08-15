@@ -236,6 +236,40 @@ static int mpeg4_aac_ga_specific_config_load(struct mpeg4_bits_t* bits, struct m
 	return mpeg4_bits_error(bits);
 }
 
+static int mpeg4_aac_celp_specific_config_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+{
+	int ExcitationMode;
+	if (mpeg4_bits_read(bits)) // isBaseLayer
+	{
+		// CelpHeader
+
+		ExcitationMode = mpeg4_bits_read(bits);
+		mpeg4_bits_read(bits); // SampleRateMode
+		mpeg4_bits_read(bits); // FineRateControl
+
+		// Table 3.50 - Description of ExcitationMode
+		if (ExcitationMode == 1 /*RPE*/)
+		{
+			mpeg4_bits_read_n(bits, 3); // RPE_Configuration
+		}
+		if (ExcitationMode == 0 /*MPE*/)
+		{
+			mpeg4_bits_read_n(bits, 5); // MPE_Configuration
+			mpeg4_bits_read_n(bits, 2); // NumEnhLayers
+			mpeg4_bits_read(bits); // BandwidthScalabilityMode
+		}
+	}
+	else
+	{
+		if (mpeg4_bits_read(bits)) // isBWSLayer
+			mpeg4_bits_read_n(bits, 2); // BWS_configuration
+		else
+			mpeg4_bits_read_n(bits, 2); // CELP-BRS-id
+	}
+
+	return mpeg4_bits_error(bits);
+}
+
 static inline uint8_t mpeg4_aac_get_audio_object_type(struct mpeg4_bits_t* bits)
 {
 	uint8_t audioObjectType;
@@ -294,8 +328,14 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 	case 17: case 19: case 20: case 21: case 22: case 23:
 		mpeg4_aac_ga_specific_config_load(&bits, aac);
 		break;
+
+	case 8:
+		mpeg4_aac_celp_specific_config_load(&bits, aac);
+		break;
+
 	default:
 		assert(0);
+		return bytes;
 	}
 
 	switch (aac->profile)
