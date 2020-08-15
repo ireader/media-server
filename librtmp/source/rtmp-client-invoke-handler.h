@@ -217,6 +217,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		{
 			assert(0);
 			printf("%s: level: %s, code: %s, description: %s\n", __FUNCTION__, result.level, result.code, result.description);
+			return -1;
 		}
 	}
 
