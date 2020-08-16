@@ -33,6 +33,7 @@ struct rtp_queue_t
 
 	int bad_count;
 	uint16_t bad_seq;
+	struct rtp_item_t bad_items[RTP_SEQUENTIAL+1];
 
 	int threshold;
 	int frequency;
@@ -40,7 +41,7 @@ struct rtp_queue_t
 	void* param;
 };
 
-static int rtp_queue_reset(struct rtp_queue_t* q);
+static void rtp_queue_reset(struct rtp_queue_t* q);
 static int rtp_queue_find(struct rtp_queue_t* q, uint16_t seq);
 static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_packet_t* pkt);
 
@@ -73,10 +74,27 @@ int rtp_queue_destroy(struct rtp_queue_t* q)
 	return 0;
 }
 
-static int rtp_queue_reset(struct rtp_queue_t* q)
+static inline void rtp_queue_reset_bad_items(struct rtp_queue_t* q)
 {
 	int i;
 	struct rtp_packet_t* pkt;
+
+	for (i = 0; i < q->bad_count; i++)
+	{
+		pkt = q->bad_items[i].pkt;
+		q->free(q->param, pkt);
+	}
+
+	q->bad_seq = 0;
+	q->bad_count = 0;
+}
+
+static void rtp_queue_reset(struct rtp_queue_t* q)
+{
+	int i;
+	struct rtp_packet_t* pkt;
+
+	rtp_queue_reset_bad_items(q);
 
 	for (i = 0; i < q->size; i++)
 	{
@@ -86,10 +104,7 @@ static int rtp_queue_reset(struct rtp_queue_t* q)
 
 	q->pos = 0;
 	q->size = 0;
-	q->bad_seq = 0;
-	q->bad_count = 0;
 	q->probation = RTP_SEQUENTIAL;
-	return 0;
 }
 
 static int rtp_queue_find(struct rtp_queue_t* q, uint16_t seq)
@@ -120,7 +135,7 @@ static int rtp_queue_find(struct rtp_queue_t* q, uint16_t seq)
 		}
 	}
 
-	return l % q->capacity; // insert position
+	return l; // insert position
 }
 
 static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_packet_t* pkt)
@@ -162,9 +177,15 @@ static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_pack
 	return 1;
 }
 
+/*
+            first               last
+              ^                  ^
+---too late---|------------------|----max drop---|-----another sequential---
+--------------|------queue-------|-------------------------------------------->
+*/
 int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 {
-	int idx;
+	int i, idx;
 	uint16_t delta;
 
 	if (q->probation)
@@ -186,58 +207,69 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 	}
 	else
 	{
-		delta = (uint16_t)pkt->rtp.seq - q->last_seq;
-		if (delta < RTP_DROPOUT)
+		delta = (uint16_t)(pkt->rtp.seq - q->last_seq);
+		if (delta > 0 && delta < RTP_DROPOUT)
 		{
 			if (pkt->rtp.seq < q->last_seq)
 				q->cycles += RTP_SEQMOD;
 
-			q->bad_count = 0;
+			rtp_queue_reset_bad_items(q);
 			q->last_seq = (uint16_t)pkt->rtp.seq;
 			return rtp_queue_insert(q, q->pos + q->size, pkt);
 		}
-		else if (delta < (uint16_t)(q->first_seq - q->last_seq))
+		else if ( (int16_t)delta <= 0 && (int16_t)delta >= (int16_t)(q->first_seq - q->last_seq) )
+		{
+			// pkt->rtp.seq - q->first_seq < q->last_seq - q->first_seq
+
+			// duplicate or reordered packet
+			idx = rtp_queue_find(q, (uint16_t)pkt->rtp.seq);
+			if (-1 == idx)
+				return 0;
+			
+			rtp_queue_reset_bad_items(q);
+			return rtp_queue_insert(q, idx, pkt);
+		}
+		else if ((uint16_t)(q->first_seq - pkt->rtp.seq) < RTP_MISORDER)
 		{
 			// too late: pkt->req.seq < q->first_seq
 			return 0;
 		}
-		else if (delta <= RTP_SEQMOD - RTP_MISORDER)
+		else
 		{
-			if (q->bad_seq == pkt->rtp.seq)
+			if (q->bad_count > 0 && q->bad_seq == pkt->rtp.seq)
 			{
-				if (++q->bad_count >= RTP_SEQUENTIAL + 1)
+				if (q->bad_count >= RTP_SEQUENTIAL)
 				{
 					// Two sequential packets -- assume that the other side
 					// restarted without telling us so just re-sync
 					// (i.e., pretend this was the first packet).
-					rtp_queue_reset(q);
+					
+					//rtp_queue_reset(q);
+
+					// copy saved items
+					for (i = 0; i < q->bad_count; i++)
+						rtp_queue_insert(q, q->pos + q->size, q->bad_items[i].pkt);
+
+					q->bad_count = 0;
 					q->last_seq = (uint16_t)pkt->rtp.seq;
 					return rtp_queue_insert(q, q->pos + q->size, pkt);
 				}
 			}
 			else
 			{
-				q->bad_count = 0;
+				rtp_queue_reset_bad_items(q);
 			}
 
 			q->bad_seq = (pkt->rtp.seq + 1) % (RTP_SEQMOD-1);
-			return 0;
-		}
-		else
-		{
-			// duplicate or reordered packet
-			idx = rtp_queue_find(q, (uint16_t)pkt->rtp.seq);
-			if (-1 == idx)
-				return 0;
-			q->bad_count = 0;
-			return rtp_queue_insert(q, idx, pkt);
+			q->bad_items[q->bad_count++].pkt = pkt;
+			return 1;
 		}
 	}
 }
 
 struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
 {
-	int threshold;
+	uint32_t threshold;
 	struct rtp_packet_t* pkt;
 	if (q->size < 1 || q->probation)
 		return NULL;
@@ -249,17 +281,15 @@ struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
 		q->first_seq++;
 		q->size--;
 		q->pos = (q->pos + 1) % q->capacity;
-		if (0 == q->pos)
-			return pkt;
 		return pkt;
 	}
 	else
 	{
-		threshold = (int)(q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp) / (q->frequency / 1000);
-		if (threshold < q->threshold)
+		threshold = (q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp) / ((uint32_t)q->frequency / 1000);
+		if (threshold < (uint32_t)q->threshold)
 			return NULL;
 
-		q->first_seq = (uint16_t)pkt->rtp.seq + 1;
+		q->first_seq = (uint16_t)(pkt->rtp.seq + 1);
 		q->size--;
 		q->pos = (q->pos + 1) % q->capacity;
 		return pkt;
