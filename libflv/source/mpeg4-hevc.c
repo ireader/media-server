@@ -82,7 +82,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 	hevc->general_tier_flag = (data[1] >> 5) & 0x01;
 	hevc->general_profile_idc = data[1] & 0x1F;
 	hevc->general_profile_compatibility_flags = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
-	hevc->general_constraint_indicator_flags = (uint32_t)((data[6] << 24) | (data[7] << 16) | (data[8] << 8) | data[9]);
+    hevc->general_constraint_indicator_flags = ((uint32_t)data[6] << 24) | ((uint32_t)data[7] << 16) | ((uint32_t)data[8] << 8) | (uint32_t)data[9];
 	hevc->general_constraint_indicator_flags = (hevc->general_constraint_indicator_flags << 16) | (((uint64_t)data[10]) << 8) | data[11];
 	hevc->general_level_idc = data[12];
 	hevc->min_spatial_segmentation_idc = ((data[13] & 0x0F) << 8) | data[14];

@@ -98,7 +98,7 @@ static void rtp_queue_reset(struct rtp_queue_t* q)
 
 	for (i = 0; i < q->size; i++)
 	{
-		pkt = q->items[q->pos + i].pkt;
+		pkt = q->items[(q->pos + i) % q->capacity].pkt;
 		q->free(q->param, pkt);
 	}
 
@@ -162,6 +162,7 @@ static int rtp_queue_insert(struct rtp_queue_t* q, int position, struct rtp_pack
 			assert(q->pos < q->capacity);
 			memmove(&q->items[q->pos + capacity - q->capacity], &q->items[q->pos], (q->capacity - q->pos) * sizeof(struct rtp_item_t));
 			q->pos += capacity - q->capacity;
+            position += capacity - q->capacity;
 		}
 
 		q->capacity = capacity;
@@ -328,6 +329,59 @@ static int rtp_queue_packet(rtp_queue_t* q, uint16_t seq)
 	return 0;
 }
 
+static void rtp_queue_test2(void)
+{
+    int i;
+    uint16_t seq;
+    rtp_queue_t* q;
+    struct rtp_packet_t* pkt;
+
+    static uint16_t s_seq[1000];
+
+    q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
+
+    for(i = 0; i < sizeof(s_seq)/sizeof(s_seq[0]); i++)
+        s_seq[i] = 45000 + i;
+    
+    // 45460, 45461, 45462, 45464, 45465, 45466, ...,
+    // 45490, 45491, 45492, 45503, 45504, 45505, 45463,
+    // 45506, 45507, 45493, 45494, 45495, 45496, 45497,
+    // 45498, 45499, 45500, 45501, 45502, 45508, 45509, ...
+    memmove(s_seq + 463, s_seq + 464, sizeof(s_seq[0]) * (509 - 464)); // lost 45463
+    s_seq[492] = 45503;
+    s_seq[493] = 45504;
+    s_seq[494] = 45505;
+    s_seq[495] = 45463;
+    s_seq[496] = 45506;
+    s_seq[497] = 45507;
+    s_seq[498] = 45493;
+    s_seq[499] = 45494;
+    s_seq[500] = 45495;
+    s_seq[501] = 45496;
+    s_seq[502] = 45497;
+    s_seq[503] = 45498;
+    s_seq[504] = 45499;
+    s_seq[505] = 45500;
+    s_seq[506] = 45501;
+    s_seq[507] = 45502;
+    s_seq[508] = 45508;
+    
+    seq = s_seq[0];
+    for (i = 0; i < sizeof(s_seq) / sizeof(s_seq[0]); i++)
+    {
+        rtp_queue_packet(q, s_seq[i]);
+        pkt = rtp_queue_read(q);
+        if (pkt)
+        {
+            //printf("%u ", pkt->rtp.seq);
+            assert(0 == pkt->rtp.seq - seq++);
+            free(pkt);
+        }
+    }
+
+    rtp_queue_destroy(q);
+}
+
 void rtp_queue_test(void)
 {
 	int i;
@@ -341,6 +395,8 @@ void rtp_queue_test(void)
 		835, 836, 837, 838, 838, 844, 859, 811,
 	};
 
+    rtp_queue_test2();
+    
 	q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
 
 	for (i = 0; i < sizeof(s_seq) / sizeof(s_seq[0]); i++)
