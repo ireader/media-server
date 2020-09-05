@@ -342,7 +342,14 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
     for (i = demuxer->idx; i < demuxer->count + demuxer->idx; i++)
     {
         pt = &demuxer->pt[i % demuxer->count];
-        if ( (id & 0x7F) == pt->payload || id > 0x80 )
+
+        // RFC7983 SRTP: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+        assert(((const uint8_t*)data)[0] > 127 && ((const uint8_t*)data)[0] < 192);
+
+        // http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4
+        // RFC 5761 (RTCP-mux) states this range for secure RTCP/RTP detection.
+        // RTCP packet types in the ranges 1-191 and 224-254 SHOULD only be used when other values have been exhausted.
+        if ( (id & 0x7F) == pt->payload || (192 <= id && id <= 223) )
         {
             demuxer->idx = i % demuxer->count;
             return rtp_demuxer_input(pt->rtp, data, bytes);
