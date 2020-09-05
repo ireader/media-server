@@ -802,13 +802,13 @@ int sip_message_set_reply_default_contact(struct sip_message_t* reply)
     memset(&contact, 0, sizeof(contact));
     
     // copy from TO
-    sip_contact_clone(reply->ptr.ptr, reply->ptr.end, &contact, &reply->to);
+    reply->ptr.ptr = sip_contact_clone(reply->ptr.ptr, reply->ptr.end, &contact, &reply->to);
     contact.tag.p = NULL; contact.tag.n = 0; // clear TO tag
     
     // update contact host by via.received
-    via = sip_vias_get(&reply->vias, 0);
-    if (via && cstrvalid(&via->received))
-        sip_message_copy2(reply, &contact.uri.host, &via->received);
+//    via = sip_vias_get(&reply->vias, 0);
+//    if (via && cstrvalid(&via->received))
+//        sip_message_copy2(reply, &contact.uri.host, &via->received);
     
     return sip_contacts_push(&reply->contacts, &contact);
 }
