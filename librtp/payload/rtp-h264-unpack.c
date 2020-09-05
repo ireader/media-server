@@ -12,8 +12,6 @@
 #define FU_END(v)	(v & 0x40)
 #define FU_NAL(v)	(v & 0x1F)
 
-#define H264_MAX_SIZE (200 * 1024 * 1024)
-
 struct rtp_decode_h264_t
 {
 	struct rtp_payload_t handler;
@@ -206,7 +204,7 @@ static int rtp_h264_unpack_fu(struct rtp_decode_h264_t *unpacker, const uint8_t*
 	//uint16_t don;
 
 	n = fu_b ? 4 : 2;
-	if (bytes < n || unpacker->size + bytes - n > H264_MAX_SIZE)
+	if (bytes < n || unpacker->size + bytes - n > RTP_PAYLOAD_MAX_SIZE)
 	{
 		assert(0);
 		return -EINVAL; // error

@@ -26,8 +26,6 @@ NUH temporal ID plus 1 (TID) : 3 bits
 #define FU_END(v)	(v & 0x40)
 #define FU_NAL(v)	(v & 0x3F)
 
-#define H265_MAX_SIZE (200 * 1024 * 1024)
-
 struct rtp_decode_h265_t
 {
 	struct rtp_payload_t handler;
@@ -156,7 +154,7 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 	uint8_t fuheader;
 
 	n = 1 /*FU header*/ + (unpacker->using_donl_field ? 4 : 2);
-	if (bytes < n || unpacker->size + bytes - n > H265_MAX_SIZE)
+	if (bytes < n || unpacker->size + bytes - n > RTP_PAYLOAD_MAX_SIZE)
 	{
 		assert(0);
 		return -EINVAL;

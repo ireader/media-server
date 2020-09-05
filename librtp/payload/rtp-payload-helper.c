@@ -1,4 +1,5 @@
 #include "rtp-payload-helper.h"
+#include "rtp-param.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,7 @@ void* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam)
 		return NULL;
 
 	memcpy(&helper->handler, handler, sizeof(helper->handler));
+	helper->maxsize = RTP_PAYLOAD_MAX_SIZE;
 	helper->cbparam = cbparam;
 	helper->__flags = -1;
 	return helper;
@@ -74,12 +76,16 @@ int rtp_payload_check(struct rtp_payload_helper_t* helper, const struct rtp_pack
 
 int rtp_payload_write(struct rtp_payload_helper_t* helper, const struct rtp_packet_t* pkt)
 {
-	if (helper->size + pkt->payloadlen > helper->capacity)
+	int size;
+	size = helper->size + pkt->payloadlen;
+	if (size > helper->maxsize || size < 0)
+		return -EINVAL;
+
+	if (size > helper->capacity)
 	{
 		void *ptr;
-		int size;
 
-		size = helper->size + pkt->payloadlen + 8000;
+		size += size / 4 > 16000 ? size / 4 : 16000;
 		ptr = realloc(helper->ptr, size);
 		if (!ptr)
 		{

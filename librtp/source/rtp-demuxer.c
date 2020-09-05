@@ -3,6 +3,7 @@
 #include "rtp-payload.h"
 #include "rtp-packet.h"
 #include "rtp-queue.h"
+#include "rtp-param.h"
 #include "rtp.h"
 #include "rtcp-header.h"
 #include <stdlib.h>
@@ -17,7 +18,7 @@ struct rtp_demuxer_t
     uint64_t clock; // rtcp clock
     
     uint8_t* ptr;
-    int cap;
+    int cap, max;
 
     rtp_queue_t* queue;
     void* payload;
@@ -173,7 +174,7 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     uint8_t pt;
     struct rtp_packet_t* pkt;
     
-    if (bytes < 12)
+    if (bytes < 12 || bytes > RTP_PAYLOAD_MAX_SIZE)
         return -1;
     pt = ((uint8_t*)data)[1];
 
