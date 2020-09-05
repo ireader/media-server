@@ -5,21 +5,23 @@
 
 #define H265_NAL_AUD 35
 
+/// @param[out] leading optional leading zero bytes
 /// @return -1-not found, other-AUD position(include start code)
-int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes)
+int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
 {
-	size_t i;
-	for (i = 2; i + 1 < bytes; i++)
-	{
-		if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2] && H265_NAL_AUD == ((p[i + 1] >> 1) & 0x3f))
-		{
-            for (i -= 2; i > 0 && 0 == p[i - 1]; --i)
-            {
-                // filter trailing zero
-            }
-            return (int)i;
-		}
-	}
+    size_t i, zeros;
+    for (zeros = i = 0; i + 1 < bytes; i++)
+    {
+        if (0x01 == p[i] && zeros >= 2 && H265_NAL_AUD == ((p[i + 1] >> 1) & 0x3f))
+        {
+            assert(i >= zeros);
+            if(leading)
+                *leading = zeros - (zeros > 2 ? 3 : 2);
+            return (int)(i - (zeros > 2 ? 3 : 2));
+        }
+        
+        zeros = 0x00 != p[i] ? 0 : (zeros + 1);
+    }
 
 	return -1;
 }

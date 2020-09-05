@@ -76,10 +76,10 @@ int mpeg_stream_type_video(int codecid);
 
 int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes);
 int mpeg_h264_find_keyframe(const uint8_t* p, size_t bytes);
-int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes);
+int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading);
 int mpeg_h264_is_new_access_unit(const uint8_t* nalu, size_t bytes);
 int mpeg_h265_find_keyframe(const uint8_t* p, size_t bytes);
-int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes);
+int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading);
 int mpeg_h265_is_new_access_unit(const uint8_t* nalu, size_t bytes);
 
 uint32_t mpeg_crc32(uint32_t crc, const uint8_t *buffer, uint32_t size);
