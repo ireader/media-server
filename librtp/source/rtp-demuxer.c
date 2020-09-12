@@ -55,20 +55,21 @@ static struct rtp_packet_t* rtp_demuxer_alloc(struct rtp_demuxer_t* rtp, const v
     uint8_t* ptr;
     struct rtp_packet_t* pkt;
     
-    if(rtp->cap < bytes + (int)sizeof(struct rtp_packet_t))
+    if(rtp->cap < bytes + (int)sizeof(struct rtp_packet_t) + (int)sizeof(intptr_t) /*bytes*/ )
     {
-        r = bytes + sizeof(struct rtp_packet_t);
+        r = bytes + sizeof(struct rtp_packet_t) + sizeof(intptr_t);
         r = r > 1500 ? r : 1500;
-        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(void*));
+        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(intptr_t) /*cap*/ + sizeof(intptr_t) /*bytes*/ );
         if(!ptr)
             return NULL;
         
         rtp->cap = r;
         rtp->ptr = ptr;
-        *(int*)ptr = r;
+        *(int*)ptr = r; /*cap*/
     }
 
-    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(void*));
+    *((int*)rtp->ptr + 1) = bytes; /*bytes*/
+    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(intptr_t) /*cap*/  + sizeof(intptr_t) /*bytes*/ );
     memcpy(pkt + 1, data, bytes);
     
     r = rtp_packet_deserialize(pkt, pkt + 1, bytes);
@@ -86,7 +87,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     uint8_t* ptr;
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
-    ptr = (uint8_t*)pkt - sizeof(void*);
+    ptr = (uint8_t*)pkt - sizeof(intptr_t) /*cap*/ - sizeof(intptr_t) /*bytes*/ ;
     cap = *(int*)ptr;
     
     if(cap <= rtp->cap)
@@ -142,6 +143,7 @@ struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char*
     rtp->param = param;
     rtp->clock = rtpclock();
     rtp->ssrc = rtp_ssrc();
+    rtp->max = RTP_PAYLOAD_MAX_SIZE;
     return rtp;
 }
 
@@ -174,7 +176,7 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     uint8_t pt;
     struct rtp_packet_t* pkt;
     
-    if (bytes < 12 || bytes > RTP_PAYLOAD_MAX_SIZE)
+    if (bytes < 12 || bytes > rtp->max)
         return -1;
     pt = ((uint8_t*)data)[1];
 
@@ -195,7 +197,7 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
         pkt = rtp_queue_read(rtp->queue);
         while(pkt)
         {
-            bytes = (int)((uint8_t*)pkt->payload - (uint8_t*)(pkt+1)) + pkt->payloadlen;
+            bytes = *(int*)((uint8_t*)pkt - sizeof(intptr_t) /*bytes*/ );
 
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
             r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
@@ -224,7 +226,7 @@ int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)
     r = 0;
     clock = rtpclock();
     interval = rtp_rtcp_interval(rtp->rtp);
-    if (rtp->clock + interval * 1000 < clock)
+    if (rtp->clock + (uint64_t)interval * 1000 < clock)
     {
         // RTCP report
         r = rtp_rtcp_report(rtp->rtp, buf, len);
