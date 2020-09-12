@@ -31,6 +31,8 @@ typedef struct _mpeg_ts_enc_context_t
 	int64_t pcr_period;
 	int64_t pcr_clock; // last pcr time
 
+	uint16_t pid;
+
 	struct mpeg_ts_func_t func;
 	void* param;
 
@@ -320,15 +322,16 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
     tsctx->pat.tsid = 1;
     tsctx->pat.ver = 0x00;
 	tsctx->pat.cc = 0;
+	tsctx->pid = 0x100;
 
-    tsctx->pat.pmt_count = 1; // only one program in ts
-    tsctx->pat.pmts[0].pid = 0x100;
-    tsctx->pat.pmts[0].pn = 1;
-    tsctx->pat.pmts[0].ver = 0x00;
-    tsctx->pat.pmts[0].cc = 0;
-    tsctx->pat.pmts[0].pminfo_len = 0;
-    tsctx->pat.pmts[0].pminfo = NULL;
-    tsctx->pat.pmts[0].PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
+	//tsctx->pat.pmt_count = 1; // only one program in ts
+    //tsctx->pat.pmts[0].pid = 0x100;
+    //tsctx->pat.pmts[0].pn = 1;
+    //tsctx->pat.pmts[0].ver = 0x00;
+    //tsctx->pat.pmts[0].cc = 0;
+    //tsctx->pat.pmts[0].pminfo_len = 0;
+    //tsctx->pat.pmts[0].pminfo = NULL;
+    //tsctx->pat.pmts[0].PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
 
 	//tsctx->pat.pmts[0].stream_count = 2; // H.264 + AAC
 	//tsctx->pat.pmts[0].streams[0].pid = 0x101;
@@ -372,57 +375,128 @@ int mpeg_ts_reset(void* ts)
 	return 0;
 }
 
+int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes)
+{
+	unsigned int i;
+	struct pmt_t* pmt = NULL;
+	mpeg_ts_enc_context_t* tsctx;
+
+	tsctx = (mpeg_ts_enc_context_t*)ts;
+	for (i = 0; i < tsctx->pat.pmt_count; i++)
+	{
+		pmt = &tsctx->pat.pmts[i];
+		if (pmt->pn == pn)
+			return -1; // EEXIST
+	}
+
+	if (i >= sizeof(tsctx->pat.pmts) / sizeof(tsctx->pat.pmts[0]))
+		return -1; // E2BIG
+
+	if (pn < 1 || bytes < 0 || bytes >= (1 << 12))
+		return -1; // EINVAL: pminfo-len 12-bits
+
+	assert(tsctx->pat.pmt_count == i);
+	pmt = &tsctx->pat.pmts[tsctx->pat.pmt_count];
+	memset(pmt, 0, sizeof(*pmt));
+	pmt->pid = tsctx->pid++;
+	pmt->pn = pn;
+	pmt->ver = 0x00;
+	pmt->cc = 0;
+	pmt->PCR_PID = 0x1FFF; // 0x1FFF-don't set PCR
+
+	if (bytes > 0 && info)
+	{
+		pmt->pminfo = (uint8_t*)malloc(bytes);
+		if (!pmt->pminfo)
+			return -1; // ENOMEM
+		memcpy(pmt->pminfo, info, bytes);
+		pmt->pminfo_len = bytes;
+	}
+
+	tsctx->pat.pmt_count++;
+	return 0;
+}
+
+static int mpeg_ts_pmt_add_stream(mpeg_ts_enc_context_t* ts, struct pmt_t* pmt, int codecid, const void* extra_data, size_t extra_data_size)
+{
+	struct pes_t* stream = NULL;
+	if (!ts || !pmt || pmt->stream_count >= sizeof(pmt->streams) / sizeof(pmt->streams[0]))
+	{
+		assert(0);
+		return -1;
+	}
+
+	stream = &pmt->streams[pmt->stream_count];
+	stream->codecid = (uint8_t)codecid;
+	stream->pid = (uint16_t)ts->pid++;
+	stream->esinfo_len = 0;
+	stream->esinfo = NULL;
+
+	// stream id
+	// Table 2-22 - Stream_id assignments
+	if (mpeg_stream_type_video(codecid))
+	{
+		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
+		// or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
+		stream->sid = PES_SID_VIDEO;
+	}
+	else if (mpeg_stream_type_audio(codecid))
+	{
+		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
+		// audio stream number
+		stream->sid = PES_SID_AUDIO;
+	}
+	else
+	{
+		// private_stream_1
+		stream->sid = PES_SID_PRIVATE_1;
+	}
+
+	if (extra_data_size > 0 && extra_data)
+	{
+		stream->esinfo = malloc(extra_data_size);
+		if (!stream->esinfo)
+			return -ENOMEM;
+		memcpy(stream->esinfo, extra_data, extra_data_size);
+		stream->esinfo_len = (uint16_t)extra_data_size;
+	}
+
+	pmt->stream_count++;
+	pmt->ver = (pmt->ver + 1) % 32;
+	mpeg_ts_reset(ts); // immediate update pat/pmt
+	return stream->pid;
+}
+
 int mpeg_ts_add_stream(void* ts, int codecid, const void* extra_data, size_t extra_data_size)
 {
     struct pmt_t *pmt = NULL;
-    struct pes_t *stream = NULL;
     mpeg_ts_enc_context_t *tsctx;
 
     tsctx = (mpeg_ts_enc_context_t*)ts;
+	if (0 == tsctx->pat.pmt_count)
+	{
+		// add default program
+		if (0 != mpeg_ts_add_program(tsctx, 1, NULL, 0))
+			return -1;
+	}
     pmt = &tsctx->pat.pmts[0];
-    if (pmt->stream_count >= sizeof(pmt->streams)/sizeof(pmt->streams[0]))
-    {
-        assert(0);
-        return -1;
-    }
 
-    stream = &pmt->streams[pmt->stream_count];
-    stream->codecid = (uint8_t)codecid;
-    stream->pid = (uint16_t)(0x101 + pmt->stream_count);
-    stream->esinfo_len = 0;
-    stream->esinfo = NULL;
+	return mpeg_ts_pmt_add_stream(tsctx, pmt, codecid, extra_data, extra_data_size);
+}
 
-    // stream id
-    // Table 2-22 - Stream_id assignments
-    if (mpeg_stream_type_video(codecid))
-    {
-        // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2 
-        // or Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream number
-        stream->sid = PES_SID_VIDEO;
-    }
-    else if (mpeg_stream_type_audio(codecid))
-    {
-        // ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or ISO/IEC 14496-3
-        // audio stream number
-        stream->sid = PES_SID_AUDIO;
-    }
-    else
-    {
-        // private_stream_1
-        stream->sid = PES_SID_PRIVATE_1;
-    }
+int mpeg_ts_add_program_stream(void* ts, uint16_t pn, int codecid, const void* extra_data, size_t extra_data_size)
+{
+	unsigned int i;
+	struct pmt_t* pmt = NULL;
+	mpeg_ts_enc_context_t* tsctx;
 
-    if (extra_data_size > 0 && extra_data)
-    {
-        stream->esinfo = malloc(extra_data_size);
-        if (!stream->esinfo)
-            return -ENOMEM;
-        memcpy(stream->esinfo, extra_data, extra_data_size);
-        stream->esinfo_len = (uint16_t)extra_data_size;
-    }
+	tsctx = (mpeg_ts_enc_context_t*)ts;
+	for (i = 0; i < tsctx->pat.pmt_count; i++)
+	{
+		pmt = &tsctx->pat.pmts[i];
+		if (pmt->pn == pn)
+			return mpeg_ts_pmt_add_stream(tsctx, pmt, codecid, extra_data, extra_data_size);
+	}
 
-    pmt->stream_count++;
-    pmt->ver = (pmt->ver + 1) % 32;
-    mpeg_ts_reset(ts); // immediate update pat/pmt
-    return stream->pid;
+	return -1; // ENOTFOUND: program not found
 }

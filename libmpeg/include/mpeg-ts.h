@@ -52,6 +52,18 @@ int mpeg_ts_write(void* ts, int stream, int flags, int64_t pts, int64_t dts, con
 int mpeg_ts_reset(void* ts);
 
 
+/// FOR MULTI-PROGRAM TS STREAM ONLY
+/// Add program
+/// @param[in] pn program number, valid value: [1, 0xFFFF]
+/// @return 0-OK, <0-error
+int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes);
+
+/// Add program stream(same as mpeg_ts_add_stream except program number)
+/// @param[in] pn mpeg_ts_add_program program number
+/// @return 0-OK, <0-error
+int mpeg_ts_add_program_stream(void* ts, uint16_t pn, int codecid, const void* extra_data, size_t extra_data_size);
+
+
 /// see more mpeg_ts_write
 typedef int (*ts_demuxer_onpacket)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
