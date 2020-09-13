@@ -10,6 +10,7 @@ extern "C" {
 struct rtsp_demuxer_t;
 
 /// @param[in] track PS/TS track id
+/// @param[in] flags 0x0100-packet lost, 0x0200-packet corrupt
 typedef int (*rtsp_demuxer_onpacket)(void* param, int track, int payload, const char* encoding, int64_t pts, int64_t dts, const void* data, int bytes, int flags);
 
 struct rtsp_demuxer_t* rtsp_demuxer_create(int frequency, int payload, const char* encoding, const char* fmtp, rtsp_demuxer_onpacket onpkt, void* param);
