@@ -39,6 +39,8 @@ typedef struct _mpeg_ts_enc_context_t
 	uint8_t payload[1024]; // maximum PAT/PMT payload length
 } mpeg_ts_enc_context_t;
 
+static void mpeg_ts_pmt_destroy(struct pmt_t* pmt);
+
 static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, unsigned int* cc, const void* payload, size_t len)
 {
 	uint8_t *data = NULL;
@@ -348,17 +350,15 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
 
 int mpeg_ts_destroy(void* ts)
 {
-	uint32_t i, j;
-	mpeg_ts_enc_context_t *tsctx = NULL;
+	uint32_t i;
+	struct pmt_t* pmt;
+	mpeg_ts_enc_context_t *tsctx;
 	tsctx = (mpeg_ts_enc_context_t*)ts;
 
 	for(i = 0; i < tsctx->pat.pmt_count; i++)
 	{
-		for(j = 0; j < tsctx->pat.pmts[i].stream_count; j++)
-		{
-			if(tsctx->pat.pmts[i].streams[j].esinfo)
-				free(tsctx->pat.pmts[i].streams[j].esinfo);
-		}
+		pmt = &tsctx->pat.pmts[i];
+		mpeg_ts_pmt_destroy(pmt);
 	}
 
 	free(tsctx);
@@ -378,7 +378,7 @@ int mpeg_ts_reset(void* ts)
 int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes)
 {
 	unsigned int i;
-	struct pmt_t* pmt = NULL;
+	struct pmt_t* pmt;
 	mpeg_ts_enc_context_t* tsctx;
 
 	tsctx = (mpeg_ts_enc_context_t*)ts;
@@ -414,7 +414,46 @@ int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes)
 	}
 
 	tsctx->pat.pmt_count++;
+	mpeg_ts_reset(ts); // update PAT/PMT
 	return 0;
+}
+
+int mpeg_ts_remove_program(void* ts, uint16_t pn)
+{
+	unsigned int i;
+	struct pmt_t* pmt = NULL;
+	mpeg_ts_enc_context_t* tsctx;
+
+	tsctx = (mpeg_ts_enc_context_t*)ts;
+	for (i = 0; i < tsctx->pat.pmt_count; i++)
+	{
+		pmt = &tsctx->pat.pmts[i];
+		if (pmt->pn != pn)
+			continue;
+
+		mpeg_ts_pmt_destroy(pmt);
+
+		if (i + 1 < tsctx->pat.pmt_count)
+			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], tsctx->pat.pmt_count - i - 1);
+		tsctx->pat.pmt_count--;
+		mpeg_ts_reset(ts); // update PAT/PMT
+		return 0;
+	}
+
+	return -1; // ENOTFOUND
+}
+
+static void mpeg_ts_pmt_destroy(struct pmt_t* pmt)
+{
+	unsigned int i;
+	for (i = 0; i < pmt->stream_count; i++)
+	{
+		if (pmt->streams[i].esinfo)
+			free(pmt->streams[i].esinfo);
+	}
+
+	if (pmt->pminfo)
+		free(pmt->pminfo);
 }
 
 static int mpeg_ts_pmt_add_stream(mpeg_ts_enc_context_t* ts, struct pmt_t* pmt, int codecid, const void* extra_data, size_t extra_data_size)

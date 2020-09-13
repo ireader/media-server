@@ -53,10 +53,15 @@ int mpeg_ts_reset(void* ts);
 
 
 /// FOR MULTI-PROGRAM TS STREAM ONLY
-/// Add program
+/// Add a program
 /// @param[in] pn program number, valid value: [1, 0xFFFF]
 /// @return 0-OK, <0-error
 int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes);
+
+/// Remove a program by program number
+/// @param[in] pn program number, valid value: [1, 0xFFFF]
+/// @return 0-OK, <0-error
+int mpeg_ts_remove_program(void* ts, uint16_t pn);
 
 /// Add program stream(same as mpeg_ts_add_stream except program number)
 /// @param[in] pn mpeg_ts_add_program program number
