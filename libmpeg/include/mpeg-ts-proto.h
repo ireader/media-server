@@ -160,6 +160,8 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_H265				= 0x24, // Rec. ITU-T H.265 | ISO/IEC 23008-2 video stream or an HEVC temporal video sub-bitstream
 	PSI_STREAM_H265_subset		= 0x25, // HEVC temporal video subset of an HEVC video stream conforming to one or more profiles defined in Annex A of Rec. ITU-T H.265 | ISO/IEC 23008-2
 	PSI_STREAM_H264_MVCD		= 0x26, // MVCD video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex I of Rec. ITU-T H.264 | ISO/IEC 14496-10
+	PSI_STREAM_VP8				= 0x9d,
+	PSI_STREAM_VP9				= 0x9e,
 	// 0x27-0x7E Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
 	PSI_STREAM_IPMP				= 0x7F, // IPMP stream
 	// 0x80-0xFF User Private

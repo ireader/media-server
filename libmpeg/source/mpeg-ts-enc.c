@@ -278,7 +278,7 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
     tsctx->h264_h265_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
 
     // set PCR_PID
-    assert(1 == tsctx->pat.pmt_count);
+    //assert(1 == tsctx->pat.pmt_count);
     if (0x1FFF == pmt->PCR_PID || (PES_SID_VIDEO == (stream->sid & PES_SID_VIDEO) && pmt->PCR_PID != stream->pid))
     {
         pmt->PCR_PID = stream->pid;
