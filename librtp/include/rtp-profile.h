@@ -92,6 +92,8 @@ enum
 	RTP_PAYLOAD_MP4A		= 100, // MP4A-LATM MPEG-4 Audio (rfc6416)
 	RTP_PAYLOAD_OPUS		= 101, // RTP Payload Format for the Opus Speech and Audio Codec (rfc7587)
 	RTP_PAYLOAD_MP4ES		= 102, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
+	RTP_PAYLOAD_VP8			= 103,
+	RTP_PAYLOAD_VP9			= 104,
 };
 
 ///@param[in] payload RTP payload type(0 ~ 127)

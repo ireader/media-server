@@ -67,6 +67,26 @@ struct rtsp_demuxer_t
     int error;
 };
 
+static struct
+{
+    int codecid; // mpeg2 codecid
+    int payload; // rtp payload id
+    const char* encoding; // rtp encoding
+} s_codecid[] = {
+    // video
+    {PSI_STREAM_H264,       RTP_PAYLOAD_H264,   "H264", },
+    {PSI_STREAM_H265,       RTP_PAYLOAD_H265,   "H265", },
+    {PSI_STREAM_VP8,        RTP_PAYLOAD_VP8,    "VP8", },
+    {PSI_STREAM_VP9,        RTP_PAYLOAD_VP9,    "VP9", },
+
+    // audio
+    {PSI_STREAM_AAC,        RTP_PAYLOAD_MP4A,   "MP4A-LATM", },
+    {PSI_STREAM_AUDIO_OPUS, RTP_PAYLOAD_OPUS,   "opus", },
+    {PSI_STREAM_MP3,        RTP_PAYLOAD_MP3,    "", }, // rtp standard payload id
+    {PSI_STREAM_AUDIO_G711U,RTP_PAYLOAD_PCMU,   "", }, // rtp standard payload id
+    {PSI_STREAM_AUDIO_G711A,RTP_PAYLOAD_PCMA,   "", }, // rtp standard payload id    
+};
+
 int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config);
 int sdp_aac_mpeg4_load(uint8_t* data, int bytes, const char* config);
 int sdp_h264_load(uint8_t* data, int bytes, const char* config);
@@ -74,17 +94,13 @@ int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, co
 
 static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int track, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    static const int s_mpeg2[] = { PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_AAC, PSI_STREAM_MP3, };
-    static const int s_payload[] = { RTP_PAYLOAD_H264, RTP_PAYLOAD_H265, RTP_PAYLOAD_MP4A, RTP_PAYLOAD_MP3, };
-    static const char* s_encoding[] = { "H264", "H265", "MP4A-LATM", "", };
-
     int i, r, len;
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
 
-    for (i = 0; i < sizeof(s_mpeg2) / sizeof(s_mpeg2[0]); i++)
+    for (i = 0; i < sizeof(s_codecid) / sizeof(s_codecid[0]); i++)
     {
-        if (codecid == s_mpeg2[i])
+        if (codecid == s_codecid[i].codecid)
         {
             if (PSI_STREAM_AAC == codecid)
             {
@@ -94,7 +110,7 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
                 len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
                 while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && (size_t)len <= bytes)
                 {
-                    r = pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, len, flags);
+                    r = pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, len, flags);
                     if (0 != r)
                         return r;
 
@@ -105,16 +121,17 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
                     len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
                 }
 
-                return bytes > 0 ? pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, len, flags) : 0;
+                return bytes > 0 ? pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, len, flags) : 0;
             }
             else
             {
-                return pt->ctx->onpacket(pt->ctx->param, track, s_payload[i], s_encoding[i], pts / 90, dts / 90, data, (int)bytes, flags);
+                return pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, (int)bytes, flags);
             }
         }
     }
 
     (void)program; //ignore
+    assert(0);
     return -1;
 }
 
