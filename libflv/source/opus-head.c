@@ -102,7 +102,295 @@ int opus_head_load(const uint8_t* data, size_t bytes, struct opus_head_t* opus)
     return 19;
 }
 
+static const uint8_t* opus_parse_size(const uint8_t* data, int bytes, int *size)
+{
+    if (bytes < 1)
+        return NULL;
+    
+    if (data[0] < 252)
+    {
+        *size = data[0];
+        return data + 1;
+    }
+    
+    if (bytes < 2)
+        return NULL;
+    *size = 4 * (uint16_t)data[1] + data[0];
+    return data + 2;
+}
+
+static const uint8_t* opus_parse_padding(const uint8_t* data, int len)
+{
+    int n;
+    int pad;
+    
+    pad = 0;
+    do
+    {
+        if (len <= 0)
+            return NULL;
+
+        n = *data++;
+        len--;
+
+        len -= n == 255 ? 254 : n;
+        pad += n == 255 ? 254 : n;
+    } while (n == 255);
+
+    return data;
+}
+
+/*
+ *                      Table 6-1 opus_access_unit syntax
+
+ |Syntax                               |Number of  |Identif|
+ |                                     |bits       |ier    |
+ |opus_access_unit() {                 |           |       |
+ |   if(nextbits(11)==0x3FF) {         |           |       |
+ |      opus_control_header()          |           |       |
+ |                                     |           |       |
+ |      for(i=0; i<stream_count-1; i++)|           |       |
+ |{                                    |           |       |
+ |          self_delimited_opus_packet |           |       |
+ |      }                              |           |       |
+ |undelimited_opus_packet              |           |       |
+ |}                                    |           |       |
+ *
+ *
+ *                      Table 6-2 opus_access_unit syntax
+
+ |Syntax                                         |Number of  |Identif|
+ |                                               |bits       |ier    |
+ |opus_control_header() {                        |           |       |
+ |   control_header_prefix                       |11         |bslbf  |
+ |   start_trim_flag                             |1          |bslbf  |
+ |   end_trim_flag                               |1          |bslbf  |
+ |   control_extension_flag                      |1          |bslbf  |
+ |   Reserved                                    |2          |bslbf  |
+ |   au_size = 0                                 |           |       |
+ |while(nextbits(8) == 0xFF){                    |           |       |
+ |ff_byte [= 0xFF]                               |8          |uimsbf |
+ |au_size += 255;                                |           |       |
+ |}                                              |           |       |
+ |au_size_last_byte                              |8          |uimsbf |
+ |au_size += au_size_last_byte                   |           |       |
+ |if(start_trim_flag==1) {                       |           |       |
+ |      Reserved                                 |3          |bslbf  |
+ |      start_trim                               |13         |uimsbf |
+ |   }                                           |           |       |
+ |   if(end_trim_flag==1) {                      |           |       |
+ |      Reserved                                 |3          |bslbf  |
+ |      end_trim                                 |13         |uimsbf |
+ |   }                                           |           |       |
+ |   if(control_extension_flag==1) {             |           |       |
+ |      control_extension_length                 |8          |uimsbf |
+ |      for(i=0; i<control_extension_length; i++)|           |       |
+ |{                                              |           |       |
+ |         reserved                              |8          |bslbf  |
+ |      }                                        |           |       |
+ |   }                                           |           |       |
+ |}                                              |           |       |
+ */
+
+static const uint8_t* opus_ts_header(const uint8_t* data, int bytes, int* payload)
+{
+    int i;
+    int start_trim_flag;
+    int end_trim_flag;
+    int control_extension_flag;
+    int au_size;
+    uint16_t prefix;
+    
+    if(bytes < 3)
+        return NULL;
+    
+    i = 0;
+    prefix = ((uint16_t)data[0] << 8) | data[1];
+    if(0x7FE0 == (prefix & 0xFFE0))
+    {
+        //opus control header
+        start_trim_flag = (prefix >> 4) & 0x01;
+        end_trim_flag = (prefix >> 3) & 0x01;
+        control_extension_flag = (prefix >> 2) & 0x01;
+        
+        au_size = data[2];
+        for(i = 3; i < bytes && 0xff == data[i-1]; i++)
+            au_size += data[i];
+        
+        if(i + (start_trim_flag ? 2 : 0) + (end_trim_flag ? 2 : 0) + (control_extension_flag ? 1 : 0) > bytes)
+            return NULL;
+        
+        if(start_trim_flag)
+            i += 2;
+        if(end_trim_flag)
+            i += 2;
+        if(control_extension_flag)
+        {
+            if(i + 1 + data[i] > bytes)
+                return NULL;
+            i += 1 + data[i];
+        }
+        
+        if(i + au_size > bytes)
+            return NULL;
+        
+        *payload = au_size;
+        return data + i;
+    }
+    else
+    {
+        *payload = bytes;
+        return data;
+    }
+}
+
+static int opus_parse_frames(const void* data, int len, int (*onframe)(uint8_t toc, const void* frame, int size), void* param)
+{
+    int i, r;
+    int vbr, count;
+    uint8_t toc;
+    int n[48];
+    const uint8_t* p, *end;
+
+    if (len < 1)
+        return -1;
+
+    p = (const uint8_t*)data;
+    end = p + len;
+
+    toc = *p++;
+    len -= 1;
+    switch (toc & 0x03)
+    {
+    case 0: // one frame
+        return onframe(toc, p, len - 1);
+
+    case 1: // two CBR frames
+        if (1 == (len % 2))
+            return -1;
+
+        toc = toc & 0xFC; // convert to one frame
+        for (i = 0; i < 2; i++)
+        {
+            r = onframe(toc, p, len / 2);
+            if (0 != r)
+                return r;
+        }
+        return 0;
+
+    case 2: // two VBR frames
+        p = opus_parse_size(p, len, &n[0]);
+        if (!p || n[0] < 0 || p + n[0] > end)
+            return -1;
+        
+        toc = toc & 0xFC; // convert to one frame
+        r = onframe(toc, p, n[0]);
+        if (0 != r)
+            return r;
+
+        // frame 2
+        p += n[0];
+        return onframe(toc, p, end - p);
+
+    default: // multiple CBR/VBR frames (from 0 to 120ms)
+        if (len < 1)
+            return -1;
+
+        len--;
+        count = *p & 0x3F; // bits of frames length (0-5)
+        vbr = *p & 0x80;
+        if (*p++ & 0x40) // padding
+        {
+            p = opus_parse_padding(p, len);
+            if (!p)
+                return -1;
+        }
+
+        toc = toc & 0xFC; // convert to one frame
+
+        if (vbr)
+        {
+            for (i = 0; i < count - 1; i++)
+            {
+                p = opus_parse_size(p, end - p, &n[i]);
+                if (!p || n[i] < 0 || p + n[i] > end)
+                    return -1;
+            }
+
+            /* Because it's not encoded explicitly, it's possible the size of the
+             last packet (or all the packets, for the CBR case) is larger than
+             1275. Reject them here.*/
+            if (end - p > 1275)
+                return -1;
+            n[i] = end - p; // last frame
+
+            for (i = 0; i < count; i++)
+            {
+                r = onframe(toc, p, n[i]);
+                if (0 != r)
+                    return r;
+
+                p += n[i];
+            }
+        }
+        else
+        {
+            n[0] = (end - p) / count;
+            if (p + n[0] * count != end)
+                return -1;
+
+            for (i = 0; i < count; i++)
+            {
+                r = onframe(toc, p, n[0]);
+                if (0 != r)
+                    return r;
+
+                p += n[0];
+            }
+        }
+    }
+
+    return 0;
+}
+
+int opus_packet_getframes(const void* data, int len, int (*onframe)(uint8_t toc, const void* frame, int size), void* param)
+{
+    int r;
+    int payload;
+    const uint8_t* p, *end;
+    
+    p = (const uint8_t*)data;
+    end = p + len;
+    
+    while(p < end)
+    {
+        p = opus_ts_header(p, end - p, &payload);
+        if(!p)
+            return -1;
+        assert(p + payload <= end);
+        
+        r = opus_parse_frames(p, payload, onframe, param);
+        if(r < 0)
+            return r;
+        
+        p += payload;
+    }
+    
+    return 0;
+}
+
 #if defined(DEBUG) || defined(_DEBUG)
+static int opus_onframe(uint8_t toc, const void* frame, int size)
+{
+    return 0;
+}
+
+static void opus_packet_getframes_test(void)
+{
+    const uint8_t data[] = { 0x7F ,0xF0 ,0xF1 ,0x00 ,0x78 ,0xFC ,0x6F ,0xE9 ,0x04 ,0x92 ,0x8B ,0x99 ,0xEF ,0x20 ,0x00 ,0x20 ,0x58 ,0x7E ,0x2E ,0x82 ,0xC6 ,0xCC ,0x27 ,0x92 ,0x56 ,0x45 ,0xA7 ,0x5C ,0xDD ,0xAB ,0x41 ,0x1F ,0xD0 ,0x4A ,0x49 ,0xBB ,0xEA ,0xC2 ,0x1F ,0xD5 ,0x2A ,0x67 ,0xD2 ,0xF4 ,0x3F ,0x9E ,0xF4 ,0x52 ,0x38 ,0x41 ,0xBE ,0x55 ,0x4C ,0xFB ,0xD7 ,0x18 ,0xF1 ,0x93 ,0x26 ,0x36 ,0x46 ,0x01 ,0x41 ,0x85 ,0x7E ,0xAD ,0xB0 ,0x37 ,0x4B ,0xB7 ,0x15 ,0xB1 ,0x4C ,0x81 ,0x05 ,0x99 ,0xF8 ,0xE1 ,0xB6 ,0x54 };
+    opus_packet_getframes(data, sizeof(data), opus_onframe, NULL);
+}
+
 void opus_head_test(void)
 {
     uint8_t data[29];
@@ -115,5 +403,7 @@ void opus_head_test(void)
     assert(0 == memcmp(opus_channel_map[opus.channels-1], opus.channel_mapping, 8));
     assert(sizeof(src) == opus_head_save(&opus, data, sizeof(data)));
     assert(0 == memcmp(src, data, sizeof(src)));
+
+    opus_packet_getframes_test();
 }
 #endif

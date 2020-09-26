@@ -31,7 +31,7 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
         if (PTS_NO_VALUE == dts)
             dts = pts;
 		//assert(0 == a_dts || dts >= a_dts);
-		printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
+		printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90, (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
 
@@ -41,7 +41,7 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
 	{
 		static int64_t v_pts = 0, v_dts = 0;
 		assert(0 == v_dts || dts >= v_dts);
-		printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, flags ? " [I]":"");
+		printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes, flags ? " [I]":"");
 		v_pts = pts;
 		v_dts = dts;
 
