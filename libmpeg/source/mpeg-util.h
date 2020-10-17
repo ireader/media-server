@@ -74,7 +74,7 @@ void pcr_write(uint8_t *ptr, int64_t pcr);
 int mpeg_stream_type_audio(int codecid);
 int mpeg_stream_type_video(int codecid);
 
-int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes);
+int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading);
 int mpeg_h264_find_keyframe(const uint8_t* p, size_t bytes);
 int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading);
 int mpeg_h264_is_new_access_unit(const uint8_t* nalu, size_t bytes);

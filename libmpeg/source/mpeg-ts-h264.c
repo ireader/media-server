@@ -6,19 +6,27 @@
 #define H264_NAL_IDR 5
 #define H264_NAL_AUD 9
 
-int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes)
+/// e.g. 
+/// 1. 0x00 00 00 00 00 01 09 EF => return 6(09), leading 6
+/// 2. 0x80 00 00 00 00 01 09 EF => return 6(09), leading 5
+/// 
+/// Find h264 nalu start position
+/// @param[out] leading leading bytes before nalu position
+/// @return -1-not found, other nalu position(after 00 00 01)
+int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading)
 {
-    size_t i;
-    for (i = 2; i + 1 < bytes; i++)
+    size_t i, zeros;
+    for (zeros = i = 0; i + 1 < bytes; i++)
     {
-        if (0x01 == p[i] && 0x00 == p[i - 1] && 0x00 == p[i - 2])
+        if (0x01 == p[i] && zeros >= 2)
         {
-            for (i -= 2; i > 0 && 0 == p[i - 1]; --i)
-            {
-                // filter trailing zero
-            }
-            return (int)i;
+            assert(i >= zeros);
+            if (leading)
+                *leading = zeros + 1; // zeros + 0x01
+            return (int)(i + 1);
         }
+
+        zeros = 0x00 != p[i] ? 0 : (zeros + 1);
     }
 
     return -1;
@@ -28,18 +36,16 @@ int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes)
 /// @return -1-not found, other-AUD position(include start code)
 int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
 {
-	size_t i, zeros;
-	for (zeros = i = 0; i + 1 < bytes; i++)
+    int i;
+    size_t off;
+    for (off = 0; off < bytes; off += i + 1)
 	{
-        if (0x01 == p[i] && zeros >= 2 && H264_NAL_AUD == (p[i+1] & 0x1f))
-		{
-            assert(i >= zeros);
-            if(leading)
-                *leading = zeros - (zeros > 2 ? 3 : 2);
-            return (int)(i - (zeros > 2 ? 3 : 2));
-		}
-        
-        zeros = 0x00 != p[i] ? 0 : (zeros + 1);
+        i = mpeg_h264_find_nalu(p + off, bytes - off, leading);
+        if (-1 == i)
+            return -1;
+
+        if (H264_NAL_AUD == (p[i + off] & 0x1f))
+            return (int)(i + off);
 	}
 
 	return -1;

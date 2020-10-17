@@ -34,10 +34,8 @@ static int mpeg_packet_h264_h265_start_width_aud(int codecid, const uint8_t* dat
 {
     int r;
     size_t leading;
-	h2645_find_aud find;
-	find = PSI_STREAM_H264 == codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
-    r = find(data, size > 9 ? 9 : size, &leading);
-	return -1 != r && 0 == r - (int)leading ? 1 : 0;
+    r = mpeg_h264_find_nalu(data, size, &leading);
+	return -1 != r && 0 == r - (int)leading && (PSI_STREAM_H264 == codecid ? 9 == (data[r] & 0x1f) : 35 == ((data[r] >> 1) & 0x3f))? 1 : 0;
 }
 
 static int mpeg_packet_h264_h265_is_new_access(int codecid, const uint8_t* data, size_t size)
@@ -62,43 +60,70 @@ static int mpeg_packet_h264_h265_is_new_access(int codecid, const uint8_t* data,
     return 0;
 }
 
-static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, h2645_find_aud find, pes_packet_handler handler, void* param)
+static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, pes_packet_handler handler, void* param)
 {
     int i;
+    size_t off;
+    size_t leading;
 
     //assert(0 == pes->len || pes->payload.len == pes->len);
 
-    // filter AUD
-    assert(mpeg_packet_h264_h265_start_width_aud(pkt->codecid, data, size));
-    assert(-1 == find(data + 5, size - 5, NULL));
-    i = mpeg_h264_find_nalu(data + 5, size - 5);
-    if(-1 != i)
-        handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + i + 5, size - i - 5);
+    // skip AUD
+    for (off = i = 0; off < size; off += i + 1)
+    {
+        i = mpeg_h264_find_nalu(data + off, size - off, &leading);
+        if (i < 0)
+        {
+            assert(0);
+            return -1;
+        }
 
-    return 0;
+        //assert(0 == i - leading);
+        if (PSI_STREAM_H264 == pkt->codecid ? 9 == (data[off + i] & 0x1f) : 35 == ((data[off + i] >> 1) & 0x3f))
+            continue;
+
+        i -= leading; // rewind to 0x00 00 00 01
+        break;
+    }
+
+    // TODO: check size > 0 ???
+    return handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + off + i, size - off - i);
 }
 
 static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, size_t size, pes_packet_handler handler, void* param)
 {
-    int r, aud;
+    size_t leading;
+    int r, aud, off;
     h2645_find_aud find;
-    const uint8_t* p, *p0, *end;
+    const uint8_t* p, *end;
 
     p = pkt->data;
     end = pkt->data + pkt->size;
     find = PSI_STREAM_H264 == pes->codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
+    leading = 0;
 
     // previous packet
     if (pkt->size > size)
     {
-        p = end - size - 7; // handle trailing AUD, <0, 0, 1, AUD>
+        p = end - size - 3; // handle trailing AUD, <0, 0, 1, AUD>
 
-        aud = p < pkt->data + 4 ? -1 : find(p, end - p, NULL);
-        if (-1 == aud)
+        aud = p < pkt->data + 4 ? -1 : find(p, end - p, &leading);
+        if (aud < 0)
             return 0; // need more data
 
-        p += aud;
-        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, pkt->data, p - pkt->data, find, handler, param);
+        p += aud - leading; // next frame
+        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, pkt->data, p - pkt->data, handler, param);
+        if (0 != r)
+            return r;
+
+        aud = leading;
+    }
+    else
+    {
+        // location first AUD
+        aud = find(pkt->data, pkt->size, &leading);
+        if (aud < 0)
+            return pkt->size > MPEG_PACKET_PAYLOAD_MAX_SIZE ? -1 : 0; // need more data
     }
 
     // save pts/dts
@@ -110,13 +135,20 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 //    assert(0 == find(p, end - p)); // start with AUD
 
     // PES contain multiple packet
-    aud = find(p + 5, end - p - 5, NULL);
-    for (p0 = p; -1 != aud; p0 = p)
+    assert(p + aud <= end);
+    while (p + aud < end)
     {
-        p += aud + 5; // next packet
-        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, p0, p - p0, find, handler, param);
+        off = aud; // frame start AUD
+        aud = find(p + off, end - p - off, &leading);
+        if (aud < 0)
+            break;
 
-        aud = find(p + 5, end - p - 5, NULL);
+        assert(aud >= (int)leading);
+        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, p, off + aud - leading, handler, param);
+        if (0 != r)
+            return r;
+
+        p += off + aud - leading; // next frame
     }
 
     // remain data
