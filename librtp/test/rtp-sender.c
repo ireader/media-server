@@ -29,7 +29,7 @@ static void rtp_free(void* param, void *packet)
     assert(s->buffer == packet);
 }
 
-static void rtp_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
     struct rtp_sender_t* s = (struct rtp_sender_t*)param;
     assert(s->buffer == packet);
@@ -37,6 +37,7 @@ static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time
     int r = s->send(s->param, packet, bytes);
     if(r == bytes)
         rtp_onsend(s->rtp, packet, bytes/*, time*/);
+    return r == bytes ? 0 : -1;
 }
 
 static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
@@ -46,8 +47,9 @@ static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
         s->onbye(param);
 }
 
-int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const char* encoding, int width, int height, const void* extra, size_t bytes)
+int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const char* encoding, const void* extra, size_t bytes)
 {
+    int r;
     struct rtp_event_t event;
     struct rtp_payload_t handler = {
         rtp_alloc,
@@ -55,11 +57,12 @@ int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const c
         rtp_packet,
     };
     
+    r = 0;
     s->seq = (uint16_t)rtp_ssrc();
     s->ssrc = rtp_ssrc();
     s->timestamp = rtp_ssrc();
-    s->frequency = 90000;
-    s->bandwidth = 1000000;
+    s->frequency = 90000; // default 90MHz
+    s->bandwidth = 2 * 1024 * 1024; // default 2Mb
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
@@ -68,17 +71,17 @@ int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const c
         if(0 == strcmp("H264", encoding))
         {
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_h264(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_h264(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
         }
         else if(0 == strcmp("H265", encoding))
         {
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_h265(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_h265(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
         }
         else if(0 == strcmp("MP4V-ES", encoding))
         {
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_mpeg4_es(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_mpeg4_es(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
         }
         else
         {
@@ -98,11 +101,12 @@ int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const c
     
     event.on_rtcp = rtp_onrtcp;
     s->rtp = rtp_create(&event, s, s->ssrc, s->timestamp, s->frequency, s->bandwidth, 1);
-    return 0;
+    return r;
 }
 
 int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const char* encoding, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes)
 {
+    int r;
     struct rtp_event_t event;
     struct rtp_payload_t handler = {
         rtp_alloc,
@@ -110,11 +114,13 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const c
         rtp_packet,
     };
     
+    r = 0;
     s->seq = (uint16_t)rtp_ssrc();
     s->ssrc = rtp_ssrc();
     s->timestamp = rtp_ssrc();
     s->frequency = sample_rate;
     s->payload = payload;
+    s->bandwidth = 128 * 1024; // default 128Kb
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
     if(payload >= 96)
@@ -124,21 +130,21 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const c
             // RFC 6416
             s->bandwidth = 128 * 1024;
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_aac_latm(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_aac_latm(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
         }
         else if(0 == strcmp("MPEG4-GENERIC", encoding))
         {
             // RFC 3640 3.3.1. General (p21)
             s->bandwidth = 128 * 1024;
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_aac_generic(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_aac_generic(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
         }
         else if(0 == strcmp("opus", encoding))
         {
             // RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
             s->bandwidth = 32000;
             s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-            sdp_opus(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_opus(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
         }
         else
         {
@@ -154,13 +160,13 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const c
                 s->bandwidth = 64000; // 8000 * 8 * 1
                 snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMU");
                 s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-                sdp_g711u(s->buffer, sizeof(s->buffer), port);
+                r = sdp_g711u(s->buffer, sizeof(s->buffer), port);
                 
             case RTP_PAYLOAD_PCMA:
                 s->bandwidth = 64000; // 8000 * 8 * 1
                 snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMA");
                 s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
-                sdp_g711a(s->buffer, sizeof(s->buffer), port);
+                r = sdp_g711a(s->buffer, sizeof(s->buffer), port);
                 break;
                 
             default:
@@ -171,5 +177,22 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const c
     
     event.on_rtcp = rtp_onrtcp;
     s->rtp = rtp_create(&event, s, s->ssrc, s->timestamp, s->frequency, s->bandwidth, 1);
+    return r;
+}
+
+int rtp_sender_destroy(struct rtp_sender_t* s)
+{
+    if (s->rtp)
+    {
+        rtp_destroy(s->rtp);
+        s->rtp = NULL;
+    }
+
+    if (s->encoder)
+    {
+        rtp_payload_encode_destroy(s->encoder);
+        s->encoder = NULL;
+    }
+
     return 0;
 }
