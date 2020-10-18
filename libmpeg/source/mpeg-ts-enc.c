@@ -43,6 +43,7 @@ static void mpeg_ts_pmt_destroy(struct pmt_t* pmt);
 
 static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, unsigned int* cc, const void* payload, size_t len)
 {
+	int r;
 	uint8_t *data = NULL;
 	data = ts->func.alloc(ts->param, TS_PACKET_SIZE);
 	if(!data) return ENOMEM;
@@ -85,9 +86,9 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
     memmove(data + 5, payload, len);
     memset(data+5+len, 0xff, TS_PACKET_SIZE-len-5);
 
-	ts->func.write(ts->param, data, TS_PACKET_SIZE);
+	r = ts->func.write(ts->param, data, TS_PACKET_SIZE);
 	ts->func.free(ts->param, data);
-	return 0;
+	return r;
 }
 
 static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, struct pes_t *stream, const uint8_t* payload, size_t bytes)
@@ -95,13 +96,14 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 	// 2.4.3.6 PES packet
 	// Table 2-21
 
+	int r = 0;
 	size_t len = 0;
 	int start = 1; // first packet
     uint8_t *p = NULL;
 	uint8_t *data = NULL;
     uint8_t *header = NULL;
 
-	while(bytes > 0)
+	while(0 == r && bytes > 0)
 	{
 		data = tsctx->func.alloc(tsctx->param, TS_PACKET_SIZE);
 		if(!data) return ENOMEM;
@@ -236,11 +238,11 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 		start = 0;
 
 		// send with TS-header
-		tsctx->func.write(tsctx->param, data, TS_PACKET_SIZE);
+		r = tsctx->func.write(tsctx->param, data, TS_PACKET_SIZE);
 		tsctx->func.free(tsctx->param, data);
 	}
 
-	return 0;
+	return r;
 }
 
 static struct pes_t *mpeg_ts_find(mpeg_ts_enc_context_t *ts, int pid, struct pmt_t** pmt)
@@ -264,7 +266,8 @@ static struct pes_t *mpeg_ts_find(mpeg_ts_enc_context_t *ts, int pid, struct pmt
 
 int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-	size_t i, r;
+	int r = 0;
+	size_t i, n;
     struct pmt_t *pmt = NULL;
 	struct pes_t *stream = NULL;
 	mpeg_ts_enc_context_t *tsctx;
@@ -295,19 +298,20 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 		tsctx->pat_period = dts;
 
 		// PAT(program_association_section)
-		r = pat_write(&tsctx->pat, tsctx->payload);
-		mpeg_ts_write_section_header(ts, PAT_TID_PAS, &tsctx->pat.cc, tsctx->payload, r); // PID = 0x00 program association table
+		n = pat_write(&tsctx->pat, tsctx->payload);
+		r = mpeg_ts_write_section_header(ts, PAT_TID_PAS, &tsctx->pat.cc, tsctx->payload, n); // PID = 0x00 program association table
+		if (0 != r) return r;
 
 		// PMT(Transport stream program map section)
 		for(i = 0; i < tsctx->pat.pmt_count; i++)
 		{
-			r = pmt_write(&tsctx->pat.pmts[i], tsctx->payload);
-			mpeg_ts_write_section_header(ts, tsctx->pat.pmts[i].pid, &tsctx->pat.pmts[i].cc, tsctx->payload, r);
+			n = pmt_write(&tsctx->pat.pmts[i], tsctx->payload);
+			r = mpeg_ts_write_section_header(ts, tsctx->pat.pmts[i].pid, &tsctx->pat.pmts[i].cc, tsctx->payload, n);
+			if (0 != r) return r;
 		}
 	}
 
-	ts_write_pes(tsctx, pmt, stream, data, bytes);
-	return 0;
+	return ts_write_pes(tsctx, pmt, stream, data, bytes);
 }
 
 void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)

@@ -30,8 +30,7 @@ static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, i
     struct ps_demuxer_t* ps;
     ps = (struct ps_demuxer_t*)param;
     assert(0 == program); // unused(ts demux only)
-    ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
-    return 0;
+    return ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
 }
 
 static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
@@ -68,8 +67,9 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
     return NULL;
 }
 
-static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t bytes)
+static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t bytes)
 {
+    int r;
     size_t i = 0;
     size_t j = 0;
     size_t pes_packet_length;
@@ -133,8 +133,10 @@ static size_t pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size
 
 			if (0 == j) continue;
 
-            pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
+            r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
             ps->start = 0; // clear start flag
+            if (0 != r)
+                return r;
         }
     }
 
@@ -168,9 +170,10 @@ static size_t ps_demuxer_find_startcode(const uint8_t* data, size_t bytes)
     return p - data;
 }
 
-size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
+int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
 {
-	size_t i, n;
+    int n;
+	size_t i;
     
     for (i = ps_demuxer_find_startcode(data, bytes); data && i + 3 < bytes; i += ps_demuxer_find_startcode(data + i, bytes - i))
     {
@@ -178,11 +181,11 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
         {
         case PES_SID_START:
             ps->start = 1;
-            n = pack_header_read(&ps->pkhd, data + i, bytes - i);
+            n = (int)pack_header_read(&ps->pkhd, data + i, bytes - i);
             break;
             
         case PES_SID_SYS:
-            n = system_header_read(&ps->system, data + i, bytes - i);
+            n = (int)system_header_read(&ps->system, data + i, bytes - i);
             break;
             
         case PES_SID_END:
@@ -194,6 +197,9 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
             break;
         }
 
+        if (n < 0)
+            return n;
+
         assert(i + n <= bytes);
         if (0 == n || i + n > bytes)
             break;
@@ -201,7 +207,7 @@ size_t ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t byt
         i += n;
     }
 
-	return i;
+	return (int)i;
 }
 
 struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param)

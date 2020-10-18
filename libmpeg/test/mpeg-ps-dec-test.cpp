@@ -22,7 +22,7 @@ inline const char* ftimestamp(int64_t t, char* buf)
     return buf;
 }
 
-static void onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     static char s_pts[64], s_dts[64];
 
@@ -52,6 +52,8 @@ static void onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int
     {
         //assert(0);
     }
+
+    return 0;
 }
 
 static uint8_t s_packet[2 * 1024 * 1024];

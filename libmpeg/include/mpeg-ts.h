@@ -25,7 +25,8 @@ struct mpeg_ts_func_t
 	/// @param[in] param use-defined parameter(by mpeg_ps_create)
 	/// @param[in] packet PS packet pointer(alloc return pointer)
 	/// @param[in] bytes packet size
-	void (*write)(void* param, const void* packet, size_t bytes);
+	/// @return 0-ok, other-error
+	int (*write)(void* param, const void* packet, size_t bytes);
 };
 
 /// Create/Destroy MPEG2-TS muxer
@@ -75,8 +76,8 @@ typedef int (*ts_demuxer_onpacket)(void* param, int program, int stream, int cod
 struct ts_demuxer_t;
 struct ts_demuxer_t* ts_demuxer_create(ts_demuxer_onpacket onpacket, void* param);
 int ts_demuxer_destroy(struct ts_demuxer_t* demuxer);
-size_t ts_demuxer_input(struct ts_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
-size_t ts_demuxer_flush(struct ts_demuxer_t* demuxer);
+int ts_demuxer_input(struct ts_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
+int ts_demuxer_flush(struct ts_demuxer_t* demuxer);
 int ts_demuxer_getservice(struct ts_demuxer_t* demuxer, int program, char* provider, int nprovider, char* name, int nname);
 
 #ifdef __cplusplus

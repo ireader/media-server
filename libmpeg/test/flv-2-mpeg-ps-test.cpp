@@ -22,9 +22,9 @@ static void ps_free(void* /*param*/, void* /*packet*/)
 	return;
 }
 
-static void ps_write(void* param, int stream, void* packet, size_t bytes)
+static int ps_write(void* param, int stream, void* packet, size_t bytes)
 {
-	fwrite(packet, bytes, 1, (FILE*)param);
+	return 1 == fwrite(packet, bytes, 1, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 
 static inline const char* ps_type(int type)

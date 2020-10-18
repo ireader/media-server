@@ -120,7 +120,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
+int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     uint32_t i, j;
     for (i = 0; i < ts->pat.pmt_count; i++)
@@ -151,7 +151,7 @@ size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
     return 0;
 }
 
-size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
+int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
     int r = 0;
     uint32_t i, j, k;
