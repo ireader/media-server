@@ -29,6 +29,9 @@ int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int
 	//aac.sampling_frequency_index = (uint8_t)mpeg4_aac_audio_frequency_from(sample_rate);
 	r = mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, extra_size, &aac);
 	if (r < 0) return r;
+	
+	sample_rate = 0 == sample_rate ? mpeg4_aac_audio_frequency_to(aac.sampling_frequency_index) : sample_rate;
+	channel_count = 0 == channel_count ? aac.channel_configuration : channel_count;
 	assert(aac.sampling_frequency_index == (uint8_t)mpeg4_aac_audio_frequency_from(sample_rate));
 	assert(aac.channel_configuration == channel_count);
 
@@ -73,6 +76,9 @@ int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, 
 
 	r = mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, extra_size, &aac);
 	if (r < 0) return r;
+
+	sample_rate = 0 == sample_rate ? mpeg4_aac_audio_frequency_to(aac.sampling_frequency_index) : sample_rate;
+	channel_count = 0 == channel_count ? aac.channel_configuration : channel_count;
 	assert(aac.sampling_frequency_index == (uint8_t)mpeg4_aac_audio_frequency_from(sample_rate));
 	assert(aac.channel_configuration == channel_count);
 
@@ -131,10 +137,10 @@ void sdp_aac_test(void)
 	const char* mpeg4_generic_sdp = "m=audio 0 RTP/AVP 96\na=rtpmap:96 mpeg4-generic/48000/2\na=fmtp:96 streamtype=5;profile-level-id=41;mode=AAC-hbr;sizeLength=13;indexLength=3;indexDeltaLength=3;config=1190\n";
 	//const char* mp4a_latm_sdp = "m=audio 0 RTP/AVP 96\na=rtpmap:96 MP4A-LATM/48000/2\na=fmtp:96 profile-level-id=9;object=8;cpresent=0;config=9128B1071070\n";
 	uint8_t buffer[256];
-	struct mpeg4_aac_t aac;
-	int n;
+	//struct mpeg4_aac_t aac;
+	//int n;
 
-	assert(strlen(mpeg4_generic_sdp) == sdp_aac_generic(buffer, sizeof(buffer), 0, 96, 48000, 2, config, sizeof(config)));
+	assert((int)strlen(mpeg4_generic_sdp) == sdp_aac_generic(buffer, sizeof(buffer), 0, 96, 48000, 2, config, sizeof(config)));
 	assert(0 == memcmp(mpeg4_generic_sdp, buffer, strlen(mpeg4_generic_sdp)));
 	assert(sizeof(config) == sdp_aac_mpeg4_load(buffer, sizeof(buffer), "1190"));
 	assert(0 == memcmp(config, buffer, sizeof(config)));

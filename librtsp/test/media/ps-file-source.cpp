@@ -166,11 +166,11 @@ void PSFileSource::Free(void* /*param*/, void* packet)
 	return free(packet);
 }
 
-void PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
+int PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
-	rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock * 90 /*kHz*/);
+	return rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock * 90 /*kHz*/);
 }
 
 void* PSFileSource::RTPAlloc(void* param, int bytes)
@@ -186,12 +186,14 @@ void PSFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PSFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
+int PSFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	PSFileSource *self = (PSFileSource*)param;
 	assert(self->m_packet == packet);
 
 	int r = self->m_transport->Send(false, packet, bytes);
-	assert(r == (int)bytes);
-	rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
+	if (r != bytes)
+		return -1;
+	
+	return rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
 }

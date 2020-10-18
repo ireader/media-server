@@ -28,10 +28,10 @@ public:
 private:
 	static void *Alloc(void* param, size_t bytes);
 	static void Free(void* param, void* packet);
-	static void Packet(void* param, int avtype, void* packet, size_t bytes);
+	static int Packet(void* param, int avtype, void* packet, size_t bytes);
 	static void* RTPAlloc(void* param, int bytes);
 	static void RTPFree(void* param, void *packet);
-	static void RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+	static int RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 	unsigned char* CreateRTPPacket();
 

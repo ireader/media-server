@@ -17,6 +17,8 @@ int sdp_mpeg4_es(uint8_t *data, int bytes, unsigned short port, int payload, int
 		"a=fmtp:%d profile-level-id=1;config=";
 
 	int n;
+
+	assert(90000 == frequence);
 	n = snprintf((char*)data, bytes, pattern, port, payload, payload, payload);
 
 	if (n + extra_size * 2 + 1 > bytes)

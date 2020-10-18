@@ -22,6 +22,7 @@ int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int fre
 	int i, j, k;
 	struct mpeg4_hevc_t hevc;
 
+	assert(90000 == frequence);
 	r = mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, extra_size, &hevc);
 	if (r < 0) 
 		return r;

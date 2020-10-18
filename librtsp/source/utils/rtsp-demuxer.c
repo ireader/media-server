@@ -8,10 +8,13 @@
 #include "mpeg-ts.h"
 #include "avbsf.h" // https://github.com/ireader/avcodec
 #include "mpeg4-aac.h"
+#include "rtsp-payloads.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+
+#define RTSP_PAYLOAD_MAX_SIZE (10 * 1024 * 1024)
 
 #if defined(OS_WINDOWS)
     #if !defined(strcasecmp)
@@ -51,6 +54,12 @@ struct rtp_payload_info_t
 
     struct avbsf_t* bsf;
     void* filter;
+
+    // ps only
+    struct {
+        uint8_t* ptr;
+        int len, cap;
+    } ptr;
 };
 
 struct rtsp_demuxer_t
@@ -64,27 +73,6 @@ struct rtsp_demuxer_t
 
     uint8_t ptr[8 * 1024];
     int off;
-    int error;
-};
-
-static struct
-{
-    int codecid; // mpeg2 codecid
-    int payload; // rtp payload id
-    const char* encoding; // rtp encoding
-} s_codecid[] = {
-    // video
-    {PSI_STREAM_H264,       RTP_PAYLOAD_H264,   "H264", },
-    {PSI_STREAM_H265,       RTP_PAYLOAD_H265,   "H265", },
-    {PSI_STREAM_VP8,        RTP_PAYLOAD_VP8,    "VP8", },
-    {PSI_STREAM_VP9,        RTP_PAYLOAD_VP9,    "VP9", },
-
-    // audio
-    {PSI_STREAM_AAC,        RTP_PAYLOAD_MP4A,   "MP4A-LATM", },
-    {PSI_STREAM_AUDIO_OPUS, RTP_PAYLOAD_OPUS,   "opus", },
-    {PSI_STREAM_MP3,        RTP_PAYLOAD_MP3,    "", }, // rtp standard payload id
-    {PSI_STREAM_AUDIO_G711U,RTP_PAYLOAD_PCMU,   "", }, // rtp standard payload id
-    {PSI_STREAM_AUDIO_G711A,RTP_PAYLOAD_PCMA,   "", }, // rtp standard payload id    
 };
 
 int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config);
@@ -98,49 +86,49 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
 
-    for (i = 0; i < sizeof(s_codecid) / sizeof(s_codecid[0]); i++)
+    i = avpayload_find_by_mpeg2((uint8_t)codecid);
+    if (i >= 0)
     {
-        if (codecid == s_codecid[i].codecid)
+        if (PSI_STREAM_AAC == codecid)
         {
-            if (PSI_STREAM_AAC == codecid)
-            {
-                if (0 == pt->fmtp.aac.sampling_frequency)
-                    mpeg4_aac_adts_load((const uint8_t*)data, bytes, &pt->fmtp.aac);
+            if (0 == pt->fmtp.aac.sampling_frequency)
+                mpeg4_aac_adts_load((const uint8_t*)data, bytes, &pt->fmtp.aac);
 
+            len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+            while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && (size_t)len <= bytes)
+            {
+                r = pt->ctx->onpacket(pt->ctx->param, track, s_payloads[i].payload, s_payloads[i].encoding, pts / 90, dts / 90, data, len, flags);
+                if (0 != r)
+                    return r;
+
+                pts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
+                dts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
+                bytes -= len;
+                data = (const uint8_t*)data + len;
                 len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-                while (pt->fmtp.aac.sampling_frequency > 0 && len > 7 && (size_t)len <= bytes)
-                {
-                    r = pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, len, flags);
-                    if (0 != r)
-                        return r;
-
-                    pts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
-                    dts += 90000 /* 90KHz */ * 1024 /*samples per frame*/ / pt->fmtp.aac.sampling_frequency;
-                    bytes -= len;
-                    data = (const uint8_t*)data + len;
-                    len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-                }
-
-                return bytes > 0 ? pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, len, flags) : 0;
             }
-            else
-            {
-                return pt->ctx->onpacket(pt->ctx->param, track, s_codecid[i].payload, s_codecid[i].encoding, pts / 90, dts / 90, data, (int)bytes, flags);
-            }
+
+            return bytes > 0 ? pt->ctx->onpacket(pt->ctx->param, track, s_payloads[i].payload, s_payloads[i].encoding, pts / 90, dts / 90, data, len, flags) : 0;
+        }
+        else
+        {
+            return pt->ctx->onpacket(pt->ctx->param, track, s_payloads[i].payload, s_payloads[i].encoding, pts / 90, dts / 90, data, (int)bytes, flags);
         }
     }
 
+    if (0xbd == codecid)
+        return 0; // ignore HIK private stream
+
     (void)program; //ignore
     assert(0);
-    return -1;
+    return -1; // discard
 }
 
-static inline void rtsp_demuxer_mpegps_onpacket(void* param, int track, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static inline int rtsp_demuxer_mpegps_onpacket(void* param, int track, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
-    pt->ctx->error = rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts, dts, data, bytes);
-    assert(0 == pt->ctx->error);
+    return rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts, dts, data, bytes);
 }
 
 static int rtsp_demuxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const uint8_t* data, int bytes, int flags)
@@ -150,32 +138,91 @@ static int rtsp_demuxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, cons
     return pt->ctx->onpacket(pt->ctx->param, 0, pt->payload, pt->encoding, pts, dts, data, bytes, flags);
 }
 
-static inline void rtsp_demuxer_ontspacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
+static inline int rtsp_demuxer_ontspacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
 {
+    int r;
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
     
-    while (bytes >= 188)
+    r = 0;
+    while (0 == r && bytes >= 188)
     {
-        pt->ctx->error = (int)ts_demuxer_input(pt->ts, packet, 188);
-        assert(0 == pt->ctx->error);
+        r = (int)ts_demuxer_input(pt->ts, packet, 188);
+        assert(0 == r);
         bytes -= 188;
         packet = (const uint8_t*)packet + 188;
     }
     (void)timestamp, (void)flags; //ignore
+
+    return r;
 }
 
-static inline void rtsp_demuxer_onpspacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
+static inline int rtsp_demuxer_merge_ps_buffer(struct rtp_payload_info_t* pt, const uint8_t* packet, int bytes)
 {
+    int n;
+    uint8_t* ptr;
+    if (bytes < 0)
+        return -EINVAL;
+
+    if (pt->ptr.len + bytes > pt->ptr.cap)
+    {
+        if (pt->ptr.len + bytes > RTSP_PAYLOAD_MAX_SIZE)
+        {
+            pt->ptr.len = 0; // clear
+            return -E2BIG;
+        }
+
+        n = pt->ptr.len + bytes + 64 * 1024;
+        ptr = (uint8_t*)realloc(pt->ptr.ptr, n);
+        if (!ptr)
+        {
+            pt->ptr.len = 0; // clear
+            return -ENOMEM;
+        }
+
+        pt->ptr.ptr = ptr;
+        pt->ptr.cap = n;
+    }
+
+    if (bytes > 0)
+    {
+        memmove(pt->ptr.ptr + pt->ptr.len, packet, bytes);
+        pt->ptr.len += bytes;
+    }
+
+    return 0;
+}
+
+static inline int rtsp_demuxer_onpspacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
+{
+    int r, n;
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
-    pt->ctx->error = (int)ps_demuxer_input(pt->ps, packet, bytes);
-    assert(pt->ctx->error == bytes);
+    if (pt->ptr.len > 0)
+    {
+        r = rtsp_demuxer_merge_ps_buffer(pt, packet, bytes);
+        if (0 != r)
+            return r;
+
+        packet = pt->ptr.ptr;
+        bytes = pt->ptr.len;
+        pt->ptr.len = 0;
+    }
+
+    n = (int)ps_demuxer_input(pt->ps, packet, bytes);
+    assert(n <= bytes);
+    if (n >= 0 && n < bytes)
+        r = rtsp_demuxer_merge_ps_buffer(pt, (const uint8_t*)packet + (bytes - n), bytes - n);
+    else
+        r = n < 0 ? n : 0;
+
     (void)timestamp, (void)flags; //ignore
+    return r;
 }
 
-static inline void rtsp_demuxer_onrtppacket(void* param, const void* data, int bytes, uint32_t timestamp, int flags)
+static inline int rtsp_demuxer_onrtppacket(void* param, const void* data, int bytes, uint32_t timestamp, int flags)
 {
+    int r;
     struct rtp_payload_info_t* pt;
     pt = (struct rtp_payload_info_t*)param;
 
@@ -192,14 +239,22 @@ static inline void rtsp_demuxer_onrtppacket(void* param, const void* data, int b
     }
 
     if (pt->bsf && pt->filter)
-        pt->ctx->error = pt->bsf->input(pt->filter, pt->pts, pt->pts, (const uint8_t*)data, bytes);
+        r = pt->bsf->input(pt->filter, pt->pts, pt->pts, (const uint8_t*)data, bytes);
     else
-        pt->ctx->error = pt->ctx->onpacket(pt->ctx->param, 0, pt->payload, pt->encoding, pt->pts, pt->pts, data, bytes, flags);
-    assert(0 == pt->ctx->error);
+        r = pt->ctx->onpacket(pt->ctx->param, 0, pt->payload, pt->encoding, pt->pts, pt->pts, data, bytes, flags);
+    
+    return r;
 }
 
 static int rtsp_demuxer_payload_close(struct rtp_payload_info_t* pt)
 {
+    if (pt->ptr.ptr)
+    {
+        assert(pt->ptr.cap > 0);
+        free(pt->ptr.ptr);
+        pt->ptr.ptr = NULL;
+    }
+
     if (pt->bsf && pt->filter)
     {
         pt->bsf->destroy(&pt->filter);
@@ -373,8 +428,9 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
         }
     }
 
-    assert(0);
-    return -1;
+    //assert(0);
+    //return -1;
+    return 0;
 }
 
 int rtsp_demuxer_rtcp(struct rtsp_demuxer_t* demuxer, void* buf, int len)

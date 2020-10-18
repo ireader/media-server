@@ -24,13 +24,13 @@ struct rtp_sender_t
     
     uint8_t buffer[2 * 1024]; // for sdp and rtp packet
     
-    int (*send)(void* param, const void *packet, int bytes);
+    int (*onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
     void (*onbye)(void* param); // rtcp bye msg
     void* param;
 };
 
-int rtp_sender_init_video(struct rtp_sender_t* s, int port, int payload, const char* encoding, const void* extra, size_t bytes);
-int rtp_sender_init_audio(struct rtp_sender_t* s, int port, int payload, const char* encoding, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
+int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes);
+int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes);
 
 int rtp_sender_destroy(struct rtp_sender_t* s);
 
