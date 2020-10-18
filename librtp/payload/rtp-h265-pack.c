@@ -71,7 +71,7 @@ static void rtp_h265_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestam
 
 static int rtp_h265_pack_nalu(struct rtp_encode_h265_t *packer, const uint8_t* nalu, int bytes)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 
 	packer->pkt.payload = nalu;
@@ -90,24 +90,25 @@ static int rtp_h265_pack_nalu(struct rtp_encode_h265_t *packer, const uint8_t* n
 	}
 
 	++packer->pkt.rtp.seq;
-	packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
+	r = packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 	packer->handler.free(packer->cbparam, rtp);
-	return 0;
+	return r;
 }
 
 static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr, int bytes)
 {
-	int n;
+	int r, n;
 	unsigned char *rtp;
 
 	uint8_t fu_header = (ptr[0] >> 1) & 0x3F;
 
+	r = 0;
 	ptr += 2; // skip NAL Unit Type byte
 	bytes -= 2;
 	assert(bytes > 0);
 
 	// FU-A start
-	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
+	for (fu_header |= FU_START; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		if (bytes + RTP_FIXED_HEADER <= packer->size - N_FU_HEADER)
 		{
@@ -139,7 +140,7 @@ static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr
 		rtp[n + 2] = fu_header;
 		memcpy(rtp + n + N_FU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 
-		packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
 		bytes -= packer->pkt.payloadlen;
@@ -147,7 +148,7 @@ static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr
 		fu_header &= 0x3F; // clear flags
 	}
 
-	return 0;
+	return r;
 }
 
 static int rtp_h265_pack_input(void* pack, const void* h265, int bytes, uint32_t timestamp)
@@ -160,7 +161,7 @@ static int rtp_h265_pack_input(void* pack, const void* h265, int bytes, uint32_t
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h265 + bytes;
-	for (p1 = h265_nalu_find((const uint8_t*)h265, pend); p1 < pend && 0 == r; p1 = p2)
+	for (p1 = h265_nalu_find((const uint8_t*)h265, pend); 0 == r && p1 < pend && 0 == r; p1 = p2)
 	{
 		size_t nalu_size;
 
@@ -183,7 +184,7 @@ static int rtp_h265_pack_input(void* pack, const void* h265, int bytes, uint32_t
 		}
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_h265_encode()

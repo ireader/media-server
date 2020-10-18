@@ -131,7 +131,7 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 	return r;
 }
 
-static void rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	const uint8_t start_code[] = { 0, 0, 0, 1 };
 	struct rtp_context_t* ctx;
@@ -180,6 +180,8 @@ static void rtp_onpacket(void* param, const void *packet, int bytes, uint32_t ti
 			// VCL frame
 		}
 	}
+
+	return 0;
 }
 
 static int STDCALL rtp_worker(void* param)

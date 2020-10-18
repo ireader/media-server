@@ -66,6 +66,7 @@ static void rtp_mpeg4_generic_pack_get_info(void* pack, uint16_t* seq, uint32_t*
 
 static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
+	int r;
 	int n, size;
 	uint8_t *rtp;
 	uint8_t header[4];
@@ -74,6 +75,7 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 	packer = (struct rtp_encode_mpeg4_generic_t *)pack;
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz);
 
+	r = 0;
 	ptr = (const uint8_t *)data;
 	if (0xFF == ptr[0] && 0xF0 == (ptr[1] & 0xF0) && bytes > 7)
 	{
@@ -83,7 +85,7 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 		bytes -= 7;
 	}
 
-	for (size = bytes; bytes > 0; ++packer->pkt.rtp.seq)
+	for (size = bytes; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		// 3.3.6. High Bit-rate AAC
 		// SDP fmtp: sizeLength=13; indexLength=3; indexDeltaLength = 3;
@@ -114,11 +116,11 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 
 		memcpy(rtp + n, header, N_AU_HEADER);
 		memcpy(rtp + n + N_AU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
-		packer->handler.packet(packer->cbparam, rtp, n + N_AU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_AU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_mpeg4_generic_encode()

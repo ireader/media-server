@@ -66,7 +66,7 @@ static void rtp_free(void* /*param*/, void * /*packet*/)
 {
 }
 
-static void rtp_encode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int /*flags*/)
+static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int /*flags*/)
 {
     struct mov_rtp_test_stream_t* ctx = (struct mov_rtp_test_stream_t*)param;
     
@@ -74,13 +74,14 @@ static void rtp_encode_packet(void* param, const void *packet, int bytes, uint32
     if( (r % 100) < RTP_LOST_PERCENT )
     {
         printf("======== discard [%s] timestamp: %u ==============\n", ctx->av ? "V" : "A", (unsigned int)timestamp);
-        return;
+        return 0;
     }
     
-    assert(rtp_payload_decode_input(ctx->decoder, packet, bytes) >= 0);
+    r = rtp_payload_decode_input(ctx->decoder, packet, bytes);
+    return r >= 0 ? 0 : r;
 }
 
-static void rtp_decode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
     struct mov_rtp_test_stream_t* ctx = (struct mov_rtp_test_stream_t*)param;
     printf("RTP Decode: [%s] timestamp: %u, bytes: %d\n", ctx->av ? "V" : "A", (unsigned int)timestamp, bytes);
@@ -90,8 +91,11 @@ static void rtp_decode_packet(void* param, const void *packet, int bytes, uint32
     {
         size_t r = ps_demuxer_input(ctx->ctx->psdec, (const uint8_t*)packet, bytes);
         assert(r == bytes);
+        return r;
     }
 #endif
+
+    return 0;
 }
 
 static int rtp_payload_codec_create(struct mov_rtp_test_stream_t* ctx, int payload, const char* encoding, uint16_t seq, uint32_t ssrc)
@@ -263,15 +267,16 @@ static void ps_free(void* /*param*/, void* /*packet*/)
     return;
 }
 
-static void ps_write(void* param, int stream, void* packet, size_t bytes)
+static int ps_write(void* param, int stream, void* packet, size_t bytes)
 {
     struct mov_rtp_test_t* ctx = (struct mov_rtp_test_t*)param;
-    assert(0 == rtp_payload_encode_input(ctx->v.encoder, packet, bytes, (unsigned int)ctx->v.dts));
+    return rtp_payload_encode_input(ctx->v.encoder, packet, bytes, (unsigned int)ctx->v.dts);
 }
 
-static void ps_onpacket(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int ps_onpacket(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     printf("PS Decode [V] pts: %08lu, dts: %08lu, bytes: %u, %s\n", (unsigned long)pts, (unsigned long)dts, (unsigned int)bytes, flags ? " [I]" : "");
+    return 0;
 }
 
 void mov_rtp_test(const char* mp4)

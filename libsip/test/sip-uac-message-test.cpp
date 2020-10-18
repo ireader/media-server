@@ -52,7 +52,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 		return -1; // invalid uri
 	
 	// TODO: sips port
-	r = socket_addr_from(&ss, &len, "atlanta.com" /*uri->host*/, uri->port ? uri->port : SIP_PORT);
+	r = socket_addr_from(&ss, &len, "127.0.0.1" /*uri->host*/, uri->port ? uri->port : SIP_PORT);
 	if (0 == r)
 	{
 		socket_addr_to((struct sockaddr*)&ss, len, ip, &port);

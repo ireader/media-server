@@ -101,7 +101,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 		return -1; // invalid uri
 
 	// TODO: sips port
-	r = socket_addr_from(&ss, &len, "atlanta.com" /*uri->host*/, uri->port ? uri->port : SIP_PORT);
+	r = socket_addr_from(&ss, &len, "127.0.0.1" /*uri->host*/, uri->port ? uri->port : SIP_PORT);
 	if (0 == r)
 	{
 		socket_addr_to((struct sockaddr*)&ss, len, ip, &port);
@@ -271,6 +271,144 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
 	return 0;
 }
 
+static int sip_test_message(struct sip_message_test_t* alice, struct sip_message_test_t* bob)
+{
+	// https://tools.ietf.org/html/rfc3428#page-11
+	// F1 MESSAGE Bob -> Alice
+	const char* f1 = "MESSAGE sip:alice@atlanta.com SIP/2.0\n"
+		"Via: SIP/2.0/TCP biloxi.com;branch=z9hG4bK776sgdkse\n"
+		"Max-Forwards: 70\n"
+		"From: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"To: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: asd88asd77a@1.2.3.4\n"
+		"CSeq: 1 MESSAGE\n"
+		"Content-Type: text/plain\n\n";
+		//"Content-Length: 18\n"
+		//"\r\n"
+		//"Watson, come here.";
+
+	const char* f2 = "MESSAGE sip:user2@domain.com SIP/2.0\r\n"
+		"Via: SIP/2.0/TCP proxy.domain.com;branch=z9hG4bK123dsghds\r\n"
+		"Via: SIP/2.0/TCP user1pc.domain.com;branch=z9hG4bK776sgdkse; received=1.2.3.4\r\n"
+		"Max-Forwards: 69\r\n"
+		"From: sip:user1@domain.com;tag=49394\r\n"
+		"To: sip:user2@domain.com\r\n"
+		"Call-ID: asd88asd77a@1.2.3.4\r\n"
+		"CSeq: 1 MESSAGE\r\n"
+		"Content-Type: text/plain\r\n"
+		"Content-Length: 18\r\n"
+		"\r\n"
+		"Watson, come here.";
+
+	const char* f3 = "SIP/2.0 200 OK\r\n"
+		"Via: SIP/2.0/TCP proxy.domain.com;branch=z9hG4bK123dsghds; received=192.0.2.1\r\n"
+		"Via: SIP/2.0/TCP user1pc.domain.com;branch=z9hG4bK776sgdkse; received=1.2.3.4\r\n"
+		"From: sip:user1@domain.com;tag=49394\r\n"
+		"To: sip:user2@domain.com;tag=ab8asdasd9\r\n"
+		"Call-ID: asd88asd77a@1.2.3.4\r\n"
+		"CSeq: 1 MESSAGE\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	// F2 200 OK Alice -> Bob
+	const char* f4 = "SIP/2.0 200 OK\r\n"
+		"Via: SIP/2.0/TCP biloxi.com;branch=z9hG4bK776sgdkse; received=1.2.3.4\r\n"
+		"From: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"To: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: asd88asd77a@1.2.3.4\r\n"
+		"CSeq: 1 MESSAGE\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	struct sip_message_t* req = req2sip(f1);
+	struct sip_message_t* reply = reply2sip(f4);
+	assert(0 == sip_uac_send(sip_uac_transaction_create1(bob->sip, req), "Watson, come here.", 18, &bob->udp, &bob));
+	assert(0 == sip_agent_input(alice->sip, req));
+	assert(0 == sip_agent_input(bob->sip, reply));
+	//sip_message_destroy(req); // delete by uac transaction
+	sip_message_destroy(reply);
+
+	return 0;
+}
+
+static int sip_test_notify(struct sip_message_test_t* alice, struct sip_message_test_t* bob)
+{
+	// https://tools.ietf.org/html/rfc3428#page-11
+	// F1 SUBSCRIBE Alice -> Bob
+	const char* f1 = "SUBSCRIBE sip:bob@biloxi.com;user=phone SIP/2.0\n"
+		"Via: SIP/2.0/UDP 10.135.0.12:5060;branch=z9hG4bKtrxftxslfcy3aagf3c9s7\n"
+		"Max-Forwards: 70\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314160 SUBSCRIBE\r\n"
+		"Contact: <sip:150@10.135.0.12;line=16172>;+sip.instance=\"<urn:uuid:0d9a008d-0355-0024-0000-000276f3d796>\"\n"
+		"Accept: application/simple-message-summary\n"
+		"Allow: INVITE, CANCEL, BYE, ACK, REGISTER, OPTIONS, REFER, SUBSCRIBE, NOTIFY, MESSAGE, INFO, PRACK, UPDATE\n"
+		"Allow-Events: dialog,message-summary\n"
+		"Event: message-summary\n"
+		"Expires: 240\n"
+		"Supported: replaces,100rel\n"
+		"User-Agent: Wildix W-AIR 03.55.00.24 9c7514340722 02:76:f3:d7:96\n"
+		"Content-Length: 0\n\n";
+
+	const char* f2 = "SIP/2.0 200 OK\n"
+		"Via: SIP/2.0/UDP 10.135.0.12:5060;branch=z9hG4bKtrxftxslfcy3aagf3c9s7;rport=5060\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314160 SUBSCRIBE\r\n"
+		"Expires: 240\n"
+		"Contact: <sip:vmaccess*150@mypbx.wildixin.com:5060;user=phone> \n"
+		"Server: Wildix GW-4.2.5.35963\n"
+		"Content-Length: 0\r\n\r\n";
+
+	const char* f3 = "NOTIFY sip:alice@atlanta.com;line=16172 SIP/2.0\n"
+		"Via: SIP/2.0/UDP 10.135.0.1;branch=z9hG4bK1308.a003bf56000000000000000000000000.0\n"
+		"From: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"To: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314161 NOTIFY\r\n"
+		"User-Agent: Wildix GW-4.2.5.35963\n"
+		"Max-Forwards: 70\n"
+		"Event: message-summary\n"
+		"Contact: <sip:vmaccess*150@mypbx.wildixin.com:5060;user=phone> \n"
+		"Subscription-State: active;expires=240\n"
+		"Content-Type: application/simple-message-summary\n"
+		//"Content-Length: 90\n"
+		"\n";
+	const char* f3message = 
+		"Messages-Waiting: yes\n"
+		"Message-Account: sip:vmaccess*150@wildix\n"
+		"Voice-Message: 1/0 (1/0)";
+
+	const char* f4 = "SIP/2.0 200 OK\n"
+		"Via: SIP/2.0/UDP 10.135.0.1;branch=z9hG4bK1308.a003bf56000000000000000000000000.0\n"
+		"Max-Forwards: 70\n"
+		"From: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"To: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314161 NOTIFY\r\n"
+		"Event: message-summary\n"
+		"Subscription-State: active;expires=240\n"
+		"User-Agent: Wildix W-AIR 03.55.00.24 9c7514340722\n"
+		"Content-Length: 0\r\n\r\n";
+
+	struct sip_message_t* req = req2sip(f1);
+	struct sip_message_t* reply = reply2sip(f2); 
+	struct sip_message_t* req2 = req2sip(f3);
+	struct sip_message_t* reply2 = reply2sip(f4);
+	assert(0 == sip_uac_send(sip_uac_transaction_create3(alice->sip, req), NULL, 0, &alice->udp, &alice));
+	assert(0 == sip_agent_input(bob->sip, req));
+	assert(0 == sip_agent_input(alice->sip, reply));
+	assert(0 == sip_uac_send(sip_uac_transaction_create1(bob->sip, req2), f3message, strlen(f3message), &bob->udp, &bob));
+	assert(0 == sip_agent_input(alice->sip, req2));
+	assert(0 == sip_agent_input(bob->sip, reply2));
+	//sip_message_destroy(req); // delete by uac transaction
+	sip_message_destroy(reply);
+	sip_message_destroy(reply2);
+
+	return 0;
+}
+
 static int sip_test_bye(struct sip_message_test_t* alice, struct sip_message_test_t *bob)
 {
 	//// F13 BYE Bob -> Alice (p218)
@@ -421,7 +559,9 @@ void sip_message_test(void)
 	alice.sip = sip_agent_create(&handler, &alice);
 	bob.sip = sip_agent_create(&handler, &bob);
 	assert(0 == sip_test_register(&alice, &bob));
+	assert(0 == sip_test_message(&alice, &bob));
 	assert(0 == sip_test_invite(&alice, &bob));
+	assert(0 == sip_test_notify(&alice, &bob));
 	assert(0 == sip_test_bye(&alice, &bob));
 
 	sip_agent_destroy(alice.sip);

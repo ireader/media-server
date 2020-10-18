@@ -9,7 +9,7 @@ extern "C" {
 
 struct rtp_demuxer_t;
 
-typedef void (*rtp_demuxer_onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+typedef int (*rtp_demuxer_onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param);
 int rtp_demuxer_destroy(struct rtp_demuxer_t** rtp);

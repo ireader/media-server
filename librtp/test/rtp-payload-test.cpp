@@ -37,7 +37,7 @@ static void rtp_free(void* /*param*/, void * /*packet*/)
 {
 }
 
-static void rtp_encode_packet(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
+static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	struct rtp_payload_test_t* ctx = (struct rtp_payload_test_t*)param;
 	uint8_t size[2];
@@ -45,9 +45,10 @@ static void rtp_encode_packet(void* param, const void *packet, int bytes, uint32
 	size[1] = (uint8_t)(uint32_t)bytes;
 	fwrite(size, 1, sizeof(size), ctx->frtp2);
 	fwrite(packet, 1, bytes, ctx->frtp2);
+	return 0;
 }
 
-static void rtp_decode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	static const uint8_t start_code[4] = { 0, 0, 0, 1 };
 	struct rtp_payload_test_t* ctx = (struct rtp_payload_test_t*)param;
@@ -84,7 +85,7 @@ static void rtp_decode_packet(void* param, const void *packet, int bytes, uint32
 	// check media file
 	fwrite(buffer, 1, size, ctx->fsource2);
 
-	rtp_payload_encode_input(ctx->encoder, buffer, size, timestamp);
+	return rtp_payload_encode_input(ctx->encoder, buffer, size, timestamp);
 }
 
 void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile, const char* sourcefile)

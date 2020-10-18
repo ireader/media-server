@@ -28,15 +28,14 @@ struct rtp_demuxer_t
     void* param;
 };
 
-static void rtp_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
     
     // TODO: rtp timestamp -> pts/dts
     
-    if(rtp->onpkt)
-        rtp->onpkt(rtp->param, packet, bytes, timestamp, flags);
+    return rtp->onpkt ? rtp->onpkt(rtp->param, packet, bytes, timestamp, flags) : -1;
 }
 
 static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
@@ -114,7 +113,7 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payloa
     memset(&handler, 0, sizeof(handler));
     handler.alloc = NULL;
     handler.free = NULL;
-    handler.packet = rtp_packet;
+    handler.packet = rtp_onpacket;
     rtp->payload = rtp_payload_decode_create(payload, encoding, &handler, rtp);
     
     timestamp = (uint32_t)rtpclock();

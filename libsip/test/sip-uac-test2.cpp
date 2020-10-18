@@ -38,7 +38,7 @@
 #include <errno.h>
 
 #include "rtsp-media.h"
-#include "../test/rtp-sender.h"
+#include "../source/utils/rtp-sender.h"
 #include "../test/ice-transport.h"
 #include "../test/media/mp4-file-reader.h"
 
@@ -52,7 +52,7 @@
 #define TURN_PWD "123456"
 
 extern "C" void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int payload, const char* encoding);
-static int rtp_packet_send(void* param, const void *packet, int bytes);
+static int rtp_packet_send(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 struct sip_uac_transport_address_t
 {
@@ -297,7 +297,7 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	s->video.track = track;
 	s->video.fp = fopen("sipvideo.h264", "wb");
 	s->video.s = s;
-	s->video.sender.send = rtp_packet_send;
+	s->video.sender.onpacket = rtp_packet_send;
 	s->video.sender.param = &s->video;
 
 	char ip[SOCKET_ADDRLEN];
@@ -311,18 +311,18 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	{
 		s->video.codec = AVCODEC_VIDEO_H264;
 		mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.avc);
-		rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H264, "H264", width, height, extra, bytes);
+		rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H264, "H264", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_H265;
         mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.hevc);
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H265, "H265", width, height, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H265, "H265", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_MP4V == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_MPEG4;
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_MP4V, "MP4V-ES", width, height, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_MP4V, "MP4V-ES", 90000, extra, bytes);
 	}
 	else
 	{
@@ -340,7 +340,7 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	s->audio.track = track;
 	s->audio.fp = fopen("sipaudio.pcm", "wb");
 	s->audio.s = s;
-	s->audio.sender.send = rtp_packet_send;
+	s->audio.sender.onpacket = rtp_packet_send;
 	s->audio.sender.param = &s->audio;
 
 	char ip[SOCKET_ADDRLEN];
@@ -354,22 +354,22 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
         mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_MP4A, "MP4A-LATM", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_OPUS;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_OPUS, "opus",channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_OPUS, "opus", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_G711u == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMU, "", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMU, "", sample_rate, channel_count, extra, bytes);
 	}
     else if (MOV_OBJECT_G711a == object)
     {
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMA, "", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMA, "", sample_rate, channel_count, extra, bytes);
     }
     else
 	{
@@ -464,13 +464,13 @@ static void ice_transport_ondata(void* param, int stream, int component, const v
 	}
 }
 
-static void rtp_packet_onrecv(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_packet_onrecv(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	sip_uac_test2_session_t::av_media_t* av = (sip_uac_test2_session_t::av_media_t*)param;
-	fwrite(packet, 1, bytes, av->fp);
+	return bytes == fwrite(packet, 1, bytes, av->fp) ? 0 : ferror(av->fp);
 }
 
-static int rtp_packet_send(void* param, const void *packet, int bytes)
+static int rtp_packet_send(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	sip_uac_test2_session_t::av_media_t* av = (sip_uac_test2_session_t::av_media_t*)param;
 	return ice_transport_send(av->s->avt, av->stream, 1, packet, bytes);

@@ -107,6 +107,9 @@ int rtp_payload_write(struct rtp_payload_helper_t* helper, const struct rtp_pack
 
 int rtp_payload_onframe(struct rtp_payload_helper_t *helper)
 {
+	int r;
+	r = 0;
+
     if (helper->size > 0
 #if !defined(RTP_ENABLE_COURRUPT_PACKET)
         && 0 == helper->lost
@@ -114,7 +117,7 @@ int rtp_payload_onframe(struct rtp_payload_helper_t *helper)
         )
 	{
 		// previous packet done
-        helper->handler.packet(helper->cbparam, helper->ptr, helper->size, helper->timestamp, helper->__flags | (helper->lost ? RTP_PAYLOAD_FLAG_PACKET_CORRUPT : 0));
+        r = helper->handler.packet(helper->cbparam, helper->ptr, helper->size, helper->timestamp, helper->__flags | (helper->lost ? RTP_PAYLOAD_FLAG_PACKET_CORRUPT : 0));
         
         // RTP_PAYLOAD_FLAG_PACKET_LOST: miss
         helper->__flags &= ~RTP_PAYLOAD_FLAG_PACKET_LOST; // clear packet lost flag
@@ -127,5 +130,5 @@ int rtp_payload_onframe(struct rtp_payload_helper_t *helper)
 	// new frame start
     helper->lost = 0;
 	helper->size = 0;
-	return 0;
+	return r;
 }
