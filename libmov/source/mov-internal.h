@@ -202,6 +202,9 @@ struct mov_t
 	struct mov_track_t* track; // current stream
 	struct mov_track_t* tracks;
 	int track_count;
+
+	const void* udta;
+	uint64_t udta_size;
 };
 
 int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent);
@@ -284,6 +287,7 @@ size_t mov_write_minf(const struct mov_t* mov);
 size_t mov_write_mdia(const struct mov_t* mov);
 size_t mov_write_trak(const struct mov_t* mov);
 size_t mov_write_dops(const struct mov_t* mov);
+size_t mov_write_udta(const struct mov_t* mov);
 
 uint32_t mov_build_stts(struct mov_track_t* track);
 uint32_t mov_build_ctts(struct mov_track_t* track);

@@ -1,5 +1,6 @@
 #include "mov-writer.h"
 #include "mov-format.h"
+#include "mov-udta.h"
 #include "mpeg4-aac.h"
 #include "opus-head.h"
 #include "flv-proto.h"
@@ -7,9 +8,11 @@
 #include "flv-parser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
+extern "C" int mov_writer_add_udta(mov_writer_t * mov, const void* data, size_t size);
 
 static uint8_t s_buffer[2 * 1024 * 1024];
 static int s_width, s_height;
@@ -79,6 +82,26 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 	return 0;
 }
 
+static int mov_writer_add_cover(mov_writer_t* mov, const char* cover)
+{
+	static uint8_t s_cover_data[2 * 1024 * 1024];
+	static uint8_t s_udta[2 * 1024 * 1024];
+	FILE* fp = fopen(cover, "rb");
+	if (!fp)
+		return -1;
+	int n = fread(s_cover_data, 1, sizeof(s_cover_data), fp);
+	fclose(fp);
+
+	assert(n < sizeof(s_cover_data)); // assert load all
+	struct mov_udta_meta_t meta;
+	memset(&meta, 0, sizeof(meta));
+	meta.cover = s_cover_data;
+	meta.cover_size = n;
+	n = mov_udta_meta_write(&meta, s_udta, sizeof(s_udta));
+	assert(n < sizeof(s_udta)); // check buffer size
+	return mov_writer_add_udta(mov, s_udta, n);
+}
+
 void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 {
 	int r, type;
@@ -88,6 +111,7 @@ void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	FILE* fp = fopen(outmp4, "wb+");
 	void* flv = flv_reader_create(inflv);
 	mov_writer_t* mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
+	mov_writer_add_cover(mov, "cover.jpg");
 
 	s_width = w;
 	s_height = h;

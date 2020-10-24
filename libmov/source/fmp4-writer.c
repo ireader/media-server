@@ -158,7 +158,7 @@ static size_t fmp4_write_moov(struct mov_t* mov)
 	}
 
 	size += fmp4_write_mvex(mov);
-//  size += fmp4_write_udta(mov);
+	size += mov_write_udta(mov);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -488,6 +488,13 @@ int fmp4_writer_add_subtitle(struct fmp4_writer_t* writer, uint8_t object, const
 
     mov->mvhd.next_track_ID++;
     return mov->track_count++;
+}
+
+int fmp4_writer_add_udta(fmp4_writer_t* writer, const void* data, size_t size)
+{
+	writer->mov.udta = data;
+	writer->mov.udta_size = size;
+	return 0;
 }
 
 int fmp4_writer_save_segment(fmp4_writer_t* writer)

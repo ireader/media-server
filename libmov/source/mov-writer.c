@@ -34,7 +34,7 @@ static size_t mov_write_moov(struct mov_t* mov)
 		size += mov_write_trak(mov);
 	}
 
-//  size += mov_write_udta(mov);
+	size += mov_write_udta(mov);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -315,4 +315,11 @@ int mov_writer_add_subtitle(struct mov_writer_t* writer, uint8_t object, const v
 
     mov->mvhd.next_track_ID++;
 	return mov->track_count++;
+}
+
+int mov_writer_add_udta(mov_writer_t* mov, const void* data, size_t size)
+{
+	mov->mov.udta = data;
+	mov->mov.udta_size = size;
+	return 0;
 }
