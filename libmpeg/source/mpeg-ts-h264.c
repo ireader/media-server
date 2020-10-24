@@ -34,7 +34,7 @@ int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading)
 
 /// @param[out] leading optional leading zero bytes
 /// @return -1-not found, other-AUD position(include start code)
-int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
+static int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
 {
     int i;
     size_t off;
@@ -70,7 +70,7 @@ int mpeg_h264_find_keyframe(const uint8_t* p, size_t bytes)
 
 /// h264_is_new_access_unit H.264 new access unit(frame)
 /// @return 1-new access, 0-not a new access
-int mpeg_h264_is_new_access_unit(const uint8_t* nalu, size_t bytes)
+static int mpeg_h264_is_new_access_unit(const uint8_t* nalu, size_t bytes)
 {
     enum { NAL_NIDR = 1, NAL_PARTITION_A = 2, NAL_IDR = 5, NAL_SEI = 6, NAL_SPS = 7, NAL_PPS = 8, NAL_AUD = 9, };
     
@@ -95,4 +95,36 @@ int mpeg_h264_is_new_access_unit(const uint8_t* nalu, size_t bytes)
     }
     
     return 0;
+}
+
+int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
+{
+    int n;
+    size_t leading;
+    uint8_t nal_type;
+    const uint8_t* p, *end;
+
+    end = data + bytes;
+    for (p = data; p && p < end; p += n)
+    {
+        n = mpeg_h264_find_nalu(p, end - p, &leading);
+        if (n < 0)
+            return -1;
+
+        nal_type = p[n] & 0x1f;
+        if (*vcl > 0 && mpeg_h264_is_new_access_unit(p + n, end - p - n))
+        {
+            return p - data + n - leading;
+        }
+        else if (nal_type > 0 && nal_type < 6)
+        {
+            ++* vcl;
+        }
+        else
+        {
+            // nothing to do
+        }
+    }
+
+    return -1;
 }

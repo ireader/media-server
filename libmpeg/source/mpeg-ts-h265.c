@@ -7,7 +7,7 @@
 
 /// @param[out] leading optional leading zero bytes
 /// @return -1-not found, other-AUD position(include start code)
-int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
+static int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t* leading)
 {
     size_t i, zeros;
     for (zeros = i = 0; i + 1 < bytes; i++)
@@ -30,7 +30,7 @@ int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, size_t*
 // intra random access point (IRAP) picture: 
 //   A coded picture for which each VCL NAL unit has nal_unit_type 
 //   in the range of BLA_W_LP to RSV_IRAP_VCL23, inclusive.
-int mpeg_h265_find_keyframe(const uint8_t* p, size_t bytes)
+static int mpeg_h265_find_keyframe(const uint8_t* p, size_t bytes)
 {
 	size_t i;
 	uint8_t type;
@@ -47,7 +47,7 @@ int mpeg_h265_find_keyframe(const uint8_t* p, size_t bytes)
 	return 0;
 }
 
-int mpeg_h265_is_new_access_unit(const uint8_t* nalu, size_t bytes)
+static int mpeg_h265_is_new_access_unit(const uint8_t* nalu, size_t bytes)
 {
     enum { NAL_VPS = 32, NAL_SPS = 33, NAL_PPS = 34, NAL_AUD = 35, NAL_PREFIX_SEI = 39, };
     
@@ -73,4 +73,36 @@ int mpeg_h265_is_new_access_unit(const uint8_t* nalu, size_t bytes)
     }
     
     return 0;
+}
+
+int mpeg_h265_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
+{
+    int n;
+    size_t leading;
+    uint8_t nal_type;
+    const uint8_t* p, *end;
+
+    end = data + bytes;
+    for (p = data; p && p < end; p += n)
+    {
+        n = mpeg_h264_find_nalu(p, end - p, &leading);
+        if (n < 0)
+            return -1;
+
+        nal_type = (p[n] >> 1) & 0x3f;
+        if (*vcl > 0 && mpeg_h265_is_new_access_unit(p+n, end - p - n))
+        {
+            return p - data + n - leading;
+        }
+        else if (nal_type <= 31)
+        {
+            ++* vcl;
+        }
+        else
+        {
+            // nothing to do
+        }
+    }
+
+    return -1;
 }

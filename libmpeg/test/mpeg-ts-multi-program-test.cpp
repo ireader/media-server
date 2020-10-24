@@ -38,9 +38,9 @@ static void ts_free(void* /*param*/, void* /*packet*/)
 	return;
 }
 
-static void ts_write(void* param, const void* packet, size_t bytes)
+static int ts_write(void* param, const void* packet, size_t bytes)
 {
-	fwrite(packet, bytes, 1, (FILE*)param);
+	return 1 == fwrite(packet, bytes, 1, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 
 static void onread(void* param, uint32_t track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
