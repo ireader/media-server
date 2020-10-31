@@ -438,7 +438,7 @@ int mpeg_ts_remove_program(void* ts, uint16_t pn)
 		mpeg_ts_pmt_destroy(pmt);
 
 		if (i + 1 < tsctx->pat.pmt_count)
-			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], tsctx->pat.pmt_count - i - 1);
+			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], (tsctx->pat.pmt_count - i - 1) * sizeof(tsctx->pat.pmts[0]));
 		tsctx->pat.pmt_count--;
 		mpeg_ts_reset(ts); // update PAT/PMT
 		return 0;
