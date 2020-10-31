@@ -30,7 +30,7 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
     return 0;
 }
 
-static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, pes_packet_handler handler, void* param)
+static int mpeg_packet_h264_h265_filter(uint16_t program, uint16_t stream, struct packet_t* pkt, const uint8_t* data, size_t size, pes_packet_handler handler, void* param)
 {
     int i;
     size_t off;
@@ -57,7 +57,7 @@ static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, 
     }
 
     // TODO: check size > 0 ???
-    return handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + off + i, size - off - i);
+    return handler(param, program, stream, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + off + i, size - off - i);
 }
 
 static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, size_t size, pes_packet_handler handler, void* param)
@@ -81,7 +81,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
         assert(pkt->vcl > 0);
 
         p += n;
-        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, data, p - data, handler, param);
+        r = mpeg_packet_h264_h265_filter(pes->pn, pes->pid, pkt, data, p - data, handler, param);
         if (0 != r)
             return r;
 
@@ -127,7 +127,7 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         if (pkt->size > 0 && (pkt->dts != pes->dts || start))
         {
             assert(PTS_NO_VALUE != pkt->dts);
-            r = handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
             pkt->size = 0; // new packet start
             if (0 != r)
                 return r;
@@ -149,7 +149,7 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
             assert(pes->pkt.size == pes->len); // packet lost
-            r = handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
             pkt->size = 0; // new packet start
         }
     }

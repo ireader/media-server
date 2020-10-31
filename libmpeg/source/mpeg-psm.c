@@ -48,6 +48,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	{
 		psm->streams[psm->stream_count].codecid = data[j];
 		psm->streams[psm->stream_count].sid = data[j+1];
+		psm->streams[psm->stream_count].pid = psm->streams[psm->stream_count].sid; // for ts PID
 		element_stream_info_length = (data[j+2] << 8) | data[j+3];
 		if (j + 4 + element_stream_info_length > bytes)
 			return bytes; // TODO: error
