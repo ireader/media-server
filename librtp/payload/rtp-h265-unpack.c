@@ -197,7 +197,7 @@ static int rtp_h265_unpack_fu(struct rtp_decode_h265_t *unpacker, const uint8_t*
 		unpacker->size = 2; // NAL unit type byte
 		unpacker->ptr[0] = (FU_NAL(fuheader) << 1) | (ptr[0] & 0x81); // replace NAL Unit Type Bits
 		unpacker->ptr[1] = ptr[1];
-		assert(H265_TYPE(unpacker->ptr[0]) > 0 && H265_TYPE(unpacker->ptr[0]) < 48);
+		assert(H265_TYPE(unpacker->ptr[0]) >= 0 && H265_TYPE(unpacker->ptr[0]) <= 63);
 	}
 	else
 	{

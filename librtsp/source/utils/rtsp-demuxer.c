@@ -13,6 +13,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 
 #define RTSP_PAYLOAD_MAX_SIZE (10 * 1024 * 1024)
 
