@@ -340,7 +340,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
 
         if (pt->bsf)
             pt->filter = pt->bsf->create(pt->extra, pt->extra_bytes > 0 ? pt->extra_bytes : 0, rtsp_demuxer_bsf_onpacket, pt);
-        pt->rtp = rtp_demuxer_create(frequency, payload, encoding, rtsp_demuxer_onrtppacket, pt);
+        pt->rtp = rtp_demuxer_create(frequency, pt->payload, encoding, rtsp_demuxer_onrtppacket, pt);
     }
 
     if (!pt->rtp || (pt->bsf && !pt->filter))
