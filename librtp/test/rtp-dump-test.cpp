@@ -29,8 +29,8 @@ void rtp_dump_test(const char* file)
 
 	fp = fopen("rtp.bin", "wb");
 	dump = rtpdump_open(file, 0);
-	//demuxer = rtsp_demuxer_create(90000, 96, "MP2P", rtp_onpacket, fp);
-	demuxer = rtsp_demuxer_create(90000, 96, "MP2P", NULL, rtsp_onpacket, fp);
+	//demuxer = rtsp_demuxer_create(100, 90000, 96, "MP2P", rtp_onpacket, fp);
+	demuxer = rtsp_demuxer_create(100, 90000, 96, "MP2P", NULL, rtsp_onpacket, fp);
 	while (1)
 	{
 		r = rtpdump_read(dump, &clock, data, sizeof(data));

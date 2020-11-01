@@ -217,7 +217,7 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	socket_getrecvbuf(rtp[0], &n);
 
 	profile = rtp_profile_find(payload);
-	ctx->demuxer = rtp_demuxer_create(profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+	ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
 	if (NULL == ctx->demuxer)
 		return; // ignore
 	
@@ -250,7 +250,7 @@ void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payloa
 	s_ctx[interleave1 / 2] = ctx;
 
 	profile = rtp_profile_find(payload);
-    ctx->demuxer = rtp_demuxer_create(profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+    ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
     return ctx;
 }
 
