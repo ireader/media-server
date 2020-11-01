@@ -1,4 +1,4 @@
-// RFC7731 RTP Payload Format for VP8 Video
+// RFC7741 RTP Payload Format for VP8 Video
 
 #include "rtp-packet.h"
 #include "rtp-profile.h"
@@ -95,7 +95,7 @@ static int rtp_decode_vp8(void* p, const void* packet, int bytes)
 			picture_id = ptr[0] & 0x7F;
 			if ((ptr[0] & 0x80) && ptr + 1 < pend)
 			{
-				picture_id = (ptr[0] << 8) | ptr[1];
+				picture_id = (picture_id << 8) | ptr[1];
 				ptr++;
 			}
 			ptr++;
@@ -140,7 +140,7 @@ static int rtp_decode_vp8(void* p, const void* packet, int bytes)
 		//    frame. When set to 1, the current frame is an interframe.
 		//    Defined in [RFC6386]
 		int keyframe;
-		keyframe = ptr[0] & 0x01;
+		keyframe = ptr[0] & 0x01; // PID == 0
 
 		// new frame begin
 		rtp_payload_onframe(helper);
