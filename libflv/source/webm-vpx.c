@@ -76,9 +76,8 @@ int webm_vpx_codec_configuration_record_save(const struct webm_vpx_t* vpx, uint8
 // https://github.com/webmproject/vp9-dash
 // https://www.rfc-editor.org/rfc/pdfrfc/rfc6386.txt.pdf
 // https://storage.googleapis.com/downloads.webmproject.org/docs/vp9/vp9-bitstream-specification-v0.6-20160331-draft.pdf
-int webm_vpx_codec_configuration_record_from_vp8(struct webm_vpx_t* vpx, const void* keyframe, size_t bytes)
+int webm_vpx_codec_configuration_record_from_vp8(struct webm_vpx_t* vpx, int *width, int* height, const void* keyframe, size_t bytes)
 {
-    int width, height;
     uint32_t tag;
     const uint8_t* p;
     const uint8_t startcode[] = { 0x9d, 0x01, 0x2a };
@@ -88,18 +87,18 @@ int webm_vpx_codec_configuration_record_from_vp8(struct webm_vpx_t* vpx, const v
 
     p = (const uint8_t*)keyframe;
 
-    // frame_tag
+    // 9.1.  Uncompressed Data Chunk
     tag = (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16);
     //key_frame = tag & 0x01;
     //version = (tag >> 1) & 0x07;
     //show_frame = (tag >> 4) & 0x1;
     //first_part_size = (tag >> 5) & 0x7FFFF;
 
-    if (0 == (tag & 0x01) || startcode[0] != p[3] || startcode[1] != p[4] || startcode[2] != p[5])
+    if (0 != (tag & 0x01) || startcode[0] != p[3] || startcode[1] != p[4] || startcode[2] != p[5])
         return -1; // not key frame
 
-    width = ((uint16_t)(p[6] & 0x3F) << 8) | (uint16_t)(p[7]); // (2 bits Horizontal Scale << 14) | Width (14 bits)
-    height = ((uint16_t)(p[8] & 0x3F) << 8) | (uint16_t)(p[9]); // (2 bits Vertical Scale << 14) | Height (14 bits)
+    *width = ((uint16_t)(p[7] & 0x3F) << 8) | (uint16_t)(p[6]); // (2 bits Horizontal Scale << 14) | Width (14 bits)
+    *height = ((uint16_t)(p[9] & 0x3F) << 8) | (uint16_t)(p[8]); // (2 bits Vertical Scale << 14) | Height (14 bits)
 
     memset(vpx, 0, sizeof(*vpx));
     vpx->profile = (tag >> 1) & 0x03;
