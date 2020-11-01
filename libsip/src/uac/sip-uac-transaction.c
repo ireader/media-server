@@ -4,13 +4,16 @@
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
+int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
+int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
+
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip, struct sip_message_t* req)
 {
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)calloc(1, sizeof(*t));
 	if (NULL == t) return NULL;
 
-	t->ref = 0;
+	t->ref = 1;
 	t->req = req; 
 	t->agent = sip;
 	LIST_INIT_HEAD(&t->link);
@@ -25,7 +28,7 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip
 	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 
 	// Life cycle: from create -> destroy
-	sip_uac_add_transaction(sip, t);
+	sip_uac_link_transaction(sip, t);
 	return t;
 }
 
@@ -43,10 +46,9 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
     if(t->ondestroy)
         t->ondestroy(t->ondestroyparam);
 
-	// MUST: destroy t->req after sip_uac_del_transaction
+	sip_uac_unlink_transaction(t->agent, t);
 	assert(t->link.next == t->link.prev);
 	sip_message_destroy(t->req);
-
 	locker_destroy(&t->locker);
 	free(t);
 	return 0;
@@ -120,7 +122,6 @@ static int sip_uac_transaction_terminate(struct sip_uac_transaction_t* t)
 		t->timerd = NULL;
 	}
 
-	sip_uac_del_transaction(t->agent, t);
 	return 0;
 }
 

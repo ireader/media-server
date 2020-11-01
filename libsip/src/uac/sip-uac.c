@@ -8,7 +8,7 @@
 #include "sip-transport.h"
 #include <stdio.h>
 
-int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
+int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
 	atomic_increment32(&sip->ref); // ref by transaction
 	assert(sip->ref > 0);
@@ -17,10 +17,10 @@ int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 	locker_lock(&sip->locker);
 	list_insert_after(&t->link, sip->uac.prev);
 	locker_unlock(&sip->locker);
-	return sip_uac_transaction_addref(t);
+	return 0;
 }
 
-int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
+int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
@@ -47,7 +47,7 @@ int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 
 	locker_unlock(&sip->locker);
 	sip_agent_destroy(sip);
-	return sip_uac_transaction_release(t);
+	return 0;
 }
 
 void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)

@@ -1,6 +1,9 @@
 #include "sip-uas-transaction.h"
 #include "sip-transport.h"
 
+int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
+int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
+
 struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req)
 {
 	struct sip_uas_transaction_t* t;
@@ -14,7 +17,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 		return NULL;
 	}
 
-	t->ref = 1;
+	t->ref = 1; // for agent uac link, don't destory it
 	t->agent = sip;
 	LIST_INIT_HEAD(&t->link);
 	locker_create(&t->locker);
@@ -28,7 +31,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 
 	// Life cycle: from create -> destroy
-	sip_uas_add_transaction(sip, t);
+	sip_uas_link_transaction(sip, t);
 	return t;
 }
 
@@ -51,6 +54,9 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
         t->ondestroy(t->ondestroyparam);
         t->ondestroy = NULL;
     }
+
+	// MUST unlink before reply destroy
+	sip_uas_unlink_transaction(t->agent, t);
 
 	if (t->reply)
     {
@@ -183,7 +189,6 @@ int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)
 		t->timerij = NULL;
 	}
 
-	sip_uas_del_transaction(t->agent, t);
 	return 0;
 }
 

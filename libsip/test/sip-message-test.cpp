@@ -10,6 +10,7 @@ extern "C" {
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "uri-parse.h"
+#include <memory>
 
 struct sip_message_test_t
 {
@@ -163,7 +164,8 @@ static int sip_test_register(struct sip_message_test_t* alice, struct sip_messag
 
 	struct sip_message_t* req = req2sip(f1);
 	struct sip_message_t* reply = reply2sip(f2);
-	assert(0 == sip_uac_send(sip_uac_transaction_create1(bob->sip, req), NULL, 0, &bob->udp, &bob));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_transaction_create1(bob->sip, req), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &bob->udp, &bob));
 	assert(0 == sip_agent_input(alice->sip, req));
 	assert(0 == sip_agent_input(bob->sip, reply));
 	//sip_message_destroy(req); // delete by uac transaction
@@ -243,7 +245,8 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
 	struct sip_message_t* reply603 = reply2sip(f13);
 	struct sip_message_t* ack = req2sip(f12);
 
-	assert(0 == sip_uac_send(sip_uac_transaction_create2(alice->sip, req), NULL, 0, &alice->udp, &alice));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_transaction_create2(alice->sip, req), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &alice->udp, &alice));
 	assert(0 == sip_agent_input(bob->sip, req));
 	assert(0 == sip_agent_input(bob->sip, req));
 	assert(0 == sip_agent_input(bob->sip, req));
@@ -320,7 +323,8 @@ static int sip_test_message(struct sip_message_test_t* alice, struct sip_message
 
 	struct sip_message_t* req = req2sip(f1);
 	struct sip_message_t* reply = reply2sip(f4);
-	assert(0 == sip_uac_send(sip_uac_transaction_create1(bob->sip, req), "Watson, come here.", 18, &bob->udp, &bob));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_transaction_create1(bob->sip, req), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), "Watson, come here.", 18, &bob->udp, &bob));
 	assert(0 == sip_agent_input(alice->sip, req));
 	assert(0 == sip_agent_input(bob->sip, reply));
 	//sip_message_destroy(req); // delete by uac transaction
@@ -396,10 +400,12 @@ static int sip_test_notify(struct sip_message_test_t* alice, struct sip_message_
 	struct sip_message_t* reply = reply2sip(f2); 
 	struct sip_message_t* req2 = req2sip(f3);
 	struct sip_message_t* reply2 = reply2sip(f4);
-	assert(0 == sip_uac_send(sip_uac_transaction_create3(alice->sip, req), NULL, 0, &alice->udp, &alice));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_transaction_create3(alice->sip, req), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &alice->udp, &alice));
 	assert(0 == sip_agent_input(bob->sip, req));
 	assert(0 == sip_agent_input(alice->sip, reply));
-	assert(0 == sip_uac_send(sip_uac_transaction_create1(bob->sip, req2), f3message, strlen(f3message), &bob->udp, &bob));
+	std::shared_ptr<sip_uac_transaction_t> t2(sip_uac_transaction_create1(bob->sip, req2), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t2.get(), f3message, strlen(f3message), &bob->udp, &bob));
 	assert(0 == sip_agent_input(alice->sip, req2));
 	assert(0 == sip_agent_input(bob->sip, reply2));
 	//sip_message_destroy(req); // delete by uac transaction
@@ -451,7 +457,8 @@ static int sip_test_bye(struct sip_message_test_t* alice, struct sip_message_tes
 
 	struct sip_message_t* req = req2sip(f13);
 	struct sip_message_t* reply = reply2sip(f14);
-	assert(0 == sip_uac_send(sip_uac_transaction_create1(alice->sip, req), NULL, 0, &alice->udp, &alice));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_transaction_create1(alice->sip, req), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &alice->udp, &alice));
 	assert(0 == sip_agent_input(bob->sip, req));
 	assert(0 == sip_agent_input(alice->sip, reply));
 	//sip_message_destroy(req); // delete by uac transaction

@@ -67,11 +67,10 @@ struct sip_uac_test2_session_t
     char buffer[2 * 1024 * 1024];
 	std::string user;
 	std::string from;
-	union
-	{
-		struct sip_uas_transaction_t* t;
-		struct sip_uac_transaction_t* tuac;
-	};
+	
+	struct sip_uas_transaction_t* t;
+	std::shared_ptr<struct sip_uac_transaction_t> tuac;
+	
 	struct ice_transport_t* avt;
 	struct sip_uac_transport_address_t transport;
 
@@ -792,14 +791,14 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 		// TODO: add Allow-Events
 		//sip_uac_add_header(s->tuac, "Allow-Events", "");
 
-		sip_uac_add_header(s->tuac, "Content-Type", "application/sdp");
+		sip_uac_add_header(s->tuac.get(), "Content-Type", "application/sdp");
 		int n = snprintf(buffer, sizeof(buffer), pattern, s->user.c_str(), host, host, (char*)s->audio.sender.buffer, (char*)s->video.sender.buffer);
 
 		struct sip_transport_t t = {
 			sip_uac_transport_via,
 			sip_uac_transport_send,
 		};
-		assert(0 == sip_uac_send(s->tuac, buffer, n, &t, &s->transport));
+		assert(0 == sip_uac_send(s->tuac.get(), buffer, n, &t, &s->transport));
 	}
 	else
 	{
@@ -920,15 +919,14 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 static void sip_uac_invite_test(struct sip_uac_test2_t *ctx)
 {
     char buffer[1024];
-    struct sip_uac_transaction_t* t;
-    t = sip_uac_invite(ctx->sip, SIP_FROM, SIP_PEER, sip_uac_oninvited, ctx);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(ctx->sip, SIP_FROM, SIP_PEER, sip_uac_oninvited, ctx), sip_uac_transaction_release);
 	if (HTTP_AUTHENTICATION_DIGEST == ctx->auth.scheme)
 	{
 		++ctx->auth.nc;
 		snprintf(ctx->auth.uri, sizeof(ctx->auth.uri), "%s", SIP_PEER);
 		snprintf(ctx->auth.username, sizeof(ctx->auth.username), "%s", ctx->usr);
 		http_header_auth(&ctx->auth, SIP_PWD, "INVITE", NULL, 0, buffer, sizeof(buffer));
-		sip_uac_add_header(t, "Proxy-Authorization", buffer);
+		sip_uac_add_header(t.get(), "Proxy-Authorization", buffer);
 	}
 
 	struct ice_transport_handler_t handler = {
@@ -1013,17 +1011,16 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 static void sip_uac_register_test(struct sip_uac_test2_t *test)
 {
 	char buffer[256];
-	struct sip_uac_transaction_t* t;
 	//t = sip_uac_register(uac, "Bob <sip:bob@biloxi.com>", "sip:registrar.biloxi.com", 7200, sip_uac_message_onregister, test);
-	t = sip_uac_register(test->sip, SIP_FROM, "sip:" SIP_HOST, SIP_EXPIRED, sip_uac_onregister, test);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(test->sip, SIP_FROM, "sip:" SIP_HOST, SIP_EXPIRED, sip_uac_onregister, test), sip_uac_transaction_release);
 
 	if (test->callid[0])
 	{
 		// All registrations from a UAC SHOULD use the same Call-ID
-		sip_uac_add_header(t, "Call-ID", test->callid);
+		sip_uac_add_header(t.get(), "Call-ID", test->callid);
 
 		snprintf(buffer, sizeof(buffer), "%u REGISTER", ++test->cseq);
-		sip_uac_add_header(t, "CSeq", buffer);
+		sip_uac_add_header(t.get(), "CSeq", buffer);
 	}
 
 	if (HTTP_AUTHENTICATION_DIGEST == test->auth.scheme)
@@ -1034,14 +1031,14 @@ static void sip_uac_register_test(struct sip_uac_test2_t *test)
 		snprintf(test->auth.uri, sizeof(test->auth.uri), "sip:%s", SIP_HOST);
 		snprintf(test->auth.username, sizeof(test->auth.username), "%s", test->usr);
 		http_header_auth(&test->auth, SIP_PWD, "REGISTER", NULL, 0, buffer, sizeof(buffer));
-		sip_uac_add_header(t, "Authorization", buffer);
+		sip_uac_add_header(t.get(), "Authorization", buffer);
 	}
 
 	struct sip_transport_t transport = {
 			sip_uac_transport_via,
 			sip_uac_transport_send,
 	};
-	assert(0 == sip_uac_send(t, NULL, 0, &transport, &test->transport));
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &transport, &test->transport));
 }
 
 static int STDCALL TimerThread(void* param)

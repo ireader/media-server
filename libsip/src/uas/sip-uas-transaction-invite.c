@@ -65,9 +65,10 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// TODO: add timer here, send 100 trying
 		if (!t->dialog->session && SIP_UAS_TRANSACTION_TRYING == t->status)
 		{
+			sip_uas_transaction_timewait(t, TIMER_H);
+
 			// user ignore/discard
 			t->status = SIP_UAS_TRANSACTION_TERMINATED;
-			sip_uas_transaction_timewait(t, TIMER_H);
 		}
 		break;
 

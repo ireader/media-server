@@ -61,6 +61,8 @@ int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, in
 /// @return 0-ok, other-error
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, struct sip_transport_t* transport, void* param);
 
+int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
+
 #if defined(__cplusplus)
 }
 #endif

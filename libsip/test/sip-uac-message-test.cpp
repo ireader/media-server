@@ -5,6 +5,7 @@
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "uri-parse.h"
+#include <memory>
 
 static struct sip_dialog_t* s_dialog;
 
@@ -133,17 +134,15 @@ static void sip_uac_message_register(struct sip_agent_t* sip, struct sip_transpo
 	struct sip_message_t* req = req2sip(f1);
 	struct sip_message_t* reply = reply2sip(f2);
 
-	struct sip_uac_transaction_t* t;
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(sip, "Bob <sip:bob@biloxi.com>", NULL, 7200, sip_uac_message_onregister, NULL), sip_uac_transaction_release);
 	//t = sip_uac_register(sip, "Bob <sip:bob@biloxi.com>", "sip:registrar.biloxi.com", 7200, sip_uac_message_onregister, NULL);
-	t = sip_uac_register(sip, "Bob <sip:bob@biloxi.com>", NULL, 7200, sip_uac_message_onregister, NULL);
-	sip_uac_add_header(t, "Via", "SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7");
-	sip_uac_add_header(t, "CSeq", "1826 REGISTER");// modify cseq.id
-	assert(0 == sip_uac_send(t, NULL, 0, udp, req));
+	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7");
+	sip_uac_add_header(t.get(), "CSeq", "1826 REGISTER");// modify cseq.id
+	assert(0 == sip_uac_send(t.get(), NULL, 0, udp, req));
 	assert(0 == sip_agent_input(sip, reply));
 
 	sip_message_destroy(req);
 	sip_message_destroy(reply);
-	//sip_uac_transaction_release(t);
 }
 
 static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport_t* udp)
@@ -216,13 +215,13 @@ static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport
 	struct sip_message_t* reply603 = reply2sip(f13);
 	struct sip_message_t* ack = req2sip(f12);
 
-	struct sip_uac_transaction_t* t = sip_uac_invite(sip, "Alice <sip:alice@atlanta.com>;tag=1928301774", "Bob <sip:bob@biloxi.com>", sip_uac_message_oninvite, NULL);
-	sip_uac_add_header(t, "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8");
-	sip_uac_add_header(t, "Call-ID", "a84b4c76e66710");// modify call-id
-	sip_uac_add_header(t, "CSeq", "314159 INVITE");// modify cseq.id
-	sip_uac_add_header(t, "Content-Type", "application/sdp");
-	sip_uac_add_header_int(t, "Content-Length", 3);
-	sip_uac_send(t, "sdp", 3, udp, req);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(sip, "Alice <sip:alice@atlanta.com>;tag=1928301774", "Bob <sip:bob@biloxi.com>", sip_uac_message_oninvite, NULL), sip_uac_transaction_release);
+	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8");
+	sip_uac_add_header(t.get(), "Call-ID", "a84b4c76e66710");// modify call-id
+	sip_uac_add_header(t.get(), "CSeq", "314159 INVITE");// modify cseq.id
+	sip_uac_add_header(t.get(), "Content-Type", "application/sdp");
+	sip_uac_add_header_int(t.get(), "Content-Length", 3);
+	sip_uac_send(t.get(), "sdp", 3, udp, req);
 
 	sip_agent_input(sip, reply100);
 	sip_agent_input(sip, reply180);
@@ -239,7 +238,6 @@ static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport
 	sip_message_destroy(reply180);
 	sip_message_destroy(reply200);
 	sip_message_destroy(ack);
-	//sip_uac_transaction_release(t);
 }
 
 static void sip_uac_message_bye(struct sip_agent_t* sip, struct sip_transport_t* udp)
@@ -266,15 +264,14 @@ static void sip_uac_message_bye(struct sip_agent_t* sip, struct sip_transport_t*
 	struct sip_message_t* req = req2sip(f13);
 	struct sip_message_t* reply = reply2sip(f14);
 
-	struct sip_uac_transaction_t* t = sip_uac_bye(sip, s_dialog, sip_uac_message_onbye, NULL);
-	sip_uac_add_header(t, "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds9");
-	sip_uac_add_header_int(t, "Content-Length", 0);
-	sip_uac_send(t, NULL, 0, udp, req);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_bye(sip, s_dialog, sip_uac_message_onbye, NULL), sip_uac_transaction_release);
+	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds9");
+	sip_uac_add_header_int(t.get(), "Content-Length", 0);
+	sip_uac_send(t.get(), NULL, 0, udp, req);
 	sip_agent_input(sip, reply);
 
 	sip_message_destroy(req);
 	sip_message_destroy(reply);
-	//sip_uac_transaction_release(t);
 }
 
 // 24 Examples (p213)

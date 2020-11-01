@@ -59,7 +59,7 @@ struct sip_uac_transaction_t
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip, struct sip_message_t* req);
 int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
-int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
+//int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
 
@@ -70,9 +70,6 @@ int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const s
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 
 int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int nconcat);
-
-int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
-int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
 
 void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
 void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, void* id);
