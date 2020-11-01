@@ -45,6 +45,7 @@ static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
     if (RTCP_MSG_BYE == msg->type)
     {
         printf("finished\n");
+        //rtp->onpkt(rtp->param, NULL, 0, 0, 0);
     }
 }
 
@@ -101,7 +102,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     rtp->ptr = ptr;
 }
 
-static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payload, const char* encoding)
+static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int jitter, int frequency, int payload, const char* encoding)
 {
     uint32_t timestamp;
     struct rtp_event_t evthandler;
@@ -120,19 +121,19 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payloa
     evthandler.on_rtcp = rtp_on_rtcp;
     rtp->rtp = rtp_create(&evthandler, rtp, rtp->ssrc, timestamp, frequency ? frequency : 90000, 2 * 1024 * 1024, 0);
     
-    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp);
+    rtp->queue = rtp_queue_create(jitter, frequency, rtp_demuxer_freepkt, rtp);
     
     return rtp->payload && rtp->rtp && rtp->queue? 0 : -1;
 }
 
-struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param)
+struct rtp_demuxer_t* rtp_demuxer_create(int jitter, int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param)
 {
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)calloc(1, sizeof(*rtp));
     if(!rtp)
         return NULL;
     
-    if(0 != rtp_demuxer_init(rtp, frequency, payload, encoding))
+    if(0 != rtp_demuxer_init(rtp, jitter, frequency, payload, encoding))
     {
         rtp_demuxer_destroy(&rtp);
         return NULL;

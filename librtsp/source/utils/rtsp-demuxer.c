@@ -68,6 +68,7 @@ struct rtsp_demuxer_t
     void* param;
     int (*onpacket)(void* param, int stream, int payload, const char* encoding, int64_t pts, int64_t dts, const void* data, int bytes, int flags);
 
+    int jitter;
     struct rtp_payload_info_t pt[4];
     int count; // payload type count
     int idx; // last payload index
@@ -127,8 +128,9 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
 
 static inline int rtsp_demuxer_mpegps_onpacket(void* param, int track, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    struct rtp_payload_info_t* pt;
-    pt = (struct rtp_payload_info_t*)param;
+    //struct rtp_payload_info_t* pt;
+    //pt = (struct rtp_payload_info_t*)param;
+    (void)param;
     return rtsp_demuxer_mpegts_onpacket(param, 0, track, codecid, flags, pts, dts, data, bytes);
 }
 
@@ -302,12 +304,12 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
     if (RTP_PAYLOAD_MP2T == payload)
     {
         pt->ts = ts_demuxer_create(rtsp_demuxer_mpegts_onpacket, pt);
-        pt->rtp = rtp_demuxer_create(frequency, payload, encoding, rtsp_demuxer_ontspacket, pt);
+        pt->rtp = rtp_demuxer_create(demuxer->jitter, frequency, payload, encoding, rtsp_demuxer_ontspacket, pt);
     }
     else if (0 == strcasecmp(encoding, "MP2P"))
     {
         pt->ps = ps_demuxer_create(rtsp_demuxer_mpegps_onpacket, pt);
-        pt->rtp = rtp_demuxer_create(frequency, payload, encoding, rtsp_demuxer_onpspacket, pt);
+        pt->rtp = rtp_demuxer_create(demuxer->jitter, frequency, payload, encoding, rtsp_demuxer_onpspacket, pt);
     }
     else
     {
@@ -316,32 +318,32 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
 
         if (0 == strcasecmp(encoding, "H264"))
         {
-            if (fmtp && 0 == sdp_a_fmtp_h264(fmtp, &payload, &pt->fmtp.h264))
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_h264(fmtp, &payload, &pt->fmtp.h264))
                 pt->extra_bytes = sdp_h264_load(pt->extra, len, pt->fmtp.h264.sprop_parameter_sets);
             pt->bsf = avbsf_h264();
         }
         else if (0 == strcasecmp(encoding, "H265") || 0 == strcasecmp(encoding, "HEVC"))
         {
-            if (fmtp && 0 == sdp_a_fmtp_h265(fmtp, &payload, &pt->fmtp.h265))
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_h265(fmtp, &payload, &pt->fmtp.h265))
                 pt->extra_bytes = sdp_h265_load(pt->extra, len, pt->fmtp.h265.sprop_vps, pt->fmtp.h265.sprop_sps, pt->fmtp.h265.sprop_pps, pt->fmtp.h265.sprop_sei);
             pt->bsf = avbsf_h265();
         }
-        else if (fmtp && (0 == strcasecmp(encoding, "MPEG4-GENERIC")))
+        else if (0 == strcasecmp(encoding, "MPEG4-GENERIC"))
         {
-            if (fmtp && 0 == sdp_a_fmtp_mpeg4(fmtp, &payload, &pt->fmtp.mpeg4))
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_mpeg4(fmtp, &payload, &pt->fmtp.mpeg4))
                 pt->extra_bytes = sdp_aac_mpeg4_load(pt->extra, len, pt->fmtp.mpeg4.config);
             pt->bsf = avbsf_aac();
         }
-        else if (fmtp && (0 == strcasecmp(encoding, "MP4A-LATM")))
+        else if (0 == strcasecmp(encoding, "MP4A-LATM"))
         {
-            if (fmtp && 0 == sdp_a_fmtp_mpeg4(fmtp, &payload, &pt->fmtp.mpeg4))
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_mpeg4(fmtp, &payload, &pt->fmtp.mpeg4))
                 pt->extra_bytes = sdp_aac_latm_load(pt->extra, len, pt->fmtp.mpeg4.config);
             pt->bsf = avbsf_aac();
         }
 
         if (pt->bsf)
             pt->filter = pt->bsf->create(pt->extra, pt->extra_bytes > 0 ? pt->extra_bytes : 0, rtsp_demuxer_bsf_onpacket, pt);
-        pt->rtp = rtp_demuxer_create(frequency, pt->payload, encoding, rtsp_demuxer_onrtppacket, pt);
+        pt->rtp = rtp_demuxer_create(demuxer->jitter, frequency, pt->payload, encoding, rtsp_demuxer_onrtppacket, pt);
     }
 
     if (!pt->rtp || (pt->bsf && !pt->filter))
@@ -356,13 +358,14 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
     return 0;
 }
 
-struct rtsp_demuxer_t* rtsp_demuxer_create(int frequency, int payload, const char* encoding, const char* fmtp, rtsp_demuxer_onpacket onpkt, void* param)
+struct rtsp_demuxer_t* rtsp_demuxer_create(int jitter, int frequency, int payload, const char* encoding, const char* fmtp, rtsp_demuxer_onpacket onpkt, void* param)
 {
     struct rtsp_demuxer_t* demuxer;
     demuxer = calloc(1, sizeof(*demuxer));
     if (!demuxer) return NULL;
 
     assert(frequency > 0);
+    demuxer->jitter = jitter;
     demuxer->param = param;
     demuxer->onpacket = onpkt;
     
