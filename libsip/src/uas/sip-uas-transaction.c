@@ -4,14 +4,14 @@
 int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
 int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req)
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req, const struct sip_dialog_t* dialog)
 {
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)calloc(1, sizeof(*t));
 	if (NULL == t) return NULL;
 
 	t->reply = sip_message_create(SIP_MESSAGE_REPLY);
-	if (0 != sip_message_init3(t->reply, req))
+	if (0 != sip_message_init3(t->reply, req, dialog))
 	{
 		free(t);
 		return NULL;
@@ -221,6 +221,7 @@ static void sip_uas_transaction_onterminated(void* usrptr)
 	t = (struct sip_uas_transaction_t*)usrptr;
 
 	locker_lock(&t->locker);
+    t->timerij = NULL;
 	if(SIP_UAS_TRANSACTION_TERMINATED != t->status)
 		sip_uas_transaction_terminated(t);
 	locker_unlock(&t->locker);

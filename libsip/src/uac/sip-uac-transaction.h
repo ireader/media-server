@@ -44,7 +44,7 @@ struct sip_uac_transaction_t
 	void* timerd; // wait for all duplicate-reply(ack) message(timer K)
 
 	struct sip_agent_t* agent;
-	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+//	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 	sip_uac_onsubscribe onsubscribe;
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;

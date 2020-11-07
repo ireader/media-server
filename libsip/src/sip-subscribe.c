@@ -132,7 +132,7 @@ struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, co
 
 	*added = 0;
 	locker_lock(&sip->locker);
-	subscribe = sip_subscribe_find(sip, &msg->callid, &msg->from.tag, &msg->to.tag, event);
+    subscribe = sip_subscribe_find(sip, &msg->callid, uac ? &msg->from.tag : &msg->to.tag, uac ? &msg->to.tag : &msg->from.tag, event);
 	if (NULL == subscribe)
 	{
 		subscribe = sip_subscribe_create(event);

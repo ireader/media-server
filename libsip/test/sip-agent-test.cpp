@@ -1,3 +1,4 @@
+#include <memory>
 #include "sockutil.h"
 #include "aio-timeout.h"
 #include "sip-agent.h"
@@ -18,7 +19,6 @@
 #include "base64.h"
 #include "md5.h"
 #include <stdint.h>
-#include <memory>
 
 #define NQUEUE 3
 #define NCONCURRENT 200

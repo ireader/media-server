@@ -181,6 +181,7 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	int i;
 	struct sip_uri_t uri;
 	//struct cstring_t f, t;
+	struct sip_contact_t contact;
 
 	//f.p = msg->ptr.ptr;
 	//f.n = sip_uri_write(&dialog->local.uri, msg->ptr.ptr, msg->ptr.end);
@@ -200,6 +201,14 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	//sip_message_copy(msg, &msg->to.tag, dialog->remote.tag);
 	//sip_message_copy(msg, &msg->from.tag, dialog->local.tag);
 
+	// default contact from dialog
+	//if (cstrvalid(&dialog->local.target.host))
+	//{
+	//	memset(&contact, 0, sizeof(contact));
+	//	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &contact.uri, &dialog->local.target);
+	//	sip_contacts_push(&msg->contacts, &contact);
+	//}
+
 	// initialize routers
 	for (i = 0; i < sip_uris_count(&dialog->routers); i++)
 	{
@@ -209,7 +218,7 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 
 	// initialize remote target
 	memcpy(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
-	memcpy(&msg->u.c.uri, &dialog->target, sizeof(struct sip_uri_t));
+	memcpy(&msg->u.c.uri, &dialog->remote.target, sizeof(struct sip_uri_t));
 
 	// TODO: Via
 
@@ -220,12 +229,13 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 
 // Copy From/To/Call-Id/Max-Forwards/CSeq
 // Add Via by transport ???
-int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req)
+int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req, const struct sip_dialog_t* dialog)
 {
 	int i;
 	char tag[16];
 	struct sip_uri_t uri;
 	struct sip_via_t via;
+	struct sip_contact_t contact;
 
 	// 8.2.6 Generating the Response
 	// 8.2.6.2 Headers and Tags
@@ -289,6 +299,14 @@ int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req
 	//{
 	//	msg->ptr.ptr = sip_via_clone(msg->ptr.ptr, msg->ptr.end, &uri, sip_uris_get(&req->routers, i));
 	//	sip_uris_push(&msg->routers, &via);
+	//}
+
+	// default contact from dialog
+	//if (dialog && cstrvalid(&dialog->local.target.host))
+	//{
+	//	memset(&contact, 0, sizeof(contact));
+	//	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &contact.uri, &dialog->local.target);
+	//	sip_contacts_push(&msg->contacts, &contact);
 	//}
 
 	return 0;
@@ -795,7 +813,7 @@ const struct cstring_t* sip_message_get_header_by_name(const struct sip_message_
 
 int sip_message_set_reply_default_contact(struct sip_message_t* reply)
 {
-    struct sip_via_t* via;
+//    struct sip_via_t* via;
     struct sip_contact_t contact;
     
     assert(SIP_MESSAGE_REPLY == reply->mode);
@@ -826,11 +844,19 @@ int sip_message_set_rport(struct sip_message_t* request, const char* addr, int p
 	if (!via || cstrvalid(&via->received) /*|| via->rport != 0*/ )
 		return -1;
 
-	via->rport = port;
-	snprintf(v, sizeof(v), "%d", port);
-	sip_message_copy(request, &rport, v);
-	sip_message_copy(request, &via->received, addr);
-	sip_params_add_or_update(&via->params, "rport", 5, &rport);
-	sip_params_add_or_update(&via->params, "received", 8, &via->received);
+    if(port > 0)
+    {
+        via->rport = port;
+        snprintf(v, sizeof(v), "%d", port);
+        sip_message_copy(request, &rport, v);
+        sip_params_add_or_update(&via->params, "rport", 5, &rport);
+    }
+    
+    if(addr && *addr)
+    {
+        sip_message_copy(request, &via->received, addr);
+        sip_params_add_or_update(&via->params, "received", 8, &via->received);
+    }
+    
 	return 0;
 }

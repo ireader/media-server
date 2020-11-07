@@ -215,7 +215,10 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 	struct sip_dialog_t *dialog;
 	struct sip_uas_transaction_t* t;
 
-	// 1. find transaction
+	// 1. find dialog
+	dialog = sip_dialog_fetch(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
+
+	// 2. find transaction
 	locker_lock(&sip->locker);
 	t = sip_uas_find_transaction(sip, msg, 1);
 	if (!t)
@@ -223,13 +226,15 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 		if (sip_message_isack(msg))
 		{
 			locker_unlock(&sip->locker);
+			sip_dialog_release(dialog);
 			return 0; // invalid ack, discard, TODO: add log here
 		}
 
-		t = sip_uas_transaction_create(sip, msg);
+		t = sip_uas_transaction_create(sip, msg, dialog);
 		if (!t)
 		{
 			locker_unlock(&sip->locker);
+			sip_dialog_release(dialog);
 			return -1;
 		}
 		assert(t->ref == 1);
@@ -240,12 +245,10 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 	if (0 != r)
 	{
 		sip_uas_transaction_release(t);
+		sip_dialog_release(dialog);
 		return r;
 	}
 
-	// 2. find dialog
-	dialog = sip_dialog_fetch(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
-    
     locker_lock(&t->locker);
 
 	// 4. handle
@@ -262,8 +265,7 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 
 	locker_unlock(&t->locker);
 	sip_uas_transaction_release(t);
-	if (dialog)
-		sip_dialog_release(dialog);
+	sip_dialog_release(dialog);
 	return r;
 }
 

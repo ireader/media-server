@@ -15,7 +15,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 
 	r = 0;
 	ack = sip_message_create(SIP_MESSAGE_REQUEST);
-	r = dialog && cstrvalid(&dialog->target.host) ? sip_message_init2(ack, SIP_METHOD_ACK, dialog) : sip_message_initack(ack, t->req);
+	r = dialog && cstrvalid(&dialog->remote.target.host) ? sip_message_init2(ack, SIP_METHOD_ACK, dialog) : sip_message_initack(ack, t->req);
 	if (0 != r)
 	{
 		sip_message_destroy(ack);

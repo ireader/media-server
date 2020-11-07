@@ -56,9 +56,7 @@ struct sip_uas_transaction_t
 	struct sip_message_t* reply; // for set reply sip header
 };
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* msg);
-int sip_uas_transaction_addref(struct sip_uas_transaction_t* t);
-int sip_uas_transaction_release(struct sip_uas_transaction_t* t);
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_dialog_t* dialog);
 
 int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
 

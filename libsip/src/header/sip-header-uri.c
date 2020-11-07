@@ -168,7 +168,7 @@ int sip_request_uri_write(const struct sip_uri_t* uri, char* data, const char* e
 	for (i = 0; i < sip_params_count(&uri->parameters); i++)
 	{
 		param = sip_params_get(&uri->parameters, i);
-		if (cstrcasecmp(&param->name, "method"))
+		if (0 == cstrcasecmp(&param->name, "method"))
 			continue;
 		sip_params_push(&v.parameters, param);
 	}

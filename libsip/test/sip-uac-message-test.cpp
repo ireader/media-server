@@ -1,3 +1,4 @@
+#include <memory>
 #include "sys/sock.h"
 #include "sip-uac.h"
 #include "sip-message.h"
@@ -5,7 +6,6 @@
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "uri-parse.h"
-#include <memory>
 
 static struct sip_dialog_t* s_dialog;
 

@@ -164,11 +164,12 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 	if (t->size < 1)
 		return -1;
 
-    // aet early dialog local url tag
+    // set early dialog local url tag/target
     if(sip_message_isinvite(t->reply) && t->dialog && !cstrvalid(&t->dialog->local.uri.tag))
     {
         assert(cstrvalid(&t->reply->to.tag));
         sip_dialog_setlocaltag(t->dialog, &t->reply->to.tag);
+		sip_dialog_set_local_target(t->dialog, t->reply);
         r = sip_dialog_add(t->agent, t->dialog);
         assert(0 == r);
     }

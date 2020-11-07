@@ -1,3 +1,4 @@
+#include <memory>
 #include "sockutil.h"
 #include "aio-timeout.h"
 #include "sip-uac.h"
@@ -13,7 +14,6 @@
 #include "base64.h"
 #include "md5.h"
 #include <stdint.h>
-#include <memory>
 
 struct sip_uac_test_t
 {
