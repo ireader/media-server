@@ -303,6 +303,9 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
         }
     }
 
+	if (ts->pat.pmts && ts->pat.pmts != ts->pat.pmt_default)
+		free(ts->pat.pmts);
+
     free(ts);
     return 0;
 }

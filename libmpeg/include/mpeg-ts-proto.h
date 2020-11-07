@@ -81,7 +81,9 @@ struct pat_t
 	unsigned int cc;	//continuity_counter : 4;
 
 	unsigned int pmt_count;
-	struct pmt_t pmts[4];
+	unsigned int pmt_capacity;
+	struct pmt_t pmt_default[1];
+	struct pmt_t* pmts;
 };
 
 // Table 2-3 - PID table(p36)
@@ -187,6 +189,7 @@ enum
     MPEG_FLAG_H264_H265_WITH_AUD = 0x8000,
 };
 
+struct pmt_t* pat_alloc_pmt(struct pat_t* pat);
 struct pmt_t* pat_find(struct pat_t* pat, uint16_t pn);
 size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
 size_t pat_write(const struct pat_t *pat, uint8_t *data);
