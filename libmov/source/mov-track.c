@@ -86,6 +86,9 @@ int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
 {
     struct mov_sample_entry_t* audio;
 
+    if (MOV_OBJECT_MP3 == object && sample_rate > 24000)
+        object = MOV_OBJECT_MP1A; // use mpeg1 sample rate table, see more @libflv/source/mp3-header.c
+
     audio = &track->stsd.entries[0];
     audio->data_reference_index = 1;
     audio->object_type_indication = object;

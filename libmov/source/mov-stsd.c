@@ -177,7 +177,7 @@ static int mov_read_video(struct mov_t* mov, struct mov_sample_entry_t* entry)
 }
 
 /*
-class PixelAspectRatioBox extends Box(‘pasp’){
+class PixelAspectRatioBox extends Box(‘pasp?{
 	unsigned int(32) hSpacing;
 	unsigned int(32) vSpacing;
 }
@@ -471,7 +471,7 @@ static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_e
 	// 2. The samplerate field shall be set to 48000<<16.
 	mov_buffer_w32(&mov->io, entry->u.audio.samplerate); /* samplerate */
 
-	if(MOV_OBJECT_AAC == entry->object_type_indication)
+	if(MOV_OBJECT_AAC == entry->object_type_indication || MOV_OBJECT_MP3 == entry->object_type_indication || MOV_OBJECT_MP1A == entry->object_type_indication)
 		size += mov_write_esds(mov);
     else if(MOV_OBJECT_OPUS == entry->object_type_indication)
         size += mov_write_dops(mov);

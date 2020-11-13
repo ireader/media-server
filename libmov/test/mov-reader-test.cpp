@@ -28,6 +28,7 @@ static uint32_t s_av1_track = 0xFFFFFFFF;
 static uint32_t s_vpx_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
 static uint32_t s_opus_track = 0xFFFFFFFF;
+static uint32_t s_mp3_track = 0xFFFFFFFF;
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
@@ -97,6 +98,13 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		a_pts = pts;
 		a_dts = dts;
 	}
+	else if (s_mp3_track == track)
+	{
+		printf("[MP3] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
+		a_pts = pts;
+		a_dts = dts;
+		fwrite(buffer, 1, bytes, s_afp);
+	}
 	else
 	{
 		printf("text\n");
@@ -138,9 +146,9 @@ static void mov_video_info(void* /*param*/, uint32_t track, uint8_t object, int 
 
 static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
-	s_afp = fopen("a.aac", "wb");
 	if (MOV_OBJECT_AAC == object)
 	{
+		s_afp = fopen("a.aac", "wb");
 		s_aac_track = track;
 		assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
 		assert(channel_count == s_aac.channels);
@@ -151,9 +159,15 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{
+		s_afp = fopen("a.opus", "wb");
 		s_opus_track = track;
 		assert(bytes == opus_head_load((const uint8_t*)extra, bytes, &s_opus));
 		assert(s_opus.input_sample_rate == 48000);
+	}
+	else if (MOV_OBJECT_MP3 == object || MOV_OBJECT_MP1A == object)
+	{
+		s_afp = fopen("a.mp3", "wb");
+		s_mp3_track = track;
 	}
 	else
 	{
