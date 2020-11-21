@@ -106,8 +106,8 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 		switch (mp3_get_frequency(&mp3))
 		{
 		case 5500: audio.rate = 0; break;
-		case 11000: audio.rate = 1; break;
-		case 22000: audio.rate = 2; break;
+		case 11025: audio.rate = 1; break;
+		case 22050: audio.rate = 2; break;
 		case 44100: audio.rate = 3; break;
 		default: audio.rate = 3;
 		}

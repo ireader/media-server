@@ -179,7 +179,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
-	for(p1 = h264_nalu_find((const uint8_t*)h264, pend); 0 == r && p1 < pend && 0 == r; p1 = p2)
+	for(p1 = h264_nalu_find((const uint8_t*)h264, pend); 0 == r && p1 < pend; p1 = p2)
 	{
 		size_t nalu_size;
 
