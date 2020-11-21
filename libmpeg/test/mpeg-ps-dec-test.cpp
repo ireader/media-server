@@ -56,6 +56,11 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
     return 0;
 }
 
+static void mpeg_ps_dec_testonstream(void* param, int stream, int codecid, const void* extra, int bytes, int finish)
+{
+    printf("stream %d, codecid: %d, finish: %s\n", stream, codecid, finish ? "true" : "false");
+}
+
 static uint8_t s_packet[2 * 1024 * 1024];
 
 void mpeg_ps_dec_test(const char* file)
@@ -64,8 +69,13 @@ void mpeg_ps_dec_test(const char* file)
     vfp = fopen("v.h264", "wb");
     afp = fopen("a.aac", "wb");
 
-    size_t n, i = 0, r = 0;
+    struct ps_demuxer_notify_t notify = {
+        mpeg_ps_dec_testonstream,
+    };
     ps_demuxer_t* ps = ps_demuxer_create(onpacket, NULL);
+    ps_demuxer_set_notify(ps, &notify, NULL);
+
+    size_t n, i = 0, r = 0;
     while ((n = fread(s_packet + i, 1, sizeof(s_packet) - i, fp)) > 0)
     {
         r = ps_demuxer_input(ps, s_packet, n + i);

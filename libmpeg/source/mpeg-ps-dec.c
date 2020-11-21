@@ -22,8 +22,13 @@ struct ps_demuxer_t
     int start;
 
     ps_demuxer_onpacket onpacket;
-	void* param;	
+	void* param;
+
+    struct ps_demuxer_notify_t notify;
+    void* notify_param;
 };
+
+static void ps_demuxer_notify(struct ps_demuxer_t* ps);
 
 static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
@@ -70,6 +75,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t bytes)
 {
     int r;
+    size_t n;
     size_t i = 0;
     size_t j = 0;
     size_t pes_packet_length;
@@ -90,8 +96,11 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
         switch (data[i+3])
         {
         case PES_SID_PSM:
+            n = ps->psm.stream_count;
             j = psm_read(&ps->psm, data + i, bytes - i);
             assert(j == pes_packet_length + 6);
+            if (n != ps->psm.stream_count)
+                ps_demuxer_notify(ps); // TODO: check psm stream sid
             break;
 
         case PES_SID_PSD:
@@ -237,4 +246,24 @@ int ps_demuxer_destroy(struct ps_demuxer_t* ps)
 
 	free(ps);
 	return 0;
+}
+
+void ps_demuxer_set_notify(struct ps_demuxer_t* ps, struct ps_demuxer_notify_t *notify, void* param)
+{
+    ps->notify_param = param;
+    memcpy(&ps->notify, notify, sizeof(ps->notify));
+}
+
+static void ps_demuxer_notify(struct ps_demuxer_t* ps)
+{
+    size_t i;
+    struct pes_t* pes;
+    if (!ps->notify.onstream)
+        return;
+
+    for (i = 0; i < ps->psm.stream_count; i++)
+    {
+        pes = &ps->psm.streams[i];
+        ps->notify.onstream(ps->notify_param, pes->pid, pes->codecid, pes->esinfo, pes->esinfo_len, i + 1 >= ps->psm.stream_count ? 1 : 0);
+    }
 }

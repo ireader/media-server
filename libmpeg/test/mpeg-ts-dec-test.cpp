@@ -59,14 +59,24 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
     return 0;
 }
 
+static void mpeg_ts_dec_testonstream(void* param, int stream, int codecid, const void* extra, int bytes, int finish)
+{
+	printf("stream %d, codecid: %d, finish: %s\n", stream, codecid, finish ? "true" : "false");
+}
+
 void mpeg_ts_dec_test(const char* file)
 {
 	unsigned char ptr[188];
 	FILE* fp = fopen(file, "rb");
 	vfp = fopen("v.h264", "wb");
 	afp = fopen("a.aac", "wb");
-    
+
+	struct ts_demuxer_notify_t notify = {
+		mpeg_ts_dec_testonstream,
+	};
+
     ts_demuxer_t *ts = ts_demuxer_create(on_ts_packet, NULL);
+	ts_demuxer_set_notify(ts, &notify, NULL);
 	while (1 == fread(ptr, sizeof(ptr), 1, fp))
 	{
         ts_demuxer_input(ts, ptr, sizeof(ptr));

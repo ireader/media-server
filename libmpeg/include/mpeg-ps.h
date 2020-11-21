@@ -77,6 +77,20 @@ int ps_demuxer_destroy(struct ps_demuxer_t* demuxer);
 /// @return >=0-consume bytes, <0-error
 int ps_demuxer_input(struct ps_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
 
+struct ps_demuxer_notify_t
+{
+	/// @param[in] param ps_demuxer_set_notify param
+	/// @param[in] stream ps stream id
+	/// @param[in] codecid ps codecid, e.g. STREAM_VIDEO_H264
+	/// @param[in] extra stream extra data
+	/// @param[in] bytes extra data length
+	/// @param[in] finish 0-have more stream, 1-no more streams
+	void (*onstream)(void* param, int stream, int codecid, const void* extra, int bytes, int finish);
+};
+
+/// Set ps notify on PSM change
+void ps_demuxer_set_notify(struct ps_demuxer_t* demuxer, struct ps_demuxer_notify_t* notify, void* param);
+
 #ifdef __cplusplus
 }
 #endif

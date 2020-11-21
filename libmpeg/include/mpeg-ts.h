@@ -80,6 +80,20 @@ int ts_demuxer_input(struct ts_demuxer_t* demuxer, const uint8_t* data, size_t b
 int ts_demuxer_flush(struct ts_demuxer_t* demuxer);
 int ts_demuxer_getservice(struct ts_demuxer_t* demuxer, int program, char* provider, int nprovider, char* name, int nname);
 
+struct ts_demuxer_notify_t
+{
+	/// @param[in] param ps_demuxer_set_notify param
+	/// @param[in] stream ps stream id
+	/// @param[in] codecid ps codecid, e.g. STREAM_VIDEO_H264
+	/// @param[in] extra stream extra data
+	/// @param[in] bytes extra data length
+	/// @param[in] finish 0-have more stream, 1-no more streams
+	void (*onstream)(void* param, int stream, int codecid, const void* extra, int bytes, int finish);
+};
+
+/// Set ts notify on PMT change
+void ts_demuxer_set_notify(struct ts_demuxer_t* demuxer, struct ts_demuxer_notify_t* notify, void* param);
+
 #ifdef __cplusplus
 }
 #endif
