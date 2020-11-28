@@ -15,8 +15,8 @@ static int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, 
         if (0x01 == p[i] && zeros >= 2 && H265_NAL_AUD == ((p[i + 1] >> 1) & 0x3f))
         {
             assert(i >= zeros);
-            if(leading)
-                *leading = zeros - (zeros > 2 ? 3 : 2);
+            if (leading)
+                *leading = (zeros > 2 ? 3 : 2) + 1; // zeros - (zeros > 2 ? 3 : 2);
             return (int)(i - (zeros > 2 ? 3 : 2));
         }
         

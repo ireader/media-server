@@ -76,7 +76,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 
     // PES contain multiple packet
     n = find(p, end - p, &pkt->vcl);
-    while (n > 0)
+    while (n >= 0)
     {
         assert(pkt->vcl > 0);
 

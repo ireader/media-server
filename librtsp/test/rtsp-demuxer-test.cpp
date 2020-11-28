@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include "rtp-demuxer.h"
 #include "rtsp-demuxer.h"
 
@@ -13,7 +15,12 @@ static int rtp_demuxer_test_onpacket(void* param, const void* packet, int bytes,
 #else
 static int rtsp_demuxer_test_onpacket(void* param, int track, int payload, const char* encoding, int64_t pts, int64_t dts, const void* data, int bytes, int flags)
 {
+    static int64_t s_dts = 0;
+    if (0 == s_dts)
+        s_dts = dts;
+    printf("[%d:%s] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", track, encoding, pts, dts, pts-dts, dts-s_dts, bytes);
     fwrite(data, 1, bytes, (FILE*)param);
+    s_dts = dts;
     return 0;
 }
 #endif

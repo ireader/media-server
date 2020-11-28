@@ -7,8 +7,8 @@
 #define H264_NAL_AUD 9
 
 /// e.g. 
-/// 1. 0x00 00 00 00 00 01 09 EF => return 6(09), leading 6
-/// 2. 0x80 00 00 00 00 01 09 EF => return 6(09), leading 5
+/// 1. 0x00 00 00 00 00 01 09 EF => return 6(09), leading 4
+/// 2. 0x80 00 00 00 00 01 09 EF => return 6(09), leading 4
 /// 
 /// Find h264 nalu start position
 /// @param[out] leading leading bytes before nalu position
@@ -22,7 +22,7 @@ int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading)
         {
             assert(i >= zeros);
             if (leading)
-                *leading = zeros + 1; // zeros + 0x01
+                *leading = (zeros > 2 ? 3 : zeros) + 1; // zeros + 0x01
             return (int)(i + 1);
         }
 

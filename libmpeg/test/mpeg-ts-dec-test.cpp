@@ -21,7 +21,7 @@ inline const char* ftimestamp(int64_t t, char* buf)
 	return buf;
 }
 
-static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
 	static char s_pts[64], s_dts[64];
     
@@ -31,17 +31,17 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
         if (PTS_NO_VALUE == dts)
             dts = pts;
 		//assert(0 == a_dts || dts >= a_dts);
-		printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90, (unsigned int)bytes);
+		printf("[A][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u\n", program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90, (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
 
 		fwrite(data, 1, bytes, afp);
 	}
-	else if (PSI_STREAM_H264 == avtype)
+	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
 	{
 		static int64_t v_pts = 0, v_dts = 0;
-		assert(0 == v_dts || dts >= v_dts);
-		printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes, flags ? " [I]":"");
+		//assert(0 == v_dts || dts >= v_dts);
+		printf("[V][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u%s\n", program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes, flags ? " [I]":"");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -50,8 +50,8 @@ static int on_ts_packet(void* /*param*/, int program, int /*stream*/, int avtype
 	else
 	{
 		static int64_t x_pts = 0, x_dts = 0;
-		assert(0 == x_dts || dts >= x_dts);
-		printf("[%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s\n", avtype, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts) / 90, (int)(dts - x_dts) / 90, flags ? " [I]" : "");
+		//assert(0 == x_dts || dts >= x_dts);
+		printf("[%d][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s\n", avtype, program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts) / 90, (int)(dts - x_dts) / 90, flags ? " [I]" : "");
 		x_pts = pts;
 		x_dts = dts;
 		//assert(0);

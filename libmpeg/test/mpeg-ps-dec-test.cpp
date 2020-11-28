@@ -51,6 +51,14 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
     else
     {
         //assert(0);
+
+        static int64_t a_pts = 0, a_dts = 0;
+        if (PTS_NO_VALUE == dts)
+            dts = pts;
+        //assert(0 == a_dts || dts >= a_dts);
+        printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
+        a_pts = pts;
+        a_dts = dts;
     }
 
     return 0;
