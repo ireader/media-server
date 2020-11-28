@@ -185,13 +185,13 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes
 	}
 
 	offset = 1 * 8; // 1-NALU
-	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
 	ppsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
+	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
 
 	for (i = 0; i < avc->nb_pps; i++)
 	{
 		offset = 1 * 8; // reset offset
-		if (spsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset) && ppsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset))
+		if (ppsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset) && spsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset))
 		{
 			if (bytes == avc->pps[i].bytes && 0 == memcmp(nalu, avc->pps[i].data, bytes))
 				return 0; // do nothing
