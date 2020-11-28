@@ -20,7 +20,7 @@ static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_G711a,	MOV_TAG('a', 'l', 'a', 'w') },
 	{ MOV_OBJECT_G711u,	MOV_TAG('u', 'l', 'a', 'w') },
 	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'x', '3', 'g') },
-	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'e', 't', 't') },
+	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'e', 'x', 't') },
 	{ MOV_OBJECT_TEXT,	MOV_TAG('c', '6', '0', '8') },
     { MOV_OBJECT_OPUS,  MOV_OPUS },
     { MOV_OBJECT_VP8,   MOV_VP8 },
