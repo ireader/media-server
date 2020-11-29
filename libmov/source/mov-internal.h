@@ -32,6 +32,7 @@
 #define MOV_FONT	MOV_TAG('f', 'd', 's', 'm') // ISO/IEC 14496-12:2015(E) 12.7 Font media (p186)
 #define MOV_CLCP	MOV_TAG('c', 'l', 'c', 'p') // ClosedCaptionHandler
 #define MOV_ALIS	MOV_TAG('a', 'l', 'i', 's') // Apple QuickTime Macintosh alias
+#define MOV_SBTL	MOV_TAG('s', 'b', 't', 'l') // text/tx3g
 
 // https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
 // Video encoding requirements 1.10: Use 'avc1', 'hvc1', or 'dvh1' rather than 'avc3', 'hev1', or 'dvhe'
@@ -208,6 +209,7 @@ struct mov_t
 };
 
 int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent);
+int mp4_read_extra(struct mov_t* mov, const struct mov_box_t* parent);
 
 int mov_read_ftyp(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_mvhd(struct mov_t* mov, const struct mov_box_t* box);
@@ -216,6 +218,7 @@ int mov_read_hdlr(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_mdhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_vmhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_nmhd(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_esds(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box);

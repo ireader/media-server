@@ -29,6 +29,7 @@ static uint32_t s_vpx_track = 0xFFFFFFFF;
 static uint32_t s_hevc_track = 0xFFFFFFFF;
 static uint32_t s_opus_track = 0xFFFFFFFF;
 static uint32_t s_mp3_track = 0xFFFFFFFF;
+static uint32_t s_subtitle_track = 0xFFFFFFFF;
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
@@ -105,9 +106,16 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		a_dts = dts;
 		fwrite(buffer, 1, bytes, s_afp);
 	}
+	else if (s_subtitle_track == track)
+	{
+		static int64_t t_pts, t_dts;
+		printf("[TEXT] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, text: %.*s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - t_pts), (int)(dts - t_dts), (unsigned int)bytes, (int)bytes-2, (const char*)buffer+2);
+		t_pts = pts;
+		t_dts = dts;
+	}
 	else
 	{
-		printf("text\n");
+		printf("%d\n", track);
 		//assert(0);
 	}
 }
@@ -177,13 +185,18 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	}
 }
 
+static void mov_subtitle_info(void* /*param*/, uint32_t track, uint8_t object, const void* /*extra*/, size_t /*bytes*/)
+{
+	s_subtitle_track = track;
+}
+
 void mov_reader_test(const char* mp4)
 {
 	FILE* fp = fopen(mp4, "rb");
 	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
 	uint64_t duration = mov_reader_getduration(mov);
 
-	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info };
+	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info, mov_subtitle_info };
 	mov_reader_getinfo(mov, &info, NULL);
 
 	while (mov_reader_read(mov, s_buffer, sizeof(s_buffer), onread, NULL) > 0)

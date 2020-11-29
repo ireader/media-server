@@ -204,7 +204,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'o', 'o', 'f'), MOV_ROOT, mov_read_moof },
 	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
-//	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
+	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_nmhd }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
 	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
@@ -479,7 +479,8 @@ int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_
 
 			case MOV_SUBT:
 			case MOV_TEXT:
-				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, MOV_OBJECT_TEXT, entry->extra_data, entry->extra_data_size);
+			case MOV_SBTL:
+				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, entry->object_type_indication, entry->extra_data, entry->extra_data_size);
 				break;
 
 			default:

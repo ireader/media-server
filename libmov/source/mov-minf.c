@@ -25,6 +25,14 @@ int mov_read_smhd(struct mov_t* mov, const struct mov_box_t* box)
 	return 0;
 }
 
+int mov_read_nmhd(struct mov_t* mov, const struct mov_box_t* box)
+{
+	mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	(void)box;
+	return 0;
+}
+
 // https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap2/qtff2.html#//apple_ref/doc/uid/TP40000939-CH204-25675
 /*
 Size: A 32-bit integer that specifies the number of bytes in this base media info atom.

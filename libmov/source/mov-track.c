@@ -185,7 +185,7 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
 
     assert(0 != mov_object_to_tag(object));
     track->tag = mov_object_to_tag(object);
-    track->handler_type = MOV_SUBT;
+    track->handler_type = MOV_SBTL;
     track->handler_descr = "SubtitleHandler";
     track->stsd.entry_count = 1;
     track->offset = 0;
@@ -268,7 +268,7 @@ size_t mov_write_minf(const struct mov_t* mov)
     {
         size += mov_write_smhd(mov);
     }
-    else if (MOV_SUBT == track->handler_type)
+    else if (MOV_SUBT == track->handler_type || MOV_SBTL == track->handler_type)
     {
         size += mov_write_nmhd(mov);
     }
