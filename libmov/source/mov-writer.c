@@ -128,7 +128,12 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 			continue;
 
 		// pts in ms
-		track->mdhd.duration = track->samples[track->sample_count - 1].dts - track->samples[0].dts;
+		track->mdhd.duration = (track->samples[track->sample_count - 1].dts - track->samples[0].dts);
+		if (track->sample_count > 1)
+		{
+			// duration += 3/4 * avg-duration + 1/4 * last-frame-duration
+			track->mdhd.duration += track->mdhd.duration * 3 / (track->sample_count - 1) / 4 + (track->samples[track->sample_count - 1].dts - track->samples[track->sample_count - 2].dts) / 4;
+		}
 		//track->mdhd.duration = track->mdhd.duration * track->mdhd.timescale / 1000;
 		track->tkhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
 		if (track->tkhd.duration > mov->mvhd.duration)
