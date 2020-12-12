@@ -1,4 +1,4 @@
-// RFC7731 RTP Payload Format for VP8 Video
+// RFC7741 RTP Payload Format for VP8 Video
 //
 
 #include "rtp-packet.h"
