@@ -248,9 +248,9 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + 2048/*AVCDecoderConfigurationRecord*/)
+	if (flv->capacity < (int)bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
 	{
-		if (0 != flv_muxer_alloc(flv, (int)bytes + 2048))
+		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.avc)))
 			return ENOMEM;
 	}
 
@@ -300,9 +300,9 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + 2048/*HEVCDecoderConfigurationRecord*/)
+	if (flv->capacity < (int)bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
 	{
-		if (0 != flv_muxer_alloc(flv, (int)bytes + 2048))
+		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.hevc)))
 			return ENOMEM;
 	}
 
@@ -348,7 +348,7 @@ int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
 	if (metadata->audiocodecid)
 	{
 		ptr = AMFWriteNamedDouble(ptr, end, "audiocodecid", 12, metadata->audiocodecid);
-		ptr = AMFWriteNamedDouble(ptr, end, "audiodatarate", 13, metadata->audiodatarate);
+		ptr = AMFWriteNamedDouble(ptr, end, "audiodatarate", 13, metadata->audiodatarate /* / 1024.0*/);
 		ptr = AMFWriteNamedDouble(ptr, end, "audiosamplerate", 15, metadata->audiosamplerate);
 		ptr = AMFWriteNamedDouble(ptr, end, "audiosamplesize", 15, metadata->audiosamplesize);
 		ptr = AMFWriteNamedBoolean(ptr, end, "stereo", 6, (uint8_t)metadata->stereo);
@@ -356,8 +356,10 @@ int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
 
 	if (metadata->videocodecid)
 	{
+		ptr = AMFWriteNamedDouble(ptr, end, "duration", 8, metadata->duration);
+		ptr = AMFWriteNamedDouble(ptr, end, "interval", 8, metadata->interval);
 		ptr = AMFWriteNamedDouble(ptr, end, "videocodecid", 12, metadata->videocodecid);
-		ptr = AMFWriteNamedDouble(ptr, end, "videodatarate", 13, metadata->videodatarate);
+		ptr = AMFWriteNamedDouble(ptr, end, "videodatarate", 13, metadata->videodatarate /* / 1024.0*/);
 		ptr = AMFWriteNamedDouble(ptr, end, "framerate", 9, metadata->framerate);
 		ptr = AMFWriteNamedDouble(ptr, end, "height", 6, metadata->height);
 		ptr = AMFWriteNamedDouble(ptr, end, "width", 5, metadata->width);

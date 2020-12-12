@@ -49,6 +49,8 @@ struct flv_metadata_t
 	int videocodecid;
 	double videodatarate; // kbps
 	double framerate; // fps
+	double duration;
+	int interval; // frame interval
 	int width;
 	int height;
 };
