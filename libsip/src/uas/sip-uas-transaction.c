@@ -173,22 +173,9 @@ int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)
 {
 	t->status = SIP_UAS_TRANSACTION_TERMINATED;
 
-	if (t->timerh)
-	{
-		sip_uas_stop_timer(t->agent, t, t->timerh);
-		t->timerh = NULL;
-	}
-	if (t->timerg)
-	{
-		sip_uas_stop_timer(t->agent, t, t->timerg);
-		t->timerg = NULL;
-	}
-	if (t->timerij)
-	{
-		sip_uas_stop_timer(t->agent, t, t->timerij);
-		t->timerij = NULL;
-	}
-
+	sip_uas_stop_timer(t->agent, t, &t->timerh);
+	sip_uas_stop_timer(t->agent, t, &t->timerg);
+	sip_uas_stop_timer(t->agent, t, &t->timerij);
 	return 0;
 }
 
@@ -197,7 +184,7 @@ void sip_uas_transaction_ontimeout(void* usrptr)
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)usrptr;
 	locker_lock(&t->locker);
-	t->timerh = NULL;
+	sip_uas_stop_timer(t->agent, t, &t->timerh); // hijack free timer only, don't release transaction
 
 	if (t->status < SIP_UAS_TRANSACTION_CONFIRMED)
 	{
@@ -221,7 +208,7 @@ static void sip_uas_transaction_onterminated(void* usrptr)
 	t = (struct sip_uas_transaction_t*)usrptr;
 
 	locker_lock(&t->locker);
-    t->timerij = NULL;
+	sip_uas_stop_timer(t->agent, t, &t->timerij); // hijack free timer only, don't release transaction
 	if(SIP_UAS_TRANSACTION_TERMINATED != t->status)
 		sip_uas_transaction_terminated(t);
 	locker_unlock(&t->locker);
@@ -233,16 +220,8 @@ int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
 	if (SIP_UAS_TRANSACTION_TERMINATED == t->status)
 		return 0;
 
-	if (t->timerh)
-	{
-		sip_uas_stop_timer(t->agent, t, t->timerh);
-		t->timerh = NULL;
-	}
-	if (t->timerg)
-	{
-		sip_uas_stop_timer(t->agent, t, t->timerg);
-		t->timerg = NULL;
-	}
+	sip_uas_stop_timer(t->agent, t, &t->timerh);
+	sip_uas_stop_timer(t->agent, t, &t->timerg);
 
 	assert(NULL == t->timerij);
 	t->timerij = sip_uas_start_timer(t->agent, t, timeout, sip_uas_transaction_onterminated);

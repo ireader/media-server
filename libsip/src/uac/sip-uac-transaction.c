@@ -80,7 +80,8 @@ static void sip_uac_transaction_onretransmission(void* usrptr)
 	t = (struct sip_uac_transaction_t*)usrptr;
 
 	locker_lock(&t->locker);
-	t->timera = NULL;
+	sip_uac_stop_timer(t->agent, t, &t->timera); // hijack free timer only, don't release transaction
+
 	if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
 	{
 		r = sip_uac_transaction_dosend(t);
@@ -106,22 +107,9 @@ static int sip_uac_transaction_terminate(struct sip_uac_transaction_t* t)
 {
 	t->status = SIP_UAC_TRANSACTION_TERMINATED;
 
-	if (t->timera)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timera);
-		t->timera = NULL;
-	}
-	if (t->timerb)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timerb);
-		t->timerb = NULL;
-	}
-	if (t->timerd)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timerd);
-		t->timerd = NULL;
-	}
-
+	sip_uac_stop_timer(t->agent, t, &t->timera);
+	sip_uac_stop_timer(t->agent, t, &t->timerb);
+	sip_uac_stop_timer(t->agent, t, &t->timerd);
 	return 0;
 }
 
@@ -133,7 +121,8 @@ static void sip_uac_transaction_ontimeout(void* usrptr)
 	
 	r = 0;
 	locker_lock(&t->locker);
-	t->timerb = NULL;
+	sip_uac_stop_timer(t->agent, t, &t->timerb); // hijack free timer only, don't release transaction
+
 	if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
 	{
 		sip_uac_transaction_terminate(t);
@@ -183,11 +172,7 @@ int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout)
 
 	// try stop timer B
 	assert(t->status > SIP_UAC_TRANSACTION_PROCEEDING);
-	if (t->timerb)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timerb);
-		t->timerb = NULL;
-	}
+	sip_uac_stop_timer(t->agent, t, &t->timerb);
 
 	assert(NULL == t->timerd);
 	t->timerd = sip_uac_start_timer(t->agent, t, timeout, sip_uac_transaction_onterminate);

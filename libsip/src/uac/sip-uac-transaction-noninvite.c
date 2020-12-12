@@ -24,11 +24,7 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
 
 	// stop retry timer A
-	if (NULL != t->timera)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timera);
-		t->timera = NULL;
-	}
+	sip_uac_stop_timer(t->agent, t, &t->timera);
 
 	if(sip_message_issubscribe(t->req))
 		r = sip_uac_subscribe_onreply(t, reply);

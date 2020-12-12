@@ -188,11 +188,7 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 	int r, status, oldstatus;
 	
 	// stop retry timer A
-	if (NULL != t->timera)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timera);
-		t->timera = NULL;
-	}
+	sip_uac_stop_timer(t->agent, t, &t->timera);
 
 	oldstatus = t->status;
 	status = sip_uac_transaction_inivte_change_state(t, reply);

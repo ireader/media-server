@@ -11,9 +11,9 @@
 #include "list.h"
 #include <stdio.h>
 
-void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
+sip_timer_t sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
 {
-	void* id;
+	sip_timer_t id;
 
 	// wait for timer done
 	if (sip_uas_transaction_addref(t) < 2)
@@ -27,7 +27,7 @@ void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t*
 	//return uas->timer.start(uas->timerptr, timeout, handler, usrptr);
 }
 
-void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, void* id)
+void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, sip_timer_t* id)
 {
 	//uas->timer.stop(uas->timerptr, id);
 	if (0 == sip_timer_stop(id))

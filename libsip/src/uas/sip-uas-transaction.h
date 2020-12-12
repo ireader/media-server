@@ -83,8 +83,8 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);
 int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes);
 
-void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);
-void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, void* id);
+sip_timer_t sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);
+void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, sip_timer_t* id);
 const char* sip_reason_phrase(int code);
 
 #endif /* !_sip_uas_transaction_h_ */
