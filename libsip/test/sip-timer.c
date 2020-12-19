@@ -21,5 +21,6 @@ int sip_timer_stop(sip_timer_t* id)
 	t = (struct aio_timeout_t*)*id;
 	r = aio_timeout_stop(t);
 	free(t);
+	*id = NULL;
 	return r;
 }

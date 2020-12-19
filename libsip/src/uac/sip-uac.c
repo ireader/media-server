@@ -72,7 +72,7 @@ sip_timer_t sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transact
 void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, sip_timer_t* id)
 {
 	//if(0 == uac->timer.stop(uac->timerptr, id))
-	if (0 == sip_timer_stop(*id))
+	if (0 == sip_timer_stop(id))
 		sip_uac_transaction_release(t);
 }
 
