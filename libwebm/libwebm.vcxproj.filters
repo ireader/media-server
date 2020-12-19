@@ -30,6 +30,9 @@
     <ClInclude Include="src\webm-ioutil.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\webm-format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ebml.c">

@@ -16,11 +16,18 @@ struct ebml_t
 	int err;
 };
 
-int32_t ebml_read_id(struct ebml_t* ebml);
+// https://github.com/ietf-wg-cellar/ebml-specification/blob/master/specification.markdown#ebml-header-elements
+struct ebml_header_t
+{
+	unsigned int version; // default 1
+	unsigned int read_version; // default 1
+	unsigned int max_id_length; // default 4
+	unsigned int max_size_length; // default 8
 
-int64_t ebml_read_size(struct ebml_t* ebml);
-
-int ebml_read_header(struct ebml_t* ebml, struct ebml_header_t* header);
+	char* doc_type;
+	unsigned int doc_type_version; // default 1
+	unsigned int doc_type_read_version; // default 1
+};
 
 #ifdef __cplusplus
 }

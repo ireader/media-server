@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "webm-buffer.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="include\ebml.h" />
     <ClInclude Include="include\webm-buffer.h" />
+    <ClInclude Include="include\webm-format.h" />
     <ClInclude Include="include\webm-reader.h" />
     <ClInclude Include="src\webm-internal.h" />
     <ClInclude Include="src\webm-ioutil.h" />
