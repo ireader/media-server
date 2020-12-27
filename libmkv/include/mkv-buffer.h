@@ -1,9 +1,9 @@
-#ifndef _webm_buffer_h_
-#define _webm_buffer_h_
+#ifndef _mkv_buffer_h_
+#define _mkv_buffer_h_
 
 #include <stdint.h>
 
-struct webm_buffer_t
+struct mkv_buffer_t
 {
 	/// read data from buffer
 	/// @param[in] param user-defined parameter
@@ -19,7 +19,7 @@ struct webm_buffer_t
 	/// @return 0-ok, <0-error
 	int (*write)(void* param, const void* data, uint64_t bytes);
 
-	/// webme buffer position
+	/// mkve buffer position
 	/// @param[in] param user-defined parameter
 	/// @param[in] offset seek buffer read/write position to offset(from buffer begin)
 	/// @return 0-ok, <0-error
@@ -30,4 +30,4 @@ struct webm_buffer_t
 	uint64_t (*tell)(void* param);
 };
 
-#endif /* !_webm_buffer_h_ */
+#endif /* !_mkv_buffer_h_ */

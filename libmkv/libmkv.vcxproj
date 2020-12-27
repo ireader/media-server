@@ -20,29 +20,29 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ebml.h" />
-    <ClInclude Include="include\webm-buffer.h" />
-    <ClInclude Include="include\webm-format.h" />
-    <ClInclude Include="include\webm-reader.h" />
-    <ClInclude Include="src\webm-internal.h" />
-    <ClInclude Include="src\webm-ioutil.h" />
+    <ClInclude Include="include\mkv-buffer.h" />
+    <ClInclude Include="include\mkv-format.h" />
+    <ClInclude Include="include\mkv-reader.h" />
+    <ClInclude Include="src\mkv-internal.h" />
+    <ClInclude Include="src\mkv-ioutil.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ebml.c" />
     <ClCompile Include="src\mkv-attachment.c" />
     <ClCompile Include="src\mkv-chapter.c" />
     <ClCompile Include="src\mkv-cluster.c" />
+    <ClCompile Include="src\mkv-codec.c" />
     <ClCompile Include="src\mkv-cue.c" />
     <ClCompile Include="src\mkv-info.c" />
-    <ClCompile Include="src\mkv-tag.c" />
+    <ClCompile Include="src\mkv-ioutil.c" />
+    <ClCompile Include="src\mkv-reader.c" />
     <ClCompile Include="src\mkv-track.c" />
-    <ClCompile Include="src\webm-reader.c" />
-    <ClCompile Include="src\webm-ioutil.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{b4a2626a-7375-4bf6-936b-0a17d18581c1}</ProjectGuid>
-    <RootNamespace>libwebm</RootNamespace>
+    <RootNamespace>libmkv</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

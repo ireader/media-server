@@ -1,9 +1,91 @@
-#ifndef _webm_format_h_
-#define _webm_format_h_
+#ifndef _mkv_format_h_
+#define _mkv_format_h_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MKV_MIME_AUDIO		"audio/x-matroska" // mka
+#define MKV_MIME_VIDEO		"video/x-matroska" // mkv
+#define MKV_MIME_VIDEO_3D	"video/x-matroska-3d"
+
+// https://www.matroska.org/technical/codec_specs.html
+enum mkv_codec_t
+{
+	MKV_CODEC_UNKNOWN = 0,
+
+	MKV_CODEC_VIDEO_VCM,			// Microsoft (TM) Video Codec Manager (VCM)
+	MKV_CODEC_VIDEO_UNCOMPRESSED,	// Video, raw uncompressed video frames
+	MKV_CODEC_VIDEO_DIVX4,			// MPEG4 ISO simple profile (DivX4)
+	MKV_CODEC_VIDEO_DIVX5,			// MPEG4 ISO advanced simple profile (DivX5, XviD, FFMPEG)
+	MKV_CODEC_VIDEO_MPEG4,			// MPEG4 ISO advanced profile
+	MKV_CODEC_VIDEO_MPEG4_MSV3,		// Microsoft (TM) MPEG4 V3
+	MKV_CODEC_VIDEO_MPEG1,			// MPEG 1 Elementary Stream (ES)
+	MKV_CODEC_VIDEO_MPEG2,			// MPEG 2 Elementary Stream (ES)
+	MKV_CODEC_VIDEO_H264,			// AVC/H.264
+	MKV_CODEC_VIDEO_H265,			// HEVC/H.265
+	MKV_CODEC_VIDEO_RV10,			// RealVideo 1.0 aka RealVideo 5
+	MKV_CODEC_VIDEO_RV20,			// RealVideo G2 and RealVideo G2+SVT
+	MKV_CODEC_VIDEO_RV30,			// RealVideo 8
+	MKV_CODEC_VIDEO_RV40,			// RealVideo 9
+	MKV_CODEC_VIDEO_QUICKTIME,		// Video taken from QuickTime(TM) files
+	MKV_CODEC_VIDEO_THEORA,			// Theora
+	MKV_CODEC_VIDEO_PRORES,			// Apple ProRes
+	MKV_CODEC_VIDEO_VP8,			// VP8 Codec format
+	MKV_CODEC_VIDEO_VP9,			// VP9 Codec format
+	MKV_CODEC_VIDEO_FFV1,			// FF Video Codec 1
+	MKV_CODEC_VIDEO_AV1,			// AV1 Codec format
+	MKV_CODEC_VIDEO_DIRAC,			// ffmpeg
+	MKV_CODEC_VIDEO_MJPEG,			// ffmpeg
+
+	MKV_CODEC_AUDIO_MP3 = 0x1000,	// MPEG Audio 1, 2, 2.5 Layer III
+	MKV_CODEC_AUDIO_MP2,			// MPEG Audio 1, 2 Layer II
+	MKV_CODEC_AUDIO_MP1,			// MPEG Audio 1, 2 Layer I
+	MKV_CODEC_AUDIO_PCM_BE,			// PCM Integer Big Endian
+	MKV_CODEC_AUDIO_PCM_LE,			// PCM Integer Little Endian
+	MKV_CODEC_AUDIO_PCM_FLOAT,		// Floating Point, IEEE compatible(32/64 bits)
+	MKV_CODEC_AUDIO_MPC,			// MPC (musepack) SV8
+	MKV_CODEC_AUDIO_AC3,			// (Dolby) AC3
+	MKV_CODEC_AUDIO_ALAC,			// ALAC (Apple Lossless Audio Codec)
+	MKV_CODEC_AUDIO_DTS,			// Digital Theatre System
+	MKV_CODEC_AUDIO_DTS_EXPRESS,	// Digital Theatre System Express
+	MKV_CODEC_AUDIO_DTS_LOSSLESS,	// Digital Theatre System Lossless
+	MKV_CODEC_AUDIO_VORBIS,			// Vorbis
+	MKV_CODEC_AUDIO_FLAC,			// FLAC (Free Lossless Audio Codec)
+	MKV_CODEC_AUDIO_RA1,			// Real Audio 1
+	MKV_CODEC_AUDIO_RA2,			// Real Audio 2
+	MKV_CODEC_AUDIO_COOK,			// Real Audio Cook Codec (codename: Gecko)
+	MKV_CODEC_AUDIO_SIPR,			// Sipro Voice Codec
+	MKV_CODEC_AUDIO_RALF,			// Real Audio Lossless Format
+	MKV_CODEC_AUDIO_ATRC,			// Sony Atrac3 Codec
+	MKV_CODEC_AUDIO_ACM,			// Microsoft(TM) Audio Codec Manager (ACM)
+	MKV_CODEC_AUDIO_AAC,			// AAC MPEG2/MPEG4 MAIN/LC/SBR/SSR/LTP
+	MKV_CODEC_AUDIO_QUICKTIME,		// Audio taken from QuickTime(TM) files
+	MKV_CODEC_AUDIO_TTA1,			// The True Audio lossless audio compressor
+	MKV_CODEC_AUDIO_WAVPACK4,		// WavPack lossless audio compressor
+	MKV_CODEC_AUDIO_OPUS,			// Opus
+	MKV_CODEC_AUDIO_TRUEHD,			// ffmpeg
+	MKV_CODEC_AUDIO_EAC3,			// ffmpeg
+
+	MKV_CODEC_SUBTITLE_TEXT = 0x2000,// UTF-8 Plain Text
+	MKV_CODEC_SUBTITLE_SSA,			// Subtitles Format
+	MKV_CODEC_SUBTITLE_ASS,			// Advanced Subtitles Format
+	MKV_CODEC_SUBTITLE_USF,			// Universal Subtitle Format
+	MKV_CODEC_SUBTITLE_WEBVTT,		// Web Video Text Tracks Format (WebVTT)
+	MKV_CODEC_SUBTITLE_BMP,			// Bitmap
+	MKV_CODEC_SUBTITLE_DVBSUB,		// Digital Video Broadcasting (DVB) subtitles
+	MKV_CODEC_SUBTITLE_VOBSUB,		// VobSub subtitles
+	MKV_CODEC_SUBTITLE_PGS,			// HDMV presentation graphics subtitles (PGS)
+	MKV_CODEC_SUBTITLE_TEXTST,		// HDMV text subtitles
+	MKV_CODEC_SUBTITLE_KATE,		// Karaoke And Text Encapsulation
+};
+
+enum
+{
+	MKV_FLAGS_KEYFRAME		= 0x00001, // Keyframe
+	MKV_FLAGS_INVISIBLE		= 0x00002, // Invisible, the codec SHOULD decode this frame but not display it
+	MKV_FLAGS_DISCARDABLE	= 0x00004, // Discardable, the frames of the Block can be discarded during playing if needed
+};
 
 enum ebml_video_interlaced_e
 {
@@ -134,4 +216,4 @@ enum ebml_video_projection_type_e
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_webm_format_h_ */
+#endif /* !_mkv_format_h_ */

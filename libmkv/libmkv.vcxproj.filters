@@ -18,27 +18,24 @@
     <ClInclude Include="include\ebml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\webm-reader.h">
+    <ClInclude Include="include\mkv-buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\webm-internal.h">
+    <ClInclude Include="include\mkv-format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mkv-reader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mkv-internal.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\webm-buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\webm-ioutil.h">
+    <ClInclude Include="src\mkv-ioutil.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\webm-format.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ebml.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\webm-reader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mkv-attachment.c">
@@ -50,19 +47,22 @@
     <ClCompile Include="src\mkv-cluster.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mkv-codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\mkv-cue.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mkv-info.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mkv-tag.c">
+    <ClCompile Include="src\mkv-ioutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mkv-reader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\mkv-track.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\webm-ioutil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
