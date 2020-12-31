@@ -58,6 +58,7 @@ static void rtp_mp4a_latm_pack_get_info(void* pack, uint16_t* seq, uint32_t* tim
 
 static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
+	int r;
 	int n, len;
 	uint8_t *rtp;
 	uint8_t hd[400]; // 100KB
@@ -67,6 +68,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 section2 p2)
 
+	r = 0;
 	ptr = (const uint8_t *)data;
 	if (0xFF == ptr[0] && 0xF0 == (ptr[1] & 0xF0) && bytes > 7)
 	{
@@ -77,7 +79,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	}
 
 	// ISO/IEC 14496-3:200X(E)
-	// Table 1.44 ¨C Syntax of PayloadLengthInfo() (p84)
+	// Table 1.44 - Syntax of PayloadLengthInfo() (p84)
 	len = bytes / 255 + 1;
 	if (len > sizeof(hd))
 	{
@@ -87,7 +89,7 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 	memset(hd, 255, len - 1);
 	hd[len - 1] = bytes % 255;
 
-	for (; bytes > 0; ++packer->pkt.rtp.seq)
+	for (; bytes > 0; 0 == r && ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + len + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - len - RTP_FIXED_HEADER);
@@ -111,12 +113,12 @@ static int rtp_mp4a_latm_pack_input(void* pack, const void* data, int bytes, uin
 
 		if (len > 0) memcpy(rtp + n, hd, len);
 		memcpy(rtp + n + len, packer->pkt.payload, packer->pkt.payloadlen);
-		packer->handler.packet(packer->cbparam, rtp, n + len + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + len + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 		len = 0;
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_mp4a_latm_encode()

@@ -10,7 +10,8 @@ OUTFILE = libdash.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
-					../libmov/include
+					../libmov/include \
+					../libhls/include
 
 #-------------------------------Source-------------------------------
 #

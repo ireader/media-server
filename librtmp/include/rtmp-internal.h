@@ -15,6 +15,7 @@
 #define RTMP_LEVEL_WARNING	"warning"
 #define RTMP_LEVEL_STATUS	"status"
 #define RTMP_LEVEL_ERROR	"error"
+#define RTMP_LEVEL_FINISH	"finish" // ksyun cdn
 
 // Chunk Stram Id
 enum rtmp_channel_t
@@ -57,6 +58,7 @@ enum rtmp_notify_t
 struct rtmp_packet_t
 {
 	struct rtmp_chunk_header_t header;
+	uint32_t delta; // delta / timestamp
 	uint32_t clock; // timestamp
 
 	uint8_t* payload;

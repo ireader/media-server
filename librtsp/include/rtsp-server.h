@@ -105,9 +105,8 @@ rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port, struct
 int rtsp_server_destroy(rtsp_server_t* server);
 
 /// client request
-/// @param[in] parser rtsp parser
 /// @param[in] data rtsp request
-/// @param[inout] bytes input data length, output remain length
+/// @param[in,out] bytes input data length, output remain length
 /// @return 0-ok, 1-need more data, other-error
 int rtsp_server_input(rtsp_server_t* rtsp, const void* data, size_t* bytes);
 

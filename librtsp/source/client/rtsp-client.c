@@ -17,7 +17,7 @@ struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const
 	snprintf(rtsp->usr, sizeof(rtsp->usr) - 1, "%s", usr ? usr : "");
 	snprintf(rtsp->pwd, sizeof(rtsp->pwd) - 1, "%s", pwd ? pwd : "");
 	
-	rtsp->parser = http_parser_create(HTTP_PARSER_CLIENT);
+	rtsp->parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	memcpy(&rtsp->handler, handler, sizeof(rtsp->handler));
 	rtsp->rtp.onrtp = rtsp->handler.onrtp;
 	rtsp->rtp.param = param;
@@ -97,7 +97,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 		}
 	} while (p < end && r >= 0);
 
-	assert(r <= 1);
+	assert(r <= 2);
 	return r >= 0 ? 0 : r;
 }
 

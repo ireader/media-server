@@ -60,6 +60,9 @@
     <ClInclude Include="src\sip-internal.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sip-subscribe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c">
@@ -145,6 +148,33 @@
     </ClCompile>
     <ClCompile Include="src\sip-agent.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-info.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-refer.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-subscribe.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-subscribe.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-info.c">
+      <Filter>Source Files\uac</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sip-subscribe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\header\sip-header-substate.c">
+      <Filter>SIP Header</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uas\sip-uas-prack.c">
+      <Filter>Source Files\uas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\uac\sip-uac-refer.c">
+      <Filter>Source Files\uac</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

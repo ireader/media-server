@@ -3,7 +3,7 @@
 
 #include "rtp-member.h"
 
-void* rtp_member_list_create();
+void* rtp_member_list_create(void);
 void rtp_member_list_destroy(void* members);
 
 int rtp_member_list_count(void* members);

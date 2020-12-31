@@ -32,7 +32,8 @@ int mov_read_sidx(struct mov_t* mov, const struct mov_box_t* box)
 		mov_buffer_r32(&mov->io); /* starts_with_SAP & SAP_type & SAP_delta_time */
 	}
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset)
@@ -44,7 +45,7 @@ size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset)
     if (track->sample_count > 0)
     {
         earliest_presentation_time = track->samples[0].pts;
-        duration = (uint32_t)(track->samples[track->sample_count - 1].dts - track->samples[0].dts);
+        duration = (uint32_t)(track->samples[track->sample_count - 1].dts - track->samples[0].dts) + (uint32_t)track->turn_last_duration;
     }
     else
     {
@@ -66,7 +67,7 @@ size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset)
 
     mov_buffer_w32(&mov->io, 0); /* reference_type & referenced_size */
     mov_buffer_w32(&mov->io, duration); /* subsegment_duration */
-    mov_buffer_w32(&mov->io, (1U/*starts_with_SAP*/ << 31) | (1 /*SAP_type*/ << 24) | 0 /*SAP_delta_time*/);
+    mov_buffer_w32(&mov->io, (1U/*starts_with_SAP*/ << 31) | (1 /*SAP_type*/ << 28) | 0 /*SAP_delta_time*/);
     
     return 52;
 }

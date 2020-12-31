@@ -1,0 +1,15 @@
+v=0
+o=- 946685052188730 1 IN IP4 0.0.0.0
+s=RTSP/RTP Server
+i=playback/robot=040082d087c335e3bd2b/camera=head/timerang1=1533620879-1533620898
+t=0 0
+a=tool:vlc 0.9.8a
+a=type:broadcast
+a=control:*
+a=range:npt=0-
+m=video 20003 RTP/AVP 97
+b=RR:0
+a=rtpmap:97 H264/90000
+a=fmtp:97 profile-level-id=42C01E;packetization-mode=1;sprop-parameter-sets=Z0LAHtkDxWhAAAADAEAAAAwDxYuSAAAAAQ==,aMuMsgAAAAE=
+a=control:track1
+m=audio 11704 RTP/AVP 96 97 98 0 8 18 101 99 100

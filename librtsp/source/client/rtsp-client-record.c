@@ -60,9 +60,12 @@ int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const fl
     assert(RTSP_SETUP == rtsp->state || RTSP_RECORD == rtsp->state || RTSP_PAUSE == rtsp->state);
     rtsp->state = RTSP_RECORD;
     rtsp->progress = 0;
+    rtsp->scale[0] = rtsp->range[0] = '\0';
 
-    r = snprintf(rtsp->range, sizeof(rtsp->range), npt ? "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n" : "", npt ? *npt / 1000 : 0, npt ? *npt % 1000 : 0);
-    r = snprintf(rtsp->scale, sizeof(rtsp->scale), scale ? "Scale: %f\r\n" : "", scale ? *scale : 0.0f);
+    r = scale ? snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %f\r\n", *scale) : 0;
+    r = npt ? snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) : 0;
+    if (r < 0 || r >= sizeof(rtsp->range))
+		return -1;
 
     if (rtsp->aggregate)
     {

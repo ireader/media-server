@@ -1,0 +1,27 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: media-server
+
+      - name: Sdk
+        uses: actions/checkout@v2
+        with:
+          repository: ireader/sdk
+          path: sdk
+
+      - name: Make
+        run: make
+        working-directory: media-server
+
+#      - name: Make check
+#        run: make tset
+#        working-directory: media-server

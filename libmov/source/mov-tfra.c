@@ -44,12 +44,13 @@ int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
 			sample_number = (sample_number << 8) | mov_buffer_r8(&mov->io); /* sample_number */
 	}
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_tfra(const struct mov_t* mov)
 {
-	size_t i, size;
+	uint32_t i, size;
 	const struct mov_track_t* track = mov->track;
 
 	size = 12/* full box */ + 12/* base */ + track->frag_count * 19/* index */;

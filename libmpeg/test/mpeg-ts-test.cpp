@@ -18,9 +18,9 @@ static void ts_free(void* /*param*/, void* /*packet*/)
 	return;
 }
 
-static void ts_write(void* param, const void* packet, size_t bytes)
+static int ts_write(void* param, const void* packet, size_t bytes)
 {
-	fwrite(packet, bytes, 1, (FILE*)param);
+	return 1 == fwrite(packet, bytes, 1, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 
 inline const char* ts_type(int type)

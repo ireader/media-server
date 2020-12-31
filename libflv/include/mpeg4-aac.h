@@ -20,7 +20,7 @@ struct mpeg4_aac_t
 	int sbr; // sbr flag, valid only in decode
 	int ps; // ps flag, valid only in decode
 	uint8_t pce[64];
-	size_t  npce; // pce bytes
+	int  npce; // pce bytes
 };
 
 enum mpeg2_aac_profile
@@ -30,7 +30,7 @@ enum mpeg2_aac_profile
 	MPEG2_AAC_SSR,
 };
 
-// ISO/IEC 14496-3:2009(E) Table 1.3 ¨C Audio Profiles definition (p41)
+// ISO/IEC 14496-3:2009(E) Table 1.3 - Audio Profiles definition (p41)
 // https://en.wikipedia.org/wiki/MPEG-4_Part_3#Audio_Profiles
 enum mpeg4_aac_object_type
 {
@@ -74,7 +74,7 @@ enum mpeg4_aac_object_type
 	MPEG4_AAC_USAC_NO_SBR, // Unified Speech and Audio Coding (no SBR)
 	MPEG4_AAC_SAOC, // Spatial Audio Object Coding: MPEG-D Part 2 standard (ISO/IEC 23003-2:2010)
 	MPEG4_AAC_LD_MEPG_SURROUND, // MPEG-D Part 2 - ISO/IEC 23003-2
-	MPEG4_AAC_USAC, // MPEG-D Part 3 ¨C ISO/IEC 23003-3
+	MPEG4_AAC_USAC, // MPEG-D Part 3 - ISO/IEC 23003-3
 };
 
 enum mpeg4_audio_profile
@@ -125,6 +125,8 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 /// @return >=0-audio specific config length, <0-error
 int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
 
+/// @return >=0-stream mux config length, <0-error
+int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 /// @return >=0-stream mux config length, <0-error
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
 

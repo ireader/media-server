@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Table 4.85 ¨C Syntactic elements (p533)
+// Table 4.85 - Syntactic elements (p533)
 enum {
 	ID_SCE = 0x0, // single channel element()
 	ID_CPE = 0x1, // channel_pair_element()
@@ -156,7 +156,7 @@ static int mpeg4_aac_pce_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac
 
 	assert(aac->sampling_frequency_index == sampling_frequency_index);
 	assert(aac->profile == object_type + 1);
-	return (pce->bits + 7) / 8;
+	return (int)((pce->bits + 7) / 8);
 }
 
 // 4.4.1 Decoder configuration (GASpecificConfig) (p487)
@@ -236,6 +236,40 @@ static int mpeg4_aac_ga_specific_config_load(struct mpeg4_bits_t* bits, struct m
 	return mpeg4_bits_error(bits);
 }
 
+static int mpeg4_aac_celp_specific_config_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+{
+	int ExcitationMode;
+	if (mpeg4_bits_read(bits)) // isBaseLayer
+	{
+		// CelpHeader
+
+		ExcitationMode = mpeg4_bits_read(bits);
+		mpeg4_bits_read(bits); // SampleRateMode
+		mpeg4_bits_read(bits); // FineRateControl
+
+		// Table 3.50 - Description of ExcitationMode
+		if (ExcitationMode == 1 /*RPE*/)
+		{
+			mpeg4_bits_read_n(bits, 3); // RPE_Configuration
+		}
+		if (ExcitationMode == 0 /*MPE*/)
+		{
+			mpeg4_bits_read_n(bits, 5); // MPE_Configuration
+			mpeg4_bits_read_n(bits, 2); // NumEnhLayers
+			mpeg4_bits_read(bits); // BandwidthScalabilityMode
+		}
+	}
+	else
+	{
+		if (mpeg4_bits_read(bits)) // isBWSLayer
+			mpeg4_bits_read_n(bits, 2); // BWS_configuration
+		else
+			mpeg4_bits_read_n(bits, 2); // CELP-BRS-id
+	}
+
+	return mpeg4_bits_error(bits);
+}
+
 static inline uint8_t mpeg4_aac_get_audio_object_type(struct mpeg4_bits_t* bits)
 {
 	uint8_t audioObjectType;
@@ -258,29 +292,29 @@ static inline uint8_t mpeg4_aac_get_sampling_frequency(struct mpeg4_bits_t* bits
 int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
 	uint16_t syncExtensionType;
-	uint8_t audioObjectType;
+//	uint8_t audioObjectType;
 	uint8_t extensionAudioObjectType = 0;
-	uint8_t samplingFrequencyIndex = 0;
+//	uint8_t samplingFrequencyIndex = 0;
 	uint8_t extensionSamplingFrequencyIndex = 0;
-	uint8_t channelConfiguration = 0;
+//	uint8_t channelConfiguration = 0;
 	uint8_t extensionChannelConfiguration = 0;
 	uint8_t epConfig;
 	struct mpeg4_bits_t bits;
 	mpeg4_bits_init(&bits, (void*)data, bytes);
 
-	audioObjectType = mpeg4_aac_get_audio_object_type(&bits);
-	samplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-	channelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
+	aac->profile = mpeg4_aac_get_audio_object_type(&bits);
+	aac->sampling_frequency_index = mpeg4_aac_get_sampling_frequency(&bits);
+	aac->channel_configuration = mpeg4_bits_read_uint8(&bits, 4);
 
-	if (5 == audioObjectType || 29 == audioObjectType)
+	if (5 == aac->profile || 29 == aac->profile)
 	{
 		extensionAudioObjectType = 5;
 		aac->sbr = 1;
-		if (29 == audioObjectType)
+		if (29 == aac->profile)
 			aac->ps = 1;
 		extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-		audioObjectType = mpeg4_aac_get_audio_object_type(&bits);
-		if (22 == audioObjectType)
+		aac->profile = mpeg4_aac_get_audio_object_type(&bits);
+		if (22 == aac->profile)
 			extensionChannelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
 	}
 	else
@@ -288,17 +322,23 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		extensionAudioObjectType = 0;
 	}
 
-	switch (audioObjectType)
+	switch (aac->profile)
 	{
 	case 1: case 2: case 3: case 4: case 6: case 7:
 	case 17: case 19: case 20: case 21: case 22: case 23:
 		mpeg4_aac_ga_specific_config_load(&bits, aac);
 		break;
+
+	case 8:
+		mpeg4_aac_celp_specific_config_load(&bits, aac);
+		break;
+
 	default:
 		assert(0);
+		return bytes;
 	}
 
-	switch (audioObjectType)
+	switch (aac->profile)
 	{
 	case 17: case 19: case 20: case 21: case 22:
 	case 23: case 24: case 25: case 26: case 27: case 39:
@@ -309,7 +349,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 			// TODO: ErrorProtectionSpecificConfig();
 			assert(0);
 		}
-		else if (3 == epConfig)
+		if (3 == epConfig)
 		{
 			if (mpeg4_bits_read(&bits)) // directMapping
 			{
@@ -353,12 +393,12 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 	}
 
 	mpeg4_bits_aligment(&bits, 8);
-	return mpeg4_bits_error(&bits) ? -1 : bits.bits / 8;
+	return mpeg4_bits_error(&bits) ? -1 : (int)(bits.bits / 8);
 }
 
 int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
-	if (bytes < 2 + aac->npce)
+	if (bytes < 2 + (size_t)aac->npce)
 		return -1;
 
 	memcpy(data + 2, aac->pce, aac->npce);
@@ -384,14 +424,14 @@ int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_
 	}
 
 	if (bytes <= offset)
-		return offset;
+		return (int)offset;
 
 	mpeg4_bits_init(&bits, (uint8_t*)data + offset, bytes - offset);
 	if (ID_PCE == mpeg4_bits_read_uint8(&bits, 3))
 	{
 		mpeg4_bits_init(&pce, aac->pce, sizeof(aac->pce));
 		aac->npce = mpeg4_aac_pce_load(&bits, aac, &pce);
-		return mpeg4_bits_error(&bits) ? -1 : (7 + (pce.bits + 7) / 8);
+		return mpeg4_bits_error(&bits) ? -1 : (int)(7 + (pce.bits + 7) / 8);
 	}
 	return 7;
 }
@@ -400,7 +440,7 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 {
 	struct mpeg4_aac_t src;
 	struct mpeg4_bits_t pce, adts;
-	if (aac->npce + 7 > bytes)
+	if ((size_t)aac->npce + 7 > bytes)
 		return 0;
 	memcpy(&src, aac, sizeof(src));
 //	assert(data[1] & 0x01); // disable protection_absent
@@ -409,5 +449,5 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 	mpeg4_bits_write_uint8(&adts, ID_PCE, 3);
 	mpeg4_aac_pce_load(&pce, &src, &adts);
 	assert(src.channels == aac->channels);
-	return mpeg4_bits_error(&pce) ? 0 : (7 + (adts.bits+7) / 8);
+	return mpeg4_bits_error(&pce) ? 0 : (int)((7 + (adts.bits+7) / 8));
 }

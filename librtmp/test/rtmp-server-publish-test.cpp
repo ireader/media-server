@@ -68,7 +68,7 @@ void rtmp_server_publish_test(const char* flv)
 	static unsigned char packet[8 * 1024 * 1024];
 	while ((r = socket_recv(c, packet, sizeof(packet), 0)) > 0)
 	{
-		r = rtmp_server_input(rtmp, packet, r);
+		assert(0 == rtmp_server_input(rtmp, packet, r));
 	}
 
 	rtmp_server_destroy(rtmp);

@@ -42,6 +42,9 @@
     <ClInclude Include="source\mov-ioutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mov-udta.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\mov-reader.c">
@@ -141,6 +144,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-track.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-opus.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-av1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-hdr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-vpcc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-udta.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

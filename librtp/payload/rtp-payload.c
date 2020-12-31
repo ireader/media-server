@@ -164,8 +164,18 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			codec->encoder = rtp_vp9_encode();
 			codec->decoder = rtp_vp9_decode();
 		}
-		else if (0 == strcasecmp(encoding, "MP2P") // MPEG-2 Program Streams video (RFC 2250)
-			|| 0 == strcasecmp(encoding, "MP1S"))  // MPEG-1 Systems Streams video (RFC 2250)
+		else if (0 == strcasecmp(encoding, "AV1"))
+		{
+			/// https://aomediacodec.github.io/av1-rtp-spec/#7-payload-format-parameters
+			codec->encoder = rtp_av1_encode();
+			codec->decoder = rtp_av1_decode();
+		}
+        else if (0 == strcasecmp(encoding, "MP2P")) // MPEG-2 Program Streams video (RFC 2250)
+        {
+            codec->encoder = rtp_ts_encode();
+            codec->decoder = rtp_ps_decode();
+        }
+		else if (0 == strcasecmp(encoding, "MP1S"))  // MPEG-1 Systems Streams video (RFC 2250)
 		{
 			codec->encoder = rtp_ts_encode();
 			codec->decoder = rtp_ts_decode();
@@ -203,7 +213,7 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			codec->decoder = rtp_common_decode();
 			break;
 
-		case RTP_PAYLOAD_MPA: // MPEG-1 or MPEG-2 audio only (RFC 3551, RFC 2250)
+		case RTP_PAYLOAD_MP3: // MPEG-1 or MPEG-2 audio only (RFC 3551, RFC 2250)
 		case RTP_PAYLOAD_MPV: // MPEG-1 and MPEG-2 video (RFC 2250)
 			codec->encoder = rtp_mpeg1or2es_encode();
 			codec->decoder = rtp_mpeg1or2es_decode();

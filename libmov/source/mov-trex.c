@@ -9,6 +9,7 @@ int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box)
 	uint32_t track_ID;
 	struct mov_track_t* track;
 
+	(void)box;
 	mov_buffer_r32(&mov->io); /* version & flags */
 	track_ID = mov_buffer_r32(&mov->io); /* track_ID */
 
@@ -19,7 +20,7 @@ int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box)
 	track->trex.default_sample_duration = mov_buffer_r32(&mov->io); /* default_sample_duration */
 	track->trex.default_sample_size = mov_buffer_r32(&mov->io); /* default_sample_size */
 	track->trex.default_sample_flags = mov_buffer_r32(&mov->io); /* default_sample_flags */
-	return mov_buffer_error(&mov->io); (void)box;
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_trex(const struct mov_t* mov)

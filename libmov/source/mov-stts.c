@@ -72,19 +72,19 @@ int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box)
 
 	if (0 == version)
 	{
-		(int32_t)mov_buffer_r32(&mov->io); /* compositionToDTSShift */
-		(int32_t)mov_buffer_r32(&mov->io); /* leastDecodeToDisplayDelta */
-		(int32_t)mov_buffer_r32(&mov->io); /* greatestDecodeToDisplayDelta */
-		(int32_t)mov_buffer_r32(&mov->io); /* compositionStartTime */
-		(int32_t)mov_buffer_r32(&mov->io); /* compositionEndTime */
+		mov_buffer_r32(&mov->io); /* compositionToDTSShift */
+		mov_buffer_r32(&mov->io); /* leastDecodeToDisplayDelta */
+		mov_buffer_r32(&mov->io); /* greatestDecodeToDisplayDelta */
+		mov_buffer_r32(&mov->io); /* compositionStartTime */
+		mov_buffer_r32(&mov->io); /* compositionEndTime */
 	}
 	else
 	{
-		(int64_t)mov_buffer_r64(&mov->io);
-		(int64_t)mov_buffer_r64(&mov->io);
-		(int64_t)mov_buffer_r64(&mov->io);
-		(int64_t)mov_buffer_r64(&mov->io);
-		(int64_t)mov_buffer_r64(&mov->io);
+		mov_buffer_r64(&mov->io);
+		mov_buffer_r64(&mov->io);
+		mov_buffer_r64(&mov->io);
+		mov_buffer_r64(&mov->io);
+		mov_buffer_r64(&mov->io);
 	}
 
 	(void)box;
@@ -93,7 +93,7 @@ int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_stts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -118,7 +118,7 @@ size_t mov_write_stts(const struct mov_t* mov, uint32_t count)
 
 size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 {
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -126,7 +126,7 @@ size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 
 	mov_buffer_w32(&mov->io, size); /* size */
 	mov_buffer_write(&mov->io, "ctts", 4);
-	mov_buffer_w8(&mov->io, 1); /* version */
+	mov_buffer_w8(&mov->io, (track->flags & MOV_TRACK_FLAG_CTTS_V1) ? 1 : 0); /* version */
 	mov_buffer_w24(&mov->io, 0); /* flags */
 	mov_buffer_w32(&mov->io, count); /* entry count */
 
@@ -134,7 +134,7 @@ size_t mov_write_ctts(const struct mov_t* mov, uint32_t count)
 	{
 		sample = &track->samples[i];
 		if(0 == sample->first_chunk)
-			continue;;
+			continue;
 		mov_buffer_w32(&mov->io, sample->first_chunk); // count
 		mov_buffer_w32(&mov->io, sample->samples_per_chunk); // offset * timescale / 1000
 	}
@@ -172,14 +172,14 @@ uint32_t mov_build_stts(struct mov_track_t* track)
 uint32_t mov_build_ctts(struct mov_track_t* track)
 {
     size_t i;
-    int32_t delta;
+    uint32_t delta;
     uint32_t count = 0;
     struct mov_sample_t* sample = NULL;
 
     for (i = 0; i < track->sample_count; i++)
     {
-        delta = (int32_t)(track->samples[i].pts - track->samples[i].dts);
-        if (i > 0 && delta == (int32_t)sample->samples_per_chunk)
+        delta = (uint32_t)(track->samples[i].pts - track->samples[i].dts);
+        if (i > 0 && delta == sample->samples_per_chunk)
         {
             track->samples[i].first_chunk = 0;
             assert(sample->first_chunk > 0);
@@ -190,7 +190,11 @@ uint32_t mov_build_ctts(struct mov_track_t* track)
             sample = &track->samples[i];
             sample->first_chunk = 1;
             sample->samples_per_chunk = delta;
-            ++count;
+			++count;
+
+			// fixed: firefox version 51 don't support version 1
+			if (track->samples[i].pts < track->samples[i].dts)
+				track->flags |= MOV_TRACK_FLAG_CTTS_V1;
         }
     }
 
@@ -233,7 +237,7 @@ void mov_apply_ctts(struct mov_track_t* track)
     for (i = 0, n = 0; i < stbl->ctts_count; i++)
     {
         for (j = 0; j < stbl->ctts[i].sample_count; j++, n++)
-            track->samples[n].pts += (int32_t)stbl->ctts[i].sample_delta - dts_shift; // always as int, fixed mp4box delta version error
+            track->samples[n].pts += (int64_t)((int32_t)stbl->ctts[i].sample_delta - dts_shift); // always as int, fixed mp4box delta version error
     }
     assert(0 == stbl->ctts_count || n == track->sample_count);
 }

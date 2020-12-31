@@ -74,7 +74,7 @@ int mpeg4_aac_adts_save(const struct mpeg4_aac_t* aac, size_t payload, uint8_t* 
 	data[4] = (uint8_t)(len >> 3);
 	data[5] = ((len & 0x07) << 5) | 0x1F;
 	data[6] = 0xFC /*| ((len / (1024 * aac->channels)) & 0x03)*/;
-	return len - payload;
+	return (int)(len - payload);
 }
 
 int mpeg4_aac_adts_frame_length(const uint8_t* data, size_t bytes)
@@ -113,7 +113,7 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	aac->channels = aac->channel_configuration;
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 
-	if (0 == aac->channel_configuration || 31 == aac->profile || 0x0F == aac->sampling_frequency_index)
+	if (bytes > 2)
 		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
 	return 2;
 }
@@ -122,7 +122,7 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
 	uint8_t channel_configuration;
-	if (bytes < 2+aac->npce) return -1;
+	if (bytes < 2+ (size_t)aac->npce) return -1;
 
 	channel_configuration = aac->npce > 0 ? 0 : aac->channel_configuration;
 	assert(aac->profile > 0 && aac->profile < 31);
@@ -136,7 +136,26 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 	return 2;
 }
 
-// ISO/IEC 14496-3:2009(E) Table 1.42 每 Syntax of StreamMuxConfig() (p83)
+// ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
+int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+{
+	if (bytes < 6) return -1;
+
+	memset(aac, 0, sizeof(*aac));
+	assert(0 == (0x80 & data[0])); // audioMuxVersion: 0
+	// [0] 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
+	aac->profile = ((data[1] & 0x01) << 4) | (data[2] >> 4); // 0-numProgram(4), 0-numLayer(3), 1-ASC(1)
+	aac->sampling_frequency_index = data[2] & 0x0F;
+	aac->channel_configuration = data[3] >> 4;
+	assert(aac->profile > 0 && aac->profile < 31);
+	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
+	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+	aac->channels = aac->channel_configuration;
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	return 6;
+}
+
+// ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
 	if (bytes < 6) return -1;
@@ -155,36 +174,85 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	return 6;
 }
 
-// ISO/IEC 14496-3:2009(E)  Table 1.14 每 audioProfileLevelIndication values (p51)
-int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
+// Table 1.6 每 Levels for the High Quality Audio Profile
+static int mpeg4_aac_high_quality_level(const struct mpeg4_aac_t* aac)
 {
-	int frequency;
-
-	// profile: MPEG4_AAC_LC only
-	// TODO:
-
-	// Table 1.10 每 Levels for the AAC Profile (p49)
-	// Table 1.14 每 audioProfileLevelIndication values (p51)
-	frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
-	if (frequency <=24000)
+	if (aac->sampling_frequency <= 22050)
 	{
 		if (aac->channel_configuration <= 2)
-			return 0x28; // AAC Profile, Level 1
+			return 1; // Level 1/5
 	}
-	else if (frequency <= 48000)
+	else if (aac->sampling_frequency <= 48000)
 	{
 		if (aac->channel_configuration <= 2)
-			return 0x29; // AAC Profile, Level 2
+			return 2; // Level 2/6
 		else if (aac->channel_configuration <= 5)
-			return 0x2A; // AAC Profile, Level 4
+			return 3; // Level 3/4/7/8
 	}
-	else if (frequency <= 96000)
+
+	return 8;
+}
+
+// Table 1.10 每 Levels for the AAC Profile
+static int mpeg4_aac_level(const struct mpeg4_aac_t* aac)
+{
+	if (aac->sampling_frequency <= 24000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 1; // AAC Profile, Level 1
+	}
+	else if (aac->sampling_frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return 2; // Level 2
+		else if (aac->channel_configuration <= 5)
+			return 4; // Level 4
+	}
+	else if (aac->sampling_frequency <= 96000)
 	{
 		if (aac->channel_configuration <= 5)
-			return 0x2B; // AAC Profile, Level 5
+			return 5; // Level 5
 	}
 
-	return 0x2B;
+	return 5;
+}
+
+static int mpeg4_aac_he_level(const struct mpeg4_aac_t* aac)
+{
+	if (aac->sampling_frequency <= 48000)
+	{
+		if (aac->channel_configuration <= 2)
+			return aac->sbr ? 3 : 2; // Level 2/3
+		else if (aac->channel_configuration <= 5)
+			return 4; // Level 4
+	}
+	else if (aac->sampling_frequency <= 96000)
+	{
+		if (aac->channel_configuration <= 5)
+			return 5; // Level 5
+	}
+
+	return 5;
+}
+
+// ISO/IEC 14496-3:2009(E)  Table 1.14 - audioProfileLevelIndication values (p51)
+int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac)
+{
+	// Table 1.10 - Levels for the AAC Profile (p49)
+	// Table 1.14 - audioProfileLevelIndication values (p51)
+	switch (aac->profile)
+	{
+	case MPEG4_AAC_LC:
+		return mpeg4_aac_level(aac) - 1 + 0x28; // AAC Profile
+	case MPEG4_AAC_SBR:
+		return mpeg4_aac_he_level(aac) - 2 + 0x2C; // High Efficiency AAC Profile
+	case MPEG4_AAC_PS:
+		return mpeg4_aac_he_level(aac) - 2 + 0x30; // High Efficiency AAC v2 Profile
+	case MPEG4_AAC_CELP:
+		return mpeg4_aac_high_quality_level(aac) - 1 + 0x0E; // High Quality Audio Profile
+	default:
+		return 1; // Main Audio Profile, Level 1
+	}
 }
 
 #define ARRAYOF(arr) sizeof(arr)/sizeof(arr[0])
@@ -214,7 +282,14 @@ void mpeg4_aac_test(void)
 	const unsigned char asc[] = { 0x13, 0x88 };
 	const unsigned char adts[] = { 0xFF, 0xF1, 0x5C, 0x40, 0x01, 0x1F, 0xFC };
 //	const unsigned char ascsbr[] = { 0x13, 0x10, 0x56, 0xe5, 0x9d, 0x48, 0x00 };
+	const unsigned char ascsbr[] = { 0x2b, 0x92, 0x08, 0x00 };
+	
 	unsigned char data[8];
+
+	assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_load(ascsbr, sizeof(ascsbr), &aac));
+	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 2 == aac.channel_configuration);
+	//assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_save(&aac, data, sizeof(data)));
+	//assert(0 == memcmp(ascsbr, data, sizeof(ascsbr)));
 
 	assert(sizeof(asc) == mpeg4_aac_audio_specific_config_load(asc, sizeof(asc), &aac));
 	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 1 == aac.channel_configuration);

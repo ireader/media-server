@@ -3,6 +3,7 @@
 
 #include "rtp-payload.h"
 #include "rtp-packet.h"
+#include "rtp-param.h"
 #include "rtp-util.h"
 
 struct rtp_payload_encode_t
@@ -44,27 +45,30 @@ struct rtp_payload_decode_t
 	int (*input)(void* decoder, const void* packet, int bytes);
 };
 
-struct rtp_payload_encode_t *rtp_ts_encode();
-struct rtp_payload_encode_t *rtp_vp8_encode();
-struct rtp_payload_encode_t *rtp_vp9_encode();
-struct rtp_payload_encode_t *rtp_h264_encode();
-struct rtp_payload_encode_t *rtp_h265_encode();
-struct rtp_payload_encode_t *rtp_common_encode();
-struct rtp_payload_encode_t *rtp_mp4v_es_encode();
-struct rtp_payload_encode_t *rtp_mp4a_latm_encode();
-struct rtp_payload_encode_t *rtp_mpeg4_generic_encode();
-struct rtp_payload_encode_t *rtp_mpeg1or2es_encode();
+struct rtp_payload_encode_t *rtp_ts_encode(void);
+struct rtp_payload_encode_t *rtp_vp8_encode(void);
+struct rtp_payload_encode_t *rtp_vp9_encode(void);
+struct rtp_payload_encode_t *rtp_av1_encode(void);
+struct rtp_payload_encode_t *rtp_h264_encode(void);
+struct rtp_payload_encode_t *rtp_h265_encode(void);
+struct rtp_payload_encode_t *rtp_common_encode(void);
+struct rtp_payload_encode_t *rtp_mp4v_es_encode(void);
+struct rtp_payload_encode_t *rtp_mp4a_latm_encode(void);
+struct rtp_payload_encode_t *rtp_mpeg4_generic_encode(void);
+struct rtp_payload_encode_t *rtp_mpeg1or2es_encode(void);
 
-struct rtp_payload_decode_t *rtp_ts_decode();
-struct rtp_payload_decode_t *rtp_vp8_decode();
-struct rtp_payload_decode_t *rtp_vp9_decode();
-struct rtp_payload_decode_t *rtp_h264_decode();
-struct rtp_payload_decode_t *rtp_h265_decode();
-struct rtp_payload_decode_t *rtp_common_decode();
-struct rtp_payload_decode_t *rtp_mp4v_es_decode();
-struct rtp_payload_decode_t *rtp_mp4a_latm_decode();
-struct rtp_payload_decode_t *rtp_mpeg4_generic_decode();
-struct rtp_payload_decode_t *rtp_mpeg1or2es_decode();
+struct rtp_payload_decode_t *rtp_ts_decode(void);
+struct rtp_payload_decode_t *rtp_ps_decode(void);
+struct rtp_payload_decode_t *rtp_vp8_decode(void);
+struct rtp_payload_decode_t *rtp_vp9_decode(void);
+struct rtp_payload_decode_t *rtp_av1_decode(void);
+struct rtp_payload_decode_t *rtp_h264_decode(void);
+struct rtp_payload_decode_t *rtp_h265_decode(void);
+struct rtp_payload_decode_t *rtp_common_decode(void);
+struct rtp_payload_decode_t *rtp_mp4v_es_decode(void);
+struct rtp_payload_decode_t *rtp_mp4a_latm_decode(void);
+struct rtp_payload_decode_t *rtp_mpeg4_generic_decode(void);
+struct rtp_payload_decode_t *rtp_mpeg1or2es_decode(void);
 
 int rtp_packet_serialize_header(const struct rtp_packet_t *pkt, void* data, int bytes);
 

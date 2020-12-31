@@ -41,7 +41,8 @@ static int rtmp_client_onscript(void* flv, const uint8_t* data, size_t bytes, ui
 
 void rtmp_chunk_test(const char* flv)
 {
-	int r, type;
+	int type;
+	size_t taglen;
 	uint32_t timestamp;
 	static char packet[8 * 1024 * 1024];
 
@@ -63,7 +64,7 @@ void rtmp_chunk_test(const char* flv)
 	rtmp.out_packets[RTMP_CHANNEL_VIDEO].header.cid = RTMP_CHANNEL_VIDEO;
 	rtmp.out_packets[RTMP_CHANNEL_DATA].header.cid = RTMP_CHANNEL_DATA;
 	
-	while ((r = flv_reader_read(reader, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (1 == flv_reader_read(reader, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
 		if (FLV_TYPE_AUDIO == type)
 		{
@@ -71,7 +72,7 @@ void rtmp_chunk_test(const char* flv)
 			header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 			header.cid = RTMP_CHANNEL_AUDIO;
 			header.timestamp = timestamp;
-			header.length = (uint32_t)r;
+			header.length = (uint32_t)taglen;
 			header.type = RTMP_TYPE_AUDIO;
 			header.stream_id = 1;
 			assert(0 == rtmp_chunk_write(&rtmp, &header, (const uint8_t*)packet));
@@ -82,7 +83,7 @@ void rtmp_chunk_test(const char* flv)
 			header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 			header.cid = RTMP_CHANNEL_VIDEO;
 			header.timestamp = timestamp;
-			header.length = (uint32_t)r;
+			header.length = (uint32_t)taglen;
 			header.type = RTMP_TYPE_VIDEO;
 			header.stream_id = 1;
 			assert(0 == rtmp_chunk_write(&rtmp, &header, (const uint8_t*)packet));
@@ -93,7 +94,7 @@ void rtmp_chunk_test(const char* flv)
 			header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 			header.cid = RTMP_CHANNEL_INVOKE;
 			header.timestamp = timestamp;
-			header.length = (uint32_t)r;
+			header.length = (uint32_t)taglen;
 			header.type = RTMP_TYPE_DATA;
 			header.stream_id = 1;
 			assert(0 == rtmp_chunk_write(&rtmp, &header, (const uint8_t*)packet));

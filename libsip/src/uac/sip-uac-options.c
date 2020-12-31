@@ -26,22 +26,7 @@ struct sip_uac_transaction_t* sip_uac_options(struct sip_agent_t* sip, const cha
 	return sip_uac_custom(sip, SIP_METHOD_OPTIONS, name, to, onoptins, param);
 }
 
-struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply oninfo, void* param)
-{
-	return sip_uac_custom(sip, SIP_METHOD_INFO, from, to, oninfo, param);
-}
-
 struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param)
 {
 	return sip_uac_custom(sip, SIP_METHOD_MESSAGE, from, to, onmsg, param);
-}
-
-struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onsubscribe, void* param)
-{
-	return sip_uac_custom(sip, SIP_METHOD_SUBSCRIBE, from, to, onsubscribe, param);
-}
-
-struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onnotify, void* param)
-{
-	return sip_uac_custom(sip, SIP_METHOD_NOTIFY, from, to, onnotify, param);
 }

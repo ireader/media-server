@@ -161,7 +161,8 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 
 	assert(0 == strcmp(RTMP_LEVEL_ERROR, result.level)
 		|| 0 == strcmp(RTMP_LEVEL_STATUS, result.level)
-		|| 0 == strcmp(RTMP_LEVEL_WARNING, result.level));
+		|| 0 == strcmp(RTMP_LEVEL_WARNING, result.level)
+		|| 0 == strcmp(RTMP_LEVEL_FINISH, result.level));
 
 	if (0 == strcmp(RTMP_LEVEL_ERROR, result.level))
 	{
@@ -204,6 +205,8 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		}
 		else if (0 == strcasecmp(result.code, "NetConnection.Connect.InvalidApp")
 			|| 0 == strcasecmp(result.code, "NetConnection.Connect.Rejected")
+			|| 0 == strcasecmp(result.code, "NetStream.Connect.IllegalApplication") // ksyun cdn: level finish, auth failed
+			|| 0 == strcasecmp(result.code, "NetStream.Publish.AlreadyExistStream") // ksyun cdn: level finish, description Already exist stream!
 			|| 0 == strcasecmp(result.code, "NetStream.Failed")
 			|| 0 == strcasecmp(result.code, "NetStream.Play.Failed")
 			|| 0 == strcasecmp(result.code, "NetStream.Play.StreamNotFound"))
@@ -215,6 +218,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		{
 			assert(0);
 			printf("%s: level: %s, code: %s, description: %s\n", __FUNCTION__, result.level, result.code, result.description);
+			return -1;
 		}
 	}
 

@@ -8,10 +8,10 @@
 #include <string.h>
 #include <assert.h>
 
-int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* extra, int extra_size)
+int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
 	static const char* pattern =
-		"m=video 0 RTP/AVP %d\n"
+		"m=video %hu RTP/AVP %d\n"
 		"a=rtpmap:%d H265/90000\n"
 		"a=fmtp:%d";
 
@@ -22,11 +22,12 @@ int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* e
 	int i, j, k;
 	struct mpeg4_hevc_t hevc;
 
+	assert(90000 == frequence);
 	r = mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, extra_size, &hevc);
 	if (r < 0) 
 		return r;
 
-	n = snprintf((char*)data, bytes, pattern, payload, payload, payload);
+	n = snprintf((char*)data, bytes, pattern, port, payload, payload, payload);
 
 	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]); i++)
 	{
@@ -50,4 +51,39 @@ int sdp_h265(uint8_t *data, int bytes, int payload, int frequence, const void* e
 	if(n < bytes) 
 		data[n++] = '\n';
 	return n;
+}
+
+int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, const char* pps, const char* sei)
+{
+	int i, n, len, off;
+	const char* p, * next;
+	const char* sprops[4];
+	const uint8_t startcode[] = { 0x00, 0x00, 0x00, 0x01 };
+
+	off = 0;
+	sprops[0] = vps;
+	sprops[1] = sps;
+	sprops[2] = pps;
+	sprops[3] = sei;
+	for (i = 0; i < sizeof(sprops) / sizeof(sprops[0]); i++)
+	{
+		p = sprops[i];
+		while (p)
+		{
+			next = strchr(p, ',');
+			len = next ? (int)(next - p) : (int)strlen(p);
+			if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
+				return -1; // don't have enough space
+
+			memcpy(data + off, startcode, sizeof(startcode));
+			n = (int)base64_decode(data + off + sizeof(startcode), p, len);
+			assert(n <= (len + 3) / 4 * 3);
+			off += n + sizeof(startcode);
+			off += n;
+
+			p = next ? next + 1 : NULL;
+		}
+	}
+
+	return 0;
 }

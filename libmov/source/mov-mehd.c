@@ -18,6 +18,6 @@ int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box)
         fragment_duration = mov_buffer_r32(&mov->io); /* fragment_duration*/
 
     (void)box;
-    assert(fragment_duration <= mov->mvhd.duration);
+    //assert(fragment_duration <= mov->mvhd.duration);
     return mov_buffer_error(&mov->io);
 }

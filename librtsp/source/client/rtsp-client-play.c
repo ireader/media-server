@@ -72,9 +72,12 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 	assert(RTSP_SETUP == rtsp->state || RTSP_PLAY == rtsp->state || RTSP_PAUSE == rtsp->state);
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;
-
-	r = snprintf(rtsp->range, sizeof(rtsp->range), npt ? "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n" : "", npt ? *npt/1000 : 0, npt ? *npt%1000 : 0);
-	r = snprintf(rtsp->speed, sizeof(rtsp->speed), speed ? "Speed: %f\r\n" : "", speed ? *speed : 0.0f);
+    rtsp->speed[0] = rtsp->range[0] = '\0';
+    
+    r = speed ? snprintf(rtsp->speed, sizeof(rtsp->speed), "Speed: %f\r\n", *speed) : 0;
+    r = npt ? snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt/1000, *npt%1000) : 0;
+	if (r < 0 || r >= sizeof(rtsp->range))
+		return -1;
 	
 	if(rtsp->aggregate)
 	{
@@ -93,7 +96,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 
 static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
-	int i, r;
+	int i, j, n, r;
 	uint64_t npt0 = (uint64_t)(-1);
 	uint64_t npt1 = (uint64_t)(-1);
 	double scale = 0.0f;
@@ -123,25 +126,41 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 	}
 
 	memset(rtpInfo, 0, sizeof(rtpInfo));
-	for (i = 0; prtpinfo && i < sizeof(rtpInfo) / sizeof(rtpInfo[0]); i++)
+	for (n = i = 0; prtpinfo && i < sizeof(rtpInfo) / sizeof(rtpInfo[0]); i++)
 	{
 		prtpinfo += strspn(prtpinfo, " "); // skip space
 		pnext = strchr(prtpinfo, ',');
 		if (0 == rtsp_header_rtp_info(prtpinfo, &rtpinfo[i]))
 		{
-			rtpInfo[i].uri = rtpinfo[i].url;
-			rtpInfo[i].seq = (unsigned int)rtpinfo[i].seq;
-			rtpInfo[i].time = (unsigned int)rtpinfo[i].rtptime;
+			rtpInfo[n].uri = rtpinfo[i].url;
+			rtpInfo[n].seq = (unsigned int)rtpinfo[i].seq;
+			rtpInfo[n].time = (unsigned int)rtpinfo[i].rtptime;
+			n++;
 		}
 		prtpinfo = pnext ? pnext + 1 : pnext;
 	}
 
-	r = rtsp->handler.onplay(rtsp->param, rtsp->progress, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, rtpInfo, i);
-
-	if(0 == r && 0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
+	if(0 == rtsp->aggregate && rtsp->media_count > ++rtsp->progress)
 	{
-		return rtsp_client_media_play(rtsp, rtsp->progress);
+		r = rtsp->handler.onplay(rtsp->param, rtsp->progress-1, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, rtpInfo, n);
+		if(0 == r)
+			return rtsp_client_media_play(rtsp, rtsp->progress);
 	}
+	else
+	{
+		for (r = j = 0; j < rtsp->media_count && 0 == r; j++)
+		{
+			for (i = 0; i < n; i++)
+			{
+				if (0 == strcmp(rtpInfo[i].uri, rtsp->media[j].uri))
+				{
+					r = rtsp->handler.onplay(rtsp->param, j, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, &rtpInfo[i], 1);
+					break; // only use the first <rtp-info>
+				}
+			}
+		}
+	}
+
 	return r;
 }
 

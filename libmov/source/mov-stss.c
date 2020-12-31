@@ -33,7 +33,7 @@ size_t mov_write_stss(const struct mov_t* mov)
 {
 	uint64_t offset;
 	uint64_t offset2;
-	size_t size, i, j;
+	uint32_t size, i, j;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 

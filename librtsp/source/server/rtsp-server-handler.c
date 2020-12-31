@@ -23,6 +23,7 @@ int rtsp_server_handle(struct rtsp_server_t *rtsp)
 
 	// parse session
 	rtsp->session.session[0] = 0; // clear session value
+    rtsp->session.timeout = 60000; // default timeout 1m
 	session = http_get_header_by_name(rtsp->parser, "Session");
 	if (session)
 		rtsp_header_session(session, &rtsp->session);

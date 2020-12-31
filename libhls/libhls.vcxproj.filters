@@ -24,6 +24,18 @@
     <ClCompile Include="source\hls-fmp4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\hls-parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hls-playlist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hls-master.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\hls-string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\hls-param.h">
@@ -39,6 +51,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="include\hls-fmp4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hls-parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hls-string.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

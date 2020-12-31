@@ -51,7 +51,7 @@ static int rtmp_server_send_control(struct rtmp_t* rtmp, const uint8_t* payload,
 
 static int rtmp_server_send_onstatus(struct rtmp_server_t* ctx, double transaction, int r, const char* success, const char* fail, const char* description)
 {
-	r = rtmp_netstream_onstatus(ctx->payload, sizeof(ctx->payload), transaction, 0==r ? RTMP_LEVEL_STATUS : RTMP_LEVEL_ERROR, 0==r ? success : fail, description) - ctx->payload;
+	r = (int)(rtmp_netstream_onstatus(ctx->payload, sizeof(ctx->payload), transaction, 0==r ? RTMP_LEVEL_STATUS : RTMP_LEVEL_ERROR, 0==r ? success : fail, description) - ctx->payload);
 	return rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 }
 
@@ -116,7 +116,7 @@ static int rtmp_server_rtmp_sample_access(struct rtmp_server_t* ctx)
 	int n;
 	struct rtmp_chunk_header_t header;
 	
-	n = rtmp_netstream_rtmpsampleaccess(ctx->payload, sizeof(ctx->payload)) - ctx->payload;
+	n = (int)(rtmp_netstream_rtmpsampleaccess(ctx->payload, sizeof(ctx->payload)) - ctx->payload);
 
 	header.fmt = RTMP_CHUNK_TYPE_0; // disable compact header
 	header.cid = RTMP_CHANNEL_INVOKE;
@@ -176,7 +176,7 @@ static int rtmp_server_onconnect(void* param, int r, double transaction, const s
 
 	if(0 == r)
 	{
-		n = rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Succeeded.", connect->encoding) - ctx->payload;
+		n = (int)(rtmp_netconnection_connect_reply(ctx->payload, sizeof(ctx->payload), transaction, RTMP_FMSVER, RTMP_CAPABILITIES, "NetConnection.Connect.Success", RTMP_LEVEL_STATUS, "Connection Succeeded.", connect->encoding) - ctx->payload);
 		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, n, 0);
 	}
 
@@ -195,9 +195,9 @@ static int rtmp_server_oncreate_stream(void* param, int r, double transaction)
 		ctx->stream_id = 1;
 		//r = ctx->handler.oncreate_stream(ctx->param, &ctx->stream_id);
 		if (0 == r)
-			r = rtmp_netconnection_create_stream_reply(ctx->payload, sizeof(ctx->payload), transaction, ctx->stream_id) - ctx->payload;
+			r = (int)(rtmp_netconnection_create_stream_reply(ctx->payload, sizeof(ctx->payload), transaction, ctx->stream_id) - ctx->payload);
 		else
-			r = rtmp_netconnection_error(ctx->payload, sizeof(ctx->payload), transaction, "NetConnection.CreateStream.Failed", RTMP_LEVEL_ERROR, "createStream failed.") - ctx->payload;
+			r = (int)(rtmp_netconnection_error(ctx->payload, sizeof(ctx->payload), transaction, "NetConnection.CreateStream.Failed", RTMP_LEVEL_ERROR, "createStream failed.") - ctx->payload);
 		r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, 0/*ctx->stream_id*/); // must be 0
 	}
 
@@ -233,7 +233,7 @@ static int rtmp_server_onget_stream_length(void* param, int r, double transactio
 		r = ctx->handler.ongetduration(ctx->param, ctx->info.app, stream_name, &duration);
 		if (0 == r)
 		{
-			r = rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload;
+			r = (int)(rtmp_netconnection_get_stream_length_reply(ctx->payload, sizeof(ctx->payload), transaction, duration) - ctx->payload);
 			r = rtmp_server_send_control(&ctx->rtmp, ctx->payload, r, ctx->stream_id);
 		}
 	}

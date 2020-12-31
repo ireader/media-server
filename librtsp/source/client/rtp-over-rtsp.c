@@ -67,7 +67,7 @@ const uint8_t* rtp_over_rtsp(struct rtp_over_rtsp_t *rtp, const uint8_t* data, c
 		case rtp_data:
 			if (0 == rtp->bytes && 0 != rtp_alloc(rtp))
 				return end;
-			n = end - data;
+			n = (int)(end - data);
 			n = VMIN(rtp->length - rtp->bytes, n);
 			memcpy(rtp->data + rtp->bytes, data, n);
 			rtp->bytes += (uint16_t)n;

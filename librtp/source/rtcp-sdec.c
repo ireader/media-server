@@ -98,7 +98,7 @@ int rtcp_sdes_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes)
 	header.rc = 1; // self only
 	header.length = 0;
 
-	n = rtcp_sdes_append_item(ptr+8, bytes-8, &ctx->self->sdes[RTCP_SDES_CNAME]);
+	n = (int)rtcp_sdes_append_item(ptr+8, bytes-8, &ctx->self->sdes[RTCP_SDES_CNAME]);
 	if(bytes < 8 + n)
 		return 8 + n;
 

@@ -269,7 +269,7 @@ int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h
 	{
 		if (0 == strcmp(command, s_command_handler[i].name))
 		{
-			return s_command_handler[i].handler(rtmp, transaction, data, end - data);
+			return s_command_handler[i].handler(rtmp, transaction, data, (int)(end - data));
 		}
 	}
 

@@ -5,4 +5,24 @@ before_script:
  - unzip /tmp/sdk.zip
  - echo $PWD
  - mv sdk-master ../sdk
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "I/9S/L5PVzty9kcCcWKPnF3rlZ1FqVIBMCqZkjf2zx6Pl+FHQoAe/9KSdRFtKfzM+GxRu1ttxvmNignghgO60QGS7tvU79N/u/5o4xZ1UdCotGmFmwytEZ+szuTrH2PuSlA3p1opcvuWsrcIpUFXBU/qp9VYZl8v8L6qpir9vtAeMGjMGSJO4pC5ePnv4oxtrLLY1u+uPVMdqMmK2d1sHOYZy166hn89IgM1hU7kqyYAeyhU6bXEWHKtEEApIwvWSciSFFl0J+EiWDynjnPtIWaNXrIG5Wf1uJ9gQYU/u76NQhxbBouSrGyps4hrmuF2gmGAhPGIIlQlzU/DDnLqRT2fKgy4yhfMylTy+zXMMi0jBDyFGjPYjnDYjWEUNkG79AUJ6t/fe8QPUc5w88p5Hbq3ljom+yflshPshlVdWyqCxBB5aw/oOnslgnEVNkNBEivXcpHhELbYu79NwmrkRSUaBzb77nuue5MsfMSkFISiMvHRPF9FzOO+2NnycGQrLpj14bNIJoNbwtQO40BoeSVYPjBlKNf62vhM2Xf2pm7SpGuezH2IvS0ulLB4Di4ap5vL+MIJer6mQ8xsRT7CQO7r1d1dFp2yqB3dOEERqywd5xl+tfgNy76TwXyRM4u5RbOMJSgwLJE59rHg3RQ8ApEB3P1Bvot838P7Pp+vv5I="
+
+before_install:
+  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+addons:
+  coverity_scan:
+    project:
+      name: "ireader/media-server"
+      description: "media-server"
+    notification_email: tao3@outlook.com
+    build_command_prepend: "make clean"
+    build_command: "make"
+    branch_pattern: coverity_scan
+
 script: make

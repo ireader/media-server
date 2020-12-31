@@ -1,5 +1,5 @@
 // ITU-T H.222.0(10/2014)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.5.4 Program stream map(p82)
 
 #include "mpeg-ps-proto.h"
@@ -19,7 +19,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	uint16_t element_stream_map_length;
 	uint16_t element_stream_info_length;
 
-	// Table 2-41 ¨C Program stream map(p79)
+	// Table 2-41 - Program stream map(p79)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xBC==data[3]);
 	program_stream_map_length = (data[4] << 8) | data[5];
 
@@ -31,6 +31,8 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 
 	// program stream descriptor
 	program_stream_info_length = (data[8] << 8) | data[9];
+	if ((size_t)program_stream_info_length + 6 > bytes)
+		return bytes; // TODO: error
 
 	// TODO: parse descriptor
 
@@ -46,7 +48,10 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	{
 		psm->streams[psm->stream_count].codecid = data[j];
 		psm->streams[psm->stream_count].sid = data[j+1];
+		psm->streams[psm->stream_count].pid = psm->streams[psm->stream_count].sid; // for ts PID
 		element_stream_info_length = (data[j+2] << 8) | data[j+3];
+		if (j + 4 + element_stream_info_length > bytes)
+			return bytes; // TODO: error
 
 		k = j + 4;
 		if(0xFD == psm->streams[psm->stream_count].sid && 0 == single_extension_stream_flag)
@@ -58,10 +63,10 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 			k += 3;
 		}
 
-		while(k < j + 4 + element_stream_info_length)
+		while(k + 2 < j + 4 + element_stream_info_length)
 		{
 			// descriptor()
-			k += mpeg_elment_descriptor(data+k, bytes-k);
+			k += mpeg_elment_descriptor(data+k, j + 4 + element_stream_info_length - k);
 		}
 
 		++psm->stream_count;
@@ -70,13 +75,13 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	}
 
 //	assert(j+4 == program_stream_map_length+6);
-	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
+//	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
 
 size_t psm_write(const struct psm_t *psm, uint8_t *data)
 {
-	// Table 2-41 ¨C Program stream map(p79)
+	// Table 2-41 - Program stream map(p79)
 
 	size_t i,j;
 	unsigned int crc;

@@ -1,4 +1,5 @@
 #include "rtp-payload-helper.h"
+#include "rtp-param.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,8 +13,9 @@ void* rtp_payload_helper_create(struct rtp_payload_t *handler, void* cbparam)
 		return NULL;
 
 	memcpy(&helper->handler, handler, sizeof(helper->handler));
+	helper->maxsize = RTP_PAYLOAD_MAX_SIZE;
 	helper->cbparam = cbparam;
-	helper->flags = -1;
+	helper->__flags = -1;
 	return helper;
 }
 
@@ -32,29 +34,41 @@ void rtp_payload_helper_destroy(void* p)
 
 int rtp_payload_check(struct rtp_payload_helper_t* helper, const struct rtp_packet_t* pkt)
 {
+    int lost; // next frame lost packet flags
+    
 	// first packet only
-	if (-1 == helper->flags)
+	if (-1 == helper->__flags)
 	{
-		helper->flags = 0;
+        // TODO: first packet lost ???
+		helper->__flags = 0;
 		helper->seq = (uint16_t)(pkt->rtp.seq - 1); // disable packet lost
 		helper->timestamp = pkt->rtp.timestamp + 1; // flag for new frame
 	}
-
+    
+    lost = 0;
 	// check sequence number
 	if ((uint16_t)pkt->rtp.seq != (uint16_t)(helper->seq + 1))
 	{
-		helper->size = 0;
+        lost = 1;
+		//helper->size = 0;
 		helper->lost = 1;
-		helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
-		helper->timestamp = pkt->rtp.timestamp;
+        //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+		//helper->timestamp = pkt->rtp.timestamp;
 	}
 	helper->seq = (uint16_t)pkt->rtp.seq;
 
 	// check timestamp
 	if (pkt->rtp.timestamp != helper->timestamp)
-	{
-		rtp_payload_onframe(helper);
-	}
+    {
+        rtp_payload_onframe(helper);
+        
+        // lost:
+        // 0 - packet lost before timestamp change
+        // 1 - packet lost on timestamp changed, can't known losted packet is at old packet tail or new packet start, so two packets mark as packet lost
+        if(0 != lost)
+            helper->lost = lost;
+    }
+    
 	helper->timestamp = pkt->rtp.timestamp;
 
 	return 0;
@@ -62,18 +76,22 @@ int rtp_payload_check(struct rtp_payload_helper_t* helper, const struct rtp_pack
 
 int rtp_payload_write(struct rtp_payload_helper_t* helper, const struct rtp_packet_t* pkt)
 {
-	if (helper->size + pkt->payloadlen > helper->capacity)
+	int size;
+	size = helper->size + pkt->payloadlen;
+	if (size > helper->maxsize || size < 0)
+		return -EINVAL;
+
+	if (size > helper->capacity)
 	{
 		void *ptr;
-		size_t size;
 
-		size = helper->size + pkt->payloadlen + 8000;
+		size += size / 4 > 16000 ? size / 4 : 16000;
 		ptr = realloc(helper->ptr, size);
 		if (!ptr)
 		{
-			helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+            //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 			helper->lost = 1;
-			helper->size = 0;
+			//helper->size = 0;
 			return -ENOMEM;
 		}
 
@@ -89,16 +107,28 @@ int rtp_payload_write(struct rtp_payload_helper_t* helper, const struct rtp_pack
 
 int rtp_payload_onframe(struct rtp_payload_helper_t *helper)
 {
-	if (helper->size > 0)
+	int r;
+	r = 0;
+
+    if (helper->size > 0
+#if !defined(RTP_ENABLE_COURRUPT_PACKET)
+        && 0 == helper->lost
+#endif
+        )
 	{
 		// previous packet done
-		assert(!helper->lost);
-		helper->handler.packet(helper->cbparam, helper->ptr, helper->size, helper->timestamp, helper->flags);
-		helper->flags &= ~RTP_PAYLOAD_FLAG_PACKET_LOST; // clear packet lost flag	
+        r = helper->handler.packet(helper->cbparam, helper->ptr, helper->size, helper->timestamp, helper->__flags | (helper->lost ? RTP_PAYLOAD_FLAG_PACKET_CORRUPT : 0));
+        
+        // RTP_PAYLOAD_FLAG_PACKET_LOST: miss
+        helper->__flags &= ~RTP_PAYLOAD_FLAG_PACKET_LOST; // clear packet lost flag
 	}
+    
+    // set packet lost flag on next frame
+    if(helper->lost)
+        helper->__flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 
 	// new frame start
-	helper->lost = 0;
+    helper->lost = 0;
 	helper->size = 0;
-	return 0;
+	return r;
 }

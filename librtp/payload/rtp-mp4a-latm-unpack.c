@@ -24,12 +24,6 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 
 	rtp_payload_check(helper, &pkt);
 
-	if (helper->lost)
-	{
-		assert(0 == helper->size);
-		return 0; // packet discard
-	}
-
 	// save payload
 	if (0 == helper->size)
 	{
@@ -37,8 +31,8 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 		for (pend = ptr + pkt.payloadlen; ptr < pend; ptr += len)
 		{
 			// ISO/IEC 14496-3:200X(E)
-			// Table 1.44 ¨C Syntax of PayloadLengthInfo() (p84)
-			// Table 1.45 ¨C Syntax of PayloadMux()
+			// Table 1.44 - Syntax of PayloadLengthInfo() (p84)
+			// Table 1.45 - Syntax of PayloadMux()
 			for (len = 0; ptr < pend; ptr++)
 			{
 				len += *ptr;
@@ -52,9 +46,9 @@ static int rtp_decode_mp4a_latm(void* p, const void* packet, int bytes)
 			if (ptr + len > pend)
 			{
 				assert(0);
-				helper->size = 0;
+				//helper->size = 0;
 				helper->lost = 1;
-				helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+				//helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 				return -1; // invalid packet
 			}
 

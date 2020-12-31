@@ -95,5 +95,8 @@
     <ClInclude Include="source\mpeg-util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\mpeg-ts-opus.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -20,6 +20,7 @@ struct sip_agent_t
 	//void* timerptr;
 
 	struct list_head dialogs;
+	struct list_head subscribes;
 	
 	struct list_head uac; // uac transactions
 	struct list_head uas; // uas transactions
@@ -29,5 +30,17 @@ struct sip_agent_t
 
 int sip_uac_input(struct sip_agent_t* sip, struct sip_message_t* reply);
 int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* request);
+
+static inline int sip_transport_isreliable(const struct cstring_t* c)
+{
+	return (0 == cstrcasecmp(c, "TCP") || 0 == cstrcasecmp(c, "TLS") || 0 == cstrcasecmp(c, "SCTP")) ? 1 : 0;
+}
+static inline int sip_transport_isreliable2(const char* protocol)
+{
+	struct cstring_t c;
+	c.p = protocol;
+	c.n = strlen(protocol);
+	return sip_transport_isreliable(&c);
+}
 
 #endif /* !_sip_internal_h_ */

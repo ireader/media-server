@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#define TIMEOUT_RECV 20000
+#define TIMEOUT_RECV 65000
 #define TIMEOUT_SEND 10000
 
 struct rtsp_session_t

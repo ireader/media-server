@@ -1,0 +1,16 @@
+#EXTM3U
+#EXT-X-SESSION-DATA:DATA-ID="com.example.lyrics",URI="lyrics.json"
+#EXT-X-SESSION-DATA:DATA-ID="com.example.title",LANGUAGE="en", VALUE="This is an example"
+#EXT-X-SESSION-DATA:DATA-ID="com.example.title",LANGUAGE="es", VALUE="Este es un ejemplo"
+
+#EXT-X-STREAM-INF:BANDWIDTH=1280000
+low/audio-video.m3u8
+#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=86000,URI="low/iframe.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=2560000
+mid/audio-video.m3u8
+#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=150000,URI="mid/iframe.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=7680000
+hi/audio-video.m3u8
+#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=550000,URI="hi/iframe.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=65000,CODECS="mp4a.40.5"
+audio-only.m3u8

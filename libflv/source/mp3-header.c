@@ -73,7 +73,7 @@ int mp3_header_load(struct mp3_header_t* mp3, const void* data, int bytes)
 	mp3->original = (p[3] >> 2) & 0x01;
 	mp3->emphasis = p[3] & 0x03;
 
-	return (p - (uint8_t*)data) + 4;
+	return (int)(p - (uint8_t*)data) + 4;
 }
 
 int mp3_header_save(const struct mp3_header_t* mp3, void* data, int bytes)
@@ -88,6 +88,11 @@ int mp3_header_save(const struct mp3_header_t* mp3, void* data, int bytes)
 	p[2] = (uint8_t)((mp3->bitrate_index << 4) | (mp3->sampling_frequency << 2) | 0x00 /*padding*/ | mp3->priviate);
 	p[3] = (uint8_t)((mp3->mode << 6) | (mp3->mode_extension << 4) | (mp3->copyright << 3) | (mp3->original << 2) | mp3->emphasis);
 	return 4;
+}
+
+int mp3_get_channel(const struct mp3_header_t* mp3)
+{
+    return 0x03 == mp3->mode ? 1 : 2;
 }
 
 int mp3_get_bitrate(const struct mp3_header_t* mp3)

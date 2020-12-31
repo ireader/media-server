@@ -77,7 +77,7 @@ static int mov_read_base_descr(struct mov_t* mov, int bytes, int* tag,  int* len
 	return 1 + i;
 }
 
-static size_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
+static uint32_t mov_write_base_descr(const struct mov_t* mov, uint8_t tag, uint32_t len)
 {
 	mov_buffer_w8(&mov->io, tag);
 	mov_buffer_w8(&mov->io, (uint8_t)(0x80 | (len >> 21)));
@@ -149,7 +149,7 @@ abstract class DecoderSpecificInfo extends BaseDescriptor : bit(8)
 	// empty. To be filled by classes extending this class.
 }
 */
-static int mp4_read_decoder_specific_info(struct mov_t* mov, size_t len)
+static int mp4_read_decoder_specific_info(struct mov_t* mov, int len)
 {
 	struct mov_track_t* track = mov->track;
 	struct mov_sample_entry_t* entry = track->stsd.current;
@@ -195,13 +195,13 @@ static int mp4_read_decoder_config_descriptor(struct mov_t* mov, int len)
 	/*uint32_t bufferSizeDB = */mov_buffer_r24(&mov->io); /* buffer size db */
 	/*uint32_t max_rate = */mov_buffer_r32(&mov->io); /* max bit-rate */
 	/*uint32_t bit_rate = */mov_buffer_r32(&mov->io); /* avg bit-rate */
-	return mp4_read_tag(mov, len - 13); // mp4_read_decoder_specific_info
+	return mp4_read_tag(mov, (uint64_t)len - 13); // mp4_read_decoder_specific_info
 }
 
 static int mp4_write_decoder_config_descriptor(const struct mov_t* mov)
 {
 	const struct mov_sample_entry_t* entry = mov->track->stsd.current;
-	size_t size = 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0);
+	int size = 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0);
 	mov_write_base_descr(mov, ISO_DecoderConfigDescrTag, size);
 	mov_buffer_w8(&mov->io, entry->object_type_indication);
 	mov_buffer_w8(&mov->io, 0x01/*reserved*/ | (entry->stream_type << 2));
@@ -359,7 +359,7 @@ int mov_read_esds(struct mov_t* mov, const struct mov_box_t* box)
 
 static size_t mp4_write_es_descriptor(const struct mov_t* mov)
 {
-	size_t size = 3; // mp4_write_decoder_config_descriptor
+	uint32_t size = 3; // mp4_write_decoder_config_descriptor
 	const struct mov_sample_entry_t* entry = mov->track->stsd.current;
 	size += 5 + 13 + (entry->extra_data_size > 0 ? entry->extra_data_size + 5 : 0); // mp4_write_decoder_config_descriptor
 	size += 5 + 1; // mp4_write_sl_config_descriptor

@@ -18,6 +18,7 @@ struct mov_track_t* mov_add_track(struct mov_t* mov)
     track = &mov->tracks[mov->track_count];
     memset(track, 0, sizeof(struct mov_track_t));
     track->start_dts = INT64_MIN;
+    track->last_dts = INT64_MIN;
 
     track->stsd.entries = calloc(1, sizeof(struct mov_sample_entry_t));
     if (NULL == track->stsd.entries)
@@ -56,7 +57,7 @@ void mov_free_track(struct mov_track_t* track)
 
 struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track)
 {
-    size_t i;
+    int i;
     for (i = 0; i < mov->track_count; i++)
     {
         if (mov->tracks[i].tkhd.track_ID == track)
@@ -84,6 +85,9 @@ struct mov_track_t* mov_fetch_track(struct mov_t* mov, uint32_t track)
 int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint32_t timescale, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)
 {
     struct mov_sample_entry_t* audio;
+
+    if (MOV_OBJECT_MP3 == object && sample_rate > 24000)
+        object = MOV_OBJECT_MP1A; // use mpeg1 sample rate table, see more @libflv/source/mp3-header.c
 
     audio = &track->stsd.entries[0];
     audio->data_reference_index = 1;
@@ -119,7 +123,7 @@ int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     if (NULL == audio->extra_data)
         return -ENOMEM;
     memcpy(audio->extra_data, extra_data, extra_data_size);
-	audio->extra_data_size = extra_data_size;
+	audio->extra_data_size = (int)extra_data_size;
 
     return 0;
 }
@@ -165,7 +169,7 @@ int mov_add_video(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     if (NULL == video->extra_data)
         return -ENOMEM;
     memcpy(video->extra_data, extra_data, extra_data_size);
-	video->extra_data_size = extra_data_size;
+	video->extra_data_size = (int)extra_data_size;
 
     return 0;
 }
@@ -177,11 +181,11 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     subtitle = &track->stsd.entries[0];
     subtitle->data_reference_index = 1;
     subtitle->object_type_indication = object;
-    subtitle->stream_type = MP4_STREAM_VISUAL; // Visually composed tracks including video and text are layered using the ¡®layer¡¯ value.
+    subtitle->stream_type = MP4_STREAM_VISUAL; // Visually composed tracks including video and text are layered using the 'layer' value.
 
     assert(0 != mov_object_to_tag(object));
     track->tag = mov_object_to_tag(object);
-    track->handler_type = MOV_SUBT;
+    track->handler_type = MOV_SBTL;
     track->handler_descr = "SubtitleHandler";
     track->stsd.entry_count = 1;
     track->offset = 0;
@@ -205,7 +209,7 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     if (NULL == subtitle->extra_data)
         return -ENOMEM;
     memcpy(subtitle->extra_data, extra_data, extra_data_size);
-	subtitle->extra_data_size = extra_data_size;
+	subtitle->extra_data_size = (int)extra_data_size;
 
     return 0;
 }
@@ -264,7 +268,7 @@ size_t mov_write_minf(const struct mov_t* mov)
     {
         size += mov_write_smhd(mov);
     }
-    else if (MOV_SUBT == track->handler_type)
+    else if (MOV_SUBT == track->handler_type || MOV_SBTL == track->handler_type)
     {
         size += mov_write_nmhd(mov);
     }

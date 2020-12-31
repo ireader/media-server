@@ -129,6 +129,18 @@
     <ClCompile Include="source\rtp-queue.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-av1-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-av1-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-ps-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtp-demuxer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
@@ -172,6 +184,9 @@
     </ClInclude>
     <ClInclude Include="payload\rtp-payload-helper.h">
       <Filter>payload</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtp-demuxer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

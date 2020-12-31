@@ -1,16 +1,17 @@
 // ITU-T H.222.0(06/2012)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.6 Program and program element descriptors(p83)
 
 #include "mpeg-ps-proto.h"
 #include "mpeg-element-descriptor.h"
+#include "mpeg-util.h"
 #include <string.h>
 #include <assert.h>
 
 /*
 2.6 Program and program element descriptors
 2.6.1 Semantic definition of fields in program and program element descriptors
-Table 2-45 ¨C Program and program element descriptors
+Table 2-45 - Program and program element descriptors
 tag		TS	PS	Identification
 0		n/a n/a reserved
 1		n/a X	forbidden
@@ -69,6 +70,8 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 {
 	uint8_t descriptor_tag = data[0];
 	uint8_t descriptor_len = data[1];
+	if ((size_t)descriptor_len + 2 > bytes)
+		return bytes;
 
 	switch(descriptor_tag)
 	{
@@ -82,6 +85,10 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 
 	case 4:
 		hierarchy_descriptor(data, bytes);
+		break;
+
+	case 5:
+		registration_descriptor(data, bytes);
 		break;
 
 	case 10:
@@ -98,6 +105,14 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 
 	case 28:
 		mpeg4_audio_descriptor(data, bytes);
+		break;
+
+	case 37:
+		metadata_pointer_descriptor(data, bytes);
+		break;
+
+	case 38:
+		metadata_descriptor(data, bytes);
 		break;
 
 	case 40:
@@ -199,6 +214,17 @@ size_t hierarchy_descriptor(const uint8_t* data, size_t bytes)
 	return descriptor_len+2;
 }
 
+size_t registration_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.8 Registration descriptor(p94)
+	size_t fourcc;
+	//	uint8_t descriptor_tag = data[0];
+	size_t descriptor_len = data[1];
+	assert(descriptor_len + 2 + 4 <= bytes);
+	fourcc = (data[5] << 24) | (data[4] << 16) | (data[3] << 8) | data[2];
+	return descriptor_len + 2;
+}
+
 size_t language_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.18 ISO 639 language descriptor(p92)
@@ -272,6 +298,101 @@ size_t mpeg4_audio_descriptor(const uint8_t* data, size_t bytes)
 	return descriptor_len+2;
 }
 
+size_t metadata_pointer_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.58 Metadata pointer descriptor(p112)
+	
+	uint8_t flags;
+	struct mpeg_bits_t bits;
+	metadata_pointer_descriptor_t desc;
+	size_t descriptor_len;
+
+	mpeg_bits_init(&bits, data, bytes);
+	mpeg_bits_read8(&bits); // descriptor_tag
+	descriptor_len = mpeg_bits_read8(&bits);
+	assert(descriptor_len + 2 <= bytes);
+
+	desc.metadata_application_format_identifier = mpeg_bits_read16(&bits);
+	if (0xFFFF == desc.metadata_application_format_identifier)
+		desc.metadata_application_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_format_identifier = mpeg_bits_read8(&bits);
+	if (0xFF == desc.metadata_format_identifier)
+		desc.metadata_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_service_id = mpeg_bits_read8(&bits);
+	flags = mpeg_bits_read8(&bits);
+	desc.MPEG_carriage_flags = (flags >> 5) & 0x03;
+
+	if (flags & 0x80) // metadata_locator_record_flag
+	{
+		desc.metadata_locator_record_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.metadata_locator_record_length); // metadata_locator_record_byte
+	}
+
+	if (desc.MPEG_carriage_flags <= 2)
+		desc.program_number = mpeg_bits_read16(&bits);
+
+	if (1 == desc.MPEG_carriage_flags)
+	{
+		desc.transport_stream_location = mpeg_bits_read16(&bits);
+		desc.transport_stream_id = mpeg_bits_read16(&bits);
+	}
+
+	assert(0 == mpeg_bits_error(&bits));
+	return descriptor_len + 2;
+}
+
+size_t metadata_descriptor(const uint8_t* data, size_t bytes)
+{
+	// 2.6.60 Metadata descriptor(p115)
+
+	uint8_t flags;
+	struct mpeg_bits_t bits;
+	metadata_descriptor_t desc;
+	size_t descriptor_len;
+
+	mpeg_bits_init(&bits, data, bytes);
+	mpeg_bits_read8(&bits); // descriptor_tag
+	descriptor_len = mpeg_bits_read8(&bits);
+	assert(descriptor_len + 2 <= bytes);
+
+	desc.metadata_application_format_identifier = mpeg_bits_read16(&bits);
+	if (0xFFFF == desc.metadata_application_format_identifier)
+		desc.metadata_application_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_format_identifier = mpeg_bits_read8(&bits);
+	if (0xFF == desc.metadata_format_identifier)
+		desc.metadata_format_identifier = mpeg_bits_read32(&bits);
+
+	desc.metadata_service_id = mpeg_bits_read8(&bits);
+	flags = mpeg_bits_read8(&bits);
+	desc.decoder_config_flags = (flags >> 5) & 0x07;
+	if (flags & 0x10) // DSM-CC_flag
+	{
+		desc.service_identification_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.service_identification_length); // service_identification_record_byte
+	}
+
+	if (0x01 == desc.decoder_config_flags)
+	{
+		desc.decoder_config_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.decoder_config_length); // decoder_config_byte
+	}
+	else if (0x03 == desc.decoder_config_flags)
+	{
+		desc.dec_config_identification_record_length = mpeg_bits_read8(&bits);
+		mpeg_bits_skip(&bits, desc.dec_config_identification_record_length); // dec_config_identification_record_byte
+	}
+	else if (0x04 == desc.decoder_config_flags)
+	{
+		desc.decoder_config_metadata_service_id = mpeg_bits_read8(&bits);
+	}
+
+	assert(0 == mpeg_bits_error(&bits));
+	return descriptor_len + 2;
+}
+
 size_t avc_video_descriptor(const uint8_t* data, size_t bytes)
 {
 	// 2.6.64 AVC video descriptor(p110)
@@ -313,19 +434,20 @@ size_t avc_timing_hrd_descriptor(const uint8_t* data, size_t bytes)
 	memset(&desc, 0, sizeof(desc));
 	desc.hrd_management_valid_flag = (data[i] >> 7) & 0x01;
 	desc.picture_and_timing_info_present = (data[i] >> 0) & 0x01;
+	++i;
 	if(desc.picture_and_timing_info_present)
 	{
-		desc._90kHZ_flag = (data[i+1] >> 7) & 0x01;
+		desc._90kHZ_flag = (data[i] >> 7) & 0x01;
 		if(0 == desc._90kHZ_flag)
 		{
-			desc.N = (data[i+2] << 24) | (data[i+3] << 16) | (data[i+4] << 8) | data[i+5];
-			i += 4;
+			desc.N = (data[i+1] << 24) | (data[i+2] << 16) | (data[i+3] << 8) | data[i+4];
+			desc.K = (data[i+5] << 24) | (data[i+6] << 16) | (data[i+7] << 8) | data[i+8];
+			i += 8;
 		}
-		desc.num_unit_in_tick = (data[i+2] << 24) | (data[i+3] << 16) | (data[i+4] << 8) | data[i+5];
+		desc.num_unit_in_tick = (data[i+1] << 24) | (data[i+2] << 16) | (data[i+3] << 8) | data[i+4];
 		i += 5;
 	}
 
-	++i;
 	desc.fixed_frame_rate_flag = (data[i] >> 7) & 0x01;
 	desc.temporal_poc_flag = (data[i] >> 6) & 0x01;
 	desc.picture_to_display_conversion_flag = (data[i] >> 5) & 0x01;

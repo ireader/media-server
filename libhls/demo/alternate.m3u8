@@ -1,0 +1,17 @@
+#EXTM3U
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-lo",LANGUAGE="eng",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="englo/prog_index.m3u8"
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-lo",LANGUAGE="fre",NAME="Français",AUTOSELECT=YES, DEFAULT=NO,URI="frelo/prog_index.m3u8"
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-lo",LANGUAGE="es",NAME="Espanol",AUTOSELECT=YES, DEFAULT=NO,URI="splo/prog_index.m3u8"
+ 
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-hi",LANGUAGE="eng",NAME="English",AUTOSELECT=YES, DEFAULT=YES,URI="eng/prog_index.m3u8"
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-hi",LANGUAGE="fre",NAME="Français",AUTOSELECT=YES, DEFAULT=NO,URI="fre/prog_index.m3u8"
+#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio-hi",LANGUAGE="es",NAME="Espanol",AUTOSELECT=YES, DEFAULT=NO,URI="sp/prog_index.m3u8"
+ 
+#EXT-X-STREAM-INF:BANDWIDTH=195023,CODECS="mp4a.40.5", AUDIO="audio-lo"
+lo/prog_index.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=260000,CODECS="avc1.42e01e,mp4a.40.2", AUDIO="audio-lo"
+hi/prog_index.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=591680,CODECS="mp4a.40.2, avc1.64001e", AUDIO="audio-hi"
+lo/prog_index.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=650000,CODECS="avc1.42e01e,mp4a.40.2", AUDIO="audio-hi"
+hi/prog_index.m3u8

@@ -4,29 +4,42 @@
 #include <string.h>
 #include <assert.h>
 
+int sip_uac_onbye(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+int sip_uac_oncancel(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+
 static int sip_uac_transaction_noninvite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status);
-	return t->onreply(t->param, reply, t, reply->u.s.code);
+	if(sip_message_issubscribe(t->req))
+		return sip_uac_subscribe_onreply(t, reply);
+	else if (sip_message_isnotify(t->req))
+		return sip_uac_notify_onreply(t, reply);
+    else
+		return t->onreply(t->param, reply, t, reply->u.s.code);
 }
 
 static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
-	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
+	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status || SIP_UAC_TRANSACTION_COMPLETED == t->status);
 
 	// stop retry timer A
-	if (NULL != t->timera)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timera);
-		t->timera = NULL;
-	}
+	sip_uac_stop_timer(t->agent, t, &t->timera);
 
-	r = t->onreply(t->param, reply, t, reply->u.s.code);
+	if(sip_message_issubscribe(t->req))
+		r = sip_uac_subscribe_onreply(t, reply);
+	else if (sip_message_isnotify(t->req))
+		r = sip_uac_notify_onreply(t, reply);
+	else
+		r = t->onreply(t->param, reply, t, reply->u.s.code);
 	
 	// post-handle
-	if (t->onhandle)
-		t->onhandle(t, reply);
+    if(sip_message_isbye(t->req))
+        sip_uac_onbye(t, reply);
+    else if(sip_message_iscancel(t->req))
+        sip_uac_oncancel(t, reply);
+//	if (t->onhandle)
+//		t->onhandle(t, reply);
 
 	// wait for in-flight response
 	sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_K);

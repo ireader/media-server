@@ -11,9 +11,9 @@ aligned(8) class AVCDecoderConfigurationRecord {
 	unsigned int(8) AVCProfileIndication;
 	unsigned int(8) profile_compatibility;
 	unsigned int(8) AVCLevelIndication;
-	bit(6) reserved = ¡®111111¡¯b;
+	bit(6) reserved = '111111'b;
 	unsigned int(2) lengthSizeMinusOne;
-	bit(3) reserved = ¡®111¡¯b;
+	bit(3) reserved = '111'b;
 
 	unsigned int(5) numOfSequenceParameterSets;
 	for (i=0; i< numOfSequenceParameterSets; i++) {
@@ -30,11 +30,11 @@ aligned(8) class AVCDecoderConfigurationRecord {
 	if( profile_idc == 100 || profile_idc == 110 || 
 		profile_idc == 122 || profile_idc == 144 )
 	{
-		bit(6) reserved = ¡®111111¡¯b;
+		bit(6) reserved = '111111'b;
 		unsigned int(2) chroma_format;
-		bit(5) reserved = ¡®11111¡¯b;
+		bit(5) reserved = '11111'b;
 		unsigned int(3) bit_depth_luma_minus8;
-		bit(5) reserved = ¡®11111¡¯b;
+		bit(5) reserved = '11111'b;
 		unsigned int(3) bit_depth_chroma_minus8;
 		unsigned int(8) numOfSequenceParameterSetExt;
 		for (i=0; i< numOfSequenceParameterSetExt; i++) {
@@ -71,7 +71,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	for (i = 0; i < avc->nb_sps && j + 2 < bytes; ++i)
 	{
 		len = (data[j] << 8) | data[j + 1];
-		if (len + j + 2 >= bytes || p + len > end)
+		if (j + 2 + len >= bytes || p + len > end)
 		{
 			assert(0);
 			return -1;
@@ -84,7 +84,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
         p += len;
 	}
 
-	if (j >= bytes || data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
+	if (j >= bytes || (unsigned int)data[j] > sizeof(avc->pps) / sizeof(avc->pps[0]))
 	{
 		assert(0);
 		return -1;
@@ -94,7 +94,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	for (i = 0; i < avc->nb_pps && j + 2 < bytes; i++)
 	{
 		len = (data[j] << 8) | data[j + 1];
-        if (len + j + 2 > bytes || p + len > end)
+        if (j + 2 + len > bytes || p + len > end)
         {
             assert(0);
             return -1;
@@ -107,6 +107,7 @@ int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t byte
         p += len;
 	}
 
+	avc->off = (int)(p - avc->data);
 	return j;
 }
 
@@ -219,10 +220,13 @@ int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes
 
 int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes)
 {
+	// https://tools.ietf.org/html/rfc6381#section-3.3
+	// https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter
     return snprintf(codecs, bytes, "avc1.%02x%02x%02x", avc->profile, avc->compatibility, avc->level);
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
+void mpeg4_annexbtomp4_test(void);
 void mpeg4_avc_test(void)
 {
 	const unsigned char src[] = {
@@ -248,5 +252,7 @@ void mpeg4_avc_test(void)
 
 	assert(sizeof(nalu) == mpeg4_avc_to_nalu(&avc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));
+
+	mpeg4_annexbtomp4_test();
 }
 #endif

@@ -4,18 +4,45 @@
 #include "sdp-a-rtpmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <assert.h>
 
-static inline int rtsp_media_aggregate_control_enable(void *sdp)
+static inline int scopy(struct rtsp_media_t* medias, char** dst, const char* src)
 {
-	const char* control;
-
-	// rfc 2326 C.1.1 Control URL (p80)
-	// If found at the session level, the attribute indicates the URL for aggregate control
-	control = sdp_attribute_find(sdp, "control");
-	return (control && *control) ? 1 : 0;
+	int n;
+	n = snprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, "%s", src);
+	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
+		return -1;
+	*dst = medias->ptr + medias->offset;
+	medias->offset += n + 1; // with '\0'
+	return 0;
 }
+
+//static inline int vscopy(struct rtsp_media_t* medias, char** dst, const char* fmt, ...)
+//{
+//	int n;
+//	va_list args;
+//	va_start(args, fmt);
+//	n = vsnprintf(medias->ptr + medias->offset, sizeof(medias->ptr) - medias->offset, fmt, args);
+//	va_end(args);
+//
+//	if (n < 0 || n >= (int)sizeof(medias->ptr) - medias->offset)
+//		return -1;
+//	*dst = medias->ptr + medias->offset;
+//	medias->offset += n + 1; // with '\0'
+//	return 0;
+//}
+//
+//static inline int rtsp_media_aggregate_control_enable(void *sdp)
+//{
+//	const char* control;
+//
+//	// rfc 2326 C.1.1 Control URL (p80)
+//	// If found at the session level, the attribute indicates the URL for aggregate control
+//	control = sdp_attribute_find(sdp, "control");
+//	return (control && *control) ? 1 : 0;
+//}
 
 static int isAbsoluteURL(char const* url)
 {
@@ -45,6 +72,8 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 		path += 1;
 	if ('/' == uri[offset - 1] || '\\' == uri[offset - 1])
 		offset -= 1;
+
+	// TODO: check uri parameters '?'
 	offset += snprintf(uri + offset, bytes - offset, "/%s", path);
 	return uri;
 }
@@ -125,7 +154,7 @@ int rtsp_media_set_url(struct rtsp_media_t* m, const char* base, const char* loc
 //			 sprop-parameter-sets=<parameter sets data>
 static void rtsp_media_onattr(void* param, const char* name, const char* value)
 {
-	int i;
+	int i, n;
 	int payload = -1;
 	struct rtsp_media_t* media;
 
@@ -153,13 +182,16 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("fmtp", name))
 		{
+			n = (int)strlen(value);
 			payload = atoi(value);
-			for (i = 0; i < media->avformat_count; i++)
+			for (i = 0; i < media->avformat_count && media->offset + n + 1 < sizeof(media->ptr); i++)
 			{
 				if (media->avformats[i].fmt != payload)
 					continue;
 
-				snprintf(media->avformats[i].fmtp, sizeof(media->avformats[i].fmtp), "%s", value);
+				media->avformats[i].fmtp = media->ptr + media->offset;
+				strcpy(media->avformats[i].fmtp, value);
+				media->offset += n + 1;
 				//if(0 == strcmp("H264", media->avformats[i].encoding))
 				//{
 				//	struct sdp_a_fmtp_h264_t h264;
@@ -193,6 +225,82 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		{
 			// C.1.8 Entity Tag
 		}
+		else if (0 == strcmp("rtcp", name))
+		{
+			// rfc3605 Real Time Control Protocol (RTCP) attribute in Session Description Protocol (SDP)
+			// "a=rtcp:" port [nettype space addrtype space connection-address] CRLF
+			// a=rtcp:53020 IN IP6 2001:2345:6789:ABCD:EF01:2345:6789:ABCD
+			assert(media->nport <= 2 && sizeof(media->port)/sizeof(media->port[0]) >= 2);
+			if (1 == media->nport)
+				media->nport++;
+			media->port[1] = atoi(value);
+
+			// TODO: rtcp address
+		}
+		else if (0 == strcmp("rtcp-mux", name))
+		{
+			if (1 == media->nport)
+				media->nport++;
+			media->port[1] = media->port[0];
+		}
+		else if (0 == strcmp("rtcp-xr", name))
+		{
+			// rfc3611 RTP Control Protocol Extended Reports (RTCP XR)
+			// "a=rtcp-xr:" [xr-format *(SP xr-format)] CRLF
+		}
+		else if (0 == strcmp("ice-pwd", name))
+		{
+			scopy(media, &media->ice.pwd, value);
+		}
+		else if (0 == strcmp("ice-ufrag", name))
+		{
+			scopy(media, &media->ice.ufrag, value);
+		}
+		else if (0 == strcmp("ice-lite", name))
+		{
+			media->ice.lite = 1;
+		}
+		else if (0 == strcmp("ice-mismatch", name))
+		{
+			media->ice.mismatch = 1;
+		}
+		else if (0 == strcmp("ice-pacing", name))
+		{
+			media->ice.pacing = atoi(value);
+		}
+		else if (0 == strcmp("candidate", name))
+		{
+			if (media->ice.candidate_count + 1 < sizeof(media->ice.candidates) / sizeof(media->ice.candidates[0]) && media->offset + sizeof(*media->ice.candidates[0]) <= sizeof(media->ptr))
+			{
+				media->ice.candidates[media->ice.candidate_count] = (struct sdp_candidate_t*)(media->ptr + media->offset);
+				if (7 == sscanf(value, "%32s %hu %7s %u %63s %hu typ %7s%n",
+					media->ice.candidates[media->ice.candidate_count]->foundation,
+					&media->ice.candidates[media->ice.candidate_count]->component,
+					media->ice.candidates[media->ice.candidate_count]->transport,
+					&media->ice.candidates[media->ice.candidate_count]->priority,
+					media->ice.candidates[media->ice.candidate_count]->address,
+					&media->ice.candidates[media->ice.candidate_count]->port,
+					media->ice.candidates[media->ice.candidate_count]->candtype, &n))
+				{
+					sscanf(value + n, " raddr %63s rport %hu", media->ice.candidates[media->ice.candidate_count]->reladdr, &media->ice.candidates[media->ice.candidate_count]->relport);
+					media->offset += sizeof(*media->ice.candidates[0]);
+					++media->ice.candidate_count;
+				}
+			}
+		}
+		else if (0 == strcmp("remote-candidates", name))
+		{
+			while (media->ice.remote_count + 1 < sizeof(media->ice.remotes) / sizeof(media->ice.remotes[0]) && media->offset + sizeof(*media->ice.remotes[0]) <= sizeof(media->ptr))
+			{
+				media->ice.remotes[media->ice.remote_count] = (struct sdp_candidate_t*)(media->ptr + media->offset);
+				if (!value || 3 != sscanf(value, "%hu %63s %hu%n", &media->ice.remotes[media->ice.remote_count]->component, media->ice.remotes[media->ice.remote_count]->address, &media->ice.remotes[media->ice.remote_count]->port, &n))
+					break;
+
+				value += n;
+				++media->ice.remote_count;
+				media->offset += sizeof(*media->ice.remotes[0]);
+			}
+		}
 	}
 }
 
@@ -214,10 +322,12 @@ a=orient:portrait
 int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 {
 	int i, j, n;
-	int formats[3];
+	int formats[16];
 	const char* control;
 	const char* start, *stop;
-	const char* network, *addrtype, *address;
+	const char* iceufrag, *icepwd;
+	const char* username, *session, *version;
+	const char* network, *addrtype, *address, *source;
 	struct rtsp_media_t* m;
 	struct rtsp_header_range_t range;
 	sdp_t* sdp;
@@ -240,12 +350,17 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	start = stop = NULL;
 	for (i = 0; i < sdp_timing_count(sdp); i++)
 	{
-	//	sdp_timing_get(sdp, i, &start, &stop);
+		sdp_timing_get(sdp, i, &start, &stop);
 	}
 
 	// C.1.7 Connection Information
-	network = addrtype = address = NULL;
-	sdp_connection_get(sdp, &network, &addrtype, &address);
+	network = addrtype = source = NULL;
+	if (0 != sdp_connection_get(sdp, &network, &addrtype, &source) || 0 == strcmp("0.0.0.0", source))
+		sdp_origin_get(sdp, &username, &session, &version, &network, &addrtype, &source);
+
+	// session ice-ufrag/ice-pwd
+	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
+	icepwd = sdp_attribute_find(sdp, "ice-pwd");
 
 	for (i = 0; i < sdp_media_count(sdp) && i < count; i++)
 	{
@@ -259,15 +374,23 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 			m->start = strtoull(start, NULL, 10);
 			m->stop = strtoull(stop, NULL, 10);
 		}
-		snprintf(m->network, sizeof(m->network), "%s", network);
-		snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
-		snprintf(m->address, sizeof(m->address), "%s", address);
+        
+		if(0 == sdp_media_get_connection(sdp, i, &network, &addrtype, &address))
+        {
+			if (0 == strcmp("IP4", addrtype) && 0 == strcmp("0.0.0.0", address) && source && *source)
+				address = source;
+            snprintf(m->source, sizeof(m->source), "%s", source && *source ? source : "");
+            snprintf(m->network, sizeof(m->network), "%s", network);
+            snprintf(m->address, sizeof(m->address), "%s", address);
+            snprintf(m->addrtype, sizeof(m->addrtype), "%s", addrtype);
+        }
 		//media->cseq = rand();
 		
-		m->nport = 0;
-		sdp_media_port(sdp, i, m->port, &m->nport);
+		m->nport = sdp_media_port(sdp, i, m->port, sizeof(m->port)/sizeof(m->port[0]));
 		snprintf(m->media, sizeof(m->media), "%s", sdp_media_type(sdp, i));
 		snprintf(m->proto, sizeof(m->proto), "%s", sdp_media_proto(sdp, i));
+		if (1 == m->nport && 0 == strncmp("RTP/", m->proto, 4))
+			m->port[m->nport++] = m->port[0] + 1;
 
 		// media control url
 		s = sdp_media_attribute_find(sdp, i, "control");
@@ -284,6 +407,12 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);
+
+		// use default ice-ufrag/pwd
+		if(NULL == m->ice.ufrag && iceufrag)
+			scopy(medias, &m->ice.ufrag, iceufrag);
+		if(NULL == m->ice.pwd && icepwd)
+			scopy(medias, &m->ice.pwd, icepwd);
 	}
 
 	count = sdp_media_count(sdp);

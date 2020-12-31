@@ -2,8 +2,10 @@
 #include "sockutil.h"
 #include "sys/pollfd.h"
 #include "sys/thread.h"
+#include "rtp-demuxer.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
+#include "rtcp-header.h"
 #include "rtp.h"
 #include "time64.h"
 #include <stdio.h>
@@ -21,16 +23,13 @@ struct rtp_context_t
 	FILE *frtp;
 
 	char encoding[64];
-	u_short port[2];
 	socket_t socket[2];
-	struct sockaddr_storage ss;
-	socklen_t len;
+	struct sockaddr_storage ss[2];
 
 	char rtp_buffer[64 * 1024];
 	char rtcp_buffer[32 * 1024];
 
-	void* payload;
-	void* rtp;
+    struct rtp_demuxer_t* demuxer;
 };
 
 static int rtp_read(struct rtp_context_t* ctx, socket_t s)
@@ -45,9 +44,7 @@ static int rtp_read(struct rtp_context_t* ctx, socket_t s)
 	r = recvfrom(s, ctx->rtp_buffer, sizeof(ctx->rtp_buffer), 0, (struct sockaddr*)&ss, &len);
 	if (r < 12)
 		return -1;
-	assert(AF_INET == ss.ss_family);
-	assert(((struct sockaddr_in*)&ss)->sin_port == htons(ctx->port[0]));
-	assert(0 == memcmp(&((struct sockaddr_in*)&ss)->sin_addr, &((struct sockaddr_in*)&ctx->ss)->sin_addr, 4));
+	assert(0 == socket_addr_compare((const struct sockaddr*) & ss, (const struct sockaddr*) & ctx->ss[0]));
 
 	n += r;
 	if(0 == i++ % 100)
@@ -58,8 +55,7 @@ static int rtp_read(struct rtp_context_t* ctx, socket_t s)
 	fwrite(size, 1, sizeof(size), ctx->frtp);
 	fwrite(ctx->rtp_buffer, 1, r, ctx->frtp);
 
-	rtp_payload_decode_input(ctx->payload, ctx->rtp_buffer, r);
-	rtp_onreceived(ctx->rtp, ctx->rtp_buffer, r);
+	r = rtp_demuxer_input(ctx->demuxer, ctx->rtp_buffer, r);
 	return r;
 }
 
@@ -72,11 +68,13 @@ static int rtcp_read(struct rtp_context_t* ctx, socket_t s)
 	r = recvfrom(s, ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer), 0, (struct sockaddr*)&ss, &len);
 	if (r < 12)
 		return -1;
-	assert(AF_INET == ss.ss_family);
-	assert(((struct sockaddr_in*)&ss)->sin_port == htons(ctx->port[1]));
-	assert(0 == memcmp(&((struct sockaddr_in*)&ss)->sin_addr, &((struct sockaddr_in*)&ctx->ss)->sin_addr, 4));
-
-	r = rtp_onreceived_rtcp(ctx->rtp, ctx->rtcp_buffer, r);
+	assert(0 == socket_addr_compare((const struct sockaddr*)&ss, (const struct sockaddr*)&ctx->ss[1]));
+	
+	r = rtp_demuxer_input(ctx->demuxer, ctx->rtcp_buffer, r);
+    if (RTCP_BYE == r)
+    {
+        printf("finished\n");
+    }
 	fflush(ctx->fp);
 	return r;
 }
@@ -84,7 +82,7 @@ static int rtcp_read(struct rtp_context_t* ctx, socket_t s)
 static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 {
 	int i, r;
-	int interval;
+//	int interval;
 	time64_t clock;
 	struct pollfd fds[2];
 
@@ -99,13 +97,9 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 	while (1)
 	{
 		// RTCP report
-		interval = rtp_rtcp_interval(ctx->rtp);
-		if (clock + interval < time64_now())
-		{
-			r = rtp_rtcp_report(ctx->rtp, ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer));
-			r = socket_send_all_by_time(rtp[1], ctx->rtcp_buffer, r, 0, timeout);
-			clock = time64_now();
-		}
+		r = rtp_demuxer_rtcp(ctx->demuxer, ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer));
+		if (r > 0)
+			r = socket_sendto(rtp[1], ctx->rtcp_buffer, r, 0, (const struct sockaddr*) & ctx->ss[1], socket_addr_len((const struct sockaddr*) & ctx->ss[1]));
 
 		r = poll(fds, 2, timeout);
 		while (-1 == r && EINTR == errno)
@@ -137,7 +131,7 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 	return r;
 }
 
-static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time, int flags)
+static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	const uint8_t start_code[] = { 0, 0, 0, 1 };
 	struct rtp_context_t* ctx;
@@ -167,7 +161,7 @@ static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time
 		// add ADTS header
 	}
 	fwrite(packet, 1, bytes, ctx->fp);
-	(void)time;
+	(void)timestamp;
 	(void)flags;
 
 	if (0 == strcmp("H264", ctx->encoding))
@@ -186,16 +180,8 @@ static void rtp_packet(void* param, const void *packet, int bytes, uint32_t time
 			// VCL frame
 		}
 	}
-}
 
-static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
-{
-	struct rtp_context_t* ctx;
-	ctx = (struct rtp_context_t*)param;
-	if (RTCP_MSG_BYE == msg->type)
-	{
-		printf("finished\n");
-	}
+	return 0;
 }
 
 static int STDCALL rtp_worker(void* param)
@@ -205,8 +191,7 @@ static int STDCALL rtp_worker(void* param)
 
 	rtp_receiver(ctx, ctx->socket, 2000);
 
-	rtp_destroy(ctx->rtp);
-	rtp_payload_decode_destroy(ctx->payload);
+	rtp_demuxer_destroy(&ctx->demuxer);
 	fclose(ctx->frtp);
 	fclose(ctx->fp);
 	free(ctx);
@@ -218,11 +203,10 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	size_t n;
 	pthread_t t;
 	struct rtp_context_t* ctx;
-	struct rtp_event_t evthandler;
-	struct rtp_payload_t handler;
 	const struct rtp_profile_t* profile;
 
 	ctx = malloc(sizeof(*ctx));
+    if(!ctx) return;
 	snprintf(ctx->rtp_buffer, sizeof(ctx->rtp_buffer), "%s.%d.%d.%s", peer, peerport[0], payload, encoding);
 	snprintf(ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer), "%s.%d.%d.%s.rtp", peer, peerport[0], payload, encoding);
 	ctx->fp = fopen(ctx->rtp_buffer, "wb");
@@ -233,28 +217,18 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	socket_getrecvbuf(rtp[0], &n);
 
 	profile = rtp_profile_find(payload);
-	
-	handler.alloc = NULL;
-	handler.free = NULL;
-	handler.packet = rtp_packet;
-	ctx->payload = rtp_payload_decode_create(payload, encoding, &handler, ctx);
-	if (NULL == ctx->payload)
+	ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+	if (NULL == ctx->demuxer)
 		return; // ignore
 	
-	evthandler.on_rtcp = rtp_on_rtcp;
-	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2*1024*1024, 0);
-
-	assert(0 == socket_addr_from(&ctx->ss, &ctx->len, peer, (u_short)peerport[0]));
-	//assert(0 == socket_addr_setport((struct sockaddr*)&ss, len, (u_short)peerport[0]));
-	//assert(0 == connect(rtp[0], (struct sockaddr*)&ss, len));
-	assert(0 == socket_addr_setport((struct sockaddr*)&ctx->ss, ctx->len, (u_short)peerport[1]));
-	//assert(0 == connect(rtp[1], (struct sockaddr*)&ss, len));
+	assert(0 == socket_addr_from(&ctx->ss[0], NULL, peer, (u_short)peerport[0]));
+	assert(0 == socket_addr_from(&ctx->ss[1], NULL, peer, (u_short)peerport[1]));
+	//assert(0 == connect(rtp[0], (struct sockaddr*)&ctx->ss[0], len));
+	//assert(0 == connect(rtp[1], (struct sockaddr*)&ctx->ss[1], len));
 
 	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
 	ctx->socket[0] = rtp[0];
 	ctx->socket[1] = rtp[1];
-	ctx->port[0] = (u_short)peerport[0];
-	ctx->port[1] = (u_short)peerport[1];
 	if (0 == thread_create(&t, rtp_worker, ctx))
 		thread_detach(t);
 }
@@ -263,36 +237,26 @@ static struct rtp_context_t* s_ctx[8];
 void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payload, const char* encoding)
 {
 	struct rtp_context_t* ctx;
-	struct rtp_event_t evthandler;
-	struct rtp_payload_t handler;
 	const struct rtp_profile_t* profile;
 
 	ctx = malloc(sizeof(struct rtp_context_t));
+    if(!ctx) return NULL;
 	snprintf(ctx->rtp_buffer, sizeof(ctx->rtp_buffer), "tcp.%d.%s", payload, encoding);
 	snprintf(ctx->rtcp_buffer, sizeof(ctx->rtcp_buffer), "tcp.%d.%s.rtp", payload, encoding);
 	ctx->fp = fopen(ctx->rtp_buffer, "wb");
 	ctx->frtp = fopen(ctx->rtcp_buffer, "wb");
-
-	profile = rtp_profile_find(payload);
-
-	handler.alloc = NULL;
-	handler.free = NULL;
-	handler.packet = rtp_packet;
-	ctx->payload = rtp_payload_decode_create(payload, encoding, &handler, ctx);
-	if (NULL == ctx->payload)
-		return NULL; // ignore
-
-	evthandler.on_rtcp = rtp_on_rtcp;
-	ctx->rtp = rtp_create(&evthandler, &ctx, (uint32_t)(intptr_t)&ctx, (uint32_t)(intptr_t)&ctx, profile ? profile->frequency : 9000, 2 * 1024 * 1024, 0);
-
 	snprintf(ctx->encoding, sizeof(ctx->encoding), "%s", encoding);
 	assert(interleave1 / 2 < sizeof(s_ctx) / sizeof(s_ctx[0]));
 	s_ctx[interleave1 / 2] = ctx;
-	return ctx;
+
+	profile = rtp_profile_find(payload);
+    ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+    return ctx;
 }
 
 void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes)
 {
+    int r;
 	uint8_t size[2];
 	struct rtp_context_t* ctx = s_ctx[channel / 2];
 
@@ -302,12 +266,11 @@ void rtp_receiver_tcp_input(uint8_t channel, const void* data, uint16_t bytes)
 		size[1] = bytes >> 0;
 		fwrite(size, 1, sizeof(size), ctx->frtp);
 		fwrite(data, 1, bytes, ctx->frtp);
-
-		rtp_payload_decode_input(ctx->payload, data, bytes);
-		rtp_onreceived(ctx->rtp, data, bytes);
 	}
-	else
-	{
-		rtp_onreceived_rtcp(ctx->rtp, data, bytes);
-	}
+    
+    if (ctx->demuxer)
+    {
+        r = rtp_demuxer_input(ctx->demuxer, data, bytes);
+        assert(r >= 0);
+    }
 }

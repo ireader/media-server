@@ -1,15 +1,3 @@
-// https://en.wikipedia.org/wiki/ISO_8601
-// Durations: 
-// 1. P[n]Y[n]M[n]DT[n]H[n]M[n]S
-// 2. P[n]W
-// 3. P<date>T<time>
-// 4. PYYYYMMDDThhmmss
-// 5. P[YYYY]-[MM]-[DD]T[hh]:[mm]:[ss]
-// For example, "P3Y6M4DT12H30M5S" represents a duration of "three years, six months, four days, twelve hours, thirty minutes, and five seconds".
-// "P23DT23H" and "P4Y" "P0.5Y" == "P0,5Y"
-// "PT0S" or "P0D"
-// "P0003-06-04T12:30:05"
-
 #include "dash-mpd.h"
 #include "dash-proto.h"
 #include "mov-format.h"
@@ -103,34 +91,6 @@ struct dash_mpd_t
 	struct dash_adaptation_set_t tracks[N_TRACK];
 };
 
-/// @param[in] duration millisecond duration
-/// @param[out] data ISO8601 duration: P[n]Y[n]M[n]DT[n]H[n]M[n]S
-static int ISO8601Duration(int64_t duration, char* data, int size)
-{
-    int n = 1;
-    data[0] = 'P';
-    if (duration > 24 * 3600 * 1000)
-    {
-        n += snprintf(data + n, size - n, "%dD", (int)(duration / (24 * 3600 * 1000)));
-        duration %= 24 * 3600 * 1000;
-    }
-
-    data[n++] = 'T';
-    if (duration > 3600 * 1000)
-    {
-        n += snprintf(data + n, size - n, "%dH", (int)(duration / (3600 * 1000)));
-        duration %= 3600 * 1000;
-
-        n += snprintf(data + n, size - n, "%dM", (int)(duration / (60 * 1000)));
-        duration %= 60 * 1000;
-    }
-
-    n += snprintf(data + n, size - n, "%dS", (int)((duration + 999) / 1000));
-    duration %= 1000;
-
-    return n;
-}
-
 static int mov_buffer_read(void* param, void* data, uint64_t bytes)
 {
 	struct dash_adaptation_set_t* dash;
@@ -202,6 +162,8 @@ static int dash_adaptation_set_segment(struct dash_mpd_t* mpd, struct dash_adapt
 		return r;
 
 	seg = (struct dash_segment_t*)calloc(1, sizeof(*seg));
+    if(!seg)
+        return -1; // ENOMEM
 	seg->timestamp = track->dts;
 	seg->duration = track->dts_last - track->dts;
 
@@ -310,7 +272,7 @@ int dash_mpd_add_video_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	char name[N_NAME + 16];
 	struct dash_adaptation_set_t* track;
 
-	r = strlen(prefix);
+	r = (int)strlen(prefix);
 	if (mpd->count + 1 >= N_TRACK || extra_data_size < 4 || r >= N_NAME)
 		return -1;
 
@@ -358,7 +320,7 @@ int dash_mpd_add_audio_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	char name[N_NAME + 16];
 	struct dash_adaptation_set_t* track;
 
-	r = strlen(prefix);
+	r = (int)strlen(prefix);
 	if (mpd->count + 1 >= N_TRACK || extra_data_size < 2 || r >= N_NAME)
 		return -1;
 

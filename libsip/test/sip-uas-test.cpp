@@ -26,14 +26,13 @@ struct sip_uas_test_t
 	struct sip_agent_t* sip;
 };
 
-static int sip_uas_transport_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* /*url*/, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
 	struct sip_uas_test_t *test = (struct sip_uas_test_t *)param;
 
 	//char p1[1024];
 	//char p2[1024];
-	((char*)data)[bytes] = 0;
-	printf("%s\n\n", (const char*)data);
+	printf("%.*s\n\n", (int)bytes, (const char*)data);
 	int r = socket_sendto(test->udp, data, bytes, 0, (struct sockaddr*)&test->addr, test->addrlen);
 	return r == bytes ? 0 : -1;
 }
@@ -72,8 +71,9 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
+	return 0;
 }
 
 /// on terminating a session(dialog)
@@ -94,13 +94,10 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return 0;
 }
 
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
-{
-	return sip_uas_reply(t, 200, NULL, 0);
-}
-
 static void sip_uas_loop(struct sip_uas_test_t *test)
 {
+	u_short port;
+	char received[SOCKET_ADDRLEN];
 	uint8_t buffer[2 * 1024];
 
 	do
@@ -108,15 +105,17 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 		memset(buffer, 0, sizeof(buffer));
 		test->addrlen = sizeof(test->addr);
 		int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&test->addr, &test->addrlen);
-		printf("\n%s\n", buffer);
+		socket_addr_to((struct sockaddr*)&test->addr, test->addrlen, received, &port);
+		printf("\n[%s:%hu] %s\n", received, port, buffer);
 
 		size_t n = r;
 		if (0 == http_parser_input(test->parser, buffer, &n))
 		{
-			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REQUEST);
-			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_agent_input(test->sip, reply));
-			sip_message_destroy(reply);
+			struct sip_message_t* request = sip_message_create(SIP_MESSAGE_REQUEST);
+			r = sip_message_load(request, test->parser);
+			sip_agent_set_rport(request, received, port);
+			assert(0 == sip_agent_input(test->sip, request));
+			sip_message_destroy(request);
 
 			http_parser_clear(test->parser);
 		}
@@ -125,19 +124,18 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 
 void sip_uas_test(void)
 {
-	struct sip_uas_handler_t handler = {
-		sip_uas_oninvite,
-		sip_uas_onack,
-		sip_uas_onbye,
-		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_transport_send,
-	};
+	struct sip_uas_handler_t handler;
+	handler.onregister = sip_uas_onregister;
+	handler.oninvite = sip_uas_oninvite;
+	handler.onack = sip_uas_onack;
+	handler.onbye = sip_uas_onbye;
+	handler.oncancel = sip_uas_oncancel;
+	handler.send = sip_uas_transport_send;
+
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, &test);
-	test.parser = http_parser_create(HTTP_PARSER_SERVER);
+	test.parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);
 	sip_agent_destroy(test.sip);

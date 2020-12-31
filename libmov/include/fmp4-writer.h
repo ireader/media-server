@@ -28,7 +28,8 @@ int fmp4_writer_add_subtitle(fmp4_writer_t* fmp4, uint8_t object, const void* ex
 /// @param[in] track return by mov_writer_add_audio/mov_writer_add_video
 /// @param[in] data audio/video frame
 /// @param[in] bytes buffer size
-/// @param[in] pts/dts timestamp in millisecond
+/// @param[in] pts timestamp in millisecond
+/// @param[in] dts timestamp in millisecond
 /// @param[in] flags MOV_AV_FLAG_XXX, such as: MOV_AV_FLAG_KEYFREAME, see more @mov-format.h
 /// @return 0-ok, other-error
 int fmp4_writer_write(fmp4_writer_t* fmp4, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);

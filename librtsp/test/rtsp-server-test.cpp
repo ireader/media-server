@@ -27,7 +27,11 @@
 #include "media/ffmpeg-live-source.h"
 #endif
 
+#define UDP_MULTICAST_ADDR "239.0.0.2"
+#define UDP_MULTICAST_PORT 6000
+
 static const char* s_workdir = "e:\\";
+//static const char* s_workdir = "/Users/ireader/video/";
 
 static ThreadLocker s_locker;
 
@@ -277,12 +281,42 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	}
 	else if(transport->multicast)
 	{
+        unsigned short port[2] = { transport->rtp.u.client_port1, transport->rtp.u.client_port2 };
+        char multicast[SOCKET_ADDRLEN];
 		// RFC 2326 1.6 Overall Operation p12
-		// Multicast, client chooses address
-		// Multicast, server chooses address
-		assert(0);
-		// 461 Unsupported Transport
-		return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
+		
+		if(transport->destination[0])
+        {
+            // Multicast, client chooses address
+            snprintf(multicast, sizeof(multicast), "%s", transport->destination);
+            port[0] = transport->rtp.m.port1;
+            port[1] = transport->rtp.m.port2;
+        }
+        else
+        {
+            // Multicast, server chooses address
+            snprintf(multicast, sizeof(multicast), "%s", UDP_MULTICAST_ADDR);
+            port[0] = UDP_MULTICAST_PORT;
+            port[1] = UDP_MULTICAST_PORT + 1;
+        }
+        
+        item.transport = std::make_shared<RTPUdpTransport>();
+        if(0 != ((RTPUdpTransport*)item.transport.get())->Init(multicast, port))
+        {
+            // log
+
+            // 500 Internal Server Error
+            return rtsp_server_reply_setup(rtsp, 500, NULL, NULL);
+        }
+        item.media->SetTransport(path_basename(uri), item.transport);
+
+        // Transport: RTP/AVP;multicast;destination=224.2.0.1;port=3456-3457;ttl=16
+        snprintf(rtsp_transport, sizeof(rtsp_transport),
+            "RTP/AVP;multicast;destination=%s;port=%hu-%hu;ttl=%d",
+            multicast, port[0], port[1], 16);
+        
+        // 461 Unsupported Transport
+        //return rtsp_server_reply_setup(rtsp, 461, NULL, NULL);
 	}
 	else
 	{
@@ -357,6 +391,11 @@ static int rtsp_onplay(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, cons
 	// 2. A mapping from RTP timestamps to NTP timestamps (wall clock) is available via RTCP.
 	char rtpinfo[512] = { 0 };
 	source->GetRTPInfo(uri, rtpinfo, sizeof(rtpinfo));
+
+	// for vlc 2.2.2
+	MP4FileSource* mp4 = dynamic_cast<MP4FileSource*>(source.get());
+	if(mp4)
+		mp4->SendRTCP(system_clock());
 
 	it->second.status = 1;
     return rtsp_server_reply_play(rtsp, 200, npt, NULL, rtpinfo);
@@ -459,6 +498,7 @@ static int rtsp_onclose(void* /*ptr2*/)
 static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
 {
 	printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
+    //return 0;
 }
 
 #define N_AIO_THREAD 4
@@ -482,7 +522,7 @@ extern "C" void rtsp_example()
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
-	void* tcp = rtsp_server_listen(NULL, 554, &handler, NULL); assert(tcp);
+	void* tcp = rtsp_server_listen(NULL, 8554, &handler, NULL); assert(tcp);
 //	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL); assert(udp);
 
 	// test only

@@ -41,7 +41,7 @@ int rtmp_chunk_basic_header_read(const uint8_t* data, uint8_t* fmt, uint32_t* ci
 
 int rtmp_chunk_basic_header_write(uint8_t* out, uint8_t fmt, uint32_t id)
 {
-	if (id >= 64 + 255)
+	if (id >= 64 + 256)
 	{
 		*out++ = (fmt << 6) | 1;
 		*out++ = (uint8_t)((id - 64) & 0xFF);

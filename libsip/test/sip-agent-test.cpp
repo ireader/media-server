@@ -1,3 +1,4 @@
+#include <memory>
 #include "sockutil.h"
 #include "aio-timeout.h"
 #include "sip-agent.h"
@@ -158,7 +159,7 @@ static int sip_uac_transport_send(void* param, const void* data, size_t bytes)
 	return 0;
 }
 
-static int sip_uas_transport_send(void* param, const struct cstring_t* url, const void* data, int bytes)
+static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* /*url*/, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
     assert(param == &s_sip.alice || param == &s_sip.bob);
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
@@ -199,11 +200,10 @@ static int sip_uac_onmessage(void* param, const struct sip_message_t* reply, str
 static void sip_uac_message_test(struct sip_task_t *task)
 {
 	const char* msg = "<?xml version=\"1.0\"?><msg>Hello SIP</msg>";
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_message(task->self->sip, task->from, task->to, sip_uac_onmessage, task);
-    sip_uac_transaction_ondestroy(t, sip_uac_transaction_ondestroy, task);
-	sip_uac_add_header(t, "Content-Type", "Application/xml");
-	assert(0 == sip_uac_send(t, msg, strlen(msg), &task->self->transport, task));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_message(task->self->sip, task->from, task->to, sip_uac_onmessage, task), sip_uac_transaction_release);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+	sip_uac_add_header(t.get(), "Content-Type", "Application/xml");
+	assert(0 == sip_uac_send(t.get(), msg, strlen(msg), &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
 
@@ -219,14 +219,13 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 
 static void sip_uac_register_test(struct sip_task_t *task)
 {
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_register(task->self->sip, task->from, "sip:127.0.0.1", 7200, sip_uac_onregister, task);
-    sip_uac_transaction_ondestroy(t, sip_uac_transaction_ondestroy, task);
-	assert(0 == sip_uac_send(t, NULL, 0, &task->self->transport, task));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(task->self->sip, task->from, "sip:127.0.0.1", 7200, sip_uac_onregister, task), sip_uac_transaction_release);
+	sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
 
-static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
+static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
 {
 	assert(code >= 100 && code < 700);
 	if (code >= 200 && code < 700)
@@ -238,16 +237,15 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 		task->dialog = dialog;
 		task->event.Signal();
 	}
-	return 0;
+	return NULL;
 }
 
 static void sip_uac_invite_test(struct sip_task_t *task)
 {
 	assert(task->dialog == NULL);
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_invite(task->self->sip, task->from, task->to, sip_uac_oninvited, task);
-    sip_uac_transaction_ondestroy(t, sip_uac_transaction_ondestroy, task);
-	assert(0 == sip_uac_send(t, NULL, 0, &task->self->transport, task));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(task->self->sip, task->from, task->to, sip_uac_oninvited, task), sip_uac_transaction_release);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
 
@@ -269,10 +267,9 @@ static int sip_uac_onbye(void* param, const struct sip_message_t* reply, struct 
 static void sip_uac_bye_test(struct sip_task_t *task)
 {
 	assert(task->dialog);
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_bye(task->self->sip, task->dialog, sip_uac_onbye, task);
-    sip_uac_transaction_ondestroy(t, sip_uac_transaction_ondestroy, task);
-	assert(0 == sip_uac_send(t, NULL, 0, &task->self->transport, task));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_bye(task->self->sip, task->dialog, sip_uac_onbye, task), sip_uac_transaction_release);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
 
@@ -358,8 +355,9 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static void sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
 {
+	return 0;
 }
 
 /// on terminating a session(dialog)
@@ -389,7 +387,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
-static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->terminated);
@@ -399,13 +397,14 @@ static int sip_uas_onrequest(void* param, const struct sip_message_t* req, struc
 
 static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
 {
-	http_parser_t* request = http_parser_create(HTTP_PARSER_CLIENT);
-	http_parser_t* response = http_parser_create(HTTP_PARSER_SERVER);
+	http_parser_t* request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
+	http_parser_t* response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 
 	while(channel_count(tu->q[idx]) > 0 || s_sip.running)
 	{
 		//int r = socket_recvfrom(test->udp, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen);
 		sip_packet_t pkt;
+		memset(&pkt, 0, sizeof(pkt));
 		assert(0 == (sip_packet_t*)channel_pop(tu->q[idx], &pkt));
         if(pkt.ptr == CHANNEL_DONE)
             continue;
@@ -460,15 +459,14 @@ extern "C" void sip_agent_test(void)
     };
     s_sip.running = true;
 
-	struct sip_uas_handler_t handler = {
-		sip_uas_oninvite,
-		sip_uas_onack,
-		sip_uas_onbye,
-		sip_uas_oncancel,
-		sip_uas_onregister,
-		sip_uas_onrequest,
-		sip_uas_transport_send,
-	};
+	struct sip_uas_handler_t handler;
+	handler.onregister = sip_uas_onregister;
+	handler.oninvite = sip_uas_oninvite;
+	handler.onack = sip_uas_onack;
+	handler.onbye = sip_uas_onbye;
+	handler.oncancel = sip_uas_oncancel;
+	handler.onmessage = sip_uas_onmessage;
+	handler.send = sip_uas_transport_send;
 
 	s_sip.udp = socket_udp();
 	s_sip.alice.sip = sip_agent_create(&handler, &s_sip.alice);

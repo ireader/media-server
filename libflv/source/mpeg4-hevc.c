@@ -36,15 +36,15 @@ aligned(8) class HEVCDecoderConfigurationRecord {
 	unsigned int(32) general_profile_compatibility_flags;
 	unsigned int(48) general_constraint_indicator_flags;
 	unsigned int(8) general_level_idc;
-	bit(4) reserved = ¡®1111¡¯b;
+	bit(4) reserved = '1111'b;
 	unsigned int(12) min_spatial_segmentation_idc;
-	bit(6) reserved = ¡®111111¡¯b;
+	bit(6) reserved = '111111'b;
 	unsigned int(2) parallelismType;
-	bit(6) reserved = ¡®111111¡¯b;
+	bit(6) reserved = '111111'b;
 	unsigned int(2) chromaFormat;
-	bit(5) reserved = ¡®11111¡¯b;
+	bit(5) reserved = '11111'b;
 	unsigned int(3) bitDepthLumaMinus8;
-	bit(5) reserved = ¡®11111¡¯b;
+	bit(5) reserved = '11111'b;
 	unsigned int(3) bitDepthChromaMinus8;
 	bit(16) avgFrameRate;
 	bit(2) constantFrameRate;
@@ -82,7 +82,7 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 	hevc->general_tier_flag = (data[1] >> 5) & 0x01;
 	hevc->general_profile_idc = data[1] & 0x1F;
 	hevc->general_profile_compatibility_flags = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
-	hevc->general_constraint_indicator_flags = (uint32_t)((data[6] << 24) | (data[7] << 16) | (data[8] << 8) | data[9]);
+    hevc->general_constraint_indicator_flags = ((uint32_t)data[6] << 24) | ((uint32_t)data[7] << 16) | ((uint32_t)data[8] << 8) | (uint32_t)data[9];
 	hevc->general_constraint_indicator_flags = (hevc->general_constraint_indicator_flags << 16) | (((uint64_t)data[10]) << 8) | data[11];
 	hevc->general_level_idc = data[12];
 	hevc->min_spatial_segmentation_idc = ((data[13] & 0x0F) << 8) | data[14];
@@ -140,7 +140,8 @@ int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t byt
 		}
 	}
 
-	return p - data;
+	hevc->off = (int)(dst - hevc->data);
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes)
@@ -220,7 +221,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 
 	data[22] = k;
 
-	return p - data;
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes)
@@ -243,7 +244,7 @@ int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t by
 		p += 4 + hevc->nalu[i].bytes;
 	}
 
-	return p - data;
+	return (int)(p - data);
 }
 
 int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t bytes)
@@ -264,10 +265,11 @@ int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t byte
     x = ((x >> 4) & 0x0f0f0f0f) | ((x & 0x0f0f0f0f) << 4);
     x = ((x >> 8) & 0x00ff00ff) | ((x & 0x00ff00ff) << 8);
     x = (x >> 16) | (x << 16);
-    return snprintf(codecs, bytes, "hvc1.%s%d.%x.%c%d", space[hevc->general_profile_space%4], hevc->general_profile_idc, x, tier[hevc->general_tier_flag%2], hevc->general_level_idc);
+    return snprintf(codecs, bytes, "hvc1.%s%u.%x.%c%u", space[hevc->general_profile_space%4], (unsigned int)hevc->general_profile_idc, (unsigned int)x, tier[hevc->general_tier_flag%2], (unsigned int)hevc->general_level_idc);
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
+void hevc_annexbtomp4_test(void);
 void mpeg4_hevc_test(void)
 {
 	const unsigned char src[] = {
@@ -303,5 +305,7 @@ void mpeg4_hevc_test(void)
 
 	assert(sizeof(nalu) == mpeg4_hevc_to_nalu(&hevc, data, sizeof(data)));
 	assert(0 == memcmp(nalu, data, sizeof(nalu)));
+
+	hevc_annexbtomp4_test();
 }
 #endif

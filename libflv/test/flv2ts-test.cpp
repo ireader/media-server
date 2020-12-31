@@ -20,9 +20,9 @@ static void ts_free(void* /*param*/, void* /*packet*/)
 	return;
 }
 
-static void ts_write(void* param, const void* packet, size_t bytes)
+static int ts_write(void* param, const void* packet, size_t bytes)
 {
-	fwrite(packet, bytes, 1, (FILE*)param);
+	return 1 == fwrite(packet, bytes, 1, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 
 inline const char* ftimestamp(uint32_t t, char* buf)
@@ -31,29 +31,48 @@ inline const char* ftimestamp(uint32_t t, char* buf)
 	return buf;
 }
 
-inline char flv_type(int type)
+static inline char flv_type(int type)
 {
 	switch (type)
 	{
-	case FLV_AUDIO_AAC: return 'A';
-	case FLV_AUDIO_MP3: return 'M';
-	case FLV_AUDIO_ASC: return 'a';
-	case FLV_VIDEO_H264: return 'V';
-	case FLV_VIDEO_AVCC: return 'v';
-	case FLV_VIDEO_H265: return 'H';
-	case FLV_VIDEO_HVCC: return 'h';
+	case FLV_AUDIO_ASC:			return 'a';
+	case FLV_AUDIO_AAC:			return 'A';
+	case FLV_AUDIO_MP3:			return 'M';
+	case FLV_AUDIO_OPUS:		return 'O';
+	case FLV_AUDIO_OPUS_HEAD:	return 'o';
+	case FLV_VIDEO_H264:		return 'V';
+	case FLV_VIDEO_AVCC:		return 'v';
+	case FLV_VIDEO_H265:		return 'H';
+	case FLV_VIDEO_HVCC:		return 'h';
 	default: return '*';
 	}
 }
 
-static int ts_stream(void* ts, int codecid)
+static inline int flv2ts_codec_id(int type)
+{
+	switch (type)
+	{
+	case FLV_AUDIO_ASC:
+	case FLV_AUDIO_AAC:			return STREAM_AUDIO_AAC;
+	case FLV_AUDIO_MP3:			return STREAM_AUDIO_MP3;
+	case FLV_AUDIO_OPUS:		
+	case FLV_AUDIO_OPUS_HEAD:	return STREAM_AUDIO_OPUS;
+	case FLV_VIDEO_H264:		
+	case FLV_VIDEO_AVCC:		return STREAM_VIDEO_H264;
+	case FLV_VIDEO_H265:		
+	case FLV_VIDEO_HVCC:		return STREAM_VIDEO_H264;
+	default: return '*';
+	}
+}
+
+static int ts_stream(void* ts, int codecid, const void* data, size_t bytes)
 {
     static std::map<int, int> streams;
     std::map<int, int>::const_iterator it = streams.find(codecid);
     if (streams.end() != it)
         return it->second;
 
-    int i = mpeg_ts_add_stream(ts, codecid, NULL, 0);
+    int i = mpeg_ts_add_stream(ts, flv2ts_codec_id(codecid), data, bytes);
     streams[codecid] = i;
     return i;
 }
@@ -66,41 +85,31 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 
 	printf("[%c] pts: %s, dts: %s, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
 
-	if (FLV_AUDIO_AAC == codec)
+	if (FLV_AUDIO_AAC == codec || FLV_AUDIO_MP3 == codec || FLV_AUDIO_OPUS == codec)
 	{
 		//		assert(0 == a_dts || dts >= a_dts);
 		pts = (a_pts && pts < a_pts) ? a_pts : pts;
 		dts = (a_dts && dts < a_dts) ? a_dts : dts;
-		mpeg_ts_write(ts, ts_stream(ts, STREAM_AUDIO_AAC), 0, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, ts_stream(ts, codec, NULL, 0), 0, pts * 90, dts * 90, data, bytes);
 
 		printf("diff: %03d/%03d", (int)(pts - a_pts), (int)(dts - a_dts));
 		a_pts = pts;
 		a_dts = dts;
 	}
-	if (FLV_AUDIO_MP3 == codec)
-	{
-		mpeg_ts_write(ts, ts_stream(ts, STREAM_AUDIO_MP3), 0, pts * 90, dts * 90, data, bytes);
-	}
-	else if (FLV_VIDEO_H264 == codec)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;
-		mpeg_ts_write(ts, ts_stream(ts, STREAM_VIDEO_H264), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
+		mpeg_ts_write(ts, ts_stream(ts, codec, NULL, 0), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
 
 		printf("diff: %03d/%03d%s", (int)(pts - v_pts), (int)(dts - v_dts), flags ? " [I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 	}
-    else if (FLV_VIDEO_H265 == codec)
-    {
-        assert(0 == v_dts || dts >= v_dts);
-        dts = (a_dts && dts < v_dts) ? v_dts : dts;
-        mpeg_ts_write(ts, ts_stream(ts, STREAM_VIDEO_H265), 0x01 & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
-
-        printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
-        v_pts = pts;
-        v_dts = dts;
-    }
+	else if (FLV_AUDIO_OPUS_HEAD == codec)
+	{
+		ts_stream(ts, FLV_AUDIO_OPUS, data, bytes);
+	}
 	else
 	{
 		// nothing to do
@@ -122,12 +131,13 @@ void flv2ts_test(const char* inputFLV, const char* outputTS)
 	void* reader = flv_reader_create(inputFLV);
 	flv_demuxer_t* flv = flv_demuxer_create(onFLV, ts);
 
-    int type, r = 0;
+	int type, r;
+	size_t taglen;
 	uint32_t timestamp;
 	static unsigned char s_packet[8 * 1024 * 1024];
-	while ((r = flv_reader_read(reader, &type, &timestamp, s_packet, sizeof(s_packet))) > 0)
+	while (1 == flv_reader_read(reader, &type, &timestamp, &taglen, s_packet, sizeof(s_packet)))
 	{
-		r = flv_demuxer_input(flv, type, s_packet, r, timestamp);
+		r = flv_demuxer_input(flv, type, s_packet, taglen, timestamp);
 		if (r < 0)
 		{
 			assert(0);

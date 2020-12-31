@@ -22,14 +22,16 @@ struct rtp_member* rtp_member_create(uint32_t ssrc)
 
 void rtp_member_addref(struct rtp_member *member)
 {
+	assert(member->ref > 0);
 	++member->ref;
 }
 
 void rtp_member_release(struct rtp_member *member)
 {
+	size_t i;
+	assert(member->ref > 0);
 	if(0 == --member->ref)
 	{
-		size_t i;
 		for(i = 0; i < sizeof(member->sdes)/sizeof(member->sdes[0]); i++)
 		{
 			if(member->sdes[i].data)

@@ -24,24 +24,29 @@
     <ClInclude Include="include\mov-format.h" />
     <ClInclude Include="include\fmp4-writer.h" />
     <ClInclude Include="include\mov-reader.h" />
+    <ClInclude Include="include\mov-udta.h" />
     <ClInclude Include="include\mov-writer.h" />
     <ClInclude Include="include\mov-buffer.h" />
     <ClInclude Include="source\mov-internal.h" />
     <ClInclude Include="source\mov-ioutil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\mov-av1.c" />
     <ClCompile Include="source\mov-avc1.c" />
     <ClCompile Include="source\mov-dinf.c" />
     <ClCompile Include="source\mov-elst.c" />
     <ClCompile Include="source\fmp4-writer.c" />
     <ClCompile Include="source\mov-ftyp.c" />
     <ClCompile Include="source\mov-hdlr.c" />
+    <ClCompile Include="source\mov-hdr.c" />
     <ClCompile Include="source\mov-hvcc.c" />
+    <ClCompile Include="source\mov-udta.c" />
     <ClCompile Include="source\mov-iods.c" />
     <ClCompile Include="source\mov-leva.c" />
     <ClCompile Include="source\mov-mehd.c" />
     <ClCompile Include="source\mov-mfhd.c" />
     <ClCompile Include="source\mov-minf.c" />
+    <ClCompile Include="source\mov-opus.c" />
     <ClCompile Include="source\mov-sidx.c" />
     <ClCompile Include="source\mov-stco.c" />
     <ClCompile Include="source\mov-stsc.c" />
@@ -62,38 +67,39 @@
     <ClCompile Include="source\mov-trex.c" />
     <ClCompile Include="source\mov-trun.c" />
     <ClCompile Include="source\mov-tx3g.c" />
+    <ClCompile Include="source\mov-vpcc.c" />
     <ClCompile Include="source\mov-writer.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D5106098-7B37-4DE0-B8FB-233BBABC2D72}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libmov</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

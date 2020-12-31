@@ -5,7 +5,7 @@ int rtsp_server_get_parameter(struct rtsp_server_t *rtsp, const char* uri)
 	int bytes;
 	const void *content;
 	content = http_get_content(rtsp->parser);
-	bytes = http_get_content_length(rtsp->parser);
+	bytes = (int)http_get_content_length(rtsp->parser);
 	return rtsp->handler.ongetparameter(rtsp->param, rtsp, uri, rtsp->session.session[0] ? rtsp->session.session : NULL, content, bytes);
 }
 
@@ -14,7 +14,7 @@ int rtsp_server_set_parameter(struct rtsp_server_t *rtsp, const char* uri)
 	int bytes;
 	const void *content;
 	content = http_get_content(rtsp->parser);
-	bytes = http_get_content_length(rtsp->parser);
+	bytes = (int)http_get_content_length(rtsp->parser);
 	return rtsp->handler.onsetparameter(rtsp->param, rtsp, uri, rtsp->session.session[0] ? rtsp->session.session : NULL, content, bytes);
 }
 

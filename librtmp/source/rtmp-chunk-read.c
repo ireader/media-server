@@ -170,16 +170,20 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 				{
 					// parse extended timestamp
 					rtmp_chunk_extended_timestamp_read(parser->buffer + s_header_size[parser->buffer[0] >> 6] + parser->basic_bytes, &extended_timestamp);
+					if (RTMP_CHUNK_TYPE_3 == parser->pkt->header.fmt && extended_timestamp != parser->pkt->delta)
+						offset -= 4;
 				}
 
 				// first chunk
 				if (0 == parser->pkt->bytes)
 				{
+					parser->pkt->delta = extended_timestamp;
+
 					// handle timestamp/delta
 					if (RTMP_CHUNK_TYPE_0 == parser->pkt->header.fmt)
-						parser->pkt->clock = extended_timestamp;
+						parser->pkt->clock = parser->pkt->delta;
 					else
-						parser->pkt->clock += extended_timestamp;
+						parser->pkt->clock += parser->pkt->delta;
 
 					if (0 != rtmp_packet_alloc(rtmp, parser->pkt))
 						return ENOMEM;

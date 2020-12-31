@@ -54,6 +54,15 @@
     <ClInclude Include="include\mpeg4-bits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\aom-av1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\webm-vpx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\opus-head.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">
@@ -105,6 +114,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mpeg4-aac-asc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\aom-av1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\flv-header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\webm-vpx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\opus-head.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -26,12 +26,6 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 
 	rtp_payload_check(helper, &pkt);
 
-	if (helper->lost)
-	{
-		assert(0 == helper->size);
-		return 0; // packet discard
-	}
-
 	// save payload
 	ptr = (const uint8_t *)pkt.payload;
 	pend = ptr + pkt.payloadlen;
@@ -43,9 +37,9 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 	if (ptr + au_header_length /*AU-size*/ > pend || au_header_length < 2)
 	{
 		assert(0);
-		helper->size = 0;
+		//helper->size = 0;
 		helper->lost = 1;
-		helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+        //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 		return -1; // invalid packet
 	}
 
@@ -64,9 +58,9 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 		if (pau + size > pend)
 		{
 			assert(0);
-			helper->size = 0;
+			//helper->size = 0;
 			helper->lost = 1;
-			helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+            //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
 			return -1; // invalid packet
 		}
 

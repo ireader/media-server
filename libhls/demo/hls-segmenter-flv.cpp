@@ -22,8 +22,11 @@ static int hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, 
 	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, discontinue);
 
 	FILE* fp = fopen(name, "wb");
-	fwrite(data, 1, bytes, fp);
-	fclose(fp);
+    if(fp)
+    {
+        fwrite(data, 1, bytes, fp);
+        fclose(fp);
+    }
 
 	return 0;
 }
@@ -60,19 +63,24 @@ void hls_segmenter_flv(const char* file)
 	flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, hls);
 
 	int r, type;
+	size_t taglen;
 	uint32_t timestamp;
 	static char data[2 * 1024 * 1024];
-	while ((r = flv_reader_read(flv, &type, &timestamp, data, sizeof(data))) > 0)
+	while (1 == flv_reader_read(flv, &type, &timestamp, &taglen, data, sizeof(data)))
 	{
-		flv_demuxer_input(demuxer, type, data, r, timestamp);
+		r = flv_demuxer_input(demuxer, type, data, taglen, timestamp);
+		assert(0 == r);
 	}
 
 	// write m3u8 file
 	hls_media_input(hls, STREAM_VIDEO_H264, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, data, sizeof(data));
 	FILE* fp = fopen("playlist.m3u8", "wb");
-	fwrite(data, 1, strlen(data), fp);
-	fclose(fp);
+    if(fp)
+    {
+        fwrite(data, 1, strlen(data), fp);
+        fclose(fp);
+    }
 
 	flv_demuxer_destroy(demuxer);
 	flv_reader_destroy(flv);

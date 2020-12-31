@@ -27,6 +27,7 @@
     <ClInclude Include="include\sip-transport.h" />
     <ClInclude Include="include\sip-uac.h" />
     <ClInclude Include="include\sip-uas.h" />
+    <ClInclude Include="include\sip-subscribe.h" />
     <ClInclude Include="src\sip-internal.h" />
     <ClInclude Include="src\uac\sip-uac-transaction.h" />
     <ClInclude Include="src\uas\sip-uas-transaction.h" />
@@ -35,6 +36,7 @@
     <ClCompile Include="src\header\sip-header-contact.c" />
     <ClCompile Include="src\header\sip-header-param.c" />
     <ClCompile Include="src\header\sip-header-cseq.c" />
+    <ClCompile Include="src\header\sip-header-substate.c" />
     <ClCompile Include="src\header\sip-header-uri.c" />
     <ClCompile Include="src\header\sip-header-via.c" />
     <ClCompile Include="src\header\sip-header.c" />
@@ -42,20 +44,28 @@
     <ClCompile Include="src\sip-dialog.c" />
     <ClCompile Include="src\sip-message.c" />
     <ClCompile Include="src\sip-reason.c" />
+    <ClCompile Include="src\sip-subscribe.c" />
     <ClCompile Include="src\uac\sip-uac-ack.c" />
     <ClCompile Include="src\uac\sip-uac-bye.c" />
     <ClCompile Include="src\uac\sip-uac-cancel.c" />
+    <ClCompile Include="src\uac\sip-uac-info.c" />
     <ClCompile Include="src\uac\sip-uac-invite.c" />
     <ClCompile Include="src\uac\sip-uac-options.c" />
+    <ClCompile Include="src\uac\sip-uac-refer.c" />
     <ClCompile Include="src\uac\sip-uac-register.c" />
+    <ClCompile Include="src\uac\sip-uac-subscribe.c" />
     <ClCompile Include="src\uac\sip-uac-transaction-invite.c" />
     <ClCompile Include="src\uac\sip-uac-transaction-noninvite.c" />
     <ClCompile Include="src\uac\sip-uac-transaction.c" />
     <ClCompile Include="src\uac\sip-uac.c" />
     <ClCompile Include="src\uas\sip-uas-bye.c" />
     <ClCompile Include="src\uas\sip-uas-cancel.c" />
+    <ClCompile Include="src\uas\sip-uas-info.c" />
     <ClCompile Include="src\uas\sip-uas-options.c" />
+    <ClCompile Include="src\uas\sip-uas-prack.c" />
+    <ClCompile Include="src\uas\sip-uas-refer.c" />
     <ClCompile Include="src\uas\sip-uas-register.c" />
+    <ClCompile Include="src\uas\sip-uas-subscribe.c" />
     <ClCompile Include="src\uas\sip-uas-transaction-invite.c" />
     <ClCompile Include="src\uas\sip-uas-transaction-noninvite.c" />
     <ClCompile Include="src\uas\sip-uas-transaction.c" />
@@ -112,7 +122,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -121,6 +134,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;include;../../sdk/include;../../sdk/libhttp/include</AdditionalIncludeDirectories>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -1,6 +1,7 @@
 #ifndef _sip_header_h_
 #define _sip_header_h_
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -61,7 +62,7 @@ extern "C" {
 											\
 	int name##s_push(struct name##s_t* p, struct name##_t* item)	\
 	{										\
-		return darray_push_back(&p->arr, item, 1);	\
+		return darray_insert(&p->arr, -1, item);	\
 	}										\
 											\
 	struct name##_t* name##s_get(const struct name##s_t* p, int index)	\
@@ -139,7 +140,8 @@ struct sip_via_t
 	struct cstring_t maddr; // host
 	struct cstring_t received; // IPv4address / IPv6address
 	int ttl; // 0-255
-	struct sip_params_t params; // include branch/maddr/received/ttl
+	int rport; // 0-not found, -1-no-value, other-value
+	struct sip_params_t params; // include branch/maddr/received/ttl/rport
 };
 DARRAY_DECLARE(sip_via);
 
@@ -147,6 +149,17 @@ struct sip_cseq_t
 {
 	uint32_t id;
 	struct cstring_t method;
+};
+
+struct sip_substate_t
+{
+	struct cstring_t state;
+
+	// parameters
+	struct cstring_t reason;
+	uint32_t expires; // expires
+	uint32_t retry; // retry-after
+	struct sip_params_t params; // include reason/expires/retry
 };
 
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
@@ -158,6 +171,7 @@ const struct cstring_t* sip_params_find_string(const struct sip_params_t* params
 int sip_params_find_int(const struct sip_params_t* params, const char* name, int bytes, int* value);
 int sip_params_find_int64(const struct sip_params_t* params, const char* name, int bytes, int64_t* value);
 int sip_params_find_double(const struct sip_params_t* params, const char* name, int bytes, double* value);
+int sip_params_add_or_update(struct sip_params_t* params, const char* name, int bytes, const struct cstring_t* value);
 
 /// @return 0-ok, other-error
 int sip_header_cseq(const char* s, const char* end, struct sip_cseq_t* cseq);
@@ -188,6 +202,11 @@ char* sip_contact_clone(char* ptr, const char* end, struct sip_contact_t* clone,
 void sip_uri_params_free(struct sip_uri_t* uri);
 void sip_via_params_free(struct sip_via_t* via);
 void sip_contact_params_free(struct sip_contact_t* contact);
+
+/// @return 0-ok, other-error
+int sip_header_substate(const char* s, const char* end, struct sip_substate_t* substate);
+/// @return write length, >0-ok, <0-error
+int sip_substate_write(const struct sip_substate_t* substate, char* data, const char* end);
 
 #if defined(__cplusplus)
 }

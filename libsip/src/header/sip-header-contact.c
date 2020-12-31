@@ -161,7 +161,14 @@ int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* c
 
 	for (r = 0; 0 == r && s && s < end; s = p + 1)
 	{
-		p = strchr(s, ',');
+		// filter ","
+		p = strpbrk(s, ",\"");
+		while (p && p < end && '"' == *p)
+		{
+			p = strchr(p + 1, '"');
+			if(p && p < end)
+				p = strpbrk(p + 1, ",\"");
+		}
 		if (!p || p >= end)
 			p = end;
 
@@ -204,22 +211,13 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 {
 	int n;
 	char* p;
+	const char* quote;
 
 	p = data;
-	if (c->nickname.p && c->nickname.n > 0)
+	if (cstrvalid(&c->nickname) && p < end)
 	{
-		if (sip_nickname_check(&c->nickname))
-		{
-			if (p < end) p += cstrcpy(&c->nickname, p, end - p);
-		}
-		else
-		{
-			if (p < end) *p++ = '\"';
-			if (p < end) p += cstrcpy(&c->nickname, p, end - p - 1);
-			if (p < end) *p++ = '\"';
-		}
-
-		if (p < end) *p++ = ' ';
+		quote = sip_nickname_check(&c->nickname) ? "" : "\"";
+		p += snprintf(p, end - p, "%s%.*s%s ", quote, (int)c->nickname.n, c->nickname.p, quote);
 	}
 
 	if (0 == cstrcmp(&c->uri.host, "*"))
@@ -244,7 +242,7 @@ int sip_contact_write(const struct sip_contact_t* c, char* data, const char* end
 	}
 	
 	if (p < end) *p = '\0';
-	return p - data;
+	return (int)(p - data);
 }
 
 //const struct cstring_t* sip_contact_tag(const struct sip_contact_t* contact)
@@ -303,5 +301,26 @@ void sip_header_contact_test(void)
 	assert(1 == sip_params_count(&contact.params) && 0 == cstrcmp(&contact.tag, "1928301774"));
 	assert(sip_contact_write(&contact, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
 	sip_contact_params_free(&contact);
+
+	s = "\"alice\" <sip:alice@192.168.1.10:63254>;+sip.instance=\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\",alice <sip:alice@192.168.1.11:40736;app-id=929724111839;pn-type=firebase;pn-timeout=0;pn-tok=dJ1uwpidM_0:APA91bF9KIATqa4LvyLWfpS83XB380FItpoIjYlUwYmRltm00hcBz7Dnb8N-xm943HVBmu8efwa5qxADOFsNd25xZlpKxlvsJSH3-WKQISwV8bCpSNAVdRJyRsggjSVmQmiD2wsQfg9d;pn-silent=1>;+sip.instance=\"<urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446\"";
+	sip_contacts_init(&contacts);
+	assert(0 == sip_header_contacts(s, s + strlen(s), &contacts) && 2 == sip_contacts_count(&contacts));
+	c = sip_contacts_get(&contacts, 0);
+	assert(0 == cstrcmp(&c->nickname, "alice") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "alice@192.168.1.10:63254") && 0 == sip_params_count(&c->uri.headers) && 0 == sip_params_count(&c->uri.parameters));
+	assert(3 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "+sip.instance") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\""));
+	assert(0 == cstrcmp(&sip_params_get(&c->params, 1)->name, "+org.linphone.specs") && 0 == cstrcmp(&sip_params_get(&c->params, 1)->value, "\"groupchat,lime\""));
+	assert(0 == cstrcmp(&sip_params_get(&c->params, 2)->name, "pub-gruu") && 0 == cstrcmp(&sip_params_get(&c->params, 2)->value, "\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\""));
+	c = sip_contacts_get(&contacts, 1);
+	assert(0 == cstrcmp(&c->nickname, "alice") && 0 == cstrcmp(&c->uri.scheme, "sip") && 0 == cstrcmp(&c->uri.host, "alice@192.168.1.11:40736") && 0 == sip_params_count(&c->uri.headers) && 5 == sip_params_count(&c->uri.parameters));
+	assert(0 == cstrcmp(&sip_params_get(&c->uri.parameters, 0)->name, "app-id") && 0 == cstrcmp(&sip_params_get(&c->uri.parameters, 0)->value, "929724111839"));
+	assert(0 == cstrcmp(&sip_params_get(&c->uri.parameters, 1)->name, "pn-type") && 0 == cstrcmp(&sip_params_get(&c->uri.parameters, 1)->value, "firebase"));
+	assert(0 == cstrcmp(&sip_params_get(&c->uri.parameters, 2)->name, "pn-timeout") && 0 == cstrcmp(&sip_params_get(&c->uri.parameters, 2)->value, "0"));
+	assert(0 == cstrcmp(&sip_params_get(&c->uri.parameters, 3)->name, "pn-tok") && 0 == cstrcmp(&sip_params_get(&c->uri.parameters, 3)->value, "dJ1uwpidM_0:APA91bF9KIATqa4LvyLWfpS83XB380FItpoIjYlUwYmRltm00hcBz7Dnb8N-xm943HVBmu8efwa5qxADOFsNd25xZlpKxlvsJSH3-WKQISwV8bCpSNAVdRJyRsggjSVmQmiD2wsQfg9d"));
+	assert(0 == cstrcmp(&sip_params_get(&c->uri.parameters, 4)->name, "pn-silent") && 0 == cstrcmp(&sip_params_get(&c->uri.parameters, 4)->value, "1"));
+	assert(3 == sip_params_count(&c->params) && 0 == cstrcmp(&sip_params_get(&c->params, 0)->name, "+sip.instance") && 0 == cstrcmp(&sip_params_get(&c->params, 0)->value, "\"<urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446>\""));
+	assert(0 == cstrcmp(&sip_params_get(&c->params, 1)->name, "+org.linphone.specs") && 0 == cstrcmp(&sip_params_get(&c->params, 1)->value, "\"groupchat,lime\""));
+	assert(0 == cstrcmp(&sip_params_get(&c->params, 2)->name, "pub-gruu") && 0 == cstrcmp(&sip_params_get(&c->params, 2)->value, "\"sip:alice@sip.linphone.org;gr=urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446\""));
+	assert(sip_contact_write(c, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s+227, p));
+	sip_contacts_free(&contacts);
 }
 #endif

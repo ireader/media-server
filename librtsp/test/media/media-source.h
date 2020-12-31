@@ -4,6 +4,10 @@
 #include <string>
 #include <memory>
 
+#ifndef MAX_UDP_PACKET
+#define MAX_UDP_PACKET (1450-16)
+#endif
+
 struct IRTPTransport
 {
 	virtual int Send(bool rtcp, const void* data, size_t bytes) = 0;

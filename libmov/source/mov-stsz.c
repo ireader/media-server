@@ -100,7 +100,7 @@ int mov_read_stz2(struct mov_t* mov, const struct mov_box_t* box)
 
 size_t mov_write_stsz(const struct mov_t* mov)
 {
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_track_t* track = mov->track;
 
 	for(i = 1; i < track->sample_count; i++)

@@ -11,6 +11,13 @@
 #include "rtp.h"
 #include <assert.h>
 
+#pragma comment(lib, "../../3rd/ffmpeg/lib/avcodec.lib")
+#pragma comment(lib, "../../3rd/ffmpeg/lib/avformat.lib")
+#pragma comment(lib, "../../3rd/ffmpeg/lib/avutil.lib")
+#pragma comment(lib, "../../3rd/ffmpeg/lib/avdevice.lib")
+#pragma comment(lib, "../../3rd/ffmpeg/lib/swresample.lib")
+#pragma comment(lib, "../../3rd/ffmpeg/lib/swscale.lib")
+
 extern "C" uint32_t rtp_ssrc(void);
 
 AVCodecContext* ffencoder_create(AVCodecParameters* codecpar)

@@ -41,7 +41,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	static uint32_t v_pts = 0, v_dts = 0;
 	static uint32_t a_pts = 0, a_dts = 0;
 
-	printf("[%c] pts: %s, dts: %s, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
+	printf("[%c] pts: %s, dts: %s, %u, cts: %d, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), dts, (int)(pts - dts));
 	
 	if (FLV_AUDIO_AAC == codec)
 	{
@@ -54,7 +54,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	}
 	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
 	{
-		printf("diff: %03d/%03d", (int)(pts - v_pts), (int)(dts - v_dts));
+		printf("diff: %03d/%03d %s", (int)(pts - v_pts), (int)(dts - v_dts), flags ? "[I]" : "");
 		v_pts = pts;
 		v_dts = dts;
 
@@ -91,11 +91,12 @@ void flv_reader_test(const char* file)
 	void* reader = flv_reader_create(file);
 	flv_demuxer_t* flv = flv_demuxer_create(onFLV, NULL);
 
-	int type, r = 0;
+	int type, r;
+	size_t taglen;
 	uint32_t timestamp;
-	while ((r = flv_reader_read(reader, &type, &timestamp, packet, sizeof(packet))) > 0)
+	while (1 == flv_reader_read(reader, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
-		r = flv_demuxer_input(flv, type, packet, r, timestamp);
+		r = flv_demuxer_input(flv, type, packet, taglen, timestamp);
 		if (r < 0)
 		{
 			assert(0);

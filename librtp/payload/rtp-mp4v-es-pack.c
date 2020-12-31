@@ -73,7 +73,7 @@ static void rtp_mp4v_es_encode_get_info(void* pack, uint16_t* seq, uint32_t* tim
 
 static int rtp_mp4v_es_encode_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 	const uint8_t *ptr;
 	struct rtp_encode_mp4v_es_t *packer;
@@ -81,7 +81,8 @@ static int rtp_mp4v_es_encode_input(void* pack, const void* data, int bytes, uin
 	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz);
 
-	for (ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
+	r = 0;
+	for (ptr = (const uint8_t *)data; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
@@ -100,11 +101,11 @@ static int rtp_mp4v_es_encode_input(void* pack, const void* data, int bytes, uin
 			return -1;
 		}
 
-		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_mp4v_es_encode()

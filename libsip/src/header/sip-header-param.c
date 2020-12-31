@@ -41,12 +41,21 @@ int sip_header_params(char sep, const char* s, const char* end, struct sip_param
 	int r;
 	const char* p;
 	struct sip_param_t param;
+	char seps[3] = { '"', 0, 0 };
 
 	r = 0;
+	seps[1] = sep;
+	assert('"' != sep);
 	for (p = s; 0 == r && p && p < end; p++)
 	{
 		s = p;
-		p = strchr(s, sep);
+		p = strpbrk(s, seps);
+		while (p && p < end && '"' == *p)
+		{
+			p = strchr(p + 1, '"');
+			if (p && p < end)
+				p = strpbrk(p + 1, seps);
+		}
 		if (!p || p > end)
 			p = end;
 
@@ -86,7 +95,7 @@ int sip_params_find_int(const struct sip_params_t* params, const char* name, int
 	const struct sip_param_t* p;
 	p = sip_params_find(params, name, bytes);
 	if (NULL == p) return -ENOENT; // not found
-	*value = cstrtol(&p->value, NULL, 10);
+	*value = (int)cstrtol(&p->value, NULL, 10);
 	return 0;
 }
 
@@ -108,22 +117,33 @@ int sip_params_find_double(const struct sip_params_t* params, const char* name, 
 	return 0;
 }
 
+int sip_params_add_or_update(struct sip_params_t* params, const char* name, int bytes, const struct cstring_t* value)
+{
+	struct sip_param_t* param, item;
+	param = (struct sip_param_t*)sip_params_find(params, name, bytes);
+	if (param)
+	{
+		param->value.p = value->p;
+		param->value.n = value->n;
+		return 0;
+	}
+
+	item.name.p = name;
+	item.name.n = bytes;
+	item.value.p = value->p;
+	item.value.n = value->n;
+	return sip_params_push(params, &item);
+}
+
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end)
 {
-	char* p;
 	if (!cstrvalid(&param->name))
 		return -1;
 
-	p = data;
-	if (p < end) p += cstrcpy(&param->name, p, end - p);
-	
 	if (cstrvalid(&param->value))
-	{
-		if (p < end) *p++ = '=';
-		if (p < end) p += cstrcpy(&param->value, p, end - p);
-	}
-
-	return p - data;
+		return snprintf(data, end - data, "%.*s=%.*s", (int)param->name.n, param->name.p, (int)param->value.n, param->value.p);
+	else
+		return snprintf(data, end - data, "%.*s", (int)param->name.n, param->name.p);
 }
 
 int sip_params_write(const struct sip_params_t* params, char* data, const char* end, char sep)
@@ -143,7 +163,7 @@ int sip_params_write(const struct sip_params_t* params, char* data, const char* 
 		p += n;
 	}
 
-	return p - data;
+	return (int)(p - data);
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -152,6 +172,7 @@ void sip_header_param_test(void)
 	const char* s;
 	struct cstring_t x;
 	struct sip_param_t param;
+	struct sip_params_t params;
 	
 	x.p = "0x12345678";
 	x.n = 8;
@@ -183,5 +204,14 @@ void sip_header_param_test(void)
 	assert(0 == sip_header_param(s, s + strlen(s), &param));
 	assert(4 == param.name.n && 0 == cstrcmp(&param.name, "name"));
 	assert(0 == param.value.n && NULL == param.value.p);
+
+	s = "+sip.instance=\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\"";
+	sip_params_init(&params);
+	sip_header_params(';', s, s + strlen(s), &params);
+	assert(3 == sip_params_count(&params));
+	assert(0 == cstrcmp(&sip_params_get(&params, 0)->name, "+sip.instance") && 0 == cstrcmp(&sip_params_get(&params, 0)->value, "\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\""));
+	assert(0 == cstrcmp(&sip_params_get(&params, 1)->name, "+org.linphone.specs") && 0 == cstrcmp(&sip_params_get(&params, 1)->value, "\"groupchat,lime\""));
+	assert(0 == cstrcmp(&sip_params_get(&params, 2)->name, "pub-gruu") && 0 == cstrcmp(&sip_params_get(&params, 2)->value, "\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\""));
+	sip_params_free(&params);
 }
 #endif

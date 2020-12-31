@@ -5,6 +5,7 @@
 
 #if defined(OS_WINDOWS) || defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#include <wincrypt.h>
 
 uint32_t rtp_ssrc(void)
 {
@@ -22,6 +23,7 @@ uint32_t rtp_ssrc(void)
 #elif defined(OS_LINUX) || defined(OS_MAC)
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 static int read_random(uint32_t *dst, const char *file)
 {
@@ -29,7 +31,7 @@ static int read_random(uint32_t *dst, const char *file)
 	int err = -1;
 	if (fd == -1)
 		return -1;
-	err = read(fd, dst, sizeof(*dst));
+	err = (int)read(fd, dst, sizeof(*dst));
 	close(fd);
 	return err;
 }

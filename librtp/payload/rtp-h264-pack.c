@@ -85,9 +85,9 @@ static const uint8_t* h264_nalu_find(const uint8_t* p, const uint8_t* end)
 	return end;
 }
 
-static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes)
+static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes, int mark)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 
 	packer->pkt.payload = nalu;
@@ -97,7 +97,7 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	if (!rtp) return ENOMEM;
 
 	//packer->pkt.rtp.m = 1; // set marker flag
-	packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? 1 : 0; // VCL only
+	packer->pkt.rtp.m = (*nalu & 0x1f) <= 5 ? mark : 0; // VCL only
 	n = rtp_packet_serialize(&packer->pkt, rtp, n);
 	if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)
 	{
@@ -106,14 +106,14 @@ static int rtp_h264_pack_nalu(struct rtp_encode_h264_t *packer, const uint8_t* n
 	}
 
 	++packer->pkt.rtp.seq;
-	packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
+	r = packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 	packer->handler.free(packer->cbparam, rtp);
-	return 0;
+	return r;
 }
 
-static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes)
+static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* nalu, int bytes, int mark)
 {
-	int n;
+	int r, n;
 	unsigned char *rtp;
 
 	// RFC6184 5.3. NAL Unit Header Usage: Table 2 (p15)
@@ -121,12 +121,13 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 	uint8_t fu_indicator = (*nalu & 0xE0) | 28; // FU-A
 	uint8_t fu_header = *nalu & 0x1F;
 
+	r = 0;
 	nalu += 1; // skip NAL Unit Type byte
 	bytes -= 1;
 	assert(bytes > 0);
 
 	// FU-A start
-	for (fu_header |= FU_START; bytes > 0; ++packer->pkt.rtp.seq)
+	for (fu_header |= FU_START; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		if (bytes + RTP_FIXED_HEADER <= packer->size - N_FU_HEADER)
 		{
@@ -144,7 +145,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
 		if (!rtp) return -ENOMEM;
 
-		packer->pkt.rtp.m = (FU_END & fu_header) ? 1 : 0; // set marker flag
+		packer->pkt.rtp.m = (FU_END & fu_header) ? mark : 0; // set marker flag
 		n = rtp_packet_serialize_header(&packer->pkt, rtp, n);
 		if (n != RTP_FIXED_HEADER)
 		{
@@ -157,7 +158,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		rtp[n + 1] = fu_header;
 		memcpy(rtp + n + N_FU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 
-		packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_FU_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
 		bytes -= packer->pkt.payloadlen;
@@ -165,7 +166,7 @@ static int rtp_h264_pack_fu_a(struct rtp_encode_h264_t *packer, const uint8_t* n
 		fu_header &= 0x1F; // clear flags
 	}
 
-	return 0;
+	return r;
 }
 
 static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t timestamp)
@@ -178,7 +179,7 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)time * KHz; // ms -> 90KHZ
 
 	pend = (const uint8_t*)h264 + bytes;
-	for(p1 = h264_nalu_find((const uint8_t*)h264, pend); p1 < pend && 0 == r; p1 = p2)
+	for(p1 = h264_nalu_find((const uint8_t*)h264, pend); 0 == r && p1 < pend; p1 = p2)
 	{
 		size_t nalu_size;
 
@@ -194,15 +195,15 @@ static int rtp_h264_pack_input(void* pack, const void* h264, int bytes, uint32_t
 		if(nalu_size + RTP_FIXED_HEADER <= (size_t)packer->size)
 		{
 			// single NAl unit packet 
-			r = rtp_h264_pack_nalu(packer, p1, nalu_size);
+			r = rtp_h264_pack_nalu(packer, p1, (int)nalu_size, p2 == pend ? 1 : 0);
 		}
 		else
 		{
-			r = rtp_h264_pack_fu_a(packer, p1, nalu_size);
+			r = rtp_h264_pack_fu_a(packer, p1, (int)nalu_size, p2 == pend ? 1 : 0);
 		}
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_h264_encode()

@@ -37,7 +37,8 @@ ifeq ($(RELEASE),1)
 	CXXFLAGS += $(CFLAGS)
 	DEFINES += NDEBUG
 else
-	CFLAGS += -g -Wall -fsanitize=address
+	CFLAGS += -g -Wall
+#	CFLAGS += -fsanitize=address
 	CXXFLAGS += $(CFLAGS)
 	DEFINES += DEBUG _DEBUG
 endif
@@ -47,6 +48,13 @@ CFLAGS += -fvisibility=hidden
 
 COMPILE.CC = $(CC) $(addprefix -I,$(INCLUDES)) $(addprefix -D,$(DEFINES)) $(CFLAGS)
 COMPILE.CXX = $(CXX) $(addprefix -I,$(INCLUDES)) $(addprefix -D,$(DEFINES)) $(CXXFLAGS)
+
+#-------------------------Link---------------------------
+#
+#--------------------------------------------------------------------
+ifeq ($(STATIC_LINK),1)
+    LDFLAGS += -static
+endif
 
 #-------------------------Compile Output---------------------------
 #

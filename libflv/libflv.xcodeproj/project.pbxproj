@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4605125A24D6B4D500B04B70 /* opus-head.c in Sources */ = {isa = PBXBuildFile; fileRef = 4605125924D6B4D500B04B70 /* opus-head.c */; };
 		46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46733798219B2315009F658F /* mpeg4-aac-asc.c */; };
+		468B915C23B8ADAA00EA99A3 /* aom-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B915B23B8ADAA00EA99A3 /* aom-av1.c */; };
+		468B916023B8AE3100EA99A3 /* flv-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B915F23B8AE3100EA99A3 /* flv-header.c */; };
 		46C5B2DB2183EDA200419E57 /* mpeg4-mp4toannexb.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */; };
 		46C5B2DC2183EDA200419E57 /* mp3-header.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2CC2183EDA200419E57 /* mp3-header.c */; };
 		46C5B2DD2183EDA200419E57 /* flv-writer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2CD2183EDA200419E57 /* flv-writer.c */; };
@@ -24,10 +27,14 @@
 		46C5B2E82183EDA200419E57 /* flv-muxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2D82183EDA200419E57 /* flv-muxer.c */; };
 		46C5B2E92183EDA200419E57 /* mpeg4-avc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2D92183EDA200419E57 /* mpeg4-avc.c */; };
 		46C5B2EA2183EDA200419E57 /* hevc-mp4toannexb.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2DA2183EDA200419E57 /* hevc-mp4toannexb.c */; };
+		46E55E5324694DE000D8BDBA /* webm-vpx.c in Sources */ = {isa = PBXBuildFile; fileRef = 46E55E5224694DE000D8BDBA /* webm-vpx.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4605125924D6B4D500B04B70 /* opus-head.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "opus-head.c"; sourceTree = "<group>"; };
 		46733798219B2315009F658F /* mpeg4-aac-asc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-aac-asc.c"; sourceTree = "<group>"; };
+		468B915B23B8ADAA00EA99A3 /* aom-av1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aom-av1.c"; sourceTree = "<group>"; };
+		468B915F23B8AE3100EA99A3 /* flv-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "flv-header.c"; sourceTree = "<group>"; };
 		46C5B21C2183EA7400419E57 /* libflv.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libflv.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-mp4toannexb.c"; sourceTree = "<group>"; };
 		46C5B2CC2183EDA200419E57 /* mp3-header.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mp3-header.c"; sourceTree = "<group>"; };
@@ -46,6 +53,7 @@
 		46C5B2D92183EDA200419E57 /* mpeg4-avc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-avc.c"; sourceTree = "<group>"; };
 		46C5B2DA2183EDA200419E57 /* hevc-mp4toannexb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "hevc-mp4toannexb.c"; sourceTree = "<group>"; };
 		46C5B2EB2183EDB400419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		46E55E5224694DE000D8BDBA /* webm-vpx.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "webm-vpx.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,23 +87,27 @@
 		46C5B2CA2183EDA200419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
-				46733798219B2315009F658F /* mpeg4-aac-asc.c */,
-				46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */,
-				46C5B2CC2183EDA200419E57 /* mp3-header.c */,
-				46C5B2CD2183EDA200419E57 /* flv-writer.c */,
 				46C5B2CE2183EDA200419E57 /* amf0.c */,
-				46C5B2CF2183EDA200419E57 /* hevc-annexbtomp4.c */,
-				46C5B2D02183EDA200419E57 /* mpeg4-hevc.c */,
-				46C5B2D12183EDA200419E57 /* flv-demuxer.c */,
 				46C5B2D22183EDA200419E57 /* amf3.c */,
-				46C5B2D32183EDA200419E57 /* mpeg4-aac.c */,
-				46C5B2D42183EDA200419E57 /* flv-reader.c */,
+				468B915B23B8ADAA00EA99A3 /* aom-av1.c */,
 				46C5B2D52183EDA200419E57 /* flv-demuxer-script.c */,
-				46C5B2D62183EDA200419E57 /* mpeg4-annexbtomp4.c */,
-				46C5B2D72183EDA200419E57 /* flv-parser.c */,
+				46C5B2D12183EDA200419E57 /* flv-demuxer.c */,
+				468B915F23B8AE3100EA99A3 /* flv-header.c */,
 				46C5B2D82183EDA200419E57 /* flv-muxer.c */,
-				46C5B2D92183EDA200419E57 /* mpeg4-avc.c */,
+				46C5B2D72183EDA200419E57 /* flv-parser.c */,
+				46C5B2D42183EDA200419E57 /* flv-reader.c */,
+				46C5B2CD2183EDA200419E57 /* flv-writer.c */,
+				46C5B2CF2183EDA200419E57 /* hevc-annexbtomp4.c */,
 				46C5B2DA2183EDA200419E57 /* hevc-mp4toannexb.c */,
+				46C5B2CC2183EDA200419E57 /* mp3-header.c */,
+				46733798219B2315009F658F /* mpeg4-aac-asc.c */,
+				46C5B2D32183EDA200419E57 /* mpeg4-aac.c */,
+				46C5B2D62183EDA200419E57 /* mpeg4-annexbtomp4.c */,
+				46C5B2D92183EDA200419E57 /* mpeg4-avc.c */,
+				46C5B2D02183EDA200419E57 /* mpeg4-hevc.c */,
+				46C5B2CB2183EDA200419E57 /* mpeg4-mp4toannexb.c */,
+				4605125924D6B4D500B04B70 /* opus-head.c */,
+				46E55E5224694DE000D8BDBA /* webm-vpx.c */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -150,6 +162,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 46C5B2132183EA7300419E57;
 			productRefGroup = 46C5B21D2183EA7400419E57 /* Products */;
@@ -169,7 +182,9 @@
 				46C5B2E12183EDA200419E57 /* flv-demuxer.c in Sources */,
 				46C5B2DB2183EDA200419E57 /* mpeg4-mp4toannexb.c in Sources */,
 				46C5B2E92183EDA200419E57 /* mpeg4-avc.c in Sources */,
+				468B916023B8AE3100EA99A3 /* flv-header.c in Sources */,
 				46C5B2E62183EDA200419E57 /* mpeg4-annexbtomp4.c in Sources */,
+				468B915C23B8ADAA00EA99A3 /* aom-av1.c in Sources */,
 				46C5B2E02183EDA200419E57 /* mpeg4-hevc.c in Sources */,
 				46C5B2DC2183EDA200419E57 /* mp3-header.c in Sources */,
 				46C5B2EA2183EDA200419E57 /* hevc-mp4toannexb.c in Sources */,
@@ -182,6 +197,8 @@
 				46C5B2E22183EDA200419E57 /* amf3.c in Sources */,
 				46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */,
 				46C5B2DE2183EDA200419E57 /* amf0.c in Sources */,
+				46E55E5324694DE000D8BDBA /* webm-vpx.c in Sources */,
+				4605125A24D6B4D500B04B70 /* opus-head.c in Sources */,
 				46C5B2E32183EDA200419E57 /* mpeg4-aac.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -245,6 +262,11 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+					../../sdk/include,
+				);
 			};
 			name = Debug;
 		};
@@ -297,6 +319,11 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					./include,
+					../../sdk/include,
+				);
 			};
 			name = Release;
 		};
@@ -305,13 +332,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Debug;
 		};
@@ -320,13 +344,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = (
-					.,
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/../../sdk/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(inherited)";
 			};
 			name = Release;
 		};

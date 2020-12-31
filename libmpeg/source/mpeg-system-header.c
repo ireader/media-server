@@ -3,7 +3,7 @@
 #include <assert.h>
 
 // 2.5.3.5 System header (p79)
-// Table 2-40 ¨C Program stream system header
+// Table 2-40 - Program stream system header
 size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, size_t bytes)
 {
     size_t i, j;
@@ -13,7 +13,11 @@ size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, siz
 
     assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2] && PES_SID_SYS == data[3]);
     len = (data[4] << 8) | data[5];
-    assert(len + 6 <= bytes);
+    if(len + 6 > bytes)
+    {
+        assert(0);
+        return 0;
+    }
 
     assert((0x80 & data[6]) == 0x80); // '1xxxxxxx'
     assert((0x01 & data[8]) == 0x01); // 'xxxxxxx1'

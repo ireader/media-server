@@ -1,5 +1,5 @@
 // ITU-T H.222.0(10/2014)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.5.5 Program stream directory(p84)
 
 #include "mpeg-ps-proto.h"
@@ -11,7 +11,7 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 	uint16_t packet_length;
 	uint16_t number_of_access_units;
 
-	// Table 2-42 ¨C Program stream directory packet(p81)
+	// Table 2-42 - Program stream directory packet(p81)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xFF==data[3]);
 	packet_length = (((uint16_t)data[4]) << 8) | data[5];
 	assert(bytes >= (size_t)packet_length + 6);

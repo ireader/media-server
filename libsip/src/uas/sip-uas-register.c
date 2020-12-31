@@ -26,7 +26,7 @@ Expires: 7200
 Content-Length: 0
 */
 
-static int sip_uas_get_expires(const char* expires)
+static inline int sip_uas_get_expires(const char* expires)
 {
 	struct tm tm;
 	memset(&tm, 0, sizeof(tm));
@@ -38,19 +38,19 @@ static int sip_uas_get_expires(const char* expires)
 	return (int)(mktime(&tm) - time(NULL));
 }
 
-static int sip_register_check_request_uri(const struct uri_t* uri)
+static inline int sip_register_check_request_uri(const struct uri_t* uri)
 {
 	// Request-URI: The "userinfo" and "@" components of the SIP URI MUST NOT be present
 	return (uri && uri->host) ? 1 : 0;
 }
 
-static int sip_register_check_to_domain(const struct sip_message_t* req)
+static inline int sip_register_check_to_domain(const struct sip_message_t* req)
 {
 	int r;
 	struct uri_t* to;
 	struct uri_t* uri;
-	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
-	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
+	to = uri_parse(req->to.uri.host.p, (int)req->to.uri.host.n);
+	uri = uri_parse(req->u.c.uri.host.p, (int)req->u.c.uri.host.n);
 
 	r = (!uri || !uri->host || !to || !to->host || 0 != strcasecmp(to->host, uri->host)) ? 0 : 1;
 
@@ -76,7 +76,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// 1. Request-URI
 
 	// Request-URI: The "userinfo" and "@" components of the SIP URI MUST NOT be present
-	uri = uri_parse(req->u.c.uri.host.p, req->u.c.uri.host.n);
+	uri = uri_parse(req->u.c.uri.host.p, (int)req->u.c.uri.host.n);
 	if (!uri || !uri->host)
 	{
 		uri_free(uri);
@@ -100,7 +100,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// 4. authorized modify registrations(403 Forbidden)
 
 	// 5. To domain check (404 Not Found)
-	to = uri_parse(req->to.uri.host.p, req->to.uri.host.n);
+	to = uri_parse(req->to.uri.host.p, (int)req->to.uri.host.n);
 	if (!to || !to->host /*|| 0 != strcasecmp(to->host, uri->host)*/)
 	{
 		uri_free(to);
@@ -128,16 +128,16 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 
 	// All registrations from a UAC SHOULD use the same Call-ID header 
 	// field value for registrations sent to a particular registrar.
-	req->callid;
+	//req->callid;
 
 	// A UA MUST increment the CSeq value by one for each
 	// REGISTER request with the same Call-ID.
 	assert(0 == cstrcasecmp(&req->cseq.method, "REGISTER"));
-	req->cseq.id;
+	//req->cseq.id;
 
 	// zero or more values containing address bindings
 	contact = sip_contacts_get(&req->contacts, 0);
-	uri = contact ? uri_parse(contact->uri.host.p, contact->uri.host.n) : NULL;
+	uri = contact ? uri_parse(contact->uri.host.p, (int)contact->uri.host.n) : NULL;
 	if(contact && contact->expires > 0)
 		expires = (int)contact->expires;
 

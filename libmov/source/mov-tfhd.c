@@ -20,7 +20,7 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 	if (MOV_TFHD_FLAG_BASE_DATA_OFFSET & flags)
 		mov->track->tfhd.base_data_offset = mov_buffer_r64(&mov->io); /* base_data_offset*/
 	else if(MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF & flags)
-		mov->track->tfhd.base_data_offset = mov->moof_offset; /* default©\base©\is©\moof */
+		mov->track->tfhd.base_data_offset = mov->moof_offset; /* default-base-is-moof */
 	else
 		mov->track->tfhd.base_data_offset = mov->implicit_offset;
 
@@ -45,8 +45,8 @@ int mov_read_tfhd(struct mov_t* mov, const struct mov_box_t* box)
 		mov->track->tfhd.default_sample_flags = mov->track->trex.default_sample_flags;
 
 	if (MOV_TFHD_FLAG_DURATION_IS_EMPTY & flags)
-		; /* duration©\is©\empty*/
-	return mov_buffer_error(&mov->io); (void)box;
+		(void)box; /* duration-is-empty*/
+	return mov_buffer_error(&mov->io);
 }
 
 size_t mov_write_tfhd(const struct mov_t* mov)

@@ -8,10 +8,6 @@
 #include "rtp.h"
 #include <string>
 
-#ifndef MAX_UDP_PACKET
-#define MAX_UDP_PACKET (1450-16)
-#endif
-
 class H264FileSource : public IMediaSource
 {
 public:
@@ -35,10 +31,11 @@ private:
 
 	static void* RTPAlloc(void* param, int bytes);
 	static void RTPFree(void* param, void *packet);
-	static void RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+	static int RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 private:
 	void* m_rtp;
+	uint32_t m_timestamp;
 	time64_t m_rtp_clock;
 	time64_t m_rtcp_clock;
     H264FileReader m_reader;

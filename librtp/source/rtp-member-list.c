@@ -50,7 +50,7 @@ struct rtp_member* rtp_member_list_get(void* members, int index)
 {
 	struct rtp_member_list *p;
 	p = (struct rtp_member_list *)members;
-	if(index >= p->count)
+	if(index >= p->count || index < 0)
 		return NULL;
 
 	return index >= N_SOURCE ? p->ptr[index-N_SOURCE] : p->members[index];
@@ -88,14 +88,15 @@ int rtp_member_list_add(void* members, struct rtp_member* s)
 			p->ptr = ptr;
 			p->capacity += 8;
 		}
-		p->ptr[p->count++ - N_SOURCE] = s;
+		p->ptr[p->count - N_SOURCE] = s;
 	}
 	else
 	{
-		p->members[p->count++] = s;
+		p->members[p->count] = s;
 	}
 
 	rtp_member_addref(s);
+	p->count++;
 	return 0;
 }
 
@@ -116,26 +117,25 @@ int rtp_member_list_delete(void* members, uint32_t ssrc)
 		{
 			if(i+1 < N_SOURCE)
 			{
-				memmove(p->members + i, p->members+i+1, N_SOURCE-i-1);
+				memmove(p->members + i, p->members+i+1, (N_SOURCE-i-1) * sizeof(struct rtp_member*));
 			}
 
 			if(p->count > N_SOURCE)
 			{
 				p->members[N_SOURCE-1] = p->ptr[0];
-				memmove(p->ptr, p->ptr + 1, p->count-N_SOURCE-1);
+				memmove(p->ptr, p->ptr + 1, (p->count-N_SOURCE-1) * sizeof(struct rtp_member*));
 			}
 		}
 		else
 		{
 			if(i + 1 < p->count)
 			{
-				memmove(p->ptr + i - N_SOURCE, p->ptr + i + 1 - N_SOURCE, p->count-i-1);
+				memmove(p->ptr + i - N_SOURCE, p->ptr + i + 1 - N_SOURCE, (p->count-i-1) * sizeof(struct rtp_member*));
 			}
 		}
 
-		--p->count;
-
 		rtp_member_release(s);
+		p->count--;
 		return 0;
 	}
 

@@ -80,15 +80,16 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	track->sample_count += sample_count;
     mov->implicit_offset = data_offset;
 
-	return mov_buffer_error(&mov->io); (void)box;
+	(void)box;
+	return mov_buffer_error(&mov->io);
 }
 
-size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32_t moof)
+size_t mov_write_trun(const struct mov_t* mov, uint32_t from, uint32_t count, uint32_t moof)
 {
     uint32_t flags;
 	uint32_t delta;
 	uint64_t offset;
-	size_t size, i;
+	uint32_t size, i;
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
@@ -103,7 +104,7 @@ size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32
         sample = track->samples + i;
         if (sample->bytes != track->tfhd.default_sample_size)
             flags |= MOV_TRUN_FLAG_SAMPLE_SIZE_PRESENT;
-        if ((uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : (i > 0 ? track->samples[i].dts - track->samples[i - 1].dts : 0)) != track->tfhd.default_sample_duration)
+        if ((uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : track->turn_last_duration) != track->tfhd.default_sample_duration)
             flags |= MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT;
         if (sample->pts != sample->dts)
             flags |= MOV_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT;
@@ -137,7 +138,7 @@ size_t mov_write_trun(const struct mov_t* mov, size_t from, size_t count, uint32
 		sample = track->samples + i;
 		if (flags & MOV_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
 		{
-            delta = (uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : (i > 0 ? track->samples[i].dts - track->samples[i-1].dts : 0));
+            delta = (uint32_t)(i + 1 < track->sample_count ? track->samples[i + 1].dts - track->samples[i].dts : track->turn_last_duration);
 			mov_buffer_w32(&mov->io, delta); /* sample_duration */
 			size += 4;
 		}

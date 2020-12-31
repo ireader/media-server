@@ -17,7 +17,7 @@ int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box)
 	}
 
 	mov_buffer_read(&mov->io, entry->extra_data, box->size);
-	entry->extra_data_size = (size_t)box->size;
+	entry->extra_data_size = (int)box->size;
 	return mov_buffer_error(&mov->io);
 }
 

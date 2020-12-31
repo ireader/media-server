@@ -1,5 +1,5 @@
 // ITU-T H.222.0(06/2012)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
 #include "mpeg-ts-proto.h"
@@ -16,10 +16,16 @@
 struct ts_demuxer_t
 {
     struct pat_t pat;
+	uint8_t cc;
 
     ts_demuxer_onpacket onpacket;
     void* param;
+
+	struct ts_demuxer_notify_t notify;
+	void* notify_param;
 };
+
+static void ts_demuxer_notify(struct ts_demuxer_t* ts, const struct pmt_t* pmt);
 
 static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const uint8_t* data, size_t bytes)
 {
@@ -114,12 +120,12 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 	return adp->adaptation_field_length + 1;
 }
 
-#define TS_SYNC_BYTE(data)						(data[0] == 0x47)
+#define TS_IS_SYNC_BYTE(data)					(data[0] == TS_SYNC_BYTE)
 #define TS_TRANSPORT_ERROR_INDICATOR(data)		(data[1] & 0x80)
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
+int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     uint32_t i, j;
     for (i = 0; i < ts->pat.pmt_count; i++)
@@ -133,28 +139,29 @@ size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
             if (PSI_STREAM_H264 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x09,0xf0};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
             }
             else if (PSI_STREAM_H265 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
             }
             else
             {
                 //assert(0);
-                pes_packet(&pes->pkt, pes, NULL, 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, NULL, 0, 0, ts->onpacket, ts->param);
             }
         }
     }
     return 0;
 }
 
-size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
+int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
     int r = 0;
     uint32_t i, j, k;
 	uint32_t PID;
+	unsigned int count;
     struct ts_packet_header_t pkhd;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
@@ -172,6 +179,13 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
+	
+	if (((ts->cc + 1) % 15) != (uint8_t)pkhd.continuity_counter)
+	{
+		// 1. PAT/PMT reset
+		// 2. pes packet corrupt
+	}
+	ts->cc = (uint8_t)pkhd.continuity_counter;
 
 //	printf("-----------------------------------------------\n");
 //	printf("PID[%u]: Error: %u, Start:%u, Priority:%u, Scrambler:%u, AF: %u, CC: %u\n", PID, pkhd.transport_error_indicator, pkhd.payload_unit_start_indicator, pkhd.transport_priority, pkhd.transport_scrambling_control, pkhd.adaptation_field_control, pkhd.continuity_counter);
@@ -185,7 +199,7 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 		{
             int64_t t;
 			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
-			printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
+			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}
     
@@ -193,14 +207,14 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 	{
 		if(TS_PID_PAT == PID)
 		{
-			if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
+			if(pkhd.payload_unit_start_indicator)
 				i += 1; // pointer 0x00
 
 			pat_read(&ts->pat, data + i, bytes - i);
 		}
         else if(TS_PID_SDT == PID)
         {
-            if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
+            if(pkhd.payload_unit_start_indicator)
                 i += 1; // pointer 0x00
             sdt_read(&ts->pat, data + i, bytes - i);
         }
@@ -210,10 +224,13 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 			{
 				if(PID == ts->pat.pmts[j].pid)
 				{
-					if(TS_PAYLOAD_UNIT_START_INDICATOR(data))
+					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
+					count = ts->pat.pmts[j].stream_count;
 					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
+					if(count != ts->pat.pmts[j].stream_count)
+						ts_demuxer_notify(ts, &ts->pat.pmts[j]);
 					break;
 				}
 				else
@@ -224,15 +241,19 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 						if (PID != pes->pid)
                             continue;
 
-                        if (TS_PAYLOAD_UNIT_START_INDICATOR(data))
+                        if (pkhd.payload_unit_start_indicator)
                         {
                             size_t n;
                             n = pes_read_header(pes, data + i, bytes - i);
                             assert(n > 0);
                             i += n;
 						}
+						else if (0 == pes->sid)
+						{
+							continue; // don't have pes header yet
+						}
 
-                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, ts->onpacket, ts->param);
+                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
                         break; // find stream
 					}
 				} // PMT handler
@@ -291,6 +312,9 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
         }
     }
 
+	if (ts->pat.pmts && ts->pat.pmts != ts->pat.pmt_default)
+		free(ts->pat.pmts);
+
     free(ts);
     return 0;
 }
@@ -298,11 +322,31 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
 int ts_demuxer_getservice(struct ts_demuxer_t* ts, int program, char* provider, int nprovider, char* name, int nname)
 {
     struct pmt_t* pmt;
-    pmt = pat_find(&ts->pat, program);
+    pmt = pat_find(&ts->pat, (uint16_t)program);
     if(NULL == pmt)
         return -1;
     
     snprintf(provider, nprovider, "%s", pmt->provider);
     snprintf(name, nname, "%s", pmt->name);
     return 0;
+}
+
+void ts_demuxer_set_notify(struct ts_demuxer_t* ts, struct ts_demuxer_notify_t* notify, void* param)
+{
+	ts->notify_param = param;
+	memcpy(&ts->notify, notify, sizeof(ts->notify));
+}
+
+static void ts_demuxer_notify(struct ts_demuxer_t* ts, const struct pmt_t* pmt)
+{
+	unsigned int i;
+	const struct pes_t* pes;
+	if (!ts->notify.onstream)
+		return;
+
+	for (i = 0; i < pmt->stream_count; i++)
+	{
+		pes = &pmt->streams[i];
+		ts->notify.onstream(ts->notify_param, pes->pid, pes->codecid, pes->esinfo, pes->esinfo_len, i + 1 >= pmt->stream_count ? 1 : 0);
+	}
 }

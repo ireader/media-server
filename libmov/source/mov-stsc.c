@@ -5,7 +5,7 @@
 
 // 8.7.4 Sample To Chunk Box (p57)
 /*
-aligned(8) class SampleToChunkBox extends FullBox(¡®stsc¡¯, version = 0, 0) { 
+aligned(8) class SampleToChunkBox extends FullBox('stsc', version = 0, 0) { 
 	unsigned int(32) entry_count; 
 	for (i=1; i <= entry_count; i++) { 
 		unsigned int(32) first_chunk; 
@@ -47,7 +47,7 @@ size_t mov_write_stsc(const struct mov_t* mov)
 {
 	uint64_t offset;
 	uint64_t offset2;
-	size_t size, i, entry;
+	uint32_t size, i, entry;
 	const struct mov_sample_t* chunk = NULL;
 	const struct mov_sample_t* sample = NULL;
 	const struct mov_track_t* track = mov->track;

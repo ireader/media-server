@@ -49,24 +49,26 @@ void flv_read_write_test(const char* flv)
 	flv_muxer_t* e = flv_muxer_create(flv_onmuxer, w);
 	flv_demuxer_t* d = flv_demuxer_create(flv_ondemuxer, e);
 
-	struct flv_metadata_t metadata;
-	metadata.audiocodecid = 4;
-	metadata.audiodatarate = 16.1;
-	metadata.audiosamplerate = 48000;
-	metadata.audiosamplesize = 16;
-	metadata.stereo = true;
-	metadata.videocodecid = 7;
-	metadata.videodatarate = 64.0;
-	metadata.framerate = 25;
-	metadata.width = 1920;
-	metadata.height = 1080;
-	flv_muxer_metadata(e, &metadata);
+	//struct flv_metadata_t metadata;
+	//metadata.audiocodecid = 4;
+	//metadata.audiodatarate = 16.1;
+	//metadata.audiosamplerate = 48000;
+	//metadata.audiosamplesize = 16;
+	//metadata.stereo = true;
+	//metadata.videocodecid = 7;
+	//metadata.videodatarate = 64.0;
+	//metadata.framerate = 25;
+	//metadata.width = 1920;
+	//metadata.height = 1080;
+	//flv_muxer_metadata(e, &metadata);
 
 	int ret, tag;
+	size_t taglen;
 	uint32_t timestamp;
-	while ((ret = flv_reader_read(r, &tag, &timestamp, packet, sizeof(packet))) > 0)
+	while (1 == flv_reader_read(r, &tag, &timestamp, &taglen, packet, sizeof(packet)))
 	{
-		flv_demuxer_input(d, tag, packet, ret, timestamp);
+		ret = flv_demuxer_input(d, tag, packet, taglen, timestamp);
+		assert(0 == ret);
 	}
 
 	flv_muxer_destroy(e);

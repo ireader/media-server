@@ -64,7 +64,7 @@ static void* rtp_mpeg2es_pack_create(int size, uint8_t pt, uint16_t seq, uint32_
 	packer = (struct rtp_encode_mpeg2es_t *)calloc(1, sizeof(*packer));
 	if (!packer) return NULL;
 
-	assert(RTP_PAYLOAD_MPA == pt || RTP_PAYLOAD_MPV == pt);
+	assert(RTP_PAYLOAD_MP3 == pt || RTP_PAYLOAD_MPV == pt);
 	memcpy(&packer->handler, handler, sizeof(packer->handler));
 	packer->cbparam = cbparam;
 	packer->size = size;
@@ -73,7 +73,7 @@ static void* rtp_mpeg2es_pack_create(int size, uint8_t pt, uint16_t seq, uint32_
 	packer->pkt.rtp.pt = pt;
 	packer->pkt.rtp.seq = seq;
 	packer->pkt.rtp.ssrc = ssrc;
-	packer->pkt.rtp.m = (RTP_PAYLOAD_MPA == pt) ? 1 : 0; // set to 1 on first packet of a "talk-spurt," 0 otherwise.
+	packer->pkt.rtp.m = (RTP_PAYLOAD_MP3 == pt) ? 1 : 0; // set to 1 on first packet of a "talk-spurt," 0 otherwise.
 	return packer;
 }
 
@@ -105,11 +105,11 @@ static void rtp_mpeg2es_pack_get_info(void* pack, uint16_t* seq, uint32_t* times
 */
 static int rtp_mpeg2es_pack_audio(struct rtp_encode_mpeg2es_t *packer, const uint8_t* audio, int bytes)
 {
-	int n;
+	int r, n;
 	int offset;
 	uint8_t *rtp;
 
-	for (offset = 0; bytes > 0; ++packer->pkt.rtp.seq)
+	for (r = offset = 0; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = audio;
 		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_MPEG12_HEADER - RTP_FIXED_HEADER);
@@ -136,11 +136,11 @@ static int rtp_mpeg2es_pack_audio(struct rtp_encode_mpeg2es_t *packer, const uin
 		memcpy(rtp + n + N_MPEG12_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 		offset += packer->pkt.payloadlen;
 
-		packer->handler.packet(packer->cbparam, rtp, n + N_MPEG12_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_MPEG12_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 	}
 
-	return 0;
+	return r;
 }
 
 static const uint8_t* mpeg2_start_code_prefix_find(const uint8_t* p, const uint8_t* end)
@@ -174,13 +174,14 @@ static const uint8_t* mpeg2_start_code_prefix_find(const uint8_t* p, const uint8
 */
 static int rtp_mpeg2es_pack_slice(struct rtp_encode_mpeg2es_t *packer, const uint8_t* video, int bytes, struct mpeg2_video_header_t* h, int marker)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 	uint8_t begin_of_slice;
 	uint8_t end_of_slice;
 	uint8_t begin_of_sequence;
 
-	for (begin_of_slice = 1; bytes > 0; ++packer->pkt.rtp.seq)
+	r = 0;
+	for (begin_of_slice = 1; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = video;
 		packer->pkt.payloadlen = (bytes + N_MPEG12_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_MPEG12_HEADER - RTP_FIXED_HEADER);
@@ -209,11 +210,11 @@ static int rtp_mpeg2es_pack_slice(struct rtp_encode_mpeg2es_t *packer, const uin
 		memcpy(rtp + n + N_MPEG12_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 		begin_of_slice = 0;
 
-		packer->handler.packet(packer->cbparam, rtp, n + N_MPEG12_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_MPEG12_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 	}
 
-	return 0;
+	return r;
 }
 
 static int mpeg2_video_header_parse(struct mpeg2_video_header_t* mpeg2vh, const uint8_t* data, int bytes)
@@ -281,7 +282,7 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 		size_t nalu_size;
 
 		mpeg2vh.begin_of_sequence = 0;
-		mpeg2_video_header_parse(&mpeg2vh, p, pend - p);
+		mpeg2_video_header_parse(&mpeg2vh, p, (int)(pend - p));
 		
 		if (pend - p + N_MPEG12_HEADER + RTP_FIXED_HEADER <= packer->size)
 		{
@@ -302,12 +303,12 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 					break;
 
 				// merge and get information
-				mpeg2_video_header_parse(&mpeg2vh, pnext, pend - pnext);
+				mpeg2_video_header_parse(&mpeg2vh, pnext, (int)(pend - pnext));
 				pnext = pnextnext;
 			}
 		}
 
-		r = rtp_mpeg2es_pack_slice(packer, p, pnext - p, &mpeg2vh, (pnext == pend) ? 1 : 0);
+		r = rtp_mpeg2es_pack_slice(packer, p, (int)(pnext - p), &mpeg2vh, (pnext == pend) ? 1 : 0);
 	}
 
 	return r;
@@ -319,7 +320,7 @@ static int rtp_mpeg2es_pack_input(void* pack, const void* data, int bytes, uint3
 	packer = (struct rtp_encode_mpeg2es_t*)pack;
 	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz); // ms -> 90KHZ (RFC2250 p7)
-	return RTP_PAYLOAD_MPA == packer->pkt.rtp.pt ?
+	return RTP_PAYLOAD_MP3 == packer->pkt.rtp.pt ?
 		rtp_mpeg2es_pack_audio(packer, (const uint8_t*)data, bytes) :
 		rtp_mpeg2es_pack_video(packer, (const uint8_t*)data, bytes);
 }
