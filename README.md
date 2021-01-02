@@ -49,6 +49,10 @@
 4. MP4 with H.264/H.265/AV1/VP9
 5. MP4 with AAC/Opus/MP3/G.711
 
+# libmkv
+1. MKV/WebM file read/write
+2. Live MKV/WebM streaming
+
 # libsip
 1. sip user-agent (UAC/UAS)
 2. sip with ICE
