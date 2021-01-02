@@ -23,6 +23,7 @@
     <ClInclude Include="include\mkv-buffer.h" />
     <ClInclude Include="include\mkv-format.h" />
     <ClInclude Include="include\mkv-reader.h" />
+    <ClInclude Include="include\mkv-writer.h" />
     <ClInclude Include="src\mkv-internal.h" />
     <ClInclude Include="src\mkv-ioutil.h" />
   </ItemGroup>
@@ -33,10 +34,10 @@
     <ClCompile Include="src\mkv-cluster.c" />
     <ClCompile Include="src\mkv-codec.c" />
     <ClCompile Include="src\mkv-cue.c" />
-    <ClCompile Include="src\mkv-info.c" />
     <ClCompile Include="src\mkv-ioutil.c" />
     <ClCompile Include="src\mkv-reader.c" />
     <ClCompile Include="src\mkv-track.c" />
+    <ClCompile Include="src\mkv-writer.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

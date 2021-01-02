@@ -82,9 +82,14 @@ enum mkv_codec_t
 
 enum
 {
-	MKV_FLAGS_KEYFRAME		= 0x00001, // Keyframe
-	MKV_FLAGS_INVISIBLE		= 0x00002, // Invisible, the codec SHOULD decode this frame but not display it
-	MKV_FLAGS_DISCARDABLE	= 0x00004, // Discardable, the frames of the Block can be discarded during playing if needed
+	MKV_FLAGS_KEYFRAME		= 0x0001, // Keyframe
+	MKV_FLAGS_INVISIBLE		= 0x0002, // Invisible, the codec SHOULD decode this frame but not display it
+	MKV_FLAGS_DISCARDABLE	= 0x0004, // Discardable, the frames of the Block can be discarded during playing if needed
+};
+
+enum
+{
+	MKV_OPTION_LIVE = 0x80000000, // live stream
 };
 
 enum ebml_video_interlaced_e
@@ -212,6 +217,12 @@ enum ebml_video_projection_type_e
 	EBML_VIDEO_PROJECTION_CUBEMAP = 2,
 	EBML_VIDEO_PROJECTION_MESH = 3,
 };
+
+const char* mkv_codec_find_name(enum mkv_codec_t codec);
+enum mkv_codec_t mkv_codec_find_id(const char* name);
+int mkv_codec_is_video(enum mkv_codec_t codec);
+int mkv_codec_is_audio(enum mkv_codec_t codec);
+int mkv_codec_is_subtitle(enum mkv_codec_t codec);
 
 #ifdef __cplusplus
 }

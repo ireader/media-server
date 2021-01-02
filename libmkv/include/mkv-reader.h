@@ -18,9 +18,9 @@ void mkv_reader_destroy(mkv_reader_t* mkv);
 struct mkv_reader_trackinfo_t
 {
 	/// @param[in] object: MKV_CODEC_VIDEO_H264/MKV_CODEC_AUDIO_AAC, see more @mkv-format.h
-	int (*onvideo)(void* param, uint32_t track, enum mkv_codec_t codec, int width, int height, const void* extra, size_t bytes);
-	int (*onaudio)(void* param, uint32_t track, enum mkv_codec_t codec, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
-	int (*onsubtitle)(void* param, uint32_t track, enum mkv_codec_t codec, const void* extra, size_t bytes);
+	void (*onvideo)(void* param, uint32_t track, enum mkv_codec_t codec, int width, int height, const void* extra, size_t bytes);
+	void (*onaudio)(void* param, uint32_t track, enum mkv_codec_t codec, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
+	void (*onsubtitle)(void* param, uint32_t track, enum mkv_codec_t codec, const void* extra, size_t bytes);
 };
 
 /// @return 0-OK, other-error

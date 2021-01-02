@@ -1,0 +1,338 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		468023B52599833D00AD5A52 /* mkv-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023A92599833D00AD5A52 /* mkv-info.c */; };
+		468023B62599833D00AD5A52 /* mkv-track.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AA2599833D00AD5A52 /* mkv-track.c */; };
+		468023B72599833D00AD5A52 /* mkv-codec.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AB2599833D00AD5A52 /* mkv-codec.c */; };
+		468023B82599833D00AD5A52 /* mkv-attachment.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AC2599833D00AD5A52 /* mkv-attachment.c */; };
+		468023B92599833D00AD5A52 /* mkv-reader.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AD2599833D00AD5A52 /* mkv-reader.c */; };
+		468023BA2599833D00AD5A52 /* mkv-cue.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AE2599833D00AD5A52 /* mkv-cue.c */; };
+		468023BB2599833D00AD5A52 /* mkv-cluster.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AF2599833D00AD5A52 /* mkv-cluster.c */; };
+		468023BC2599833D00AD5A52 /* mkv-internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 468023B02599833D00AD5A52 /* mkv-internal.h */; };
+		468023BD2599833D00AD5A52 /* mkv-ioutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023B12599833D00AD5A52 /* mkv-ioutil.c */; };
+		468023BE2599833D00AD5A52 /* mkv-chapter.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023B22599833D00AD5A52 /* mkv-chapter.c */; };
+		468023BF2599833D00AD5A52 /* ebml.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023B32599833D00AD5A52 /* ebml.c */; };
+		468023C02599833D00AD5A52 /* mkv-ioutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 468023B42599833D00AD5A52 /* mkv-ioutil.h */; };
+		4683718925999A54003A141A /* mkv-writer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4683718725999A54003A141A /* mkv-writer.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		46802396259981D700AD5A52 /* libmkv.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmkv.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4680239D2599821800AD5A52 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		468023A92599833D00AD5A52 /* mkv-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-info.c"; sourceTree = "<group>"; };
+		468023AA2599833D00AD5A52 /* mkv-track.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-track.c"; sourceTree = "<group>"; };
+		468023AB2599833D00AD5A52 /* mkv-codec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-codec.c"; sourceTree = "<group>"; };
+		468023AC2599833D00AD5A52 /* mkv-attachment.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-attachment.c"; sourceTree = "<group>"; };
+		468023AD2599833D00AD5A52 /* mkv-reader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-reader.c"; sourceTree = "<group>"; };
+		468023AE2599833D00AD5A52 /* mkv-cue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-cue.c"; sourceTree = "<group>"; };
+		468023AF2599833D00AD5A52 /* mkv-cluster.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-cluster.c"; sourceTree = "<group>"; };
+		468023B02599833D00AD5A52 /* mkv-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mkv-internal.h"; sourceTree = "<group>"; };
+		468023B12599833D00AD5A52 /* mkv-ioutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-ioutil.c"; sourceTree = "<group>"; };
+		468023B22599833D00AD5A52 /* mkv-chapter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-chapter.c"; sourceTree = "<group>"; };
+		468023B32599833D00AD5A52 /* ebml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ebml.c; sourceTree = "<group>"; };
+		468023B42599833D00AD5A52 /* mkv-ioutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mkv-ioutil.h"; sourceTree = "<group>"; };
+		4683718725999A54003A141A /* mkv-writer.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mkv-writer.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46802394259981D700AD5A52 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4680238D259981D700AD5A52 = {
+			isa = PBXGroup;
+			children = (
+				4680239D2599821800AD5A52 /* include */,
+				46802397259981D700AD5A52 /* Products */,
+				468023A82599833D00AD5A52 /* src */,
+			);
+			sourceTree = "<group>";
+		};
+		46802397259981D700AD5A52 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				46802396259981D700AD5A52 /* libmkv.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		468023A82599833D00AD5A52 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				468023A92599833D00AD5A52 /* mkv-info.c */,
+				468023AA2599833D00AD5A52 /* mkv-track.c */,
+				468023AB2599833D00AD5A52 /* mkv-codec.c */,
+				468023AC2599833D00AD5A52 /* mkv-attachment.c */,
+				468023AD2599833D00AD5A52 /* mkv-reader.c */,
+				468023AE2599833D00AD5A52 /* mkv-cue.c */,
+				468023AF2599833D00AD5A52 /* mkv-cluster.c */,
+				468023B02599833D00AD5A52 /* mkv-internal.h */,
+				468023B12599833D00AD5A52 /* mkv-ioutil.c */,
+				468023B22599833D00AD5A52 /* mkv-chapter.c */,
+				468023B32599833D00AD5A52 /* ebml.c */,
+				468023B42599833D00AD5A52 /* mkv-ioutil.h */,
+				4683718725999A54003A141A /* mkv-writer.c */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		46802392259981D700AD5A52 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				468023BC2599833D00AD5A52 /* mkv-internal.h in Headers */,
+				468023C02599833D00AD5A52 /* mkv-ioutil.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		46802395259981D700AD5A52 /* libmkv */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4680239A259981D700AD5A52 /* Build configuration list for PBXNativeTarget "libmkv" */;
+			buildPhases = (
+				46802392259981D700AD5A52 /* Headers */,
+				46802393259981D700AD5A52 /* Sources */,
+				46802394259981D700AD5A52 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libmkv;
+			productName = libmkv;
+			productReference = 46802396259981D700AD5A52 /* libmkv.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4680238E259981D700AD5A52 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1160;
+				ORGANIZATIONNAME = ireader;
+				TargetAttributes = {
+					46802395259981D700AD5A52 = {
+						CreatedOnToolsVersion = 11.6;
+					};
+				};
+			};
+			buildConfigurationList = 46802391259981D700AD5A52 /* Build configuration list for PBXProject "libmkv" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4680238D259981D700AD5A52;
+			productRefGroup = 46802397259981D700AD5A52 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				46802395259981D700AD5A52 /* libmkv */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46802393259981D700AD5A52 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				468023B72599833D00AD5A52 /* mkv-codec.c in Sources */,
+				468023B82599833D00AD5A52 /* mkv-attachment.c in Sources */,
+				468023BB2599833D00AD5A52 /* mkv-cluster.c in Sources */,
+				468023BE2599833D00AD5A52 /* mkv-chapter.c in Sources */,
+				4683718925999A54003A141A /* mkv-writer.c in Sources */,
+				468023BA2599833D00AD5A52 /* mkv-cue.c in Sources */,
+				468023BF2599833D00AD5A52 /* ebml.c in Sources */,
+				468023B62599833D00AD5A52 /* mkv-track.c in Sources */,
+				468023B52599833D00AD5A52 /* mkv-info.c in Sources */,
+				468023BD2599833D00AD5A52 /* mkv-ioutil.c in Sources */,
+				468023B92599833D00AD5A52 /* mkv-reader.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		46802398259981D700AD5A52 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					include,
+				);
+			};
+			name = Debug;
+		};
+		46802399259981D700AD5A52 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = (
+					.,
+					include,
+				);
+			};
+			name = Release;
+		};
+		4680239B259981D700AD5A52 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		4680239C259981D700AD5A52 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				EXECUTABLE_PREFIX = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46802391259981D700AD5A52 /* Build configuration list for PBXProject "libmkv" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46802398259981D700AD5A52 /* Debug */,
+				46802399259981D700AD5A52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4680239A259981D700AD5A52 /* Build configuration list for PBXNativeTarget "libmkv" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4680239B259981D700AD5A52 /* Debug */,
+				4680239C259981D700AD5A52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4680238E259981D700AD5A52 /* Project object */;
+}

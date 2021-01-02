@@ -94,3 +94,15 @@ int64_t mkv_buffer_read_signed_size(struct mkv_ioutil_t* io)
 
     return io->error ? 0 : v - ( (1LL << (7*n - 1)) - 1);
 }
+
+void mkv_buffer_write_signed_size(struct mkv_ioutil_t* io, int64_t size)
+{
+    uint64_t tmp;
+    tmp = 2*(size < 0 ? size^-1 : size);
+    size |= (1ULL << ebml_size_length(tmp) * 7);
+    do
+    {
+        mkv_buffer_w8(io, (uint8_t)size);
+        size >>= 8;
+    } while(size > 0);
+}
