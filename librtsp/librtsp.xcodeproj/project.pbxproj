@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4643D91E245712A400572339 /* rtsp-multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D91D245712A400572339 /* rtsp-multicast.c */; };
+		4680238425997EFF00AD5A52 /* sdp-mpeg2.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680238325997EFF00AD5A52 /* sdp-mpeg2.c */; };
 		46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D72183EE5D00419E57 /* rtsp-reason.c */; };
 		46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */; };
 		46C5B4072183EE5D00419E57 /* sdp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D92183EE5D00419E57 /* sdp.c */; };
@@ -54,6 +55,7 @@
 
 /* Begin PBXFileReference section */
 		4643D91D245712A400572339 /* rtsp-multicast.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "rtsp-multicast.c"; sourceTree = "<group>"; };
+		4680238325997EFF00AD5A52 /* sdp-mpeg2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-mpeg2.c"; sourceTree = "<group>"; };
 		46C5B2922183ECF900419E57 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3D52183EE5600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B3D72183EE5D00419E57 /* rtsp-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-reason.c"; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 				46E55E5E24A7388A00D8BDBA /* sdp-fmtp-load.c */,
 				F42351212287B77800D805B4 /* sdp-mpeg4.c */,
 				46C5B3EF2183EE5D00419E57 /* sdp-opus.c */,
+				4680238325997EFF00AD5A52 /* sdp-mpeg2.c */,
 				46C5B3F02183EE5D00419E57 /* sdp-h264.c */,
 				46C5B3F12183EE5D00419E57 /* sdp-aac.c */,
 				46C5B3F22183EE5D00419E57 /* sdp-g7xx.c */,
@@ -302,6 +305,7 @@
 				46C5B41C2183EE5D00419E57 /* sdp-aac.c in Sources */,
 				46C5B4122183EE5D00419E57 /* rtsp-server-options.c in Sources */,
 				46C5B40C2183EE5D00419E57 /* rtsp-server-record.c in Sources */,
+				4680238425997EFF00AD5A52 /* sdp-mpeg2.c in Sources */,
 				46E55E5F24A7388A00D8BDBA /* sdp-fmtp-load.c in Sources */,
 				46C5B42E2183EE5D00419E57 /* rtsp-client-setup.c in Sources */,
 				46C5B4142183EE5D00419E57 /* rtsp-server.c in Sources */,
