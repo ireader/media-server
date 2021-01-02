@@ -37,7 +37,7 @@ uint32_t mkv_buffer_read_id(struct mkv_ioutil_t* io)
 
 int64_t mkv_buffer_read_size(struct mkv_ioutil_t* io)
 {
-    size_t n;
+    size_t i, n;
     int64_t v;
     uint8_t ptr[16];
 
@@ -53,11 +53,14 @@ int64_t mkv_buffer_read_size(struct mkv_ioutil_t* io)
     //}
 
     v = ptr[0] & ~(1 << s_ebml_log2_tab[ptr[0]]);
-    while (n-- > 1 && 0 == io->error)
+    for(i = 1; i < n && 0 == io->error; i++)
     {
         mkv_buffer_read(io, ptr, 1);
         v = (v << 8) | ptr[0];
     }
+
+    if (v + 1 == 1LL << (7 * n))
+        v = -1; // unknown length
 
     return io->error ? 0 : v;
 }

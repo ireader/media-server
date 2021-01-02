@@ -132,7 +132,7 @@ static void mkv_write_tracks(struct mkv_ioutil_t* io, struct mkv_t* mkv)
     uint64_t offset;
 
     // Segment/Tracks
-    mkv_buffer_write_master(io, EBML_ID_TRACKS, 0, 4); // placeholder
+    mkv_buffer_write_master(io, EBML_ID_TRACKS, 0x0FFFFFFF, 4); // placeholder
     offset = mkv_buffer_tell(io);
 
     for(i = 0; i < mkv->track_count; i++)
@@ -147,7 +147,7 @@ static void mkv_write_init(struct mkv_writer_t* writer)
 {
     // Segment
     writer->segment_offset = mkv_buffer_tell(&writer->io) + 4;
-    mkv_buffer_write_master(&writer->io, EBML_ID_SEGMENT, 0, 8); // placeholder
+    mkv_buffer_write_master(&writer->io, EBML_ID_SEGMENT, 0x00FFFFFFFFFFFFFF, 8); // placeholder
     
     if (0 == (MKV_OPTION_LIVE & writer->options))
     {
@@ -181,7 +181,7 @@ struct mkv_writer_t* mkv_writer_create(const struct mkv_buffer_t* buffer, void* 
     writer->cluster_limit_size = 5000000;
 
     mkv->timescale = 1000000;
-    snprintf(mkv->doc, sizeof(mkv->doc), "%s", "matroska");
+    snprintf(mkv->doc, sizeof(mkv->doc), "%s", (MKV_OPTION_WEBM & options) ? "webm" : "matroska");
     mkv_write_ebml_header(&writer->io, mkv);
     return writer;
 }
@@ -314,7 +314,7 @@ int mkv_writer_write(struct mkv_writer_t* writer, int tid, const void* data, siz
         cluster->position = mkv_buffer_tell(&writer->io); // don't with id
 
         // Segment/Cluster
-        mkv_buffer_write_master(&writer->io, EBML_ID_CLUSTER, 0, 4); // placeholder
+        mkv_buffer_write_master(&writer->io, EBML_ID_CLUSTER, 0x0FFFFFFF, 4); // placeholder
         mkv_buffer_write_uint_element(&writer->io, 0xE7, ts); // Segment/Cluster/Timestamp
     }
 

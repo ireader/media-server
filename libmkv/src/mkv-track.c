@@ -115,7 +115,7 @@ int mkv_write_track(struct mkv_ioutil_t* io, struct mkv_track_t* track)
     }
 
     // Segment/Tracks/TrackEntry
-    mkv_buffer_write_master(io, 0xAE, 0, 4); // placeholder
+    mkv_buffer_write_master(io, 0xAE, 0x0FFFFFFF, 4); // placeholder
     offset = mkv_buffer_tell(io);
 
     mkv_buffer_write_uint_element(io, 0xD7, track->id); // TrackNumber

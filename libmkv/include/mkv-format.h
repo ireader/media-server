@@ -89,6 +89,7 @@ enum
 
 enum
 {
+	MKV_OPTION_WEBM = 0x00010000, // webm file
 	MKV_OPTION_LIVE = 0x80000000, // live stream
 };
 

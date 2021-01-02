@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#define MKV_PRINT_ELEMENT 1
+//#define MKV_PRINT_ELEMENT 1
 
 #ifndef offsetof
 #define offsetof(s, m)   (size_t)&(((s*)0)->m)
@@ -232,7 +232,7 @@ static int mkv_segment_seek_pos_parse(struct mkv_reader_t* reader, struct mkv_el
 		}
 	}
 
-	printf("seek id: 0x%X, pos: %" PRIu64 "\n", (unsigned int)reader->seek_id, pos);
+	//printf("seek id: 0x%X, pos: %" PRIu64 "\n", (unsigned int)reader->seek_id, pos);
 	return 0; // nothing to do
 }
 
@@ -728,7 +728,7 @@ static int mkv_reader_open(mkv_reader_t* reader, struct mkv_element_t *elements,
 	struct mkv_element_node_t *node;
 	struct mkv_element_t* e;
 
-	r = 0;
+	i = r = 0;
 	memset(tree, 0, sizeof(tree));
 	while (0 == reader->io.error && 0 == r)
 	{

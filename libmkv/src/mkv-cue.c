@@ -31,7 +31,7 @@ void mkv_write_cues(struct mkv_ioutil_t* io, struct mkv_t* mkv)
     struct mkv_cue_position_t* cue;
 
     // Segment/Cues
-    mkv_buffer_write_master(io, EBML_ID_CUES, 0, 4); // placeholder
+    mkv_buffer_write_master(io, EBML_ID_CUES, 0x0FFFFFFF, 4); // placeholder
     offset = mkv_buffer_tell(io);
 
     for (i = 0; i < mkv->cue.count; i++)
