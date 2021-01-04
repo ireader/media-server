@@ -1,6 +1,7 @@
 #ifndef _mkv_internal_h_
 #define _mkv_internal_h_
 
+#include "ebml.h"
 #include "mkv-buffer.h"
 #include "mkv-format.h"
 #include "mkv-ioutil.h"
@@ -8,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <errno.h>
 
 enum
 {
@@ -21,6 +24,18 @@ enum
 	MKV_TRACK_METADATA	= 33,
 };
 
+#define EBML_ID_EBML		0x1A45DFA3
+#define EBML_ID_SEGMENT		0x18538067
+#define EBML_ID_SEEK		0x114D9B74
+#define EBML_ID_INFO		0x1549A966
+#define EBML_ID_TRACKS		0x1654AE6B
+#define EBML_ID_CLUSTER		0x1F43B675
+#define EBML_ID_CUES		0x1C53BB6B
+#define EBML_ID_TAGS		0x1254C367
+#define EBML_ID_CHAPTERS	0x1043A770
+#define EBML_ID_ATTACHMENTS	0x1941A469
+#define EMLB_ID_VOID		0xEC
+
 struct ebml_binary_t
 {
 	void* ptr;
@@ -32,10 +47,10 @@ struct mkv_segment_seek_t
 	int64_t info;
 	int64_t tracks;
 	int64_t chapters;
-	int64_t cluster;
-	int64_t cues;
 	int64_t attachments;
 	int64_t tags;
+	int64_t cluster;
+	int64_t cues;
 };
 
 struct mkv_segment_info_t
@@ -99,8 +114,9 @@ struct mkv_sample_t
 	int flags; // 1-keyframe
 	int64_t dts;
 	int64_t pts;
-	uint64_t bytes;
+	uint32_t bytes;
 	uint64_t offset;
+	void* data;
 };
 
 struct mkv_cluster_t
@@ -143,6 +159,7 @@ struct mkv_cue_position_t
 	uint64_t cluster;
 	uint64_t relative;
 	uint64_t duration;
+	uint64_t timestamp;
 
 	uint64_t block; // default 1
 	int flag_codec_state; // codec state, default 0
@@ -150,8 +167,6 @@ struct mkv_cue_position_t
 
 struct mkv_cue_t
 {
-	uint64_t time;
-
 	struct mkv_cue_position_t* positions;
 	size_t count, capacity;
 };
@@ -166,8 +181,11 @@ struct mkv_track_t
 	int flag_lacing;
 	int flag_forced;
 
+	int64_t first_ts;
+	int64_t last_ts;
+	int64_t sample_count;
+
 	uint64_t duration;
-	double timescale; // default 1.0
 	int64_t offset;
 
 	enum mkv_codec_t codecid;
@@ -184,25 +202,39 @@ struct mkv_track_t
 
 struct mkv_t
 {
-	struct mkv_track_t _track3[3]; // default
-	struct mkv_track_t* tracks;
-	int track_count, track_capacity;
+	char doc[16];
 
+	struct mkv_track_t* tracks;
+	int track_count;
+
+	double duration;
 	uint64_t timescale;
 	struct mkv_cluster_t cluster;
 
-	struct mkv_sample_t* samples;
-	size_t count, capacity;
+	struct mkv_cue_t cue;
+	struct mkv_segment_seek_t seek;
+
+	struct mkv_sample_t* samples; // cache, read only
+	int count, capacity;
 };
 
 #define FREE(ptr) {void* p = (ptr); if(p) free(p); }
 
-const char* mkv_codec_find_name(enum mkv_codec_t codec);
-enum mkv_codec_t mkv_codec_find_id(const char* name);
-
-struct mkv_track_t* mkv_track_find(struct mkv_t* mkv, int id);
+struct mkv_track_t* mkv_track_find(struct mkv_t* mkv, unsigned int id);
+struct mkv_track_t* mkv_add_track(struct mkv_t* mkv);
 int mkv_track_free(struct mkv_track_t* track);
+int mkv_write_track(struct mkv_ioutil_t* io, struct mkv_track_t* track);
+
+int mkv_add_video(struct mkv_track_t* track, enum mkv_codec_t codec, int width, int height, const void* extra_data, size_t extra_data_size);
+int mkv_add_audio(struct mkv_track_t* track, enum mkv_codec_t codec, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
+int mkv_add_subtitle(struct mkv_track_t* track, enum mkv_codec_t codec, const void* extra_data, size_t extra_data_size);
 
 int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t* io, size_t bytes);
+int mkv_cluster_simple_block_write(struct mkv_t* mkv, struct mkv_sample_t* sample, struct mkv_ioutil_t* io);
+
+int mkv_cue_add(struct mkv_t* mkv, int track, int64_t timestamp, uint64_t cluster, uint64_t relative);
+void mkv_write_cues(struct mkv_ioutil_t* io, struct mkv_t* mkv);
+
+void mkv_write_size(const struct mkv_ioutil_t* io, uint64_t offset, uint32_t size);
 
 #endif /* !_mkv_internal_h_ */

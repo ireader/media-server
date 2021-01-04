@@ -68,11 +68,11 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 			size = 0;
 			do
 			{
-				j = mkv_buffer_read_uint(io, 1);
+				j = (uint8_t)mkv_buffer_read_uint(io, 1);
 				size += j;
 			} while (j == 255);
 
-			mkv->samples[i].bytes = size;
+			mkv->samples[i].bytes = (uint32_t)size;
 			total += size; // remain
 		}
 
@@ -115,7 +115,7 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 		mkv->samples[0].track = tid;
 		mkv->samples[0].pts = cluster->timestamp + timestamp;
 		mkv->samples[0].dts = cluster->timestamp + timestamp;
-		mkv->samples[0].bytes = size;
+		mkv->samples[0].bytes = (uint32_t)size;
 		mkv->samples[0].offset = mkv_buffer_tell(io);
 		for (i = 1; i < n + 1; i++)
 		{
@@ -123,7 +123,7 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 			mkv->samples[i].track = mkv->samples[0].track;
 			mkv->samples[i].pts = mkv->samples[i - 1].pts + track->duration;
 			mkv->samples[i].dts = mkv->samples[i - 1].dts + track->duration;
-			mkv->samples[i].bytes = size;
+			mkv->samples[i].bytes = (uint32_t)size;
 			mkv->samples[i].offset = mkv->samples[i - 1].offset + mkv->samples[i - 1].bytes;
 		}
 
@@ -142,7 +142,7 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 			// The others use a range shifting to get a sign on each value
 			lacing = 0 == i ? mkv_buffer_read_size(io) : mkv_buffer_read_signed_size(io);
 			size += lacing; // diff with previous size
-			mkv->samples[i].bytes = size;
+			mkv->samples[i].bytes = (uint32_t)size;
 			total += size; // remain
 		}
 
@@ -189,4 +189,26 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 	}
 
 	return mkv->count;
+}
+
+int mkv_cluster_simple_block_write(struct mkv_t* mkv, struct mkv_sample_t* sample, struct mkv_ioutil_t* io)
+{
+	uint8_t flags;
+	(void)mkv;
+	assert(sample->track > 0 && sample->track < 8);
+
+	flags = sample->flags & MKV_FLAGS_KEYFRAME ? 0x80 : 0;
+	flags |= sample->flags & MKV_FLAGS_INVISIBLE ? 0x08 : 0;
+	flags |= sample->flags & MKV_FLAGS_DISCARDABLE ? 0x01 : 0;
+
+	// Segment/Cluster/SimpleBlock
+	mkv_buffer_write_master(io, 0xA3, 4 + sample->bytes, 0);
+	mkv_buffer_w8(io, (uint8_t)sample->track|0x80); // Track Number
+	mkv_buffer_w16(io, (uint16_t)sample->pts); // Timestamp (relative to Cluster timestamp, signed int16)
+	mkv_buffer_w8(io, flags); // SimpleBlock Header Flags
+
+	// no lacing
+
+	mkv_buffer_write(io, sample->data, sample->bytes);
+	return 0;
 }

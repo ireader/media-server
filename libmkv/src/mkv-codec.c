@@ -77,7 +77,7 @@ const static struct
 	{ "S_KATE",				MKV_CODEC_SUBTITLE_KATE, -1 },
 };
 
-enum ebml_codec_t mkv_codec_find_id(const char* name)
+enum mkv_codec_t mkv_codec_find_id(const char* name)
 {
 	int i;
 	size_t n;
@@ -88,14 +88,14 @@ enum ebml_codec_t mkv_codec_find_id(const char* name)
 	for (i = 0; i < sizeof(s_tags) / sizeof(s_tags[0]); i++)
 	{
 		if ((-1 == s_tags[i].prefix && 0 == strcmp(s_tags[i].name, name))
-			|| (s_tags[i].prefix > 0 && 0 == strncmp(s_tags[i].name, name, n) && (n== s_tags[i].prefix || name[n] == '/')))
+			|| (s_tags[i].prefix > 0 && 0 == strncmp(s_tags[i].name, name, s_tags[i].prefix) && ((int)n == s_tags[i].prefix || name[s_tags[i].prefix] == '/')))
 			return s_tags[i].codec;
 	}
 
 	return MKV_CODEC_UNKNOWN;
 }
 
-const char* mkv_codec_find_name(enum ebml_codec_t codec)
+const char* mkv_codec_find_name(enum mkv_codec_t codec)
 {
 	int i;
 	for (i = 0; i < sizeof(s_tags) / sizeof(s_tags[0]); i++)
@@ -105,4 +105,19 @@ const char* mkv_codec_find_name(enum ebml_codec_t codec)
 	}
 
 	return NULL;
+}
+
+int mkv_codec_is_video(enum mkv_codec_t codec)
+{
+	return codec > 0 && codec < 0x1000;
+}
+
+int mkv_codec_is_audio(enum mkv_codec_t codec)
+{
+	return codec >= 0x1000 && codec < 0x2000;
+}
+
+int mkv_codec_is_subtitle(enum mkv_codec_t codec)
+{
+	return codec >= 0x2000 && codec < 0x3000;
 }

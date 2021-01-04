@@ -41,6 +41,7 @@ static void mkv_reader_test_onread(void* flv, uint32_t track, const void* buffer
 	static char s_pts[64], s_dts[64];
 	static int64_t v_pts, v_dts;
 	static int64_t a_pts, a_dts;
+	static int64_t x_pts, x_dts;
 
 	if (s_avc_track == track)
 	{
@@ -114,12 +115,14 @@ static void mkv_reader_test_onread(void* flv, uint32_t track, const void* buffer
 	}
 	else
 	{
-		printf("%d\n", track);
+		printf("[%d] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", track, ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - x_pts), (int)(dts - x_dts), (unsigned int)bytes, flags ? " [I]" : "");
+		x_pts = pts;
+		x_dts = dts;
 		//assert(0);
 	}
 }
 
-static int mkv_video_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, int /*width*/, int /*height*/, const void* extra, size_t bytes)
+static void mkv_video_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
 	if (MKV_CODEC_VIDEO_H264 == codec)
 	{
@@ -147,12 +150,13 @@ static int mkv_video_info(void* /*param*/, uint32_t track, enum mkv_codec_t code
 	}
 	else
 	{
-		assert(0);
+		const char* name = mkv_codec_find_name(codec);
+		printf("unknow video %u-%s\n", (unsigned int)codec, name ? name : "*");
+		//assert(0);
 	}
-	return 0;
 }
 
-static int mkv_audio_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
+static void mkv_audio_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
 	if (MKV_CODEC_AUDIO_AAC == codec)
 	{
@@ -182,13 +186,11 @@ static int mkv_audio_info(void* /*param*/, uint32_t track, enum mkv_codec_t code
 		s_aac.channel_configuration = channel_count;
 		//s_aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
 	}
-	return 0;
 }
 
-static int mkv_subtitle_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, const void* /*extra*/, size_t /*bytes*/)
+static void mkv_subtitle_info(void* /*param*/, uint32_t track, enum mkv_codec_t codec, const void* /*extra*/, size_t /*bytes*/)
 {
 	s_subtitle_track = track;
-	return 0;
 }
 
 void mkv_reader_test(const char* file)
