@@ -50,7 +50,8 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 
 	default:
 		// nothing to do
-		assert(0);
+		//assert(0);
+		break;
 	}
 
 	printf("\n");
