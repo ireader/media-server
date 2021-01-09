@@ -310,16 +310,16 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
     return r;
 }
 
-int sip_uas_discard(struct sip_uas_transaction_t* t)
-{
-	//return sip_uas_transaction_release(t);
-
-	locker_lock(&t->locker);
-	assert(t->ref > 0);
-	t->status = SIP_UAS_TRANSACTION_TERMINATED;
-	locker_unlock(&t->locker);
-	return 0;
-}
+//int sip_uas_discard(struct sip_uas_transaction_t* t)
+//{
+//	locker_lock(&t->locker);
+//	assert(t->ref > 0);
+//	if(SIP_UAS_TRANSACTION_TERMINATED != t->status)
+//		sip_uas_transaction_terminated();
+//	locker_unlock(&t->locker);
+//	
+//	return sip_uas_transaction_release(t);
+//}
 
 int sip_uas_add_header(struct sip_uas_transaction_t* t, const char* name, const char* value)
 {

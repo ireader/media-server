@@ -27,8 +27,6 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip
 	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
 	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 
-	// Life cycle: from create -> destroy
-	sip_uac_link_transaction(sip, t);
 	return t;
 }
 
@@ -42,12 +40,11 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 	assert(NULL == t->timera);
 	assert(NULL == t->timerb);
 	assert(NULL == t->timerd);
-    
+	assert(t->link.next == t->link.prev) ;// unlink on termernate
+
     if(t->ondestroy)
         t->ondestroy(t->ondestroyparam);
 
-	sip_uac_unlink_transaction(t->agent, t);
-	assert(t->link.next == t->link.prev);
 	sip_message_destroy(t->req);
 	locker_destroy(&t->locker);
 	free(t);
@@ -56,8 +53,10 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 
 int sip_uac_transaction_addref(struct sip_uac_transaction_t* t)
 {
-	assert(t->ref >= 0);
-	return atomic_increment32(&t->ref);
+	int r;
+	r = atomic_increment32(&t->ref);
+	assert(r > 1);
+	return r;
 }
 
 //static int sip_uac_transaction_destroy(struct sip_uac_transaction_t* t)
@@ -110,6 +109,8 @@ static int sip_uac_transaction_terminate(struct sip_uac_transaction_t* t)
 	sip_uac_stop_timer(t->agent, t, &t->timera);
 	sip_uac_stop_timer(t->agent, t, &t->timerb);
 	sip_uac_stop_timer(t->agent, t, &t->timerd);
+
+	sip_uac_unlink_transaction(t->agent, t);
 	return 0;
 }
 
@@ -154,6 +155,10 @@ static void sip_uac_transaction_onterminate(void* usrptr)
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
 {
+	// link to transactions
+	// unlink on tranaction terminate
+	sip_uac_link_transaction(t->agent, t);
+
     t->retries = 1; // reset retry times
     t->timerb = sip_uac_start_timer(t->agent, t, TIMER_B, sip_uac_transaction_ontimeout);
     if(!t->reliable) // UDP
@@ -176,5 +181,6 @@ int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout)
 
 	assert(NULL == t->timerd);
 	t->timerd = sip_uac_start_timer(t->agent, t, timeout, sip_uac_transaction_onterminate);
-	return t->timerd ? 0 : -1;
+	assert(t->timerd);
+	return 0;
 }
