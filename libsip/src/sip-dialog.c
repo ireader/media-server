@@ -117,6 +117,10 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 	if (0 != atomic_decrement32(&dialog->ref))
 		return 0;
 
+	sip_uri_free(&dialog->local.target);
+	sip_contact_free(&dialog->local.uri);
+	sip_uri_free(&dialog->remote.target);
+	sip_contact_free(&dialog->remote.uri);
 	sip_uris_free(&dialog->routers);
 	free(dialog);
 	return 0;

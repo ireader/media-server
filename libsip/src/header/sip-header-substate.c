@@ -1,6 +1,11 @@
 #include "sip-header.h"
 #include <stdio.h>
 
+void sip_substate_free(struct sip_substate_t* substate)
+{
+	sip_params_free(&substate->params);
+}
+
 /*
 Subscription-State = "Subscription-State" HCOLON substate-value *( SEMI subexp-params )
 substate-value = "active" / "pending" / "terminated" / extension-substate
@@ -85,5 +90,6 @@ void sip_header_substate_test(void)
 	assert(0 == cstrcmp(&substate.state, "active") && substate.expires == 600000);
 	assert((int)strlen(s) == sip_substate_write(&substate, buf, buf + sizeof(buf)));
 	assert(0 == strcmp(s, buf));
+	sip_substate_free(&substate);
 }
 #endif

@@ -29,7 +29,7 @@ struct sip_tu_t
     struct sip_agent_t* sip;
     struct channel_t* q[NQUEUE];
     struct sip_transport_t transport;
-    int32_t terminated;
+    int32_t count;
 };
 
 struct sip_agent_test_t
@@ -338,14 +338,14 @@ static int STDCALL BobThread(void* param)
 static void sip_uas_transaction_ondestroy(void* param)
 {
     struct sip_tu_t *tu = (struct sip_tu_t *)param;
-    assert(atomic_decrement32(&tu->terminated) >= 0);
+    assert(atomic_decrement32(&tu->count) >= 0);
 }
 
 static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
 	char contact[128];
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
-    atomic_increment32(&tu->terminated);
+    atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
 	sip_contact_write(&req->to, contact, contact+sizeof(contact));
 	sip_uas_add_header(t, "Contact", contact);
@@ -364,7 +364,7 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
-    atomic_increment32(&tu->terminated);
+    atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -373,7 +373,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
-    atomic_increment32(&tu->terminated);
+    atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -382,7 +382,7 @@ static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
-    atomic_increment32(&tu->terminated);
+    atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -390,7 +390,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
-    atomic_increment32(&tu->terminated);
+    atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
@@ -471,8 +471,8 @@ extern "C" void sip_agent_test(void)
 	s_sip.udp = socket_udp();
 	s_sip.alice.sip = sip_agent_create(&handler, &s_sip.alice);
 	s_sip.bob.sip = sip_agent_create(&handler, &s_sip.bob);
-    s_sip.alice.terminated = 0;
-    s_sip.bob.terminated = 0;
+    s_sip.alice.count = 0;
+    s_sip.bob.count = 0;
 
 	pthread_t timer[NQUEUE];
 	pthread_t worker[NQUEUE*2];
@@ -537,7 +537,7 @@ extern "C" void sip_agent_test(void)
         channel_destroy(&s_sip.bob.q[i]);
 	}
 
-    while(s_sip.alice.terminated != 0 || s_sip.bob.terminated != 0)
+    while(s_sip.alice.count != 0 || s_sip.bob.count != 0)
         system_sleep(10);
     
     for (int i = 0; i < NQUEUE; i++)
