@@ -32,6 +32,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 
 	// Life cycle: from create -> destroy
 	sip_uas_link_transaction(sip, t);
+	sip_uas_transaction_timeout(t, TIMER_H); // trying timeout
 	return t;
 }
 
@@ -220,6 +221,21 @@ static void sip_uas_transaction_onterminated(void* usrptr)
 	sip_uas_transaction_release(t);
 }
 
+// trying + proceeding timeout
+int sip_uas_transaction_timeout(struct sip_uas_transaction_t* t, int timeout)
+{
+	// try stop timer H
+	assert(t->status <= SIP_UAS_TRANSACTION_CONFIRMED);
+	sip_uas_stop_timer(t->agent, t, &t->timerh);
+
+	// restart timer H
+	assert(NULL == t->timerh);
+	t->timerh = sip_uas_start_timer(t->agent, t, timeout, sip_uas_transaction_ontimeout);
+	assert(t->timerh);
+	return 0;
+}
+
+// wait for network cache data
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
 {
 	if (SIP_UAS_TRANSACTION_TERMINATED == t->status)

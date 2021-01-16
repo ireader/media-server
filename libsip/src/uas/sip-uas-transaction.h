@@ -60,9 +60,11 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 
 int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
 
+// trying + proceeding timeout
+int sip_uas_transaction_timeout(struct sip_uas_transaction_t* t, int timeout);
+
 // wait for all in-flight reply
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout);
-void sip_uas_transaction_ontimeout(void* usrptr);
 
 struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod);
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req);

@@ -66,6 +66,9 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
 int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 int sip_uac_transaction_noninvite_input(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 
+// calling/trying + proceeding timeout
+int sip_uac_transaction_timeout(struct sip_uac_transaction_t* t, int timeout);
+
 // wait for all inflight reply
 int sip_uac_transaction_timewait(struct sip_uac_transaction_t* t, int timeout);
 

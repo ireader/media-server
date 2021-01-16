@@ -81,7 +81,7 @@ static void sip_uac_transaction_onretransmission(void* usrptr)
 	locker_lock(&t->locker);
 	sip_uac_stop_timer(t->agent, t, &t->timera); // hijack free timer only, don't release transaction
 
-	if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
+	if (SIP_UAC_TRANSACTION_CALLING == t->status || (t->status <= SIP_UAC_TRANSACTION_PROCEEDING && !sip_message_isinvite(t->req)))
 	{
 		r = sip_uac_transaction_dosend(t);
 		if (0 != r)
@@ -124,8 +124,11 @@ static void sip_uac_transaction_ontimeout(void* usrptr)
 	locker_lock(&t->locker);
 	sip_uac_stop_timer(t->agent, t, &t->timerb); // hijack free timer only, don't release transaction
 
+	//if (SIP_UAC_TRANSACTION_CALLING == t->status || (t->status <= SIP_UAC_TRANSACTION_PROCEEDING && !sip_message_isinvite(&t->req)))
 	if (t->status <= SIP_UAC_TRANSACTION_PROCEEDING)
 	{
+		// MUST: invite should reset timer b per 1xx response
+
 		sip_uac_transaction_terminate(t);
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
@@ -160,13 +163,27 @@ int sip_uac_transaction_send(struct sip_uac_transaction_t* t)
 	sip_uac_link_transaction(t->agent, t);
 
     t->retries = 1; // reset retry times
-    t->timerb = sip_uac_start_timer(t->agent, t, TIMER_B, sip_uac_transaction_ontimeout);
-    if(!t->reliable) // UDP
+	if(!t->reliable) // UDP
         t->timera = sip_uac_start_timer(t->agent, t, TIMER_A, sip_uac_transaction_onretransmission);
-    assert(t->timerb && (t->reliable || t->timera));
+	sip_uac_transaction_timeout(t, TIMER_B);
+	assert(t->timerb && (t->reliable || t->timera));
 
 	// TODO: return 503/*Service Unavailable*/
     return sip_uac_transaction_dosend(t);
+}
+
+// calling/trying + proceeding timeout
+int sip_uac_transaction_timeout(struct sip_uac_transaction_t* t, int timeout)
+{
+	// try stop timer B
+	assert(t->status <= SIP_UAC_TRANSACTION_PROCEEDING);
+	sip_uac_stop_timer(t->agent, t, &t->timerb);
+
+	// restart timer B
+	assert(NULL == t->timerb);
+	t->timerb = sip_uac_start_timer(t->agent, t, timeout, sip_uac_transaction_ontimeout);
+	assert(t->timerb);
+	return 0;
 }
 
 // wait for network cache data

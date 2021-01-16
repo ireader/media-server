@@ -63,6 +63,7 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 		if (!dialog) return -1;
 		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_set_local_target(dialog, t->req) || 0 != sip_dialog_add(t->agent, dialog))
 		{
+			assert(0);
 			sip_dialog_release(dialog);
 			dialog = NULL;
 			return 0; // ignore
@@ -74,8 +75,9 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
 	t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
 
-	if (dialog)
-		sip_dialog_release(dialog);
+	// reset timer b for proceeding too long
+	sip_uac_transaction_timeout(t, TIMER_B);
+	sip_dialog_release(dialog);
 	return 0;
 }
 
@@ -125,8 +127,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 		sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_D);
 	}
 
-	if (dialog)
-		sip_dialog_release(dialog);
+	sip_dialog_release(dialog);
 	return r;
 }
 
@@ -232,7 +233,7 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 {
 	int r, status, oldstatus;
 	
-	// stop retry timer A
+	// stop retry timer A/B
 	sip_uac_stop_timer(t->agent, t, &t->timera);
 
 	oldstatus = t->status;

@@ -43,6 +43,7 @@ int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transacti
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker
+			break;
 		}
 	}
 

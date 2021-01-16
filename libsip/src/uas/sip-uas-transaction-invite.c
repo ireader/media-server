@@ -255,10 +255,15 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// set Timer L to 64*T1
 
 		t->retries = 1;
-		t->timerh = sip_uas_start_timer(t->agent, t, TIMER_H, sip_uas_transaction_ontimeout);
 		if (!t->reliable) // UDP
 			t->timerg = sip_uas_start_timer(t->agent, t, TIMER_G, sip_uas_transaction_onretransmission);
+		sip_uas_transaction_timeout(t, TIMER_H);
 		assert(t->timerh && (t->reliable || t->timerg));
+	}
+	else
+	{
+		// proceding timeout
+		sip_uas_transaction_timeout(t, TIMER_H);
 	}
 
     return sip_uas_transaction_dosend(t);

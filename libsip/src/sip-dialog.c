@@ -128,8 +128,10 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 
 int sip_dialog_addref(struct sip_dialog_t* dialog)
 {
-	assert(dialog->ref > 0);
-	return atomic_increment32(&dialog->ref);
+	int r;
+	r = atomic_increment32(&dialog->ref);
+	assert(r > 1);
+	return r;
 }
 
 int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* tag)
@@ -160,8 +162,11 @@ int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_mess
     end = (char*)(dialog + 1) + N;
     
     contact = sip_contacts_get(&msg->contacts, 0);
-    if(contact && cstrvalid(&contact->uri.host) && !sip_uri_equal(&dialog->remote.target, &contact->uri))
-        dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->remote.target, &contact->uri);
+	if (contact && cstrvalid(&contact->uri.host) && !sip_uri_equal(&dialog->remote.target, &contact->uri))
+	{
+		sip_uri_free(&dialog->remote.target);
+		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->remote.target, &contact->uri);
+	}
     return dialog->ptr < end ? 0 : -1;
 }
 
@@ -205,6 +210,7 @@ int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 	locker_lock(&sip->locker);
 	if (NULL != sip_dialog_find(sip, &dialog->callid, &dialog->local.uri.tag, &dialog->remote.uri.tag))
 	{
+		assert(0);
 		locker_unlock(&sip->locker);
 		return -1; // exist
 	}
@@ -261,6 +267,7 @@ int sip_dialog_remove_early(struct sip_agent_t* sip, const struct cstring_t* cal
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			list_remove(&dialog->link);
 			early = dialog;
+			break;
 		}
 	}
 
@@ -291,6 +298,7 @@ struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const st
 
 		// link to sip dialogs(add ref later)
 		list_insert_after(&dialog->link, sip->dialogs.prev);
+		assert(dialog->ref == 1);
 		*added = 1;
 	}
 
