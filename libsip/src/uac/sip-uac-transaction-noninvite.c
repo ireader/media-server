@@ -1,3 +1,48 @@
+/*
+|Request from TU
+								   |send request
+			   Timer E             V
+			   send request  +-----------+
+				   +---------|           |-------------------+
+				   |         |  Trying   |  Timer F          |
+				   +-------->|           |  or Transport Err.|
+							 +-----------+  inform TU        |
+				200-699         |  |                         |
+				resp. to TU     |  |1xx                      |
+				+---------------+  |resp. to TU              |
+				|                  |                         |
+				|   Timer E        V       Timer F           |
+				|   send req +-----------+ or Transport Err. |
+				|  +---------|           | inform TU         |
+				|  |         |Proceeding |------------------>|
+				|  +-------->|           |-----+             |
+				|            +-----------+     |1xx          |
+				|              |      ^        |resp to TU   |
+				| 200-699      |      +--------+             |
+				| resp. to TU  |                             |
+				|              |                             |
+				|              V                             |
+				|            +-----------+                   |
+				|            |           |                   |
+				|            | Completed |                   |
+				|            |           |                   |
+				|            +-----------+                   |
+				|              ^   |                         |
+				|              |   | Timer K                 |
+				+--------------+   | -                       |
+								   |                         |
+								   V                         |
+			 NOTE:           +-----------+                   |
+							 |           |                   |
+		 transitions         | Terminated|<------------------+
+		 labeled with        |           |
+		 the event           +-----------+
+		 over the action
+		 to take
+
+				 Figure 6: non-INVITE client transaction
+*/
+
 #include "sip-uac-transaction.h"
 #include "sip-uac.h"
 #include <stdlib.h>

@@ -67,12 +67,12 @@ static void mkv_write_ebml_header(struct mkv_ioutil_t *io, const struct mkv_t* m
     assert(27 + strlen(mkv->doc) == mkv_buffer_tell(io) - offset);
 }
 
-static void mkv_write_seek_head(struct mkv_ioutil_t *io, const struct mkv_segment_seek_t* seek)
+static void mkv_write_seek_head(struct mkv_ioutil_t *io, const struct mkv_segment_seek_t* seek, const struct mkv_writer_t* writer)
 {
     size_t i, size;
     uint64_t offset;
     const uint32_t id[] = { EBML_ID_INFO, EBML_ID_TRACKS, /*EBML_ID_CHAPTERS, EBML_ID_ATTACHMENTS, EBML_ID_TAGS,*/ EBML_ID_CLUSTER, EBML_ID_CUES };
-    uint64_t position[] = {seek->info, seek->tracks, /*seek->chapters, seek->attachments, seek->tags,*/ seek->cluster, seek->cues};
+    uint64_t position[] = {seek->info-writer->seekhead_offset, seek->tracks - writer->seekhead_offset, /*seek->chapters-writer->seekhead_offset, seek->attachments-writer->seekhead_offset, seek->tags-writer->seekhead_offset,*/ seek->cluster - writer->seekhead_offset, seek->cues - writer->seekhead_offset };
 
     for (size = i = 0; i < sizeof(id) / sizeof(id[0]); i++)
     {
@@ -106,8 +106,9 @@ static void mkv_write_seek_head(struct mkv_ioutil_t *io, const struct mkv_segmen
 static void mkv_write_info(struct mkv_ioutil_t* io, struct mkv_writer_t* writer)
 {
     uint64_t offset;
+    uint8_t uid[16]; // 128-bits
     int live = (MKV_OPTION_LIVE & writer->options) ? 1 : 0;
-    int size = 7 /*timescale*/ + 2 * (3 + strlen(MKV_APP)) + (live ? 0 : 11 /*duration*/);
+    int size = 7 /*timescale*/ + 2 * (3 + strlen(MKV_APP)) + 19 /*SegmentUID*/ + (live ? 0 : 11 /*duration*/);
 
     // Segment/Info
     mkv_buffer_write_master(io, EBML_ID_INFO, size, 0);
@@ -116,6 +117,7 @@ static void mkv_write_info(struct mkv_ioutil_t* io, struct mkv_writer_t* writer)
     mkv_buffer_write_uint_element(io, 0x2AD7B1, writer->mkv.timescale); // TimestampScale
     mkv_buffer_write_string_element(io, 0x4D80, MKV_APP, strlen(MKV_APP)); // MuxingApp
     mkv_buffer_write_string_element(io, 0x5741, MKV_APP, strlen(MKV_APP)); // WritingApp
+    mkv_buffer_write_binary_element(io, 0x73A4, uid, sizeof(uid)); // SegmentUID
     
     if (!live)
     {
@@ -223,7 +225,7 @@ void mkv_writer_destroy(struct mkv_writer_t* writer)
         offset = mkv_buffer_tell(&writer->io);
         assert(offset >= writer->seekhead_offset);
         mkv_buffer_seek(&writer->io, writer->seekhead_offset);
-        mkv_write_seek_head(&writer->io, &writer->mkv.seek);
+        mkv_write_seek_head(&writer->io, &writer->mkv.seek, writer);
         mkv_buffer_seek(&writer->io, offset);
 
         // Duration

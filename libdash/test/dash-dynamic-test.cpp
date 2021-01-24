@@ -181,7 +181,8 @@ static int dash_server_onlive(void* dash, http_session_t* session, const char* /
 		return http_server_sendfile(session, name, NULL, NULL);
 	}
 
-	return http_server_send(session, 404, "", 0, NULL, NULL);
+    http_server_set_status_code(session, 404, NULL);
+	return http_server_send(session, "", 0, NULL, NULL);
 }
 
 static int dash_server_onvod(void* /*dash*/, http_session_t* session, const char* /*method*/, const char* path)
@@ -209,7 +210,8 @@ static int dash_server_onvod(void* /*dash*/, http_session_t* session, const char
 		return http_server_sendfile(session, fullpath, NULL, NULL);
 	}
 
-	return http_server_send(session, 404, "", 0, NULL, NULL);
+    http_server_set_status_code(session, 404, NULL);
+	return http_server_send(session, "", 0, NULL, NULL);
 }
 
 void dash_dynamic_test(const char* ip, int port, const char* file, int width, int height)

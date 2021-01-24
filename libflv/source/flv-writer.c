@@ -12,16 +12,19 @@
 struct flv_writer_t
 {
 	FILE* fp;
-	int (*write)(void* param, const void* buf, int len);
+	flv_writer_onwrite write;
 	void* param;
 };
 
-static int flv_write_header(struct flv_writer_t* flv)
+static int flv_write_header(int audio, int video, struct flv_writer_t* flv)
 {
+	struct flv_vec_t vec[1];
 	uint8_t header[FLV_HEADER_SIZE + 4];
-	flv_header_write(1, 1, header, FLV_HEADER_SIZE);
+	flv_header_write(audio, video, header, FLV_HEADER_SIZE);
     flv_tag_size_write(header + FLV_HEADER_SIZE, 4, 0); // PreviousTagSize0(Always 0)
-	return sizeof(header) == flv->write(flv->param, header, sizeof(header)) ? 0 : -1;
+	vec[0].ptr = header;
+	vec[0].len = sizeof(header);
+	return flv->write(flv->param, vec, 1);
 }
 
 static int flv_write_eos(struct flv_writer_t* flv)
@@ -39,9 +42,15 @@ static int flv_write_eos(struct flv_writer_t* flv)
 	return n > 0 ? flv_writer_input(flv, FLV_TYPE_VIDEO, header, n, 0) : -1;
 }
 
-static int file_write(void* param, const void* buf, int len)
+static int file_write(void* param, const struct flv_vec_t* vec, int n)
 {
-	return (int)fwrite(buf, 1, len, (FILE*)param);
+	int i;
+	for(i = 0; i < n; i++)
+	{
+		if (vec[i].len != (int)fwrite(vec[i].ptr, 1, vec[i].len, (FILE*)param))
+			return ferror((FILE*)param);
+	}
+	return 0;
 }
 
 void* flv_writer_create(const char* file)
@@ -52,7 +61,7 @@ void* flv_writer_create(const char* file)
 	if (!fp)
 		return NULL;
 
-	flv = flv_writer_create2(file_write, fp);
+	flv = flv_writer_create2(1, 1, file_write, fp);
 	if (!flv)
 	{
 		fclose(fp);
@@ -63,7 +72,7 @@ void* flv_writer_create(const char* file)
 	return flv;
 }
 
-void* flv_writer_create2(int (*write)(void* param, const void* buf, int len), void* param)
+void* flv_writer_create2(int audio, int video, flv_writer_onwrite write, void* param)
 {
 	struct flv_writer_t* flv;
 	flv = (struct flv_writer_t*)calloc(1, sizeof(*flv));
@@ -72,7 +81,7 @@ void* flv_writer_create2(int (*write)(void* param, const void* buf, int len), vo
 
 	flv->write = write;
 	flv->param = param;
-	if (0 != flv_write_header(flv))
+	if (0 != flv_write_header(audio, video, flv))
 	{
 		flv_writer_destroy(flv);
 		return NULL;
@@ -98,6 +107,7 @@ void flv_writer_destroy(void* p)
 int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
 	uint8_t buf[FLV_TAG_HEADER_SIZE + 4];
+	struct flv_vec_t vec[3];
 	struct flv_writer_t* flv;
 	struct flv_tag_header_t tag;
 	flv = (struct flv_writer_t*)p;
@@ -109,9 +119,11 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	flv_tag_header_write(&tag, buf, FLV_TAG_HEADER_SIZE);
 	flv_tag_size_write(buf + FLV_TAG_HEADER_SIZE, 4, (uint32_t)bytes + FLV_TAG_HEADER_SIZE);
 
-	if(FLV_TAG_HEADER_SIZE != flv->write(flv->param, buf, FLV_TAG_HEADER_SIZE) // FLV Tag Header
-		|| bytes != (size_t)flv->write(flv->param, data, (int)bytes)
-		|| 4 != flv->write(flv->param, buf + FLV_TAG_HEADER_SIZE, 4)) // TAG size
-		return -1;
-	return 0;
+	vec[0].ptr = buf;  // FLV Tag Header
+	vec[0].len = FLV_TAG_HEADER_SIZE;
+	vec[1].ptr = (void*)data;
+	vec[1].len = bytes;
+	vec[2].ptr = buf + FLV_TAG_HEADER_SIZE; // TAG size
+	vec[2].len = 4;
+	return flv->write(flv->param, vec, 3);
 }

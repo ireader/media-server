@@ -1,3 +1,51 @@
+/*
+									  |INVITE
+									  |pass INV to TU
+				   INVITE             V send 100 if TU won't in 200 ms
+				   send response+------------+
+					   +--------|            |--------+ 101-199 from TU
+					   |        |            |        | send response
+					   +------->|            |<-------+
+								| Proceeding |
+								|            |--------+ Transport Err.
+								|            |        | Inform TU
+								|            |<-------+
+								+------------+
+				   300-699 from TU |    |2xx from TU
+				   send response   |    |send response
+					+--------------+    +------------+
+					|                                |
+   INVITE           V          Timer G fires         |
+   send response +-----------+ send response         |
+		+--------|           |--------+              |
+		|        |           |        |              |
+		+------->| Completed |<-------+      INVITE  |  Transport Err.
+				 |           |               -       |  Inform TU
+		+--------|           |----+          +-----+ |  +---+
+		|        +-----------+    | ACK      |     | v  |   v
+		|          ^   |          | -        |  +------------+
+		|          |   |          |          |  |            |---+ ACK
+		+----------+   |          |          +->|  Accepted  |   | to TU
+		Transport Err. |          |             |            |<--+
+		Inform TU      |          V             +------------+
+					   |      +-----------+        |  ^     |
+					   |      |           |        |  |     |
+					   |      | Confirmed |        |  +-----+
+					   |      |           |        |  2xx from TU
+		 Timer H fires |      +-----------+        |  send response
+		 -             |          |                |
+					   |          | Timer I fires  |
+					   |          | -              | Timer L fires
+					   |          V                | -
+					   |        +------------+     |
+					   |        |            |<----+
+					   +------->| Terminated |
+								|            |
+								+------------+
+
+					Figure 7: INVITE server transaction
+*/
+
 #include "sip-uas-transaction.h"
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -184,6 +232,8 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// If a UAS generates a 2xx response and never receives an ACK, it
 		// SHOULD generate a BYE to terminate the dialog.
 
+		// The server transaction MUST NOT generate 2xx retransmissions on its own
+
 		// rfc6026
 		t->status = SIP_UAS_TRANSACTION_ACCEPTED;
 	}
@@ -205,10 +255,15 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// set Timer L to 64*T1
 
 		t->retries = 1;
-		t->timerh = sip_uas_start_timer(t->agent, t, TIMER_H, sip_uas_transaction_ontimeout);
 		if (!t->reliable) // UDP
 			t->timerg = sip_uas_start_timer(t->agent, t, TIMER_G, sip_uas_transaction_onretransmission);
+		sip_uas_transaction_timeout(t, TIMER_H);
 		assert(t->timerh && (t->reliable || t->timerg));
+	}
+	else
+	{
+		// proceding timeout
+		sip_uas_transaction_timeout(t, TIMER_H);
 	}
 
     return sip_uas_transaction_dosend(t);

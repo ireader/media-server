@@ -10,6 +10,7 @@
 
 int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
+	sip_uac_transaction_addref(t);
 	atomic_increment32(&sip->ref); // ref by transaction
 	assert(sip->ref > 0);
 
@@ -42,10 +43,12 @@ int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transacti
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker
+			break;
 		}
 	}
 
 	locker_unlock(&sip->locker);
+	sip_uac_transaction_release(t);
 	sip_agent_destroy(sip);
 	return 0;
 }

@@ -205,14 +205,15 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
             std::atomic_fetch_add(&ts->ref, 1);
 			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
 			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-			http_server_send(session, 200, ts->data, ts->size, hls_server_ts_onsend, ts);
+			http_server_send(session, ts->data, ts->size, hls_server_ts_onsend, ts);
 			printf("load file %s\n", file.c_str());
 			return 0;
 		}
 	}
 
 	printf("load ts file(%s) failed\n", file.c_str());
-	return http_server_send(session, 404, "", 0, NULL, NULL);
+	http_server_set_status_code(session, 404, NULL);
+	return http_server_send(session, "", 0, NULL, NULL);
 }
 
 static int hls_server_onlive(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
@@ -245,7 +246,8 @@ static int hls_server_onlive(void* /*http*/, http_session_t* session, const char
 		}
 	}
 
-	return http_server_send(session, 404, "", 0, NULL, NULL);
+	http_server_set_status_code(session, 404, NULL);
+	return http_server_send(session, "", 0, NULL, NULL);
 }
 
 static int hls_server_onvod(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
@@ -275,7 +277,8 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 		return http_server_sendfile(session, fullpath.c_str(), NULL, NULL);
 	}
 
-	return http_server_send(session, 404, "", 0, NULL, NULL);
+	http_server_set_status_code(session, 404, NULL);
+	return http_server_send(session, "", 0, NULL, NULL);
 }
 
 void hls_server_test(const char* ip, int port)

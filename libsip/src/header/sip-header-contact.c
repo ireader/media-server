@@ -61,10 +61,10 @@ static int sip_header_contact_star(struct sip_contact_t* c)
 	return 0;
 }
 
-void sip_contact_params_free(struct sip_contact_t* contact)
+void sip_contact_free(struct sip_contact_t* contact)
 {
 	sip_params_free(&contact->params);
-	sip_uri_params_free(&contact->uri);
+	sip_uri_free(&contact->uri);
 }
 
 int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
@@ -280,18 +280,18 @@ void sip_header_contact_test(void)
 	assert(1 == sip_params_count(&contact.params) && 0 == cstrcmp(&sip_params_get(&contact.params, 0)->name, "expires") && 0 == cstrcmp(&sip_params_get(&contact.params, 0)->value, "60"));
 	assert(1 == sip_params_count(&contact.params) && contact.expires == 60);
 	assert(sip_contact_write(&contact, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
-	sip_contact_params_free(&contact);
+	sip_contact_free(&contact);
 
 	s = "\"<sip:joe@big.org>\" <sip:joe@really.big.com>";
 	assert(0 == sip_header_contact(s, s + strlen(s), &contact));
 	assert(0 == cstrcmp(&contact.nickname, "<sip:joe@big.org>") && 0 == cstrcmp(&contact.uri.scheme, "sip") && 0 == cstrcmp(&contact.uri.host, "joe@really.big.com") && 0 == sip_params_count(&contact.uri.headers) && 0 == sip_params_count(&contact.uri.parameters));
 	assert(sip_contact_write(&contact, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
-	sip_contact_params_free(&contact);
+	sip_contact_free(&contact);
 	
 	s = "*";
 	assert(0 == sip_header_contact(s, s + strlen(s), &contact));
 	assert(sip_contact_write(&contact, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
-	sip_contact_params_free(&contact);
+	sip_contact_free(&contact);
 
 	// TO/FROM
 	s = "Alice <sip:alice@atlanta.com>;tag=1928301774";
@@ -300,7 +300,7 @@ void sip_header_contact_test(void)
 	assert(1 == sip_params_count(&contact.params) && 0 == cstrcmp(&sip_params_get(&contact.params, 0)->name, "tag") && 0 == cstrcmp(&sip_params_get(&contact.params, 0)->value, "1928301774"));
 	assert(1 == sip_params_count(&contact.params) && 0 == cstrcmp(&contact.tag, "1928301774"));
 	assert(sip_contact_write(&contact, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
-	sip_contact_params_free(&contact);
+	sip_contact_free(&contact);
 
 	s = "\"alice\" <sip:alice@192.168.1.10:63254>;+sip.instance=\"<urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:4bc9608d-8364-00c4-a871-10d41d9d2923\",alice <sip:alice@192.168.1.11:40736;app-id=929724111839;pn-type=firebase;pn-timeout=0;pn-tok=dJ1uwpidM_0:APA91bF9KIATqa4LvyLWfpS83XB380FItpoIjYlUwYmRltm00hcBz7Dnb8N-xm943HVBmu8efwa5qxADOFsNd25xZlpKxlvsJSH3-WKQISwV8bCpSNAVdRJyRsggjSVmQmiD2wsQfg9d;pn-silent=1>;+sip.instance=\"<urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446>\";+org.linphone.specs=\"groupchat,lime\";pub-gruu=\"sip:alice@sip.linphone.org;gr=urn:uuid:3789dd53-f7ae-00b7-b6f8-0350e404d446\"";
 	sip_contacts_init(&contacts);

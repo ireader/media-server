@@ -32,6 +32,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 
 	// Life cycle: from create -> destroy
 	sip_uas_link_transaction(sip, t);
+	sip_uas_transaction_timeout(t, TIMER_H); // trying timeout
 	return t;
 }
 
@@ -45,6 +46,7 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 	assert(NULL == t->timerg);
 	assert(NULL == t->timerh);
 	assert(NULL == t->timerij);
+	assert(t->link.next == t->link.prev);// unlink on termernate
 
 	// MUST: destroy t->reply after sip_uas_del_transaction
 	//sip_message_destroy((struct sip_message_t*)t->req);
@@ -56,7 +58,7 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
     }
 
 	// MUST unlink before reply destroy
-	sip_uas_unlink_transaction(t->agent, t);
+	//sip_uas_unlink_transaction(t->agent, t);
 
 	if (t->reply)
     {
@@ -77,8 +79,10 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
 
 int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
 {
-	assert(t->ref > 0);
-	return atomic_increment32(&t->ref);
+	int r;
+	r = atomic_increment32(&t->ref);
+	assert(r > 1);
+	return r;
 }
 
 //int sip_uas_transaction_destroy(struct sip_uas_transaction_t* t)
@@ -176,6 +180,8 @@ int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)
 	sip_uas_stop_timer(t->agent, t, &t->timerh);
 	sip_uas_stop_timer(t->agent, t, &t->timerg);
 	sip_uas_stop_timer(t->agent, t, &t->timerij);
+
+	sip_uas_unlink_transaction(t->agent, t);
 	return 0;
 }
 
@@ -215,6 +221,21 @@ static void sip_uas_transaction_onterminated(void* usrptr)
 	sip_uas_transaction_release(t);
 }
 
+// trying + proceeding timeout
+int sip_uas_transaction_timeout(struct sip_uas_transaction_t* t, int timeout)
+{
+	// try stop timer H
+	assert(t->status <= SIP_UAS_TRANSACTION_CONFIRMED);
+	sip_uas_stop_timer(t->agent, t, &t->timerh);
+
+	// restart timer H
+	assert(NULL == t->timerh);
+	t->timerh = sip_uas_start_timer(t->agent, t, timeout, sip_uas_transaction_ontimeout);
+	assert(t->timerh);
+	return 0;
+}
+
+// wait for network cache data
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout)
 {
 	if (SIP_UAS_TRANSACTION_TERMINATED == t->status)

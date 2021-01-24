@@ -765,7 +765,7 @@ static int mkv_reader_open(mkv_reader_t* reader, struct mkv_element_t *elements,
 #if defined(MKV_PRINT_ELEMENT) && (defined(DEBUG) || defined(_DEBUG))
 			for (i = e->level >= 0 ? e->level : level; i > 0; i--)
 				printf("\t");
-			printf("%s (%" PRId64 ")\n", e->name, node->size);
+			printf("%s (%" PRId64 ") off: %u\n", e->name, node->size, (unsigned int)node->off);
 #endif
 
 			assert(e->level <= level);

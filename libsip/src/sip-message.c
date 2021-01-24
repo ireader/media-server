@@ -52,10 +52,16 @@ int sip_message_destroy(struct sip_message_t* msg)
 {
 	if (msg)
 	{
+		if (SIP_MESSAGE_REQUEST == msg->mode)
+			sip_uri_free(&msg->u.c.uri);
+		sip_contact_free(&msg->to);
+		sip_contact_free(&msg->from);
 		sip_vias_free(&msg->vias);
+		sip_contacts_free(&msg->contacts);
 		sip_uris_free(&msg->routers);
 		sip_uris_free(&msg->record_routers);
-		sip_contacts_free(&msg->contacts);
+		sip_contact_free(&msg->referto);
+		sip_substate_free(&msg->substate);
 		sip_params_free(&msg->headers);
 		free(msg);
 	}
@@ -83,7 +89,7 @@ int sip_message_clone(struct sip_message_t* msg, const struct sip_message_t* clo
 		msg->u.s.code = clone->u.s.code;
 		msg->u.s.verminor = clone->u.s.verminor;
 		msg->u.s.vermajor = clone->u.s.vermajor;
-		memcpy(msg->u.s.protocol, clone->u.s.protocol, sizeof(msg->u.s.protocol));
+		memmove(msg->u.s.protocol, clone->u.s.protocol, sizeof(msg->u.s.protocol));
 		sip_message_copy2(msg, &msg->u.s.reason, &clone->u.s.reason);
 	}
 
@@ -161,8 +167,9 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 	}
 
 	// initialize remote target
-	memcpy(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
-	memcpy(&msg->u.c.uri, &contact.uri, sizeof(struct sip_uri_t));
+	memmove(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
+	//memmove(&msg->u.c.uri, &contact.uri, sizeof(struct sip_uri_t));
+	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &contact.uri);
 
 	// TODO: Via
 
@@ -171,6 +178,8 @@ int sip_message_init(struct sip_message_t* msg, const char* method, const char* 
 	// as a 32-bit unsigned integer and MUST be less than 2**31
 	msg->cseq.id = rand();
 	msg->maxforwards = SIP_MAX_FORWARDS;
+
+	sip_contact_free(&contact);
 	return 0;
 }
 
@@ -181,7 +190,7 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	int i;
 	struct sip_uri_t uri;
 	//struct cstring_t f, t;
-	struct sip_contact_t contact;
+	//struct sip_contact_t contact;
 
 	//f.p = msg->ptr.ptr;
 	//f.n = sip_uri_write(&dialog->local.uri, msg->ptr.ptr, msg->ptr.end);
@@ -217,8 +226,9 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	}
 
 	// initialize remote target
-	memcpy(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
-	memcpy(&msg->u.c.uri, &dialog->remote.target, sizeof(struct sip_uri_t));
+	memmove(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
+	//memmove(&msg->u.c.uri, &dialog->remote.target, sizeof(struct sip_uri_t));
+	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.target);
 
 	// TODO: Via
 
@@ -235,7 +245,7 @@ int sip_message_init3(struct sip_message_t* msg, const struct sip_message_t* req
 	char tag[16];
 	struct sip_uri_t uri;
 	struct sip_via_t via;
-	struct sip_contact_t contact;
+	//struct sip_contact_t contact;
 
 	// 8.2.6 Generating the Response
 	// 8.2.6.2 Headers and Tags
@@ -515,7 +525,7 @@ static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, c
 		// which the registration is meant (for example, "sip:chicago.com"). 
 		// The "userinfo" and "@" components of the SIP URI MUST NOT be present.
 		
-		memcpy(&uri, host, sizeof(uri));
+		memmove(&uri, host, sizeof(uri));
 		phost = cstrchr(&uri.host, '@');
 		if (phost)
 		{
@@ -664,7 +674,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 	if (msg->size > 0 && p < end)
 	{
 		n = end - p > msg->size ? msg->size : (int)(end - p);
-		memcpy(p, msg->payload, n);
+		memmove(p, msg->payload, n);
 		p += n;
 	}
 	
@@ -801,8 +811,8 @@ int sip_message_get_header(const struct sip_message_t* msg, int i, struct cstrin
 	const struct sip_param_t* param;
 	param = sip_params_get(&msg->headers, i);
 	if (!param) return -1;
-	memcpy(name, &param->name, sizeof(struct cstring_t));
-	memcpy(value, &param->value, sizeof(struct cstring_t));
+	memmove(name, &param->name, sizeof(struct cstring_t));
+	memmove(value, &param->value, sizeof(struct cstring_t));
 	return 0;
 }
 
