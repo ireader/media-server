@@ -24,7 +24,7 @@ static int mkv_alloc_samples(struct mkv_t* mkv, int n)
 	return 0;
 }
 
-int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t *io, size_t bytes)
+int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t *io, int64_t bytes)
 {
 	int r;
 	int tid;
@@ -33,6 +33,7 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 	uint64_t pos, pos2;
 	int64_t size, total;
 	int64_t lacing;
+	uint64_t duration;
 	int16_t timestamp;
 	struct mkv_track_t* track;
 
@@ -50,6 +51,10 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 	track = mkv_track_find(mkv, tid);
 	if (!track)
 		return -1;
+
+	// Number of nanoseconds (not scaled via TimestampScale) per frame 
+	// (track->duration / 1000000000 -> seconds) * 1000000000 / timescale
+	duration = track->duration / mkv->timescale;
 
 	f = 0;
 	if (flags & 0x80) { f |= MKV_FLAGS_KEYFRAME; }
@@ -72,35 +77,35 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 				size += j;
 			} while (j == 255);
 
-			mkv->samples[i].bytes = (uint32_t)size;
+			mkv->samples[mkv->count + i].bytes = (uint32_t)size;
 			total += size; // remain
 		}
 
 		pos2 = mkv_buffer_tell(io);
-		if (total + (pos2 - pos) > bytes)
+		if (total + (int64_t)(pos2 - pos) > bytes)
 		{
 			assert(0);
 			return -1;
 		}
 
 		// last-frame(n+1)
-		mkv->samples[n].bytes = bytes - total - (pos2 - pos);
+		mkv->samples[mkv->count + n].bytes = bytes - total - (pos2 - pos);
 
-		mkv->samples[0].flags = f;
-		mkv->samples[0].track = tid;
-		mkv->samples[0].pts = cluster->timestamp + timestamp;
-		mkv->samples[0].dts = cluster->timestamp + timestamp;
-		mkv->samples[0].offset = mkv_buffer_tell(io);
+		mkv->samples[mkv->count + 0].flags = f;
+		mkv->samples[mkv->count + 0].track = tid;
+		mkv->samples[mkv->count + 0].pts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].dts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].offset = mkv_buffer_tell(io);
 		for (i = 1; i < n + 1; i++)
 		{
 			//mkv->samples[i].flags = mkv->samples[0].flags;
-			mkv->samples[i].track = mkv->samples[0].track;
-			mkv->samples[i].pts = mkv->samples[i - 1].pts + track->duration;
-			mkv->samples[i].dts = mkv->samples[i - 1].dts + track->duration;
-			mkv->samples[i].offset = mkv->samples[i - 1].offset + mkv->samples[i - 1].bytes;
+			mkv->samples[mkv->count + i].track = mkv->samples[mkv->count + 0].track;
+			mkv->samples[mkv->count + i].pts = mkv->samples[mkv->count + i - 1].pts + duration;
+			mkv->samples[mkv->count + i].dts = mkv->samples[mkv->count + i - 1].dts + duration;
+			mkv->samples[mkv->count + i].offset = mkv->samples[mkv->count + i - 1].offset + mkv->samples[mkv->count + i - 1].bytes;
 		}
 
-		mkv->count = n + 1;
+		mkv->count += n + 1;
 		break;
 
 	case MKV_LACING_FIXED_SIZE: // fixed-size 
@@ -111,23 +116,23 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 		size = (bytes - 5) / (n + 1);
 		assert(size * (n + 1) == bytes - 5);
 
-		mkv->samples[0].flags = f;
-		mkv->samples[0].track = tid;
-		mkv->samples[0].pts = cluster->timestamp + timestamp;
-		mkv->samples[0].dts = cluster->timestamp + timestamp;
-		mkv->samples[0].bytes = (uint32_t)size;
-		mkv->samples[0].offset = mkv_buffer_tell(io);
+		mkv->samples[mkv->count + 0].flags = f;
+		mkv->samples[mkv->count + 0].track = tid;
+		mkv->samples[mkv->count + 0].pts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].dts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].bytes = (uint32_t)size;
+		mkv->samples[mkv->count + 0].offset = mkv_buffer_tell(io);
 		for (i = 1; i < n + 1; i++)
 		{
-			//mkv->samples[i].flags = mkv->samples[0].flags;
-			mkv->samples[i].track = mkv->samples[0].track;
-			mkv->samples[i].pts = mkv->samples[i - 1].pts + track->duration;
-			mkv->samples[i].dts = mkv->samples[i - 1].dts + track->duration;
-			mkv->samples[i].bytes = (uint32_t)size;
-			mkv->samples[i].offset = mkv->samples[i - 1].offset + mkv->samples[i - 1].bytes;
+			//mkv->samples[mkv->count + i].flags = mkv->samples[mkv->count + 0].flags;
+			mkv->samples[mkv->count + i].track = mkv->samples[mkv->count + 0].track;
+			mkv->samples[mkv->count + i].pts = mkv->samples[mkv->count + i - 1].pts + duration;
+			mkv->samples[mkv->count + i].dts = mkv->samples[mkv->count + i - 1].dts + duration;
+			mkv->samples[mkv->count + i].bytes = (uint32_t)size;
+			mkv->samples[mkv->count + i].offset = mkv->samples[mkv->count + i - 1].offset + mkv->samples[mkv->count + i - 1].bytes;
 		}
 
-		mkv->count = n + 1;
+		mkv->count += n + 1;
 		break;
 
 	case MKV_LACING_EBML: // EBML lacing
@@ -142,35 +147,35 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 			// The others use a range shifting to get a sign on each value
 			lacing = 0 == i ? mkv_buffer_read_size(io) : mkv_buffer_read_signed_size(io);
 			size += lacing; // diff with previous size
-			mkv->samples[i].bytes = (uint32_t)size;
+			mkv->samples[mkv->count + i].bytes = (uint32_t)size;
 			total += size; // remain
 		}
 
 		pos2 = mkv_buffer_tell(io);
-		if (total + (pos2 - pos) > bytes)
+		if (total + (int64_t)(pos2 - pos) > bytes)
 		{
 			assert(0);
 			return -1;
 		}
 
 		// last-frame(n+1)
-		mkv->samples[n].bytes = bytes - total - (pos2 - pos);
+		mkv->samples[mkv->count + n].bytes = bytes - total - (pos2 - pos);
 
-		mkv->samples[0].flags = f;
-		mkv->samples[0].track = tid;
-		mkv->samples[0].pts = cluster->timestamp + timestamp;
-		mkv->samples[0].dts = cluster->timestamp + timestamp;
-		mkv->samples[0].offset = mkv_buffer_tell(io);
+		mkv->samples[mkv->count + 0].flags = f;
+		mkv->samples[mkv->count + 0].track = tid;
+		mkv->samples[mkv->count + 0].pts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].dts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].offset = mkv_buffer_tell(io);
 		for (i = 1; i < n + 1; i++)
 		{
-			//mkv->samples[i].flags = mkv->samples[0].flags;
-			mkv->samples[i].track = mkv->samples[0].track;
-			mkv->samples[i].pts = mkv->samples[i - 1].pts + track->duration;
-			mkv->samples[i].dts = mkv->samples[i - 1].dts + track->duration;
-			mkv->samples[i].offset = mkv->samples[i - 1].offset + mkv->samples[i - 1].bytes;
+			//mkv->samples[mkv->count + i].flags = mkv->samples[mkv->count + 0].flags;
+			mkv->samples[mkv->count + i].track = mkv->samples[mkv->count + 0].track;
+			mkv->samples[mkv->count + i].pts = mkv->samples[mkv->count + i - 1].pts + duration;
+			mkv->samples[mkv->count + i].dts = mkv->samples[mkv->count + i - 1].dts + duration;
+			mkv->samples[mkv->count + i].offset = mkv->samples[mkv->count + i - 1].offset + mkv->samples[mkv->count + i - 1].bytes;
 		}
 
-		mkv->count = n + 1;
+		mkv->count += n + 1;
 		break;
 
 	default: // no lacing
@@ -178,17 +183,17 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 		r = mkv_alloc_samples(mkv, 1);
 		if (0 != r) return r;
 
-		mkv->count = 1;
-		mkv->samples[0].flags = f;
-		mkv->samples[0].track = tid;
-		mkv->samples[0].pts = cluster->timestamp + timestamp;
-		mkv->samples[0].dts = cluster->timestamp + timestamp;
-		mkv->samples[0].bytes = bytes - 4;
-		mkv->samples[0].offset = mkv_buffer_tell(io);
+		mkv->samples[mkv->count + 0].flags = f;
+		mkv->samples[mkv->count + 0].track = tid;
+		mkv->samples[mkv->count + 0].pts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].dts = cluster->timestamp + timestamp;
+		mkv->samples[mkv->count + 0].bytes = bytes - 4;
+		mkv->samples[mkv->count + 0].offset = mkv_buffer_tell(io);
+		mkv->count += 1;
 		break;
 	}
 
-	return mkv->count;
+	return 0;
 }
 
 int mkv_cluster_simple_block_write(struct mkv_t* mkv, struct mkv_sample_t* sample, struct mkv_ioutil_t* io)
