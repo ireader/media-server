@@ -272,7 +272,7 @@ int mkv_writer_write(struct mkv_writer_t* writer, int tid, const void* data, siz
     struct mkv_sample_t sample;
     struct mkv_cluster_t* cluster;
 
-    assert(bytes < UINT32_MAX);
+    assert(bytes < UINT32_MAX && bytes < UINT32_MAX - 16);
     if (tid < 1 || tid > (int)writer->mkv.track_count) // base from 1
         return -ENOENT;
     

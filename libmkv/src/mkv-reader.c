@@ -15,6 +15,8 @@
 
 //#define MKV_PRINT_ELEMENT 1
 
+//#define MKV_LIVE_STREAMING 1
+
 #ifndef offsetof
 #define offsetof(s, m)   (size_t)&(((s*)0)->m)
 #endif
@@ -215,7 +217,7 @@ static int mkv_segment_seek_pos_parse(struct mkv_reader_t* reader, struct mkv_el
 {
 	size_t i;
 	uint64_t pos;
-	const char* names[] = { "Info", "Tracks", "Chapters", "Attachments", "Tags", "Cluster", "Cues" };
+//	const char* names[] = { "Info", "Tracks", "Chapters", "Attachments", "Tags", "Cluster", "Cues" };
 	const uint64_t ids[] = { EBML_ID_INFO, EBML_ID_TRACKS, EBML_ID_CHAPTERS, EBML_ID_ATTACHMENTS, EBML_ID_TAGS, EBML_ID_CLUSTER, EBML_ID_CUES };
 	int64_t* offsets[] = { &reader->mkv.seek.info, &reader->mkv.seek.tracks, &reader->mkv.seek.chapters, &reader->mkv.seek.attachments, &reader->mkv.seek.tags, &reader->mkv.seek.cluster, &reader->mkv.seek.cues };
 	
@@ -348,9 +350,14 @@ static int mkv_segment_cluster_parse(struct mkv_reader_t* reader, struct mkv_ele
 	cluster = &reader->clusters[reader->cluster_count++];
 	cluster->position = node->off;
 
+	reader->mkv.cluster = cluster;
 	node->ptr = cluster;
-	mkv_buffer_skip(&reader->io, node->size); // nothing to do
-	return 0;
+
+#if !defined(MKV_LIVE_STREAMING)
+	if(node->size > 0)
+		mkv_buffer_skip(&reader->io, node->size); // nothing to do
+#endif
+	return node->size > 0 ? 0 : 1; // eof
 }
 
 static int mkv_segment_cluster_block_group_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
@@ -358,7 +365,7 @@ static int mkv_segment_cluster_block_group_parse(struct mkv_reader_t* reader, st
 	struct mkv_cluster_t* cluster;
 	struct mkv_block_group_t* group;
 	//cluster = (struct mkv_cluster_t*)node->parent->ptr;
-	cluster = &reader->mkv.cluster; // seek to block, no parent
+	cluster = reader->mkv.cluster; // seek to block, no parent
 
 	if (0 != mkv_realloc(&cluster->groups, cluster->count, &cluster->capacity, sizeof(struct mkv_block_group_t), 4))
 		return -ENOMEM;
@@ -396,16 +403,31 @@ static int mkv_segment_cluster_block_slice_parse(struct mkv_reader_t* reader, st
 
 static int mkv_segment_cluster_block_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
-	node->ptr = &reader->mkv.cluster;
+	node->ptr = reader->mkv.cluster;
 	return 0;
 }
 
 static int mkv_segment_cluster_simple_block_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
+	int r;
+	uint64_t pos;
 	struct mkv_cluster_t* cluster;
+	if (node->size < 0)
+		return 0; // eof
+
 	//cluster = (struct mkv_cluster_t*)node->parent->ptr;
-	cluster = &reader->mkv.cluster; // seek to block, no parent
-	return mkv_cluster_simple_block_read(&reader->mkv, cluster, &reader->io, node->size);
+	cluster = reader->mkv.cluster; // seek to block, no parent
+	reader->mkv.timescale = reader->info_count > 0 ? reader->infos[0].timescale : 1000000; // for sample duration
+	r = mkv_cluster_simple_block_read(&reader->mkv, cluster, &reader->io, node->size);
+
+#if defined(MKV_LIVE_STREAMING)
+	pos = mkv_buffer_tell(&reader->io);
+	assert(node->off + node->head + node->size >= pos);
+	mkv_buffer_skip(&reader->io, node->off + node->head + node->size - pos);
+	return r; 
+#else
+	return 0 == r ? 1 : 0; // per block
+#endif
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -667,6 +689,8 @@ static struct mkv_element_t s_elements[] = {
     ELEMENT(0x4484,		EBML_TYPE_UINT,		4,	"TagDefault", NULL, 0), // Segment/Tags/Tag/SimpleTag/TagDefault, default 1
     ELEMENT(0x4487,		EBML_TYPE_UTF8,		4,	"TagString", ebml_value_parse_utf8,    offsetof(struct mkv_tag_simple_t, string)), // Segment/Tags/Tag/SimpleTag/TagString
     ELEMENT(0x4485,		EBML_TYPE_BINARY,	4,	"TagBinary", NULL, 0), // Segment/Tags/Tag/SimpleTag/TagBinary
+
+#if !defined(MKV_LIVE_STREAMING)
 };
 
 static struct mkv_element_t s_clusters[] = {
@@ -675,6 +699,7 @@ static struct mkv_element_t s_clusters[] = {
 
 	// Cluster
     ELEMENT(0x1F43B675,	EBML_TYPE_MASTER,	1,	"Cluster", mkv_segment_cluster_block_parse, 0), // Segment/Cluster [mult]
+#endif
     ELEMENT(0xE7,		EBML_TYPE_UINT,		2,	"Timestamp", ebml_value_parse_uint64,offsetof(struct mkv_cluster_t, timestamp)), // Segment/Cluster/Timestamp
     ELEMENT(0x5854,		EBML_TYPE_MASTER,	2,	"SilentTracks", NULL, 0), // Segment/Cluster/SilentTracks
     ELEMENT(0x58D7,		EBML_TYPE_UINT,		3,	"SilentTrackNumber", NULL, 0), // Segment/Cluster/SilentTracks/SilentTrackNumber [mult]
@@ -711,7 +736,7 @@ static struct mkv_element_t* mkv_element_find(struct mkv_element_t *elements, si
 {
 	// TODO: to map or tree
 
-	int i;
+	size_t i;
 	for (i = 0; i < count; i++)
 	{
 		if (id == elements[i].id)
@@ -828,11 +853,11 @@ static int mkv_reader_build(mkv_reader_t* reader)
 	struct mkv_segment_info_t* info;
 
 	reader->mkv.duration = 0;
-	for (i = 0; i < reader->info_count; i++)
+	for (i = 0; i < (int)reader->info_count; i++)
 	{
 		info = &reader->infos[i];
 		reader->mkv.timescale = info->timescale;
-		reader->mkv.duration += (info->duration * 1000000 / info->timescale);
+		reader->mkv.duration += (info->duration * reader->mkv.timescale / 1000000);
 	}
 
 	for (i = 0; i < reader->mkv.track_count; i++)
@@ -847,8 +872,15 @@ static int mkv_reader_build(mkv_reader_t* reader)
 
 		// Number of nanoseconds (not scaled via TimestampScale) per frame 
 		// ('frame' in the Matroska sense -- one Element put into a (Simple)Block).
-		track->duration = track->duration / reader->mkv.timescale;
+		//track->duration = track->duration / reader->mkv.timescale;
 	}
+
+#if defined(MKV_LIVE_STREAMING)
+	if (0 == reader->mkv.duration && reader->mkv.count > 0)
+	{
+		reader->mkv.duration = (reader->mkv.samples[reader->mkv.count - 1].dts - reader->mkv.samples[0].dts) * reader->mkv.timescale / 1000000;
+	}
+#endif
 
 	// seek at cluster
 	if (reader->cluster_count > 0)
@@ -873,7 +905,7 @@ mkv_reader_t* mkv_reader_create(const struct mkv_buffer_t* buffer, void* param)
 	reader->ebml.doc_type_version = 1;
 	reader->ebml.doc_type_read_version = 1;
 
-	if (0 != mkv_reader_open(reader, s_elements, sizeof(s_elements)/sizeof(s_elements[0]), 0) 
+	if (mkv_reader_open(reader, s_elements, sizeof(s_elements)/sizeof(s_elements[0]), 0) < 0
 		|| 0 != mkv_reader_build(reader))
 	{
 		mkv_reader_destroy(reader);
@@ -952,6 +984,7 @@ int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader
 	int r;
 	struct mkv_sample_t* sample;
 
+#if !defined(MKV_LIVE_STREAMING)
 	if (reader->offset >= reader->mkv.count)
 	{
 		reader->offset = 0;
@@ -961,6 +994,7 @@ int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader
 		if (r < 0)
 			return r;
 	}
+#endif
 
 	if (reader->offset >= reader->mkv.count)
 		return 0; // eof

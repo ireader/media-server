@@ -185,6 +185,8 @@ struct mkv_track_t
 	int64_t last_ts;
 	int64_t sample_count;
 
+	// Number of nanoseconds (not scaled via TimestampScale) per frame 
+	// (frame in the Matroska sense -- one Element put into a (Simple)Block).
 	uint64_t duration;
 	int64_t offset;
 
@@ -208,8 +210,8 @@ struct mkv_t
 	int track_count;
 
 	double duration;
-	uint64_t timescale;
-	struct mkv_cluster_t cluster;
+	uint64_t timescale; // Timestamp scale in nanoseconds
+	struct mkv_cluster_t *cluster;
 
 	struct mkv_cue_t cue;
 	struct mkv_segment_seek_t seek;
@@ -229,7 +231,7 @@ int mkv_add_video(struct mkv_track_t* track, enum mkv_codec_t codec, int width, 
 int mkv_add_audio(struct mkv_track_t* track, enum mkv_codec_t codec, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);
 int mkv_add_subtitle(struct mkv_track_t* track, enum mkv_codec_t codec, const void* extra_data, size_t extra_data_size);
 
-int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t* io, size_t bytes);
+int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t* io, int64_t bytes);
 int mkv_cluster_simple_block_write(struct mkv_t* mkv, struct mkv_sample_t* sample, struct mkv_ioutil_t* io);
 
 int mkv_cue_add(struct mkv_t* mkv, int track, int64_t timestamp, uint64_t cluster, uint64_t relative);
