@@ -203,8 +203,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 		}
 
 		q->last_seq = (uint16_t)pkt->rtp.seq;
-		rtp_queue_insert(q, q->pos + q->size, pkt);
-		return 1;
+		return rtp_queue_insert(q, q->pos + q->size, pkt);
 	}
 	else
 	{
@@ -225,7 +224,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 			// duplicate or reordered packet
 			idx = rtp_queue_find(q, (uint16_t)pkt->rtp.seq);
 			if (-1 == idx)
-				return 0;
+				return -1;
 			
 			rtp_queue_reset_bad_items(q);
 			return rtp_queue_insert(q, idx, pkt);
@@ -233,7 +232,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 		else if ((uint16_t)(q->first_seq - pkt->rtp.seq) < RTP_MISORDER)
 		{
 			// too late: pkt->req.seq < q->first_seq
-			return 0;
+			return -1;
 		}
 		else
 		{
@@ -266,6 +265,9 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 			return 1;
 		}
 	}
+
+	// for safety
+	return -1;
 }
 
 struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
