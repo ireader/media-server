@@ -177,20 +177,20 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     struct rtp_packet_t* pkt;
     
     if (bytes < 12 || bytes > rtp->max)
-        return -1;
+        return -EINVAL;
     pt = ((uint8_t*)data)[1];
 
     if(pt < RTCP_FIR || pt > RTCP_TOKEN)
     {
         pkt = rtp_demuxer_alloc(rtp, data, bytes);
         if (!pkt)
-            return -1;
+            return -ENOMEM;
 
         r = rtp_queue_write(rtp->queue, pkt);
-        if(r < 0)
+        if(r <= 0) // 0-discard packet(duplicate/too late)
         {
             rtp_demuxer_freepkt(rtp, pkt);
-            return r > 0 ? -r : r;
+            return r;
         }
         
         // re-order packet
@@ -202,7 +202,7 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
             r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
             if(r < 0)
-                break;
+                return r;
     
             rtp_demuxer_freepkt(rtp, pkt);
             pkt = rtp_queue_read(rtp->queue);
@@ -211,10 +211,12 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     else
     {
         r = rtp_onreceived_rtcp(rtp->rtp, data, bytes);
-        r = pt; // rtcp message type
+        (void)r; // ignore rtcp handler
+        
+        return pt; // rtcp message type
     }
-    
-    return r;
+
+    return 0;
 }
 
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)

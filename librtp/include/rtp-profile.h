@@ -94,6 +94,7 @@ enum
 	RTP_PAYLOAD_MP4ES		= 102, // MPEG4-generic audio/video MPEG-4 Elementary Streams (rfc3640)
 	RTP_PAYLOAD_VP8			= 103,
 	RTP_PAYLOAD_VP9			= 104,
+	RTP_PAYLOAD_AV1			= 105,
 };
 
 ///@param[in] payload RTP payload type(0 ~ 127)
