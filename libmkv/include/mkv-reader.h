@@ -30,7 +30,7 @@ uint64_t mkv_reader_getduration(mkv_reader_t* mkv);
 
 /// audio: AAC raw data, don't include ADTS/AudioSpecificConfig
 /// video: 4-byte data length(don't include self length) + H.264 NALU(don't include 0x00000001)
-/// @param[in] flags MOV_AV_FLAG_xxx, such as: MOV_AV_FLAG_KEYFREAME
+/// @param[in] flags MKV_FLAGS_xxx, such as: MKV_FLAGS_KEYFRAME
 typedef void (*mkv_reader_onread)(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags);
 /// @return 1-read one frame, 0-EOF, <0-error 
 int mkv_reader_read(mkv_reader_t* mkv, void* buffer, size_t bytes, mkv_reader_onread onread, void* param);

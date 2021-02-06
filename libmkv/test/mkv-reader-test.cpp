@@ -30,8 +30,9 @@ static uint32_t s_subtitle_track = 0xFFFFFFFF;
 
 extern "C" const struct mkv_buffer_t* mkv_file_buffer(void);
 
-inline const char* ftimestamp(uint32_t t, char* buf)
+static inline const char* ftimestamp(int64_t timestamp, char* buf)
 {
+	uint32_t t = (uint32_t)timestamp;
 	sprintf(buf, "%02u:%02u:%02u.%03u", t / 3600000, (t / 60000) % 60, (t / 1000) % 60, t % 1000);
 	return buf;
 }
@@ -173,7 +174,7 @@ static void mkv_audio_info(void* /*param*/, uint32_t track, enum mkv_codec_t cod
 		s_afp = fopen("a.opus", "wb");
 		s_opus_track = track;
 		assert(bytes == opus_head_load((const uint8_t*)extra, bytes, &s_opus));
-		assert(s_opus.input_sample_rate == 48000);
+		//assert(s_opus.input_sample_rate == 48000);
 	}
 	else if (MKV_CODEC_AUDIO_MP3 == codec || MKV_CODEC_AUDIO_MP1 == codec)
 	{
