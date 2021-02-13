@@ -13,6 +13,8 @@
 #endif
 
 uint32_t rtp_ssrc(void);
+int sdp_vp8(uint8_t* data, int bytes, unsigned short port, int payload);
+int sdp_vp9(uint8_t* data, int bytes, unsigned short port, int payload);
 int sdp_h264(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
 int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
 int sdp_mpeg4_es(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
@@ -43,9 +45,9 @@ static int rtp_packet(void* param, const void *packet, int bytes, uint32_t times
     assert(s->buffer == packet);
     
     int r = s->onpacket(s->param, packet, bytes, timestamp, flags);
-    if(r == bytes)
+    if(0 == r)
         rtp_onsend(s->rtp, packet, bytes/*, time*/);
-    return r == bytes ? 0 : -1;
+    return r;
 }
 
 static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
@@ -92,6 +94,14 @@ int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int paylo
         else if (0 == strcasecmp(encoding, "MP2P"))
         {
             r = sdp_mpeg2_ps(s->buffer, sizeof(s->buffer), port, payload);
+        }
+        else if (0 == strcasecmp(encoding, "VP8"))
+        {
+            r = sdp_vp8(s->buffer, sizeof(s->buffer), port, payload);
+        }
+        else if (0 == strcasecmp(encoding, "VP9"))
+        {
+            r = sdp_vp9(s->buffer, sizeof(s->buffer), port, payload);
         }
         else
         {

@@ -164,6 +164,7 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_H264_MVCD		= 0x26, // MVCD video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex I of Rec. ITU-T H.264 | ISO/IEC 14496-10
 	PSI_STREAM_VP8				= 0x9d,
 	PSI_STREAM_VP9				= 0x9e,
+	PSI_STREAM_AV1				= 0x9f,
 	// 0x27-0x7E Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
 	PSI_STREAM_IPMP				= 0x7F, // IPMP stream
 	// 0x80-0xFF User Private

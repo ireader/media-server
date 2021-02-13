@@ -239,9 +239,11 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
     {
         if (0 == strcasecmp(encoding, "H264") 
             || 0 == strcasecmp(encoding, "H265") || 0 == strcasecmp(encoding, "HEVC")
+            || 0 == strcasecmp(encoding, "VP8") || 0 == strcasecmp(encoding, "VP9")
+            // || 0 == strcasecmp(encoding, "AV1")
             || 0 == strcasecmp(encoding, "MP4V-ES"))
         {
-            r = rtp_sender_init_video(&pt->rtp, port, payload, encoding, 90000, extra, size);
+            r = rtp_sender_init_video(&pt->rtp, port, payload, encoding, frequence, extra, size);
         }
         else if (RTP_PAYLOAD_PCMU == payload || RTP_PAYLOAD_PCMA == payload || 0 == strcasecmp(encoding, "MP4A-LATM") || 0 == strcasecmp(encoding, "MPEG4-GENERIC") || 0 == strcasecmp(encoding, "opus"))
         {
@@ -273,7 +275,7 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
 
     muxer->payload_count++;
     muxer->off += r;
-    return 0;
+    return pt->pid;
 }
 
 int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const void* extra, int size)

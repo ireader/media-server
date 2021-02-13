@@ -24,6 +24,7 @@ struct rtp_sender_t
     
     uint8_t buffer[2 * 1024]; // for sdp and rtp packet
     
+    /// @return 0-ok, other-error
     int (*onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
     void (*onbye)(void* param); // rtcp bye msg
     void* param;
