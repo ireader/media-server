@@ -230,6 +230,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('t', 'r', 'e', 'x'), MOV_MVEX, mov_read_trex },
 	{ MOV_TAG('t', 'r', 'a', 'f'), MOV_MOOF, mov_read_default },
 	{ MOV_TAG('t', 'r', 'u', 'n'), MOV_TRAF, mov_read_trun },
+	{ MOV_TAG('u', 'd', 't', 'a'), MOV_MOOV, mov_read_udta },
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
     { MOV_TAG('v', 'p', 'c', 'C'), MOV_NULL, mov_read_vpcc },

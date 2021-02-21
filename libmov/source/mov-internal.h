@@ -250,6 +250,7 @@ int mov_read_gmin(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_text(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_coll(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_udta(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
