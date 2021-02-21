@@ -23,7 +23,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xBC==data[3]);
 	program_stream_map_length = (data[4] << 8) | data[5];
 	if (program_stream_map_length < 3 || bytes < (size_t)program_stream_map_length + 6)
-		return bytes; // invalid data length
+		return 0; // invalid data length
 
 	//assert((0x20 & data[6]) == 0x00); // 'xx0xxxxx'
 	current_next_indicator = (data[6] >> 7) & 0x01;
@@ -34,7 +34,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	// program stream descriptor
 	program_stream_info_length = (data[8] << 8) | data[9];
 	if ((size_t)program_stream_info_length + 4 + 2 /*element_stream_map_length*/ > (size_t)program_stream_map_length)
-		return bytes; // TODO: error
+		return 0; // TODO: error
 
 	// TODO: parse descriptor
 
@@ -53,7 +53,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 		psm->streams[psm->stream_count].pid = psm->streams[psm->stream_count].sid; // for ts PID
 		element_stream_info_length = (data[j+2] << 8) | data[j+3];
 		if (j + 4 + element_stream_info_length > i+element_stream_map_length)
-			return bytes; // TODO: error
+			return 0; // TODO: error
 
 		k = j + 4;
 		if(0xFD == psm->streams[psm->stream_count].sid && 0 == single_extension_stream_flag)

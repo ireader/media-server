@@ -140,14 +140,19 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 			else
 				j = pes_read_mpeg1_header(pes, data + i, pes_packet_length + 6);
 
-			if (0 == j)
-                return -1; // invalid data
+            if (j > 0)
+            {
+                r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
+                ps->start = 0; // clear start flag
+                if (0 != r)
+                    return r;
+            }
 
-            r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
-            ps->start = 0; // clear start flag
-            if (0 != r)
-                return r;
+            break;
         }
+
+        if (0 == j)
+            return -1; // invalid data
     }
 
     return i;
