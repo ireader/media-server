@@ -4,6 +4,7 @@
 #include "sip-uac.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -228,19 +229,9 @@ static void sip_uac_invite_test(struct sip_uac_test_t *test)
 	sip_uac_recv_reply(test);
 }
 
-static int STDCALL TimerThread(void* param)
-{
-	bool *running = (bool*)param;
-	while (*running)
-	{
-		aio_timeout_process();
-		system_sleep(5);
-	}
-	return 0;
-}
-
 void sip_uac_test(void)
 {
+	sip_timer_init();
 	struct sip_uac_test_t test;
 	test.transport = {
 		sip_uac_transport_via,
@@ -248,10 +239,6 @@ void sip_uac_test(void)
 	};
 	struct sip_uas_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
-
-	pthread_t th;
-	bool running = true;
-	thread_create(&th, TimerThread, &running);
 
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, NULL);
@@ -261,10 +248,8 @@ void sip_uac_test(void)
 	sip_uac_message_test(&test);
 	//sip_uac_invite_test(&test);
 
-	running = false;
-	thread_destroy(th);
-
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
+	sip_timer_cleanup();
 }

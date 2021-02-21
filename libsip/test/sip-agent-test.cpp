@@ -6,6 +6,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -182,7 +183,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return 0;
 }
 
-static void sip_uac_transaction_ondestroy(void* param)
+static void sip_uac_task_ondestroy(void* param)
 {
     struct sip_task_t *task = (struct sip_task_t *)param;
     atomic_decrement32(&task->terminated);
@@ -201,7 +202,7 @@ static void sip_uac_message_test(struct sip_task_t *task)
 {
 	const char* msg = "<?xml version=\"1.0\"?><msg>Hello SIP</msg>";
 	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_message(task->self->sip, task->from, task->to, sip_uac_onmessage, task), sip_uac_transaction_release);
-    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_task_ondestroy, task);
 	sip_uac_add_header(t.get(), "Content-Type", "Application/xml");
 	assert(0 == sip_uac_send(t.get(), msg, strlen(msg), &task->self->transport, task));
 	assert(0 == task->event.Wait());
@@ -220,7 +221,7 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 static void sip_uac_register_test(struct sip_task_t *task)
 {
 	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(task->self->sip, task->from, "sip:127.0.0.1", 7200, sip_uac_onregister, task), sip_uac_transaction_release);
-	sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+	sip_uac_transaction_ondestroy(t.get(), sip_uac_task_ondestroy, task);
 	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
@@ -244,7 +245,7 @@ static void sip_uac_invite_test(struct sip_task_t *task)
 {
 	assert(task->dialog == NULL);
 	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(task->self->sip, task->from, task->to, sip_uac_oninvited, task), sip_uac_transaction_release);
-    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_task_ondestroy, task);
 	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
@@ -268,7 +269,7 @@ static void sip_uac_bye_test(struct sip_task_t *task)
 {
 	assert(task->dialog);
 	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_bye(task->self->sip, task->dialog, sip_uac_onbye, task), sip_uac_transaction_release);
-    sip_uac_transaction_ondestroy(t.get(), sip_uac_transaction_ondestroy, task);
+    sip_uac_transaction_ondestroy(t.get(), sip_uac_task_ondestroy, task);
 	assert(0 == sip_uac_send(t.get(), NULL, 0, &task->self->transport, task));
 	assert(0 == task->event.Wait());
 }
@@ -304,38 +305,7 @@ static int STDCALL AliceThread(void* param)
 	return 0;
 }
 
-static int STDCALL BobThread(void* param)
-{
-	struct sip_task_t* task = (struct sip_task_t*)param;
-	
-	for (int i = 0; i < 100; i++)
-	{
-		switch (rand() % 3)
-		{
-		case 0:
-            atomic_increment32(&task->terminated);
-			sip_uac_register_test(task);
-		case 1:
-            atomic_increment32(&task->terminated);
-			sip_uac_message_test(task);
-		case 2:
-            atomic_increment32(&task->terminated);
-			sip_uac_invite_test(task);
-			while (task->dialog)
-            {
-                atomic_increment32(&task->terminated);
-                sip_uac_bye_test(task);
-            }
-		}
-	}
-    
-    while(task->terminated != 0)
-        system_sleep(10);
-    printf("%s done\n", task->from);
-	return 0;
-}
-
-static void sip_uas_transaction_ondestroy(void* param)
+static void sip_uas_task_ondestroy(void* param)
 {
     struct sip_tu_t *tu = (struct sip_tu_t *)param;
     assert(atomic_decrement32(&tu->count) >= 0);
@@ -346,7 +316,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	char contact[128];
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
-    sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
+    sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	sip_contact_write(&req->to, contact, contact+sizeof(contact));
 	sip_uas_add_header(t, "Contact", contact);
 	assert(0 == sip_uas_reply(t, 200, NULL, 0));
@@ -365,7 +335,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
-    sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
+    sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
@@ -374,7 +344,7 @@ static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
-    sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
+    sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
@@ -383,7 +353,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
-    sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
+    sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
@@ -391,14 +361,13 @@ static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struc
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
-    sip_uas_transaction_ondestroy(t, sip_uas_transaction_ondestroy, param);
+    sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	return sip_uas_reply(t, 200, NULL, 0);
 }
 
 static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
 {
-	http_parser_t* request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
-	http_parser_t* response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
+	http_parser_t* parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 
 	while(channel_count(tu->q[idx]) > 0 || s_sip.running)
 	{
@@ -409,21 +378,20 @@ static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
         if(pkt.ptr == CHANNEL_DONE)
             continue;
 
-		http_parser_t* parser = 0 == strncasecmp("SIP", (char*)pkt.ptr, 3) ? request : response;
+		int response = 0 == strncasecmp("SIP", (char*)pkt.ptr, 3) ? 1 : 0;
+		http_parser_reset(parser, response ? HTTP_PARSER_RESPONSE : HTTP_PARSER_REQUEST);
 
 		size_t n = pkt.len;
 		assert(0 == http_parser_input(parser, pkt.ptr, &n));
-		struct sip_message_t* msg = sip_message_create(parser==response? SIP_MESSAGE_REQUEST : SIP_MESSAGE_REPLY);
+		struct sip_message_t* msg = sip_message_create(response ? SIP_MESSAGE_REPLY : SIP_MESSAGE_REQUEST);
 		assert(0 == sip_message_load(msg, parser));
 		assert(0 == sip_agent_input(tu->sip, msg));
 		sip_message_destroy(msg);
-		http_parser_clear(parser);
-
+		
 		free(pkt.ptr);
 	}
 
-	http_parser_destroy(request);
-	http_parser_destroy(response);
+	http_parser_destroy(parser);
 	return 0;
 }
 
@@ -436,19 +404,9 @@ static int STDCALL BobInputThread(void* param)
     return InputThread(&s_sip.bob, (int)(intptr_t)param);
 }
 
-static int STDCALL TimerThread(void* param)
-{
-	bool *running = (bool*)param;
-	while (*running)
-	{
-		aio_timeout_process();
-		system_sleep(5);
-	}
-	return 0;
-}
-
 extern "C" void sip_agent_test(void)
 {
+	sip_timer_init();
 	s_sip.alice.transport = {
 		sip_uac_transport_via,
 		sip_uac_transport_send,
@@ -474,13 +432,11 @@ extern "C" void sip_agent_test(void)
     s_sip.alice.count = 0;
     s_sip.bob.count = 0;
 
-	pthread_t timer[NQUEUE];
 	pthread_t worker[NQUEUE*2];
 	for (int i = 0; i < NQUEUE; i++)
 	{
 		s_sip.alice.q[i] = channel_create(200, sizeof(struct sip_packet_t));
 		s_sip.bob.q[i] = channel_create(200, sizeof(struct sip_packet_t));
-		thread_create(&timer[i], TimerThread, &s_sip.running);
 		thread_create(&worker[2*i], AliceInputThread, (void*)(intptr_t)i); // alice
 		thread_create(&worker[2*i+1], BobInputThread, (void*)(intptr_t)i); // bob
 	}
@@ -507,7 +463,7 @@ extern "C" void sip_agent_test(void)
         s_bob_tasks[i].terminated = 0;
         snprintf(s_bob_tasks[i].from, sizeof(s_bob_tasks[i].from), "sip:BOB%03d@127.0.0.1", i);
         snprintf(s_bob_tasks[i].to, sizeof(s_bob_tasks[i].to), "sip:ALICE%03d@127.0.0.1", i);
-		thread_create(&bob[i], BobThread, &s_bob_tasks[i]);
+		thread_create(&bob[i], AliceThread, &s_bob_tasks[i]);
 	}
 
 	// do worker
@@ -540,10 +496,8 @@ extern "C" void sip_agent_test(void)
     while(s_sip.alice.count != 0 || s_sip.bob.count != 0)
         system_sleep(10);
     
-    for (int i = 0; i < NQUEUE; i++)
-        thread_destroy(timer[i]);
-
 	assert(0 == sip_agent_destroy(s_sip.alice.sip));
 	assert(0 == sip_agent_destroy(s_sip.bob.sip));
 	socket_close(s_sip.udp);
+	sip_timer_cleanup();
 }

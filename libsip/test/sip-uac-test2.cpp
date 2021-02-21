@@ -12,6 +12,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -1055,7 +1056,6 @@ static int STDCALL TimerThread(void* param)
 			sip_uac_register_test(ctx);
 		}
 
-		aio_timeout_process();
 		system_sleep(5);
 	}
 	return 0;
@@ -1134,6 +1134,8 @@ static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct
 void sip_uac_test2(void)
 {
 	socket_init();
+	sip_timer_init();
+
 	struct sip_uac_test2_t test;
 	test.running = true;
 	test.callid[0] = 0;
@@ -1177,4 +1179,5 @@ void sip_uac_test2(void)
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	socket_cleanup();
+	sip_timer_cleanup();
 }

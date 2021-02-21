@@ -3,6 +3,8 @@
 #include "sip-header.h"
 #include "sip-dialog.h"
 #include "sip-message.h"
+#include "sip-timer.h"
+#include "sys/system.h"
 
 static struct sip_dialog_t* s_dialog;
 
@@ -284,6 +286,8 @@ static int sip_uas_send(void* param, const struct cstring_t* /*protocol*/, const
 // 24 Examples (p213)
 void sip_uas_message_test(void)
 {
+	sip_timer_init();
+
 	struct sip_uas_handler_t handler;
 	handler.onregister = sip_uas_onregister;
 	handler.oninvite = sip_uas_oninvite;
@@ -299,4 +303,5 @@ void sip_uas_message_test(void)
 	assert(0 == sip_invite(sip));
 	assert(0 == sip_bye(sip));
 	sip_agent_destroy(sip);
+	sip_timer_cleanup();
 }
