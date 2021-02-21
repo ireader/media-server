@@ -14,12 +14,14 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
 {
     void* ptr;
 
+    // fix: pkt->size + size bits wrap
+    if (pkt->size + size > MPEG_PACKET_PAYLOAD_MAX_SIZE || pkt->size + size < pkt->size)
+        return -EINVAL;
+
     if (pkt->capacity < pkt->size + size)
     {
-        if (pkt->size + size > MPEG_PACKET_PAYLOAD_MAX_SIZE)
-            return EINVAL;
         ptr = realloc(pkt->data, pkt->size + size + 2048);
-        if (NULL == ptr) return ENOMEM;
+        if (NULL == ptr) return -ENOMEM;
         pkt->data = (uint8_t*)ptr;
         pkt->capacity = pkt->size + size + 2048;
     }

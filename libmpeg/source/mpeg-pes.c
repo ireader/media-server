@@ -7,6 +7,26 @@
 #include <string.h>
 #include <assert.h>
 
+static size_t pes_header_ext_length(const struct pes_t* pes)
+{
+	size_t n = 0;
+	if (0x02 & pes->PTS_DTS_flags)
+		n += 5;
+	if (0x01 & pes->PTS_DTS_flags)
+		n += 5;
+	if (pes->ESCR_flag)
+		n += 6;
+	if (pes->ES_rate_flag)
+		n += 3;
+	if (pes->DSM_trick_mode_flag)
+		n += 1;
+	if (pes->additional_copy_info_flag)
+		n += 1;
+	if (pes->PES_CRC_flag)
+		n += 2;
+	return n;
+}
+
 /// @return 0-error, other-pes header length
 size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 {
@@ -15,6 +35,8 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
     assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
     pes->sid = data[3];
     pes->len = (data[4] << 8) | data[5];
+	if (bytes < pes->len + 6 || pes->len < 3)
+		return 0; // invalid data length
 
     i = 6;
     assert(0x02 == ((data[i] >> 6) & 0x3));
@@ -35,7 +57,8 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
     i++;
     pes->PES_header_data_length = data[i];
-    if (bytes < pes->PES_header_data_length + 9)
+    if (pes->len < pes->PES_header_data_length + 3 
+		|| pes->PES_header_data_length < pes_header_ext_length(pes))
         return 0; // invalid data length
 
     i++;
