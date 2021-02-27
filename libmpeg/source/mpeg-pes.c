@@ -7,20 +7,25 @@
 #include <string.h>
 #include <assert.h>
 
-#define DATA(off) ((off < bytes) ? (data[off]) : (err=1, 0))
+#define DATA(off) data_read_with_boundary_check(data, bytes, off, &overflow)
+static inline uint8_t data_read_with_boundary_check(const uint8_t* data, size_t bytes, size_t off, int *overflow)
+{
+	return (off < bytes) ? (data[off]) : (*overflow = 1, 0);
+}
 
 /// @return 0-error, other-pes header length
 size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 {
-	int err;
-    size_t i;
+	size_t i;
+	int overflow;
 
-	err = 0;
+	overflow = 0;
+	if (bytes < 3 + 6)
+		return 0; // invalid data length
+
 	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
     pes->sid = data[3];
     pes->len = (data[4] << 8) | data[5];
-	if (bytes < pes->len + 6 || pes->len < 3)
-		return 0; // invalid data length
 
 	i = 6;
     assert(0x02 == ((DATA(i) >> 6) & 0x3));
@@ -104,13 +109,15 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
     {
     }
 
-	if (err || pes->len < pes->PES_header_data_length + 3)
-		return 0; // invalid data length
-
-    if (pes->len > 0)
-        pes->len -= pes->PES_header_data_length + 3;
-
-    return pes->PES_header_data_length + 9;
+	if (pes->len > 0)
+	{
+		if (pes->len < pes->PES_header_data_length + 3)
+			return 0; // invalid data length
+		pes->len -= pes->PES_header_data_length + 3;
+	}
+    
+	assert(pes->len >= 0); // TS pes->len maybe 0(payload > 65535)
+    return overflow ? 0 : pes->PES_header_data_length + 9;
 }
 
 /// @return 0-error, pes header length
@@ -194,10 +201,10 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 
 size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 {
-	int err;
 	size_t i;
+	int overflow;
 
-	err = 0;
+	overflow = 0;
 	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
 	pes->sid = data[3];
 	pes->len = (data[4] << 8) | data[5];
@@ -227,9 +234,12 @@ size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t byte
 		i += 1;
 	}
 
-	if (err || pes->len < i - 6)
-		return 0; // invalid data length
+	if (pes->len > 0)
+	{
+		if (pes->len < i - 6)
+			return 0; // invalid data length
+		pes->len -= i - 6;
+	}
 
-	pes->len -= i - 6;
-	return i;
+	return overflow ? 0 : i;
 }

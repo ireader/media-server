@@ -152,7 +152,7 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
         }
 
         if (0 == j)
-            return -1; // invalid data
+            return i + 4; // invalid data, skip start code
     }
 
     return i;

@@ -46,7 +46,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	
 	i += 2;
 	psm->stream_count = 0;
-	for(j = i; j + 4/*element_stream_info_length*/ < i+element_stream_map_length && psm->stream_count < sizeof(psm->streams)/sizeof(psm->streams[0]); j += 4 + element_stream_info_length)
+	for(j = i; j + 4/*element_stream_info_length*/ <= i+element_stream_map_length && psm->stream_count < sizeof(psm->streams)/sizeof(psm->streams[0]); j += 4 + element_stream_info_length)
 	{
 		psm->streams[psm->stream_count].codecid = data[j];
 		psm->streams[psm->stream_count].sid = data[j+1];
@@ -59,7 +59,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 		if(0xFD == psm->streams[psm->stream_count].sid && 0 == single_extension_stream_flag)
 		{
 			if(element_stream_info_length < 3)
-				return bytes; // TODO: error 
+				return 0; // TODO: error 
 //			uint8_t pseudo_descriptor_tag = data[k];
 //			uint8_t pseudo_descriptor_length = data[k+1];
 //			uint8_t element_stream_id_extension = data[k+2] & 0x7F;
@@ -67,7 +67,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 			k += 3;
 		}
 
-		while(k + 2 < j + 4 + element_stream_info_length)
+		while(k + 2 <= j + 4 + element_stream_info_length)
 		{
 			// descriptor()
 			k += mpeg_elment_descriptor(data+k, j + 4 + element_stream_info_length - k);
