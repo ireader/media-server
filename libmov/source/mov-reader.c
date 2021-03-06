@@ -251,7 +251,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		box.size = mov_buffer_r32(&mov->io);
 		box.type = mov_buffer_r32(&mov->io);
 		
-#if defined(MOV_READER_BOX_TREE) && (defined(DEBUG) || defined(_DEBUG))
+#if defined(MOV_READER_BOX_TREE) && !defined(NDEBUG)
 		box.level = parent->level + 1;
 		for (i = 0; i < parent->level; i++)
 			printf("\t");
@@ -304,7 +304,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 			uint64_t pos, pos2;
 			pos = mov_buffer_tell(&mov->io);
 			r = parse(mov, &box);
-			assert(0 == r);
+			assert(0 == r || mov_buffer_error(&mov->io));
 			if (0 != r) return r;
 			pos2 = mov_buffer_tell(&mov->io);
 			assert(pos2 - pos == box.size);
@@ -312,7 +312,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		}
 	}
 
-	return 0;
+	return mov_buffer_error(&mov->io) ? -1 : 0;
 }
 
 static int mov_reader_init(struct mov_t* mov)
