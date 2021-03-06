@@ -63,7 +63,7 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
     if (0x01 & pes->PTS_DTS_flags)
     {
         assert(0x10 == (DATA(i) & 0x10));
-        pes->dts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 10) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
+        pes->dts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
         i += 5;
     }
     else if(0x02 & pes->PTS_DTS_flags)
