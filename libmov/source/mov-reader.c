@@ -267,7 +267,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		else if (0 == box.size)
 		{
 			if (0 == box.type)
-				break; // all done
+				return 0; // all done
 			box.size = UINT64_MAX;
 		}
 
