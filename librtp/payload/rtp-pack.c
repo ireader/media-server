@@ -53,17 +53,18 @@ void rtp_pack_get_info(void* p, uint16_t* seq, uint32_t* timestamp)
 
 int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 	const uint8_t *ptr;
 	struct rtp_packer_t *packer;
 
+	r = 0;
 	packer = (struct rtp_packer_t *)p;
 	assert(packer->pkt.rtp.timestamp != timestamp || !packer->pkt.payload /*first packet*/);
 	packer->pkt.rtp.timestamp = timestamp; // (uint32_t)time * packer->frequency / 1000; // ms -> 8KHZ
 	packer->pkt.rtp.m = 0; // marker bit alway 0
 
-	for(ptr = (const uint8_t *)data; bytes > 0; ++packer->pkt.rtp.seq)
+	for(ptr = (const uint8_t *)data; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - RTP_FIXED_HEADER);
@@ -81,13 +82,13 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 			return -1;
 		}
 
-		packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 
 		//packer->pkt.rtp.timestamp += packer->pkt.payloadlen * packer->frequency / 1000;
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_common_encode()

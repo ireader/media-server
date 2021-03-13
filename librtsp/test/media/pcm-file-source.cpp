@@ -175,12 +175,14 @@ void PCMFileSource::RTPFree(void* param, void *packet)
 	assert(self->m_packet == packet);
 }
 
-void PCMFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
+int PCMFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	PCMFileSource *self = (PCMFileSource*)param;
 	assert(self->m_packet == packet);
 
 	int r = self->m_transport->Send(false, packet, bytes);
-	assert(r == (int)bytes);
-	rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
+	if (r != bytes)
+		return -1;
+
+	return rtp_onsend(self->m_rtp, packet, bytes/*, time*/);
 }

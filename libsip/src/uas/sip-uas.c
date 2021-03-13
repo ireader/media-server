@@ -11,13 +11,16 @@
 #include "list.h"
 #include <stdio.h>
 
-void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
+sip_timer_t sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler)
 {
-	void* id;
+	sip_timer_t id;
 
 	// wait for timer done
 	if (sip_uas_transaction_addref(t) < 2)
+	{
+		assert(0);
 		return NULL;
+	}
 
 	id = sip_timer_start(timeout, handler, t);
 	if (id == NULL)
@@ -27,15 +30,16 @@ void* sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t*
 	//return uas->timer.start(uas->timerptr, timeout, handler, usrptr);
 }
 
-void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, void* id)
+void sip_uas_stop_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, sip_timer_t* id)
 {
 	//uas->timer.stop(uas->timerptr, id);
 	if (0 == sip_timer_stop(id))
 		sip_uas_transaction_release(t);
 }
 
-int sip_uas_add_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
+int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
 {
+	sip_uas_transaction_addref(t);
 	t->param = sip->param;
 	t->handler = &sip->handler;
 	
@@ -46,10 +50,10 @@ int sip_uas_add_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_
 	locker_lock(&sip->locker);
 	list_insert_after(&t->link, sip->uas.prev);
 	locker_unlock(&sip->locker);
-	return sip_uas_transaction_addref(t);
+	return 0;
 }
 
-int sip_uas_del_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
+int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
@@ -71,12 +75,14 @@ int sip_uas_del_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker
+			break;
 		}
 	}
 
 	locker_unlock(&sip->locker);
+	sip_uas_transaction_release(t);
 	sip_agent_destroy(sip); // unref by transaction
-	return sip_uas_transaction_release(t);
+	return 0;
 }
 
 static struct sip_uas_transaction_t* sip_uas_find_acktransaction(struct sip_agent_t* sip, const struct sip_message_t* req)
@@ -209,43 +215,14 @@ static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transac
 	return 0;
 }
 
-int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
+static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog, struct sip_uas_transaction_t* t)
 {
 	int r;
-	struct sip_dialog_t *dialog;
-	struct sip_uas_transaction_t* t;
-
-	// 1. find transaction
-	locker_lock(&sip->locker);
-	t = sip_uas_find_transaction(sip, msg, 1);
-	if (!t)
-	{
-		if (sip_message_isack(msg))
-		{
-			locker_unlock(&sip->locker);
-			return 0; // invalid ack, discard, TODO: add log here
-		}
-
-		t = sip_uas_transaction_create(sip, msg);
-		if (!t)
-		{
-			locker_unlock(&sip->locker);
-			return -1;
-		}
-	}
-	locker_unlock(&sip->locker);
-
 	r = sip_uas_check_request(sip, t, msg);
 	if (0 != r)
-	{
-		sip_uas_transaction_release(t);
 		return r;
-	}
 
-	// 2. find dialog
-	dialog = sip_dialog_fetch(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
-    
-    locker_lock(&t->locker);
+	locker_lock(&t->locker);
 
 	// 4. handle
 	if (sip_message_isinvite(msg) || sip_message_isack(msg))
@@ -260,9 +237,50 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
 	// 4. A stateless UAS MUST ignore CANCEL requests.
 
 	locker_unlock(&t->locker);
+	return r;
+}
+
+static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog)
+{
+	int r;
+	struct sip_uas_transaction_t* t;
+
+	// find transaction
+	locker_lock(&sip->locker);
+	t = sip_uas_find_transaction(sip, msg, 1);
+	if (!t)
+	{
+		if (sip_message_isack(msg))
+		{
+			locker_unlock(&sip->locker);
+			return 0; // invalid ack, discard, TODO: add log here
+		}
+
+		t = sip_uas_transaction_create(sip, msg, dialog);
+		if (!t)
+		{
+			locker_unlock(&sip->locker);
+			return -1;
+		}
+		assert(t->ref == 3); // +2 linker with timer H
+	}
+	locker_unlock(&sip->locker);
+
+	r = sip_uas_input_with_transaction(sip, msg, dialog, t);
 	sip_uas_transaction_release(t);
-	if (dialog)
-		sip_dialog_release(dialog);
+	return r;
+}
+
+int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg)
+{
+	int r;
+	struct sip_dialog_t *dialog;
+
+	dialog = sip_dialog_fetch(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
+
+	r = sip_uas_input_with_dialog(sip, msg, dialog);
+
+	sip_dialog_release(dialog);
 	return r;
 }
 
@@ -307,10 +325,16 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
     return r;
 }
 
-int sip_uas_discard(struct sip_uas_transaction_t* t)
-{
-	return sip_uas_transaction_release(t);
-}
+//int sip_uas_discard(struct sip_uas_transaction_t* t)
+//{
+//	locker_lock(&t->locker);
+//	assert(t->ref > 0);
+//	if(SIP_UAS_TRANSACTION_TERMINATED != t->status)
+//		sip_uas_transaction_terminated();
+//	locker_unlock(&t->locker);
+//	
+//	return sip_uas_transaction_release(t);
+//}
 
 int sip_uas_add_header(struct sip_uas_transaction_t* t, const char* name, const char* value)
 {

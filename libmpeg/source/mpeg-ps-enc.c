@@ -45,7 +45,7 @@ static struct pes_t* ps_stream_find(struct ps_muxer_t *ps, int streamid)
 
 int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-	int first;
+	int r, first;
 	size_t i, n, sz;
 	uint8_t *packet;
     struct pes_t* stream;
@@ -153,11 +153,11 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 	}
 
 	assert(i < sz);
-	ps->func.write(ps->param, stream->sid, packet, i);
+	r = ps->func.write(ps->param, stream->sid, packet, i);
 	ps->func.free(ps->param, packet);
 
 	++ps->psm_period;
-	return 0;
+	return r;
 }
 
 struct ps_muxer_t* ps_muxer_create(const struct ps_muxer_func_t *func, void* param)

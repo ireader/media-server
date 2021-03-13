@@ -12,6 +12,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -38,7 +39,7 @@
 #include <errno.h>
 
 #include "rtsp-media.h"
-#include "../test/rtp-sender.h"
+#include "../source/utils/rtp-sender.h"
 #include "../test/ice-transport.h"
 #include "../test/media/mp4-file-reader.h"
 
@@ -52,7 +53,7 @@
 #define TURN_PWD "123456"
 
 extern "C" void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int payload, const char* encoding);
-static int rtp_packet_send(void* param, const void *packet, int bytes);
+static int rtp_packet_send(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 struct sip_uac_transport_address_t
 {
@@ -67,11 +68,10 @@ struct sip_uac_test2_session_t
     char buffer[2 * 1024 * 1024];
 	std::string user;
 	std::string from;
-	union
-	{
-		struct sip_uas_transaction_t* t;
-		struct sip_uac_transaction_t* tuac;
-	};
+	
+	struct sip_uas_transaction_t* t;
+	std::shared_ptr<struct sip_uac_transaction_t> tuac;
+	
 	struct ice_transport_t* avt;
 	struct sip_uac_transport_address_t transport;
 
@@ -297,7 +297,7 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	s->video.track = track;
 	s->video.fp = fopen("sipvideo.h264", "wb");
 	s->video.s = s;
-	s->video.sender.send = rtp_packet_send;
+	s->video.sender.onpacket = rtp_packet_send;
 	s->video.sender.param = &s->video;
 
 	char ip[SOCKET_ADDRLEN];
@@ -311,18 +311,18 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	{
 		s->video.codec = AVCODEC_VIDEO_H264;
 		mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.avc);
-		rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H264, "H264", width, height, extra, bytes);
+		rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H264, "H264", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_H265;
         mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.hevc);
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H265, "H265", width, height, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H265, "H265", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_MP4V == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_MPEG4;
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_MP4V, "MP4V-ES", width, height, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_MP4V, "MP4V-ES", 90000, extra, bytes);
 	}
 	else
 	{
@@ -340,7 +340,7 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	s->audio.track = track;
 	s->audio.fp = fopen("sipaudio.pcm", "wb");
 	s->audio.s = s;
-	s->audio.sender.send = rtp_packet_send;
+	s->audio.sender.onpacket = rtp_packet_send;
 	s->audio.sender.param = &s->audio;
 
 	char ip[SOCKET_ADDRLEN];
@@ -354,22 +354,22 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
         mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_MP4A, "MP4A-LATM", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_OPUS;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_OPUS, "opus",channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_OPUS, "opus", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_G711u == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMU, "", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMU, "", sample_rate, channel_count, extra, bytes);
 	}
     else if (MOV_OBJECT_G711a == object)
     {
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMA, "", channel_count, bit_per_sample, sample_rate, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMA, "", sample_rate, channel_count, extra, bytes);
     }
     else
 	{
@@ -464,13 +464,13 @@ static void ice_transport_ondata(void* param, int stream, int component, const v
 	}
 }
 
-static void rtp_packet_onrecv(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_packet_onrecv(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	sip_uac_test2_session_t::av_media_t* av = (sip_uac_test2_session_t::av_media_t*)param;
-	fwrite(packet, 1, bytes, av->fp);
+	return bytes == fwrite(packet, 1, bytes, av->fp) ? 0 : ferror(av->fp);
 }
 
-static int rtp_packet_send(void* param, const void *packet, int bytes)
+static int rtp_packet_send(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	sip_uac_test2_session_t::av_media_t* av = (sip_uac_test2_session_t::av_media_t*)param;
 	return ice_transport_send(av->s->avt, av->stream, 1, packet, bytes);
@@ -792,14 +792,14 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 		// TODO: add Allow-Events
 		//sip_uac_add_header(s->tuac, "Allow-Events", "");
 
-		sip_uac_add_header(s->tuac, "Content-Type", "application/sdp");
+		sip_uac_add_header(s->tuac.get(), "Content-Type", "application/sdp");
 		int n = snprintf(buffer, sizeof(buffer), pattern, s->user.c_str(), host, host, (char*)s->audio.sender.buffer, (char*)s->video.sender.buffer);
 
 		struct sip_transport_t t = {
 			sip_uac_transport_via,
 			sip_uac_transport_send,
 		};
-		assert(0 == sip_uac_send(s->tuac, buffer, n, &t, &s->transport));
+		assert(0 == sip_uac_send(s->tuac.get(), buffer, n, &t, &s->transport));
 	}
 	else
 	{
@@ -920,15 +920,14 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 static void sip_uac_invite_test(struct sip_uac_test2_t *ctx)
 {
     char buffer[1024];
-    struct sip_uac_transaction_t* t;
-    t = sip_uac_invite(ctx->sip, SIP_FROM, SIP_PEER, sip_uac_oninvited, ctx);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(ctx->sip, SIP_FROM, SIP_PEER, sip_uac_oninvited, ctx), sip_uac_transaction_release);
 	if (HTTP_AUTHENTICATION_DIGEST == ctx->auth.scheme)
 	{
 		++ctx->auth.nc;
 		snprintf(ctx->auth.uri, sizeof(ctx->auth.uri), "%s", SIP_PEER);
 		snprintf(ctx->auth.username, sizeof(ctx->auth.username), "%s", ctx->usr);
 		http_header_auth(&ctx->auth, SIP_PWD, "INVITE", NULL, 0, buffer, sizeof(buffer));
-		sip_uac_add_header(t, "Proxy-Authorization", buffer);
+		sip_uac_add_header(t.get(), "Proxy-Authorization", buffer);
 	}
 
 	struct ice_transport_handler_t handler = {
@@ -1013,17 +1012,16 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 static void sip_uac_register_test(struct sip_uac_test2_t *test)
 {
 	char buffer[256];
-	struct sip_uac_transaction_t* t;
 	//t = sip_uac_register(uac, "Bob <sip:bob@biloxi.com>", "sip:registrar.biloxi.com", 7200, sip_uac_message_onregister, test);
-	t = sip_uac_register(test->sip, SIP_FROM, "sip:" SIP_HOST, SIP_EXPIRED, sip_uac_onregister, test);
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(test->sip, SIP_FROM, "sip:" SIP_HOST, SIP_EXPIRED, sip_uac_onregister, test), sip_uac_transaction_release);
 
 	if (test->callid[0])
 	{
 		// All registrations from a UAC SHOULD use the same Call-ID
-		sip_uac_add_header(t, "Call-ID", test->callid);
+		sip_uac_add_header(t.get(), "Call-ID", test->callid);
 
 		snprintf(buffer, sizeof(buffer), "%u REGISTER", ++test->cseq);
-		sip_uac_add_header(t, "CSeq", buffer);
+		sip_uac_add_header(t.get(), "CSeq", buffer);
 	}
 
 	if (HTTP_AUTHENTICATION_DIGEST == test->auth.scheme)
@@ -1034,14 +1032,14 @@ static void sip_uac_register_test(struct sip_uac_test2_t *test)
 		snprintf(test->auth.uri, sizeof(test->auth.uri), "sip:%s", SIP_HOST);
 		snprintf(test->auth.username, sizeof(test->auth.username), "%s", test->usr);
 		http_header_auth(&test->auth, SIP_PWD, "REGISTER", NULL, 0, buffer, sizeof(buffer));
-		sip_uac_add_header(t, "Authorization", buffer);
+		sip_uac_add_header(t.get(), "Authorization", buffer);
 	}
 
 	struct sip_transport_t transport = {
 			sip_uac_transport_via,
 			sip_uac_transport_send,
 	};
-	assert(0 == sip_uac_send(t, NULL, 0, &transport, &test->transport));
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &transport, &test->transport));
 }
 
 static int STDCALL TimerThread(void* param)
@@ -1058,7 +1056,6 @@ static int STDCALL TimerThread(void* param)
 			sip_uac_register_test(ctx);
 		}
 
-		aio_timeout_process();
 		system_sleep(5);
 	}
 	return 0;
@@ -1137,6 +1134,8 @@ static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct
 void sip_uac_test2(void)
 {
 	socket_init();
+	sip_timer_init();
+
 	struct sip_uac_test2_t test;
 	test.running = true;
 	test.callid[0] = 0;
@@ -1180,4 +1179,5 @@ void sip_uac_test2(void)
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	socket_cleanup();
+	sip_timer_cleanup();
 }

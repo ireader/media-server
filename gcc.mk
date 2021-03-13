@@ -49,6 +49,13 @@ CFLAGS += -fvisibility=hidden
 COMPILE.CC = $(CC) $(addprefix -I,$(INCLUDES)) $(addprefix -D,$(DEFINES)) $(CFLAGS)
 COMPILE.CXX = $(CXX) $(addprefix -I,$(INCLUDES)) $(addprefix -D,$(DEFINES)) $(CXXFLAGS)
 
+#-------------------------Link---------------------------
+#
+#--------------------------------------------------------------------
+ifeq ($(STATIC_LINK),1)
+    LDFLAGS += -static
+endif
+
 #-------------------------Compile Output---------------------------
 #
 #--------------------------------------------------------------------

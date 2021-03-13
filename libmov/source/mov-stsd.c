@@ -6,7 +6,7 @@
 
 // stsd: Sample Description Box
 
-static int mp4_read_extra(struct mov_t* mov, const struct mov_box_t* box)
+int mp4_read_extra(struct mov_t* mov, const struct mov_box_t* box)
 {
 	int r;
 	uint64_t p1, p2;
@@ -177,7 +177,7 @@ static int mov_read_video(struct mov_t* mov, struct mov_sample_entry_t* entry)
 }
 
 /*
-class PixelAspectRatioBox extends Box(‘pasp’){
+class PixelAspectRatioBox extends Box(‘pasp?{
 	unsigned int(32) hSpacing;
 	unsigned int(32) vSpacing;
 }
@@ -285,6 +285,7 @@ static int mov_read_subtitle_sample_entry(struct mov_t* mov, struct mov_sample_e
 {
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
+	box.size -= 16;
 	if (box.type == MOV_TAG('t', 'x', '3', 'g'))
 	{
 		mov_read_tx3g(mov, &box);
@@ -345,7 +346,7 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 		{
 			mov_read_text_sample_entry(mov, &track->stsd.entries[i]);
 		}
-		else if (MOV_SUBT == track->handler_type)
+		else if (MOV_SUBT == track->handler_type || MOV_SBTL == track->handler_type)
 		{
 			mov_read_subtitle_sample_entry(mov, &track->stsd.entries[i]);
 		}
@@ -471,7 +472,7 @@ static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_e
 	// 2. The samplerate field shall be set to 48000<<16.
 	mov_buffer_w32(&mov->io, entry->u.audio.samplerate); /* samplerate */
 
-	if(MOV_OBJECT_AAC == entry->object_type_indication)
+	if(MOV_OBJECT_AAC == entry->object_type_indication || MOV_OBJECT_MP3 == entry->object_type_indication || MOV_OBJECT_MP1A == entry->object_type_indication)
 		size += mov_write_esds(mov);
     else if(MOV_OBJECT_OPUS == entry->object_type_indication)
         size += mov_write_dops(mov);
@@ -495,8 +496,15 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 	mov_buffer_w16(&mov->io, 0); /* Reserved */
 	mov_buffer_w16(&mov->io, entry->data_reference_index); /* Data-reference index */
 
-	if (entry->extra_data_size > 0)
+	if (MOV_TAG('t', 'x', '3', 'g') == mov->track->tag)
+	{
+		size += mov_write_tx3g(mov);
+	}
+	else if (entry->extra_data_size > 0) // unknown type
+	{
 		mov_buffer_write(&mov->io, entry->extra_data, entry->extra_data_size);
+		size += entry->extra_data_size;
+	}
 
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
@@ -529,7 +537,7 @@ size_t mov_write_stsd(const struct mov_t* mov)
 		{
 			size += mov_write_audio(mov, &track->stsd.entries[i]);
 		}
-		else if (MOV_SUBT == track->handler_type || MOV_TEXT == track->handler_type)
+		else if (MOV_SUBT == track->handler_type || MOV_TEXT == track->handler_type || MOV_SBTL == track->handler_type)
 		{
 			size += mov_write_subtitle(mov, &track->stsd.entries[i]);
 		}

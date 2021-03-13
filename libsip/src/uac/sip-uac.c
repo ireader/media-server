@@ -8,8 +8,9 @@
 #include "sip-transport.h"
 #include <stdio.h>
 
-int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
+int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
+	sip_uac_transaction_addref(t);
 	atomic_increment32(&sip->ref); // ref by transaction
 	assert(sip->ref > 0);
 
@@ -17,10 +18,10 @@ int sip_uac_add_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 	locker_lock(&sip->locker);
 	list_insert_after(&t->link, sip->uac.prev);
 	locker_unlock(&sip->locker);
-	return sip_uac_transaction_addref(t);
+	return 0;
 }
 
-int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
+int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
 	struct sip_dialog_t* dialog;
 	struct list_head *pos, *next;
@@ -42,17 +43,19 @@ int sip_uac_del_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_
 		{
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			sip_dialog_remove(sip, dialog); // TODO: release in locker
+			break;
 		}
 	}
 
 	locker_unlock(&sip->locker);
+	sip_uac_transaction_release(t);
 	sip_agent_destroy(sip);
-	return sip_uac_transaction_release(t);
+	return 0;
 }
 
-void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
+sip_timer_t sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler)
 {
-	void* id;
+	sip_timer_t id;
 
 	// wait for timer done
 	if (sip_uac_transaction_addref(t) < 2)
@@ -69,7 +72,7 @@ void* sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t*
 	//return uac->timer.start(uac->timerptr, timeout, handler, usrptr);
 }
 
-void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, void* id)
+void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, sip_timer_t* id)
 {
 	//if(0 == uac->timer.stop(uac->timerptr, id))
 	if (0 == sip_timer_stop(id))

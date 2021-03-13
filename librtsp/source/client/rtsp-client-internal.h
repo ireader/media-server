@@ -83,7 +83,6 @@ struct rtsp_client_t
 //int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp);
 //int rtsp_client_teardown(struct rtsp_client_t* rtsp);
 int rtsp_client_sdp(struct rtsp_client_t* rtsp, const char* sdp);
-int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands);
 int rtsp_client_get_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
 int rtsp_client_set_parameter(struct rtsp_client_t *rtsp, int media, const char* parameter);
 

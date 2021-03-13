@@ -51,7 +51,7 @@ int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t*
 	//assert(1 == sip_contacts_count(&msg->contacts));
 	contact = sip_contacts_get(&msg->contacts, 0);
 	if (contact && cstrvalid(&contact->uri.host))
-		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
+		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->remote.target, &contact->uri);
 
 	// 12.1.2 UAC Behavior (p71)
 	// The route set MUST be set to the list of URIs in the Record-Route
@@ -64,7 +64,7 @@ int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t*
 		sip_uris_push(&dialog->routers, &uri);
 	}
 
-	dialog->secure = cstrprefix(&dialog->target.host, "sips");
+	dialog->secure = cstrprefix(&dialog->remote.target.host, "sips");
 	return 0;
 }
 
@@ -90,7 +90,7 @@ int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t*
     //assert(1 == sip_contacts_count(&msg->contacts));
     contact = sip_contacts_get(&msg->contacts, 0);
     if (contact && cstrvalid(&contact->uri.host))
-        dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
+        dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->remote.target, &contact->uri);
     
 	// 12.1.1 UAS behavior (p70)
 	// The route set MUST be set to the list of URIs in the Record-Route
@@ -104,7 +104,7 @@ int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t*
         sip_uris_push(&dialog->routers, &uri);
     }
     
-    dialog->secure = cstrprefix(&dialog->target.host, "sips");
+    dialog->secure = cstrprefix(&dialog->remote.target.host, "sips");
     return 0;
 }
 
@@ -117,6 +117,10 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 	if (0 != atomic_decrement32(&dialog->ref))
 		return 0;
 
+	sip_uri_free(&dialog->local.target);
+	sip_contact_free(&dialog->local.uri);
+	sip_uri_free(&dialog->remote.target);
+	sip_contact_free(&dialog->remote.uri);
 	sip_uris_free(&dialog->routers);
 	free(dialog);
 	return 0;
@@ -124,8 +128,10 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 
 int sip_dialog_addref(struct sip_dialog_t* dialog)
 {
-	assert(dialog->ref > 0);
-	return atomic_increment32(&dialog->ref);
+	int r;
+	r = atomic_increment32(&dialog->ref);
+	assert(r > 1);
+	return r;
 }
 
 int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* tag)
@@ -133,6 +139,19 @@ int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* 
 	const char* end;
 	end = (char*)(dialog + 1) + N;
 	dialog->ptr = cstring_clone(dialog->ptr, end, &dialog->local.uri.tag, tag->p, tag->n);
+	sip_params_add_or_update(&dialog->local.uri.params, "tag", 3, &dialog->local.uri.tag);
+	return dialog->ptr < end ? 0 : -1;
+}
+
+int sip_dialog_set_local_target(struct sip_dialog_t* dialog, const struct sip_message_t* msg)
+{
+	const char* end;
+	struct sip_contact_t* contact;
+	end = (char*)(dialog + 1) + N;
+
+	contact = sip_contacts_get(&msg->contacts, 0);
+	if (contact && cstrvalid(&contact->uri.host) && !sip_uri_equal(&dialog->local.target, &contact->uri))
+		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->local.target, &contact->uri);
 	return dialog->ptr < end ? 0 : -1;
 }
 
@@ -143,8 +162,11 @@ int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_mess
     end = (char*)(dialog + 1) + N;
     
     contact = sip_contacts_get(&msg->contacts, 0);
-    if(contact && !sip_uri_equal(&dialog->target, &contact->uri))
-        dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->target, &contact->uri);
+	if (contact && cstrvalid(&contact->uri.host) && !sip_uri_equal(&dialog->remote.target, &contact->uri))
+	{
+		sip_uri_free(&dialog->remote.target);
+		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->remote.target, &contact->uri);
+	}
     return dialog->ptr < end ? 0 : -1;
 }
 
@@ -188,6 +210,7 @@ int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 	locker_lock(&sip->locker);
 	if (NULL != sip_dialog_find(sip, &dialog->callid, &dialog->local.uri.tag, &dialog->remote.uri.tag))
 	{
+		assert(0);
 		locker_unlock(&sip->locker);
 		return -1; // exist
 	}
@@ -244,6 +267,7 @@ int sip_dialog_remove_early(struct sip_agent_t* sip, const struct cstring_t* cal
 			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
 			list_remove(&dialog->link);
 			early = dialog;
+			break;
 		}
 	}
 
@@ -262,7 +286,7 @@ struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const st
 	struct sip_dialog_t* dialog;
 
 	*added = 0;
-	dialog = sip_dialog_find(sip, &msg->callid, &msg->from.tag, &msg->to.tag);
+    dialog = sip_dialog_find(sip, &msg->callid, uac ? &msg->from.tag : &msg->to.tag, uac ? &msg->to.tag : &msg->from.tag);
 	if (!dialog)
 	{
 		dialog = sip_dialog_create();
@@ -274,6 +298,7 @@ struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const st
 
 		// link to sip dialogs(add ref later)
 		list_insert_after(&dialog->link, sip->dialogs.prev);
+		assert(dialog->ref == 1);
 		*added = 1;
 	}
 

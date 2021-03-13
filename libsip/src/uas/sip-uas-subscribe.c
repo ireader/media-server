@@ -7,9 +7,11 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	const struct cstring_t *h;
 	struct sip_subscribe_t* subscribe;
 
-	subscribe = sip_subscribe_internal_fetch(t->agent, t->reply, &req->event, 1, &added);
+	subscribe = sip_subscribe_internal_fetch(t->agent, t->reply, &req->event, 0, &added);
 	if (!subscribe)
 		return sip_uas_reply(t, 481, NULL, 0); // 481 Subscription does not exist
+
+	assert(!dialog || subscribe->dialog == dialog);
 
 	// call once only
 	if (added && t->handler->onsubscribe)
@@ -21,6 +23,9 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		h = sip_message_get_header_by_name(req, "Expires");
 		if (h && 0 == atoi(h->p))
 		{
+            // notify expire
+            if (t->handler->onnotify)
+                t->handler->onnotify(t->param, req, t, subscribe->evtsession, NULL);
 			sip_subscribe_remove(t->agent, subscribe);
 			assert(1 == subscribe->ref);
 		}
@@ -51,7 +56,7 @@ int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t
 	int r;
 	struct sip_subscribe_t* subscribe;
 
-	subscribe = sip_subscribe_fetch(t->agent, &req->callid, &req->from.tag, &req->to.tag, &req->event);
+	subscribe = sip_subscribe_fetch(t->agent, &req->callid, &req->to.tag, &req->from.tag, &req->event);
 	if (!subscribe)
 		return sip_uas_reply(t, 481, NULL, 0); // 481 Subscription does not exist
 

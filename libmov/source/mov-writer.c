@@ -34,7 +34,7 @@ static size_t mov_write_moov(struct mov_t* mov)
 		size += mov_write_trak(mov);
 	}
 
-//  size += mov_write_udta(mov);
+	size += mov_write_udta(mov);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -128,7 +128,12 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 			continue;
 
 		// pts in ms
-		track->mdhd.duration = track->samples[track->sample_count - 1].dts - track->samples[0].dts;
+		track->mdhd.duration = (track->samples[track->sample_count - 1].dts - track->samples[0].dts);
+		if (track->sample_count > 1)
+		{
+			// duration += 3/4 * avg-duration + 1/4 * last-frame-duration
+			track->mdhd.duration += track->mdhd.duration * 3 / (track->sample_count - 1) / 4 + (track->samples[track->sample_count - 1].dts - track->samples[track->sample_count - 2].dts) / 4;
+		}
 		//track->mdhd.duration = track->mdhd.duration * track->mdhd.timescale / 1000;
 		track->tkhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
 		if (track->tkhd.duration > mov->mvhd.duration)
@@ -315,4 +320,11 @@ int mov_writer_add_subtitle(struct mov_writer_t* writer, uint8_t object, const v
 
     mov->mvhd.next_track_ID++;
 	return mov->track_count++;
+}
+
+int mov_writer_add_udta(mov_writer_t* mov, const void* data, size_t size)
+{
+	mov->mov.udta = data;
+	mov->mov.udta_size = size;
+	return 0;
 }

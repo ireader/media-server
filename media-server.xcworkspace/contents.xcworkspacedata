@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:../avcodec/avbsf/avbsf.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:../sdk/libaio/libaio.xcodeproj">
    </FileRef>
    <FileRef
@@ -18,6 +21,9 @@
    </FileRef>
    <FileRef
       location = "group:../sdk/libice/libice.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:libmkv/libmkv.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:libmov/libmov.xcodeproj">

@@ -57,13 +57,14 @@ static void hls_ts_free(void* param, void* packet)
 	assert(hls->ptr <= (uint8_t*)packet && hls->ptr + hls->capacity > (uint8_t*)packet);
 }
 
-static void hls_ts_write(void* param, const void* packet, size_t bytes)
+static int hls_ts_write(void* param, const void* packet, size_t bytes)
 {
 	struct hls_media_t* hls;
 	hls = (struct hls_media_t*)param;
 	assert(188 == bytes);
 	assert(hls->ptr <= (uint8_t*)packet && hls->ptr + hls->capacity > (uint8_t*)packet);
 	hls->bytes += bytes; // update packet length
+	return 0;
 }
 
 static void* hls_ts_create(struct hls_media_t* hls)

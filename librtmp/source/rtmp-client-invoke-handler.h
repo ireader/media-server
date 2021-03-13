@@ -206,6 +206,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		else if (0 == strcasecmp(result.code, "NetConnection.Connect.InvalidApp")
 			|| 0 == strcasecmp(result.code, "NetConnection.Connect.Rejected")
 			|| 0 == strcasecmp(result.code, "NetStream.Connect.IllegalApplication") // ksyun cdn: level finish, auth failed
+			|| 0 == strcasecmp(result.code, "NetStream.Publish.AlreadyExistStream") // ksyun cdn: level finish, description Already exist stream!
 			|| 0 == strcasecmp(result.code, "NetStream.Failed")
 			|| 0 == strcasecmp(result.code, "NetStream.Play.Failed")
 			|| 0 == strcasecmp(result.code, "NetStream.Play.StreamNotFound"))

@@ -4,6 +4,9 @@
 #if defined(_WIN32) || defined(_WIN64)
 #define fseek64 _fseeki64
 #define ftell64 _ftelli64
+#elif defined(OS_LINUX)
+#define fseek64 fseeko64
+#define ftell64 ftello64
 #else
 #define fseek64 fseek
 #define ftell64 ftell

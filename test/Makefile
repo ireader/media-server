@@ -1,4 +1,5 @@
 ROOT:=../../sdk
+AVCODEC:=../../avcodec
 NOVERSION = 1
 
 #--------------------------------Output------------------------------
@@ -12,6 +13,7 @@ OUTFILE = test
 # INCLUDES = $(addprefix -I,$(INCLUDES)) # add -I prefix
 #--------------------------------------------------------------------
 INCLUDES = . $(ROOT)/include $(ROOT)/libaio/include $(ROOT)/libhttp/include $(ROOT)/libice/include \
+			$(AVCODEC)/avbsf/include \
 			../libdash/include \
 			../libflv/include \
 			../libhls/include \
@@ -30,8 +32,10 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				../libmpeg/test ../libhls/demo \
 				../libdash/test ../libmov/test \
 				../libflv/test ../librtmp/aio ../librtmp/test \
-				../librtp/test ../librtsp/source/server/aio ../librtsp/source/sdp ../librtsp/test ../librtsp/test/media \
-				../libsip/test
+				../librtp/test ../librtsp/source/server/aio ../librtsp/source/sdp ../librtsp/source/utils ../librtsp/test ../librtsp/test/media \
+				../libsip/test \
+				$(AVCODEC)/avbsf/src
+				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 SOURCE_FILES += $(ROOT)/source/uri-parse.c

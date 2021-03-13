@@ -158,7 +158,7 @@ static size_t fmp4_write_moov(struct mov_t* mov)
 	}
 
 	size += fmp4_write_mvex(mov);
-//  size += fmp4_write_udta(mov);
+	size += mov_write_udta(mov);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -326,22 +326,25 @@ static int fmp4_writer_init(struct mov_t* mov)
 	{
 		mov->ftyp.major_brand = MOV_BRAND_MSDH;
 		mov->ftyp.minor_version = 0;
-		mov->ftyp.brands_count = 4;
+		mov->ftyp.brands_count = 6;
 		mov->ftyp.compatible_brands[0] = MOV_BRAND_ISOM;
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_MSDH;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_MSIX;
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
+		mov->ftyp.compatible_brands[5] = MOV_BRAND_ISO6; // styp
 		mov->header = 0;
 	}
 	else
 	{
 		mov->ftyp.major_brand = MOV_BRAND_ISOM;
 		mov->ftyp.minor_version = 1;
-		mov->ftyp.brands_count = 4;
+		mov->ftyp.brands_count = 5;
 		mov->ftyp.compatible_brands[0] = MOV_BRAND_ISOM;
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_AVC1;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_DASH;
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
 		mov->header = 0;
 	}
 	return 0;
@@ -488,6 +491,13 @@ int fmp4_writer_add_subtitle(struct fmp4_writer_t* writer, uint8_t object, const
 
     mov->mvhd.next_track_ID++;
     return mov->track_count++;
+}
+
+int fmp4_writer_add_udta(fmp4_writer_t* writer, const void* data, size_t size)
+{
+	writer->mov.udta = data;
+	writer->mov.udta_size = size;
+	return 0;
 }
 
 int fmp4_writer_save_segment(fmp4_writer_t* writer)

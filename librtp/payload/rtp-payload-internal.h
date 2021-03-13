@@ -3,6 +3,7 @@
 
 #include "rtp-payload.h"
 #include "rtp-packet.h"
+#include "rtp-param.h"
 #include "rtp-util.h"
 
 struct rtp_payload_encode_t

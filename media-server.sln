@@ -31,6 +31,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libice", "..\sdk\libice\lib
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sdk", "..\sdk\sdk.vcxproj", "{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "avbsf", "..\avcodec\avbsf\avbsf.vcxproj", "{454FC5B7-C7DC-4E78-9803-254C35FC01E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -143,6 +145,14 @@ Global
 		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|Win32.Build.0 = Release|Win32
 		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|x64.ActiveCfg = Release|x64
 		{11B5E9D8-CEE3-4F4A-9DF6-370EC4D71639}.Release|x64.Build.0 = Release|x64
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Debug|Win32.Build.0 = Debug|Win32
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Debug|x64.ActiveCfg = Debug|x64
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Debug|x64.Build.0 = Debug|x64
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Release|Win32.ActiveCfg = Release|Win32
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Release|Win32.Build.0 = Release|Win32
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Release|x64.ActiveCfg = Release|x64
+		{454FC5B7-C7DC-4E78-9803-254C35FC01E6}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

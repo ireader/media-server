@@ -18,9 +18,9 @@ static void ps_free(void* /*param*/, void* /*packet*/)
     return;
 }
 
-static void ps_write(void* param, int stream, void* packet, size_t bytes)
+static int ps_write(void* param, int stream, void* packet, size_t bytes)
 {
-    fwrite(packet, bytes, 1, (FILE*)param);
+    return 1 == fwrite(packet, bytes, 1, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 
 static inline const char* ps_type(int type)
@@ -31,11 +31,13 @@ static inline const char* ps_type(int type)
     case PSI_STREAM_AAC: return "AAC";
     case PSI_STREAM_H264: return "H264";
     case PSI_STREAM_H265: return "H265";
+    case PSI_STREAM_AUDIO_OPUS: return "OPUS";
+    case PSI_STREAM_AUDIO_G711A: return "G711";
     default: return "*";
     }
 }
 
-static void on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     printf("[%s] pts: %08lu, dts: %08lu%s\n", ps_type(codecid), (unsigned long)pts, (unsigned long)dts, flags ? " [I]" : "");
 
@@ -43,10 +45,10 @@ static void on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t p
     static std::map<int, int> streams;
     if (0 == streams.size())
     {
-        i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_AAC, NULL, 0);
-        streams[PSI_STREAM_AAC] = i;
-        i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H264, NULL, 0);
-        streams[PSI_STREAM_H264] = i;
+        //i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_AAC, NULL, 0);
+        //streams[PSI_STREAM_AAC] = i;
+        //i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H264, NULL, 0);
+        //streams[PSI_STREAM_H264] = i;
         //i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H265, NULL, 0);
         //streams[PSI_STREAM_H265] = i;
     }
@@ -54,7 +56,6 @@ static void on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t p
     std::map<int, int>::const_iterator it = streams.find(codecid);
     if (streams.end() == it)
     {
-        assert(0);
         i = ps_muxer_add_stream((ps_muxer_t*)ps, codecid, NULL, 0);
         streams[codecid] = i;
     }
@@ -63,7 +64,7 @@ static void on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t p
         i = it->second;
     }
 
-    ps_muxer_input((ps_muxer_t*)ps, i, flags, pts, dts, data, bytes);
+    return ps_muxer_input((ps_muxer_t*)ps, i, flags, pts, dts, data, bytes);
 }
 
 static void ps_demuxer(const char* file, ps_muxer_t* muxer)

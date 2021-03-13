@@ -3,6 +3,8 @@
 #include "sip-header.h"
 #include "sip-dialog.h"
 #include "sip-message.h"
+#include "sip-timer.h"
+#include "sys/system.h"
 
 static struct sip_dialog_t* s_dialog;
 
@@ -233,7 +235,7 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 		assert(0 == cstrcmp(&ptr, "Bob <sip:bob@biloxi.com>;tag=a6c85cf"));
 		ptr.n = sip_contact_write(&dialog->remote.uri, buf, end);
 		assert(0 == cstrcmp(&ptr, "Alice <sip:alice@atlanta.com>;tag=1928301774"));
-		ptr.n = sip_uri_write(&dialog->target, buf, end);
+		ptr.n = sip_uri_write(&dialog->remote.target, buf, end);
 		assert(0 == cstrcmp(&ptr, "sip:alice@pc33.atlanta.com"));
 		assert(0 == cstrcmp(&dialog->callid, "a84b4c76e66710"));
 		assert(0 == sip_uris_count(&dialog->routers));
@@ -284,6 +286,8 @@ static int sip_uas_send(void* param, const struct cstring_t* /*protocol*/, const
 // 24 Examples (p213)
 void sip_uas_message_test(void)
 {
+	sip_timer_init();
+
 	struct sip_uas_handler_t handler;
 	handler.onregister = sip_uas_onregister;
 	handler.oninvite = sip_uas_oninvite;
@@ -299,4 +303,5 @@ void sip_uas_message_test(void)
 	assert(0 == sip_invite(sip));
 	assert(0 == sip_bye(sip));
 	sip_agent_destroy(sip);
+	sip_timer_cleanup();
 }

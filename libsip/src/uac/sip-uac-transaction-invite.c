@@ -1,3 +1,48 @@
+/*
+                                    |INVITE from TU
+                  Timer A fires     |INVITE sent      Timer B fires
+                  Reset A,          V                 or Transport Err.
+                  INVITE sent +-----------+           inform TU
+                    +---------|           |--------------------------+
+                    |         |  Calling  |                          |
+                    +-------->|           |-----------+              |
+   300-699                    +-----------+ 2xx       |              |
+   ACK sent                      |  |       2xx to TU |              |
+   resp. to TU                   |  |1xx              |              |
+   +-----------------------------+  |1xx to TU        |              |
+   |                                |                 |              |
+   |                1xx             V                 |              |
+   |                1xx to TU +-----------+           |              |
+   |                +---------|           |           |              |
+   |                |         |Proceeding |           |              |
+   |                +-------->|           |           |              |
+   |                          +-----------+ 2xx       |              |
+   |         300-699             |    |     2xx to TU |              |
+   |         ACK sent,  +--------+    +---------------+              |
+   |         resp. to TU|                             |              |
+   |                    |                             |              |
+   |                    V                             V              |
+   |              +-----------+                   +----------+       |
+   +------------->|           |Transport Err.     |          |       |
+                  | Completed |Inform TU          | Accepted |       |
+               +--|           |-------+           |          |-+     |
+       300-699 |  +-----------+       |           +----------+ |     |
+       ACK sent|    ^  |              |               |  ^     |     |
+               |    |  |              |               |  |     |     |
+               +----+  |              |               |  +-----+     |
+                       |Timer D fires |  Timer M fires|    2xx       |
+                       |-             |             - |    2xx to TU |
+                       +--------+     |   +-----------+              |
+      NOTE:                     V     V   V                          |
+   Transitions                 +------------+                        |
+   are labeled                 |            |                        |
+   with the event              | Terminated |<-----------------------+
+   over the action             |            |
+   to take.                    +------------+
+
+					Figure 5: INVITE client transaction
+*/
+
 #include "sip-uac-transaction.h"
 #include "sip-uac.h"
 #include <stdlib.h>
@@ -16,8 +61,9 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 		// create early dialog
 		dialog = sip_dialog_create();
 		if (!dialog) return -1;
-		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_add(t->agent, dialog))
+		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_set_local_target(dialog, t->req) || 0 != sip_dialog_add(t->agent, dialog))
 		{
+			assert(0);
 			sip_dialog_release(dialog);
 			dialog = NULL;
 			return 0; // ignore
@@ -29,8 +75,9 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
 	t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
 
-	if (dialog)
-		sip_dialog_release(dialog);
+	// reset timer b for proceeding too long
+	sip_uac_transaction_timeout(t, TIMER_B);
+	sip_dialog_release(dialog);
 	return 0;
 }
 
@@ -80,8 +127,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 		sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_D);
 	}
 
-	if (dialog)
-		sip_dialog_release(dialog);
+	sip_dialog_release(dialog);
 	return r;
 }
 
@@ -99,7 +145,7 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	{
 		dialog = sip_dialog_create();
 		if (!dialog) return -1;
-		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_add(t->agent, dialog))
+		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_set_local_target(dialog, t->req) || 0 != sip_dialog_add(t->agent, dialog))
 		{
 			sip_dialog_release(dialog);
 			dialog = NULL;
@@ -187,12 +233,8 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 {
 	int r, status, oldstatus;
 	
-	// stop retry timer A
-	if (NULL != t->timera)
-	{
-		sip_uac_stop_timer(t->agent, t, t->timera);
-		t->timera = NULL;
-	}
+	// stop retry timer A/B
+	sip_uac_stop_timer(t->agent, t, &t->timera);
 
 	oldstatus = t->status;
 	status = sip_uac_transaction_inivte_change_state(t, reply);
@@ -220,6 +262,8 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 		break;
 
 	case SIP_UAC_TRANSACTION_TERMINATED:
+		break; // timeout ?
+
 	default:
 		assert(0);
 		break;

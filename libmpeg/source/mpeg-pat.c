@@ -4,25 +4,61 @@
 
 #include "mpeg-ts-proto.h"
 #include "mpeg-util.h"
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
+
+struct pmt_t* pat_alloc_pmt(struct pat_t* pat)
+{
+	void* ptr;
+	unsigned int n;
+
+	if (NULL == pat->pmts)
+	{
+		assert(0 == pat->pmt_count);
+		assert(0 == pat->pmt_capacity);
+		pat->pmts = pat->pmt_default;
+		pat->pmt_capacity = sizeof(pat->pmt_default) / sizeof(pat->pmt_default[0]);
+	}
+
+	if (pat->pmt_count >= pat->pmt_capacity)
+	{
+		if (pat->pmt_count + 1 > 65535)
+		{
+			assert(0);
+			return NULL;
+		}
+
+		n = pat->pmt_capacity + pat->pmt_capacity / 4 + 4;
+		ptr = realloc(pat->pmts == pat->pmt_default ? NULL : pat->pmts, sizeof(pat->pmts[0]) * n);
+		if (!ptr)
+			return NULL;
+
+		if (pat->pmts == pat->pmt_default)
+			memmove(ptr, pat->pmts, sizeof(pat->pmt_default));
+		pat->pmts = (struct pmt_t*)ptr;
+		pat->pmt_capacity = n;
+	}
+
+	// new pmt
+	memset(&pat->pmts[pat->pmt_count], 0, sizeof(pat->pmts[0]));
+	return &pat->pmts[pat->pmt_count];
+}
 
 static struct pmt_t* pat_fetch(struct pat_t* pat, uint16_t pid)
 {
-    unsigned int i;
-    for(i = 0; i < pat->pmt_count; i++)
+	unsigned int i;
+	struct pmt_t* pmt;
+	for(i = 0; i < pat->pmt_count; i++)
     {
         if(pat->pmts[i].pid == pid)
             return &pat->pmts[i];
     }
-    
-    if(pat->pmt_count >= sizeof(pat->pmts) / sizeof(pat->pmts[0]))
-    {
-        assert(0);
-        return NULL;
-    }
-    
+	
     // new pmt
-    return &pat->pmts[pat->pmt_count++];
+	pmt = pat_alloc_pmt(pat);
+	pat->pmt_count++;
+	return pmt;
 }
 
 size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
@@ -65,7 +101,6 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
         
         if(0 == pn)
             continue; // ignore NIT info
-        assert(pat->pmt_count <= sizeof(pat->pmts)/sizeof(pat->pmts[0]));
         pmt = pat_fetch(pat, pid);
         if(NULL == pmt)
             continue;

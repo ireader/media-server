@@ -41,7 +41,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	static uint32_t v_pts = 0, v_dts = 0;
 	static uint32_t a_pts = 0, a_dts = 0;
 
-	printf("[%c] pts: %s, dts: %s, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts));
+	printf("[%c] pts: %s, dts: %s, %u, cts: %d, ", flv_type(codec), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), dts, (int)(pts - dts));
 	
 	if (FLV_AUDIO_AAC == codec)
 	{

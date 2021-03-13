@@ -104,7 +104,7 @@ static void rtp_av1_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp
 
 static int rtp_av1_pack_flush(struct rtp_encode_av1_t *packer)
 {
-	int n;
+	int r, n;
 	if (!packer->ptr || packer->offset <= RTP_FIXED_HEADER)
 		return 0; // nothing to send
 
@@ -119,15 +119,16 @@ static int rtp_av1_pack_flush(struct rtp_encode_av1_t *packer)
 	++packer->pkt.rtp.seq;
 	packer->aggregation &= ~AV1_AGGREGATION_HEADER_N;
 
-	packer->handler.packet(packer->cbparam, packer->ptr, n + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+	r = packer->handler.packet(packer->cbparam, packer->ptr, n + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 	packer->handler.free(packer->cbparam, packer->ptr);
 	packer->offset = 0;
 	packer->ptr = NULL;
-	return 0;
+	return r;
 }
 
 static int rtp_av1_pack_append(struct rtp_encode_av1_t *packer, const uint8_t* obu, int64_t bytes)
 {
+	int r;
 	int64_t n;
 	uint8_t* ptr, *end;
 	uint8_t aggregation;
@@ -162,7 +163,8 @@ static int rtp_av1_pack_append(struct rtp_encode_av1_t *packer, const uint8_t* o
 		if (bytes > 0)
 		{
 			packer->ptr[RTP_FIXED_HEADER] = aggregation | AV1_AGGREGATION_HEADER_Y;
-			rtp_av1_pack_flush(packer);
+			r = rtp_av1_pack_flush(packer);
+			if (0 != r) return r;
 		}
 	}
 
@@ -175,6 +177,7 @@ static int rtp_av1_pack_append(struct rtp_encode_av1_t *packer, const uint8_t* o
 /// @param[in] bytes temporal_unit_sizetemporal_unit_size
 static int rtp_av1_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
+	int r;
 	uint8_t obu_has_size_field;
 	uint8_t obu_extension_flag;
 	uint8_t temporal_id, temporal_id0;
@@ -224,7 +227,9 @@ static int rtp_av1_pack_input(void* pack, const void* data, int bytes, uint32_t 
 				// OBUs in the RTP packet.
 				if (temporal_id != temporal_id0 || spatial_id != spatial_id0)
 				{
-					rtp_av1_pack_flush(packer);
+					r = rtp_av1_pack_flush(packer);
+					if (0 != r) return r;
+
 					temporal_id0 = temporal_id;
 					spatial_id0 = spatial_id;
 				}

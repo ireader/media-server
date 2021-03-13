@@ -19,6 +19,7 @@ int sdp_h264(uint8_t *data, int bytes, unsigned short port, int payload, int fre
 	uint8_t i;
 	struct mpeg4_avc_t avc;
 
+	assert(90000 == frequence);
 	r = mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, extra_size, &avc);
 	if (r < 0) return r;
 	assert(avc.nb_pps + avc.nb_sps > 0);
@@ -84,7 +85,7 @@ void sdp_h264_test(void)
 	static const uint8_t ps[] = { 0x00, 0x00, 0x00, 0x1, 0x67, 0x64, 0x00, 0x1f, 0xac, 0xd9, 0x40, 0x50, 0x05, 0xba, 0x6a, 0x02, 0x1a, 0x02, 0x80, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x1e, 0x47, 0x8c, 0x18, 0xcb, 0x00, 0x00, 0x00, 0x1, 0x68, 0xef, 0xbc, 0xb0 };
 	uint8_t buffer[256];
 
-	assert(strlen(sdp) == sdp_h264(buffer, sizeof(buffer), 0, 96, 90000, extra, sizeof(extra)));
+	assert((int)strlen(sdp) == sdp_h264(buffer, sizeof(buffer), 0, 96, 90000, extra, sizeof(extra)));
 	assert(0 == memcmp(sdp, buffer, strlen(sdp)));
 
 	assert(sizeof(ps) == sdp_h264_load(buffer, sizeof(buffer), config));

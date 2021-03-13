@@ -3,6 +3,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -124,6 +125,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 
 void sip_uas_test(void)
 {
+	sip_timer_init();
 	struct sip_uas_handler_t handler;
 	handler.onregister = sip_uas_onregister;
 	handler.oninvite = sip_uas_oninvite;
@@ -141,4 +143,5 @@ void sip_uas_test(void)
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
+	sip_timer_cleanup();
 }

@@ -24,6 +24,7 @@
     <ClInclude Include="include\mov-format.h" />
     <ClInclude Include="include\fmp4-writer.h" />
     <ClInclude Include="include\mov-reader.h" />
+    <ClInclude Include="include\mov-udta.h" />
     <ClInclude Include="include\mov-writer.h" />
     <ClInclude Include="include\mov-buffer.h" />
     <ClInclude Include="source\mov-internal.h" />
@@ -39,6 +40,7 @@
     <ClCompile Include="source\mov-hdlr.c" />
     <ClCompile Include="source\mov-hdr.c" />
     <ClCompile Include="source\mov-hvcc.c" />
+    <ClCompile Include="source\mov-udta.c" />
     <ClCompile Include="source\mov-iods.c" />
     <ClCompile Include="source\mov-leva.c" />
     <ClCompile Include="source\mov-mehd.c" />

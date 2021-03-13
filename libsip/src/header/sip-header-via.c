@@ -23,7 +23,7 @@ ttl = 1*3DIGIT ; 0 to 255
 
 #include "sip-header.h"
 
-void sip_via_params_free(struct sip_via_t* via)
+void sip_via_free(struct sip_via_t* via)
 {
 	sip_params_free(&via->params);
 }
@@ -181,7 +181,7 @@ void sip_header_via_test(void)
 	assert(1 == sip_params_count(&v->params) && 0 == cstrcmp(&sip_params_get(&v->params, 0)->name, "branch") && 0 == cstrcmp(&sip_params_get(&v->params, 0)->value, "z9hG4bK87asdks7"));
 	assert(0 == cstrcmp(&v->branch, "z9hG4bK87asdks7"));
 	assert(sip_via_write(v, p, p + sizeof(p)) < sizeof(p) && 0 == strcmp(s, p));
-	sip_via_params_free(&via);
+	sip_via_free(&via);
 
 	sip_vias_init(&vias);
 	s = "SIP/2.0/UDP first.example.com:4000;ttl=16;maddr=224.2.0.1;branch=z9hG4bKa7c6a8dlze.1,SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7";

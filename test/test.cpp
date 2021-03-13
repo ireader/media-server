@@ -96,13 +96,14 @@ int main(int argc, char* argv[])
 	http_header_www_authenticate_test();
 	rtsp_client_auth_test();
 	sip_header_test();
-	sip_uac_message_test();
-	sip_uas_message_test();
 	
 	socket_init();
+	sip_uac_message_test();
+	sip_uas_message_test();
 
 	//mpeg_ts_dec_test("fileSequence0.ts");
 	//mpeg_ts_test("hevc_aac.ts");
+	//mpeg_ps_dec_test("sjz.ps");
 	//mpeg_ps_test("sjz.ps");
 	
 	//mov_2_flv_test("720p.mp4");

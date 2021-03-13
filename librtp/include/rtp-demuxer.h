@@ -9,9 +9,19 @@ extern "C" {
 
 struct rtp_demuxer_t;
 
-typedef void (*rtp_demuxer_onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+/// @param[in] param rtp_demuxer_create input param
+/// @param[in] packet rtp payload data
+/// @param[in] bytes rtp payload length in byte
+/// @param[in] timestamp rtp timestamp(relation at sample rate)
+/// @param[in] flags rtp packet flags, RTP_PAYLOAD_FLAG_PACKET_xxx, see more @rtp-payload.h
+/// @return 0-ok, other-error
+typedef int (*rtp_demuxer_onpacket)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
-struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param);
+/// @param[in] jitter rtp reorder jitter(ms), e.g. 200(ms)
+/// @param[in] frequency audio/video sample rate, e.g. video 90000, audio 48000
+/// @param[in] payload rtp payload id, see more @rtp-profile.h
+/// @param[in] encoding rtp payload encoding, see more @rtp-profile.h
+struct rtp_demuxer_t* rtp_demuxer_create(int jitter, int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param);
 int rtp_demuxer_destroy(struct rtp_demuxer_t** rtp);
 
 /// @param[in] data a rtp/rtcp packet

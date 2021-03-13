@@ -6,14 +6,22 @@
 #include <assert.h>
 #include <errno.h>
 
+#define MPEG_PACKET_PAYLOAD_MAX_SIZE (10 * 1024 * 1024)
+
+typedef int (*h2645_find_new_access)(const uint8_t* p, size_t bytes, int* vcl);
+
 static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t size)
 {
     void* ptr;
 
+    // fix: pkt->size + size bits wrap
+    if (pkt->size + size > MPEG_PACKET_PAYLOAD_MAX_SIZE || pkt->size + size < pkt->size)
+        return -EINVAL;
+
     if (pkt->capacity < pkt->size + size)
     {
         ptr = realloc(pkt->data, pkt->size + size + 2048);
-        if (NULL == ptr) return ENOMEM;
+        if (NULL == ptr) return -ENOMEM;
         pkt->data = (uint8_t*)ptr;
         pkt->capacity = pkt->size + size + 2048;
     }
@@ -24,62 +32,64 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
     return 0;
 }
 
-typedef int (*h2645_find_aud)(const uint8_t* p, size_t bytes);
-
-static int mpeg_packet_h264_h265_start_width_aud(int codecid, const uint8_t* data, size_t size)
-{
-	h2645_find_aud find;
-	find = PSI_STREAM_H264 == codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
-	return -1 != find(data, size > 9 ? 9 : size) ? 1 : 0;
-}
-
-static int mpeg_packet_h264_h265_is_new_access(int codecid, const uint8_t* data, size_t size)
-{
-    h2645_find_aud find;
-    find = PSI_STREAM_H264 == codecid ? mpeg_h264_is_new_access_unit : mpeg_h265_is_new_access_unit;
-
-    if (size > 4 && 0x00 == data[0] && 0x00 == data[1] && (0x01 == data[2] || (0x00 == data[2] && 0x01 == data[3])))
-        return find(data + (0x01==data[2] ? 3 : 4), size - ((0x01==data[2] ? 3 : 4)));
-    return 0;
-}
-
-static int mpeg_packet_h264_h265_filter(uint16_t program, struct packet_t* pkt, const uint8_t* data, size_t size, h2645_find_aud find, pes_packet_handler handler, void* param)
+static int mpeg_packet_h264_h265_filter(uint16_t program, uint16_t stream, struct packet_t* pkt, const uint8_t* data, size_t size, pes_packet_handler handler, void* param)
 {
     int i;
+    size_t off;
+    size_t leading;
 
     //assert(0 == pes->len || pes->payload.len == pes->len);
 
-    // filter AUD
-    assert(0 == find(data, size));
-    assert(-1 == find(data + 5, size - 5));
-    i = mpeg_h264_find_nalu(data + 5, size - 5);
-    if(-1 != i)
-        handler(param, program, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + i + 5, size - i - 5);
+    // skip AUD
+    for (off = i = 0; off < size; off += i + 1)
+    {
+        i = mpeg_h264_find_nalu(data + off, size - off, &leading);
+        if (i < 0)
+        {
+            assert(0);
+            return -1;
+        }
 
-    return 0;
+        //assert(0 == i - leading);
+        if (PSI_STREAM_H264 == pkt->codecid ? 9 == (data[off + i] & 0x1f) : 35 == ((data[off + i] >> 1) & 0x3f))
+            continue;
+
+        i -= leading; // rewind to 0x00 00 00 01
+        break;
+    }
+
+    // TODO: check size > 0 ???
+    return handler(param, program, stream, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + off + i, size - off - i);
 }
 
 static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, size_t size, pes_packet_handler handler, void* param)
 {
-    int r, aud;
-    h2645_find_aud find;
-    const uint8_t* p, *p0, *end;
+    int r, n;
+    const uint8_t* p, *end, *data;
+    h2645_find_new_access find;
 
-    p = pkt->data;
+    data = pkt->data;
     end = pkt->data + pkt->size;
-    find = PSI_STREAM_H264 == pes->codecid ? mpeg_h264_find_access_unit_delimiter : mpeg_h265_find_access_unit_delimiter;
+    p = pkt->size < size + 5 ? pkt->data : end - size - 5; // start from trailing nalu
+    find = PSI_STREAM_H264 == pes->codecid ? mpeg_h264_find_new_access_unit : mpeg_h265_find_new_access_unit;
 
-    // previous packet
-    if (pkt->size > size)
+    // TODO: The first frame maybe not a valid frame, filter it
+
+
+    // PES contain multiple packet
+    n = find(p, end - p, &pkt->vcl);
+    while (n >= 0)
     {
-        p = end - size - 7; // handle trailing AUD, <0, 0, 1, AUD>
+        assert(pkt->vcl > 0);
 
-        aud = p < pkt->data + 4 ? -1 : find(p, end - p);
-        if (-1 == aud)
-            return 0; // need more data
+        p += n;
+        r = mpeg_packet_h264_h265_filter(pes->pn, pes->pid, pkt, data, p - data, handler, param);
+        if (0 != r)
+            return r;
 
-        p += aud;
-        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, pkt->data, p - pkt->data, find, handler, param);
+        data = p;
+        pkt->vcl = 0; // next frame
+        n = find(p, end - p, &pkt->vcl);
     }
 
     // save pts/dts
@@ -90,21 +100,11 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     pkt->flags = pes->data_alignment_indicator ? 1 : 0;
 //    assert(0 == find(p, end - p)); // start with AUD
 
-    // PES contain multiple packet
-    aud = find(p + 5, end - p - 5);
-    for (p0 = p; -1 != aud; p0 = p)
-    {
-        p += aud + 5; // next packet
-        r = mpeg_packet_h264_h265_filter(pes->pn, pkt, p0, p - p0, find, handler, param);
-
-        aud = find(p + 5, end - p - 5);
-    }
-
     // remain data
-    if (p != pkt->data)
+    if (data != pkt->data)
     {
-        memmove(pkt->data, p, end - p);
-        pkt->size = end - p;
+        memmove(pkt->data, data, end - data);
+        pkt->size = end - data;
     }
 
     return 0;
@@ -113,21 +113,9 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, size_t size, int start, pes_packet_handler handler, void* param)
 {
     int r;
-    static uint8_t h264aud[] = { 0, 0, 0, 1, 0x09, 0xE0 };
-    static uint8_t h265aud[] = { 0, 0, 0, 1, 0x46, 0x01, 0x50 };
-    
-	// split H.264/H.265 by AUD
-    if ( (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && mpeg_packet_h264_h265_start_width_aud(pes->codecid, pkt->data, pkt->size))
+
+    if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
     {
-#if 1 // for some stream only has an AUD in IDR frame
-        if(mpeg_packet_h264_h265_is_new_access(pes->codecid, data, size) && 0 == mpeg_packet_h264_h265_start_width_aud(pes->codecid, data, size))
-        {
-            assert(PTS_NO_VALUE != pkt->dts);
-            r = PSI_STREAM_H264 == pes->codecid ? mpeg_packet_append(pkt, h264aud, sizeof(h264aud)) : mpeg_packet_append(pkt, h265aud, sizeof(h265aud));
-            if (0 != r)
-                return r;
-        }
-#endif
         r = mpeg_packet_append(pkt, data, size);
         if (0 != r)
             return r;
@@ -141,8 +129,10 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         if (pkt->size > 0 && (pkt->dts != pes->dts || start))
         {
             assert(PTS_NO_VALUE != pkt->dts);
-            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
             pkt->size = 0; // new packet start
+            if (0 != r)
+                return r;
         }
 
         r = mpeg_packet_append(pkt, data, size);
@@ -157,13 +147,14 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         pkt->flags = pes->data_alignment_indicator ? 1 : 0;
 
         // for audio packet only, H.264/H.265 pes->len maybe incorrect
-        if (pes->len > 0 && pes->pkt.size >= pes->len && PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid)
+        assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid);
+        if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
             assert(pes->pkt.size == pes->len); // packet lost
-            handler(param, pes->pn, pkt->sid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
             pkt->size = 0; // new packet start
         }
     }
 
-    return 0;
+    return r;
 }

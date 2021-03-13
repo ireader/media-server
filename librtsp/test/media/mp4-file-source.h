@@ -6,6 +6,7 @@
 #include "media-source.h"
 #include "avpacket-queue.h"
 #include "mov-reader.h"
+#include "../source/utils/rtp-sender.h"
 #include <string>
 #include <stdio.h>
 #include <stdint.h>
@@ -37,9 +38,7 @@ private:
 	
 	int SendBye();
 
-	static void* RTPAlloc(void* param, int bytes);
-	static void RTPFree(void* param, void *packet);
-	static void RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+	static int OnRTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 	static void MP4OnVideo(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes);
 	static void MP4OnAudio(void* param, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
@@ -64,19 +63,11 @@ private:
 
 	struct media_t
 	{
-		void* rtp;
+		struct rtp_sender_t rtp;
+
 		int64_t dts_first; // first frame timestamp
 		int64_t dts_last; // last frame timestamp
-		uint32_t timestamp; // rtp timestamp
 		uint64_t rtcp_clock;
-
-		uint32_t ssrc;
-		int bandwidth;
-		int frequency;
-		char name[64];
-		int payload;
-		void* packer; // rtp encoder
-		uint8_t packet[1450];
 
 		struct avpacket_queue_t* pkts;
 		std::shared_ptr<IRTPTransport> transport;

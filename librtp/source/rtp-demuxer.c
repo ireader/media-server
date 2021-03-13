@@ -3,6 +3,7 @@
 #include "rtp-payload.h"
 #include "rtp-packet.h"
 #include "rtp-queue.h"
+#include "rtp-param.h"
 #include "rtp.h"
 #include "rtcp-header.h"
 #include <stdlib.h>
@@ -17,7 +18,7 @@ struct rtp_demuxer_t
     uint64_t clock; // rtcp clock
     
     uint8_t* ptr;
-    int cap;
+    int cap, max;
 
     rtp_queue_t* queue;
     void* payload;
@@ -27,15 +28,14 @@ struct rtp_demuxer_t
     void* param;
 };
 
-static void rtp_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
     
     // TODO: rtp timestamp -> pts/dts
     
-    if(rtp->onpkt)
-        rtp->onpkt(rtp->param, packet, bytes, timestamp, flags);
+    return rtp->onpkt ? rtp->onpkt(rtp->param, packet, bytes, timestamp, flags) : -1;
 }
 
 static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
@@ -45,6 +45,7 @@ static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
     if (RTCP_MSG_BYE == msg->type)
     {
         printf("finished\n");
+        //rtp->onpkt(rtp->param, NULL, 0, 0, 0);
     }
 }
 
@@ -54,20 +55,21 @@ static struct rtp_packet_t* rtp_demuxer_alloc(struct rtp_demuxer_t* rtp, const v
     uint8_t* ptr;
     struct rtp_packet_t* pkt;
     
-    if(rtp->cap < bytes + (int)sizeof(struct rtp_packet_t))
+    if(rtp->cap < bytes + (int)sizeof(struct rtp_packet_t) + (int)sizeof(int) /*bytes*/ )
     {
-        r = bytes + sizeof(struct rtp_packet_t);
+        r = bytes + sizeof(struct rtp_packet_t) + sizeof(int);
         r = r > 1500 ? r : 1500;
-        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(void*));
+        ptr = (uint8_t*)realloc(rtp->ptr, r + sizeof(int) /*cap*/ );
         if(!ptr)
             return NULL;
         
         rtp->cap = r;
         rtp->ptr = ptr;
-        *(int*)ptr = r;
+        *(int*)ptr = r; /*cap*/
     }
 
-    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(void*));
+    *((int*)rtp->ptr + 1) = bytes; /*bytes*/
+    pkt = (struct rtp_packet_t*)(rtp->ptr + sizeof(int) /*cap*/  + sizeof(int) /*bytes*/ );
     memcpy(pkt + 1, data, bytes);
     
     r = rtp_packet_deserialize(pkt, pkt + 1, bytes);
@@ -85,7 +87,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     uint8_t* ptr;
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)param;
-    ptr = (uint8_t*)pkt - sizeof(void*);
+    ptr = (uint8_t*)pkt - sizeof(int) /*cap*/ - sizeof(int) /*bytes*/ ;
     cap = *(int*)ptr;
     
     if(cap <= rtp->cap)
@@ -100,7 +102,7 @@ static void rtp_demuxer_freepkt(void* param, struct rtp_packet_t* pkt)
     rtp->ptr = ptr;
 }
 
-static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payload, const char* encoding)
+static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int jitter, int frequency, int payload, const char* encoding)
 {
     uint32_t timestamp;
     struct rtp_event_t evthandler;
@@ -112,26 +114,26 @@ static int rtp_demuxer_init(struct rtp_demuxer_t* rtp, int frequency, int payloa
     memset(&handler, 0, sizeof(handler));
     handler.alloc = NULL;
     handler.free = NULL;
-    handler.packet = rtp_packet;
+    handler.packet = rtp_onpacket;
     rtp->payload = rtp_payload_decode_create(payload, encoding, &handler, rtp);
     
     timestamp = (uint32_t)rtpclock();
     evthandler.on_rtcp = rtp_on_rtcp;
     rtp->rtp = rtp_create(&evthandler, rtp, rtp->ssrc, timestamp, frequency ? frequency : 90000, 2 * 1024 * 1024, 0);
     
-    rtp->queue = rtp_queue_create(100, frequency, rtp_demuxer_freepkt, rtp);
+    rtp->queue = rtp_queue_create(jitter, frequency, rtp_demuxer_freepkt, rtp);
     
     return rtp->payload && rtp->rtp && rtp->queue? 0 : -1;
 }
 
-struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param)
+struct rtp_demuxer_t* rtp_demuxer_create(int jitter, int frequency, int payload, const char* encoding, rtp_demuxer_onpacket onpkt, void* param)
 {
     struct rtp_demuxer_t* rtp;
     rtp = (struct rtp_demuxer_t*)calloc(1, sizeof(*rtp));
     if(!rtp)
         return NULL;
     
-    if(0 != rtp_demuxer_init(rtp, frequency, payload, encoding))
+    if(0 != rtp_demuxer_init(rtp, jitter, frequency, payload, encoding))
     {
         rtp_demuxer_destroy(&rtp);
         return NULL;
@@ -141,6 +143,7 @@ struct rtp_demuxer_t* rtp_demuxer_create(int frequency, int payload, const char*
     rtp->param = param;
     rtp->clock = rtpclock();
     rtp->ssrc = rtp_ssrc();
+    rtp->max = RTP_PAYLOAD_MAX_SIZE;
     return rtp;
 }
 
@@ -173,33 +176,33 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     uint8_t pt;
     struct rtp_packet_t* pkt;
     
-    if (bytes < 12)
-        return -1;
+    if (bytes < 12 || bytes > rtp->max)
+        return -EINVAL;
     pt = ((uint8_t*)data)[1];
 
     if(pt < RTCP_FIR || pt > RTCP_TOKEN)
     {
         pkt = rtp_demuxer_alloc(rtp, data, bytes);
         if (!pkt)
-            return -1;
+            return -ENOMEM;
 
         r = rtp_queue_write(rtp->queue, pkt);
-        if(r < 0)
+        if(r <= 0) // 0-discard packet(duplicate/too late)
         {
             rtp_demuxer_freepkt(rtp, pkt);
-            return r > 0 ? -r : r;
+            return r;
         }
         
         // re-order packet
         pkt = rtp_queue_read(rtp->queue);
         while(pkt)
         {
-            bytes = (int)((uint8_t*)pkt->payload - (uint8_t*)(pkt+1)) + pkt->payloadlen;
+            bytes = *(int*)((uint8_t*)pkt - sizeof(int) /*bytes*/ );
 
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
             r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
             if(r < 0)
-                break;
+                return r;
     
             rtp_demuxer_freepkt(rtp, pkt);
             pkt = rtp_queue_read(rtp->queue);
@@ -208,10 +211,12 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     else
     {
         r = rtp_onreceived_rtcp(rtp->rtp, data, bytes);
-        r = pt; // rtcp message type
+        (void)r; // ignore rtcp handler
+        
+        return pt; // rtcp message type
     }
-    
-    return r;
+
+    return 0;
 }
 
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)
@@ -223,7 +228,7 @@ int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)
     r = 0;
     clock = rtpclock();
     interval = rtp_rtcp_interval(rtp->rtp);
-    if (rtp->clock + interval * 1000 < clock)
+    if (rtp->clock + (uint64_t)interval * 1000 < clock)
     {
         // RTCP report
         r = rtp_rtcp_report(rtp->rtp, buf, len);

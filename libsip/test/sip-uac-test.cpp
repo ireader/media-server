@@ -1,8 +1,10 @@
+#include <memory>
 #include "sockutil.h"
 #include "aio-timeout.h"
 #include "sip-uac.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -141,12 +143,12 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 		// https://blog.csdn.net/yunlianglinfeng/article/details/81109380
 		// http://www.voidcn.com/article/p-oqqbqgvd-bgn.html
 		const char* h;
-		t = sip_uac_register(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, param);
+		std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, param), sip_uac_transaction_release);
 		h = http_get_header_by_name(test->parser, "Call-ID");
-		sip_uac_add_header(t, "Call-ID", h); // All registrations from a UAC SHOULD use the same Call-ID
+		sip_uac_add_header(t.get(), "Call-ID", h); // All registrations from a UAC SHOULD use the same Call-ID
 		h = http_get_header_by_name(test->parser, "CSeq");
 		snprintf(buffer, sizeof(buffer), "%u REGISTER", atoi(h) + 1);
-		sip_uac_add_header(t, "CSeq", buffer); // A UA MUST increment the CSeq value by one for each REGISTER request with the same Call-ID
+		sip_uac_add_header(t.get(), "CSeq", buffer); // A UA MUST increment the CSeq value by one for each REGISTER request with the same Call-ID
 
 		// Unauthorized
 		struct http_header_www_authenticate_t auth;
@@ -169,8 +171,8 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
             snprintf(auth.uri, sizeof(auth.uri), "sip:%s", "192.168.154.128");
             snprintf(auth.username, sizeof(auth.username), "%s", "34020000001320000001");
             http_header_auth(&auth, "12345678", "REGISTER", NULL, 0, buffer, sizeof(buffer));
-            sip_uac_add_header(t, "Authorization", buffer);
-			assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
+            sip_uac_add_header(t.get(), "Authorization", buffer);
+			assert(0 == sip_uac_send(t.get(), NULL, 0, &test->transport, test));
 			sip_uac_recv_reply(test);
 			break;
 
@@ -188,10 +190,9 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 
 static void sip_uac_register_test(struct sip_uac_test_t *test)
 {
-	struct sip_uac_transaction_t* t;
 	//t = sip_uac_register(uac, "Bob <sip:bob@biloxi.com>", "sip:registrar.biloxi.com", 7200, sip_uac_message_onregister, test);
-	t = sip_uac_register(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, test);
-	assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_register(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:192.168.154.128", 3600, sip_uac_onregister, test), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &test->transport, test));
 	sip_uac_recv_reply(test);
 }
 
@@ -210,10 +211,9 @@ static void sip_uac_message_test(struct sip_uac_test_t *test)
 						"<Status>OK</Status>"
 						"</Notify>";
 
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_message(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:34020000002000000001@192.168.154.128", sip_uac_onmessage, test);
-	sip_uac_add_header(t, "Content-Type", "Application/MANSCDP+xml");
-	assert(0 == sip_uac_send(t, msg, strlen(msg), &test->transport, test));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_message(test->sip, "sip:34020000001320000001@192.168.154.1", "sip:34020000002000000001@192.168.154.128", sip_uac_onmessage, test), sip_uac_transaction_release);
+	sip_uac_add_header(t.get(), "Content-Type", "Application/MANSCDP+xml");
+	assert(0 == sip_uac_send(t.get(), msg, strlen(msg), &test->transport, test));
 	sip_uac_recv_reply(test);
 }
 
@@ -224,25 +224,14 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 
 static void sip_uac_invite_test(struct sip_uac_test_t *test)
 {
-	struct sip_uac_transaction_t* t;
-	t = sip_uac_invite(test->sip, "sip:34020000001320000001@192.168.154.128", "sip:34020000001320000001@192.168.154.128", sip_uac_oninvited, test);
-	assert(0 == sip_uac_send(t, NULL, 0, &test->transport, test));
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_invite(test->sip, "sip:34020000001320000001@192.168.154.128", "sip:34020000001320000001@192.168.154.128", sip_uac_oninvited, test), sip_uac_transaction_release);
+	assert(0 == sip_uac_send(t.get(), NULL, 0, &test->transport, test));
 	sip_uac_recv_reply(test);
-}
-
-static int STDCALL TimerThread(void* param)
-{
-	bool *running = (bool*)param;
-	while (*running)
-	{
-		aio_timeout_process();
-		system_sleep(5);
-	}
-	return 0;
 }
 
 void sip_uac_test(void)
 {
+	sip_timer_init();
 	struct sip_uac_test_t test;
 	test.transport = {
 		sip_uac_transport_via,
@@ -250,10 +239,6 @@ void sip_uac_test(void)
 	};
 	struct sip_uas_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
-
-	pthread_t th;
-	bool running = true;
-	thread_create(&th, TimerThread, &running);
 
 	test.udp = socket_udp();
 	test.sip = sip_agent_create(&handler, NULL);
@@ -263,10 +248,8 @@ void sip_uac_test(void)
 	sip_uac_message_test(&test);
 	//sip_uac_invite_test(&test);
 
-	running = false;
-	thread_destroy(th);
-
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
+	sip_timer_cleanup();
 }

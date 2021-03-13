@@ -55,6 +55,8 @@ struct packet_t
     uint8_t *data;
     size_t size;
     size_t capacity;
+
+	int vcl; // h.264/h.265 only
 };
 
 struct pes_t

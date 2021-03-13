@@ -58,7 +58,7 @@ static void rtp_vp9_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp
 
 static int rtp_vp9_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 	uint8_t vp9_payload_descriptor[1];
 	const uint8_t *ptr;
@@ -66,9 +66,10 @@ static int rtp_vp9_pack_input(void* pack, const void* data, int bytes, uint32_t 
 	packer = (struct rtp_encode_vp9_t *)pack;
 	packer->pkt.rtp.timestamp = timestamp;
 
+	r = 0;
 	ptr = (const uint8_t *)data;
 	//In non-flexible mode (with the F bit below set to 0),
-	for (vp9_payload_descriptor[0] = 0x08 /*Start of a layer frame*/; bytes > 0; ++packer->pkt.rtp.seq)
+	for (vp9_payload_descriptor[0] = 0x08 /*Start of a layer frame*/; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + N_VP9_HEADER + RTP_FIXED_HEADER) < packer->size ? bytes : (packer->size - N_VP9_HEADER - RTP_FIXED_HEADER);
@@ -96,12 +97,12 @@ static int rtp_vp9_pack_input(void* pack, const void* data, int bytes, uint32_t 
 
 		memcpy(rtp + n, vp9_payload_descriptor, N_VP9_HEADER);
 		memcpy(rtp + n + N_VP9_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
-		packer->handler.packet(packer->cbparam, rtp, n + N_VP9_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_VP9_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 		vp9_payload_descriptor[0] &= ~0x08;
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_vp9_encode()

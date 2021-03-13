@@ -16,6 +16,10 @@ struct mov_box_t
 	// FullBox
 	//uint32_t version : 8;
 	//uint32_t flags : 24;
+
+#if defined(DEBUG) || defined(_DEBUG)
+	int level;
+#endif
 };
 
 #endif /* !_mov_box_h_ */

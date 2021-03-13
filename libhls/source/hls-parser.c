@@ -493,6 +493,11 @@ static int hls_parser_onuri(struct hls_parser_t* parser, const char* uri, size_t
 
 	if (parser->playlist)
 	{
+		if (!parser->segment)
+		{
+			assert(0);
+			return -1;
+		}
 		parser->segment->uri = (char*)uri;
 		parser->segment->uri[len] = 0;
 		parser->segment = NULL;
@@ -500,6 +505,11 @@ static int hls_parser_onuri(struct hls_parser_t* parser, const char* uri, size_t
 	}
 	else
 	{
+		if (!parser->variant)
+		{
+			assert(0);
+			return -1;
+		}
 		parser->variant->uri = (char*)uri;
 		parser->variant->uri[len] = 0;
 		parser->variant = NULL;

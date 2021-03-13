@@ -20,7 +20,12 @@ struct ts_demuxer_t
 
     ts_demuxer_onpacket onpacket;
     void* param;
+
+	struct ts_demuxer_notify_t notify;
+	void* notify_param;
 };
+
+static void ts_demuxer_notify(struct ts_demuxer_t* ts, const struct pmt_t* pmt);
 
 static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const uint8_t* data, size_t bytes)
 {
@@ -120,7 +125,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
-size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
+int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     uint32_t i, j;
     for (i = 0; i < ts->pat.pmt_count; i++)
@@ -151,11 +156,12 @@ size_t ts_demuxer_flush(struct ts_demuxer_t* ts)
     return 0;
 }
 
-size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
+int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
     int r = 0;
     uint32_t i, j, k;
 	uint32_t PID;
+	unsigned int count;
     struct ts_packet_header_t pkhd;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
@@ -221,7 +227,10 @@ size_t ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t byt
 					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
+					count = ts->pat.pmts[j].stream_count;
 					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
+					if(count != ts->pat.pmts[j].stream_count)
+						ts_demuxer_notify(ts, &ts->pat.pmts[j]);
 					break;
 				}
 				else
@@ -303,6 +312,9 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
         }
     }
 
+	if (ts->pat.pmts && ts->pat.pmts != ts->pat.pmt_default)
+		free(ts->pat.pmts);
+
     free(ts);
     return 0;
 }
@@ -317,4 +329,24 @@ int ts_demuxer_getservice(struct ts_demuxer_t* ts, int program, char* provider, 
     snprintf(provider, nprovider, "%s", pmt->provider);
     snprintf(name, nname, "%s", pmt->name);
     return 0;
+}
+
+void ts_demuxer_set_notify(struct ts_demuxer_t* ts, struct ts_demuxer_notify_t* notify, void* param)
+{
+	ts->notify_param = param;
+	memcpy(&ts->notify, notify, sizeof(ts->notify));
+}
+
+static void ts_demuxer_notify(struct ts_demuxer_t* ts, const struct pmt_t* pmt)
+{
+	unsigned int i;
+	const struct pes_t* pes;
+	if (!ts->notify.onstream)
+		return;
+
+	for (i = 0; i < pmt->stream_count; i++)
+	{
+		pes = &pmt->streams[i];
+		ts->notify.onstream(ts->notify_param, pes->pid, pes->codecid, pes->esinfo, pes->esinfo_len, i + 1 >= pmt->stream_count ? 1 : 0);
+	}
 }

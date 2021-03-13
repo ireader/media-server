@@ -2,6 +2,9 @@
 #include <string.h>
 #include <assert.h>
 
+#define H265_NAL_VPS 32
+#define H265_NAL_SPS 33
+#define H265_NAL_PPS 34
 #define H265_NAL_AUD 35 // Access unit delimiter
 
 int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, int bytes, void* out, int size)
@@ -37,6 +40,10 @@ int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, int byte
 		if (H265_NAL_AUD == nalu_type)
 			continue; // ignore AUD
 #endif
+
+		if (H265_NAL_VPS == nalu_type || H265_NAL_SPS == nalu_type || H265_NAL_PPS == nalu_type)
+			vps_sps_pps_flag = 1;
+
 		irap = 16 <= nalu_type && nalu_type <= 23;
 		if (irap && 0 == vps_sps_pps_flag)
 		{

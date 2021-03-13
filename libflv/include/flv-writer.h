@@ -8,8 +8,21 @@
 extern "C" {
 #endif
 
+struct flv_vec_t
+{
+	void* ptr;
+	int len;
+};
+
+/// @param[in] param flv_writer_create2 param
+/// @param[in] n vec number
+/// @return 0-ok, other-error
+typedef int (*flv_writer_onwrite)(void* param, const struct flv_vec_t* vec, int n);
+
 void* flv_writer_create(const char* file);
-void* flv_writer_create2(int (*write)(void* param, const void* buf, int len), void* param);
+/// @param[in] audio 1-has audio, 0-don't has audio
+/// @param[in] video 1-has video, 0-don't has video
+void* flv_writer_create2(int audio, int video, flv_writer_onwrite onwrite, void* param);
 
 void flv_writer_destroy(void* flv);
 

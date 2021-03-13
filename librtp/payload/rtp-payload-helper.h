@@ -14,7 +14,7 @@ struct rtp_payload_helper_t
 	uint32_t timestamp;
 
 	uint8_t* ptr;
-	int size, capacity;
+	int size, capacity, maxsize;
     int __flags; // internal use only
 };
 

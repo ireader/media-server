@@ -58,32 +58,32 @@ static inline uint8_t mov_buffer_r8(struct mov_ioutil_t* io)
 static inline uint16_t mov_buffer_r16(struct mov_ioutil_t* io)
 {
 	uint16_t v;
-	v = mov_buffer_r8(io) << 8;
-	v |= mov_buffer_r8(io);
+	v = mov_buffer_r8(io);
+	v = (v << 8) | mov_buffer_r8(io);
 	return v;
 }
 
 static inline uint32_t mov_buffer_r24(struct mov_ioutil_t* io)
 {
 	uint32_t v;
-	v = mov_buffer_r8(io) << 16;
-	v |= mov_buffer_r16(io);
+	v = mov_buffer_r8(io);
+	v = (v << 16) | mov_buffer_r16(io);
 	return v;
 }
 
 static inline uint32_t mov_buffer_r32(struct mov_ioutil_t* io)
 {
 	uint32_t v;
-	v = mov_buffer_r16(io) << 16;
-	v |= mov_buffer_r16(io);
+	v = mov_buffer_r16(io);
+	v = (v << 16) | mov_buffer_r16(io);
 	return v;
 }
 
 static inline uint64_t mov_buffer_r64(struct mov_ioutil_t* io)
 {
 	uint64_t v;
-	v = ((uint64_t)mov_buffer_r32(io)) << 32;
-	v |= mov_buffer_r32(io);
+	v = mov_buffer_r32(io);
+	v = (v << 32) | mov_buffer_r32(io);
 	return v;
 }
 

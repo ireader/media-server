@@ -90,7 +90,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,7 +155,8 @@
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
     <ClInclude Include="..\librtp\test\rtp-dump.h" />
-    <ClInclude Include="..\librtp\test\rtp-sender.h" />
+    <ClInclude Include="..\librtsp\source\utils\rtp-sender.h" />
+    <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h" />
     <ClInclude Include="..\librtsp\test\media\avbuffer.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket-queue.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket.h" />
@@ -229,17 +230,20 @@
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
     <ClCompile Include="..\librtp\test\rtp-sender-test.cpp" />
-    <ClCompile Include="..\librtp\test\rtp-sender.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-fmtp-load.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h265.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c" />
+    <ClCompile Include="..\librtsp\source\utils\rtp-sender.c" />
+    <ClCompile Include="..\librtsp\source\utils\rtsp-demuxer.c" />
+    <ClCompile Include="..\librtsp\source\utils\rtsp-muxer.c" />
     <ClCompile Include="..\librtsp\test\media\avbuffer.c" />
     <ClCompile Include="..\librtsp\test\media\avpacket-queue.cpp" />
     <ClCompile Include="..\librtsp\test\media\avpacket.c" />
@@ -277,6 +281,9 @@
     <None Include="..\libmpeg\test\fileSequence0.ts" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\avcodec\avbsf\avbsf.vcxproj">
+      <Project>{454fc5b7-c7dc-4e78-9803-254c35fc01e6}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\sdk\libaio\libaio.vcxproj">
       <Project>{24239ef8-56ac-4b79-81aa-5cb49b8b1178}</Project>
     </ProjectReference>

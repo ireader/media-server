@@ -7,14 +7,16 @@
 
 size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 {
-	int i, j;
-	uint16_t packet_length;
+	size_t i, j;
+	size_t packet_length;
 	uint16_t number_of_access_units;
 
 	// Table 2-42 - Program stream directory packet(p81)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xFF==data[3]);
 	packet_length = (((uint16_t)data[4]) << 8) | data[5];
 	assert(bytes >= (size_t)packet_length + 6);
+	if (bytes < 20 || packet_length < 20 - 6)
+		return 0; // invalid data length
 
 	assert((0x01 & data[7]) == 0x01); // 'xxxxxxx1'
 	number_of_access_units = (data[6] << 8) | ((data[7] >> 7) & 0x7F);
@@ -31,7 +33,7 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 
 	// access unit
 	j = 20;
-	for(i = 0; i < number_of_access_units; i++)
+	for(i = 0; j + 18 <= packet_length + 6 && i < number_of_access_units && i < N_ACCESS_UNIT; i++)
 	{
 		psd->units[i].packet_stream_id = data[j];
 		psd->units[i].pes_header_position_offset_sign = (data[j+1] >> 7) & 0x01;
@@ -73,5 +75,5 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 		j += 18;
 	}
 
-	return j+1;
+	return j;
 }

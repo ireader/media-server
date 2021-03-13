@@ -38,7 +38,7 @@ extern "C" {
 		struct name##s_t* p;				\
 		p = (struct name##s_t*)(((char*)arr) - offsetof(struct name##s_t, arr)); \
 		for(i = 0; i < darray_count(arr); i++) \
-			name##_params_free(name##s_get(p, i)); \
+			name##_free(name##s_get(p, i)); \
 		if(arr && arr->elements)			\
 			free(arr->elements);			\
 	}										\
@@ -199,9 +199,10 @@ char* sip_uri_clone(char* ptr, const char* end, struct sip_uri_t* clone, const s
 char* sip_via_clone(char* ptr, const char* end, struct sip_via_t* clone, const struct sip_via_t* via);
 char* sip_contact_clone(char* ptr, const char* end, struct sip_contact_t* clone, const struct sip_contact_t* contact);
 
-void sip_uri_params_free(struct sip_uri_t* uri);
-void sip_via_params_free(struct sip_via_t* via);
-void sip_contact_params_free(struct sip_contact_t* contact);
+void sip_uri_free(struct sip_uri_t* uri);
+void sip_via_free(struct sip_via_t* via);
+void sip_contact_free(struct sip_contact_t* contact);
+void sip_substate_free(struct sip_substate_t* substate);
 
 /// @return 0-ok, other-error
 int sip_header_substate(const char* s, const char* end, struct sip_substate_t* substate);

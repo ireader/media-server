@@ -31,7 +31,7 @@ private:
 
 	static void* RTPAlloc(void* param, int bytes);
 	static void RTPFree(void* param, void *packet);
-	static void RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+	static int RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 private:
 	void* m_rtp;

@@ -1,4 +1,4 @@
-// RFC7731 RTP Payload Format for VP8 Video
+// RFC7741 RTP Payload Format for VP8 Video
 //
 
 #include "rtp-packet.h"
@@ -59,7 +59,7 @@ static void rtp_vp8_pack_get_info(void* pack, uint16_t* seq, uint32_t* timestamp
 
 static int rtp_vp8_pack_input(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
-	int n;
+	int r, n;
 	uint8_t *rtp;
 	uint8_t vp8_payload_descriptor[1];
 	const uint8_t *ptr;
@@ -67,8 +67,9 @@ static int rtp_vp8_pack_input(void* pack, const void* data, int bytes, uint32_t 
 	packer = (struct rtp_encode_vp8_t *)pack;
 	packer->pkt.rtp.timestamp = timestamp; //(uint32_t)(time * KHz);
 
+	r = 0;
 	ptr = (const uint8_t *)data;
-	for (vp8_payload_descriptor[0] = 0x10 /*start of partition*/; bytes > 0; ++packer->pkt.rtp.seq)
+	for (vp8_payload_descriptor[0] = 0x10 /*start of partition*/; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		packer->pkt.payload = ptr;
 		packer->pkt.payloadlen = (bytes + N_VP8_HEADER + RTP_FIXED_HEADER) <= packer->size ? bytes : (packer->size - N_VP8_HEADER - RTP_FIXED_HEADER);
@@ -91,12 +92,12 @@ static int rtp_vp8_pack_input(void* pack, const void* data, int bytes, uint32_t 
 
 		memcpy(rtp + n, vp8_payload_descriptor, N_VP8_HEADER);
 		memcpy(rtp + n + N_VP8_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
-		packer->handler.packet(packer->cbparam, rtp, n + N_VP8_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
+		r = packer->handler.packet(packer->cbparam, rtp, n + N_VP8_HEADER + packer->pkt.payloadlen, packer->pkt.rtp.timestamp, 0);
 		packer->handler.free(packer->cbparam, rtp);
 		vp8_payload_descriptor[0] = 0x00;
 	}
 
-	return 0;
+	return r;
 }
 
 struct rtp_payload_encode_t *rtp_vp8_encode()

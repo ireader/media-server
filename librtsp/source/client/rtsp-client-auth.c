@@ -58,6 +58,8 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed)
 {
 	memset(&rtsp->auth, 0, sizeof(rtsp->auth));
+	snprintf(rtsp->auth.username, sizeof(rtsp->auth.username), "%s", rtsp->usr);
+
 	if (0 != http_header_www_authenticate(filed, &rtsp->auth))
 	{
 		assert(0);

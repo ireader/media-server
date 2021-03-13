@@ -15,10 +15,12 @@ static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_HEVC,	MOV_TAG('h', 'e', 'v', '1') }, // HEVCSampleEntry (ISO/IEC 14496-15:2013)
 	{ MOV_OBJECT_MP4V,	MOV_MP4V },
 	{ MOV_OBJECT_AAC,	MOV_MP4A },
+	{ MOV_OBJECT_MP3,	MOV_MP4A }, // mp4_read_decoder_config_descriptor
+	{ MOV_OBJECT_MP1A,	MOV_MP4A }, // mp4_read_decoder_config_descriptor
 	{ MOV_OBJECT_G711a,	MOV_TAG('a', 'l', 'a', 'w') },
 	{ MOV_OBJECT_G711u,	MOV_TAG('u', 'l', 'a', 'w') },
 	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'x', '3', 'g') },
-	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'e', 't', 't') },
+	{ MOV_OBJECT_TEXT,	MOV_TAG('t', 'e', 'x', 't') },
 	{ MOV_OBJECT_TEXT,	MOV_TAG('c', '6', '0', '8') },
     { MOV_OBJECT_OPUS,  MOV_OPUS },
     { MOV_OBJECT_VP8,   MOV_VP8 },

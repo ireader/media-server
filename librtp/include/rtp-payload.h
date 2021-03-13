@@ -17,7 +17,9 @@ struct rtp_payload_t
 {
 	void* (*alloc)(void* param, int bytes);
 	void (*free)(void* param, void *packet);
-	void (*packet)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+
+	/// @return 0-ok, other-error
+	int (*packet)(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 };
 
 /// Create RTP packet encoder

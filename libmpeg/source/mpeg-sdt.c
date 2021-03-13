@@ -30,7 +30,7 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
     
 //    printf("SDT: %0x %0x %0x %0x %0x %0x %0x %0x, %0x, %0x, %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6],(unsigned int)data[7],(unsigned int)data[8],(unsigned int)data[9],(unsigned int)data[10]);
     
-    if(PAT_TID_SDT != table_id)
+    if(PAT_TID_SDT != table_id || section_length + 3 > bytes)
         return 0;
     
     // TODO: version_number change, reload SDT

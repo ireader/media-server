@@ -1,3 +1,48 @@
+/*
+								  |Request received
+								  |pass to TU
+								  V
+							+-----------+
+							|           |
+							| Trying    |-------------+
+							|           |             |
+							+-----------+             |200-699 from TU
+								  |                   |send response
+								  |1xx from TU        |
+								  |send response      |
+								  |                   |
+			   Request            V      1xx from TU  |
+			   send response+-----------+send response|
+				   +--------|           |--------+    |
+				   |        | Proceeding|        |    |
+				   +------->|           |<-------+    |
+			+<--------------|           |             |
+			|Trnsprt Err    +-----------+             |
+			|Inform TU            |                   |
+			|                     |                   |
+			|                     |200-699 from TU    |
+			|                     |send response      |
+			|  Request            V                   |
+			|  send response+-----------+             |
+			|      +--------|           |             |
+			|      |        | Completed |<------------+
+			|      +------->|           |
+			+<--------------|           |
+			|Trnsprt Err    +-----------+
+			|Inform TU            |
+			|                     |Timer J fires
+			|                     |-
+			|                     |
+			|                     V
+			|               +-----------+
+			|               |           |
+			+-------------->| Terminated|
+							|           |
+							+-----------+
+
+				Figure 8: non-INVITE server transaction
+*/
+
 #include "sip-uas-transaction.h"
 
 // Figure 8: non-INVITE server transaction (p140)
@@ -83,6 +128,11 @@ int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int cod
 	{
 		// start timer J
 		sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_J);
+	}
+	else
+	{
+		// proceding timeout
+		sip_uas_transaction_timeout(t, TIMER_H);
 	}
 
 	return sip_uas_transaction_dosend(t);

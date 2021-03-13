@@ -131,7 +131,7 @@ static int rtp_receiver(struct rtp_context_t* ctx, socket_t rtp[2], int timeout)
 	return r;
 }
 
-static void rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
 {
 	const uint8_t start_code[] = { 0, 0, 0, 1 };
 	struct rtp_context_t* ctx;
@@ -180,6 +180,8 @@ static void rtp_onpacket(void* param, const void *packet, int bytes, uint32_t ti
 			// VCL frame
 		}
 	}
+
+	return 0;
 }
 
 static int STDCALL rtp_worker(void* param)
@@ -215,7 +217,7 @@ void rtp_receiver_test(socket_t rtp[2], const char* peer, int peerport[2], int p
 	socket_getrecvbuf(rtp[0], &n);
 
 	profile = rtp_profile_find(payload);
-	ctx->demuxer = rtp_demuxer_create(profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+	ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
 	if (NULL == ctx->demuxer)
 		return; // ignore
 	
@@ -248,7 +250,7 @@ void* rtp_receiver_tcp_test(uint8_t interleave1, uint8_t interleave2, int payloa
 	s_ctx[interleave1 / 2] = ctx;
 
 	profile = rtp_profile_find(payload);
-    ctx->demuxer = rtp_demuxer_create(profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
+    ctx->demuxer = rtp_demuxer_create(100, profile ? profile->frequency : 90000, payload, encoding, rtp_onpacket, ctx);
     return ctx;
 }
 

@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void sip_param_params_free(struct sip_param_t* param)
+static void sip_param_free(struct sip_param_t* param)
 {
+	(void)param;
 }
 
 DARRAY_IMPLEMENT(sip_uri, 3);
