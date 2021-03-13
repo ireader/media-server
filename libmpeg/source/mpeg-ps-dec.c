@@ -192,6 +192,13 @@ int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
     
     for (i = ps_demuxer_find_startcode(data, bytes); data && i + 3 < bytes; i += ps_demuxer_find_startcode(data + i, bytes - i))
     {
+        // fix HIK H.265: 00 00 01 BA 00 00 01 E0 ...
+        if (i + 6 < bytes && 00 == data[i + 4] && 00 == data[i + 5] && 01 == data[i + 6])
+        {
+            i += 4;
+            continue;
+        }
+
         switch (data[i + 3])
         {
         case PES_SID_START:
