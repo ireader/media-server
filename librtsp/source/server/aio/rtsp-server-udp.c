@@ -46,7 +46,7 @@ void* rtsp_transport_udp_create(const char* ip, int port, struct rtsp_handler_t*
 		memcpy(&t->handler, handler, sizeof(t->handler));
 		handler->send = rtsp_transport_udp_send;
 
-		t->socket = socket_udp_bind(ip, (u_short)port);
+		t->socket = socket_udp_bind(0 /*AF_UNSPEC*/, ip, (u_short)port, 0, 1);
 		if (socket_invalid == t->socket)
 		{
 			free(t);

@@ -10,7 +10,7 @@ void rtp_sender_test(const char* peer, int port, const char* rtpfile)
 	uint8_t packet[64 * 1024];
 
 	socket_init();
-	socket_t udp = socket_udp_bind(NULL, 0);
+	socket_t udp = socket_udp_bind_ipv4(NULL, 0);
 
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof(addr);

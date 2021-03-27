@@ -113,7 +113,7 @@ void rtmp_server_vod_test(const char* flv)
 
 	socklen_t n;
 	struct sockaddr_storage ss;
-	socket_t s = socket_tcp_listen(NULL, 1935, SOMAXCONN);
+	socket_t s = socket_tcp_listen_ipv4(NULL, 1935, SOMAXCONN);
 	socket_t c = socket_accept(s, &ss, &n);
 
 	s_file = flv;
