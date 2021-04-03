@@ -30,6 +30,51 @@ struct ps_demuxer_t
 
 static void ps_demuxer_notify(struct ps_demuxer_t* ps);
 
+static size_t ps_demuxer_find_startcode(const uint8_t* data, size_t bytes)
+{
+    const uint8_t* p, * pend;
+    pend = data + bytes;
+    p = data;
+
+    // find ps start
+    for (p = data; data && p + 2 < pend; p++)
+    {
+        if (0x00 != p[0])
+            continue;
+
+        if (0x00 != p[1])
+        {
+            p++;
+            continue;
+        }
+
+        if (0x01 == p[2])
+            break;
+        else if (0x00 != p[2])
+            p += 2;
+    }
+
+    return p - data;
+}
+
+#if defined(MPEG_ZERO_PAYLOAD_LENGTH)
+static size_t ps_demuxer_find_pes_start(const uint8_t* data, size_t bytes)
+{
+    size_t i;
+    const uint8_t* p, * end;
+    
+    end = data + bytes;
+    for (p = data; p + 6 < end; p += i + 4)
+    {
+        i = ps_demuxer_find_startcode(p, end - p);
+        if (PES_SID_START == p[i + 3])
+            return i + (p - data);
+    }
+
+    return bytes; // not found
+}
+#endif
+
 static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     struct ps_demuxer_t* ps;
@@ -88,9 +133,17 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
         i += pes_packet_length + 6) 
     {
         pes_packet_length = (data[i + 4] << 8) | data[i + 5];
+#if defined(MPEG_ZERO_PAYLOAD_LENGTH)
+        // fix H.264/H.265 ps payload zero-length
+        if (0 == pes_packet_length && 0xE0 <= data[i + 3] && data[i + 3] <= 0xEF)
+        {
+            pes_packet_length = ps_demuxer_find_pes_start(data + i + 6, bytes - i - 6);
+        }
+#endif
+
         //assert(i + 6 + pes_packet_length <= bytes);
         if (i + 6 + pes_packet_length > bytes)
-            return i;
+            return i; // need more data
 
         // stream id
         switch (data[i+3])
@@ -156,33 +209,6 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
     }
 
     return i;
-}
-
-static size_t ps_demuxer_find_startcode(const uint8_t* data, size_t bytes)
-{
-    const uint8_t* p, *pend;
-    pend = data + bytes;
-    p = data;
-
-    // find ps start
-    for(p = data; data && p + 2 < pend; p++)
-    {
-        if(0x00 != p[0])
-            continue;
-        
-        if(0x00 != p[1])
-        {
-            p++;
-            continue;
-        }
-        
-        if(0x01 == p[2])
-            break;
-        else if(0x00 != p[2])
-            p+=2;
-    }
-    
-    return p - data;
 }
 
 int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
