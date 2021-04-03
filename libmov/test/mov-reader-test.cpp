@@ -54,13 +54,14 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	}
 	else if (s_hevc_track == track)
 	{
-		uint8_t nalu_type = (((const uint8_t*)buffer)[3] >> 1) & 0x3F;
+		uint8_t nalu_type = (((const uint8_t*)buffer)[4] >> 1) & 0x3F;
 		uint8_t irap = 16 <= nalu_type && nalu_type <= 23;
 
 		printf("[H265] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s,%d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "", (unsigned int)nalu_type);
 		v_pts = pts;
 		v_dts = dts;
 
+		assert(h265_is_new_access_unit((const uint8_t*)buffer+4, bytes-4));
 		int n = h265_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
@@ -88,10 +89,10 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		a_pts = pts;
 		a_dts = dts;
 
-		//uint8_t adts[32];
-		//int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
-		//fwrite(adts, 1, n, s_afp);
-		//fwrite(buffer, 1, bytes, s_afp);
+		uint8_t adts[32];
+		int n = mpeg4_aac_adts_save(&s_aac, bytes, adts, sizeof(adts));
+		fwrite(adts, 1, n, s_afp);
+		fwrite(buffer, 1, bytes, s_afp);
 	}
 	else if (s_opus_track == track)
 	{

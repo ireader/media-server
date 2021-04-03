@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <time.h>
 
-#define IP "10.227.90.162"
+#define IP "127.0.0.1"
 
 #define SOCKET_STORAGE_TO_ADDR(storage) (const struct sockaddr*)(storage), socket_addr_len((const struct sockaddr*)(storage))
 
@@ -148,10 +148,10 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     ctx->v.track = track;
     ctx->v.object = object;
     ctx->v.av = 1;
-    ctx->v.udp[0] = socket_udp_bind(NULL, 0);
-    ctx->v.udp[1] = socket_udp_bind(NULL, 0);
-    assert(0 == socket_addr_from(&ctx->v.addr[0], NULL, IP, 5004));
-    assert(0 == socket_addr_from(&ctx->v.addr[1], NULL, IP, 5005));
+    ctx->v.udp[0] = socket_udp_bind_ipv4(NULL, 0);
+    ctx->v.udp[1] = socket_udp_bind_ipv4(NULL, 0);
+    assert(0 == socket_addr_from(&ctx->v.addr[0], NULL, IP, 8004));
+    assert(0 == socket_addr_from(&ctx->v.addr[1], NULL, IP, 8005));
     ctx->v.rtp = rtsp_muxer_create(rtp_encode_packet, &ctx->v);
 
     if (MOV_OBJECT_H264 == object)
@@ -196,8 +196,8 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*ch
     ctx->a.track = track;
     ctx->a.object = object;
     ctx->a.av = 0;
-    ctx->a.udp[0] = socket_udp_bind(NULL, 0);
-    ctx->a.udp[1] = socket_udp_bind(NULL, 0);
+    ctx->a.udp[0] = socket_udp_bind_ipv4(NULL, 0);
+    ctx->a.udp[1] = socket_udp_bind_ipv4(NULL, 0);
     assert(0 == socket_addr_from(&ctx->a.addr[0], NULL, IP, 5002));
     assert(0 == socket_addr_from(&ctx->a.addr[1], NULL, IP, 5003));
     ctx->a.rtp = rtsp_muxer_create(rtp_encode_packet, &ctx->a);

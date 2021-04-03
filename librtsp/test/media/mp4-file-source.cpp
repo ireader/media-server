@@ -305,7 +305,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		if (1)
 		{
 			// RFC 6416
-			n = rtp_sender_init_audio(&m->rtp, 0, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
+			n = rtp_sender_init_audio(&m->rtp, 0, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, self->m_aac.channel_configuration, extra, bytes);
 		}
 		else
 		{
@@ -413,6 +413,11 @@ int MP4FileSource::OnRTPPacket(void* param, const void *packet, int bytes, uint3
 {
 	struct media_t* m = (struct media_t*)param;
 	int r = m->transport->Send(false, packet, bytes);
-	assert(r == (int)bytes);
-	return r;
+	if (r != bytes)
+	{
+		assert(0);
+		return -1;
+	}	
+
+	return rtp_onsend(&m->rtp, packet, bytes/*, time*/);
 }

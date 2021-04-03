@@ -535,7 +535,7 @@ void FFFileSource::RTPFree(void* param, void *packet)
 	assert(m->packet == packet);
 }
 
-void FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
+int FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	struct media_t* m = (struct media_t*)param;
 	assert(m->packet == packet);
@@ -547,6 +547,7 @@ void FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_
 	
 	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
+	return 0;
 }
 
 #endif

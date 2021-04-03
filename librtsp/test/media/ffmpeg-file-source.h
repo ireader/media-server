@@ -35,7 +35,7 @@ private:
 
 	static void* RTPAlloc(void* param, int bytes);
 	static void RTPFree(void* param, void *packet);
-	static void RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
+	static int RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
 	static void MP4OnVideo(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes);
 	static void MP4OnAudio(void* param, uint32_t track, uint8_t object, int channel_count, int bit_per_sample, int sample_rate, const void* extra, size_t bytes);
