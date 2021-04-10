@@ -36,6 +36,7 @@ clean:
 	
 .PHONY : test
 test:
+	$(MAKE) -C ../avcodec
 	$(MAKE) -C ../sdk
 	$(MAKE) -C test
 	ln -sf ../sdk/libaio/$(BUILD).$(PLATFORM)/libaio.so . &&  ./test/$(BUILD).$(PLATFORM)/test

@@ -68,7 +68,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int paylo
     };
     
     r = 0;
-    memset(s, 0, sizeof(s));
+    memset(s, 0, sizeof(*s));
     s->seq = (uint16_t)rtp_ssrc();
     s->ssrc = rtp_ssrc();
     s->timestamp = rtp_ssrc();
@@ -147,7 +147,7 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int paylo
     };
     
     r = 0;
-    memset(s, 0, sizeof(s));
+    memset(s, 0, sizeof(*s));
     s->seq = (uint16_t)rtp_ssrc();
     s->ssrc = rtp_ssrc();
     s->timestamp = rtp_ssrc();

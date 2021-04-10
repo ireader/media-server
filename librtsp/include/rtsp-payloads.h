@@ -53,7 +53,7 @@ static struct
 };
 
 #ifdef _avcodecid_h_
-inline int avcodecid_find_by_codecid(AVPACKET_CODEC_ID codecid)
+static inline int avcodecid_find_by_codecid(AVPACKET_CODEC_ID codecid)
 {
     int i;
     for (i = 0; i < sizeof(s_payloads) / sizeof(s_payloads[0]); i++)

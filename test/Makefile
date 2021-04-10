@@ -14,6 +14,7 @@ OUTFILE = test
 #--------------------------------------------------------------------
 INCLUDES = . $(ROOT)/include $(ROOT)/libaio/include $(ROOT)/libhttp/include $(ROOT)/libice/include \
 			$(AVCODEC)/avbsf/include \
+			$(AVCODEC)/avcodec/include \
 			../libdash/include \
 			../libflv/include \
 			../libhls/include \
@@ -32,9 +33,8 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				../libmpeg/test ../libhls/demo \
 				../libdash/test ../libmov/test \
 				../libflv/test ../librtmp/aio ../librtmp/test \
-				../librtp/test ../librtsp/source/server/aio ../librtsp/source/sdp ../librtsp/source/utils ../librtsp/test ../librtsp/test/media \
-				../libsip/test \
-				$(AVCODEC)/avbsf/src
+				../librtp/test ../librtsp/source/server/aio ../librtsp/test ../librtsp/test/media \
+				../libsip/test
 				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
@@ -71,7 +71,7 @@ else
 LIBPATHS +=
 endif
 
-LIBS = rt pthread dl aio
+LIBS = rt pthread dl aio ssl crypt
 
 STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				../libflv/$(BUILD).$(PLATFORM)/libflv.a \
@@ -83,7 +83,12 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				../librtp/$(BUILD).$(PLATFORM)/librtp.a \
 				../libsip/$(BUILD).$(PLATFORM)/libsip.a \
 				$(ROOT)/libhttp/$(BUILD).$(PLATFORM)/libhttp.a \
-				$(ROOT)/libice/$(BUILD).$(PLATFORM)/libice.a
+				$(ROOT)/libice/$(BUILD).$(PLATFORM)/libice.a \
+				$(AVCODEC)/avbsf/$(BUILD).$(PLATFORM)/libavbsf.a \
+	      		$(AVCODEC)/avcodec/$(BUILD).$(PLATFORM)/libavcodec.a \
+				$(AVCODEC)/h264/$(BUILD).$(PLATFORM)/libh264.a \
+				$(AVCODEC)/h265/$(BUILD).$(PLATFORM)/libh265.a
+				
 
 #-----------------------------DEFINES--------------------------------
 #

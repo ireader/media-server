@@ -13,14 +13,15 @@ static int rtp_demuxer_test_onpacket(void* param, const void* packet, int bytes,
     return bytes == fwrite(packet, 1, bytes, (FILE*)param) ? 0 : ferror((FILE*)param);
 }
 #else
-static int rtsp_demuxer_test_onpacket(void* param, int track, int payload, const char* encoding, int64_t pts, int64_t dts, const void* data, int bytes, int flags)
+static int rtsp_demuxer_test_onpacket(void* param, struct avpacket_t* pkt)
 {
     static int64_t s_dts = 0;
     if (0 == s_dts)
-        s_dts = dts;
-    printf("[%d:%s] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", track, encoding, pts, dts, pts-dts, dts-s_dts, bytes);
-    fwrite(data, 1, bytes, (FILE*)param);
-    s_dts = dts;
+        s_dts = pkt->dts;
+    printf("[%d:0x%x] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", pkt->stream->stream, (unsigned int)pkt->stream->codecid, pkt->pts, pkt->dts, pkt->pts - pkt->dts, pkt->dts - s_dts, pkt->size);
+    s_dts = pkt->dts;
+
+    fwrite(pkt->data, 1, pkt->size, (FILE*)param);
     return 0;
 }
 #endif
@@ -35,7 +36,8 @@ void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t
 #if USE_RTP_DEMUXER
     struct rtp_demuxer_t* demuxer = rtp_demuxer_create(100, 90000, payload, encoding, rtp_demuxer_test_onpacket, wfp);
 #else
-    struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(100, 90000, payload, encoding, "96 profile-level-id=1; cpresent=0; config=400023203fc0;", rtsp_demuxer_test_onpacket, wfp);
+    struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(100, rtsp_demuxer_test_onpacket, wfp);
+    rtsp_demuxer_add_payload(demuxer, 90000, payload, encoding, "96 profile-level-id=1; cpresent=0; config=400023203fc0;");
     rtsp_demuxer_rtpinfo(demuxer, seq, ssrc);
 #endif
     
