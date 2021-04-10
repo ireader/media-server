@@ -1,6 +1,10 @@
 #ifndef _rtp_profile_h_
 #define _rtp_profile_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// https://en.wikipedia.org/wiki/RTP_audio_video_profile
 /// RFC3551 6. Payload Type Definitions (p28)
 struct rtp_profile_t
@@ -101,4 +105,7 @@ enum
 ///@return NULL if not exist
 const struct rtp_profile_t* rtp_profile_find(int payload);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _rtp_profile_h_ */

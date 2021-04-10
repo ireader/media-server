@@ -39,7 +39,7 @@
 #include <errno.h>
 
 #include "rtsp-media.h"
-#include "../source/utils/rtp-sender.h"
+#include "rtp-sender.h"
 #include "../test/ice-transport.h"
 #include "../test/media/mp4-file-reader.h"
 
@@ -508,13 +508,13 @@ static int STDCALL sip_work_thread(void* param)
 
 		for (std::shared_ptr<avpacket_t> pkt(s->pkts->FrontWait(0), avpacket_release); pkt.get(); pkt.reset(s->pkts->FrontWait(0), avpacket_release))
 		{
-			if (pkt->stream == s->audio.track && s->audio.m)
+			if (pkt->stream->stream == s->audio.track && s->audio.m)
 			{
 				uint32_t timestamp = s->audio.sender.timestamp + (uint32_t)(pkt->pts * (s->audio.sender.frequency / 1000) /*kHz*/);
 				rtp_payload_encode_input(s->audio.sender.encoder, pkt->data, pkt->size, timestamp);
 				//printf("send audio[%d] packet pts: %" PRId64 ", timestamp: %u\n", s->audio.sender.frequency, pkt->pts, timestamp);
 			}
-			else if (pkt->stream == s->video.track && s->video.m)
+			else if (pkt->stream->stream == s->video.track && s->video.m)
 			{
 				int n = h264_mp4toannexb(&s->video.u.avc, pkt->data, pkt->size, s->buffer, sizeof(s->buffer));
 				uint32_t timestamp = s->video.sender.timestamp + (uint32_t)(pkt->pts * (s->video.sender.frequency / 1000) /*kHz*/);

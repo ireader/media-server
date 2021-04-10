@@ -68,7 +68,7 @@ void MP4FileReader::MP4OnRead(void* param, uint32_t track, const void* buffer, s
 	if (pkt)
 	{
 		memcpy(pkt->data, buffer, bytes);
-		pkt->stream = track;
+		//pkt->stream = track; // TODO:
 		pkt->pts = pts;
 		pkt->dts = dts;
 		pkt->flags = flags ? AVPACKET_FLAG_KEY : 0;
