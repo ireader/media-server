@@ -27,7 +27,7 @@ int webm_vpx_codec_configuration_record_load(const uint8_t* data, size_t bytes, 
 int webm_vpx_codec_configuration_record_save(const struct webm_vpx_t* vpx, uint8_t* data, size_t bytes);
 
 int webm_vpx_codec_configuration_record_from_vp8(struct webm_vpx_t* vpx, int* width, int* height, const void* keyframe, size_t bytes);
-int webm_vpx_codec_configuration_record_from_vp9(struct webm_vpx_t* vpx, const void* keyframe, size_t bytes);
+int webm_vpx_codec_configuration_record_from_vp9(struct webm_vpx_t* vpx, int* width, int* height, const void* keyframe, size_t bytes);
 
 #if defined(__cplusplus)
 }
