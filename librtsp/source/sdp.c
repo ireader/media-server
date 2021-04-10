@@ -163,6 +163,7 @@ struct sdp_t
 	char* s;
 	char* i;
 	char* u;
+	char* y; // gb28181
 
 	struct email
 	{
@@ -1096,6 +1097,24 @@ static int sdp_parse_media(struct sdp_t* sdp)
 	return -1;
 }
 
+// gb28181 extension
+static int sdp_parse_gb28181(struct sdp_t* sdp)
+{
+	int n = 0;
+
+	// No more than one URI field is allowed per session description.
+	assert(!sdp->y);
+
+	sdp->y = sdp->raw + sdp->offset;
+
+	n = sdp_token_word(sdp, "\r\n");
+	if (0 != sdp_token_crlf(sdp))
+		return -1;
+
+	sdp->y[n] = '\0';
+	return 0;
+}
+
 static void* sdp_create(void)
 {
 	struct sdp_t *sdp;
@@ -1251,11 +1270,15 @@ struct sdp_t* sdp_parse(const char* s)
 			r = sdp_parse_media(sdp);
 			break;
 
+		case 'y':
+			r = sdp_parse_gb28181(sdp);
+			break;
+
 		default:
 			assert(0); // unknown sdp
             r = 0;
-			while(*s && '\n' != *s)
-				++s; // skip line
+			while (sdp->raw[sdp->offset] && '\n' != sdp->raw[sdp->offset])
+				++sdp->offset; // skip line
 		}
 
 		if(0 != r)
