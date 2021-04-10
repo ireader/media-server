@@ -383,7 +383,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, int bytes)
 		mp4->out[mp4->bytes + 1] = (uint8_t)((bytes >> 16) & 0xFF);
 		mp4->out[mp4->bytes + 2] = (uint8_t)((bytes >> 8) & 0xFF);
 		mp4->out[mp4->bytes + 3] = (uint8_t)((bytes >> 0) & 0xFF);
-		memcpy(mp4->out + mp4->bytes + 4, nalu, bytes);
+		memmove(mp4->out + mp4->bytes + 4, nalu, bytes);
 		mp4->bytes += bytes + 4;
 	}
 	else

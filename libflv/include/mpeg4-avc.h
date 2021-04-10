@@ -60,7 +60,7 @@ int h264_mp4toannexb(const struct mpeg4_avc_t* avc, const void* data, int bytes,
 int h264_is_new_access_unit(const uint8_t* nalu, size_t bytes);
 
 /// H.264 nal unit split
-void mpeg4_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param);
+int mpeg4_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param);
 
 #if defined(__cplusplus)
 }
