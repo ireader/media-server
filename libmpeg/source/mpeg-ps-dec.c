@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <string.h>
 
+#define MPEG_GUESS_STREAM
 struct ps_demuxer_t
 {
     struct psm_t psm;
@@ -83,7 +84,73 @@ static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, i
     return ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
 }
 
-static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
+int mpeg_find_h265_nalu_type(const uint8_t* p, size_t bytes,uint8_t nal_type)
+{
+
+    size_t i, zeros;
+    for (zeros = i = 0; i + 1 < bytes; i++)
+    {
+        if (0x01 == p[i] && zeros >= 2)
+        {
+            assert(i >= zeros);
+
+            uint8_t sid = p[i+1];
+
+            if ((0xE0 <= sid && sid <= 0xEF) || (0xC0 <= sid && sid <= 0xDF) || (0xBD == sid) || (0xFD == sid))
+            {
+                zeros = 0;
+                continue;
+            }
+            uint8_t current_nal_type = (p[i+1] >> 1) & 0x3f;
+            if(nal_type == current_nal_type)
+            {
+                return 1;
+            }
+
+            zeros = 0;
+            continue;
+        }
+
+        zeros = 0x00 != p[i] ? 0 : (zeros + 1);
+    }
+
+    return 0;
+}
+
+int mpeg_find_h264_nalu_type(const uint8_t* p, size_t bytes,uint8_t nal_type)
+{
+
+    size_t i, zeros;
+    for (zeros = i = 0; i + 1 < bytes; i++)
+    {
+        if (0x01 == p[i] && zeros >= 2)
+        {
+            assert(i >= zeros);
+
+            uint8_t sid = p[i+1];
+
+            if ((0xE0 <= sid && sid <= 0xEF) || (0xC0 <= sid && sid <= 0xDF) || (0xBD == sid) || (0xFD == sid))
+            {
+                zeros = 0;
+                continue;
+            }
+            uint8_t current_nal_type = p[i+1] & 0x1f;
+            if(nal_type == current_nal_type)
+            {
+                return 1;
+            }
+
+            zeros = 0;
+            continue;
+        }
+
+        zeros = 0x00 != p[i] ? 0 : (zeros + 1);
+    }
+
+    return 0;
+}
+
+static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid,const uint8_t* data, size_t bytes)
 {
     size_t i;
     for (i = 0; i < psm->stream_count; ++i)
@@ -93,26 +160,80 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
     }
 
 #if defined(MPEG_GUESS_STREAM)
-    if (psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
+    if(psm->find_psm == 0)
     {
-		// '110x xxxx'
-		// ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or 
-		// ISO/IEC 14496-3 or ISO/IEC 23008-3 audio stream number 'x xxxx'
+        if (psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
+        {
+            // '110x xxxx'
+            // ISO/IEC 13818-3 or ISO/IEC 11172-3 or ISO/IEC 13818-7 or
+            // ISO/IEC 14496-3 or ISO/IEC 23008-3 audio stream number 'x xxxx'
 
-		// '1110 xxxx'
-		// Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2, 
-		// Rec. ITU-T H.264 | ISO/IEC 14496-10 or 
-		// Rec. ITU-T H.265 | ISO/IEC 23008-2 video stream number 'xxxx'
+            // '1110 xxxx'
+            // Rec. ITU-T H.262 | ISO/IEC 13818-2, ISO/IEC 11172-2, ISO/IEC 14496-2,
+            // Rec. ITU-T H.264 | ISO/IEC 14496-10 or
+            // Rec. ITU-T H.265 | ISO/IEC 23008-2 video stream number 'xxxx'
+            int findGuesstVideoSream = 0;
+            int findGuesstAudioSream = 0;
+            // guess stream codec id
+            if (0xE0 <= sid && sid <= 0xEF)
+            {
+                enum { H264_NAL_IDR = 5, H264_NAL_SPS = 7, H264_NAL_PPS = 8 };
+                int findH264SPS = mpeg_find_h264_nalu_type(data,bytes,H264_NAL_SPS);
+                int findH264PPS = mpeg_find_h264_nalu_type(data,bytes,H264_NAL_PPS);
+                int findH264IDR = mpeg_find_h264_nalu_type(data,bytes,H264_NAL_IDR);
+                uint8_t codecid = PSI_STREAM_H264;
+                if(findH264SPS == 1 && findH264PPS == 1 && findH264IDR == 1)
+                {
+                   codecid = PSI_STREAM_H264;
+                   findGuesstVideoSream = 1;
+                }
+                else
+                {
+                    enum { H265_NAL_VPS = 32, H265_NAL_SPS = 33, H265_NAL_PPS = 34,H265_NAL_IDR = 19};
+                    int findH265VPS = mpeg_find_h265_nalu_type(data,bytes,H265_NAL_VPS);
+                    int findH265SPS = mpeg_find_h265_nalu_type(data,bytes,H265_NAL_SPS);
+                    int findH265PPS = mpeg_find_h265_nalu_type(data,bytes,H265_NAL_PPS);
+                    int findH265IDR = mpeg_find_h265_nalu_type(data,bytes,H265_NAL_IDR);
 
-        // guess stream codec id
-        if (0xE0 <= sid && sid <= 0xEF)
-            psm->streams[psm->stream_count].codecid = PSI_STREAM_H264;
-        else if(0xC0 <= sid && sid <= 0xDF)
-            psm->streams[psm->stream_count].codecid = PSI_STREAM_AAC;
+                    if(findH265VPS == 1 && findH265SPS == 1 && findH265PPS == 1 && findH265IDR == 1)
+                    {
+                       codecid = PSI_STREAM_H265;
+                       findGuesstVideoSream = 1;
+                    }
+                }
+                if(findGuesstVideoSream == 1)
+                {
+                    psm->streams[psm->stream_count].codecid = codecid;
+                }
 
-        return &psm->streams[psm->stream_count++];
+            }
+            else if(0xC0 <= sid && sid <= 0xDF)
+            {
+                if(psm->guesst_video_sream == 1)
+                {
+                    psm->streams[psm->stream_count].codecid = PSI_STREAM_AAC;
+                    findGuesstAudioSream = 1;
+                }
+            }
+            if(findGuesstVideoSream == 1)
+            {
+                psm->guesst_video_sream = 1;
+                return &psm->streams[psm->stream_count++];
+            }
+            else if(findGuesstAudioSream == 1)
+            {
+                psm->guesst_audio_sream = 1;
+                return &psm->streams[psm->stream_count++];
+            }
+            else
+            {
+                 return NULL;
+            }
+
+        }
     }
 #endif
+
 
     return NULL;
 }
@@ -152,8 +273,11 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
             n = ps->psm.stream_count;
             j = psm_read(&ps->psm, data + i, pes_packet_length + 6);
             assert(j == pes_packet_length + 6);
-            if (n != ps->psm.stream_count)
+            if ((n != ps->psm.stream_count) || (ps->psm.find_psm == 0 && ps->psm.guesst_video_sream == 1))
+            {
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
+            }
+            ps->psm.find_psm = 1;
             break;
 
         case PES_SID_PSD:
@@ -183,9 +307,24 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 		//	break;
 
         default:
-            pes = psm_fetch(&ps->psm, data[i+3]);
+#if defined(MPEG_GUESS_STREAM)
+            if(ps->psm.find_psm == 0)
+            {
+                n = ps->psm.stream_count;
+            }
+#endif
+            pes = psm_fetch(&ps->psm, data[i+3],data,bytes);
             if (NULL == pes)
                 continue;
+#if defined(MPEG_GUESS_STREAM)
+            if(ps->psm.find_psm == 0)
+            {
+                if (n != ps->psm.stream_count)
+                {
+                    ps_demuxer_notify(ps);
+                }
+            }
+#endif
 
             assert(PES_SID_END != data[i + 3]);
 			if (ps->pkhd.mpeg2)
