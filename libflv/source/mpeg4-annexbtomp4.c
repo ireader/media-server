@@ -73,7 +73,7 @@ static int mpeg4_h264_avcc_bitstream_valid(const uint8_t* h264, int bytes, int a
 }
 
 /// @return 0-annexb, >0-avcc, <0-error
-static int mpeg4_h264_bitstream_format(const uint8_t* h264, int bytes)
+int mpeg4_h264_bitstream_format(const uint8_t* h264, int bytes)
 {
 	uint32_t n;
 	if (bytes < 4)
