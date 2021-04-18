@@ -5,6 +5,16 @@
 extern "C" {
 #endif
 
+enum
+{
+	RTP_TYPE_UNKNOWN = 0,
+	RTP_TYPE_AUDIO,
+	RTP_TYPE_VIDEO,
+	RTP_TYPE_SYSTEM,
+};
+
+enum { RTP_PAYLOAD_DYNAMIC = 96, };
+
 /// https://en.wikipedia.org/wiki/RTP_audio_video_profile
 /// RFC3551 6. Payload Type Definitions (p28)
 struct rtp_profile_t
@@ -22,7 +32,7 @@ struct rtp_profile_t
 	{ 0, "PCMU",	8000,	1 }, // G711 mu-law
 	{ 1, "",		0,		0 }, // reserved
 	{ 2, "",		0,		0 }, // reserved
-	{ 3, "GSM",	8000,	1 },
+	{ 3, "GSM",		8000,	1 },
 	{ 4, "G723",	8000,	1 },
 	{ 5, "DVI4",	8000,	1 },
 	{ 6, "DVI4",	16000,	1 },
@@ -33,7 +43,7 @@ struct rtp_profile_t
 	{11, "L16",		44100,	1 },
 	{12, "QCELP",	8000,	1 },
 	{13, "CN",		8000,	1 },
-	{14, "MPA",	90000,	0 }, // MPEG-1/MPEG-2 audio
+	{14, "MPA",		90000,	0 }, // MPEG-1/MPEG-2 audio
 	{15, "G728",	8000,	1 },
 	{16, "DVI4",	11025,	1 },
 	{17, "DVI4",	22050,	1 },
@@ -61,7 +71,7 @@ struct rtp_profile_t
 	{29, "",		0,		0 }, // unassigned
 	{30, "",		0,		0 }, // unassigned
 	{31, "H261",	90000,	0 },
-	{32, "MPV",	90000,	0 }, // MPEG-1/MPEG-2 video
+	{32, "MPV",		90000,	0 }, // MPEG-1/MPEG-2 video
 	{33, "MP2T",	90000,	0 }, // MPEG-2 TS
 	{34, "H263",	90000,	0 },
 	//{ 0, "H263-1998",90000,	0 },

@@ -1,5 +1,6 @@
 #include "rtsp-media.h"
 #include "sdp.h"
+#include "sdp-utils.h"
 #include "sdp-a-fmtp.h"
 #include "sdp-a-rtpmap.h"
 #include <stdio.h>
@@ -301,6 +302,10 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 				media->offset += sizeof(*media->ice.remotes[0]);
 			}
 		}
+		else if (0 == strcmp("setup", name))
+		{
+			media->setup = sdp_util_setup_from(value);
+		}
 	}
 }
 
@@ -404,6 +409,10 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 		m->avformat_count = n > j ? j : n;
 		for (j = 0; j < m->avformat_count; j++)
 			m->avformats[j].fmt = formats[j];
+
+		// TODO: plan-B streams
+		m->mode = sdp_media_mode(sdp, i);
+		m->setup = SDP_A_SETUP_NONE;
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);

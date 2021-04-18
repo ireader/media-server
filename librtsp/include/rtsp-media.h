@@ -73,6 +73,8 @@ struct rtsp_media_t
 	char media[32]; //audio, video, text, application, message
 	char proto[64]; // udp, RTP/AVP, RTP/SAVP, RTP/AVPF
 	int nport, port[8]; // rtcp-mux: port[0] == port[1]
+	int mode; // SDP_A_SENDRECV/SDP_A_SENDONLY/SDP_A_RECVONLY/SDP_A_INACTIVE, @sdp.h
+	int setup; // SDP_A_SETUP_ACTPASS/SDP_A_SETUP_ACTIVE/SDP_A_SETUP_PASSIVE, @sdp-utils.h
 
 	int avformat_count;
 	struct avformat_t

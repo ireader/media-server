@@ -1,13 +1,5 @@
 #include "rtp-profile.h"
 
-enum
-{
-	RTP_TYPE_UNKNOWN = 0,
-	RTP_TYPE_AUDIO,
-	RTP_TYPE_VIDEO,
-	RTP_TYPE_SYSTEM,
-};
-
 static struct rtp_profile_t s_profiles[] = {
 	// audio
 	{ 0, RTP_TYPE_AUDIO,	1, 8000,	"PCMU" }, // G711 mu-law

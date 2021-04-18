@@ -9,9 +9,6 @@
 #define strcasecmp	_stricmp
 #endif
 
-enum { SDP_M_MEDIA_UNKOWN=0, SDP_M_MEDIA_AUDIO, SDP_M_MEDIA_VIDEO, SDP_M_MEDIA_TEXT, SDP_M_MEDIA_APPLICATION, SDP_M_MEDIA_MESSAGE };
-enum { SDP_M_PROTO_UKNOWN=0, SDP_M_PROTO_UDP, SDP_M_PROTO_RTP_AVP, SDP_M_PROTO_RTP_SAVP };
-
 #define N_EMAIL 1
 #define N_PHONE 1
 #define N_CONNECTION 1
@@ -1522,22 +1519,22 @@ static inline int sdp_media_format_value(const char* format)
 {
 	switch(format[0])
 	{
-	case 'a': return ('u' == format[1]) ? SDP_M_FMT_UDP_AUDIO : SDP_M_FMT_UDP_APPLICATION;
-	case 'v': return SDP_M_FMT_UDP_VIDEO;
-	case 't': return SDP_M_FMT_UDP_TEXT;
-	case 'm': return SDP_M_FMT_UDP_MESSAGE;
+	case 'a': return ('u' == format[1]) ? SDP_M_MEDIA_AUDIO : SDP_M_MEDIA_APPLICATION;
+	case 'v': return SDP_M_MEDIA_VIDEO;
+	case 't': return SDP_M_MEDIA_TEXT;
+	case 'm': return SDP_M_MEDIA_MESSAGE;
 	default: return atoi(format);
 	}
 	//if(0 == strcasecmp("video", format))
-	//	return SDP_M_FMT_UDP_VIDEO;
+	//	return SDP_M_MEDIA_VIDEO;
 	//else if(0 == strcasecmp("audio", format))
-	//	return SDP_M_FMT_UDP_AUDIO;
+	//	return SDP_M_MEDIA_AUDIO;
 	//else if(0 == strcasecmp("text", format))
-	//	return SDP_M_FMT_UDP_TEXT;
+	//	return SDP_M_MEDIA_TEXT;
 	//else if(0 == strcasecmp("application", format))
-	//	return SDP_M_FMT_UDP_APPLICATION;
+	//	return SDP_M_MEDIA_APPLICATION;
 	//else if(0 == strcasecmp("message", format))
-	//	return SDP_M_FMT_UDP_MESSAGE;
+	//	return SDP_M_MEDIA_MESSAGE;
 	//else
 	//	return atoi(format);
 }
@@ -1653,48 +1650,6 @@ int sdp_media_get_connection_addrtype(struct sdp_t* sdp, int media)
 	return SDP_C_ADDRESS_UNKNOWN;
 }
 
-const char* sdp_media_attribute_find(struct sdp_t* sdp, int media, const char* name)
-{
-	int i;
-	struct sdp_media *m;
-	struct sdp_attribute *attr;
-
-	m = sdp_get_media(sdp, media);
-	for(i = 0; name && m && i < m->a.count; i++)
-	{
-		if(i < N_ATTRIBUTE)
-			attr = m->a.attrs + i;
-		else
-			attr = m->a.ptr + i - N_ATTRIBUTE;
-
-		if(attr->name && 0==strcmp(attr->name, name))
-			return attr->value;
-	}
-
-	return NULL;
-}
-
-int sdp_media_attribute_list(struct sdp_t* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
-{
-	int i;
-	struct sdp_media *m;
-	struct sdp_attribute *attr;
-
-	m = sdp_get_media(sdp, media);
-	for(i = 0; m && i < m->a.count; i++)
-	{
-		if(i < N_ATTRIBUTE)
-			attr = m->a.attrs + i;
-		else
-			attr = m->a.ptr + i - N_ATTRIBUTE;
-
-		if( !name || (attr->name && 0==strcmp(attr->name, name)) )
-			onattr(param, attr->name, attr->value);
-	}
-
-	return 0;
-}
-
 int sdp_media_bandwidth_count(struct sdp_t* sdp, int media)
 {
 	struct sdp_media *m;
@@ -1752,46 +1707,72 @@ int sdp_attribute_get(struct sdp_t* sdp, int idx, const char** name, const char*
 	return 0;
 }
 
-const char* sdp_attribute_find(struct sdp_t* sdp, const char* name)
+static const char* sdp_attribute_find_impl(const struct attributes* a, const char* name)
 {
 	int i;
-	struct sdp_attribute *attr;
-	for(i = 0; name && i < sdp->a.count; i++)
-	{
-		if(i < N_ATTRIBUTE)
-			attr = sdp->a.attrs + i;
-		else
-			attr = sdp->a.ptr + i - N_ATTRIBUTE;
+	const struct sdp_attribute* attr;
 
-		if(attr->name && 0==strcmp(attr->name, name))
+	for (i = 0; name && i < a->count; i++)
+	{
+		if (i < N_ATTRIBUTE)
+			attr = a->attrs + i;
+		else
+			attr = a->ptr + i - N_ATTRIBUTE;
+
+		if (attr->name && 0 == strcmp(attr->name, name))
 			return attr->value;
 	}
 
 	return NULL;
 }
 
-int sdp_attribute_list(struct sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+static int sdp_attribute_list_impl(const struct attributes* a, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
 {
 	int i;
-	struct sdp_attribute *attr;
-	for(i = 0; i < sdp->a.count; i++)
-	{
-		if(i < N_ATTRIBUTE)
-			attr = sdp->a.attrs + i;
-		else
-			attr = sdp->a.ptr + i - N_ATTRIBUTE;
+	const struct sdp_attribute* attr;
 
-		if( !name || (attr->name && 0==strcmp(attr->name, name)) )
+	for (i = 0; name && i < a->count; i++)
+	{
+		if (i < N_ATTRIBUTE)
+			attr = a->attrs + i;
+		else
+			attr = a->ptr + i - N_ATTRIBUTE;
+
+		if (!name || (attr->name && 0 == strcmp(attr->name, name)))
 			onattr(param, attr->name, attr->value);
 	}
 
 	return 0;
 }
 
+const char* sdp_media_attribute_find(struct sdp_t* sdp, int media, const char* name)
+{
+	struct sdp_media* m;
+	m = sdp_get_media(sdp, media);
+	return m ? sdp_attribute_find_impl(&m->a, name) : NULL;
+}
+
+int sdp_media_attribute_list(struct sdp_t* sdp, int media, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+{
+	struct sdp_media* m;
+	m = sdp_get_media(sdp, media);
+	return m ? sdp_attribute_list_impl(&m->a, name, onattr, param) : -1;
+}
+
+const char* sdp_attribute_find(struct sdp_t* sdp, const char* name)
+{
+	return sdp_attribute_find_impl(&sdp->a, name);
+}
+
+int sdp_attribute_list(struct sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param)
+{
+	return sdp_attribute_list_impl(&sdp->a, name, onattr, param);
+}
+
 static int sdp_attribute_mode(struct attributes* a)
 {
-	const int v[] = { SDP_A_SENDRECV, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE };
-	char* mode[] = { "sendrecv", "sendonly", "recvonly", "inactive" };
+	static const int values[] = { SDP_A_SENDRECV, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE };
+	static const char* strings[] = { "sendrecv", "sendonly", "recvonly", "inactive" };
 
 	int i, j;
 	const struct sdp_attribute *attr;
@@ -1802,19 +1783,14 @@ static int sdp_attribute_mode(struct attributes* a)
 		else
 			attr = a->ptr + i - N_ATTRIBUTE;
 
-		for (j = 0; j < sizeof(mode) / sizeof(mode[0]); j++)
+		for (j = 0; j < sizeof(values) / sizeof(values[0]); j++)
 		{
-			if (attr->name && 0 == strcmp(mode[j], attr->name))
-				return v[j];
+			if (attr->name && 0 == strcmp(strings[j], attr->name))
+				return values[j];
 		}
 	}
 
 	return -1;
-}
-
-static int sdp_session_mode(struct sdp_t* sdp)
-{
-	return sdp_attribute_mode(&sdp->a);
 }
 
 int sdp_media_mode(struct sdp_t* sdp, int media)
@@ -1823,5 +1799,6 @@ int sdp_media_mode(struct sdp_t* sdp, int media)
 	struct sdp_media *m;
 	m = sdp_get_media(sdp, media);
 	mode = m ? sdp_attribute_mode(&m->a) : -1;
-	return -1 == mode ? sdp_session_mode(sdp) : mode;
+	mode = -1 == mode ? sdp_attribute_mode(&sdp->a) : mode;
+	return -1 == mode ? SDP_A_SENDRECV : mode; // default SDP_A_SENDRECV
 }

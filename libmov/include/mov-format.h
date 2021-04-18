@@ -33,6 +33,8 @@
 #define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
 #define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
+#define MOV_OBJECT_NONE		0x00 // unknown object id
+
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001
 #define MOV_FLAG_SEGMENT	0x00000002 // fmp4_writer only
