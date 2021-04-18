@@ -1,5 +1,5 @@
 #include "aio-rtmp-transport.h"
-#include "aio-tcp-transport.h"
+#include "aio-transport.h"
 #include "sys/sock.h"
 #include "sys/locker.h"
 #include "sys/system.h"
@@ -24,7 +24,7 @@ struct aio_rtmp_transport_t
 
 	int vecsize;
 	socket_bufvec_t vec[VEC];
-	aio_tcp_transport_t* aio;
+	aio_transport_t* aio;
 	char buffer[2 * 1024];
 
 	locker_t locker;
@@ -60,7 +60,7 @@ static int aio_rtmp_send(struct aio_rtmp_transport_t* t)
 	assert(t->vecsize > 0);
 	locker_unlock(&t->locker);
 
-	return aio_tcp_transport_send_v(t->aio, t->vec, t->vecsize);
+	return aio_transport_send_v(t->aio, t->vec, t->vecsize);
 }
 
 static void aio_rtmp_ondestroy(void* param)
@@ -95,7 +95,7 @@ static void aio_rtmp_onrecv(void* param, int code, size_t bytes)
 	t->handler.onrecv(t->param, code, t->buffer, bytes);
 	if (0 == code)
 	{
-		code = aio_tcp_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
+		code = aio_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
 		if (0 != code)
 			t->handler.onrecv(t->param, code, t->buffer, 0);
 	}
@@ -137,7 +137,7 @@ static void aio_rtmp_onsend(void* param, int code, size_t bytes)
 struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, struct aio_rtmp_handler_t* handler, void* param)
 {
 	struct aio_rtmp_transport_t* t;
-	struct aio_tcp_transport_handler_t h;
+	struct aio_transport_handler_t h;
 	h.ondestroy = aio_rtmp_ondestroy;
 	h.onrecv = aio_rtmp_onrecv;
 	h.onsend = aio_rtmp_onsend;
@@ -149,18 +149,18 @@ struct aio_rtmp_transport_t* aio_rtmp_transport_create(aio_socket_t socket, stru
 	locker_create(&t->locker);
 	memcpy(&t->handler, handler, sizeof(t->handler));
 	t->param = param;
-	t->aio = aio_tcp_transport_create2(socket, &h, t);
+	t->aio = aio_transport_create2(socket, &h, t);
 	return t;
 }
 
 int aio_rtmp_transport_destroy(struct aio_rtmp_transport_t* t)
 {
-	return aio_tcp_transport_destroy(t->aio);
+	return aio_transport_destroy(t->aio);
 }
 
 int aio_rtmp_transport_start(struct aio_rtmp_transport_t* t)
 {
-	return aio_tcp_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
+	return aio_transport_recv(t->aio, t->buffer, sizeof(t->buffer));
 }
 
 int aio_rtmp_transport_send(struct aio_rtmp_transport_t* t, const void* header, size_t len, const void* payload, size_t bytes)
@@ -194,5 +194,5 @@ size_t aio_rtmp_transport_get_unsend(struct aio_rtmp_transport_t* t)
 
 void aio_rtmp_transport_set_timeout(struct aio_rtmp_transport_t* t, int recv, int send)
 {
-	aio_tcp_transport_set_timeout(t->aio, recv, send);
+	aio_transport_set_timeout(t->aio, recv, send);
 }

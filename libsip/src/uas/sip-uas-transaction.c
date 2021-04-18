@@ -133,7 +133,7 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_MESSAGE))
 	{
-		return t->handler->onmessage ? t->handler->onmessage(t->param, req, t, dialog, req->payload, req->size) : 0;
+		return t->handler->onmessage ? t->handler->onmessage(t->param, req, t, dialog ? dialog->session : NULL, req->payload, req->size) : 0;
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_INFO))
     {
