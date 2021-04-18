@@ -30,8 +30,9 @@ struct rtp_sender_t
     void* param;
 };
 
-int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes);
-int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes);
+/// @param[in] proto RTP/AVP, see more @librtsp/include/sdp-utils.h
+int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes);
+int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes);
 
 int rtp_sender_destroy(struct rtp_sender_t* s);
 

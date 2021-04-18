@@ -1,6 +1,7 @@
 #include "rtp-sender.h"
 #include "rtp-profile.h"
 #include "rtp-payload.h"
+#include "sdp-payload.h"
 #include "rtp.h"
 #include <stdlib.h>
 #include <string.h>
@@ -13,18 +14,6 @@
 #endif
 
 uint32_t rtp_ssrc(void);
-int sdp_vp8(uint8_t* data, int bytes, unsigned short port, int payload);
-int sdp_vp9(uint8_t* data, int bytes, unsigned short port, int payload);
-int sdp_h264(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-int sdp_mpeg4_es(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-int sdp_opus(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-int sdp_mpeg2_ps(uint8_t* data, int bytes, unsigned short port, int payload);
-int sdp_mpeg2_ts(uint8_t* data, int bytes, unsigned short port);
-int sdp_g711u(uint8_t *data, int bytes, unsigned short port);
-int sdp_g711a(uint8_t *data, int bytes, unsigned short port);
 
 static void* rtp_alloc(void* param, int bytes)
 {
@@ -57,7 +46,7 @@ static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
         s->onbye(param);
 }
 
-int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes)
+int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes)
 {
     int r;
     struct rtp_event_t event;
@@ -77,31 +66,31 @@ int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int paylo
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
-    if(payload >= 96)
+    if(payload >= RTP_PAYLOAD_DYNAMIC)
     {
         if(0 == strcasecmp("H264", encoding) || 0 == strcasecmp("AVC", encoding))
         {
-            r = sdp_h264(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_h264(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
         }
         else if(0 == strcasecmp("H265", encoding) || 0 == strcasecmp("HEVC", encoding))
         {
-            r = sdp_h265(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_h265(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
         }
         else if(0 == strcasecmp("MP4V-ES", encoding))
         {
-            r = sdp_mpeg4_es(s->buffer, sizeof(s->buffer), port, payload, s->frequency, extra, bytes);
+            r = sdp_mpeg4_es(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
         }
         else if (0 == strcasecmp(encoding, "MP2P"))
         {
-            r = sdp_mpeg2_ps(s->buffer, sizeof(s->buffer), port, payload);
+            r = sdp_mpeg2_ps(s->buffer, sizeof(s->buffer), proto, port, payload);
         }
         else if (0 == strcasecmp(encoding, "VP8"))
         {
-            r = sdp_vp8(s->buffer, sizeof(s->buffer), port, payload);
+            r = sdp_vp8(s->buffer, sizeof(s->buffer), proto, port, payload);
         }
         else if (0 == strcasecmp(encoding, "VP9"))
         {
-            r = sdp_vp9(s->buffer, sizeof(s->buffer), port, payload);
+            r = sdp_vp9(s->buffer, sizeof(s->buffer), proto, port, payload);
         }
         else
         {
@@ -114,7 +103,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int paylo
         switch(payload)
         {
         case RTP_PAYLOAD_MP2T:
-            r = sdp_mpeg2_ts(s->buffer, sizeof(s->buffer), port);
+            r = sdp_mpeg2_ts(s->buffer, sizeof(s->buffer), proto, port);
             break;
 
         default:
@@ -136,7 +125,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, unsigned short port, int paylo
     return r;
 }
 
-int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes)
+int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes)
 {
     int r;
     struct rtp_event_t event;
@@ -156,25 +145,25 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int paylo
     s->bandwidth = 128 * 1024; // default 128Kb
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
-    if(payload >= 96)
+    if(payload >= RTP_PAYLOAD_DYNAMIC)
     {
         if(0 == strcasecmp("MP4A-LATM", encoding))
         {
             // RFC 6416
             s->bandwidth = 128 * 1024;
-            r = sdp_aac_latm(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_aac_latm(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
         }
         else if(0 == strcasecmp("MPEG4-GENERIC", encoding))
         {
             // RFC 3640 3.3.1. General (p21)
             s->bandwidth = 128 * 1024;
-            r = sdp_aac_generic(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_aac_generic(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
         }
         else if(0 == strcasecmp("opus", encoding))
         {
             // RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
             s->bandwidth = 32000;
-            r = sdp_opus(s->buffer, sizeof(s->buffer), port, payload, sample_rate, channel_count, extra, bytes);
+            r = sdp_opus(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
         }
         else
         {
@@ -189,12 +178,12 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, unsigned short port, int paylo
         case RTP_PAYLOAD_PCMU:
             s->bandwidth = 64000; // 8000 * 8 * 1
             snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMU");
-            r = sdp_g711u(s->buffer, sizeof(s->buffer), port);
+            r = sdp_g711u(s->buffer, sizeof(s->buffer), proto, port);
                 
         case RTP_PAYLOAD_PCMA:
             s->bandwidth = 64000; // 8000 * 8 * 1
             snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMA");
-            r = sdp_g711a(s->buffer, sizeof(s->buffer), port);
+            r = sdp_g711a(s->buffer, sizeof(s->buffer), proto, port);
             break;
                 
         default:

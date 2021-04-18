@@ -241,7 +241,7 @@ static int sdp_media_negotiate(const struct rtsp_media_t* m)
 	assert(0 == strcasecmp("IP4", m->addrtype) || 0 == strcasecmp("IP6", m->addrtype));
 	for (i = 0; i < m->avformat_count; i++)
 	{
-		if(m->avformats[i].fmt < 96)
+		if(m->avformats[i].fmt < RTP_PAYLOAD_DYNAMIC)
         {
             //for(j = 0; j < sizeof(payloads)/sizeof(payloads[0]); j++)
             //{
@@ -271,7 +271,7 @@ static int sdp_media_negotiate(const struct rtsp_media_t* m)
 //		if(0 != strcmp(m->media, media))
 //			continue;
 //
-//		if (payload < 96)
+//		if (payload < RTP_PAYLOAD_DYNAMIC)
 //		{
 //			for (j = 0; j < m->avformat_count; j++)
 //			{
@@ -311,18 +311,18 @@ static void mp4_onvideo(void* param, uint32_t track, uint8_t object, int width, 
 	{
 		s->video.codec = AVCODEC_VIDEO_H264;
 		mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.avc);
-		rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H264, "H264", 90000, extra, bytes);
+		rtp_sender_init_video(&s->video.sender, "RTP/AVP", port, RTP_PAYLOAD_H264, "H264", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_H265;
         mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s->video.u.hevc);
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_H265, "H265", 90000, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, "RTP/AVP", port, RTP_PAYLOAD_H265, "H265", 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_MP4V == object)
 	{
 		s->video.codec = AVCODEC_VIDEO_MPEG4;
-        rtp_sender_init_video(&s->video.sender, port, RTP_PAYLOAD_MP4V, "MP4V-ES", 90000, extra, bytes);
+        rtp_sender_init_video(&s->video.sender, "RTP/AVP", port, RTP_PAYLOAD_MP4V, "MP4V-ES", 90000, extra, bytes);
 	}
 	else
 	{
@@ -354,22 +354,22 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
         mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_OPUS;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_OPUS, "opus", sample_rate, channel_count, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_OPUS, "opus", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_G711u == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMU, "", sample_rate, channel_count, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_PCMU, "", sample_rate, channel_count, extra, bytes);
 	}
     else if (MOV_OBJECT_G711a == object)
     {
         s->audio.codec = AVCODEC_AUDIO_PCM;
-        rtp_sender_init_audio(&s->audio.sender, port, RTP_PAYLOAD_PCMA, "", sample_rate, channel_count, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_PCMA, "", sample_rate, channel_count, extra, bytes);
     }
     else
 	{
