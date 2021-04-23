@@ -976,12 +976,13 @@ int mkv_reader_getinfo(mkv_reader_t* reader, struct mkv_reader_trackinfo_t* ontr
 
 uint64_t mkv_reader_getduration(mkv_reader_t* reader)
 {
-	return reader->mkv.duration;
+	return reader ? reader->mkv.duration : 0;
 }
 
-int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader_onread onread, void* param)
+int mkv_reader_read2(mkv_reader_t* reader, mkv_reader_onread2 onread, void* param)
 {
 	int r;
+	void* ptr;
 	struct mkv_sample_t* sample;
 
 #if !defined(MKV_LIVE_STREAMING)
@@ -1000,16 +1001,46 @@ int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader
 		return 0; // eof
 
 	sample = &reader->mkv.samples[reader->offset];
-	if (bytes < sample->bytes)
+	ptr = onread(param, sample->track, sample->bytes, sample->pts * reader->mkv.timescale / 1000000, sample->dts * reader->mkv.timescale / 1000000, sample->flags);
+	if (!ptr)
 		return ENOMEM;
-	
+
 	mkv_buffer_seek(&reader->io, sample->offset);
-	mkv_buffer_read(&reader->io, buffer, sample->bytes);
+	mkv_buffer_read(&reader->io, ptr, sample->bytes);
 	if (0 != reader->io.error)
 		return reader->io.error;
-	reader->offset++;
 
-	onread(param, sample->track, buffer, sample->bytes, sample->pts * reader->mkv.timescale / 1000000, sample->dts * reader->mkv.timescale / 1000000, sample->flags);
+	reader->offset++;
+	return 1;
+}
+
+static void* mkv_reader_read_helper(void* param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags)
+{
+	struct mkv_sample_t* sample;
+	sample = (struct mkv_sample_t*)param;
+	if (sample->bytes < bytes)
+		return NULL;
+
+	sample->pts = pts;
+	sample->dts = dts;
+	sample->flags = flags;
+	sample->bytes = bytes;
+	sample->track = track;
+	return sample->data;
+}
+
+int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader_onread onread, void* param)
+{
+	int r;
+	struct mkv_sample_t sample; // temp
+	//memset(&sample, 0, sizeof(sample));
+	sample.data = buffer;
+	sample.bytes = bytes;
+	r = mkv_reader_read2(reader, mkv_reader_read_helper, &sample);
+	if (r <= 0)
+		return r;
+
+	onread(param, sample.track, buffer, sample.bytes, sample.pts, sample.dts, sample.flags);
 	return 1;
 }
 
