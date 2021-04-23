@@ -11,6 +11,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define USE_NEW_MOV_READ_API 1
+
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
 static uint8_t s_packet[2 * 1024 * 1024];
@@ -30,6 +32,32 @@ static uint32_t s_hevc_track = 0xFFFFFFFF;
 static uint32_t s_opus_track = 0xFFFFFFFF;
 static uint32_t s_mp3_track = 0xFFFFFFFF;
 static uint32_t s_subtitle_track = 0xFFFFFFFF;
+
+#if defined(USE_NEW_MOV_READ_API)
+struct mov_packet_test_t
+{
+	int flags;
+	int64_t pts;
+	int64_t dts;
+	uint32_t track;
+
+	void* ptr;
+	size_t bytes;
+};
+static void* onalloc(void* param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags)
+{
+	// emulate allocation
+	struct mov_packet_test_t* pkt = (struct mov_packet_test_t*)param;
+	if (pkt->bytes < bytes)
+		return NULL;
+	pkt->flags = flags;
+	pkt->pts = pts;
+	pkt->dts = dts;
+	pkt->track = track;
+	pkt->bytes = bytes;
+	return pkt->ptr;
+}
+#endif
 
 inline const char* ftimestamp(uint32_t t, char* buf)
 {
@@ -200,9 +228,25 @@ void mov_reader_test(const char* mp4)
 	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info, mov_subtitle_info };
 	mov_reader_getinfo(mov, &info, NULL);
 
+#if !defined(USE_NEW_MOV_READ_API)
 	while (mov_reader_read(mov, s_buffer, sizeof(s_buffer), onread, NULL) > 0)
 	{
 	}
+#else
+	while (1)
+	{
+		struct mov_packet_test_t pkt;
+		pkt.ptr = s_buffer;
+		pkt.bytes = sizeof(s_buffer);
+		int r = mov_reader_read2(mov, onalloc, &pkt);
+		if (r <= 0)
+		{
+			// WARNNING: free(pkt.ptr) if alloc new buffer
+			break;
+		}
+		onread(NULL, pkt.track, pkt.ptr, pkt.bytes, pkt.pts, pkt.dts, pkt.flags);
+	}
+#endif
 
 	duration /= 2;
 	mov_reader_seek(mov, (int64_t*)&duration);

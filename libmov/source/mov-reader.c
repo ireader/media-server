@@ -409,8 +409,9 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 	return track;
 }
 
-int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
+int mov_reader_read2(struct mov_reader_t* reader, mov_reader_onread2 onread, void* param)
 {
+	void* ptr;
 	struct mov_track_t* track;
 	struct mov_sample_t* sample;
 
@@ -422,19 +423,50 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 
 	assert(track->sample_offset < track->sample_count);
 	sample = &track->samples[track->sample_offset];
-	if (bytes < sample->bytes)
+	assert(sample->sample_description_index > 0);
+	ptr = onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
+	if(!ptr)
 		return ENOMEM;
 
 	mov_buffer_seek(&reader->mov.io, sample->offset);
-	mov_buffer_read(&reader->mov.io, buffer, sample->bytes);
+	mov_buffer_read(&reader->mov.io, ptr, sample->bytes);
 	if (mov_buffer_error(&reader->mov.io))
 	{
+		// TODO: user free buffer
 		return mov_buffer_error(&reader->mov.io);
 	}
 
 	track->sample_offset++; //mark as read
-	assert(sample->sample_description_index > 0);
-	onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
+	return 1;
+}
+
+static void* mov_reader_read_helper(void* param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags)
+{
+	struct mov_sample_t* sample;
+	sample = (struct mov_sample_t*)param;
+	if (sample->bytes < bytes)
+		return NULL;
+	
+	sample->pts = pts;
+	sample->dts = dts;
+	sample->flags = flags;
+	sample->bytes = bytes;
+	sample->sample_description_index = track;
+	return sample->data;
+}
+
+int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov_reader_onread onread, void* param)
+{
+	int r;
+	struct mov_sample_t sample; // temp
+	//memset(&sample, 0, sizeof(sample));
+	sample.data = buffer;
+	sample.bytes = bytes;
+	r = mov_reader_read2(reader, mov_reader_read_helper, &sample);
+	if (r <= 0)
+		return r;
+
+	onread(param, sample.sample_description_index, buffer, sample.bytes, sample.pts, sample.dts, sample.flags);
 	return 1;
 }
 
