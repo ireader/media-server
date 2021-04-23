@@ -25,7 +25,7 @@ int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 	if (r < 0) return r;
 	assert(avc.nb_pps + avc.nb_sps > 0);
 
-	n = snprintf((char*)data, bytes, pattern, port, proto ? "RTP/AVP" : NULL, payload, payload, payload,
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload,
 		(unsigned int)avc.profile, (unsigned int)avc.compatibility, (unsigned int)avc.level);
 
 	for (i = 0; i < avc.nb_sps; i++)

@@ -22,7 +22,7 @@ int sdp_opus(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 	int n;
 
 	sample_rate = sample_rate ? sample_rate : 48000;
-	n = snprintf((char*)data, bytes, pattern, port, proto ? "RTP/AVP" : NULL, payload, payload, sample_rate);
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, sample_rate);
 	if (2 == channel_count)
 		n += snprintf((char*)data + n, bytes - n, "a=fmtp:%d sprop-stereo=1\n", payload);
 	return n;

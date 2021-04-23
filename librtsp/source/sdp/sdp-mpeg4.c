@@ -20,7 +20,7 @@ int sdp_mpeg4_es(uint8_t *data, int bytes, const char* proto, unsigned short por
 	int n;
 
 	assert(90000 == frequence);
-	n = snprintf((char*)data, bytes, pattern, port, proto ? "RTP/AVP" : NULL, payload, payload, payload);
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload);
 
 	if (n + extra_size * 2 + 1 > bytes)
 		return -1; // // don't have enough memory

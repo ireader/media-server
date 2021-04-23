@@ -45,7 +45,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, const char* proto, unsigned short por
 	sample_rate = 0 == sample_rate ? 90000 : sample_rate;
 
 	n = snprintf((char*)data, bytes, pattern, port, 
-		proto ? "RTP/AVP" : NULL,
+		proto && *proto ? proto : "RTP/AVP",
 		payload, payload, sample_rate, channel_count, 
 		payload, mpeg4_aac_profile_level(&aac), aac.profile);
 
@@ -84,7 +84,7 @@ int sdp_aac_generic(uint8_t *data, int bytes, const char* proto, unsigned short 
 	assert(aac.sampling_frequency_index == (uint8_t)mpeg4_aac_audio_frequency_from(sample_rate));
 	assert(aac.channel_configuration == channel_count);
 
-	n = snprintf((char*)data, bytes, pattern, port, proto ? "RTP/AVP" : NULL, payload, payload, sample_rate, channel_count, payload, mpeg4_aac_profile_level(&aac));
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, sample_rate, channel_count, payload, mpeg4_aac_profile_level(&aac));
 
 	if (n + extra_size * 2 + 1 > bytes)
 		return -1; // don't have enough memory

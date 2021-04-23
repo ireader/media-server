@@ -157,31 +157,31 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     if (MOV_OBJECT_H264 == object)
     {
         assert(bytes == mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, 90000, 126, "H264", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, 126, "H264", 0, 0, 0, extra, bytes);
         ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_H264, extra, bytes);
     }
     else if (MOV_OBJECT_HEVC == object)
     {
         assert(bytes == mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_hevc));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, 90000, RTP_PAYLOAD_H265, "H265", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, RTP_PAYLOAD_H265, "H265", 0, 0, 0, extra, bytes);
         ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_H265, extra, bytes);
     }
     else if (MOV_OBJECT_AV1 == object)
     {
         assert(bytes == aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, 90000, 96, "AV1", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, 96, "AV1", 0, 0, 0, extra, bytes);
         ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_AV1, extra, bytes);
     }
     else if (MOV_OBJECT_VP9 == object)
     {
         assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, 90000, RTP_PAYLOAD_VP9, "VP9", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, RTP_PAYLOAD_VP9, "VP9", 0, 0, 0, extra, bytes);
         ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_VP9, extra, bytes);
     }
     else if (MOV_OBJECT_VP8 == object)
     {
         assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, 90000, 100, "VP8", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, 100, "VP8", 0, 0, 0, extra, bytes);
         ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_VP8, extra, bytes);
     }
     else
@@ -205,13 +205,13 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*ch
     if (MOV_OBJECT_AAC == object)
     {
         assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
-        int pid = rtsp_muxer_add_payload(ctx->a.rtp, sample_rate, RTP_PAYLOAD_MP4A, "MP4A-LATM", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->a.rtp, "RTP/AVP", sample_rate, RTP_PAYLOAD_MP4A, "MP4A-LATM", 0, 0, 0, extra, bytes);
         ctx->a.mid = rtsp_muxer_add_media(ctx->a.rtp, pid, RTP_PAYLOAD_MP4A, extra, bytes);
     }
     else if (MOV_OBJECT_OPUS == object)
     {
         assert(48000 == sample_rate);
-        int pid = rtsp_muxer_add_payload(ctx->a.rtp, sample_rate, 111, "OPUS", 0, 0, 0, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->a.rtp, "RTP/AVP", sample_rate, 111, "OPUS", 0, 0, 0, extra, bytes);
         ctx->a.mid = rtsp_muxer_add_media(ctx->a.rtp, pid, RTP_PAYLOAD_OPUS, extra, bytes);
     }
     else

@@ -28,7 +28,7 @@ int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 	if (r < 0) 
 		return r;
 
-	n = snprintf((char*)data, bytes, pattern, port, proto ? "RTP/AVP" : NULL, payload, payload, payload);
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload);
 
 	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]); i++)
 	{
