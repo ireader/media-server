@@ -90,12 +90,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../libmkv/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../3rd/openssl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rd/openssl/win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -157,9 +157,7 @@
     <ClInclude Include="..\librtp\test\rtp-dump.h" />
     <ClInclude Include="..\librtsp\source\utils\rtp-sender.h" />
     <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h" />
-    <ClInclude Include="..\librtsp\test\media\avbuffer.h" />
     <ClInclude Include="..\librtsp\test\media\avpacket-queue.h" />
-    <ClInclude Include="..\librtsp\test\media\avpacket.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h" />
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h" />
@@ -195,6 +193,11 @@
     <ClCompile Include="..\libhls\demo\hls-segmenter-flv.cpp" />
     <ClCompile Include="..\libhls\demo\hls-segmenter-mp4.cpp" />
     <ClCompile Include="..\libhls\demo\hls-server.cpp" />
+    <ClCompile Include="..\libmkv\test\mkv-2-mp4-test.cpp" />
+    <ClCompile Include="..\libmkv\test\mkv-file-buffer.c" />
+    <ClCompile Include="..\libmkv\test\mkv-reader-test.cpp" />
+    <ClCompile Include="..\libmkv\test\mkv-writer-test.cpp" />
+    <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp" />
     <ClCompile Include="..\libmov\test\fmp4-writer-test.cpp" />
     <ClCompile Include="..\libmov\test\mov-2-flv.cpp" />
     <ClCompile Include="..\libmov\test\mov-file-buffer.c" />
@@ -238,15 +241,14 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-vpx.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c" />
     <ClCompile Include="..\librtsp\source\utils\rtp-sender.c" />
     <ClCompile Include="..\librtsp\source\utils\rtsp-demuxer.c" />
     <ClCompile Include="..\librtsp\source\utils\rtsp-muxer.c" />
-    <ClCompile Include="..\librtsp\test\media\avbuffer.c" />
     <ClCompile Include="..\librtsp\test\media\avpacket-queue.cpp" />
-    <ClCompile Include="..\librtsp\test\media\avpacket.c" />
     <ClCompile Include="..\librtsp\test\media\ffmpeg-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp" />
@@ -284,6 +286,15 @@
     <ProjectReference Include="..\..\avcodec\avbsf\avbsf.vcxproj">
       <Project>{454fc5b7-c7dc-4e78-9803-254c35fc01e6}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\avcodec\avcodec\avcodec.vcxproj">
+      <Project>{01e9d416-4a49-416e-8182-22241f07c295}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\avcodec\h264\h264.vcxproj">
+      <Project>{11fda5d5-41b7-4a1e-9b79-c38851b8d8ae}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\avcodec\h265\h265.vcxproj">
+      <Project>{4a2e513d-9808-44ec-8329-bcb439d5c00a}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\sdk\libaio\libaio.vcxproj">
       <Project>{24239ef8-56ac-4b79-81aa-5cb49b8b1178}</Project>
     </ProjectReference>
@@ -304,6 +315,9 @@
     </ProjectReference>
     <ProjectReference Include="..\libhls\libhls.vcxproj">
       <Project>{84b0af1d-d52e-4bdf-8fd5-a8dbf12dda1b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libmkv\libmkv.vcxproj">
+      <Project>{b4a2626a-7375-4bf6-936b-0a17d18581c1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\libmov\libmov.vcxproj">
       <Project>{d5106098-7b37-4de0-b8fb-233bbabc2d72}</Project>

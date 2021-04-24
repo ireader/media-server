@@ -55,6 +55,9 @@
     <Filter Include="librtsp\sdp">
       <UniqueIdentifier>{65f4c8fc-27c7-4b37-9c1b-de6acfc134bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libmkv">
+      <UniqueIdentifier>{6ad79cfa-2fb8-4e75-b04b-48ad86d6aaa7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -103,12 +106,6 @@
       <Filter>librtsp\media</Filter>
     </ClInclude>
     <ClInclude Include="..\librtsp\test\media\vod-file-source.h">
-      <Filter>librtsp\media</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\avbuffer.h">
-      <Filter>librtsp\media</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\avpacket.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h">
@@ -377,12 +374,6 @@
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\avbuffer.c">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\avpacket.c">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
@@ -424,6 +415,24 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c">
       <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-vpx.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-2-mp4-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-file-buffer.c">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-reader-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-writer-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp">
+      <Filter>libmkv</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
