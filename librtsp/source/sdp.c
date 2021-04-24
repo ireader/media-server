@@ -1731,7 +1731,7 @@ static int sdp_attribute_list_impl(const struct attributes* a, const char* name,
 	int i;
 	const struct sdp_attribute* attr;
 
-	for (i = 0; name && i < a->count; i++)
+	for (i = 0; i < a->count; i++)
 	{
 		if (i < N_ATTRIBUTE)
 			attr = a->attrs + i;

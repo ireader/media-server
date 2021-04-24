@@ -114,6 +114,7 @@ const char* sdp_media_bandwidth_get_type(sdp_t* sdp, int media, int idx); // CT/
 int sdp_media_bandwidth_get_value(sdp_t* sdp, int media, int idx); // kbps-kilobits per second
 
 int sdp_attribute_count(sdp_t* sdp);
+/// param[in] name attrbution name, NULL-for list all attributions
 int sdp_attribute_list(sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param);
 int sdp_attribute_get(sdp_t* sdp, int idx, const char** name, const char** value);
 const char* sdp_attribute_find(sdp_t* sdp, const char* name);
