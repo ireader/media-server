@@ -66,6 +66,7 @@ static int mpeg4_h264_avcc_bitstream_valid(const uint8_t* h264, int bytes, int a
 		if (n < 0 || n + avcc > bytes)
 			return 0; // invalid
 
+		h264 += n + avcc;
 		bytes -= n + avcc;
 	}
 
@@ -80,17 +81,20 @@ int mpeg4_h264_bitstream_format(const uint8_t* h264, int bytes)
 		return -1;
 
 	n = ((uint32_t)h264[0]) << 16 | ((uint32_t)h264[1]) << 8 | ((uint32_t)h264[2]);
-	if (0 == n && 1 == h264[3])
+	if (0 == n && h264[3] <= 1)
 	{
 		return 0; // annexb
 	}
 	else if(1 == n)
 	{
 		// try avcc & annexb
-		return mpeg4_h264_avcc_bitstream_valid(h264, bytes, 3) ? 3 : 0;
+		return mpeg4_h264_avcc_bitstream_valid(h264, bytes, 4) ? 4 : 0;
 	}
-
-	return mpeg4_h264_avcc_bitstream_valid(h264, bytes, 4) ? 4 : -1;
+	else
+	{
+		// try avcc 4/3 bytes
+		return mpeg4_h264_avcc_bitstream_valid(h264, bytes, 4) ? 4 : (mpeg4_h264_avcc_bitstream_valid(h264, bytes, 3) ? 3 : -1);
+	}
 }
 
 static int mpeg4_h264_avcc_nalu(const void* h264, int bytes, int avcc, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param)
@@ -100,7 +104,7 @@ static int mpeg4_h264_avcc_nalu(const void* h264, int bytes, int avcc, void (*ha
 
 	p = (const uint8_t*)h264;
 	end = (const uint8_t*)h264 + bytes;
-	for(n = h264_avcc_length(p, (int)(end - p), avcc); p + n + avcc < end; n = h264_avcc_length(p, (int)(end - p), avcc))
+	for(n = h264_avcc_length(p, (int)(end - p), avcc); p + n + avcc <= end; n = h264_avcc_length(p, (int)(end - p), avcc))
 	{
 		assert(n > 0);
 		if (n > 0)
@@ -432,6 +436,20 @@ int h264_is_new_access_unit(const uint8_t* nalu, size_t bytes)
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
+static void mpeg4_h264_bitstream_format_test(void)
+{
+	const uint8_t bs3[] = { 0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
+	const uint8_t bs4[] = { 0x00,0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
+	const uint8_t bs5[] = { 0x00,0x00,0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
+	const uint8_t avcc3[] = { 0x00,0x00,0x06,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
+	const uint8_t avcc4[] = { 0x00,0x00,0x00,0x06,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
+	assert(0 == mpeg4_h264_bitstream_format(bs3, sizeof(bs3)));
+	assert(0 == mpeg4_h264_bitstream_format(bs4, sizeof(bs4)));
+	assert(0 == mpeg4_h264_bitstream_format(bs5, sizeof(bs5)));
+	assert(3 == mpeg4_h264_bitstream_format(avcc3, sizeof(avcc3)));
+	assert(4 == mpeg4_h264_bitstream_format(avcc4, sizeof(avcc4)));	
+}
+
 static void mpeg4_annexbtomp4_test2(void)
 {
 	const uint8_t sps[] = { 0x00,0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab,0xcd, };
@@ -480,5 +498,6 @@ void mpeg4_annexbtomp4_test(void)
 	assert(vcl == 1);
 
 	mpeg4_annexbtomp4_test2();
+	mpeg4_h264_bitstream_format_test();
 }
 #endif
