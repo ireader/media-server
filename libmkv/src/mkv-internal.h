@@ -159,7 +159,7 @@ struct mkv_cue_position_t
 	uint64_t cluster;
 	uint64_t relative;
 	uint64_t duration;
-	uint64_t timestamp;
+	uint64_t timestamp; // Absolute timestamp according to the Segment time base.
 
 	uint64_t block; // default 1
 	int flag_codec_state; // codec state, default 0

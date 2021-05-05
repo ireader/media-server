@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		468023B52599833D00AD5A52 /* mkv-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023A92599833D00AD5A52 /* mkv-info.c */; };
 		468023B62599833D00AD5A52 /* mkv-track.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AA2599833D00AD5A52 /* mkv-track.c */; };
 		468023B72599833D00AD5A52 /* mkv-codec.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AB2599833D00AD5A52 /* mkv-codec.c */; };
 		468023B82599833D00AD5A52 /* mkv-attachment.c in Sources */ = {isa = PBXBuildFile; fileRef = 468023AC2599833D00AD5A52 /* mkv-attachment.c */; };
@@ -25,7 +24,6 @@
 /* Begin PBXFileReference section */
 		46802396259981D700AD5A52 /* libmkv.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmkv.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4680239D2599821800AD5A52 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
-		468023A92599833D00AD5A52 /* mkv-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-info.c"; sourceTree = "<group>"; };
 		468023AA2599833D00AD5A52 /* mkv-track.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-track.c"; sourceTree = "<group>"; };
 		468023AB2599833D00AD5A52 /* mkv-codec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-codec.c"; sourceTree = "<group>"; };
 		468023AC2599833D00AD5A52 /* mkv-attachment.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mkv-attachment.c"; sourceTree = "<group>"; };
@@ -71,7 +69,6 @@
 		468023A82599833D00AD5A52 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				468023A92599833D00AD5A52 /* mkv-info.c */,
 				468023AA2599833D00AD5A52 /* mkv-track.c */,
 				468023AB2599833D00AD5A52 /* mkv-codec.c */,
 				468023AC2599833D00AD5A52 /* mkv-attachment.c */,
@@ -165,7 +162,6 @@
 				468023BA2599833D00AD5A52 /* mkv-cue.c in Sources */,
 				468023BF2599833D00AD5A52 /* ebml.c in Sources */,
 				468023B62599833D00AD5A52 /* mkv-track.c in Sources */,
-				468023B52599833D00AD5A52 /* mkv-info.c in Sources */,
 				468023BD2599833D00AD5A52 /* mkv-ioutil.c in Sources */,
 				468023B92599833D00AD5A52 /* mkv-reader.c in Sources */,
 			);

@@ -327,7 +327,8 @@ static int mkv_segment_cue_position_parse(struct mkv_reader_t* reader, struct mk
 {
 	struct mkv_cue_t* cue;
 	struct mkv_cue_position_t* pt;
-	cue = (struct mkv_cue_t*)node->parent->ptr;
+	//cue = (struct mkv_cue_t*)node->parent->ptr;
+	cue = &reader->mkv.cue;
 
 	if (0 != mkv_realloc(&cue->positions, cue->count, &cue->capacity, sizeof(struct mkv_cue_position_t), 4))
 		return -ENOMEM;
@@ -1046,7 +1047,48 @@ int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader
 
 int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 {
+	uint64_t clock;
+	size_t idx, start, end;
+
+#if !defined(MKV_LIVE_STREAMING)
+	struct mkv_cue_position_t* cue, *prev, *next;
+
 	if (reader->mkv.cue.count < 1)
 		return -1;
+
+	idx = start = 0;
+	end = reader->mkv.cue.count;
+	assert(reader->mkv.cue.count > 0);
+	clock = (uint64_t)(*timestamp) * 1000000 / reader->mkv.timescale; // mvhd timescale
+
+	while (start < end)
+	{
+		idx = (start + end) / 2;
+		cue = &reader->mkv.cue.positions[idx];
+
+		if (cue->timestamp > clock)
+			end = idx;
+		else if (cue->timestamp < clock)
+			start = idx + 1;
+		else
+			break;
+	}
+
+#define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))
+	cue = &reader->mkv.cue.positions[idx];
+	prev = &reader->mkv.cue.positions[idx > 0 ? idx - 1 : idx];
+	next = &reader->mkv.cue.positions[idx + 1 < reader->mkv.cue.count ? idx + 1 : idx];
+	if (DIFF(prev->timestamp, clock) < DIFF(cue->timestamp, clock))
+		cue = prev;
+	if (DIFF(next->timestamp, clock) < DIFF(cue->timestamp, clock))
+		cue = next;
+#undef DIFF
+
+	*timestamp = cue->timestamp * reader->mkv.timescale / 1000000;
+	mkv_buffer_seek(&reader->io, cue->cluster);
+	reader->offset = reader->mkv.count; // clear
+	return 0;
+#else
 	return -1;
+#endif
 }

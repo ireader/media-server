@@ -24,9 +24,9 @@ static int mkv_file_write(void* fp, const void* data, uint64_t bytes)
 	return bytes == fwrite(data, 1, bytes, (FILE*)fp) ? 0 : ferror((FILE*)fp);
 }
 
-static int mkv_file_seek(void* fp, uint64_t offset)
+static int mkv_file_seek(void* fp, int64_t offset)
 {
-	return fseek64((FILE*)fp, offset, SEEK_SET);
+	return fseek64((FILE*)fp, offset, offset >= 0 ? SEEK_SET : SEEK_END);
 }
 
 static uint64_t mkv_file_tell(void* fp)
