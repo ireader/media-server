@@ -2,6 +2,7 @@
 #include "rtp-profile.h"
 #include "rtp-payload.h"
 #include "sdp-payload.h"
+#include "rtsp-payloads.h"
 #include "rtp.h"
 #include <stdlib.h>
 #include <string.h>
@@ -66,50 +67,18 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
-    if(payload >= RTP_PAYLOAD_DYNAMIC)
+    r = avpayload_find_by_rtp(payload, encoding);
+    if (r < 0)
     {
-        if(0 == strcasecmp("H264", encoding) || 0 == strcasecmp("AVC", encoding))
-        {
-            r = sdp_h264(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
-        }
-        else if(0 == strcasecmp("H265", encoding) || 0 == strcasecmp("HEVC", encoding))
-        {
-            r = sdp_h265(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
-        }
-        else if(0 == strcasecmp("MP4V-ES", encoding))
-        {
-            r = sdp_mpeg4_es(s->buffer, sizeof(s->buffer), proto, port, payload, s->frequency, extra, bytes);
-        }
-        else if (0 == strcasecmp(encoding, "MP2P"))
-        {
-            r = sdp_mpeg2_ps(s->buffer, sizeof(s->buffer), proto, port, payload);
-        }
-        else if (0 == strcasecmp(encoding, "VP8"))
-        {
-            r = sdp_vp8(s->buffer, sizeof(s->buffer), proto, port, payload);
-        }
-        else if (0 == strcasecmp(encoding, "VP9"))
-        {
-            r = sdp_vp9(s->buffer, sizeof(s->buffer), proto, port, payload);
-        }
-        else
-        {
-            assert(0);
-            return -1;
-        }
+        assert(0);
+        return -1;
     }
-    else
-    {
-        switch(payload)
-        {
-        case RTP_PAYLOAD_MP2T:
-            r = sdp_mpeg2_ts(s->buffer, sizeof(s->buffer), proto, port);
-            break;
 
-        default:
-            assert(0);
-            return -1;
-        }
+    r = sdp_payload_video(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, s->frequency, extra, bytes);
+    if (r < 0)
+    {
+        assert(0);
+        return -1;
     }
     
     s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);
@@ -145,51 +114,41 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->bandwidth = 128 * 1024; // default 128Kb
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
-    if(payload >= RTP_PAYLOAD_DYNAMIC)
+    r = avpayload_find_by_rtp(payload, encoding);
+    if (r < 0)
     {
-        if(0 == strcasecmp("MP4A-LATM", encoding))
-        {
-            // RFC 6416
-            s->bandwidth = 128 * 1024;
-            r = sdp_aac_latm(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
-        }
-        else if(0 == strcasecmp("MPEG4-GENERIC", encoding))
-        {
-            // RFC 3640 3.3.1. General (p21)
-            s->bandwidth = 128 * 1024;
-            r = sdp_aac_generic(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
-        }
-        else if(0 == strcasecmp("opus", encoding))
-        {
-            // RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
-            s->bandwidth = 32000;
-            r = sdp_opus(s->buffer, sizeof(s->buffer), proto, port, payload, sample_rate, channel_count, extra, bytes);
-        }
-        else
-        {
-            assert(0);
-            return -1;
-        }
+        assert(0);
+        return -1;
     }
-    else
+
+    r = sdp_payload_audio(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, sample_rate, channel_count, extra, bytes);
+    if (r < 0)
     {
-        switch(payload)
-        {
-        case RTP_PAYLOAD_PCMU:
-            s->bandwidth = 64000; // 8000 * 8 * 1
-            snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMU");
-            r = sdp_g711u(s->buffer, sizeof(s->buffer), proto, port);
+        assert(0);
+        return -1;
+    }
+
+    switch(s_payloads[r].payload)
+    {
+    case RTP_PAYLOAD_MP4A: // RFC 3640 3.3.1. General (p21)
+    case RTP_PAYLOAD_LATM: // RFC 6416
+        s->bandwidth = 128 * 1024;
+        break;
+
+    case RTP_PAYLOAD_OPUS: // RFC7587 RTP Payload Format for the Opus Speech and Audio Codec
+        s->bandwidth = 32000;
+        break;
+
+    case RTP_PAYLOAD_PCMU:
+        s->bandwidth = 64000; // 8000 * 8 * 1
+        break;
                 
-        case RTP_PAYLOAD_PCMA:
-            s->bandwidth = 64000; // 8000 * 8 * 1
-            snprintf(s->encoding, sizeof(s->encoding)-1, "%s", "PCMA");
-            r = sdp_g711a(s->buffer, sizeof(s->buffer), proto, port);
-            break;
+    case RTP_PAYLOAD_PCMA:
+        s->bandwidth = 64000; // 8000 * 8 * 1
+        break;
                 
-        default:
-            assert(0);
-            return -1;
-        }
+    default:
+        s->bandwidth = 128 * 1024; // default 128Kb
     }
 
     s->encoder = rtp_payload_encode_create(payload, s->encoding, s->seq, s->ssrc, &handler, s);

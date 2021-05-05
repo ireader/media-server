@@ -30,6 +30,17 @@ struct rtcp_xr_t
 	int voip_metrics;
 };
 
+// rfc 5576
+struct sdp_ssrc_t
+{
+	uint32_t ssrc;
+
+	// TODO: 
+	// ssrc attribute(s)
+	// multiple ssrc
+	// ssrc-group
+};
+
 struct sdp_candidate_t
 {
 	char foundation[33];
@@ -89,6 +100,7 @@ struct rtsp_media_t
 
 	struct rtcp_xr_t xr;
 	struct sdp_ice_t ice;
+	struct sdp_ssrc_t ssrc; // rfc 5576
 
 	int offset;
 	char ptr[8 * 1024]; // RTP fmtp value

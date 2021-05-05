@@ -354,7 +354,7 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
         mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);
-        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
+        rtp_sender_init_audio(&s->audio.sender, "RTP/AVP", port, RTP_PAYLOAD_LATM, "MP4A-LATM", sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_OPUS == object)
 	{

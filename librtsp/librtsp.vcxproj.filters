@@ -119,7 +119,7 @@
     <ClCompile Include="source\rtsp-multicast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\sdp-utils.c">
+    <ClCompile Include="source\sdp-options.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -181,7 +181,7 @@
     <ClInclude Include="include\rtsp-server-aio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sdp-utils.h">
+    <ClInclude Include="include\sdp-options.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

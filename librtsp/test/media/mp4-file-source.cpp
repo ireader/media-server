@@ -305,7 +305,7 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		if (1)
 		{
 			// RFC 6416
-			n = rtp_sender_init_audio(&m->rtp, "RTP/AVP", 0, RTP_PAYLOAD_MP4A, "MP4A-LATM", sample_rate, self->m_aac.channel_configuration, extra, bytes);
+			n = rtp_sender_init_audio(&m->rtp, "RTP/AVP", 0, RTP_PAYLOAD_LATM, "MP4A-LATM", sample_rate, self->m_aac.channel_configuration, extra, bytes);
 		}
 		else
 		{

@@ -1,9 +1,27 @@
-#ifndef _sdp_utils_h_
-#define _sdp_utils_h_
+#ifndef _sdp_options_h_
+#define _sdp_options_h_
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct sdp_options_t
+{
+	int bundle;
+	int rtcp_mux; // rtp/rtcp port muxer
+	
+	struct
+	{
+		int media; // SDP_M_MEDIA_AUDIO
+		int setup; // SDP_A_SETUP_ACTPASS
+		int proto; // SDP_M_PROTO_RTP_AVP
+		int port[2];
+		uint8_t payloads[16]; // payload list
+	} m[8];
+	int count; // media count
+};
 
 enum 
 {
@@ -15,8 +33,8 @@ enum
 };
 
 /// @return SDP_A_SETUP_NONE/SDP_A_SETUP_PASSIVE/SDP_A_SETUP_ACTIVE/SDP_A_SETUP_xxx
-int sdp_util_setup_from(const char* setup);
-const char* sdp_util_setup_to(int setup);
+int sdp_option_setup_from(const char* setup);
+const char* sdp_option_setup_to(int setup);
 
 // RTP      = xxxxxxx1 xxxxxxxx
 // UDP      = xxxxxxxx xxxxx000 
@@ -63,10 +81,15 @@ enum
 };
 
 /// @return SDP_M_PROTO_RAW/SDP_M_PROTO_UDP/SDP_M_PROTO_RTP_AVP/SDP_M_PROTO_XXX
-int sdp_util_proto_from(const char* proto);
-const char* sdp_util_proto_to(int proto);
+int sdp_option_proto_from(const char* proto);
+const char* sdp_option_proto_to(int proto);
+
+int sdp_option_mode_from(const char* mode);
+const char* sdp_option_mode_to(int mode);
+
+const char* sdp_option_media_to(int media);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_sdp_utils_h_ */
+#endif /* !_sdp_options_h_ */

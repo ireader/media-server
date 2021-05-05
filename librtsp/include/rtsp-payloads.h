@@ -26,7 +26,7 @@ static struct
 #ifdef _avcodecid_h_
     AVPACKET_CODEC_ID codecid;
 #endif
-    uint8_t flv; // flv codec id
+    uint16_t flv; // flv codec id
     uint8_t mov; // mov object id
     uint8_t mpeg2; // mpeg2 codecid
     uint8_t payload; // rtp payload id
@@ -44,13 +44,16 @@ static struct
     CODEC(AVCODEC_VIDEO_AV1,    MOV_OBJECT_AV1,     MKV_CODEC_VIDEO_AV1,    FLV_VIDEO_AV1,      PSI_STREAM_VP9,         RTP_PAYLOAD_AV1,    "AV1"),
 
     // audio
-    CODEC(AVCODEC_AUDIO_AAC,    MOV_OBJECT_AAC,     MKV_CODEC_AUDIO_AAC,    FLV_AUDIO_AAC,      PSI_STREAM_AAC,         RTP_PAYLOAD_MP4A,   "MP4A-LATM"),
+    CODEC(AVCODEC_AUDIO_AAC,    MOV_OBJECT_AAC,     MKV_CODEC_AUDIO_AAC,    FLV_AUDIO_AAC,      PSI_STREAM_AAC,         RTP_PAYLOAD_LATM,   "MP4A-LATM"),
     CODEC(AVCODEC_AUDIO_AAC,    MOV_OBJECT_AAC,     MKV_CODEC_AUDIO_AAC,    FLV_AUDIO_AAC,      PSI_STREAM_AAC,         RTP_PAYLOAD_MP4A,   "mpeg4-generic"),
     CODEC(AVCODEC_AUDIO_OPUS,   MOV_OBJECT_OPUS,    MKV_CODEC_AUDIO_OPUS,   FLV_AUDIO_OPUS,     PSI_STREAM_AUDIO_OPUS,  RTP_PAYLOAD_OPUS,   "opus"),
     CODEC(AVCODEC_AUDIO_MP3,    MOV_OBJECT_MP3,     MKV_CODEC_AUDIO_MP3,    FLV_AUDIO_MP3,      PSI_STREAM_MP3,         RTP_PAYLOAD_MP3,    ""), // rtp standard payload id
     CODEC(AVCODEC_AUDIO_G711U,  MOV_OBJECT_G711u,   MKV_CODEC_UNKNOWN,      FLV_AUDIO_G711A,    PSI_STREAM_AUDIO_G711U, RTP_PAYLOAD_PCMU,   ""), // rtp standard payload id
     CODEC(AVCODEC_AUDIO_G711A,  MOV_OBJECT_G711a,   MKV_CODEC_UNKNOWN,      FLV_AUDIO_G711U,    PSI_STREAM_AUDIO_G711A, RTP_PAYLOAD_PCMA,   ""), // rtp standard payload id    
 
+    // data
+    CODEC(AVCODEC_DATA_RAW,     MOV_OBJECT_NONE,   MKV_CODEC_UNKNOWN,      FLV_SCRIPT_METADATA, PSI_STREAM_RESERVED,    RTP_PAYLOAD_DYNAMIC,""),
+    
     // PS/TS
     CODEC(AVCODEC_NONE,         MOV_OBJECT_NONE,    MKV_CODEC_UNKNOWN,      0,                  PSI_STREAM_RESERVED,    RTP_PAYLOAD_MP2T,   ""), // rtp standard payload id    
     CODEC(AVCODEC_NONE,         MOV_OBJECT_NONE,    MKV_CODEC_UNKNOWN,      0,                  PSI_STREAM_RESERVED,    RTP_PAYLOAD_MP2P,   "MP2P"),

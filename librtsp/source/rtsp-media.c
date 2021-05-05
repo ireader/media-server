@@ -1,6 +1,6 @@
 #include "rtsp-media.h"
 #include "sdp.h"
-#include "sdp-utils.h"
+#include "sdp-options.h"
 #include "sdp-a-fmtp.h"
 #include "sdp-a-rtpmap.h"
 #include <stdio.h>
@@ -158,6 +158,8 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 	int i, n;
 	int payload = -1;
 	struct rtsp_media_t* media;
+	static char* mode[] = { "sendrecv", "sendonly", "recvonly", "inactive" };
+	static const int v[] = { SDP_A_SENDRECV, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE };
 
 	media = (struct rtsp_media_t*)param;
 
@@ -304,7 +306,16 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("setup", name))
 		{
-			media->setup = sdp_util_setup_from(value);
+			media->setup = sdp_option_setup_from(value);
+		}
+		else if (0 == strcmp("ssrc", name))
+		{
+			media->ssrc.ssrc = atoi(value);
+			// TODO: ssrc attribute
+		}
+		else if (0 == strcmp("ssrc-group", name))
+		{
+			// TODO
 		}
 	}
 }

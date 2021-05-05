@@ -1,4 +1,5 @@
-#include "sdp-utils.h"
+#include "sdp-options.h"
+#include "sdp.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,7 +49,23 @@ static struct sdp_attr_value_t s_protos[] = {
 	{ SDP_M_PROTO_RTP_AVP_TCP,			"RTP/AVP/TCP"},
 };
 
-static int sdp_util_find_name(const struct sdp_attr_value_t* attrs, int count, const char* name)
+static struct sdp_attr_value_t s_modes[] = {
+	{ SDP_A_SENDRECV,					"sendrecv"},
+	{ SDP_A_SENDONLY,					"sendonly"},
+	{ SDP_A_RECVONLY,					"recvonly"},
+	{ SDP_A_INACTIVE,					"inactive"},
+};
+
+static struct sdp_attr_value_t s_medias[] = {
+	{ SDP_M_MEDIA_UNKOWN,				"<none>"},
+	{ SDP_M_MEDIA_AUDIO,				"audio"},
+	{ SDP_M_MEDIA_VIDEO,				"video"},
+	{ SDP_M_MEDIA_TEXT,					"text"},
+	{ SDP_M_MEDIA_APPLICATION,			"application"},
+	{ SDP_M_MEDIA_MESSAGE,				"message"},
+};
+
+static int sdp_option_find_name(const struct sdp_attr_value_t* attrs, int count, const char* name)
 {
 	int i;
 	for (i = 0; i < count; i++)
@@ -59,7 +76,7 @@ static int sdp_util_find_name(const struct sdp_attr_value_t* attrs, int count, c
 	return -1;
 }
 
-static int sdp_util_find_value(const struct sdp_attr_value_t* attrs, int count, int value)
+static int sdp_option_find_value(const struct sdp_attr_value_t* attrs, int count, int value)
 {
 	int i;
 	for (i = 0; i < count; i++)
@@ -71,19 +88,19 @@ static int sdp_util_find_value(const struct sdp_attr_value_t* attrs, int count, 
 }
 
 #define SDP_UTIL_FROM(attr, none) \
-	int sdp_util_##attr##_from(const char* s) \
+	int sdp_option_##attr##_from(const char* s) \
 	{ \
 		int r; \
-		r = sdp_util_find_name(s_##attr##s, sizeof(s_##attr##s) / sizeof(s_##attr##s[0]), s); \
-		return r ? s_##attr##s[r].value : none; \
+		r = sdp_option_find_name(s_##attr##s, sizeof(s_##attr##s) / sizeof(s_##attr##s[0]), s); \
+		return r>=0 ? s_##attr##s[r].value : none; \
 	}
 
 #define SDP_UTIL_TO(attr) \
-	const char* sdp_util_##attr##_to(int v) \
+	const char* sdp_option_##attr##_to(int v) \
 	{ \
 		int r; \
-		r = sdp_util_find_value(s_##attr##s, sizeof(s_##attr##s) / sizeof(s_##attr##s[0]), v); \
-		return r ? s_##attr##s[r].name : ""; \
+		r = sdp_option_find_value(s_##attr##s, sizeof(s_##attr##s) / sizeof(s_##attr##s[0]), v); \
+		return r>=0 ? s_##attr##s[r].name : ""; \
 	}
 
 SDP_UTIL_FROM(setup, SDP_A_SETUP_NONE)
@@ -91,3 +108,8 @@ SDP_UTIL_TO(setup)
 
 SDP_UTIL_FROM(proto, SDP_M_PROTO_UKNOWN)
 SDP_UTIL_TO(proto)
+
+SDP_UTIL_FROM(mode, SDP_A_SENDRECV)
+SDP_UTIL_TO(mode)
+
+SDP_UTIL_TO(media)

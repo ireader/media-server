@@ -205,8 +205,8 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*ch
     if (MOV_OBJECT_AAC == object)
     {
         assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
-        int pid = rtsp_muxer_add_payload(ctx->a.rtp, "RTP/AVP", sample_rate, RTP_PAYLOAD_MP4A, "MP4A-LATM", 0, 0, 0, extra, bytes);
-        ctx->a.mid = rtsp_muxer_add_media(ctx->a.rtp, pid, RTP_PAYLOAD_MP4A, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->a.rtp, "RTP/AVP", sample_rate, RTP_PAYLOAD_LATM, "MP4A-LATM", 0, 0, 0, extra, bytes);
+        ctx->a.mid = rtsp_muxer_add_media(ctx->a.rtp, pid, RTP_PAYLOAD_LATM, extra, bytes);
     }
     else if (MOV_OBJECT_OPUS == object)
     {

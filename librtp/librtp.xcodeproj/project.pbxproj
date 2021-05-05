@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		461263D9263BE34000E07FD8 /* rtp-h264-bitstream.c in Sources */ = {isa = PBXBuildFile; fileRef = 461263D8263BE34000E07FD8 /* rtp-h264-bitstream.c */; };
 		4643D901244A894B00572339 /* rtp-demuxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D900244A894B00572339 /* rtp-demuxer.c */; };
 		468B916523B8AEAE00EA99A3 /* rtp-av1-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916323B8AEAE00EA99A3 /* rtp-av1-unpack.c */; };
 		468B916623B8AEAE00EA99A3 /* rtp-av1-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916423B8AEAE00EA99A3 /* rtp-av1-pack.c */; };
@@ -53,6 +54,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		461263D8263BE34000E07FD8 /* rtp-h264-bitstream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h264-bitstream.c"; sourceTree = "<group>"; };
 		4643D900244A894B00572339 /* rtp-demuxer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-demuxer.c"; sourceTree = "<group>"; };
 		468B916323B8AEAE00EA99A3 /* rtp-av1-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-av1-unpack.c"; sourceTree = "<group>"; };
 		468B916423B8AEAE00EA99A3 /* rtp-av1-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-av1-pack.c"; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 			children = (
 				468B916423B8AEAE00EA99A3 /* rtp-av1-pack.c */,
 				468B916323B8AEAE00EA99A3 /* rtp-av1-unpack.c */,
+				461263D8263BE34000E07FD8 /* rtp-h264-bitstream.c */,
 				46C5B3902183EE2C00419E57 /* rtp-h264-pack.c */,
 				46C5B3872183EE2C00419E57 /* rtp-h264-unpack.c */,
 				46C5B39A2183EE2C00419E57 /* rtp-h265-pack.c */,
@@ -279,6 +282,7 @@
 				46C5B3B32183EE2C00419E57 /* rtp-mp4v-es-unpack.c in Sources */,
 				46C5B3AA2183EE2C00419E57 /* rtp-payload.c in Sources */,
 				468B916523B8AEAE00EA99A3 /* rtp-av1-unpack.c in Sources */,
+				461263D9263BE34000E07FD8 /* rtp-h264-bitstream.c in Sources */,
 				46C5B3CC2183EE4800419E57 /* rtp-member-list.c in Sources */,
 				46C5B3C62183EE4800419E57 /* rtp-ssrc.c in Sources */,
 				46C5B3A62183EE2C00419E57 /* rtp-vp8-pack.c in Sources */,
