@@ -92,5 +92,8 @@
     <ClInclude Include="include\rtmp-chunk-header.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\rtmp-url.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
