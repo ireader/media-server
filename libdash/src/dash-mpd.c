@@ -128,13 +128,13 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 	return 0;
 }
 
-static int mov_buffer_seek(void* param, uint64_t offset)
+static int mov_buffer_seek(void* param, int64_t offset)
 {
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
-	if (offset >= dash->maxsize)
+	if ((offset >= 0 ? offset : -offset) >= dash->maxsize)
 		return E2BIG;
-	dash->offset = (size_t)offset;
+	dash->offset = (size_t)(offset >= 0 ? offset : (dash->maxsize+offset));
 	return 0;
 }
 
