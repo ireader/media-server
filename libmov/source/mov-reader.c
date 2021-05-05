@@ -528,7 +528,8 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 	int i;
 	struct mov_track_t* track;
 
-	if (reader->have_read_mfra && (MOV_READER_FLAG_FMP4_FAST & reader->flags))
+	if (reader->have_read_mfra && (MOV_READER_FLAG_FMP4_FAST & reader->flags)
+		&& reader->mov.track_count > 0 && reader->mov.tracks[0].frag_count > 0)
 		return mov_fragment_seek(&reader->mov, timestamp);
 
 	// seek video track(s)

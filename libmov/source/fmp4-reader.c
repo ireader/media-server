@@ -54,7 +54,7 @@ int mov_fragment_seek(struct mov_t* mov, int64_t* timestamp)
 	struct mov_fragment_t* frag, *prev, *next;
 
 	track = mov->track_count > 0 ? &mov->tracks[0] : NULL;
-	if (!track)
+	if (!track || track->frag_count < 1)
 		return -1;
 
 	idx = start = 0;
