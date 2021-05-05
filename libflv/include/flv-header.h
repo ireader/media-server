@@ -7,15 +7,6 @@
 extern "C" {
 #endif
 
-enum
-{
-	FLV_SEQUENCE_HEADER = 0,
-	FLV_AVPACKET = 1,
-	FLV_END_OF_SEQUENCE = 2,
-};
-
-#define FLV_VIDEO_KEY_FRAME 1
-
 struct flv_header_t
 {
 	uint8_t FLV[3];

@@ -247,6 +247,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes);
 int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
+	int n;
 	if (bytes < 1)
 		return 0;
 
@@ -259,8 +260,11 @@ int flv_demuxer_input(struct flv_demuxer_t* flv, int type, const void* data, siz
 		return flv_demuxer_video(flv, data, (int)bytes, timestamp);
 
 	case FLV_TYPE_SCRIPT:
-		//return flv_demuxer_script(flv, data, bytes);
-		return 0;
+		n = flv_demuxer_script(flv, data, bytes);
+		if (n < 12)
+			return 0; // ignore
+		n -= 12; // 2-LEN + 10-onMetaData
+		return flv->handler(flv->param, FLV_SCRIPT_METADATA, (const uint8_t*)data + n, bytes - n, timestamp, timestamp, 0);
 		
 	default:
 		assert(0);

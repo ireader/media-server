@@ -176,7 +176,7 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 	(void)pts;
 
 	bytes = (int)sz;
-	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
+	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 29/*OpusHead*/)
 	{
 		if (0 != flv_muxer_alloc(flv, bytes + 4))
 			return ENOMEM;
@@ -197,10 +197,10 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 		
 		// Opus Head
 		m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
-		assert(m + bytes <= (int)flv->capacity);
-		memcpy(flv->ptr + m, data, bytes);
-		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + bytes, dts);
-		return r;
+        m += opus_head_save(&flv->a.opus, flv->ptr+m, flv->capacity-m);
+		assert(m <= (int)flv->capacity);
+		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m, dts);
+		if (0 != r) return r;
 	}
 
 	audio.avpacket = FLV_AVPACKET;
@@ -237,7 +237,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	if (flv->vcl && flv->video_sequence_header)
 	{
 		video.cts = pts - dts;
-		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
@@ -248,7 +248,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
+	if ((size_t)flv->capacity < bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
 	{
 		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.avc)))
 			return ENOMEM;
@@ -289,7 +289,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	if (flv->vcl && flv->video_sequence_header)
 	{
 		video.cts = pts - dts;
-		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
@@ -300,7 +300,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
+	if ((size_t)flv->capacity < bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
 	{
 		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.hevc)))
 			return ENOMEM;

@@ -23,6 +23,7 @@
     <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\aom-av1.h" />
     <ClInclude Include="include\flv-demuxer.h" />
+    <ClInclude Include="include\flv-header.h" />
     <ClInclude Include="include\flv-muxer.h" />
     <ClInclude Include="include\flv-parser.h" />
     <ClInclude Include="include\flv-proto.h" />

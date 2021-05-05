@@ -63,6 +63,9 @@
     <ClInclude Include="include\opus-head.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\flv-header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">
