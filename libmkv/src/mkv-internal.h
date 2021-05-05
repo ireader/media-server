@@ -218,6 +218,12 @@ struct mkv_t
 
 	struct mkv_sample_t* samples; // cache, read only
 	int count, capacity;
+
+	struct
+	{
+		int* raps; // keyframe index
+		int count, capacity;
+	} rap;
 };
 
 #define FREE(ptr) {void* p = (ptr); if(p) free(p); }

@@ -941,6 +941,7 @@ void mkv_reader_destroy(mkv_reader_t* reader)
 	FREE(reader->mkv.tracks);
 	FREE(reader->mkv.samples);
 	FREE(reader->mkv.cue.positions);
+	FREE(reader->mkv.rap.raps);
 	free(reader);
 }
 
@@ -991,6 +992,7 @@ int mkv_reader_read2(mkv_reader_t* reader, mkv_reader_onread2 onread, void* para
 	{
 		reader->offset = 0;
 		reader->mkv.count = 0; // clear samples
+		reader->mkv.rap.count = 0; // clear rap index
 
 		r = mkv_reader_open(reader, s_clusters, sizeof(s_clusters) / sizeof(s_clusters[0]), 2);
 		if (r < 0)
@@ -1049,6 +1051,7 @@ int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 {
 	uint64_t clock;
 	size_t idx, start, end;
+#define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 
 #if !defined(MKV_LIVE_STREAMING)
 	struct mkv_cue_position_t* cue, *prev, *next;
@@ -1059,7 +1062,7 @@ int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 	idx = start = 0;
 	end = reader->mkv.cue.count;
 	assert(reader->mkv.cue.count > 0);
-	clock = (uint64_t)(*timestamp) * 1000000 / reader->mkv.timescale; // mvhd timescale
+	clock = (uint64_t)(*timestamp) * 1000000 / reader->mkv.timescale;
 
 	while (start < end)
 	{
@@ -1074,7 +1077,6 @@ int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 			break;
 	}
 
-#define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 	cue = &reader->mkv.cue.positions[idx];
 	prev = &reader->mkv.cue.positions[idx > 0 ? idx - 1 : idx];
 	next = &reader->mkv.cue.positions[idx + 1 < reader->mkv.cue.count ? idx + 1 : idx];
@@ -1082,13 +1084,55 @@ int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 		cue = prev;
 	if (DIFF(next->timestamp, clock) < DIFF(cue->timestamp, clock))
 		cue = next;
-#undef DIFF
 
 	*timestamp = cue->timestamp * reader->mkv.timescale / 1000000;
 	mkv_buffer_seek(&reader->io, cue->cluster);
 	reader->offset = reader->mkv.count; // clear
 	return 0;
 #else
-	return -1;
+	size_t mid, prev, next;
+	struct mkv_sample_t* sample;
+
+	if (reader->mkv.rap.count < 1)
+		return -1;
+	idx = mid = start = 0;
+	end = reader->mkv.rap.count;
+	assert(reader->mkv.rap.count > 0);
+	clock = (uint64_t)(*timestamp) * 1000000 / reader->mkv.timescale;
+
+	while (start < end)
+	{
+		mid = (start + end) / 2;
+		idx = reader->mkv.rap.raps[mid];
+
+		if (idx < 0 || idx > reader->mkv.count)
+		{
+			// start from 1
+			assert(0);
+			return -1;
+		}
+		idx -= 1;
+		sample = &reader->mkv.samples[idx];
+
+		if (sample->dts > clock)
+			end = mid;
+		else if (sample->dts < clock)
+			start = mid + 1;
+		else
+			break;
+	}
+
+	prev = reader->mkv.rap.raps[mid > 0 ? mid - 1 : mid];
+	next = reader->mkv.rap.raps[mid + 1 < reader->mkv.rap.count ? mid + 1 : mid];
+	if (DIFF(reader->mkv.samples[prev].dts, clock) < DIFF(reader->mkv.samples[idx].dts, clock))
+		idx = prev;
+	if (DIFF(reader->mkv.samples[next].dts, clock) < DIFF(reader->mkv.samples[idx].dts, clock))
+		idx = next;
+
+	*timestamp = reader->mkv.samples[idx].dts * reader->mkv.timescale / 1000000;
+	reader->offset = idx;
+	return 0;
 #endif
+
+#undef DIFF
 }

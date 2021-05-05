@@ -24,6 +24,21 @@ static int mkv_alloc_samples(struct mkv_t* mkv, int n)
 	return 0;
 }
 
+static int mkv_add_rap(struct mkv_t* mkv, int i)
+{
+	void* p;
+	if (mkv->rap.count >= mkv->rap.capacity)
+	{
+		p = realloc(mkv->rap.raps, sizeof(mkv->rap.raps[0]) * (mkv->rap.capacity * 4 / 3 + 16));
+		if (!p) return -ENOMEM;
+		mkv->rap.raps = (int**)p;
+		mkv->rap.capacity = mkv->rap.capacity * 4 / 3 + 16;
+	}
+
+	mkv->rap.raps[mkv->rap.count++] = i;
+	return 0;
+}
+
 int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* cluster, struct mkv_ioutil_t *io, int64_t bytes)
 {
 	int r;
@@ -180,6 +195,7 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 
 	default: // no lacing
 		// frame
+		n = 0;
 		r = mkv_alloc_samples(mkv, 1);
 		if (0 != r) return r;
 
@@ -191,6 +207,12 @@ int mkv_cluster_simple_block_read(struct mkv_t* mkv, struct mkv_cluster_t* clust
 		mkv->samples[mkv->count + 0].offset = mkv_buffer_tell(io);
 		mkv->count += 1;
 		break;
+	}
+
+	if (f & MKV_FLAGS_KEYFRAME)
+	{
+		assert(mkv->count >= n + 1);
+		mkv_add_rap(mkv, mkv->count - n - 1);
 	}
 
 	return 0;
