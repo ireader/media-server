@@ -352,7 +352,10 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 				mov_fragment_seek_read_mfra(mov);
 				reader->have_read_mfra = 1; // force, seek once only
 			}
-			break;
+
+			// skip fast mode, fallback to read all
+			if(mov->mfro > 0)
+				break;
 		}
 	}
 
