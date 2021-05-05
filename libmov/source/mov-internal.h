@@ -129,7 +129,7 @@ struct mov_stbl_t
 	struct mov_stts_t* ctts;
 	size_t ctts_count;
 
-	uint32_t* stss;
+	uint32_t* stss; // sample_number, start from 1
 	size_t stss_count;
 };
 
@@ -168,7 +168,7 @@ struct mov_track_t
 	struct mov_trex_t trex;
 	struct mov_tfhd_t tfhd;
 	struct mov_fragment_t* frags;
-	uint32_t frag_count, frag_capacity;
+	uint32_t frag_count, frag_capacity /*offset for read*/;
 
 	struct mov_stsd_t stsd;
 
@@ -197,6 +197,7 @@ struct mov_t
 
 	int flags;
 	int header;
+	uint32_t mfro; // mfro size
 	uint64_t moof_offset; // last moof offset(from file begin)
     uint64_t implicit_offset;
 
@@ -208,6 +209,7 @@ struct mov_t
 	uint64_t udta_size;
 };
 
+int mov_reader_root(struct mov_t* mov);
 int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent);
 int mp4_read_extra(struct mov_t* mov, const struct mov_box_t* parent);
 
@@ -306,6 +308,10 @@ void mov_apply_elst_tfdt(struct mov_track_t *track);
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);
 
 size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
+
+int mov_fragment_read_next_moof(struct mov_t* mov);
+int mov_fragment_seek_read_mfra(struct mov_t* mov);
+int mov_fragment_seek(struct mov_t* mov, int64_t* timestamp);
 
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);

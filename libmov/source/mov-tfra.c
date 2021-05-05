@@ -1,5 +1,7 @@
 #include "mov-internal.h"
+#include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
 
 // 8.8.10 Track Fragment Random Access Box (p74)
 int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
@@ -21,17 +23,25 @@ int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
 
 	length_size_of = mov_buffer_r32(&mov->io); /* length_size_of XXX */
 	number_of_entry = mov_buffer_r32(&mov->io); /* number_of_entry */
+	if (number_of_entry > 0)
+	{
+		void* p = realloc(track->frags, sizeof(struct mov_fragment_t) * number_of_entry);
+		if (!p) return ENOMEM;
+		track->frags = p;
+	}	
+	track->frag_count = number_of_entry;
+
 	for (i = 0; i < number_of_entry; i++)
 	{
 		if (1 == version)
 		{
-			mov_buffer_r64(&mov->io); /* time */
-			mov_buffer_r64(&mov->io); /* moof_offset */
+			track->frags[i].time = mov_buffer_r64(&mov->io); /* time */
+			track->frags[i].offset = mov_buffer_r64(&mov->io); /* moof_offset */
 		}
 		else
 		{
-			mov_buffer_r32(&mov->io); /* time */
-			mov_buffer_r32(&mov->io); /* moof_offset */
+			track->frags[i].time = mov_buffer_r32(&mov->io); /* time */
+			track->frags[i].offset = mov_buffer_r32(&mov->io); /* moof_offset */
 		}
 
 		for (traf_number = 0, j = 0; j < ((length_size_of >> 4) & 0x03) + 1; j++)
