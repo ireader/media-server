@@ -2,11 +2,11 @@
 #include "mov-format.h"
 #include "mov-reader.h"
 #include "mpeg4-aac.h"
+#include "mov-file-buffer.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
-
-extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
 static uint8_t s_buffer[2 * 1024 * 1024];
 static int s_audio_track = -1;
@@ -33,10 +33,13 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int chan
 
 void fmp4_writer_test2(const char* mp4, const char* outmp4)
 {
-    FILE* fp = fopen(mp4, "rb");
-    FILE* wfp = fopen(outmp4, "wb");
-    mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
-    fmp4_writer_t* fmp4 = fmp4_writer_create(mov_file_buffer(), wfp, MOV_FLAG_SEGMENT);
+    struct mov_file_cache_t file, wfile;
+    memset(&file, 0, sizeof(file));
+    memset(&wfile, 0, sizeof(wfile));
+    file.fp = fopen(mp4, "rb");
+    wfile.fp = fopen(outmp4, "wb");
+    mov_reader_t* mov = mov_reader_create(mov_file_cache_buffer(), &file);
+    fmp4_writer_t* fmp4 = fmp4_writer_create(mov_file_cache_buffer(), &wfile, MOV_FLAG_SEGMENT);
 
     struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info };
     mov_reader_getinfo(mov, &info, fmp4);
@@ -48,6 +51,6 @@ void fmp4_writer_test2(const char* mp4, const char* outmp4)
 
     fmp4_writer_destroy(fmp4);
     mov_reader_destroy(mov);
-    fclose(fp);
-    fclose(wfp);
+    fclose(wfile.fp);
+    fclose(wfile.fp);
 }

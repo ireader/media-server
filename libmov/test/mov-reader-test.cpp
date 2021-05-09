@@ -10,10 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "mov-file-buffer.h"
 
 #define USE_NEW_MOV_READ_API 1
-
-extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
 static uint8_t s_packet[2 * 1024 * 1024];
 static uint8_t s_buffer[4 * 1024 * 1024];
@@ -221,8 +220,10 @@ static void mov_subtitle_info(void* /*param*/, uint32_t track, uint8_t object, c
 
 void mov_reader_test(const char* mp4)
 {
-	FILE* fp = fopen(mp4, "rb");
-	mov_reader_t* mov = mov_reader_create(mov_file_buffer(), fp);
+	struct mov_file_cache_t file;
+	memset(&file, 0, sizeof(file));
+	file.fp = fopen(mp4, "rb");
+	mov_reader_t* mov = mov_reader_create(mov_file_cache_buffer(), &file);
 	uint64_t duration = mov_reader_getduration(mov);
 
 	struct mov_reader_trackinfo_t info = { mov_video_info, mov_audio_info, mov_subtitle_info };
@@ -254,5 +255,5 @@ void mov_reader_test(const char* mp4)
 	mov_reader_destroy(mov);
 	if(s_vfp) fclose(s_vfp);
 	if(s_afp) fclose(s_afp);
-	fclose(fp);
+	fclose(file.fp);
 }
