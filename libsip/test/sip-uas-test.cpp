@@ -115,7 +115,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 			struct sip_message_t* request = sip_message_create(SIP_MESSAGE_REQUEST);
 			r = sip_message_load(request, test->parser);
 			sip_agent_set_rport(request, received, port);
-			assert(0 == sip_agent_input(test->sip, request));
+			assert(0 == sip_agent_input(test->sip, request, test));
 			sip_message_destroy(request);
 
 			http_parser_clear(test->parser);
@@ -136,7 +136,7 @@ void sip_uas_test(void)
 
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
-	test.sip = sip_agent_create(&handler, &test);
+	test.sip = sip_agent_create(&handler);
 	test.parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);

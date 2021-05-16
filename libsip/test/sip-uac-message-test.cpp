@@ -139,7 +139,7 @@ static void sip_uac_message_register(struct sip_agent_t* sip, struct sip_transpo
 	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7");
 	sip_uac_add_header(t.get(), "CSeq", "1826 REGISTER");// modify cseq.id
 	assert(0 == sip_uac_send(t.get(), NULL, 0, udp, req));
-	assert(0 == sip_agent_input(sip, reply));
+	assert(0 == sip_agent_input(sip, reply, NULL));
 
 	sip_message_destroy(req);
 	sip_message_destroy(reply);
@@ -223,15 +223,15 @@ static void sip_uac_message_invite(struct sip_agent_t* sip, struct sip_transport
 	sip_uac_add_header_int(t.get(), "Content-Length", 3);
 	sip_uac_send(t.get(), "sdp", 3, udp, req);
 
-	sip_agent_input(sip, reply100);
-	sip_agent_input(sip, reply180);
-	sip_agent_input(sip, reply100);
-	sip_agent_input(sip, reply180);
+	sip_agent_input(sip, reply100, NULL);
+	sip_agent_input(sip, reply180, NULL);
+	sip_agent_input(sip, reply100, NULL);
+	sip_agent_input(sip, reply180, NULL);
 //	sip_agent_input(sip, reply603);
-	sip_agent_input(sip, reply200);
-	sip_agent_input(sip, reply180);
-	sip_agent_input(sip, reply100);
-	sip_agent_input(sip, reply200);
+	sip_agent_input(sip, reply200, NULL);
+	sip_agent_input(sip, reply180, NULL);
+	sip_agent_input(sip, reply100, NULL);
+	sip_agent_input(sip, reply200, NULL);
 
 	sip_message_destroy(req);
 	sip_message_destroy(reply100);
@@ -268,7 +268,7 @@ static void sip_uac_message_bye(struct sip_agent_t* sip, struct sip_transport_t*
 	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds9");
 	sip_uac_add_header_int(t.get(), "Content-Length", 0);
 	sip_uac_send(t.get(), NULL, 0, udp, req);
-	sip_agent_input(sip, reply);
+	sip_agent_input(sip, reply, NULL);
 
 	sip_message_destroy(req);
 	sip_message_destroy(reply);
@@ -283,7 +283,7 @@ void sip_uac_message_test(void)
 	};
 	struct sip_uas_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
-	struct sip_agent_t* sip = sip_agent_create(&handler, NULL);
+	struct sip_agent_t* sip = sip_agent_create(&handler);
 	sip_uac_message_register(sip, &udp);
 	sip_uac_message_invite(sip, &udp);
 	sip_uac_message_bye(sip, &udp);

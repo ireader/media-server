@@ -25,6 +25,7 @@ typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, s
 /// @param[in] seconds expires seconds
 struct sip_uac_transaction_t* sip_uac_register(struct sip_agent_t* sip, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
 struct sip_uac_transaction_t* sip_uac_options(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onoptins, void* param);
+
 struct sip_uac_transaction_t* sip_uac_invite(struct sip_agent_t* sip, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
 struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param);
 struct sip_uac_transaction_t* sip_uac_bye(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
@@ -32,6 +33,8 @@ struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_agent_t* sip, struct s
 /// @param[in] req100rel sip 180/183 response with Require: 100rel
 struct sip_uac_transaction_t* sip_uac_prack(struct sip_agent_t* sip, const struct sip_message_t* req100rel, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
 struct sip_uac_transaction_t* sip_uac_update(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
+/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
+struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param);
 
 
 /// @param[in] from valid only dialog is null
@@ -44,10 +47,8 @@ struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, struct sip
 struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, int expires, sip_uac_onsubscribe onsubscribe, void* param);
 struct sip_uac_transaction_t* sip_uac_publish(struct sip_agent_t* sip, const char* from, const char* to, const char* event, sip_uac_onreply onreply, void* param);
 
-/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
-struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param);
-struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 struct sip_uac_transaction_t* sip_uac_refer(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onreply, void* param);
+struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 
 int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param);
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);

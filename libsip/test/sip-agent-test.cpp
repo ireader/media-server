@@ -385,7 +385,7 @@ static int STDCALL InputThread(struct sip_tu_t* tu, int idx)
 		assert(0 == http_parser_input(parser, pkt.ptr, &n));
 		struct sip_message_t* msg = sip_message_create(response ? SIP_MESSAGE_REPLY : SIP_MESSAGE_REQUEST);
 		assert(0 == sip_message_load(msg, parser));
-		assert(0 == sip_agent_input(tu->sip, msg));
+		assert(0 == sip_agent_input(tu->sip, msg, tu));
 		sip_message_destroy(msg);
 		
 		free(pkt.ptr);
@@ -427,8 +427,8 @@ extern "C" void sip_agent_test(void)
 	handler.send = sip_uas_transport_send;
 
 	s_sip.udp = socket_udp();
-	s_sip.alice.sip = sip_agent_create(&handler, &s_sip.alice);
-	s_sip.bob.sip = sip_agent_create(&handler, &s_sip.bob);
+	s_sip.alice.sip = sip_agent_create(&handler);
+	s_sip.bob.sip = sip_agent_create(&handler);
     s_sip.alice.count = 0;
     s_sip.bob.count = 0;
 

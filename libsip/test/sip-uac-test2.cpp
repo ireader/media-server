@@ -1088,7 +1088,7 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
 		assert(0 == http_parser_input(parser, buffer, &n));
 		struct sip_message_t* msg = sip_message_create(parser == response ? SIP_MESSAGE_REQUEST : SIP_MESSAGE_REPLY);
 		assert(0 == sip_message_load(msg, parser));
-		assert(0 == sip_agent_input(test->sip, msg));
+		assert(0 == sip_agent_input(test->sip, msg, test));
 		sip_message_destroy(msg);
 		http_parser_clear(parser);
     } while (1);
@@ -1111,11 +1111,6 @@ static int sip_uas_onpublish(void* param, const struct sip_message_t* req, struc
 	return 0;
 }
 
-static int sip_uas_oninfo(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
-{
-	return 0;
-}
-
 static int sip_uas_onrefer(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
 	return 0;
@@ -1129,6 +1124,11 @@ static int sip_uas_onprack(void* param, const struct sip_message_t* req, struct 
 static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes)
 {
 	return 0;
+}
+
+static int sip_uas_oninfo(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const struct cstring_t* package, const void* data, int bytes)
+{
+    return 0;
 }
 
 void sip_uac_test2(void)
@@ -1146,12 +1146,12 @@ void sip_uac_test2(void)
 		sip_uas_onack,
 		sip_uas_onprack,
 		sip_uas_onupdate,
-		sip_uas_onbye,
+		sip_uas_oninfo,
+        sip_uas_onbye,
 		sip_uas_oncancel,
 		sip_uas_onsubscribe,
 		sip_uas_onnotify,
 		sip_uas_onpublish,
-		sip_uas_oninfo,
 		sip_uas_onmessage,
 		sip_uas_onrefer,
 	};
@@ -1164,7 +1164,7 @@ void sip_uac_test2(void)
 	//if(socket_invalid != test.tcp)
 	//	socket_setnonblock(test.tcp, 0);
 	test.tcp = socket_invalid;
-	test.sip = sip_agent_create(&handler, &test);
+	test.sip = sip_agent_create(&handler);
     socket_bind_any(test.udp, SIP_PORT);
 	test.transport.udp = test.udp;
 	test.transport.tcp = test.tcp;

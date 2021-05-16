@@ -28,6 +28,8 @@ struct sip_uac_transaction_t* sip_uac_dialog_custom(struct sip_agent_t* sip, con
 
 struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param)
 {
+    // INFO messages cannot be sent as part of other dialog usages, or outside an existing dialog.
+
 	struct sip_uac_transaction_t* t;
     t = sip_uac_dialog_custom(sip, SIP_METHOD_INFO, dialog, oninfo, param);
     if(!t)

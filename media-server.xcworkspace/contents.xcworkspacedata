@@ -1,47 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
-   <FileRef
-      location = "group:../avcodec/avbsf/avbsf.xcodeproj">
-   </FileRef>
+   <Group
+      location = "container:"
+      name = "avcodec">
+      <FileRef
+         location = "group:../avcodec/avbsf/avbsf.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:../avcodec/h264/h264.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:../avcodec/h265/h265.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:../avcodec/avcodec/avcodec.xcodeproj">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:"
+      name = "media-server">
+      <FileRef
+         location = "group:libdash/libdash.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libflv/libflv.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libhls/libhls.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libmkv/libmkv.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libmov/libmov.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libmpeg/libmpeg.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:librtmp/librtmp.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:librtp/librtp.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:librtsp/librtsp.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:libsip/libsip.xcodeproj">
+      </FileRef>
+   </Group>
    <FileRef
       location = "group:../sdk/libaio/libaio.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libdash/libdash.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libflv/libflv.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libhls/libhls.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../sdk/libhttp/libhttp.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../sdk/libice/libice.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libmkv/libmkv.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libmov/libmov.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libmpeg/libmpeg.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:librtmp/librtmp.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:librtp/librtp.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:librtsp/librtsp.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:libsip/libsip.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../sdk/sdk.xcodeproj">

@@ -82,7 +82,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 		uri_free(uri);
 		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
 	}
-	assert(NULL == uri->userinfo && uri->host);
+	assert(/*NULL == uri->userinfo &&*/ uri->host);
 
 	// TODO: check domain and proxy to another host
 	//if (0 != strcasecmp(uri->host, t->uas->domain))
@@ -154,7 +154,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//// The Record-Route header field has no meaning in REGISTER requests or responses, 
 	//// and MUST be ignored if present.
 	//return sip_uas_transaction_noninvite_reply(t, r, NULL, 0);
-	free(uri);
+    free(uri);
 	free(to);
 	return r;
 }

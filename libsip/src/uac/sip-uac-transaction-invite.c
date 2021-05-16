@@ -76,9 +76,9 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
 
 	// reset timer b for proceeding too long
-	sip_uac_transaction_timeout(t, TIMER_B);
-	sip_dialog_release(dialog);
-	return 0;
+    sip_uac_transaction_timeout(t, TIMER_B);
+    sip_dialog_release(dialog);
+    return 0;
 }
 
 static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, int retransmissions)

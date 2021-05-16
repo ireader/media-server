@@ -434,6 +434,9 @@
     <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp">
       <Filter>libmkv</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">

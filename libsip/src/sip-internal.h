@@ -25,11 +25,10 @@ struct sip_agent_t
 	struct list_head uac; // uac transactions
 	struct list_head uas; // uas transactions
 	struct sip_uas_handler_t handler;
-	void* param;
 };
 
 int sip_uac_input(struct sip_agent_t* sip, struct sip_message_t* reply);
-int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* request);
+int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* request, void* param);
 
 static inline int sip_transport_isreliable(const struct cstring_t* c)
 {

@@ -241,6 +241,7 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-vpx.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c" />
     <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c" />

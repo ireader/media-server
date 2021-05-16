@@ -121,7 +121,7 @@ static void sip_uac_recv_reply(struct sip_uac_test_t *test)
 		{
 			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REPLY);
 			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_agent_input(test->sip, reply));
+			assert(0 == sip_agent_input(test->sip, reply, NULL));
 			sip_message_destroy(reply);
 
 			http_parser_clear(test->parser);
@@ -241,7 +241,7 @@ void sip_uac_test(void)
 	memset(&handler, 0, sizeof(handler));
 
 	test.udp = socket_udp();
-	test.sip = sip_agent_create(&handler, NULL);
+	test.sip = sip_agent_create(&handler);
 	test.parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uac_register_test(&test);
