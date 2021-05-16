@@ -16,7 +16,7 @@
 
 #define N_FU_HEADER	3
 
-int rtp_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* param, const uint8_t* nalu, int bytes, int last), void* param);
+int rtp_h264_annexb_nalu(const void* h264, int bytes, int (*handler)(void* param, const uint8_t* nalu, int bytes, int last), void* param);
 
 struct rtp_encode_h265_t
 {

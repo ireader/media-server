@@ -10,6 +10,7 @@
 		461F0BEC22F80F1400A995BD /* mov-opus.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BEB22F80F1400A995BD /* mov-opus.c */; };
 		4680238625997F1500AD5A52 /* mov-udta.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680238525997F1500AD5A52 /* mov-udta.c */; };
 		468B916223B8AE8700EA99A3 /* mov-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916123B8AE8700EA99A3 /* mov-av1.c */; };
+		469AADD4264416A800559AA2 /* fmp4-reader.c in Sources */ = {isa = PBXBuildFile; fileRef = 469AADD3264416A800559AA2 /* fmp4-reader.c */; };
 		46C5B31D2183EDEE00419E57 /* mov-mfhd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FA2183EDEE00419E57 /* mov-mfhd.c */; };
 		46C5B31E2183EDEE00419E57 /* mov-elst.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FB2183EDEE00419E57 /* mov-elst.c */; };
 		46C5B31F2183EDEE00419E57 /* mov-mehd.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B2FC2183EDEE00419E57 /* mov-mehd.c */; };
@@ -53,6 +54,7 @@
 		461F0BEB22F80F1400A995BD /* mov-opus.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mov-opus.c"; sourceTree = "<group>"; };
 		4680238525997F1500AD5A52 /* mov-udta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-udta.c"; sourceTree = "<group>"; };
 		468B916123B8AE8700EA99A3 /* mov-av1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-av1.c"; sourceTree = "<group>"; };
+		469AADD3264416A800559AA2 /* fmp4-reader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "fmp4-reader.c"; sourceTree = "<group>"; };
 		46C5B2522183EB6400419E57 /* libmov.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmov.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B2F82183EDE600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B2FA2183EDEE00419E57 /* mov-mfhd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-mfhd.c"; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 		46C5B2F92183EDEE00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				469AADD3264416A800559AA2 /* fmp4-reader.c */,
 				4680238525997F1500AD5A52 /* mov-udta.c */,
 				46C5B30E2183EDEE00419E57 /* fmp4-writer.c */,
 				468B916123B8AE8700EA99A3 /* mov-av1.c */,
@@ -276,6 +279,7 @@
 				46C5B3242183EDEE00419E57 /* mov-tfra.c in Sources */,
 				4680238625997F1500AD5A52 /* mov-udta.c in Sources */,
 				46C5B3272183EDEE00419E57 /* mov-trun.c in Sources */,
+				469AADD4264416A800559AA2 /* fmp4-reader.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

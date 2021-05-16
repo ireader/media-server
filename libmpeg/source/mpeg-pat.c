@@ -35,7 +35,7 @@ struct pmt_t* pat_alloc_pmt(struct pat_t* pat)
 			return NULL;
 
 		if (pat->pmts == pat->pmt_default)
-			memmove(ptr, pat->pmts, sizeof(pat->pmt_default));
+			memmove(ptr, pat->pmt_default, sizeof(pat->pmt_default));
 		pat->pmts = (struct pmt_t*)ptr;
 		pat->pmt_capacity = n;
 	}

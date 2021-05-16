@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		461263D5263BE23E00E07FD8 /* sdp-payload.c in Sources */ = {isa = PBXBuildFile; fileRef = 461263D4263BE23E00E07FD8 /* sdp-payload.c */; };
-		461263DB263BE39F00E07FD8 /* sdp-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 461263DA263BE39F00E07FD8 /* sdp-utils.c */; };
 		4643D91E245712A400572339 /* rtsp-multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D91D245712A400572339 /* rtsp-multicast.c */; };
 		4680238425997EFF00AD5A52 /* sdp-mpeg2.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680238325997EFF00AD5A52 /* sdp-mpeg2.c */; };
 		468503642611F9AE00E7ABEC /* sdp-vpx.c in Sources */ = {isa = PBXBuildFile; fileRef = 468503632611F9AE00E7ABEC /* sdp-vpx.c */; };
+		469AADD22644152400559AA2 /* sdp-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 469AADD12644152400559AA2 /* sdp-options.c */; };
 		46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D72183EE5D00419E57 /* rtsp-reason.c */; };
 		46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */; };
 		46C5B4072183EE5D00419E57 /* sdp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D92183EE5D00419E57 /* sdp.c */; };
@@ -58,10 +58,10 @@
 
 /* Begin PBXFileReference section */
 		461263D4263BE23E00E07FD8 /* sdp-payload.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-payload.c"; sourceTree = "<group>"; };
-		461263DA263BE39F00E07FD8 /* sdp-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-utils.c"; sourceTree = "<group>"; };
 		4643D91D245712A400572339 /* rtsp-multicast.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "rtsp-multicast.c"; sourceTree = "<group>"; };
 		4680238325997EFF00AD5A52 /* sdp-mpeg2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-mpeg2.c"; sourceTree = "<group>"; };
 		468503632611F9AE00E7ABEC /* sdp-vpx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-vpx.c"; sourceTree = "<group>"; };
+		469AADD12644152400559AA2 /* sdp-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-options.c"; sourceTree = "<group>"; };
 		46C5B2922183ECF900419E57 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3D52183EE5600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B3D72183EE5D00419E57 /* rtsp-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-reason.c"; sourceTree = "<group>"; };
@@ -139,6 +139,7 @@
 		46C5B3D62183EE5D00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				469AADD12644152400559AA2 /* sdp-options.c */,
 				4643D91D245712A400572339 /* rtsp-multicast.c */,
 				46C5B3DB2183EE5D00419E57 /* rtsp-header-range.c */,
 				46C5B3DC2183EE5D00419E57 /* rtsp-header-rtp-info.c */,
@@ -148,7 +149,6 @@
 				46C5B3D72183EE5D00419E57 /* rtsp-reason.c */,
 				46C5B3ED2183EE5D00419E57 /* sdp-a-fmtp.c */,
 				46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */,
-				461263DA263BE39F00E07FD8 /* sdp-utils.c */,
 				46C5B3D92183EE5D00419E57 /* sdp.c */,
 				46C5B3F52183EE5D00419E57 /* client */,
 				46C5B3EE2183EE5D00419E57 /* sdp */,
@@ -286,6 +286,7 @@
 				46C5B4092183EE5D00419E57 /* rtsp-header-range.c in Sources */,
 				46C5B41F2183EE5D00419E57 /* rtsp-header-transport.c in Sources */,
 				46C5B40B2183EE5D00419E57 /* rtsp-server-handler.c in Sources */,
+				469AADD22644152400559AA2 /* sdp-options.c in Sources */,
 				F42351202287B72900D805B4 /* rtsp-server-parameter.c in Sources */,
 				46C5B4072183EE5D00419E57 /* sdp.c in Sources */,
 				46C5B4272183EE5D00419E57 /* rtsp-client-play.c in Sources */,
@@ -314,7 +315,6 @@
 				46C5B4162183EE5D00419E57 /* rtsp-server-teardown.c in Sources */,
 				46C5B41C2183EE5D00419E57 /* sdp-aac.c in Sources */,
 				46C5B4122183EE5D00419E57 /* rtsp-server-options.c in Sources */,
-				461263DB263BE39F00E07FD8 /* sdp-utils.c in Sources */,
 				46C5B40C2183EE5D00419E57 /* rtsp-server-record.c in Sources */,
 				4680238425997EFF00AD5A52 /* sdp-mpeg2.c in Sources */,
 				46E55E5F24A7388A00D8BDBA /* sdp-fmtp-load.c in Sources */,

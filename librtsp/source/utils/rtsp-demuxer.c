@@ -411,7 +411,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         }
 
         if (pt->bs)
-            pt->filter = pt->bs->create(0, codec, pt->extra, pt->extra_bytes > 0 ? pt->extra_bytes : 0, rtsp_demuxer_avpbs_onpacket, pt);
+            pt->filter = pt->bs->create(demuxer->count, codec, pt->extra, pt->extra_bytes > 0 ? pt->extra_bytes : 0, rtsp_demuxer_avpbs_onpacket, pt);
         pt->rtp = rtp_demuxer_create(demuxer->jitter, frequency, pt->payload, encoding, rtsp_demuxer_onrtppacket, pt);
     }
 

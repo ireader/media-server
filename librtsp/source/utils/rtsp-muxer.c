@@ -41,7 +41,7 @@ struct rtp_muxer_payload_t
     
     struct ps_muxer_t* ps;
     void* ts; // ts muxer
-    int64_t dts; // ps/ts only
+    int64_t timestamp; // ps/ts only
 
     const char* sdp;
     int len; // sdp size
@@ -98,7 +98,7 @@ static int rtsp_muxer_ts_write(void* param, const void* packet, size_t bytes)
 {
     struct rtp_muxer_payload_t* pt;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->dts);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->timestamp);
 }
 
 static int rtsp_muxer_ps_write(void* param, int stream, const void* packet, size_t bytes)
@@ -106,7 +106,7 @@ static int rtsp_muxer_ps_write(void* param, int stream, const void* packet, size
     struct rtp_muxer_payload_t* pt;
     (void)stream;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->dts);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->timestamp);
 }
 
 static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
@@ -118,20 +118,20 @@ static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int byt
 
 static int rtsp_muxer_ts_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    m->pt->dts = dts * 90; // last dts
+    m->pt->timestamp = pts * 90; // last dts
     return mpeg_ts_write(m->pt->ts, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_ps_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    m->pt->dts = dts * 90; // last dts
+    m->pt->timestamp = pts * 90; // last dts
     return ps_muxer_input(m->pt->ps, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_av_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    (void)flags, (void)pts; // TODO: rtp timestamp map PTS
-    return rtp_payload_encode_input(m->pt->rtp.encoder, data, bytes, (uint32_t)(dts * m->pt->rtp.frequency / 1000));
+    (void)flags, (void)dts; // TODO: rtp timestamp map PTS
+    return rtp_payload_encode_input(m->pt->rtp.encoder, data, bytes, (uint32_t)(pts * m->pt->rtp.frequency / 1000));
 }
 
 static int rtsp_muxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const uint8_t* data, int bytes, int flags)

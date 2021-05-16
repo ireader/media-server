@@ -158,8 +158,6 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 	int i, n;
 	int payload = -1;
 	struct rtsp_media_t* media;
-	static char* mode[] = { "sendrecv", "sendonly", "recvonly", "inactive" };
-	static const int v[] = { SDP_A_SENDRECV, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE };
 
 	media = (struct rtsp_media_t*)param;
 
