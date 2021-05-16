@@ -219,6 +219,8 @@ static inline int sdp_token_word(struct sdp_t* sdp, const char* escape)
 
 static inline int sdp_token_crlf(struct sdp_t* sdp)
 {
+	sdp_skip_space(sdp);
+
 	if('\r' == sdp->raw[sdp->offset])
 		++sdp->offset;
 	
@@ -1271,11 +1273,15 @@ struct sdp_t* sdp_parse(const char* s)
 			r = sdp_parse_gb28181(sdp);
 			break;
 
+		case 'f':
+			sdp_token_word(sdp, "\r\n");
+			r = sdp_token_crlf(sdp);
+			break;
+
 		default:
 			assert(0); // unknown sdp
-            r = 0;
-			while (sdp->raw[sdp->offset] && '\n' != sdp->raw[sdp->offset])
-				++sdp->offset; // skip line
+			sdp_token_word(sdp, "\r\n");
+			r = sdp_token_crlf(sdp);
 		}
 
 		if(0 != r)
