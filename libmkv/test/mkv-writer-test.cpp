@@ -99,9 +99,12 @@ void mkv_writer_test(int w, int h, const char* inflv, const char* outmkv)
 	size_t taglen;
 	uint32_t timestamp;
 
-	FILE* fp = fopen(outmkv, "wb+");
+	struct mkv_file_cache_t wfile;
+	memset(&wfile, 0, sizeof(wfile));
+	wfile.fp = fopen(outmkv, "wb+");
+
 	void* flv = flv_reader_create(inflv);
-	mkv_writer_t* mkv = mkv_writer_create(mkv_file_buffer(), fp, 0);
+	mkv_writer_t* mkv = mkv_writer_create(mkv_file_cache_buffer(), &wfile, 0);
 
 	s_width = w;
 	s_height = h;
@@ -113,5 +116,5 @@ void mkv_writer_test(int w, int h, const char* inflv, const char* outmkv)
 
 	mkv_writer_destroy(mkv);
 	flv_reader_destroy(flv);
-	fclose(fp);
+	fclose(wfile.fp);
 }
