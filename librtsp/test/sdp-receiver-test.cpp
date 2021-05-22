@@ -162,7 +162,7 @@ static int rtsp_receiver_sdp(struct rtp_receiver_t *ctx, const char* sdp)
 		socket_setrecvbuf(t->udp[0], 2 * 1024 * 1024);
 
 		avtimeline_init(&t->line, 5000, 0);
-		t->demuxer = rtsp_demuxer_create(100, rtsp_receiver_onpacket, t);
+		t->demuxer = rtsp_demuxer_create(0, 100, rtsp_receiver_onpacket, t);
 		for (j = 0; j < m->avformat_count; j++)
 		{
 			int frequence = m->avformats[j].rate;

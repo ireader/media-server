@@ -17,7 +17,7 @@ typedef int (*rtsp_demuxer_onpacket)(void* param, struct avpacket_t* pkt);
 /// @param[in] frequency audio/video sample rate, e.g. video 90000, audio 48000
 /// @param[in] payload rtp payload id, see more @rtp-profile.h
 /// @param[in] encoding rtp payload encoding, see more @rtp-profile.h
-struct rtsp_demuxer_t* rtsp_demuxer_create(int jitter, rtsp_demuxer_onpacket onpkt, void* param);
+struct rtsp_demuxer_t* rtsp_demuxer_create(int stream, int jitter, rtsp_demuxer_onpacket onpkt, void* param);
 int rtsp_demuxer_destroy(struct rtsp_demuxer_t* demuxer);
 
 /// @param[in] frequency audio/video sample rate, e.g. video 90000, audio 48000

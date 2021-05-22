@@ -36,7 +36,7 @@ void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t
 #if USE_RTP_DEMUXER
     struct rtp_demuxer_t* demuxer = rtp_demuxer_create(100, 90000, payload, encoding, rtp_demuxer_test_onpacket, wfp);
 #else
-    struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(100, rtsp_demuxer_test_onpacket, wfp);
+    struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(0, 100, rtsp_demuxer_test_onpacket, wfp);
     rtsp_demuxer_add_payload(demuxer, 90000, payload, encoding, "96 profile-level-id=1; cpresent=0; config=400023203fc0;");
     rtsp_demuxer_rtpinfo(demuxer, seq, ssrc);
 #endif
