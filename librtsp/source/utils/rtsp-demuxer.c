@@ -142,8 +142,18 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
 {
     int i;
     struct rtp_payload_info_t* pt;
-    pt = (struct rtp_payload_info_t*)param;
 
+#if defined(FIX_DAHUA_AAC_FROM_G711)
+    if ((codecid == PSI_STREAM_AUDIO_G711A || codecid == PSI_STREAM_AUDIO_G711U) 
+        && bytes > 7 && 0xFF == ((uint8_t*)data)[0] && 0xF0 == (((uint8_t*)data)[1] & 0xF0))
+    {
+        for(i = 0; i + 7 < bytes;)
+            i += mpeg4_aac_adts_frame_length((const uint8_t*)data + i, bytes - i);
+        codecid = i == bytes ? PSI_STREAM_AAC : codecid; // fix it
+    }
+#endif
+
+    pt = (struct rtp_payload_info_t*)param;
     i = rtsp_demuxer_mpeg2_fetch_stream(pt, track, codecid);
     if (i >= 0)
     {
@@ -364,7 +374,7 @@ static int rtsp_demuxer_payload_close(struct rtp_payload_info_t* pt)
 
 int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int payload, const char* encoding, const char* fmtp)
 {
-    int r, len;
+    int avp, len;
     AVPACKET_CODEC_ID codec;
     struct rtp_payload_info_t* pt;
     int (*onpacket)(void* param, const void* data, int bytes, uint32_t timestamp, int flags);
@@ -372,7 +382,10 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
     if (demuxer->count >= sizeof(demuxer->pt) / sizeof(demuxer->pt[0]))
         return -1; // too many payload type
 
-    assert(frequency > 0);
+    avp = avpayload_find_by_rtp((uint8_t)payload, encoding);
+    // fixme: ffmpeg g711u sample rate 0
+    frequency = frequency ? frequency : (-1!=avp?s_payloads[avp].frequency:90000);
+
     pt = &demuxer->pt[demuxer->count];
     memset(pt, 0, sizeof(*pt));
     snprintf(pt->encoding, sizeof(pt->encoding) - 1, "%s", encoding);
@@ -397,8 +410,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         onpacket = rtsp_demuxer_onrtppacket;
         assert(demuxer->off <= sizeof(demuxer->ptr));
         len = sizeof(demuxer->ptr) - demuxer->off;
-        r = avpayload_find_by_rtp((uint8_t)payload, encoding);
-        codec = -1 != r ? s_payloads[r].codecid : AVCODEC_NONE;
+        codec = -1 != avp ? s_payloads[avp].codecid : AVCODEC_NONE;
         switch (codec)
         {
         case AVCODEC_VIDEO_H264:

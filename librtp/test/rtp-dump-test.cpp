@@ -44,9 +44,9 @@ void rtp_dump_test(const char* file)
 	fp = fopen("rtp.bin", "wb");
 	dump = rtpdump_open(file, 0);
 #if RTP_DEMUXER
-	struct rtp_demuxer_t* demuxer = rtp_demuxer_create(100, 90000, 100, "MP2P", rtp_onpacket, fp);
+	struct rtp_demuxer_t* demuxer = rtp_demuxer_create(0, 100, 90000, 100, "MP2P", rtp_onpacket, fp);
 #else
-	struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(100, rtsp_onpacket, fp);
+	struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(0, 100, rtsp_onpacket, fp);
 	r = rtsp_demuxer_add_payload(demuxer, 90000, 99, "H264", "99 packetization-mode=1;profile-level-id=4D4033; sprop-parameter-sets=Z01AM5pkAeACH/4C3AQEBQAAAwPoAAB1MOhgAJ/8AAE/8i7y40MABP/gAAn/kXeXCgA=,aO44gA==");
 	assert(0 == r);
 #endif
