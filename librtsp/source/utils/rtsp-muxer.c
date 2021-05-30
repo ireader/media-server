@@ -230,7 +230,7 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
         pt->ts = mpeg_ts_create(&h, pt);
         r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, 90000, extra, size);
     }
-    else if (0 == strcasecmp(encoding, "MP2P"))
+    else if (0 == strcasecmp(encoding, "MP2P") || 0 == strcasecmp(encoding, "PS"))
     {
         struct ps_muxer_func_t h;
         h.alloc = rtsp_muxer_ts_alloc;
