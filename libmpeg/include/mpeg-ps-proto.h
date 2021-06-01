@@ -48,6 +48,10 @@ struct psm_t
 	
     struct pes_t streams[16];
 	size_t stream_count;
+
+    uint32_t find_psm;
+    uint32_t guesst_video_sream;
+    uint32_t guesst_audio_sream;
 };
 
 struct psd_t
