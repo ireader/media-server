@@ -110,7 +110,7 @@ void mkv_writer_test(int w, int h, const char* inflv, const char* outmkv)
 	s_height = h;
 	while (1 == flv_reader_read(flv, &type, &timestamp, &taglen, s_buffer, sizeof(s_buffer)))
 	{
-		r = flv_parser_input(type, s_buffer, taglen, timestamp, onFLV, mkv);
+		r = flv_parser_tag(type, s_buffer, taglen, timestamp, onFLV, mkv);
 		assert(r >= 0);
 	}
 
