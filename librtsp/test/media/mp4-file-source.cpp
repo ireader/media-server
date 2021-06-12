@@ -258,8 +258,6 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 	m->rtcp_clock = 0;
 	m->dts_first = -1;
 	m->dts_last = -1;
-	m->rtp.onpacket = OnRTPPacket;
-	m->rtp.param = m;
 
 	if (MOV_OBJECT_H264 == object)
 	{
@@ -281,6 +279,8 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 		return;
 	}
 
+	m->rtp.onpacket = OnRTPPacket;
+	m->rtp.param = m;
 	n = snprintf((char*)self->m_packet, sizeof(self->m_packet), "%.*sa=control:track%d\n", n, m->rtp.buffer, m->track);
 	self->m_sdp += (const char*)self->m_packet;
 }
@@ -295,8 +295,6 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	m->rtcp_clock = 0;
 	m->dts_first = -1;
 	m->dts_last = -1;
-	m->rtp.onpacket = OnRTPPacket;
-	m->rtp.param = m;
 
 	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LOW == object)
 	{
@@ -332,6 +330,8 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 		return;
 	}
 
+	m->rtp.param = m;
+	m->rtp.onpacket = OnRTPPacket;
 	n = snprintf((char*)self->m_packet, sizeof(self->m_packet), "%.*sa=control:track%d\n", n, m->rtp.buffer, m->track);
 	self->m_sdp += (const char*)self->m_packet;
 }
@@ -419,5 +419,5 @@ int MP4FileSource::OnRTPPacket(void* param, const void *packet, int bytes, uint3
 		return -1;
 	}	
 
-	return rtp_onsend(&m->rtp, packet, bytes/*, time*/);
+	return rtp_onsend(m->rtp.rtp, packet, bytes/*, time*/);
 }
