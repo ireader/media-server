@@ -8,8 +8,11 @@
 #include "mpeg-ps-proto.h"
 #include "mpeg-ts-proto.h"
 #include "mpeg-pes-proto.h"
+#include "mpeg-util.h"
 #include <assert.h>
 #include <string.h>
+
+#define MPEG_H26X_VERIFY 1
 
 struct ps_demuxer_t
 {
@@ -20,6 +23,7 @@ struct ps_demuxer_t
     struct ps_system_header_t system;
 
     int start;
+    int h26x_verify;
 
     ps_demuxer_onpacket onpacket;
 	void* param;
@@ -154,6 +158,7 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
             assert(j == pes_packet_length + 6);
             if (n != ps->psm.stream_count)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
+            ps->h26x_verify = 1;
             break;
 
         case PES_SID_PSD:
@@ -195,6 +200,14 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 
             if (j > 0)
             {
+#if defined(MPEG_H26X_VERIFY)
+                if (ps->h26x_verify && (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && 0 == mpeg_h26x_verify(data + i + j, pes_packet_length + 6 - j, &r))
+                {
+                    // maybe modify codecid
+                    pes->codecid = (1 == r ? PSI_STREAM_H264 : PSI_STREAM_H265);
+                    ps->h26x_verify = 0;
+                }
+#endif
                 r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
                 ps->start = 0; // clear start flag
                 if (0 != r)
@@ -265,6 +278,7 @@ struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param
 	if(!ps)
 		return NULL;
 
+    ps->h26x_verify = 1;
 	ps->pkhd.mpeg2 = 1;
     ps->onpacket = onpacket;
 	ps->param = param;

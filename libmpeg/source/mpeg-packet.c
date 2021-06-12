@@ -75,6 +75,14 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
 
     // TODO: The first frame maybe not a valid frame, filter it
 
+    if (0 == pkt->codecid)
+    {
+        pkt->pts = pes->pts;
+        pkt->dts = pes->dts;
+        pkt->sid = pes->sid;
+        pkt->codecid = pes->codecid;
+        pkt->flags = pes->data_alignment_indicator ? 1 : 0;
+    }
 
     // PES contain multiple packet
     n = find(p, end - p, &pkt->vcl);

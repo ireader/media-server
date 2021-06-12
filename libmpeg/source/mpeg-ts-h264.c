@@ -128,3 +128,50 @@ int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
 
     return -1;
 }
+
+/// @param[out] codec 1-h264, 2-h265
+/// @return 0-ok, other-error
+int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
+{
+    uint32_t h264_flags = 0x01A0U; // sps/pps/idr
+    uint64_t h265_flags = 0x700000000ULL; // vps/sps/pps
+
+    int n, count;
+    size_t leading;
+    uint8_t h26x[2][10];
+    const uint8_t* p, * end;
+
+    count = 0;
+    end = data + bytes;
+    for (p = data; p && p < end && count < sizeof(h26x[0])/sizeof(h26x[0][0]); p += n)
+    {
+        n = mpeg_h264_find_nalu(p, end - p, &leading);
+        if (n < 0)
+            break;
+
+        h26x[0][count] = p[n] & 0x1f;
+        h26x[1][count] = (p[n] >> 1) & 0x3f;
+        ++count;
+    }
+
+    for(n = 0; n < count; n++)
+    {
+        h264_flags &= ~(1U << h26x[0][n]);
+        h265_flags &= ~(1ULL << h26x[1][n]);
+    }
+    
+    if (0 == h264_flags && 0 != h265_flags)
+    {
+        // match sps/pps/idr
+        *codec = 1;
+        return 0;
+    }
+    else if (0 == h265_flags && 0 != h264_flags)
+    {
+        // match vps/sps/pps
+        *codec = 2;
+        return 0;
+    }
+
+    return -1;
+}
