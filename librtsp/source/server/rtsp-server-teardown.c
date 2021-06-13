@@ -16,3 +16,9 @@ int rtsp_server_reply_teardown(struct rtsp_server_t *rtsp, int code)
 {
 	return rtsp_server_reply(rtsp, code);
 }
+
+
+char*  rtsp_server_close_session(struct rtsp_server_t* rtsp){
+
+	return rtsp->session.session;
+}

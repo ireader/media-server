@@ -146,6 +146,11 @@ int rtsp_server_reply_pause(rtsp_server_t* rtsp, int code);
 /// @return 0-ok, other-error code
 int rtsp_server_reply_teardown(rtsp_server_t* rtsp, int code);
 
+
+///  when error, get session to close
+/// @param[in] rtsp request handle
+char*  rtsp_server_close_session(rtsp_server_t* rtsp);
+
 /// RTSP ANNOUNCE reply
 /// @param[in] rtsp request handle
 /// @param[in] code RTSP status-code(200-OK, 301-Move Permanently, ...)
@@ -192,6 +197,8 @@ const char* rtsp_server_get_header(rtsp_server_t* rtsp, const char* name);
 
 /// get client ip/port
 const char* rtsp_server_get_client(rtsp_server_t* rtsp, unsigned short* port);
+
+
 
 #if defined(__cplusplus)
 }
