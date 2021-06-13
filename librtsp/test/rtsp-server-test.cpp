@@ -30,11 +30,11 @@
 #define UDP_MULTICAST_ADDR "239.0.0.2"
 #define UDP_MULTICAST_PORT 6000
 
-static const char* s_workdir = "e:\\";
-//static const char* s_workdir = "/Users/ireader/video/";
+//static const char* s_workdir = "e:\\";
+static const char* s_workdir = "/home/ubuntu/media_file/";
 
 static ThreadLocker s_locker;
-
+int status  = 0;
 struct rtsp_media_t
 {
 	std::shared_ptr<IMediaSource> media;
@@ -436,6 +436,7 @@ static int rtsp_onpause(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/,
 
 static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri*/, const char* session)
 {
+
 	std::shared_ptr<IMediaSource> source;
 	TSessions::iterator it;
 	{
@@ -492,13 +493,33 @@ static int rtsp_onclose(void* /*ptr2*/)
 	//       start a timer to check rtp/rtcp activity
 	//       close rtsp media session on expired
 	printf("rtsp close\n");
+
 	return 0;
 }
 
 static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
 {
+
 	printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
-    //return 0;
+	//status = -1;
+	//找出当前的session并销毁  
+	char* session = rtsp_server_close_session(rtsp);
+	std::shared_ptr<IMediaSource> source;
+	TSessions::iterator it;
+	{
+		AutoThreadLocker locker(s_locker);
+		it = s_sessions.find(session ? session : "");
+		if(it == s_sessions.end())
+		{
+			// 454 Session Not Found
+			//rtsp_server_reply_teardown(rtsp, 454);
+			return;
+		}
+
+		source = it->second.media;
+		s_sessions.erase(it);
+	}
+    return;
 }
 
 #define N_AIO_THREAD 4
