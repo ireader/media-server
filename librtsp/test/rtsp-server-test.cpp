@@ -30,11 +30,11 @@
 #define UDP_MULTICAST_ADDR "239.0.0.2"
 #define UDP_MULTICAST_PORT 6000
 
-//static const char* s_workdir = "e:\\";
-static const char* s_workdir = "/home/ubuntu/media_file/";
+static const char* s_workdir = "e:\\";
+//static const char* s_workdir = "/Users/ireader/video/";
 
 static ThreadLocker s_locker;
-int status  = 0;
+
 struct rtsp_media_t
 {
 	std::shared_ptr<IMediaSource> media;
