@@ -83,6 +83,8 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 		}
 		else
 		{
+			// TODO: server->client Announce (update sdp)
+
 			remain = (size_t)(end - p);
 			r = http_parser_input(rtsp->parser, p, &remain);
 			rtsp->parser_need_more_data = r;
@@ -116,6 +118,13 @@ const struct rtsp_header_transport_t* rtsp_client_get_media_transport(struct rts
 	if(media < 0 || media >= rtsp->media_count)
 		return NULL;
 	return rtsp->transport + media;
+}
+
+const struct rtsp_media_t* rtsp_client_get_media(struct rtsp_client_t* rtsp, int media)
+{
+	if (media < 0 || media >= rtsp->media_count)
+		return NULL;
+	return rtsp->media + media;
 }
 
 const char* rtsp_client_get_media_encoding(struct rtsp_client_t *rtsp, int media)

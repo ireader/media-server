@@ -96,7 +96,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 
 static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
-	int i, j, n, r;
+	int i, j, n, r, len;
 	uint64_t npt0 = (uint64_t)(-1);
 	uint64_t npt1 = (uint64_t)(-1);
 	double scale = 0.0f;
@@ -152,7 +152,8 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 		{
 			for (i = 0; i < n; i++)
 			{
-				if (0 == strcmp(rtpInfo[i].uri, rtsp->media[j].uri))
+				len = rtpInfo[i].uri ? strlen(rtpInfo[i].uri) : 0;
+				if (len > 0 && strlen(rtsp->media[j].uri) >= len && 0 == strncmp(rtpInfo[i].uri, rtsp->media[j].uri+(strlen(rtsp->media[j].uri)-len), len))
 				{
 					r = rtsp->handler.onplay(rtsp->param, j, (uint64_t)(-1) == npt0 ? NULL : &npt0, (uint64_t)(-1) == npt1 ? NULL : &npt1, pscale ? &scale : NULL, &rtpInfo[i], 1);
 					break; // only use the first <rtp-info>
