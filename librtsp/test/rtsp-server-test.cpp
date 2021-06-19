@@ -41,6 +41,7 @@ struct rtsp_media_t
 	std::shared_ptr<IRTPTransport> transport;
 	uint8_t channel; // rtp over rtsp interleaved channel
 	int status; // setup-init, 1-play, 2-pause
+	rtsp_server_t* rtsp;
 };
 typedef std::map<std::string, rtsp_media_t> TSessions;
 static TSessions s_sessions;
@@ -204,6 +205,7 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 	else
 	{
 		rtsp_media_t item;
+		item.rtsp = rtsp;
 		item.channel = 0;
 		item.status = 0;
 
@@ -498,6 +500,19 @@ static int rtsp_onclose(void* /*ptr2*/)
 static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
 {
 	printf("rtsp_onerror code=%d, rtsp=%p\n", code, rtsp);
+
+	TSessions::iterator it;
+	AutoThreadLocker locker(s_locker);
+	for (it = s_sessions.begin(); it != s_sessions.end(); ++it)
+	{
+		if (rtsp == it->second.rtsp)
+		{
+			it->second.media->Pause();
+			s_sessions.erase(it);
+			break;
+		}
+	}
+
     //return 0;
 }
 
@@ -522,7 +537,7 @@ extern "C" void rtsp_example()
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
-	void* tcp = rtsp_server_listen(NULL, 8554, &handler, NULL); assert(tcp);
+	void* tcp = rtsp_server_listen("0.0.0.0", 8554, &handler, NULL); assert(tcp);
 //	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL); assert(udp);
 
 	// test only
