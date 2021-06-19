@@ -201,7 +201,8 @@ void sip_uas_transaction_ontimeout(void* usrptr)
 		// SHOULD generate a BYE to terminate the dialog.
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
-		t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
+		if (t->dialog)
+			t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
 	}
 
 	locker_unlock(&t->locker);

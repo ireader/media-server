@@ -274,7 +274,6 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 	int r;
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)usrptr;
-	r = 0;
 	locker_lock(&t->locker);
 	sip_uas_stop_timer(t->agent, t, &t->timerg); // hijack free timer only, don't release transaction
 	
