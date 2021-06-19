@@ -437,3 +437,58 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	sdp_destroy(sdp);
 	return count; // should check return value
 }
+
+/// @return -0-no media, >0-ok, <0-error
+int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
+{
+	int i, n;
+	int setup = 0;
+	int port = m->port[0];
+
+	if (SDP_M_PROTO_TEST_TCP(sdp_option_proto_from(m->proto)))
+	{
+		// try to set tcp active for sender side
+		setup = (SDP_A_SETUP_NONE == m->setup || SDP_A_SETUP_ACTPASS == m->setup) ? SDP_A_SETUP_ACTIVE : m->setup;
+		//if (SDP_A_SETUP_PASSIVE == setup || SDP_A_SETUP_ACTPASS == setup)
+		//	port = options->m[i].port[0];
+	}
+
+	n = snprintf(line, bytes, "m=%s %d %s", m->media, port, m->proto);
+	for (i = 0; i < m->avformat_count; i++)
+	{
+		if (m->avformats[i].fmt >= 96 && !m->avformats[i].encoding[0])
+			continue; // ignore empty encoding
+		n += snprintf(line + n, bytes - n, " %d", m->avformats[i].fmt);
+	}
+	n += snprintf(line + n, bytes - n, "\n");
+
+	for (i = 0; i < m->avformat_count; i++)
+	{
+		if (!m->avformats[i].encoding[0])
+			continue;
+
+		if (SDP_M_MEDIA_VIDEO == sdp_option_media_from(m->media))
+			n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate ? m->avformats[i].rate : 90000);
+		else if (SDP_M_MEDIA_AUDIO == sdp_option_media_from(m->media))
+			n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate, m->avformats[i].channel);
+	}
+
+	//for (int j = 0; j < 128 && j < 8 * sizeof(m->payloads) / sizeof(m->payloads[0]); j++)
+	//{
+	//	if(m->payloads[j/8] & (1<<(j%8)))
+	//		n += snprintf(answer+n, sizeof(answer)-n, " %d", j);
+	//}
+
+	if (SDP_M_PROTO_TEST_TCP(sdp_option_proto_from(m->proto)))
+	{
+		n += snprintf(line + n, bytes - n, "a=setup:%s\n", sdp_option_setup_to(setup));
+	}
+
+	if (m->nport < 2 || m->port[0] == m->port[1])
+	{
+		n += snprintf(line + n, bytes - n, "a=rtcp-mux\n");
+	}
+
+	n += snprintf(line + n, bytes - n, "a=%s\n", sdp_option_mode_to(m->mode));
+	return n;
+}

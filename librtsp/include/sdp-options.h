@@ -87,6 +87,7 @@ const char* sdp_option_proto_to(int proto);
 int sdp_option_mode_from(const char* mode);
 const char* sdp_option_mode_to(int mode);
 
+int sdp_option_media_from(const char* media);
 const char* sdp_option_media_to(int media);
 
 #ifdef __cplusplus

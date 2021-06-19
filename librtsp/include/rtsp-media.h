@@ -116,6 +116,10 @@ int rtsp_media_sdp(const char* sdp, struct rtsp_media_t* medias, int count);
 /// return 0-ok, other-error
 int rtsp_media_set_url(struct rtsp_media_t* media, const char* base, const char* location, const char* request);
 
+/// create media sdp
+/// @return -0-no media, >0-ok, <0-error
+int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes);
+
 #if defined(__cplusplus)
 }
 #endif
