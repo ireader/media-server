@@ -17,11 +17,17 @@ jobs:
         with:
           repository: ireader/sdk
           path: sdk
+          
+      - name: avcodec
+        uses: actions/checkout@v2
+        with:
+          repository: ireader/avcodec
+          path: avcodec
 
       - name: Make
         run: make
         working-directory: media-server
 
 #      - name: Make check
-#        run: make tset
+#        run: make test
 #        working-directory: media-server
