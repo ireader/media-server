@@ -122,7 +122,7 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	vec[0].ptr = buf;  // FLV Tag Header
 	vec[0].len = FLV_TAG_HEADER_SIZE;
 	vec[1].ptr = (void*)data;
-	vec[1].len = bytes;
+	vec[1].len = (int)bytes;
 	vec[2].ptr = buf + FLV_TAG_HEADER_SIZE; // TAG size
 	vec[2].len = 4;
 	return flv->write(flv->param, vec, 3);

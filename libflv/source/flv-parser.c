@@ -12,7 +12,7 @@
 
 #define FLV_VIDEO_CODEC_NAME(codecid) (FLV_VIDEO_H264==(codecid) ? FLV_VIDEO_AVCC : (FLV_VIDEO_H265==(codecid) ? FLV_VIDEO_HVCC : FLV_VIDEO_AV1C))
 
-static int flv_parser_audio(struct flv_audio_tag_header_t* audio, const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_audio(struct flv_audio_tag_header_t* audio, const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	if (FLV_SEQUENCE_HEADER == audio->avpacket)
 		return handler(param, FLV_AUDIO_AAC == audio->codecid ? FLV_AUDIO_ASC : FLV_AUDIO_OPUS_HEAD, data, bytes, timestamp, timestamp, 0);
@@ -20,7 +20,7 @@ static int flv_parser_audio(struct flv_audio_tag_header_t* audio, const uint8_t*
 		return handler(param, audio->codecid, data, bytes, timestamp, timestamp, 0);
 }
 
-static int flv_parser_video(struct flv_video_tag_header_t* video, const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_video(struct flv_video_tag_header_t* video, const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_AV1 == video->codecid)
 	{
@@ -51,7 +51,7 @@ static int flv_parser_video(struct flv_video_tag_header_t* video, const uint8_t*
 
 // http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
 // metadata keyframes/filepositions
-static int flv_parser_script(const uint8_t* data, int bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
+static int flv_parser_script(const uint8_t* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param)
 {
 	return handler(param, FLV_SCRIPT_METADATA, data, bytes, timestamp, timestamp, 0);
 }
@@ -90,9 +90,9 @@ int flv_parser_tag(int type, const void* data, size_t bytes, uint32_t timestamp,
 	}
 }
 
-static int flv_parser_append(struct flv_parser_t* parser, const uint8_t* data, int bytes, int expect)
+static size_t flv_parser_append(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, size_t expect)
 {
-	int n;
+	size_t n;
 	assert(parser->bytes <= expect && expect <= sizeof(parser->ptr));
 	n = parser->bytes + bytes >= expect ? expect - parser->bytes : bytes;
 	if (n > 0)
@@ -103,9 +103,10 @@ static int flv_parser_append(struct flv_parser_t* parser, const uint8_t* data, i
 	return n;
 }
 
-int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, int bytes, flv_parser_handler handler, void* param)
+int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, flv_parser_handler handler, void* param)
 {
-	int n, r;
+    int r;
+	size_t n;
 	uint8_t codec;
 	uint32_t size;
 	enum {FLV_HEADER=0, FLV_HEADER_OFFSET, FLV_PREVIOUS_SIZE, FLV_TAG_HEADER, FLV_AVHEADER_CODEC, FLV_AVHEADER_EXTRA, FLV_TAG_BODY};

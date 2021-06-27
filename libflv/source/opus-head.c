@@ -102,7 +102,7 @@ int opus_head_load(const uint8_t* data, size_t bytes, struct opus_head_t* opus)
     return 19;
 }
 
-static const uint8_t* opus_parse_size(const uint8_t* data, int bytes, int *size)
+static const uint8_t* opus_parse_size(const uint8_t* data, size_t bytes, size_t *size)
 {
     if (bytes < 1)
         return NULL;
@@ -192,9 +192,9 @@ static const uint8_t* opus_parse_padding(const uint8_t* data, int len)
  |}                                              |           |       |
  */
 
-static const uint8_t* opus_ts_header(const uint8_t* data, int bytes, int* payload)
+static const uint8_t* opus_ts_header(const uint8_t* data, size_t bytes, size_t* payload)
 {
-    int i;
+    size_t i;
     int start_trim_flag;
     int end_trim_flag;
     int control_extension_flag;
@@ -244,12 +244,12 @@ static const uint8_t* opus_ts_header(const uint8_t* data, int bytes, int* payloa
     }
 }
 
-static int opus_parse_frames(const void* data, int len, int (*onframe)(uint8_t toc, const void* frame, int size), void* param)
+static int opus_parse_frames(const void* data, size_t len, int (*onframe)(uint8_t toc, const void* frame, size_t size), void* param)
 {
     int i, r;
     int vbr, count;
     uint8_t toc;
-    int n[48];
+    size_t n[48];
     const uint8_t* p, *end;
 
     if (len < 1)
@@ -353,10 +353,10 @@ static int opus_parse_frames(const void* data, int len, int (*onframe)(uint8_t t
     return 0;
 }
 
-int opus_packet_getframes(const void* data, int len, int (*onframe)(uint8_t toc, const void* frame, int size), void* param)
+int opus_packet_getframes(const void* data, size_t len, int (*onframe)(uint8_t toc, const void* frame, size_t size), void* param)
 {
     int r;
-    int payload;
+    size_t payload;
     const uint8_t* p, *end;
     
     p = (const uint8_t*)data;
@@ -380,7 +380,7 @@ int opus_packet_getframes(const void* data, int len, int (*onframe)(uint8_t toc,
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
-static int opus_onframe(uint8_t toc, const void* frame, int size)
+static int opus_onframe(uint8_t toc, const void* frame, size_t size)
 {
     return 0;
 }

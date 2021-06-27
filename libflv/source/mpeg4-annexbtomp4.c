@@ -26,13 +26,13 @@ struct h264_annexbtomp4_handle_t
 	int* vcl;
 
 	uint8_t* out;
-	int bytes;
-	int capacity;
+	size_t bytes;
+	size_t capacity;
 };
 
-static const uint8_t* h264_startcode(const uint8_t *data, int bytes)
+static const uint8_t* h264_startcode(const uint8_t *data, size_t bytes)
 {
-	int i;
+	size_t i;
 	for (i = 2; i + 1 < bytes; i++)
 	{
 		if (0x01 == data[i] && 0x00 == data[i - 1] && 0x00 == data[i - 2])
@@ -43,9 +43,9 @@ static const uint8_t* h264_startcode(const uint8_t *data, int bytes)
 }
 
 /// @return >0-ok, <=0-error
-static inline int h264_avcc_length(const uint8_t* h264, int bytes, int avcc)
+static inline int h264_avcc_length(const uint8_t* h264, size_t bytes, size_t avcc)
 {
-	int i;
+	size_t i;
 	uint32_t n;
 
 	n = 0;
@@ -56,9 +56,9 @@ static inline int h264_avcc_length(const uint8_t* h264, int bytes, int avcc)
 }
 
 /// @return 1-true, 0-false
-static int mpeg4_h264_avcc_bitstream_valid(const uint8_t* h264, int bytes, int avcc)
+static int mpeg4_h264_avcc_bitstream_valid(const uint8_t* h264, size_t bytes, size_t avcc)
 {
-	int n;
+	size_t n;
 
 	while(avcc + 1 < bytes)
 	{
@@ -74,7 +74,7 @@ static int mpeg4_h264_avcc_bitstream_valid(const uint8_t* h264, int bytes, int a
 }
 
 /// @return 0-annexb, >0-avcc, <0-error
-int mpeg4_h264_bitstream_format(const uint8_t* h264, int bytes)
+int mpeg4_h264_bitstream_format(const uint8_t* h264, size_t bytes)
 {
 	uint32_t n;
 	if (bytes < 4)
@@ -97,7 +97,7 @@ int mpeg4_h264_bitstream_format(const uint8_t* h264, int bytes)
 	}
 }
 
-static int mpeg4_h264_avcc_nalu(const void* h264, int bytes, int avcc, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param)
+static int mpeg4_h264_avcc_nalu(const void* h264, size_t bytes, int avcc, void (*handler)(void* param, const uint8_t* nalu, size_t bytes), void* param)
 {
 	uint32_t n;
 	const uint8_t* p, * end;
@@ -119,7 +119,7 @@ static int mpeg4_h264_avcc_nalu(const void* h264, int bytes, int avcc, void (*ha
 }
 
 ///@param[in] h264 H.264 byte stream format data(A set of NAL units)
-int mpeg4_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* param, const uint8_t* nalu, int bytes), void* param)
+int mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void* param, const uint8_t* nalu, size_t bytes), void* param)
 {
 	ptrdiff_t n;
 	const uint8_t* p, *next, *end;
@@ -160,7 +160,7 @@ int mpeg4_h264_annexb_nalu(const void* h264, int bytes, void (*handler)(void* pa
 	return 0;
 }
 
-uint8_t mpeg4_h264_read_ue(const uint8_t* data, int bytes, int* offset)
+uint8_t mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset)
 {
 	int bit, i;
 	int leadingZeroBits = -1;
@@ -182,7 +182,7 @@ uint8_t mpeg4_h264_read_ue(const uint8_t* data, int bytes, int* offset)
 	return (uint8_t)((1 << leadingZeroBits) - 1 + bit);
 }
 
-static void mpeg4_avc_remove(struct mpeg4_avc_t* avc, uint8_t* ptr, int bytes, const uint8_t* end)
+static void mpeg4_avc_remove(struct mpeg4_avc_t* avc, uint8_t* ptr, size_t bytes, const uint8_t* end)
 {
 	uint8_t i;
 	assert(ptr >= avc->data && ptr + bytes <= end && end <= avc->data + sizeof(avc->data));
@@ -201,10 +201,10 @@ static void mpeg4_avc_remove(struct mpeg4_avc_t* avc, uint8_t* ptr, int bytes, c
 	}
 }
 
-static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes)
+static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 {
-	int i;
-	int offset;
+	size_t i;
+	size_t offset;
     uint8_t spsid;
 
 	if (bytes < 4 + 1)
@@ -258,10 +258,10 @@ static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes
 	return 1; // set update flag
 }
 
-static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes)
+static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 {
-	int i;
-    int offset;
+	size_t i;
+    size_t offset;
 	uint8_t spsid;
 	uint8_t ppsid;
 
@@ -317,7 +317,7 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes
 	return 1; // set update flag
 }
 
-int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes)
+int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 {
 	int r;
 	
@@ -345,7 +345,7 @@ int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, int bytes)
 	return r;
 }
 
-static void h264_handler(void* param, const uint8_t* nalu, int bytes)
+static void h264_handler(void* param, const uint8_t* nalu, size_t bytes)
 {
 	int r;
 	uint8_t nalutype;
@@ -389,7 +389,7 @@ static void h264_handler(void* param, const uint8_t* nalu, int bytes)
 	}
 }
 
-int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void* out, int size, int* vcl, int* update)
+int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, size_t bytes, void* out, size_t size, int* vcl, int* update)
 {
 	struct h264_annexbtomp4_handle_t h;
 	memset(&h, 0, sizeof(h));
@@ -403,7 +403,7 @@ int h264_annexbtomp4(struct mpeg4_avc_t* avc, const void* data, int bytes, void*
 	
 	mpeg4_h264_annexb_nalu(data, bytes, h264_handler, &h);
 	avc->nalu = 4;
-	return 0 == h.errcode ? h.bytes : 0;
+	return 0 == h.errcode ? (int)h.bytes : 0;
 }
 
 /// h264_is_new_access_unit H.264 new access unit(frame)

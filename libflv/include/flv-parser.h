@@ -32,8 +32,8 @@ struct flv_parser_t
 {
 	int state;
 
-	int bytes;
-	int expect;
+	size_t bytes;
+	size_t expect;
 	uint8_t ptr[32];
 	struct flv_header_t header;
 	struct flv_tag_header_t tag;
@@ -45,7 +45,7 @@ struct flv_parser_t
 	void (*free)(void* param, void* ptr);
 };
 
-int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, int bytes, flv_parser_handler handler, void* param);
+int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, flv_parser_handler handler, void* param);
 
 #if defined(__cplusplus)
 }
