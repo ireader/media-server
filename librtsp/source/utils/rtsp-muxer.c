@@ -351,6 +351,12 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
         m->input = rtsp_muxer_av_input;
     }
 
+    if (m->stream < 0)
+    {
+        assert(0);
+        return -1;
+    }
+
     return muxer->media_count++;
 }
 
