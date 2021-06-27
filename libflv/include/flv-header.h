@@ -2,6 +2,7 @@
 #define _flv_header_h_
 
 #include <stdint.h>
+#include <stddef.h>
 
 #if defined(__cplusplus)
 extern "C" {
