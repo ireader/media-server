@@ -160,7 +160,6 @@ struct sdp_t
 	char* s;
 	char* i;
 	char* u;
-	char* y; // gb28181
 
 	struct email
 	{
@@ -1097,20 +1096,51 @@ static int sdp_parse_media(struct sdp_t* sdp)
 }
 
 // gb28181 extension
-static int sdp_parse_gb28181(struct sdp_t* sdp)
+static int sdp_parse_gb28181_ssrc(struct sdp_t* sdp)
 {
-	int n = 0;
+	int n;
+	struct attributes* as;
+	struct sdp_attribute* a;
 
-	// No more than one URI field is allowed per session description.
-	assert(!sdp->y);
+	if (sdp->m.count > 0)
+	{
+		as = &sdp_get_media(sdp, sdp->m.count - 1)->a;
+	}
+	else
+	{
+		as = &sdp->a;
+	}
 
-	sdp->y = sdp->raw + sdp->offset;
+	if (as->count >= N_ATTRIBUTE)
+	{
+		if (as->count - N_ATTRIBUTE >= as->capacity)
+		{
+			void* ptr;
+			ptr = (struct sdp_attribute*)realloc(as->ptr, (as->capacity + 8) * sizeof(struct sdp_attribute));
+			if (!ptr)
+				return ENOMEM;
+
+			as->ptr = ptr;
+			as->capacity += 8;
+		}
+
+		a = &as->ptr[as->count - N_ATTRIBUTE];
+	}
+	else
+	{
+		a = &as->attrs[as->count];
+	}
+
+	memset(a, 0, sizeof(struct sdp_attribute));
+	a->name = "ssrc";
+	a->value = sdp->raw + sdp->offset;
 
 	n = sdp_token_word(sdp, "\r\n");
 	if (0 != sdp_token_crlf(sdp))
 		return -1;
 
-	sdp->y[n] = '\0';
+	a->value[n] = '\0';
+	++as->count;
 	return 0;
 }
 
@@ -1270,7 +1300,7 @@ struct sdp_t* sdp_parse(const char* s)
 			break;
 
 		case 'y':
-			r = sdp_parse_gb28181(sdp);
+			r = sdp_parse_gb28181_ssrc(sdp);
 			break;
 
 		case 'f':
