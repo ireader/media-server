@@ -335,7 +335,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 
 	default:
 		assert(0);
-		return bytes;
+		return (int)bytes;
 	}
 
 	switch (aac->profile)

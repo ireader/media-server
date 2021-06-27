@@ -23,7 +23,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, const struct sip_message_t* rep
 	}
 
 	assert(ack->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
-	if (!cstrcmp(&ack->u.c.method, SIP_METHOD_ACK))
+	if (cstrcmp(&ack->u.c.method, SIP_METHOD_ACK))
 	{
 		// overwrite method
 		ack->u.c.method.p = SIP_METHOD_ACK;
@@ -40,7 +40,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, const struct sip_message_t* rep
 			sip_message_destroy(ack);
 			return -1;
 		}
-		sip_message_add_header(ack, "To", contact);
+		r = sip_message_add_header(ack, "To", contact);
 	}
 	
 	// 8.1.1.7 Via (p39)
