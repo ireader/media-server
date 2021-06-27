@@ -58,12 +58,12 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
     };
     
     r = 0;
-    memset(s, 0, sizeof(*s));
-    s->seq = (uint16_t)rtp_ssrc();
-    s->ssrc = rtp_ssrc();
-    s->timestamp = rtp_ssrc();
+    //memset(s, 0, sizeof(*s));
+    s->seq = s->seq ? s->seq : (uint16_t)rtp_ssrc();
+    s->ssrc = s->ssrc ? s->ssrc : rtp_ssrc();
+    s->timestamp = s->timestamp ? s->timestamp : rtp_ssrc();
+    s->bandwidth = s->bandwidth ? s->bandwidth : 2 * 1024 * 1024; // default 2Mb
     s->frequency = 0 == frequence ? 90000 : frequence; // default 90MHz
-    s->bandwidth = 2 * 1024 * 1024; // default 2Mb
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
@@ -105,13 +105,13 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned sh
     };
     
     r = 0;
-    memset(s, 0, sizeof(*s));
-    s->seq = (uint16_t)rtp_ssrc();
-    s->ssrc = rtp_ssrc();
-    s->timestamp = rtp_ssrc();
+//  memset(s, 0, sizeof(*s));
+    s->seq = s->seq ? s->seq : (uint16_t)rtp_ssrc();
+    s->ssrc = s->ssrc ? s->ssrc : rtp_ssrc();
+    s->timestamp = s->timestamp ? s->timestamp : rtp_ssrc();
+    s->bandwidth = s->bandwidth ? s->bandwidth : 128 * 1024; // default 128Kb
     s->frequency = sample_rate;
     s->payload = payload;
-    s->bandwidth = 128 * 1024; // default 128Kb
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
     r = avpayload_find_by_rtp(payload, encoding);

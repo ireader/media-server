@@ -214,6 +214,10 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
     pt->port = port;
     pt->pid = muxer->payload_count;
     pt->muxer = muxer;
+    pt->rtp.seq = seq;
+    pt->rtp.ssrc = ssrc;
+    pt->rtp.onpacket = rtsp_muxer_rtp_encode_packet;
+    pt->rtp.param = pt;
 
     if (RTP_PAYLOAD_MP2T == payload)
     {
@@ -278,11 +282,6 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
     pt->sdp = (const char*)muxer->ptr + muxer->off;
     memcpy(muxer->ptr + muxer->off, pt->rtp.buffer, r);
 
-    pt->rtp.onpacket = rtsp_muxer_rtp_encode_packet;
-    pt->rtp.param = pt;
-    pt->rtp.ssrc = ssrc ? ssrc : pt->rtp.ssrc; // override
-    pt->rtp.seq = seq ? seq : pt->rtp.seq; // override
-
     muxer->payload_count++;
     muxer->off += r;
     return pt->pid;
@@ -341,7 +340,7 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
         m->stream = mpeg_ts_add_stream(m->pt->ts, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ts_input;
     }
-    else if (0 == strcasecmp(m->pt->rtp.encoding, "MP2P"))
+    else if (0 == strcasecmp(m->pt->rtp.encoding, "MP2P") || 0 == strcasecmp(m->pt->rtp.encoding, "PS"))
     {
         m->stream = ps_muxer_add_stream(m->pt->ps, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ps_input;
