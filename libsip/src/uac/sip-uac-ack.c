@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 // 17.1.1.3 Construction of the ACK Request(Section 13.) (p129)
-int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction)
+int sip_uac_ack(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, struct sip_dialog_t* dialog)
 {
 	int r;
 	char ptr[1024];
@@ -21,14 +21,28 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 		sip_message_destroy(ack);
 		return -1;
 	}
+
 	assert(ack->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
-	if (!dialog)
+	if (!cstrcmp(&ack->u.c.method, SIP_METHOD_ACK))
 	{
+		// overwrite method
 		ack->u.c.method.p = SIP_METHOD_ACK;
 		ack->u.c.method.n = strlen(SIP_METHOD_ACK);
 		memcpy(&ack->cseq.method, &ack->u.c.method, sizeof(ack->cseq.method));
 	}
 
+	// override to tag
+	if (!cstrvalid(&ack->to.tag))
+	{
+		r = sip_contact_write(&reply->to, contact, contact + sizeof(contact));
+		if (r < 0 || r >= sizeof(contact) - 1)
+		{
+			sip_message_destroy(ack);
+			return -1;
+		}
+		sip_message_add_header(ack, "To", contact);
+	}
+	
 	// 8.1.1.7 Via (p39)
 	// The branch parameter value MUST be unique across space and time for
 	// all requests sent by the UA.The exceptions to this rule are CANCEL
@@ -57,7 +71,7 @@ int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, in
 	// 1. If the request is INVITE and the final response is a non-2xx, the transaction also
 	//	  includes an ACK to the response. 
 	// 2. The ACK for a 2xx response to an INVITE request is a separate transaction(new branch value).
-	if (newtransaction)
+	if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
 		assert(0 == sip_vias_count(&ack->vias));
 		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html

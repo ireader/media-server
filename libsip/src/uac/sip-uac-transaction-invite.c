@@ -108,7 +108,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	// 17.1.1.3 Construction of the ACK Request
 	// The ACK MUST be sent to the same address, port, 
 	// and transport to which the original request was sent.
-	sip_uac_ack(t, dialog, 0); // ignore ack transport layer error, retry send on retransmissions
+	sip_uac_ack(t, reply, dialog); // ignore ack transport layer error, retry send on retransmissions
 
 	if (!retransmissions)
 	{
@@ -179,7 +179,7 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	// to send a response to an INVITE request MUST NOT immediately destroy
 	// the associated INVITE server transaction state.  This state is
 	// necessary to ensure correct processing of retransmissions of the request.
-	sip_uac_ack(t, dialog, 1); // ignore ack transport layer error, retry send on retransmissions
+	sip_uac_ack(t, reply, dialog); // ignore ack transport layer error, retry send on retransmissions
 	
 	if (!retransmissions)
 	{

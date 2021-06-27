@@ -77,7 +77,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 sip_timer_t sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
 void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, sip_timer_t* id);
 
-int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction);
+int sip_uac_ack(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, struct sip_dialog_t* dialog);
 
 int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
