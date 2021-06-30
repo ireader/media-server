@@ -20,6 +20,7 @@ INCLUDES = . $(ROOT)/include $(ROOT)/libaio/include $(ROOT)/libhttp/include $(RO
 			../libhls/include \
 			../libmov/include \
 			../libmpeg/include \
+			../libmkv/include \
 			../librtmp/include \
 			../librtmp/aio \
 			../librtp/include \
@@ -98,4 +99,4 @@ DEFINES = OS_INT64_TYPE
 
 include $(ROOT)/gcc.mk
 
-CXXFLAGS += -std=c++0x
+CXXFLAGS += -std=c++11
