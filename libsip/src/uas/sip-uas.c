@@ -255,7 +255,7 @@ static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_m
 			return 0; // invalid ack, discard, TODO: add log here
 		}
 
-		t = sip_uas_transaction_create(sip, msg, dialog);
+		t = sip_uas_transaction_create(sip, msg, dialog, param);
 		if (!t)
 		{
 			locker_unlock(&sip->locker);

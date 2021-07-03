@@ -104,7 +104,8 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
         {
             sip_dialog_addref(dialog); // for t->dialog
         }
-            
+
+		assert(t->param == t->initparam);
         t->dialog = dialog;
 		// notify user
 		t->status = SIP_UAS_TRANSACTION_TRYING;
@@ -136,7 +137,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 
 	case SIP_UAS_TRANSACTION_PROCEEDING:
 		// send last 1xx reply
-		r = sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t, t->param);
 		// ignore transport error(client will retransmission request)
 		break;
 
@@ -146,7 +147,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// until recv ack
 		
 		// send last 3xx-6xx reply
-		r = sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t, t->param);
 		break;
 
 	case SIP_UAS_TRANSACTION_ACCEPTED:
@@ -156,7 +157,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// retransmissions are not passed onto the TU.
 
 		// send last 2xx reply
-		r = sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t, t->param);
 		break;
 
 	case SIP_UAS_TRANSACTION_CONFIRMED:
@@ -255,8 +256,9 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		// set Timer L to 64*T1
 
 		t->retries = 1;
-		if (!t->reliable) // UDP
+		if (!t->reliable) { // UDP
 			t->timerg = sip_uas_start_timer(t->agent, t, TIMER_G, sip_uas_transaction_onretransmission);
+		}
 		sip_uas_transaction_timeout(t, TIMER_H);
 		assert(t->timerh && (t->reliable || t->timerg));
 	}
@@ -266,7 +268,7 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 		sip_uas_transaction_timeout(t, TIMER_H);
 	}
 
-    return sip_uas_transaction_dosend(t);
+    return sip_uas_transaction_dosend(t, t->param);
 }
 
 static void sip_uas_transaction_onretransmission(void* usrptr)
@@ -280,11 +282,11 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 	if (t->status < SIP_UAS_TRANSACTION_CONFIRMED)
 	{
 		assert(SIP_UAS_TRANSACTION_COMPLETED == t->status || SIP_UAS_TRANSACTION_ACCEPTED == t->status);
-		r = sip_uas_transaction_dosend(t);
+		r = sip_uas_transaction_dosend(t, t->initparam); // fixme
 		//if (0 != r)
 		//{
 		//	// 8.1. 3.1 Transaction Layer Errors (p42)
-		//	r = t->handler.onack(t->param, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
+		//	r = t->handler.onack(t->initparam, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
 		//}
 
 		assert(!t->reliable);

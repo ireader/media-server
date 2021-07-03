@@ -47,6 +47,7 @@ struct sip_uas_transaction_t
     struct sip_dialog_t* dialog;
 	struct sip_uas_handler_t* handler;
 	void* param;
+	void* initparam; // for retransmission/timeout
     
     sip_transaction_ondestroy ondestroy;
     void* ondestroyparam;
@@ -56,9 +57,9 @@ struct sip_uas_transaction_t
 	struct sip_message_t* reply; // for set reply sip header
 };
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_dialog_t* dialog);
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_dialog_t* dialog, void* param);
 
-int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t);
+int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t, void* param);
 
 // trying + proceeding timeout
 int sip_uas_transaction_timeout(struct sip_uas_transaction_t* t, int timeout);

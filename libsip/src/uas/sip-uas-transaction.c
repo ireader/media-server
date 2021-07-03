@@ -4,7 +4,7 @@
 int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
 int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
 
-struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req, const struct sip_dialog_t* dialog)
+struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip, const struct sip_message_t* req, const struct sip_dialog_t* dialog, void* param)
 {
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)calloc(1, sizeof(*t));
@@ -19,6 +19,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 
 	t->ref = 1; // for agent uac link, don't destory it
 	t->agent = sip;
+	t->initparam = param;
 	LIST_INIT_HEAD(&t->link);
 	locker_create(&t->locker);
 	t->status = SIP_UAS_TRANSACTION_INIT;
@@ -95,6 +96,7 @@ int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
 
 int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
 {
+	assert(t->param == t->initparam);
 	if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_CANCEL))
 	{
 		return sip_uas_oncancel(t, dialog, req);
@@ -151,7 +153,7 @@ int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dial
 	}
 }
 
-int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
+int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t, void* param)
 {
 	const struct sip_via_t *via;
 
@@ -170,7 +172,7 @@ int sip_uas_transaction_dosend(struct sip_uas_transaction_t* t)
 	via = sip_vias_get(&t->reply->vias, 0);
 	if (!via) return -1; // invalid via
 
-	return t->handler->send(t->param, &via->protocol, &via->host, &via->received, via->rport, t->data, t->size);
+	return t->handler->send(param, &via->protocol, &via->host, &via->received, via->rport, t->data, t->size);
 }
 
 int sip_uas_transaction_terminated(struct sip_uas_transaction_t* t)
@@ -202,7 +204,7 @@ void sip_uas_transaction_ontimeout(void* usrptr)
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
 		if (t->dialog)
-			t->handler->onack(t->param, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
+			t->handler->onack(t->initparam, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
 	}
 
 	locker_unlock(&t->locker);
