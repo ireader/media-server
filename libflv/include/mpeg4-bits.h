@@ -114,6 +114,23 @@ static inline uint64_t mpeg4_bits_read_n(struct mpeg4_bits_t* bits, int n)
 	return v;
 }
 
+// http://aomedia.org/av1/specification/conventions/#descriptors
+static inline uint64_t mpeg4_bits_read_uvlc(struct mpeg4_bits_t* bits)
+{
+	uint64_t value;
+	int leadingZeros;
+	for (leadingZeros = 0; !mpeg4_bits_read(bits); ++leadingZeros)
+	{
+	}
+
+	if (leadingZeros >= 32)
+		return (1ULL << 32) - 1;
+	
+	value = mpeg4_bits_read_n(bits, leadingZeros);
+	return (1ULL << leadingZeros) - 1 + value;
+}
+
+
 /// write 1-bit
 /// @param[in] v write 0 if v value 0, other, write 1
 static inline int mpeg4_bits_write(struct mpeg4_bits_t* bits, int v)

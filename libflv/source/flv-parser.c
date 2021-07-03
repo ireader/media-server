@@ -111,7 +111,7 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 	uint32_t size;
 	enum {FLV_HEADER=0, FLV_HEADER_OFFSET, FLV_PREVIOUS_SIZE, FLV_TAG_HEADER, FLV_AVHEADER_CODEC, FLV_AVHEADER_EXTRA, FLV_TAG_BODY};
 
-	for (n = 0; bytes > 0 && n >= 0; data += n, bytes -= n)
+	for (n = r = 0; bytes > 0 && n >= 0 && 0 == r; data += n, bytes -= n)
 	{
 		switch (parser->state)
 		{
@@ -235,8 +235,6 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 				}
 				
 				parser->free ? parser->free(param, parser->body) : free(parser->body);
-				if (0 != r)
-					return r;
 			}
 			break;
 
@@ -246,5 +244,5 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 		}
 	}
 
-	return 0;
+	return r;
 }

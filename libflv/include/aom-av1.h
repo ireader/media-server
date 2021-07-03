@@ -26,9 +26,18 @@ struct aom_av1_t
 	uint32_t initial_presentation_delay_present : 1;
 	uint32_t initial_presentation_delay_minus_one : 4;
 
+	uint8_t buffer_delay_length_minus_1; // decoder_model_info
+	uint32_t width; // max_frame_width_minus_1
+	uint32_t height; // max_frame_height_minus_1
+
 	uint16_t bytes;
 	uint8_t data[2 * 1024];
 };
+
+/// Create av1 codec configuration record from Sequence Header OBU
+/// @param[in] data av1 low overhead bitstream format
+/// @return 0-ok, other-error
+int aom_av1_codec_configuration_record_init(struct aom_av1_t* av1, const void* data, size_t bytes);
 
 int aom_av1_codec_configuration_record_load(const uint8_t* data, size_t bytes, struct aom_av1_t* av1);
 int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t* data, size_t bytes);
