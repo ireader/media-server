@@ -19,7 +19,7 @@ static std::string str_register_fun;
     }\
 }while(0)
 
-int usage(int argc, char const *argv[]){
+void usage(int argc, char const *argv[]){
     printf( "****************************************\n");
     printf( "usage: \n"                                 );
     printf( "./test -c <func name> \n"	                );
