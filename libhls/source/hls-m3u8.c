@@ -161,7 +161,7 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 		m3u8->live ? "" : "#EXT-X-PLAYLIST-TYPE:VOD\n",
 		m3u8->live ? "" : "#EXT-X-ALLOW-CACHE:YES\n");
 	if (r <= 0 || (size_t)r >= bytes)
-		return ENOMEM;
+		return -ENOMEM;
 
 	// #EXT-X-MAP:URI="main.mp4",BYTERANGE="1206@0"
 	if (m3u8->ext_x_map)
@@ -184,5 +184,5 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 	if (eof && bytes > n + 15)
 		n += snprintf(playlist + n, bytes - n, "#EXT-X-ENDLIST\n");
 
-	return (bytes > n && n > 0) ? 0 : ENOMEM;
+	return (bytes > n && n > 0) ? 0 : -ENOMEM;
 }

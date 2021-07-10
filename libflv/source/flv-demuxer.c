@@ -218,7 +218,7 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 	{
 		if (FLV_SEQUENCE_HEADER == video.avpacket)
 		{
-			// HEVCDecoderConfigurationRecord
+			// AV1CodecConfigurationRecord
 			assert(bytes > n + 5);
 			aom_av1_codec_configuration_record_load(data + n, bytes - n, &flv->v.av1);
 			return flv->handler(flv->param, FLV_VIDEO_AV1C, data + n, bytes - n, timestamp + video.cts, timestamp, 0);

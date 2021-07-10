@@ -8,6 +8,20 @@
 // https://aomediacodec.github.io/av1-isobmff
 // https://aomediacodec.github.io/av1-avif/
 
+enum
+{
+	OBU_SEQUENCE_HEADER = 1,
+	OBU_TEMPORAL_DELIMITER = 2,
+	OBU_FRAME_HEADER = 3,
+	OBU_TILE_GROUP = 4,
+	OBU_METADATA = 5,
+	OBU_FRAME = 6,
+	OBU_REDUNDANT_FRAME_HEADER = 7,
+	OBU_TILE_LIST = 8,
+	// 9-14	Reserved
+	OBU_PADDING = 15,
+};
+
 /*
 aligned (8) class AV1CodecConfigurationRecord {
   unsigned int (1) marker = 1;
@@ -78,9 +92,9 @@ int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t
 	return av1->bytes + 4;
 }
 
-static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* v)
+static inline const uint8_t* leb128(const uint8_t* data, int bytes, uint64_t* v)
 {
-	size_t i;
+	int i;
 	int64_t b;
 
 	b = 0x80;
@@ -92,27 +106,79 @@ static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* 
 	return data + i;
 }
 
-static int aom_av1_low_overhead_bitstream_obu(const uint8_t* data, size_t bytes, int (*handler)(void* param, const uint8_t* obu, size_t bytes), void* param)
+int aom_av1_annexb_split(const uint8_t* data, size_t bytes, int (*handler)(void* param, const uint8_t* obu, size_t bytes), void* param)
 {
 	int r;
-	int64_t n[3];
+	uint64_t n[3];
 	const uint8_t* temporal, * frame, * obu;
 
 	r = 0;
 	for (temporal = data; temporal < data + bytes && 0 == r; temporal += n[0])
 	{
 		// temporal_unit_size
-		temporal = leb128(temporal, data + bytes - temporal, &n[0]);
+		temporal = leb128(temporal, (int)(data + bytes - temporal), &n[0]);
+		if (temporal + n[0] > data + bytes)
+			return -1;
+
 		for (frame = temporal; frame < temporal + n[0] && 0 == r; frame += n[1])
 		{
 			// frame_unit_size
-			frame = leb128(frame, temporal + n[0] - frame, &n[1]);
+			frame = leb128(frame, (int)(temporal + n[0] - frame), &n[1]);
+			if (frame + n[1] > temporal + n[0])
+				return -1;
+
 			for (obu = frame; obu < frame + n[1] && 0 == r; obu += n[2])
 			{
-				obu = leb128(obu, frame + n[1] - obu, &n[2]);
+				obu = leb128(obu, (int)(frame + n[1] - obu), &n[2]);
+				if (obu + n[2] > frame + n[1])
+					return -1;
+
 				r = handler(param, obu, (size_t)n[2]);
 			}
 		}
+	}
+
+	return r;
+}
+
+int aom_av1_obu_split(const uint8_t* data, size_t bytes, int (*handler)(void* param, const uint8_t* obu, size_t bytes), void* param)
+{
+	int r;
+	size_t i;
+	size_t offset;
+	uint64_t len;
+	uint8_t obu_type;
+	const uint8_t* ptr;
+
+	for (i = r = 0; i < bytes && 0 == r; i += (size_t)len)
+	{
+		// http://aomedia.org/av1/specification/syntax/#obu-header-syntax
+		obu_type = (data[i] >> 3) & 0x0F;
+		if (data[i] & 0x04) // obu_extension_flag
+		{
+			// http://aomedia.org/av1/specification/syntax/#obu-extension-header-syntax
+			// temporal_id = (obu[1] >> 5) & 0x07;
+			// spatial_id = (obu[1] >> 3) & 0x03;
+			offset = 2;
+		}
+		else
+		{
+			offset = 1;
+		}
+
+		if (data[i] & 0x02) // obu_has_size_field
+		{
+			ptr = leb128(data + i + offset, (int)(bytes - i - offset), &len);
+			if (ptr + len > data + bytes)
+				return -1;
+			len += ptr - data;
+		}
+		else
+		{
+			len = bytes - i;
+		}
+
+		r = handler(param, data + i, (size_t)len);
 	}
 
 	return r;
@@ -248,7 +314,7 @@ static int aom_av1_operating_parameters_info(struct mpeg4_bits_t* bits, struct a
 }
 
 // http://aomedia.org/av1/specification/syntax/#sequence-header-obu-syntax
-static int aom_av1_sequence_header_obu(struct aom_av1_t* av1, const void* data, size_t bytes)
+static int aom_av1_obu_sequence_header(struct aom_av1_t* av1, const void* data, size_t bytes)
 {
 	uint8_t i;
 	uint8_t reduced_still_picture_header;
@@ -292,7 +358,7 @@ static int aom_av1_sequence_header_obu(struct aom_av1_t* av1, const void* data, 
 
 		av1->initial_presentation_delay_present = mpeg4_bits_read(&bits); //  initial_display_delay_present_flag =
 		operating_points_cnt_minus_1 = mpeg4_bits_read_uint8(&bits, 5);
-		for (i = 0; i < operating_points_cnt_minus_1; i++)
+		for (i = 0; i <= operating_points_cnt_minus_1; i++)
 		{
 			uint8_t seq_level_idx;
 			uint8_t seq_tier;
@@ -337,7 +403,7 @@ static int aom_av1_sequence_header_obu(struct aom_av1_t* av1, const void* data, 
 	av1->width = 1 + mpeg4_bits_read_uint32(&bits, frame_width_bits_minus_1 + 1); // max_frame_width_minus_1
 	av1->height = 1 + mpeg4_bits_read_uint32(&bits, frame_height_bits_minus_1 + 1); // max_frame_height_minus_1
 
-	if (reduced_still_picture_header && mpeg4_bits_read(&bits)) // frame_id_numbers_present_flag
+	if (!reduced_still_picture_header && mpeg4_bits_read(&bits)) // frame_id_numbers_present_flag
 	{
 		mpeg4_bits_read_n(&bits, 4); // delta_frame_id_length_minus_2
 		mpeg4_bits_read_n(&bits, 3); // additional_frame_id_length_minus_1
@@ -382,7 +448,7 @@ static int aom_av1_sequence_header_obu(struct aom_av1_t* av1, const void* data, 
 
 		if (enable_order_hint)
 		{
-			mpeg4_bits_read(&bits); // order_hint_bits_minus_1
+			mpeg4_bits_read_n(&bits, 3); // order_hint_bits_minus_1
 		}
 	}
 
@@ -399,9 +465,10 @@ static int aom_av1_sequence_header_obu(struct aom_av1_t* av1, const void* data, 
 }
 
 // http://aomedia.org/av1/specification/syntax/#general-obu-syntax
-static int aom_av1_obu_handler(void* param, const uint8_t* obu, size_t bytes)
+static int aom_av1_extra_handler(void* param, const uint8_t* obu, size_t bytes)
 {
-	int64_t len;
+	uint64_t i;
+	uint64_t len;
 	size_t offset;
 	uint8_t obu_type;
 	const uint8_t* ptr;
@@ -413,7 +480,7 @@ static int aom_av1_obu_handler(void* param, const uint8_t* obu, size_t bytes)
 
 	// http://aomedia.org/av1/specification/syntax/#obu-header-syntax
 	obu_type = (obu[0] >> 3) & 0x0F;
-	if ((obu[0] >> 3) & 0x04) // obu_extension_flag
+	if (obu[0] & 0x04) // obu_extension_flag
 	{
 		// http://aomedia.org/av1/specification/syntax/#obu-extension-header-syntax
 		// temporal_id = (obu[1] >> 5) & 0x07;
@@ -427,7 +494,7 @@ static int aom_av1_obu_handler(void* param, const uint8_t* obu, size_t bytes)
 
 	if (obu[0] & 0x02) // obu_has_size_field
 	{
-		ptr = leb128(obu + offset, bytes - offset, &len);
+		ptr = leb128(obu + offset, (int)(bytes - offset), &len);
 		if (ptr + len > obu + bytes)
 			return -1;
 	}
@@ -437,10 +504,35 @@ static int aom_av1_obu_handler(void* param, const uint8_t* obu, size_t bytes)
 		len = bytes - offset;
 	}
 
-	// http://aomedia.org/av1/specification/semantics/#obu-header-semantics
-	if (obu_type == 1 /*OBU_SEQUENCE_HEADER*/ )
+	if (OBU_SEQUENCE_HEADER == obu_type || OBU_METADATA == obu_type)
 	{
-		return aom_av1_sequence_header_obu(av1, ptr, (size_t)len);
+		if (av1->bytes + bytes + 8 /*leb128*/ >= sizeof(av1->data))
+			return -1;
+
+		av1->data[av1->bytes++] = obu[0] | 0x02 /*obu_has_size_field*/;
+		if (obu[0] & 0x04) // obu_extension_flag
+			av1->data[av1->bytes++] = obu[1];
+
+		if (0 == (obu[0] & 0x02))
+		{
+			// fill obu size, leb128
+			for(i = len; 1; av1->bytes++)
+			{
+				av1->data[av1->bytes] = (uint8_t)(i & 0x7F);
+				i >>= 7;
+				if (i <= 0)
+					break;
+				av1->data[av1->bytes] |= 0x80;
+			}
+		}
+		memcpy(av1->data + av1->bytes, ptr, (size_t)len);
+		av1->bytes += (uint16_t)len;
+	}
+
+	// http://aomedia.org/av1/specification/semantics/#obu-header-semantics
+	if (obu_type == OBU_SEQUENCE_HEADER)
+	{
+		return aom_av1_obu_sequence_header(av1, ptr, (size_t)len);
 	}
 
 	return 0;
@@ -449,7 +541,9 @@ static int aom_av1_obu_handler(void* param, const uint8_t* obu, size_t bytes)
 // https://aomediacodec.github.io/av1-isobmff/#av1codecconfigurationbox-section
 int aom_av1_codec_configuration_record_init(struct aom_av1_t* av1, const void* data, size_t bytes)
 {
-	return aom_av1_low_overhead_bitstream_obu((const uint8_t*)data, bytes, aom_av1_obu_handler, av1);
+	av1->version = 1;
+	av1->marker = 1;
+	return aom_av1_obu_split((const uint8_t*)data, bytes, aom_av1_extra_handler, av1);
 }
 
 int aom_av1_codecs(const struct aom_av1_t* av1, char* codecs, size_t bytes)
@@ -487,5 +581,28 @@ void aom_av1_test(void)
 
 	aom_av1_codecs(&av1, (char*)data, sizeof(data));
 	assert(0 == memcmp("av01.0.04M.08", data, 13));
+}
+
+void aom_av1_sequence_header_obu_test(void)
+{
+	const uint8_t obu[] = { /*0x0A, 0x0B,*/ 0x00, 0x00, 0x00, 0x2C, 0xCF, 0x7F, 0x0D, 0xBF, 0xFF, 0x38, 0x18 };
+	
+	struct aom_av1_t av1;
+	memset(&av1, 0, sizeof(av1));
+	assert(0 == aom_av1_obu_sequence_header(&av1, obu, sizeof(obu)));
+}
+
+void aom_av1_obu_test(const char* file)
+{
+	int n;
+	FILE* fp;
+	struct aom_av1_t av1;
+	static uint8_t buffer[24 * 1024 * 1024];
+	aom_av1_sequence_header_obu_test();
+	memset(&av1, 0, sizeof(av1));
+	fp = fopen(file, "rb");
+	n = fread(buffer, 1, sizeof(buffer), fp);
+	aom_av1_codec_configuration_record_init(&av1, buffer, n);
+	fclose(fp);
 }
 #endif

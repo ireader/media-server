@@ -42,6 +42,10 @@ int aom_av1_codec_configuration_record_init(struct aom_av1_t* av1, const void* d
 int aom_av1_codec_configuration_record_load(const uint8_t* data, size_t bytes, struct aom_av1_t* av1);
 int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t* data, size_t bytes);
 
+/// @param[in] data av1 split low overhead/annexb bitstream format to obu
+int aom_av1_obu_split(const uint8_t* data, size_t bytes, int (*handler)(void* param, const uint8_t* obu, size_t bytes), void* param);
+int aom_av1_annexb_split(const uint8_t* data, size_t bytes, int (*handler)(void* param, const uint8_t* obu, size_t bytes), void* param);
+
 int aom_av1_codecs(const struct aom_av1_t* av1, char* codecs, size_t bytes);
 
 #if defined(__cplusplus)

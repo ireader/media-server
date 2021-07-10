@@ -33,6 +33,10 @@ static int flv_ondemuxer(void* param, int codec, const void* data, size_t bytes,
 		flv_muxer_hevc(muxer, data, bytes, pts, dts);
 		break;
 
+	case FLV_VIDEO_AV1:
+		flv_muxer_av1(muxer, data, bytes, pts, dts);
+		break;
+
 	default:
 		break;
 	}
