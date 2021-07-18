@@ -2,6 +2,7 @@
 
 int rtsp_server_handle(struct rtsp_server_t *rtsp)
 {
+    int64_t v;
 	char protocol[8];
 	int major, minor;
 	const char* uri;
@@ -15,13 +16,14 @@ int rtsp_server_handle(struct rtsp_server_t *rtsp)
 		return rtsp_server_reply(rtsp, 505);
 	}
 
-	if (0 != http_get_header_by_name2(rtsp->parser, "CSeq", (int*)&rtsp->cseq))
+	if (0 != http_get_header_by_name2(rtsp->parser, "CSeq", &v))
 	{
 		// 400 Bad Request
 		return rtsp_server_reply(rtsp, 400);
 	}
 
 	// parse session
+    rtsp->cseq = (unsigned int)v;
 	rtsp->session.session[0] = 0; // clear session value
     rtsp->session.timeout = 60000; // default timeout 1m
 	session = http_get_header_by_name(rtsp->parser, "Session");

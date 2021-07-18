@@ -147,7 +147,7 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 
         //assert(i + 6 + pes_packet_length <= bytes);
         if (i + 6 + pes_packet_length > bytes)
-            return i; // need more data
+            return (int)i; // need more data
 
         // stream id
         switch (data[i+3])
@@ -229,10 +229,10 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
         }
 
         if (0 == j)
-            return i + 4; // invalid data, skip start code
+            return (int)(i + 4); // invalid data, skip start code
     }
 
-    return i;
+    return (int)i;
 }
 
 int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)

@@ -503,7 +503,7 @@ static void* mov_reader_read_helper(void* param, uint32_t track, size_t bytes, i
 	sample->pts = pts;
 	sample->dts = dts;
 	sample->flags = flags;
-	sample->bytes = bytes;
+	sample->bytes = (uint32_t)bytes;
 	sample->sample_description_index = track;
 	return sample->data;
 }
@@ -514,7 +514,7 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	struct mov_sample_t sample; // temp
 	//memset(&sample, 0, sizeof(sample));
 	sample.data = buffer;
-	sample.bytes = bytes;
+	sample.bytes =  (uint32_t)bytes;
 	r = mov_reader_read2(reader, mov_reader_read_helper, &sample);
 	if (r <= 0)
 		return r;

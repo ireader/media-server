@@ -258,7 +258,7 @@ static int mkv_realloc(void** ptr, size_t count, size_t *capacity, size_t size, 
 static int mkv_segment_info_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
 	struct mkv_segment_info_t* info;
-	if (0 != mkv_realloc(&reader->infos, reader->info_count, &reader->info_capacity, sizeof(struct mkv_segment_info_t), 4))
+	if (0 != mkv_realloc((void**)&reader->infos, reader->info_count, &reader->info_capacity, sizeof(struct mkv_segment_info_t), 4))
 		return -ENOMEM;
 	
 	info = &reader->infos[reader->info_count++];
@@ -288,7 +288,7 @@ static int mkv_segment_track_parse(struct mkv_reader_t* reader, struct mkv_eleme
 
 static int mkv_segment_chapter_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
-	if (0 != mkv_realloc(&reader->chapters, reader->chapter_count, &reader->chapter_capacity, sizeof(struct mkv_chapter_t), 4))
+	if (0 != mkv_realloc((void**)&reader->chapters, reader->chapter_count, &reader->chapter_capacity, sizeof(struct mkv_chapter_t), 4))
 		return -ENOMEM;
 
 	node->ptr = &reader->chapters[reader->chapter_count++];
@@ -297,7 +297,7 @@ static int mkv_segment_chapter_parse(struct mkv_reader_t* reader, struct mkv_ele
 
 static int mkv_segment_tag_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
-	if (0 != mkv_realloc(&reader->tags, reader->tag_count, &reader->tag_capacity, sizeof(struct mkv_tag_t), 4))
+	if (0 != mkv_realloc((void**)&reader->tags, reader->tag_count, &reader->tag_capacity, sizeof(struct mkv_tag_t), 4))
 		return -ENOMEM;
 
 	node->ptr = &reader->tags[reader->tag_count++];
@@ -309,7 +309,7 @@ static int ebml_segment_tag_simple_parse(struct mkv_reader_t* reader, struct mkv
 	struct mkv_tag_t* tag;
 	tag = (struct mkv_tag_t*)node->parent->ptr;
 
-	if (0 != mkv_realloc(&tag->simples, tag->count, &tag->capacity, sizeof(struct mkv_tag_simple_t), 4))
+	if (0 != mkv_realloc((void**)&tag->simples, tag->count, &tag->capacity, sizeof(struct mkv_tag_simple_t), 4))
 		return -ENOMEM;
 
 	node->ptr = &tag->simples[tag->count++];
@@ -330,7 +330,7 @@ static int mkv_segment_cue_position_parse(struct mkv_reader_t* reader, struct mk
 	//cue = (struct mkv_cue_t*)node->parent->ptr;
 	cue = &reader->mkv.cue;
 
-	if (0 != mkv_realloc(&cue->positions, cue->count, &cue->capacity, sizeof(struct mkv_cue_position_t), 4))
+	if (0 != mkv_realloc((void**)&cue->positions, cue->count, &cue->capacity, sizeof(struct mkv_cue_position_t), 4))
 		return -ENOMEM;
 
 	pt = &cue->positions[cue->count++];
@@ -345,7 +345,7 @@ static int mkv_segment_cue_position_parse(struct mkv_reader_t* reader, struct mk
 static int mkv_segment_cluster_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
 	struct mkv_cluster_t* cluster;
-	if (0 != mkv_realloc(&reader->clusters, reader->cluster_count, &reader->cluster_capacity, sizeof(struct mkv_cluster_t), 4))
+	if (0 != mkv_realloc((void**)&reader->clusters, reader->cluster_count, &reader->cluster_capacity, sizeof(struct mkv_cluster_t), 4))
 		return -ENOMEM;
 
 	cluster = &reader->clusters[reader->cluster_count++];
@@ -368,7 +368,7 @@ static int mkv_segment_cluster_block_group_parse(struct mkv_reader_t* reader, st
 	//cluster = (struct mkv_cluster_t*)node->parent->ptr;
 	cluster = reader->mkv.cluster; // seek to block, no parent
 
-	if (0 != mkv_realloc(&cluster->groups, cluster->count, &cluster->capacity, sizeof(struct mkv_block_group_t), 4))
+	if (0 != mkv_realloc((void**)&cluster->groups, cluster->count, &cluster->capacity, sizeof(struct mkv_block_group_t), 4))
 		return -ENOMEM;
 
 	group = &cluster->groups[cluster->count++];
@@ -381,7 +381,7 @@ static int mkv_segment_cluster_block_group_addition_parse(struct mkv_reader_t* r
 	struct mkv_block_group_t* group;
 	group = (struct mkv_block_group_t*)node->parent->ptr;
 
-	if (0 != mkv_realloc(&group->additions, group->addition_count, &group->addition_capacity, sizeof(struct mkv_block_addition_t), 4))
+	if (0 != mkv_realloc((void**)&group->additions, group->addition_count, &group->addition_capacity, sizeof(struct mkv_block_addition_t), 4))
 		return -ENOMEM;
 
 	node->ptr = &group->additions[group->addition_count++];
@@ -394,7 +394,7 @@ static int mkv_segment_cluster_block_slice_parse(struct mkv_reader_t* reader, st
 	struct mkv_block_group_t* group;
 	group = (struct mkv_block_group_t*)node->parent->ptr;
 
-	if (0 != mkv_realloc(&group->slices, group->slice_count, &group->slice_capacity, sizeof(struct mkv_block_slice_t), 4))
+	if (0 != mkv_realloc((void**)&group->slices, group->slice_count, &group->slice_capacity, sizeof(struct mkv_block_slice_t), 4))
 		return -ENOMEM;
 
 	node->ptr = &group->slices[group->slice_count++];
@@ -411,7 +411,9 @@ static int mkv_segment_cluster_block_parse(struct mkv_reader_t* reader, struct m
 static int mkv_segment_cluster_simple_block_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
 	int r;
+#if defined(MKV_LIVE_STREAMING)
 	uint64_t pos;
+#endif
 	struct mkv_cluster_t* cluster;
 	if (node->size < 0)
 		return 0; // eof
@@ -1027,7 +1029,7 @@ static void* mkv_reader_read_helper(void* param, uint32_t track, size_t bytes, i
 	sample->pts = pts;
 	sample->dts = dts;
 	sample->flags = flags;
-	sample->bytes = bytes;
+	sample->bytes = (uint32_t)bytes;
 	sample->track = track;
 	return sample->data;
 }
@@ -1038,7 +1040,7 @@ int mkv_reader_read(mkv_reader_t* reader, void* buffer, size_t bytes, mkv_reader
 	struct mkv_sample_t sample; // temp
 	//memset(&sample, 0, sizeof(sample));
 	sample.data = buffer;
-	sample.bytes = bytes;
+	sample.bytes = (uint32_t)bytes;
 	r = mkv_reader_read2(reader, mkv_reader_read_helper, &sample);
 	if (r <= 0)
 		return r;

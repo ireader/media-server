@@ -91,7 +91,7 @@ int mov_fragment_seek(struct mov_t* mov, int64_t* timestamp)
 		mov->tracks[i].sample_count = 0;
 		mov->tracks[i].sample_offset = 0;
 	}
-	track->frag_capacity = idx;
+	track->frag_capacity = (uint32_t)idx;
 	return 0;
 }
 

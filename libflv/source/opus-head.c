@@ -301,7 +301,7 @@ static int opus_parse_frames(const void* data, size_t len, int (*onframe)(uint8_
         vbr = *p & 0x80;
         if (*p++ & 0x40) // padding
         {
-            p = opus_parse_padding(p, len);
+            p = opus_parse_padding(p, (int)len);
             if (!p)
                 return -1;
         }

@@ -594,7 +594,7 @@ void aom_av1_sequence_header_obu_test(void)
 
 void aom_av1_obu_test(const char* file)
 {
-	int n;
+	size_t n;
 	FILE* fp;
 	struct aom_av1_t av1;
 	static uint8_t buffer[24 * 1024 * 1024];

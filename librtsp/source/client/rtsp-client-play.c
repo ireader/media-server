@@ -96,7 +96,8 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 
 static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* parser)
 {
-	int i, j, n, r, len;
+	int i, j, n, r;
+    size_t len;
 	uint64_t npt0 = (uint64_t)(-1);
 	uint64_t npt1 = (uint64_t)(-1);
 	double scale = 0.0f;
