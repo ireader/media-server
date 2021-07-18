@@ -9,6 +9,7 @@ extern "C" {
 
 int sdp_vp8(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload);
 int sdp_vp9(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload);
+int sdp_av1(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
 int sdp_h264(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
 int sdp_h265(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
 int sdp_mpeg4_es(uint8_t* data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
