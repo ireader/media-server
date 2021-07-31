@@ -184,7 +184,7 @@ int aio_rtmp_transport_send(struct aio_rtmp_transport_t* t, const void* header, 
 	list_insert_before(&c->node, &t->root); // link to end
 	locker_unlock(&t->locker);
 
-	return 0 == aio_rtmp_send(t) ? len + bytes : -1;
+	return 0 == aio_rtmp_send(t) ? (int)(len + bytes) : -1;
 }
 
 size_t aio_rtmp_transport_get_unsend(struct aio_rtmp_transport_t* t)

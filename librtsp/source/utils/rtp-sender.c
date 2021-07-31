@@ -74,7 +74,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
         return -1;
     }
 
-    r = sdp_payload_video(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, s->frequency, extra, bytes);
+    r = sdp_payload_video(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, s->frequency, extra, (int)bytes);
     if (r < 0)
     {
         assert(0);
@@ -121,7 +121,7 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned sh
         return -1;
     }
 
-    r = sdp_payload_audio(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, sample_rate, channel_count, extra, bytes);
+    r = sdp_payload_audio(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, sample_rate, channel_count, extra, (int)bytes);
     if (r < 0)
     {
         assert(0);

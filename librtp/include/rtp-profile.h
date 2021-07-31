@@ -100,6 +100,7 @@ enum
 	RTP_PAYLOAD_MPV			= 32, // MPEG-1 and MPEG-2 video (rfc2250)
 	RTP_PAYLOAD_MP2T		= 33, // MPEG-2 transport stream (rfc2250)
 	RTP_PAYLOAD_H263		= 34, // H.263 video, first version (1996) (rfc2190)
+    RTP_PAYLOAD_AV1X        = 35, // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
 
 	RTP_PAYLOAD_MP2P		= 96, // MPEG-2 Program Streams video (rfc2250)
 	RTP_PAYLOAD_MP4V		= 97, // MP4V-ES MPEG-4 Visual (rfc6416)

@@ -39,14 +39,14 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
     
     u->host = u->__ptr + n;
     r = snprintf(u->host, sizeof(u->__ptr) - n, "%s", uri->host);
-    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+    if(r <= 0 || (size_t)r >= sizeof(u->__ptr) - n)
         goto FAILED_PARSE_RTMP_URL;
     n += r + 1;
     u->vhost = u->host; // default value
     
     u->scheme = u->__ptr + n;
 	r = snprintf(u->scheme, sizeof(u->__ptr) - n, "%s", uri->scheme);
-    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+    if(r <= 0 || (size_t)r >= sizeof(u->__ptr) - n)
         goto FAILED_PARSE_RTMP_URL;
     n += r + 1;
     
@@ -60,7 +60,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
             {
                 u->vhost = u->__ptr + n;
                 r = snprintf(u->vhost, sizeof(u->__ptr) - n, "%.*s", q[r].n_value, q[r].value);
-                if (r <= 0 || r >= sizeof(u->__ptr) - n)
+                if (r <= 0 || (size_t)r >= sizeof(u->__ptr) - n)
                 {
                     uri_query_free(&q);
                     goto FAILED_PARSE_RTMP_URL;
@@ -98,7 +98,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
     {
         *v[j] = u->__ptr + n;
         r = url_decode(p[j], pend[j] ? (int)(pend[j] - p[j]) : -1, *v[j], sizeof(u->__ptr) - n);
-        if (r <= 0 || r >= sizeof(u->__ptr) - n)
+        if (r <= 0 || (size_t)r >= sizeof(u->__ptr) - n)
             return -1;
         n += r + 1;
     }
@@ -108,7 +108,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
 	    r = snprintf(u->tcurl, sizeof(u->__ptr) - n, "rtmp://%s:%d/%s", u->vhost, u->port, u->app);
     else
         r = snprintf(u->tcurl, sizeof(u->__ptr) - n, "rtmp://%s/%s", u->vhost, u->app);
-    if(r <= 0 || r >= sizeof(u->__ptr) - n)
+    if(r <= 0 || (size_t)r >= sizeof(u->__ptr) - n)
         return -1;
     n += r + 1;
     

@@ -59,7 +59,7 @@ static int mov_file_cache_read(void* fp, void* data, uint64_t bytes)
 			else
 			{
 				file->off = 0;
-				file->len = fread(file->ptr, 1, sizeof(file->ptr), file->fp);
+				file->len = fread(file->ptr, 1, (int)sizeof(file->ptr), file->fp);
 				if (file->len < 1)
 					return 0 != ferror(file->fp) ? ferror(file->fp) : -1 /*EOF*/;
 			}

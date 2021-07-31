@@ -9,7 +9,6 @@ extern "C" {
 
 struct rtsp_muxer_t;
 
-/// @param[in] track PS/TS track id
 /// @param[in] flags 0x0100-packet lost, 0x0200-packet corrupt
 /// @return 0-ok, other-error
 typedef int (*rtsp_muxer_onpacket)(void* param, int pid, const void* data, int bytes, uint32_t timestamp, int flags);

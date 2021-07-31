@@ -12,6 +12,7 @@
 		4680238425997EFF00AD5A52 /* sdp-mpeg2.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680238325997EFF00AD5A52 /* sdp-mpeg2.c */; };
 		468503642611F9AE00E7ABEC /* sdp-vpx.c in Sources */ = {isa = PBXBuildFile; fileRef = 468503632611F9AE00E7ABEC /* sdp-vpx.c */; };
 		469AADD22644152400559AA2 /* sdp-options.c in Sources */ = {isa = PBXBuildFile; fileRef = 469AADD12644152400559AA2 /* sdp-options.c */; };
+		46BC171026A3C8D00008446D /* sdp-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 46BC170F26A3C8D00008446D /* sdp-av1.c */; };
 		46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D72183EE5D00419E57 /* rtsp-reason.c */; };
 		46C5B4062183EE5D00419E57 /* sdp-a-rtpmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D82183EE5D00419E57 /* sdp-a-rtpmap.c */; };
 		46C5B4072183EE5D00419E57 /* sdp.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3D92183EE5D00419E57 /* sdp.c */; };
@@ -62,6 +63,7 @@
 		4680238325997EFF00AD5A52 /* sdp-mpeg2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-mpeg2.c"; sourceTree = "<group>"; };
 		468503632611F9AE00E7ABEC /* sdp-vpx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-vpx.c"; sourceTree = "<group>"; };
 		469AADD12644152400559AA2 /* sdp-options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sdp-options.c"; sourceTree = "<group>"; };
+		46BC170F26A3C8D00008446D /* sdp-av1.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "sdp-av1.c"; sourceTree = "<group>"; };
 		46C5B2922183ECF900419E57 /* librtsp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtsp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		46C5B3D52183EE5600419E57 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		46C5B3D72183EE5D00419E57 /* rtsp-reason.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtsp-reason.c"; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 				46C5B3F22183EE5D00419E57 /* sdp-g7xx.c */,
 				46C5B3F32183EE5D00419E57 /* sdp-h265.c */,
 				468503632611F9AE00E7ABEC /* sdp-vpx.c */,
+				46BC170F26A3C8D00008446D /* sdp-av1.c */,
 			);
 			path = sdp;
 			sourceTree = "<group>";
@@ -289,6 +292,7 @@
 				469AADD22644152400559AA2 /* sdp-options.c in Sources */,
 				F42351202287B72900D805B4 /* rtsp-server-parameter.c in Sources */,
 				46C5B4072183EE5D00419E57 /* sdp.c in Sources */,
+				46BC171026A3C8D00008446D /* sdp-av1.c in Sources */,
 				46C5B4272183EE5D00419E57 /* rtsp-client-play.c in Sources */,
 				46C5B4202183EE5D00419E57 /* rtsp-client-auth.c in Sources */,
 				46C5B4052183EE5D00419E57 /* rtsp-reason.c in Sources */,

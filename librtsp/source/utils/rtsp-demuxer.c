@@ -158,7 +158,7 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
     if (i >= 0)
     {
         flags = flags ? AVPACKET_FLAG_KEY : 0;
-        return pt->tracks[i].bs->input(pt->tracks[i].filter, pts / 90, dts / 90, (const uint8_t*)data, bytes, flags);
+        return pt->tracks[i].bs->input(pt->tracks[i].filter, pts / 90, dts / 90, (const uint8_t*)data, (int)bytes, flags);
     }
 
     if (0xbd == codecid)

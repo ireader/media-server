@@ -47,7 +47,8 @@ void rtp_dump_test(const char* file)
 	struct rtp_demuxer_t* demuxer = rtp_demuxer_create(0, 100, 90000, 100, "MP2P", rtp_onpacket, fp);
 #else
 	struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(0, 100, rtsp_onpacket, fp);
-	r = rtsp_demuxer_add_payload(demuxer, 90000, 99, "H264", "99 packetization-mode=1;profile-level-id=4D4033; sprop-parameter-sets=Z01AM5pkAeACH/4C3AQEBQAAAwPoAAB1MOhgAJ/8AAE/8i7y40MABP/gAAn/kXeXCgA=,aO44gA==");
+	//r = rtsp_demuxer_add_payload(demuxer, 90000, 99, "H264", "99 packetization-mode=1;profile-level-id=4D4033; sprop-parameter-sets=Z01AM5pkAeACH/4C3AQEBQAAAwPoAAB1MOhgAJ/8AAE/8i7y40MABP/gAAn/kXeXCgA=,aO44gA==");
+    r = rtsp_demuxer_add_payload(demuxer, 44100, 121, "MP4A-LATM", "121 config=4000242000;cpresent=0;object=2;profile-level-id=1");
 	assert(0 == r);
 #endif
 	while (1)

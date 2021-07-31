@@ -18,7 +18,8 @@ int sdp_av1(uint8_t *data, int bytes, const char* proto, unsigned short port, in
      */
     static const char* pattern =
         "m=video %hu %s %d\n"
-        "a=rtpmap:%d AV1/90000\n"
+        //"a=rtpmap:%d AV1/90000\n"
+        "a=rtpmap:%d AV1X/90000\n" // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
         "a=fmtp:%d profile=%u;level-idx=%u;tier=%u";
 
     int r, n;
@@ -28,6 +29,7 @@ int sdp_av1(uint8_t *data, int bytes, const char* proto, unsigned short port, in
     r = aom_av1_codec_configuration_record_load((const uint8_t*)extra, extra_size, &av1);
     if (r < 0) return r;
 
+    payload = 35; // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
     n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload,
                  (unsigned int)av1.seq_profile, (unsigned int)av1.seq_level_idx_0, (unsigned int)av1.seq_tier_0);
 
