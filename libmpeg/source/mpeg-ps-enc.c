@@ -82,9 +82,14 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 	ps->pack.program_mux_rate = 6106;
 	i += pack_header_write(&ps->pack, packet + i);
 
+#if !defined(MPEG_FIX_VLC_3_X_PS_SYSTEM_HEADER)
+    // https://github.com/videolan/vlc/blob/3.0.x/modules/demux/mpeg/ps.h#L488
+    // fix ps_pkt_parse_system -> ps_track_fill with default mp1/2 audio codec(without psm)
+    
 	// write system_header(p76)
 	if(0 == (ps->psm_period % 30))
 		i += system_header_write(&ps->system, packet + i);
+#endif
 
 	// write program_stream_map(p79)
 	if(0 == (ps->psm_period % 30))
