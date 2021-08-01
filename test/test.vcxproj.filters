@@ -120,6 +120,9 @@
     <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h">
       <Filter>librtsp</Filter>
     </ClInclude>
+    <ClInclude Include="..\libmov\test\mov-file-buffer.h">
+      <Filter>libmov</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -437,13 +440,49 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
       <Filter>librtsp\sdp</Filter>
     </ClCompile>
+    <ClCompile Include="..\libflv\test\flv-parser-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\http-flv-live.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\fmp4-writer-test2.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-adts.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-multi-program-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-publish-benchmark.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-dump-replay.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-queue-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtp-streaming-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\sdp-receiver-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-av1.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
       <Filter>libflv</Filter>
-    </None>
-    <None Include="..\libmpeg\test\fileSequence0.ts">
-      <Filter>libmpeg</Filter>
     </None>
   </ItemGroup>
 </Project>

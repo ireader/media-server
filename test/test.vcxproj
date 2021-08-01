@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\libmov\test\mov-file-buffer.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
@@ -184,11 +185,13 @@
     <ClCompile Include="..\libdash\test\dash-dynamic-test.cpp" />
     <ClCompile Include="..\libdash\test\dash-static-test.cpp" />
     <ClCompile Include="..\libflv\test\amf0-test.c" />
+    <ClCompile Include="..\libflv\test\flv-parser-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-read-write-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-reader-test.cpp" />
     <ClCompile Include="..\libflv\test\flv2ts-test.cpp" />
     <ClCompile Include="..\libflv\test\h264-flv-test.cpp" />
     <ClCompile Include="..\libflv\test\h265-flv-test.cpp" />
+    <ClCompile Include="..\libflv\test\http-flv-live.cpp" />
     <ClCompile Include="..\libflv\test\ts2flv-test.cpp" />
     <ClCompile Include="..\libhls\demo\hls-segmenter-flv.cpp" />
     <ClCompile Include="..\libhls\demo\hls-segmenter-mp4.cpp" />
@@ -199,17 +202,21 @@
     <ClCompile Include="..\libmkv\test\mkv-writer-test.cpp" />
     <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp" />
     <ClCompile Include="..\libmov\test\fmp4-writer-test.cpp" />
+    <ClCompile Include="..\libmov\test\fmp4-writer-test2.cpp" />
     <ClCompile Include="..\libmov\test\mov-2-flv.cpp" />
     <ClCompile Include="..\libmov\test\mov-file-buffer.c" />
     <ClCompile Include="..\libmov\test\mov-reader-test.cpp" />
+    <ClCompile Include="..\libmov\test\mov-writer-adts.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-audio.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-h264.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-h265.cpp" />
+    <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-test.cpp" />
     <ClCompile Include="..\libmpeg\test\flv-2-mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-dec-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-multi-program-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-encrypt-test.cpp" />
     <ClCompile Include="..\librtmp\aio\aio-rtmp-client.c" />
@@ -224,16 +231,20 @@
     <ClCompile Include="..\librtmp\test\rtmp-server-forward-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-input-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-aio-test.cpp" />
+    <ClCompile Include="..\librtmp\test\rtmp-server-publish-benchmark.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-test.cpp" />
     <ClCompile Include="..\librtp\test\mov-rtp-test.cpp" />
+    <ClCompile Include="..\librtp\test\rtp-dump-replay.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump.c" />
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp" />
+    <ClCompile Include="..\librtp\test\rtp-queue-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
     <ClCompile Include="..\librtp\test\rtp-sender-test.cpp" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c" />
+    <ClCompile Include="..\librtsp\source\sdp\sdp-av1.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-fmtp-load.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c" />
     <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c" />
@@ -259,10 +270,13 @@
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\ps-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\rtp-streaming-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
+    <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp" />
+    <ClCompile Include="..\librtsp\test\sdp-receiver-test.cpp" />
     <ClCompile Include="..\librtsp\test\sdp-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-agent-test.cpp" />
     <ClCompile Include="..\libsip\test\sip-header-test.c" />

@@ -218,9 +218,9 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
                     && pes_packet_length + 6 - j > 7 && 0xFF == data[i + j] && 0xF0 == (data[i + j + 1] & 0xF0))
                 {
                     // calc mpeg4_aac_adts_frame_length
-                    for (r = (int)(i + j); (size_t)r + 7 < pes_packet_length + 6 - j;)
+                    for (r = (int)(i + j); (size_t)r + 7 < i + pes_packet_length + 6;)
                         r += ((uint16_t)(data[r+3] & 0x03) << 11) | ((uint16_t)data[r + 4] << 3) | ((uint16_t)(data[r + 5] >> 5) & 0x07);
-                    pes->codecid = (size_t)r == pes_packet_length + 6 - j ? PSI_STREAM_AAC : pes->codecid; // fix it
+                    pes->codecid = (size_t)r == i + pes_packet_length + 6 ? PSI_STREAM_AAC : pes->codecid; // fix it
                 }
 #endif
                 r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
