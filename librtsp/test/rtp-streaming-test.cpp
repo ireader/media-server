@@ -169,8 +169,8 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     else if (MOV_OBJECT_AV1 == object)
     {
         assert(bytes == aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1));
-        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, 96, "AV1", 0, 0, 0, extra, bytes);
-        ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_AV1, extra, bytes);
+        int pid = rtsp_muxer_add_payload(ctx->v.rtp, "RTP/AVP", 90000, RTP_PAYLOAD_AV1X, "AV1X", 0, 0, 0, extra, bytes);
+        ctx->v.mid = rtsp_muxer_add_media(ctx->v.rtp, pid, RTP_PAYLOAD_AV1X, extra, bytes);
     }
     else if (MOV_OBJECT_VP9 == object)
     {
