@@ -382,6 +382,7 @@ int opus_packet_getframes(const void* data, size_t len, int (*onframe)(uint8_t t
 #if defined(DEBUG) || defined(_DEBUG)
 static int opus_onframe(uint8_t toc, const void* frame, size_t size)
 {
+    (void)toc, frame, size;
     return 0;
 }
 

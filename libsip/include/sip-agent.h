@@ -29,8 +29,9 @@ struct sip_uas_handler_t
 	int (*onregister)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
 
 	/// @param[in] dialog nil-new invite, not nil-reinvite
-    /// @return user-defined session-id(valid only code=2xx)
-    void* (*oninvite)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes);
+	/// @param[out] session user-defined session-id(valid only code=2xx)
+    /// @return 0-ok, other-error
+    int (*oninvite)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session);
 	/// @param[in] code 0-ok, other-sip status code
     int (*onack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes);
 	/// @param[in] session oninvite return value
@@ -42,8 +43,8 @@ struct sip_uas_handler_t
 	/// cancel a transaction(should be an invite transaction)
 	int (*oncancel)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);
 
-	void* (*onsubscribe)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_subscribe_t* subscribe);
-	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct cstring_t* event);
+	int (*onsubscribe)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_subscribe_t* subscribe, void** sub);
+	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* sub, const struct cstring_t* event);
 	int (*onpublish)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* event);
 
 	int (*onmessage)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* data, int bytes);

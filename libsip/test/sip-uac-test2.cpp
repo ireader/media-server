@@ -536,7 +536,7 @@ static int STDCALL sip_work_thread(void* param)
 	return 0;
 }
 
-static void* sip_uas_oninvite_indialog(sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite_indialog(sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
 	const char* pattern = "v=0\n"
 		"o=%s 0 0 IN IP4 %s\n"
@@ -565,14 +565,15 @@ static void* sip_uas_oninvite_indialog(sip_uac_test2_session_t* s, const struct 
 		n += ice_transport_getsdp(s->avt, s->video.stream, reply + n, sizeof(reply) - n);
 	}
 
+	*session = s;
 	s->t = t;
 	sip_uas_add_header(t, "Content-Type", "application/sdp");
 	//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 	assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
-	return s;
+	return 0;
 }
 
-static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
     sip_uac_test2_t* ctx = (sip_uac_test2_t*)param;
 
@@ -580,7 +581,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	if (0 != cstrcasecmp(h, "application/sdp"))
 	{
 		assert(0);
-		return NULL;
+		return 0; // discard
 	}
 
 	std::shared_ptr<sip_uac_test2_session_t> s(new sip_uac_test2_session_t());
@@ -592,10 +593,10 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		if (ctx->sessions.end() != it)
 		{
 			if(!dialog)
-				return NULL; // ignore
+				return 0; // ignore
 
 			// in dialog
-			return sip_uas_oninvite_indialog(it->second.get(), req, t, dialog, data, bytes);
+			return sip_uas_oninvite_indialog(it->second.get(), req, t, dialog, data, bytes, session);
 		}
 		ctx->sessions.insert(std::make_pair(s->from, s));
 	}
@@ -680,13 +681,14 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 //      s->pkts = pkts;
 	//s->source = source;
 
+	*session = s.get();
 	//sip_uas_add_header(t, "Content-Type", "application/sdp");
 	//sip_uas_add_header(t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 //      snprintf(reply, sizeof(reply), pattern, SIP_USR, LOCAL_HOST, LOCAL_HOST, s->audio.decoder?(char*)s->audio.sender.buffer:"", s->video.decoder?(char*)s->video.sender.buffer:"");
 	//assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
 	s->running = true;
 	thread_create(&s->th, sip_work_thread, s.get());
-    return s.get();
+    return 0;
 }
 
 /// @param[in] code 0-ok, other-sip status code
@@ -807,7 +809,7 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 	}
 }
 
-static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
+static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
 {
 	const cstring_t* h;
 	std::shared_ptr<struct sip_uac_test2_session_t> s;
@@ -819,19 +821,19 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 		AutoThreadLocker locker(ctx->locker);
 		it = ctx->sessions.find(SIP_PEER);
 		if (it == ctx->sessions.end())
-			return NULL; // ignore
+			return 0; // ignore
 		s = it->second;
 	}
 
 	// TODO: handle reply->recv_info
 
-	if (200 == code)
+	if (200 <= code && code < 300)
 	{
 		h = sip_message_get_header_by_name(reply, "Content-Type");
 		if (!h || 0 != cstrcasecmp(h, "application/sdp"))
 		{
 			assert(0);
-			return NULL;
+			return 0;
 		}
 
 		s->nmedia = rtsp_media_sdp((const char*)reply->payload, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
@@ -887,7 +889,10 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 		s->from = SIP_PEER;
 		s->running = true;
 		thread_create(&s->th, sip_work_thread, s.get());
-		return s.get();
+
+		*session = s.get();
+		sip_uac_ack(t, NULL, 0);
+		return 0;
 	}
 	else if (code == 183)
 	{
@@ -895,25 +900,25 @@ static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, s
 		if (!h || (0 != cstrcasecmp(h, "100rel") && 0 != cstrcasecmp(h, "precondition")))
 		{
 			assert(0);
-			return NULL;
+			return 0;
 		}
 
 		assert(dialog);
 		//struct sip_uac_transaction_t* prack = sip_uac_prack(ctx->sip, dialog, sip_uac_onprack, ctx);
 		//sip_uac_add_header(prack, "Supported", "precondition");
 		//sip_uac_send(prack, sdp, 0, transport, param);
-		return NULL;
+		return 0;
 	}
 	else if (code >= 300)
 	{
 		// TODO: delete session
 		printf("sip_uac_oninvited code: %d\n", code);
-		return NULL;
+		return 0;
 	}
 	else
 	{
 		// trying
-		return NULL;
+		return 0;
 	}
 }
 
@@ -1098,9 +1103,9 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
     return 0;
 }
 
-static void* sip_uas_onsubscribe(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, sip_subscribe_t* subscribe)
+static int sip_uas_onsubscribe(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, sip_subscribe_t* subscribe, void** sub)
 {
-	return NULL;
+	return 0;
 }
 static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct cstring_t* event)
 {

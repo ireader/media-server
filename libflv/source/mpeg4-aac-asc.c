@@ -85,7 +85,7 @@ static int mpeg4_aac_pce_load(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac
 	uint64_t sampling_frequency_index;
 	uint64_t num_front_channel_elements;
 	uint64_t num_side_channel_elements;
-	uint64_t num_back_channel_elements;;
+	uint64_t num_back_channel_elements;
 	uint64_t num_lfe_channel_elements;
 	uint64_t num_assoc_data_elements;
 	uint64_t num_valid_cc_elements;
@@ -267,6 +267,7 @@ static int mpeg4_aac_celp_specific_config_load(struct mpeg4_bits_t* bits, struct
 			mpeg4_bits_read_n(bits, 2); // CELP-BRS-id
 	}
 
+	(void)aac;
 	return mpeg4_bits_error(bits);
 }
 

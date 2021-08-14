@@ -9,6 +9,7 @@
 
 int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
+	int r;
 	int added;
 	const struct cstring_t *h;
 	struct sip_subscribe_t* subscribe;
@@ -16,6 +17,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 	if (reply->u.s.code < 200)
 		return 0; // ignore
 
+	r = 0;
 	subscribe = NULL;
 	if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
@@ -23,7 +25,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 
 		// call once only
 		if (added)
-			subscribe->evtsession = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code);
+			r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, &subscribe->evtsession);
 	}
 
 	if (subscribe)
@@ -39,7 +41,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 		sip_subscribe_release(subscribe);
 	}
 
-	return 0;
+	return r;
 }
 
 int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)

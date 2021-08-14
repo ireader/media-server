@@ -1,4 +1,5 @@
 #include "amf0.h"
+#include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>

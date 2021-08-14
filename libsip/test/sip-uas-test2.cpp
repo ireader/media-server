@@ -60,7 +60,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return r == bytes ? 0 : -1;
 }
 
-static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
 	const char* pattern = "v=0\n"
 		"o=- 0 0 IN IP4 %s\n"
@@ -93,12 +93,13 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		sip_uas_add_header(t, "Contact", "sip:" NAME "@" HOST);
 		snprintf(reply, sizeof(reply), pattern, HOST, HOST, m->port[0]);
 		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
-		return m;
+		*session = m;
+		return 0;
 	}
 	else
 	{
 		assert(0);
-		return NULL;
+		return 0;
 	}
 }
 

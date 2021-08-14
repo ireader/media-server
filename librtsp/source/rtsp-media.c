@@ -493,7 +493,7 @@ int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
 
 	if (m->ssrc.ssrc)
 	{
-		n += snprintf(line + n, bytes - n, "a=ssrc: %u\n", m->ssrc.ssrc);
+		n += snprintf(line + n, bytes - n, "a=ssrc:%u\n", m->ssrc.ssrc);
 	}
 
 	return n;

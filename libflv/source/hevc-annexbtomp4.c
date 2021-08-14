@@ -166,15 +166,11 @@ static uint8_t hevc_sps_id(const uint8_t* rbsp,size_t bytes, struct mpeg4_hevc_t
 
 static uint8_t hevc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* sps)
 {
-	// TODO:
-	//hevc->parallelismType; // entropy_coding_sync_enabled_flag
-	(void)hevc;
-
 	size_t sodb;
 	size_t offset = 2 * 8;  // 2-nalu type
 	sodb = hevc_rbsp_decode(rbsp, bytes, ptr);
 	if (sodb < 3)
-		return 0xFF;
+		return 0xFF; (void)hevc;
 	*sps = mpeg4_h264_read_ue(ptr, sodb, &offset);
 	return mpeg4_h264_read_ue(ptr, sodb, &offset);
 }

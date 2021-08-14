@@ -110,7 +110,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		// notify user
 		t->status = SIP_UAS_TRANSACTION_TRYING;
 		// re-invite: 488 (Not Acceptable Here)
-		t->dialog->session = t->handler->oninvite(t->param, req, t, (dialog && dialog->state == DIALOG_CONFIRMED) ? dialog : NULL, req->payload, req->size);
+		r = t->handler->oninvite(t->param, req, t, (dialog && dialog->state == DIALOG_CONFIRMED) ? dialog : NULL, req->payload, req->size, &t->dialog->session);
 		// TODO: add timer here, send 100 trying
 		if (!t->dialog->session && SIP_UAS_TRANSACTION_TRYING == t->status)
 		{

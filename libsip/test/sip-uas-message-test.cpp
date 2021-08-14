@@ -201,7 +201,7 @@ struct sip_session_t
 	struct sip_dialog_t* dialog;	
 };
 
-static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** ptr)
 {
 	struct sip_session_t* session = new struct sip_session_t;
 	assert(NULL == dialog); // re-invite
@@ -214,7 +214,8 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	assert(0 == sip_uas_reply(t, 200, NULL, 0));
 //	assert(0 == sip_uas_reply(t, 200, NULL, 0));
 	session->t = t;
-	return session;
+	*ptr = session;
+	return 0;
 }
 
 static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)

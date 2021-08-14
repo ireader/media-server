@@ -3,10 +3,11 @@
 
 int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
 {
-	int added;
+	int r, added;
 	const struct cstring_t *h;
 	struct sip_subscribe_t* subscribe;
 
+	r = 0;
 	subscribe = sip_subscribe_internal_fetch(t->agent, t->reply, &req->event, 0, &added);
 	if (!subscribe)
 		return sip_uas_reply(t, 481, NULL, 0); // 481 Subscription does not exist
@@ -15,7 +16,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 
 	// call once only
 	if (added && t->handler->onsubscribe)
-		subscribe->evtsession = t->handler->onsubscribe(t->param, req, t, subscribe);
+		r = t->handler->onsubscribe(t->param, req, t, subscribe, &subscribe->evtsession);
 
 	if (subscribe)
 	{
@@ -33,7 +34,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		sip_subscribe_release(subscribe);
 	}
 
-	return 0;
+	return r;
 
 	// TODO:
 	// Note that a NOTIFY message is always sent immediately after any 200-
