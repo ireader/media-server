@@ -71,16 +71,18 @@ int sip_uac_ack_3456xx(struct sip_uac_transaction_t* t, const struct sip_message
 	// 1. If the request is INVITE and the final response is a non-2xx, the transaction also
 	//	  includes an ACK to the response. 
 	// 2. The ACK for a 2xx response to an INVITE request is a separate transaction(new branch value).
-	if (200 <= reply->u.s.code && reply->u.s.code < 300)
-	{
-		assert(0 == sip_vias_count(&ack->vias));
-		// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
-		// [Sip] Branch in INVITE ,ACK,BYE
-		r = sip_uac_transaction_via(t, ptr, sizeof(ptr), contact, sizeof(contact));
-		if(0 == r)
-			r = sip_message_add_header(ack, "Via", ptr);
-	}
-	else
+
+	// fix 408 Busy Here + 200 OK(Dahua IPC)
+	//if (200 <= reply->u.s.code && reply->u.s.code < 300)
+	//{
+	//	assert(0 == sip_vias_count(&ack->vias));
+	//	// https://www.ietf.org/mail-archive/web/sip/current/msg06460.html
+	//	// [Sip] Branch in INVITE ,ACK,BYE
+	//	r = sip_uac_transaction_via(t, ptr, sizeof(ptr), contact, sizeof(contact));
+	//	if(0 == r)
+	//		r = sip_message_add_header(ack, "Via", ptr);
+	//}
+	//else
 	{
 		// rfc3263 4-Client Usage (p5)
 		// once a SIP server has successfully been contacted (success is defined below), 
