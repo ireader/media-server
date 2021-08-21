@@ -262,11 +262,12 @@ static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_m
 			return -1;
 		}
 		assert(t->ref == 3); // +2 linker with timer H
+
+		t->param = param; // first only
 	}
 	locker_unlock(&sip->locker);
 
-    t->param = param;
-	r = sip_uas_input_with_transaction(sip, msg, dialog, t);
+    r = sip_uas_input_with_transaction(sip, msg, dialog, t);
 	sip_uas_transaction_release(t);
 	return r;
 }
