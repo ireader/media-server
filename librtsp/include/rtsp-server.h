@@ -65,7 +65,7 @@ struct rtsp_handler_t
     /// @param[in] uri request uri
     /// @param[in] sdp RTSP SDP
     /// @return 0-ok, other-error
-    int (*onannounce)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* sdp);
+    int (*onannounce)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* sdp, int len);
 
     /// RTSP RECORD request(call rtsp_server_reply_record)
     /// @param[in] ptr user-defined parameter

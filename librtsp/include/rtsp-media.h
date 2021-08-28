@@ -107,7 +107,7 @@ struct rtsp_media_t
 };
 
 /// @return <0-error, >count-try again, other-ok
-int rtsp_media_sdp(const char* sdp, struct rtsp_media_t* medias, int count);
+int rtsp_media_sdp(const char* sdp, int len, struct rtsp_media_t* medias, int count);
 
 /// update session and media url
 /// @param[in] base The RTSP Content-Base field

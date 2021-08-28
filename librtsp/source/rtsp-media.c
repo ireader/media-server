@@ -333,7 +333,7 @@ m=video 2232 RTP/AVP 31
 m=whiteboard 32416 UDP WB
 a=orient:portrait
 */
-int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
+int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int count)
 {
 	int i, j, n;
 	int formats[16];
@@ -346,7 +346,7 @@ int rtsp_media_sdp(const char* s, struct rtsp_media_t* medias, int count)
 	struct rtsp_header_range_t range;
 	sdp_t* sdp;
 
-	sdp = sdp_parse(s);
+	sdp = sdp_parse(s, len);
 	if (!sdp)
 		return -1;
 

@@ -13,7 +13,7 @@ enum { SDP_C_ADDRESS_UNKNOWN=0, SDP_C_ADDRESS_IP4, SDP_C_ADDRESS_IP6 };
 enum { SDP_A_INACTIVE = 0, SDP_A_SENDONLY = 0x01, SDP_A_RECVONLY = 0x02, SDP_A_SENDRECV = 0x03 /*default*/, };
 enum { SDP_M_MEDIA_UNKOWN = 0, SDP_M_MEDIA_AUDIO, SDP_M_MEDIA_VIDEO, SDP_M_MEDIA_TEXT, SDP_M_MEDIA_APPLICATION, SDP_M_MEDIA_MESSAGE };
 
-sdp_t* sdp_parse(const char* s);
+sdp_t* sdp_parse(const char* s, int len);
 void sdp_destroy(sdp_t* sdp);
 
 int sdp_version_get(sdp_t* sdp);

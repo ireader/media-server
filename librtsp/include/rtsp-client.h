@@ -37,7 +37,7 @@ struct rtsp_client_handler_t
 	int (*onannounce)(void* param);
 
 	/// call rtsp_client_setup
-	int (*ondescribe)(void* param, const char* sdp);
+	int (*ondescribe)(void* param, const char* sdp, int len);
 
 	/// @param[in] timeout session timeout in seconds
 	/// @param[in] duration -1-unknown or live stream, other-rtsp stream duration in MS
@@ -78,7 +78,7 @@ int rtsp_client_describe(struct rtsp_client_t* rtsp);
 /// rtsp setup
 /// @param[in] sdp resource info. it can be null, sdp will get by describe command
 /// @return 0-ok, -EACCESS-auth required, try again, other-error.
-int rtsp_client_setup(rtsp_client_t* rtsp, const char* sdp);
+int rtsp_client_setup(rtsp_client_t* rtsp, const char* sdp, int len);
 
 /// stop and close session(TearDown)
 /// call onclose on done

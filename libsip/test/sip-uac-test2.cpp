@@ -614,7 +614,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 	s->user = ctx->usr;
 	s->t = t;
 
-	s->nmedia = rtsp_media_sdp((const char*)data, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
+	s->nmedia = rtsp_media_sdp((const char*)data, bytes, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
 	for (int i = 0; i < s->nmedia; i++)
 	{
 		struct rtsp_media_t* m = s->medias + i;
@@ -836,7 +836,7 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 			return 0;
 		}
 
-		s->nmedia = rtsp_media_sdp((const char*)reply->payload, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
+		s->nmedia = rtsp_media_sdp((const char*)reply->payload, reply->size, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
 		assert(0 == ice_transport_connect(s->avt, s->medias, s->nmedia));
 		for (int i = 0; i < s->nmedia; i++)
 		{

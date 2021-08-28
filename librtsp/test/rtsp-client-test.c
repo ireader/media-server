@@ -92,10 +92,10 @@ static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes
 	}
 }
 
-static int ondescribe(void* param, const char* sdp)
+static int ondescribe(void* param, const char* sdp, int len)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
-	return rtsp_client_setup(ctx->rtsp, sdp);
+	return rtsp_client_setup(ctx->rtsp, sdp, len);
 }
 
 static int onsetup(void* param, int timeout, int64_t duration)

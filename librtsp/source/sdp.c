@@ -1144,14 +1144,16 @@ static int sdp_parse_gb28181_ssrc(struct sdp_t* sdp)
 	return 0;
 }
 
-static void* sdp_create(void)
+static void* sdp_create(const char* s, int len)
 {
 	struct sdp_t *sdp;
-	sdp = (struct sdp_t*)malloc(sizeof(struct sdp_t));
+	sdp = (struct sdp_t*)malloc(sizeof(struct sdp_t) + len + 1);
 	if( !sdp )
 		return NULL;
 
 	memset(sdp, 0, sizeof(struct sdp_t));
+	memcpy(sdp->raw, s, len);
+	sdp->raw[len] = 0;
 	return sdp;
 }
 
@@ -1205,26 +1207,19 @@ void sdp_destroy(struct sdp_t* sdp)
 	if(sdp->m.count > N_MEDIA)
 		free(sdp->m.ptr);
 
-	if(sdp->raw)
-		free(sdp->raw);
-
 	free(sdp);
 }
 
-struct sdp_t* sdp_parse(const char* s)
+struct sdp_t* sdp_parse(const char* s, int len)
 {
 	int r;
 	char c;
 	struct sdp_t *sdp;
 
 	assert(s);
-	sdp = (struct sdp_t*)sdp_create();
+	sdp = (struct sdp_t*)sdp_create(s, len);
 	if(!sdp)
 		return NULL;
-
-	sdp->raw = strdup(s);
-	if(!sdp->raw)
-		goto parse_failed;
 
 	while(sdp->raw[sdp->offset] && !strchr("\r\n", sdp->raw[sdp->offset]))
 	{

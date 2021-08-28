@@ -126,7 +126,7 @@ static int rtsp_receiver_onpacket(void* param, struct avpacket_t* pkt)
 	return mov_writer_write(t->ctx->mov, track, pkt->data, pkt->size, timestamp + (pkt->pts - pkt->dts), timestamp, (pkt->flags & AVPACKET_FLAG_KEY) ? MOV_AV_FLAG_KEYFREAME : 0);
 }
 
-static int rtsp_receiver_sdp(struct rtp_receiver_t *ctx, const char* sdp)
+static int rtsp_receiver_sdp(struct rtp_receiver_t *ctx, const char* sdp, int len)
 {
 	int i, j;
 	int count;
@@ -136,7 +136,7 @@ static int rtsp_receiver_sdp(struct rtp_receiver_t *ctx, const char* sdp)
 	if (NULL == sdp || 0 == *sdp)
 		return -1;
 
-	count = rtsp_media_sdp(sdp, ctx->media, N);
+	count = rtsp_media_sdp(sdp, len, ctx->media, N);
 	if (count < 0 || count > N)
 	{
 		printf("Invalid sdp medias\n");
@@ -382,7 +382,7 @@ int rtp_mov_test(int argc, char* argv[])
 
 	printf("sdp: \n%s\n", sdp);
 	ctx.mov = mov_writer_create(mov_file_buffer(), fp.get(), faststart ? MOV_FLAG_FASTSTART : 0);
-	rtsp_receiver_sdp(&ctx, sdp);
+	rtsp_receiver_sdp(&ctx, sdp, strlen(sdp));
 	rtsp_receiver_run(&ctx);
 
 	mov_writer_destroy(ctx.mov);

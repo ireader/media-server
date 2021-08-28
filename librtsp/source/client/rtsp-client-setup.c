@@ -72,17 +72,17 @@ static int rtsp_client_media_setup(struct rtsp_client_t* rtsp, int i)
 	return len == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, len) ? 0 : -1;
 }
 
-int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
+int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp, int len)
 {
 	int i, r;
     unsigned short port[2];
     struct rtsp_media_t *m;
 	struct rtsp_header_transport_t *t;
 
-	if (NULL == sdp || 0 == *sdp)
+	if (NULL == sdp || 0 == *sdp || len < 1)
 		return -1;
 
-	r = rtsp_media_sdp(sdp, rtsp->media, sizeof(rtsp->media)/sizeof(rtsp->media[0]));
+	r = rtsp_media_sdp(sdp, len, rtsp->media, sizeof(rtsp->media)/sizeof(rtsp->media[0]));
 	if (r < 0 || r > sizeof(rtsp->media) / sizeof(rtsp->media[0]))
 		return r < 0 ? r : -E2BIG; // too many media stream
 

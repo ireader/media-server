@@ -75,7 +75,7 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 		rtsp->auth_failed = 0;
 		if (!contentType || 0 == strcasecmp("application/sdp", contentType))
 		{
-			r = rtsp->handler.ondescribe(rtsp->param, (const char*)content);
+			r = rtsp->handler.ondescribe(rtsp->param, (const char*)content, (int)http_get_content_length(parser));
 		}
 	}
 	else if (401 == code)

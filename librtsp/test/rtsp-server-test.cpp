@@ -456,7 +456,7 @@ static int rtsp_onteardown(void* /*ptr*/, rtsp_server_t* rtsp, const char* /*uri
 	return rtsp_server_reply_teardown(rtsp, 200);
 }
 
-static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* sdp)
+static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* sdp, int len)
 {
     return rtsp_server_reply_announce(rtsp, 200);
 }

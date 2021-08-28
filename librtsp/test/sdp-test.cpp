@@ -1,5 +1,7 @@
 #include "sdp.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static char s_sdp[64 * 1024];
 
@@ -14,6 +16,6 @@ static const char* sdp_read(const char* file)
 void sdp_test(const char* file)
 {
 	const char* txt = sdp_read(file);
-	sdp_t* sdp = sdp_parse(txt);
+	sdp_t* sdp = sdp_parse(txt, strlen(txt));
 	sdp_destroy(sdp);
 }

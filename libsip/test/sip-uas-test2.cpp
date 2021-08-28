@@ -79,7 +79,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		socklen_t len = 0;
 		struct sip_media_t* m = new sip_media_t;
 		m->transport.reset(new RTPUdpTransport());
-		m->nmedia = rtsp_media_sdp((const char*)data, m->medias, sizeof(m->medias) / sizeof(m->medias[0]));
+		m->nmedia = rtsp_media_sdp((const char*)data, bytes, m->medias, sizeof(m->medias) / sizeof(m->medias[0]));
 		assert(m->nmedia > 0);
 		assert(0 == strcasecmp("IP4", m->medias[0].addrtype) || 0 == strcasecmp("IP6", m->medias[0].addrtype));
 		m->port[0] = m->medias[0].port[0];
