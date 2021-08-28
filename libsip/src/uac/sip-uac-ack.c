@@ -8,7 +8,7 @@
 int sip_uac_ack_3456xx(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, struct sip_dialog_t* dialog)
 {
 	int r;
-	char ptr[1024];
+//	char ptr[1024];
 	char contact[1024];
 	struct sip_via_t via;
 	struct sip_message_t* ack;

@@ -181,7 +181,7 @@ int rtsp_client_setup_onreply(struct rtsp_client_t* rtsp, void* parser)
 		{
 			assert(rtsp->media_count > 0);
 			range = &rtsp->media[0].range;
-			return rtsp->handler.onsetup(rtsp->param, RTSP_RANGE_TIME_NORMAL==range->from_value && RTSP_RANGE_TIME_NORMAL==range->to_value ? range->to - range->from : -1);
+			return rtsp->handler.onsetup(rtsp->param, rtsp->session[rtsp->progress].timeout / 1000, RTSP_RANGE_TIME_NORMAL==range->from_value && RTSP_RANGE_TIME_NORMAL==range->to_value ? range->to - range->from : -1);
 		}
 		else
 		{

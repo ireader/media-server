@@ -51,7 +51,7 @@ static void g711_read_frame(mkv_writer_t* mkv, const uint8_t* ptr, const uint8_t
 
 		int n = ptr + 320 < end ? 320 : end - ptr;
 		mkv_writer_write(mkv, track, ptr, n, pts, pts, 0);
-		pts += n / 8;
+		pts += n / 8; // 8000Hz/8-bits/1-channel
 		ptr += n;
 	}
 }
@@ -74,12 +74,13 @@ static void aac_read_frame(mkv_writer_t* mkv, const uint8_t* ptr, const uint8_t*
 			rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
 			track = mkv_writer_add_audio(mkv, MKV_CODEC_AUDIO_AAC, aac.channel_configuration, 16, rate, extra_data, extra_data_size);
 			if (-1 == track) continue;
+			assert(rate != 0);
 		}
 
 		samples += 1024; // aac frame
-		int framelen = ((ptr[3] & 0x03) << 11) | (ptr[4] << 3) | (ptr[5] >> 5);
+		int framelen = mpeg4_aac_adts_frame_length(ptr, end - ptr);
 		mkv_writer_write(mkv, track, ptr + 7, framelen - 7, pts, pts, 0);
-		pts = samples * 1000 / rate;
+		pts += samples * 1000 / rate;
 		ptr += framelen;
 	}
 }

@@ -39,8 +39,9 @@ struct rtsp_client_handler_t
 	/// call rtsp_client_setup
 	int (*ondescribe)(void* param, const char* sdp);
 
+	/// @param[in] timeout session timeout in seconds
 	/// @param[in] duration -1-unknown or live stream, other-rtsp stream duration in MS
-	int (*onsetup)(void* param, int64_t duration);
+	int (*onsetup)(void* param, int timeout, int64_t duration);
 	int (*onplay)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // play
     int (*onrecord)(void* param, int media, const uint64_t *nptbegin, const uint64_t *nptend, const double *scale, const struct rtsp_rtp_info_t* rtpinfo, int count); // record
 	int (*onpause)(void* param);

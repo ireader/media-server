@@ -123,6 +123,9 @@
     <ClInclude Include="..\libmov\test\mov-file-buffer.h">
       <Filter>libmov</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtmp\test\RTMPUrl.h">
+      <Filter>librtmp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -437,9 +440,6 @@
     <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp">
       <Filter>libmkv</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
     <ClCompile Include="..\libflv\test\flv-parser-test.cpp">
       <Filter>libflv</Filter>
     </ClCompile>
@@ -479,10 +479,21 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-av1.c">
       <Filter>librtsp\sdp</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mvk-writer-audio.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
       <Filter>libflv</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\librtsp\test\sdp1.txt">
+      <Filter>librtsp</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -101,12 +101,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../libmkv/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +156,7 @@
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-server.h" />
     <ClInclude Include="..\librtmp\aio\aio-rtmp-transport.h" />
+    <ClInclude Include="..\librtmp\test\RTMPUrl.h" />
     <ClInclude Include="..\librtp\test\rtp-dump.h" />
     <ClInclude Include="..\librtsp\source\utils\rtp-sender.h" />
     <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h" />
@@ -201,6 +203,7 @@
     <ClCompile Include="..\libmkv\test\mkv-reader-test.cpp" />
     <ClCompile Include="..\libmkv\test\mkv-writer-test.cpp" />
     <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp" />
+    <ClCompile Include="..\libmkv\test\mvk-writer-audio.cpp" />
     <ClCompile Include="..\libmov\test\fmp4-writer-test.cpp" />
     <ClCompile Include="..\libmov\test\fmp4-writer-test2.cpp" />
     <ClCompile Include="..\libmov\test\mov-2-flv.cpp" />
@@ -295,7 +298,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0" />
-    <None Include="..\libmpeg\test\fileSequence0.ts" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\avcodec\avbsf\avbsf.vcxproj">
@@ -352,6 +354,9 @@
     <ProjectReference Include="..\libsip\libsip.vcxproj">
       <Project>{5cdf2275-37a7-450a-b69f-2063079d6946}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\librtsp\test\sdp1.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
