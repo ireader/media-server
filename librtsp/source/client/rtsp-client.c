@@ -163,3 +163,10 @@ int rtsp_client_get_media_rate(struct rtsp_client_t *rtsp, int media)
 	}
 	return rate;
 }
+
+int rtsp_client_get_media_type(struct rtsp_client_t* rtsp, int media)
+{
+	if (media < 0 || media >= rtsp->media_count)
+		return -1;
+	return sdp_option_media_from(rtsp->media[media].media);
+}

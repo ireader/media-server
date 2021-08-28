@@ -8,6 +8,7 @@
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
 #include "http-parser.h"
+#include "sdp-options.h"
 #include "sdp.h"
 #include <errno.h>
 #include <stdio.h>

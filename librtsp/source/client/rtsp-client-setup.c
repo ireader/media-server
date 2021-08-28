@@ -130,6 +130,15 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp)
             t->rtp.u.client_port1 = port[0];
             t->rtp.u.client_port2 = 0 == port[1] ? t->rtp.u.client_port1 + 1 : port[1];
         }
+		else if (0 == r)
+		{
+			// ignore media
+			if (i + 1 < rtsp->media_count)
+				memmove(rtsp->media + i, rtsp->media + i + 1, sizeof(rtsp->media[0]) * (rtsp->media_count - i - 1));
+			rtsp->media_count--;
+			i--; // redo
+			continue;
+		}
         else
         {
             assert(0);

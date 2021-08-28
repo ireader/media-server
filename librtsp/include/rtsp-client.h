@@ -30,7 +30,7 @@ struct rtsp_client_handler_t
     /// @param[in,out] port [INPUT] media port, [OUTPUT] udp: bind local port for rtp/rtcp(port[0] % 2 == 0), tcp: channel interleaved id
     /// @param[in,out] ip [INPUT] media address, [OUTPUT] udp bind local ip address, 224~239.x.x.x for multicast udp transport
     /// @param[in] len ip buffer length in byte
-    /// @return <0-error, other-RTSP_TRANSPORT_XXX
+    /// @return <0-error, 0-ignore this media track, other-RTSP_TRANSPORT_XXX
 	int (*rtpport)(void* param, int media, const char* source, unsigned short port[2], char* ip, int len);
 
 	/// rtsp_client_announce callback only
@@ -116,7 +116,10 @@ const struct rtsp_header_transport_t* rtsp_client_get_media_transport(rtsp_clien
 const char* rtsp_client_get_media_encoding(rtsp_client_t* rtsp, int media);
 const char* rtsp_client_get_media_fmtp(rtsp_client_t* rtsp, int media);
 int rtsp_client_get_media_payload(rtsp_client_t* rtsp, int media);
-int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media); // return 0 if unknown rate
+/// @return media sampling rate/frequency, 0 if unknown
+int rtsp_client_get_media_rate(rtsp_client_t* rtsp, int media);
+/// @return SDP_M_MEDIA_AUDIO/SDP_M_MEDIA_VIDEO/SDP_M_MEDIA_xxx, see more @sdp.h
+int rtsp_client_get_media_type(rtsp_client_t* rtsp, int media);
 
 #if defined(__cplusplus)
 }
