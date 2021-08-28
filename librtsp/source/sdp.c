@@ -1152,6 +1152,7 @@ static void* sdp_create(const char* s, int len)
 		return NULL;
 
 	memset(sdp, 0, sizeof(struct sdp_t));
+	sdp->raw = (char*)(sdp + 1);
 	memcpy(sdp->raw, s, len);
 	sdp->raw[len] = 0;
 	return sdp;
