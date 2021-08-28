@@ -31,8 +31,8 @@ struct mkv_buffer_t
 	int (*seek)(void* param, int64_t offset);
 
 	/// get buffer read/write position
-	/// @return >=0-current read/write position
-	uint64_t (*tell)(void* param);
+	/// @return <0-error, other-current read/write position
+	int64_t (*tell)(void* param);
 };
 
 struct mkv_file_cache_t

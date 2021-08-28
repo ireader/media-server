@@ -17,7 +17,11 @@ static inline int mov_buffer_error(const struct mov_ioutil_t* io)
 
 static inline uint64_t mov_buffer_tell(const struct mov_ioutil_t* io)
 {
-	return io->io.tell(io->param);
+	int64_t v;
+	v = io->io.tell(io->param);
+	if (v < 0)
+		((struct mov_ioutil_t*)io)->error = -1;
+	return v;
 }
 
 static inline void mov_buffer_seek(const struct mov_ioutil_t* io, int64_t offset)

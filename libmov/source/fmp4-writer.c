@@ -439,7 +439,7 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 	writer->mdat_size += bytes; // update media data size
 	track->sample_count += 1;
     track->last_dts = sample->dts;
-	return 0;
+	return mov_buffer_error(&writer->mov.io);
 }
 
 int fmp4_writer_add_audio(struct fmp4_writer_t* writer, uint8_t object, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size)

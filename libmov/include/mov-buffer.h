@@ -26,8 +26,8 @@ struct mov_buffer_t
 	int (*seek)(void* param, int64_t offset);
 
 	/// get buffer read/write position
-	/// @return current read/write position
-	uint64_t (*tell)(void* param);
+	/// @return <0-error, other-current read/write position
+	int64_t (*tell)(void* param);
 };
 
 #endif /* !_mov_buffer_h_ */

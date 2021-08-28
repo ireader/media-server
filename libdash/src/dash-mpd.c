@@ -138,9 +138,9 @@ static int mov_buffer_seek(void* param, int64_t offset)
 	return 0;
 }
 
-static uint64_t mov_buffer_tell(void* param)
+static int64_t mov_buffer_tell(void* param)
 {
-	return ((struct dash_adaptation_set_t*)param)->offset;
+	return (int64_t)((struct dash_adaptation_set_t*)param)->offset;
 }
 
 static struct mov_buffer_t s_io = {

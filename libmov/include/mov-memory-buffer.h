@@ -48,11 +48,11 @@ static int mov_memory_seek(void* param, int64_t offset)
 	return 0;
 }
 
-static uint64_t mov_memory_tell(void* param)
+static int64_t mov_memory_tell(void* param)
 {
 	struct mov_memory_buffer_t* ptr;
 	ptr = (struct mov_memory_buffer_t*)param;
-	return ptr->off;
+	return (int64_t)ptr->off;
 }
 
 static inline const struct mov_buffer_t* mov_memory_buffer(void)

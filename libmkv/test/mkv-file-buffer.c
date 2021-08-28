@@ -31,7 +31,7 @@ static int mkv_file_seek(void* fp, int64_t offset)
 	return fseek64((FILE*)fp, offset, offset >= 0 ? SEEK_SET : SEEK_END);
 }
 
-static uint64_t mkv_file_tell(void* fp)
+static int64_t mkv_file_tell(void* fp)
 {
 	return ftell64((FILE*)fp);
 }
@@ -124,11 +124,12 @@ static int mkv_file_cache_seek(void* fp, int64_t offset)
 	return 0;
 }
 
-static uint64_t mkv_file_cache_tell(void* fp)
+static int64_t mkv_file_cache_tell(void* fp)
 {
 	struct mkv_file_cache_t* file = (struct mkv_file_cache_t*)fp;
-	assert(ftell64(file->fp) == file->tell + (int)(file->len - file->off));
-	return file->tell;
+	if (ftell64(file->fp) != file->tell + (int)(file->len - file->off))
+		return -1;
+	return (int64_t)file->tell;
 	//return ftell64(file->fp);
 }
 
