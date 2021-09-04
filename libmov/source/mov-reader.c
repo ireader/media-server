@@ -370,7 +370,7 @@ static int mov_reader_init(struct mov_reader_t* reader)
 
 	mov = &reader->mov;
 	r = mov_reader_root(mov);
-	if (0 != r) return r;
+//	if (0 != r) return r;  // ignore file read error(for streaming file)
 
 	for (i = 0; i < mov->track_count; i++)
 	{

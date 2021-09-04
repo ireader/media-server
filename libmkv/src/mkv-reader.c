@@ -908,8 +908,9 @@ mkv_reader_t* mkv_reader_create(const struct mkv_buffer_t* buffer, void* param)
 	reader->ebml.doc_type_version = 1;
 	reader->ebml.doc_type_read_version = 1;
 
-	if (mkv_reader_open(reader, s_elements, sizeof(s_elements)/sizeof(s_elements[0]), 0) < 0
-		|| 0 != mkv_reader_build(reader))
+	// ignore file read error(for streaming file)
+	mkv_reader_open(reader, s_elements, sizeof(s_elements) / sizeof(s_elements[0]), 0);
+	if (0 != mkv_reader_build(reader))
 	{
 		mkv_reader_destroy(reader);
 		return NULL;
