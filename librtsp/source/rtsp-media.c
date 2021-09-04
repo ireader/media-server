@@ -3,6 +3,7 @@
 #include "sdp-options.h"
 #include "sdp-a-fmtp.h"
 #include "sdp-a-rtpmap.h"
+#include "sys/path.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -45,40 +46,6 @@ static inline int scopy(struct rtsp_media_t* medias, char** dst, const char* src
 //	return (control && *control) ? 1 : 0;
 //}
 
-static int isAbsoluteURL(char const* url)
-{
-	// Assumption: "url" is absolute if it contains a ':', before any
-	// occurrence of '/'
-	while (*url != '\0' && *url != '/') {
-		if (*url == ':') return 1;
-		++url;
-	}
-
-	return 0;
-}
-
-static const char* uri_join(char* uri, size_t bytes, const char* base, const char* path)
-{
-	size_t n, n2, offset;
-
-	assert(uri && base && path);
-	n = strlen(base ? base : "");
-	n2 = strlen(path ? path : "");
-	if (n < 1 || n2 < 1 || n + n2 + 2 > bytes || !uri)
-		return NULL;
-
-	offset = snprintf(uri, bytes, "%s", base);
-
-	if ('/' == path[0] || '\\' == path[0])
-		path += 1;
-	if ('/' == uri[offset - 1] || '\\' == uri[offset - 1])
-		offset -= 1;
-
-	// TODO: check uri parameters '?'
-	offset += snprintf(uri + offset, bytes - offset, "/%s", path);
-	return uri;
-}
-
 // rfc 2326 C.1.1 Control URL (p81)
 // look for a base URL in the following order:
 // 1. The RTSP Content-Base field
@@ -86,64 +53,38 @@ static const char* uri_join(char* uri, size_t bytes, const char* base, const cha
 // 3. The RTSP request URL
 int rtsp_media_set_url(struct rtsp_media_t* m, const char* base, const char* location, const char* request)
 {
-	char path[256] = { 0 };
-	char session[256] = { 0 };
+	int r;
+	char buffer[256] = { 0 };
 
 	// C.1.1 Control URL (p81)
 	// If this attribute contains only an asterisk (*), then the URL is
 	// treated as if it were an empty embedded URL, and thus inherits the entire base URL.
-	if (*m->session_uri && '*' != *m->session_uri)
-		snprintf(session, sizeof(session), "%s", m->session_uri);
-
-	if (!isAbsoluteURL(session) && base && *base)
+	if (m->session_uri[0] && '*' != m->session_uri[0])
 	{
-		if (*session)
-		{
-			uri_join(path, sizeof(path), base, session);
-			base = path;
-		}
-		snprintf(session, sizeof(session), "%s", base);
+		snprintf(buffer, sizeof(buffer)-1, "%s", m->session_uri);
+		r = path_resolve2(m->session_uri, sizeof(m->session_uri)-1, buffer, base, location, request);
+	}
+	else if('*' == m->session_uri[0])
+	{
+		r = snprintf(m->session_uri, sizeof(m->session_uri) - 1, "%s", request);
+	}
+	else
+	{
+		// keep session uri empty
+		r = 0;
 	}
 
-	if (!isAbsoluteURL(session) && location && *location)
+	if ('*' != m->uri[0])
 	{
-		if (*session)
-		{
-			uri_join(path, sizeof(path), location, session);
-			location = path;
-		}
-		snprintf(session, sizeof(session), "%s", location);
+		snprintf(buffer, sizeof(buffer) - 1, "%s", m->uri);
+		r = path_resolve2(m->uri, sizeof(m->uri) - 1, buffer, base, location, request);
+	}
+	else
+	{
+		r = snprintf(m->uri, sizeof(m->uri) - 1, "%s", request);
 	}
 
-	if (!isAbsoluteURL(session) && request && *request)
-	{
-		if (*session)
-		{
-			uri_join(path, sizeof(path), request, session);
-			request = path;
-		}
-		snprintf(session, sizeof(session), "%s", request);
-	}
-
-	// update session url
-	if (*m->session_uri && *session)
-		snprintf(m->session_uri, sizeof(m->session_uri), "%s", session);
-
-	// update media url
-	if (!isAbsoluteURL(m->uri) && *session)
-	{
-		if (*m->uri)
-		{
-			uri_join(path, sizeof(path), session, m->uri);
-			snprintf(m->uri, sizeof(m->uri), "%s", path);
-		}
-		else
-		{
-			snprintf(m->uri, sizeof(m->uri), "%s", session);
-		}
-	}
-
-	return 0;
+	return r >= 0 ? 0 : r;
 }
 
 // RFC 6184 RTP Payload Format for H.264 Video

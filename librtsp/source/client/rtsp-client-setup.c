@@ -91,13 +91,10 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp, int len)
 	{
         m = rtsp->media + i;
         t = rtsp->transport + i;
-        
+
 		// rfc 2326 C.1.1 Control URL (p80)
 		// If found at the session level, the attribute indicates the URL for aggregate control
-		rtsp->aggregate = rtsp->media[0].session_uri[0] ? 1 : 0;
-		rtsp_media_set_url(rtsp->media+i, rtsp->baseuri, rtsp->location, rtsp->uri);
-		if(rtsp->aggregate)
-			snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", m->session_uri);
+		rtsp_media_set_url(m, rtsp->baseuri, rtsp->location, rtsp->uri);
 
         port[0] = (unsigned short)m->port[0];
         port[1] = (unsigned short)m->port[1];
@@ -144,6 +141,33 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp, int len)
             assert(0);
             return -1;
         }
+	}
+
+	rtsp->aggregate = (rtsp->media_count > 1 && rtsp->media[0].session_uri[0]) ? 1 : 0;
+	if (rtsp->aggregate)
+	{
+		snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", rtsp->media[0].session_uri);
+	}
+	else if(rtsp->media_count > 1)
+	{
+		// rfc 2326 C.1.1 Control URL (p81)
+		// look for a base URL in the following order:
+		// 1. The RTSP Content-Base field
+		// 2. The RTSP Content-Location field
+		// 3. The RTSP request URL
+		const char* base;
+		base = rtsp->baseuri[0] ? rtsp->baseuri : (rtsp->location[0] ? rtsp->location : rtsp->uri);
+		r = strlen(base);
+		for (i = 0; i < rtsp->media_count; i++)
+		{
+			m = rtsp->media + i;
+			if (strlen(m->uri) <= r || 0 != strncmp(base, m->uri, r))
+				break;
+		}
+
+		rtsp->aggregate = i == rtsp->media_count;
+		if(rtsp->aggregate)
+			snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", base);
 	}
 
 	rtsp->state = RTSP_SETUP;

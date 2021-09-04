@@ -109,7 +109,7 @@ struct rtsp_media_t
 /// @return <0-error, >count-try again, other-ok
 int rtsp_media_sdp(const char* sdp, int len, struct rtsp_media_t* medias, int count);
 
-/// update session and media url
+/// Update session and media control url
 /// @param[in] base The RTSP Content-Base field
 /// @param[in] location The RTSP Content-Location field
 /// @param[in] request The RTSP request URL
