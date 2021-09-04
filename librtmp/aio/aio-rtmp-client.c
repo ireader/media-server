@@ -173,5 +173,7 @@ static void aio_rtmp_transport_ondestroy(void* param)
 	client = (struct aio_rtmp_client_t*)param;
 	if (client->handler.ondestroy)
 		client->handler.ondestroy(client->param);
+	if (client->rtmp)
+		rtmp_client_destroy(client->rtmp);
 	free(client);
 }
