@@ -21,7 +21,6 @@ struct ps_demuxer_t
     struct ps_system_header_t system;
 
     int start;
-    int h26x_verify;
 
     ps_demuxer_onpacket onpacket;
 	void* param;
@@ -109,7 +108,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 #if defined(MPEG_GUESS_STREAM) || defined(MPEG_H26X_VERIFY)
         if (0xE0 <= sid && sid <= 0xEF)
         {
-            psm->streams[psm->stream_count].codecid = PSI_STREAM_H264;
+            psm->streams[psm->stream_count].codecid = PSI_STREAM_RESERVED; // unknown
             return &psm->streams[psm->stream_count++];
         }
 #endif
@@ -162,7 +161,6 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
             assert(j == pes_packet_length + 6);
             if (n != ps->psm.stream_count)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
-            ps->h26x_verify = 1;
             break;
 
         case PES_SID_PSD:
@@ -204,12 +202,12 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 
             if (j > 0)
             {
-#if defined(MPEG_H26X_VERIFY)
-                if (ps->h26x_verify && (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid) && 0 == mpeg_h26x_verify(data + i + j, pes_packet_length + 6 - j, &r))
+#if defined(MPEG_GUESS_STREAM) || defined(MPEG_H26X_VERIFY)
+                if (pes->codecid == PSI_STREAM_RESERVED && 0 == mpeg_h26x_verify(data + i + j, pes_packet_length + 6 - j, &r))
                 {
-                    // maybe modify codecid
-                    pes->codecid = (1 == r ? PSI_STREAM_H264 : PSI_STREAM_H265);
-                    ps->h26x_verify = 0;
+                    // modify codecid
+                    static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_MPEG4, };
+                    pes->codecid = sc_codecid[(r < 0 || r >= sizeof(sc_codecid)/sizeof(sc_codecid[0])) ? PSI_STREAM_RESERVED : r];
                 }
 #endif
 
@@ -293,8 +291,7 @@ struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param
 	if(!ps)
 		return NULL;
 
-    ps->h26x_verify = 1;
-	ps->pkhd.mpeg2 = 1;
+    ps->pkhd.mpeg2 = 1;
     ps->onpacket = onpacket;
 	ps->param = param;
 	return ps;

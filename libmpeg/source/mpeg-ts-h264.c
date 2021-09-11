@@ -138,7 +138,7 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
 
     int n, count;
     size_t leading;
-    uint8_t h26x[2][10];
+    uint8_t h26x[4][10];
     const uint8_t* p, * end;
 
     count = 0;
@@ -146,11 +146,13 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
     for (p = data; p && p < end && count < sizeof(h26x[0])/sizeof(h26x[0][0]); p += n)
     {
         n = mpeg_h264_find_nalu(p, end - p, &leading);
-        if (n < 0)
+        if (n < 0 || p + n + 1 > end)
             break;
 
         h26x[0][count] = p[n] & 0x1f;
         h26x[1][count] = (p[n] >> 1) & 0x3f;
+        h26x[2][count] = p[n]; // for mpeg4 vop_start_code
+        h26x[3][count] = p[n+1]; // for mpeg4 vop_coding_type
         ++count;
     }
 
@@ -170,6 +172,12 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
     {
         // match vps/sps/pps
         *codec = 2;
+        return 0;
+    }
+    else if (0xB0 == h26x[2][0] && 0 == (0x30 & h26x[3][0]))
+    {
+        // match VOP start code
+        *codec = 3;
         return 0;
     }
 

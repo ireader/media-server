@@ -70,6 +70,8 @@ int ps_muxer_add_stream(struct ps_muxer_t* muxer, int codecid, const void* extra
 int ps_muxer_input(struct ps_muxer_t* muxer, int stream, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 
+/// @param[in] codecid 0-unknown, other-enum EPSI_STREAM_TYPE, see more @mpeg-ts-proto.h
+/// @return 0-ok, other-error
 typedef int (*ps_demuxer_onpacket)(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
 
 struct ps_demuxer_t; 
