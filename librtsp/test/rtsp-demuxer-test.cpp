@@ -4,24 +4,41 @@
 #include <inttypes.h>
 #include "rtp-demuxer.h"
 #include "rtsp-demuxer.h"
+#include "avpkt2bs.h"
 
 #define USE_RTP_DEMUXER 0
+
+struct rtsp_demuxer_test_t
+{
+#if USE_RTP_DEMUXER
+    struct rtp_demuxer_t* demuxer;
+#else
+    struct rtsp_demuxer_t* demuxer;
+    struct avpkt2bs_t bs;
+#endif
+
+    FILE* fp;
+};
 
 #if USE_RTP_DEMUXER
 static int rtp_demuxer_test_onpacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
 {
-    return bytes == fwrite(packet, 1, bytes, (FILE*)param) ? 0 : ferror((FILE*)param);
+    struct rtsp_demuxer_test_t* ctx = (struct rtsp_demuxer_test_t*)param;
+    return bytes == fwrite(packet, 1, bytes, ctx->fp) ? 0 : ferror(ctx->fp);
 }
 #else
 static int rtsp_demuxer_test_onpacket(void* param, struct avpacket_t* pkt)
 {
+    struct rtsp_demuxer_test_t* ctx = (struct rtsp_demuxer_test_t*)param;
     static int64_t s_dts = 0;
     if (0 == s_dts)
         s_dts = pkt->dts;
     printf("[%d:0x%x] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", pkt->stream->stream, (unsigned int)pkt->stream->codecid, pkt->pts, pkt->dts, pkt->pts - pkt->dts, pkt->dts - s_dts, pkt->size);
     s_dts = pkt->dts;
 
-    fwrite(pkt->data, 1, pkt->size, (FILE*)param);
+    int r = avpkt2bs_input(&ctx->bs, pkt);
+    fwrite(ctx->bs.ptr, 1, r, ctx->fp);
+    //fwrite(pkt->data, 1, pkt->size, ctx->fp);
     return 0;
 }
 #endif
@@ -30,15 +47,18 @@ void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t
 {
     uint8_t buffer[1500];
     FILE* fp = fopen(rtpfile, "rb");
-    FILE* wfp = fopen("xx.ps", "wb");
     assert(fp);
- 
+
+    struct rtsp_demuxer_test_t ctx;
+    ctx.fp = fopen("rtp.bin", "wb");
+    
 #if USE_RTP_DEMUXER
-    struct rtp_demuxer_t* demuxer = rtp_demuxer_create(100, 90000, payload, encoding, rtp_demuxer_test_onpacket, wfp);
+    ctx.demuxer = rtp_demuxer_create(100, 90000, payload, encoding, rtp_demuxer_test_onpacket, &ctx);
 #else
-    struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(0, 100, rtsp_demuxer_test_onpacket, wfp);
-    rtsp_demuxer_add_payload(demuxer, 90000, payload, encoding, "96 profile-level-id=1; cpresent=0; config=400023203fc0;");
-    rtsp_demuxer_rtpinfo(demuxer, seq, ssrc);
+    avpkt2bs_create(&ctx.bs);
+    ctx.demuxer = rtsp_demuxer_create(0, 100, rtsp_demuxer_test_onpacket, &ctx);
+    rtsp_demuxer_add_payload(ctx.demuxer, 90000, payload, encoding, "96 profile-level-id=1; cpresent=0; config=400023203fc0;");
+    rtsp_demuxer_rtpinfo(ctx.demuxer, seq, ssrc);
 #endif
     
     while (1)
@@ -51,19 +71,20 @@ void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t
         assert(size < sizeof(buffer));
         assert(size == (int)fread(buffer, 1, size, fp));
 #if USE_RTP_DEMUXER
-        assert(rtp_demuxer_input(demuxer, buffer, size) >= 0);
+        assert(rtp_demuxer_input(ctx.demuxer, buffer, size) >= 0);
 #else
-        assert(rtsp_demuxer_input(demuxer, buffer, size) >= 0);
+        assert(rtsp_demuxer_input(ctx.demuxer, buffer, size) >= 0);
 #endif
         
     }
 
 #if USE_RTP_DEMUXER
-    rtp_demuxer_destroy(&demuxer);
+    rtp_demuxer_destroy(&ctx.demuxer);
 #else
-    rtsp_demuxer_destroy(demuxer);
+    rtsp_demuxer_destroy(ctx.demuxer);
+    avpkt2bs_destroy(&ctx.bs);
 #endif
     
     fclose(fp);
-    fclose(wfp);
+    fclose(ctx.fp);
 }

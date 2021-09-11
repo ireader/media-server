@@ -150,22 +150,10 @@ int rtsp_client_setup(struct rtsp_client_t* rtsp, const char* sdp, int len)
 	}
 	else if(rtsp->media_count > 1)
 	{
-		// rfc 2326 C.1.1 Control URL (p81)
-		// look for a base URL in the following order:
-		// 1. The RTSP Content-Base field
-		// 2. The RTSP Content-Location field
-		// 3. The RTSP request URL
+		// fix some IPC set Content-Base only
 		const char* base;
-		base = rtsp->baseuri[0] ? rtsp->baseuri : (rtsp->location[0] ? rtsp->location : rtsp->uri);
-		r = strlen(base);
-		for (i = 0; i < rtsp->media_count; i++)
-		{
-			m = rtsp->media + i;
-			if (strlen(m->uri) <= r || 0 != strncmp(base, m->uri, r))
-				break;
-		}
-
-		rtsp->aggregate = i == rtsp->media_count;
+		base = rtsp->baseuri[0] ? rtsp->baseuri : rtsp->location;
+		rtsp->aggregate = base[0] ? 1 : 0;
 		if(rtsp->aggregate)
 			snprintf(rtsp->aggregate_uri, sizeof(rtsp->aggregate_uri), "%s", base);
 	}
