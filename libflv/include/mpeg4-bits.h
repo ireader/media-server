@@ -51,6 +51,11 @@ static inline size_t mpeg4_bits_remain(struct mpeg4_bits_t* bits)
 	return bits->error ? 0 : (bits->size * 8 - bits->bits);
 }
 
+static inline void mpeg4_bits_skip(struct mpeg4_bits_t* bits, size_t n)
+{
+	bits->bits += n;
+}
+
 /// read 1-bit from bit stream(offset position)
 /// @param[in] bits bit stream
 /// @return -1-error, 1-value, 0-value
@@ -130,6 +135,12 @@ static inline uint64_t mpeg4_bits_read_uvlc(struct mpeg4_bits_t* bits)
 	return (1ULL << leadingZeros) - 1 + value;
 }
 
+static inline uint64_t mpeg4_bits_read_latm(struct mpeg4_bits_t* bits)
+{
+	int len;
+	len = (int)mpeg4_bits_read_n(bits, 2);
+	return mpeg4_bits_read_n(bits, (len + 1) * 8);
+}
 
 /// write 1-bit
 /// @param[in] v write 0 if v value 0, other, write 1

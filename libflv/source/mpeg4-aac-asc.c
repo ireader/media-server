@@ -271,6 +271,72 @@ static int mpeg4_aac_celp_specific_config_load(struct mpeg4_bits_t* bits, struct
 	return mpeg4_bits_error(bits);
 }
 
+// ISO/IEC 23003-1 Table 9.1 ¡ª Syntax of SpatialSpecificConfig()
+/*
+SpatialSpecificConfig()
+{
+	bsSamplingFrequencyIndex;	4	uimsbf
+	if ( bsSamplingFrequencyIndex == 0xf ) {
+		bsSamplingFrequency;	24	uimsbf
+	}
+	bsFrameLength;	7	uimsbf
+	bsFreqRes;	3	uimsbf
+	bsTreeConfig;	4	uimsbf
+	if (bsTreeConfig == ¡®0111¡¯) {
+		bsNumInCh;	4	uimsbf
+		bsNumLFE	2	uimsbf
+		bsHasSpeakerConfig	1	uimsbf
+		if ( bsHasSpeakerConfig == 1 ) {
+			audioChannelLayout = SpeakerConfig3d();		Note 1
+		}
+	}
+
+	bsQuantMode;	2	uimsbf
+	bsOneIcc;	1	uimsbf
+	bsArbitraryDownmix;	1	uimsbf
+	bsFixedGainSur;	3	uimsbf
+	bsFixedGainLFE;	3	uimsbf
+	bsFixedGainDMX;	3	uimsbf
+	bsMatrixMode;	1	uimsbf
+	bsTempShapeConfig;	2	uimsbf
+	bsDecorrConfig;	2	uimsbf
+	bs3DaudioMode;	1	uimsbf
+
+	if ( bsTreeConfig == ¡®0111¡¯ ) {
+		for (i=0; i< NumInCh - NumLfe; i++) {
+			defaultCld[i] = 1;
+			ottModelfe[i] = 0;
+		}
+		for (i= NumInCh - NumLfe; i< NumInCh; i++) {
+			defaultCld[i] = 1;
+			ottModelfe[i] = 1;
+		}
+	}
+
+	for (i=0; i<numOttBoxes; i++) {		Note 2
+		OttConfig(i);
+	}
+	for (i=0; i<numTttBoxes; i++) {		Note 2
+		TttConfig(i);
+	}
+	if (bsTempShapeConfig == 2) {
+		bsEnvQuantMode	1	uimsbf
+	}
+	if (bs3DaudioMode) {
+		bs3DaudioHRTFset;	2	uimsbf
+		if (bs3DaudioHRTFset==0) {
+			ParamHRTFset();
+		}
+	}
+	ByteAlign();
+	SpatialExtensionConfig();
+}
+*/
+static int SpatialSpecificConfig(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+{
+
+}
+
 static inline uint8_t mpeg4_aac_get_audio_object_type(struct mpeg4_bits_t* bits)
 {
 	uint8_t audioObjectType;
@@ -290,7 +356,8 @@ static inline uint8_t mpeg4_aac_get_sampling_frequency(struct mpeg4_bits_t* bits
 	return samplingFrequencyIndex;
 }
 
-int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+/// @return asc bits
+static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
 {
 	uint16_t syncExtensionType;
 //	uint8_t audioObjectType;
@@ -300,12 +367,15 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 //	uint8_t channelConfiguration = 0;
 	uint8_t extensionChannelConfiguration = 0;
 	uint8_t epConfig;
-	struct mpeg4_bits_t bits;
-	mpeg4_bits_init(&bits, (void*)data, bytes);
+	size_t offset;
 
-	aac->profile = mpeg4_aac_get_audio_object_type(&bits);
-	aac->sampling_frequency_index = mpeg4_aac_get_sampling_frequency(&bits);
-	aac->channel_configuration = mpeg4_bits_read_uint8(&bits, 4);
+	offset = bits->bits;
+	aac->profile = mpeg4_aac_get_audio_object_type(bits);
+	aac->sampling_frequency_index = mpeg4_aac_get_sampling_frequency(bits);
+	aac->channel_configuration = mpeg4_bits_read_uint8(bits, 4);
+	aac->channels = mpeg4_aac_channel_count(aac->channel_configuration);
+	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	aac->extension_frequency = aac->sampling_frequency;
 
 	if (5 == aac->profile || 29 == aac->profile)
 	{
@@ -313,10 +383,11 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		aac->sbr = 1;
 		if (29 == aac->profile)
 			aac->ps = 1;
-		extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-		aac->profile = mpeg4_aac_get_audio_object_type(&bits);
+		extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(bits);
+		aac->extension_frequency = mpeg4_aac_audio_frequency_to(extensionSamplingFrequencyIndex);
+		aac->profile = mpeg4_aac_get_audio_object_type(bits);
 		if (22 == aac->profile)
-			extensionChannelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
+			extensionChannelConfiguration = mpeg4_bits_read_uint8(bits, 4);
 	}
 	else
 	{
@@ -327,23 +398,27 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 	{
 	case 1: case 2: case 3: case 4: case 6: case 7:
 	case 17: case 19: case 20: case 21: case 22: case 23:
-		mpeg4_aac_ga_specific_config_load(&bits, aac);
+		mpeg4_aac_ga_specific_config_load(bits, aac);
 		break;
 
 	case 8:
-		mpeg4_aac_celp_specific_config_load(&bits, aac);
+		mpeg4_aac_celp_specific_config_load(bits, aac);
+		break;
+
+	case 30:
+		/*sacPayloadEmbedding=*/ mpeg4_bits_read(bits);
 		break;
 
 	default:
 		assert(0);
-		return (int)bytes;
+		return bits->bits - offset;
 	}
 
 	switch (aac->profile)
 	{
 	case 17: case 19: case 20: case 21: case 22:
 	case 23: case 24: case 25: case 26: case 27: case 39:
-		epConfig = mpeg4_bits_read_uint8(&bits, 2);
+		epConfig = mpeg4_bits_read_uint8(bits, 2);
 		if (2 == epConfig || 3 == epConfig)
 		{
 			// 1.8.2.1 Error protection specific configuration (p96)
@@ -352,7 +427,7 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		}
 		if (3 == epConfig)
 		{
-			if (mpeg4_bits_read(&bits)) // directMapping
+			if (mpeg4_bits_read(bits)) // directMapping
 			{
 				// tbd
 				assert(0);
@@ -360,39 +435,52 @@ int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, str
 		}
 		break;
 
-	default: break; // do nothing;
+	default:
+		break; // do nothing;
 	}
 
-	if (5 != extensionAudioObjectType && mpeg4_bits_remain(&bits) >= 16)
+	if (5 != extensionAudioObjectType && mpeg4_bits_remain(bits) >= 16)
 	{
-		syncExtensionType = mpeg4_bits_read_uint16(&bits, 11);
+		syncExtensionType = mpeg4_bits_read_uint16(bits, 11);
 		if (0x2b7 == syncExtensionType)
 		{
-			extensionAudioObjectType = mpeg4_aac_get_audio_object_type(&bits);
+			extensionAudioObjectType = mpeg4_aac_get_audio_object_type(bits);
 			if (5 == extensionAudioObjectType)
 			{
-				aac->sbr = mpeg4_bits_read(&bits);
+				aac->sbr = mpeg4_bits_read(bits);
 				if (aac->sbr)
 				{
-					extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-					if (mpeg4_bits_remain(&bits) >= 12)
+					extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(bits);
+					aac->extension_frequency = mpeg4_aac_audio_frequency_to(extensionSamplingFrequencyIndex);
+					if (mpeg4_bits_remain(bits) >= 12)
 					{
-						syncExtensionType = mpeg4_bits_read_uint16(&bits, 11);
+						syncExtensionType = mpeg4_bits_read_uint16(bits, 11);
 						if (0x548 == syncExtensionType)
-							aac->ps = mpeg4_bits_read(&bits);
+							aac->ps = mpeg4_bits_read(bits);
 					}
 				}
 			}
 			if (22 == extensionAudioObjectType)
 			{
-				aac->sbr = mpeg4_bits_read(&bits);
+				aac->sbr = mpeg4_bits_read(bits);
 				if (aac->sbr)
-					extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(&bits);
-				extensionChannelConfiguration = mpeg4_bits_read_uint8(&bits, 4);
+				{
+					extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(bits);
+					aac->extension_frequency = mpeg4_aac_audio_frequency_to(extensionSamplingFrequencyIndex);
+				}
+				extensionChannelConfiguration = mpeg4_bits_read_uint8(bits, 4);
 			}
 		}
 	}
 
+	return bits->bits - offset;
+}
+
+int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+{
+	struct mpeg4_bits_t bits;
+	mpeg4_bits_init(&bits, (void*)data, bytes);
+	mpeg4_aac_audio_specific_config_load3(&bits, aac);
 	mpeg4_bits_aligment(&bits, 8);
 	return mpeg4_bits_error(&bits) ? -1 : (int)(bits.bits / 8);
 }
@@ -451,4 +539,126 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 	mpeg4_aac_pce_load(&pce, &src, &adts);
 	assert(src.channels == aac->channels);
 	return mpeg4_bits_error(&pce) ? 0 : (int)((7 + (adts.bits+7) / 8));
+}
+
+static size_t mpeg4_aac_stream_mux_config_load3(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+{
+	uint8_t audioMuxVersion = 0;
+	uint8_t numSubFrames;
+	uint8_t numProgram;
+	uint8_t numLayer;
+	uint8_t allStreamsSameTimeFraming;
+	uint8_t profile = 0;
+	uint64_t ascLen;
+	size_t offset;
+	int streamCnt, prog, lay;
+
+	offset = bits->bits;
+	audioMuxVersion = (uint8_t)mpeg4_bits_read(bits);
+	if (!audioMuxVersion || 0 == mpeg4_bits_read(bits))
+	{
+		if (1 == audioMuxVersion)
+			/*taraBufferFullness =*/ mpeg4_bits_read_latm(bits);
+
+		streamCnt = 0;
+		allStreamsSameTimeFraming = (uint8_t)mpeg4_bits_read(bits);
+		numSubFrames = (uint8_t)mpeg4_bits_read_n(bits, 6);
+		numProgram = (uint8_t)mpeg4_bits_read_n(bits, 4);
+		for (prog = 0; prog <= numProgram; prog++)
+		{
+			numLayer = (uint8_t)mpeg4_bits_read_n(bits, 3);
+			for (lay = 0; lay <= numLayer; lay++)
+			{
+				//progSIndx[streamCnt] = prog;
+				//laySIndx[streamCnt] = lay;
+				//streamID[prog][lay] = streamCnt++;
+				if ( (prog == 0 && lay == 0) || 0 == (uint8_t)mpeg4_bits_read(bits)) 
+				{
+					profile = aac->profile; // previous profile
+					if (audioMuxVersion == 0) {
+						mpeg4_aac_audio_specific_config_load3(bits, aac);
+					} else {
+						ascLen = mpeg4_bits_read_latm(bits);
+						ascLen -= mpeg4_aac_audio_specific_config_load3(bits, aac);
+						mpeg4_bits_skip(bits, (size_t)ascLen);
+					}
+				}
+
+				//frameLengthType[streamID[prog][lay]] = (uint8_t)mpeg4_bits_read_n(bits, 3);
+				//switch (frameLengthType[streamID[prog][lay]])
+				switch (mpeg4_bits_read_n(bits, 3))
+				{
+				case 0:
+					/*latmBufferFullness[streamID[prog][lay]] =*/ (uint8_t)mpeg4_bits_read_n(bits, 8);
+					if (!allStreamsSameTimeFraming)
+					{
+						// fixme
+						//if ((AudioObjectType[lay] == 6 || AudioObjectType[lay] == 20) &&
+						//	(AudioObjectType[lay - 1] == 8 || AudioObjectType[lay - 1] == 24))
+						if( (aac->profile == 6 || aac->profile == 20) && (profile == 8 || profile == 24) )
+						{
+							/*coreFrameOffset =*/ (uint8_t)mpeg4_bits_read_n(bits, 6);
+						}
+					}
+					break;
+
+				case 1:
+					/*frameLength[streamID[prog][lay]] =*/ (uint16_t)mpeg4_bits_read_n(bits, 9);
+					break;
+
+				case 3:
+				case 4:
+				case 5:
+					/*CELPframeLengthTableIndex[streamID[prog][lay]] =*/ (uint16_t)mpeg4_bits_read_n(bits, 6);
+					break;
+
+				case 6:
+				case 7:
+					/*HVXCframeLengthTableIndex[streamID[prog][lay]] =*/ (uint16_t)mpeg4_bits_read_n(bits, 1);
+					break;
+
+				default:
+					// nothing to do
+					break;
+				}
+			}
+		}
+
+		// otherDataPresent
+		if (mpeg4_bits_read(bits))
+		{
+			if (audioMuxVersion == 1)
+			{
+				/*otherDataLenBits =*/ mpeg4_bits_read_latm(bits);
+			}
+			else
+			{
+				/*otherDataLenBits =*/ mpeg4_bits_read_n(bits, 8); /* helper variable 32bit */
+				while(mpeg4_bits_read(bits))
+				{
+					/*otherDataLenBits <<= 8;
+					otherDataLenBits +=*/ mpeg4_bits_read_n(bits, 8);
+				}
+			}
+		}
+
+		// crcCheckPresent
+		if (mpeg4_bits_read(bits))
+			/*crcCheckSum =*/ mpeg4_bits_read_n(bits, 8);
+	}
+	else
+	{
+		/*tbd*/
+	}
+
+	return bits->bits - offset;
+}
+
+int mpeg4_aac_stream_mux_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+{
+	struct mpeg4_bits_t bits;
+	mpeg4_bits_init(&bits, (void*)data, bytes);
+	mpeg4_aac_stream_mux_config_load3(&bits, aac);
+	mpeg4_bits_aligment(&bits, 8);
+	return mpeg4_bits_error(&bits) ? -1 : (int)(bits.bits / 8);
 }

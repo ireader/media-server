@@ -6,6 +6,7 @@ int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_
 int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_t* aac);
 int mpeg4_aac_audio_specific_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
+int mpeg4_aac_stream_mux_config_load2(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 
 /*
 // ISO-14496-3 adts_frame (p122)
@@ -46,8 +47,9 @@ int mpeg4_aac_adts_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* a
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
-	aac->channels = aac->channel_configuration;
+	aac->channels = mpeg4_aac_channel_count(aac->channel_configuration);
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	aac->extension_frequency = aac->sampling_frequency;
 
 	if (0 == aac->channel_configuration)
 		return mpeg4_aac_adts_pce_load(data, bytes, aac);
@@ -110,8 +112,9 @@ int mpeg4_aac_audio_specific_config_load(const uint8_t* data, size_t bytes, stru
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
-	aac->channels = aac->channel_configuration;
+	aac->channels = mpeg4_aac_channel_count(aac->channel_configuration);
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+	aac->extension_frequency = aac->sampling_frequency;
 
 	if (bytes > 2)
 		return mpeg4_aac_audio_specific_config_load2(data, bytes, aac);
@@ -142,17 +145,24 @@ int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct m
 	if (bytes < 6) return -1;
 
 	memset(aac, 0, sizeof(*aac));
-	assert(0 == (0x80 & data[0])); // audioMuxVersion: 0
-	// [0] 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
-	aac->profile = ((data[1] & 0x01) << 4) | (data[2] >> 4); // 0-numProgram(4), 0-numLayer(3), 1-ASC(1)
-	aac->sampling_frequency_index = data[2] & 0x0F;
-	aac->channel_configuration = data[3] >> 4;
-	assert(aac->profile > 0 && aac->profile < 31);
-	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
-	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
-	aac->channels = aac->channel_configuration;
-	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
-	return 6;
+	if (6 == bytes && 0x40 == data[0] && 0 == (data[1] & 0xFE))
+	{
+		// fast path
+		// [0] 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
+		assert(0 == (0x80 & data[0])); // audioMuxVersion: 0
+		aac->profile = ((data[1] & 0x01) << 4) | (data[2] >> 4); // 0-numProgram(4), 0-numLayer(3), 1-ASC(1)
+		aac->sampling_frequency_index = data[2] & 0x0F;
+		aac->channel_configuration = data[3] >> 4;
+		assert(aac->profile > 0 && aac->profile < 31);
+		assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
+		assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
+		aac->channels = mpeg4_aac_channel_count(aac->channel_configuration);
+		aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
+		aac->extension_frequency = aac->sampling_frequency;
+		return 6;
+	}
+
+	return mpeg4_aac_stream_mux_config_load2(data, bytes, aac);
 }
 
 // ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
@@ -273,6 +283,13 @@ int mpeg4_aac_audio_frequency_from(int frequence)
 	return i >= ARRAYOF(s_frequency) ? -1 : i;
 }
 
+uint8_t mpeg4_aac_channel_count(uint8_t channel_configuration)
+{
+	static const uint8_t s_channels[] = { 0, 1, 2, 3, 4, 5, 6, 8 };
+	if (channel_configuration < 0 || channel_configuration >= ARRAYOF(s_channels))
+		return 0;
+	return s_channels[channel_configuration];
+}
 #undef ARRAYOF
 
 #if defined(_DEBUG) || defined(DEBUG)
@@ -283,8 +300,17 @@ void mpeg4_aac_test(void)
 	const unsigned char adts[] = { 0xFF, 0xF1, 0x5C, 0x40, 0x01, 0x1F, 0xFC };
 //	const unsigned char ascsbr[] = { 0x13, 0x10, 0x56, 0xe5, 0x9d, 0x48, 0x00 };
 	const unsigned char ascsbr[] = { 0x2b, 0x92, 0x08, 0x00 };
+	// https://datatracker.ietf.org/doc/html/rfc6416#page-25
+	const unsigned char mux1[] = { 0x40, 0x00, 0x8B, 0x18, 0x38, 0x83, 0x80 }; // 6 kbit/s CELP
+	const unsigned char mux2[] = { 0x40, 0x00, 0x26, 0x20, 0x3f, 0xc0 }; // 64 kbit/s AAC LC Stereo
+	const unsigned char mux3[] = { 0x40, 0x00, 0x56, 0x23, 0x10, 0x1f, 0xe0 }; // Hierarchical Signaling of SBR
+	const unsigned char mux4[] = { 0x40, 0x00, 0x26, 0x10, 0x3f, 0xc0 }; // HE AAC v2 Signaling
+	const unsigned char mux5[] = { 0x40, 0x01, 0xd6, 0x13, 0x10, 0x1f, 0xe0 }; // Hierarchical Signaling of PS
+	const unsigned char mux6[] = { 0x8F, 0xF8, 0x00, 0x41, 0x92, 0xB1, 0x18, 0x80, 0xFF, 0x0D, 0xDE, 0x36, 0x99, 0xF2, 0x40, 0x8C, 0x00, 0x53, 0x6C, 0x02, 0x31, 0x3C, 0xF3, 0xCE, 0x0F, 0xF0 }; // MPEG Surround
+	const unsigned char mux7[] = { 0x40, 0x00, 0x56, 0x23, 0x10, 0x1f, 0xe0 }; // MPEG Surround with Extended SDP Parameters
+	const unsigned char mux8[] = { 0x8F, 0xF8, 0x00, 0x06, 0x52, 0xB9, 0x20, 0x87, 0x6A, 0x83, 0xA1, 0xF4, 0x40, 0x88, 0x40, 0x53, 0x62, 0x0F, 0xF0 }; // MPEG Surround with Single-Layer Configuration
 	
-	unsigned char data[8];
+	unsigned char data[32];
 
 	assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_load(ascsbr, sizeof(ascsbr), &aac));
 	assert(2 == aac.profile && 7 == aac.sampling_frequency_index && 2 == aac.channel_configuration);
@@ -306,5 +332,17 @@ void mpeg4_aac_test(void)
 
 	//assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_load(ascsbr, sizeof(ascsbr), &aac));
 	//assert(2 == aac.profile && 6 == aac.sampling_frequency_index && 1 == aac.channel_configuration);
+
+	memset(&aac, 0, sizeof(aac));
+	mpeg4_aac_stream_mux_config_load(mux1, sizeof(mux1), &aac);
+	mpeg4_aac_stream_mux_config_load(mux2, sizeof(mux2), &aac);
+	mpeg4_aac_stream_mux_config_load(mux3, sizeof(mux3), &aac);
+	mpeg4_aac_stream_mux_config_load(mux4, sizeof(mux4), &aac);
+	mpeg4_aac_stream_mux_config_load(mux5, sizeof(mux5), &aac);
+	//mpeg4_aac_stream_mux_config_load(mux6, sizeof(mux6), &aac);
+	//mpeg4_aac_stream_mux_config_load(mux7, sizeof(mux7), &aac);
+	//mpeg4_aac_stream_mux_config_load(mux8, sizeof(mux8), &aac);
+	mpeg4_aac_stream_mux_config_save(&aac, data, sizeof(data));
+	//assert(0 == memcmp(data, mux1, sizeof(mux1)));
 }
 #endif
