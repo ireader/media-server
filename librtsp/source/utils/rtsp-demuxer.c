@@ -161,7 +161,7 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
         return pt->tracks[i].bs->input(pt->tracks[i].filter, pts / 90, dts / 90, (const uint8_t*)data, (int)bytes, flags);
     }
 
-    if (0xbd == codecid)
+    if (0xbd == codecid || 0 == codecid)
         return 0; // ignore HIK private stream
 
     (void)program; //ignore

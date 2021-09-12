@@ -95,10 +95,10 @@ int aom_av1_codec_configuration_record_save(const struct aom_av1_t* av1, uint8_t
 static inline const uint8_t* leb128(const uint8_t* data, int bytes, uint64_t* v)
 {
 	int i;
-	int64_t b;
+	uint64_t b;
 
 	b = 0x80;
-	for (*v = i = 0; i < 8 && i < bytes && 0 != (b & 0x80); i++)
+	for (*v = i = 0; i * 7 < 64 && i < bytes && 0 != (b & 0x80); i++)
 	{
 		b = data[i];
 		*v |= (b & 0x7F) << (i * 7);

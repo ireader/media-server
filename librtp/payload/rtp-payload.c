@@ -224,6 +224,11 @@ static int rtp_payload_find(int payload, const char* encoding, struct rtp_payloa
 			codec->decoder = rtp_ts_decode();
 			break;
 
+		case RTP_PAYLOAD_AV1X: // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
+			codec->encoder = rtp_av1_encode();
+			codec->decoder = rtp_av1_decode();
+			break;
+
 		case RTP_PAYLOAD_JPEG:
 		case RTP_PAYLOAD_H263:
 			return -1; // TODO
