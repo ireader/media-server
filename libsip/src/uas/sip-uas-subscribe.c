@@ -8,7 +8,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	struct sip_subscribe_t* subscribe;
 
 	r = 0;
-	subscribe = sip_subscribe_internal_fetch(t->agent, t->reply, &req->event, 0, &added);
+	subscribe = sip_subscribe_internal_fetch(t->agent, req, &req->event, 0, &added);
 	if (!subscribe)
 		return sip_uas_reply(t, 481, NULL, 0); // 481 Subscription does not exist
 
