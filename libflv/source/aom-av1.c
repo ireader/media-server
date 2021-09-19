@@ -171,7 +171,7 @@ int aom_av1_obu_split(const uint8_t* data, size_t bytes, int (*handler)(void* pa
 			ptr = leb128(data + i + offset, (int)(bytes - i - offset), &len);
 			if (ptr + len > data + bytes)
 				return -1;
-			len += ptr - data;
+			len += ptr - data - i;
 		}
 		else
 		{

@@ -57,13 +57,12 @@ static inline const uint8_t* leb128(const uint8_t* data, size_t bytes, int64_t* 
 static inline uint8_t* leb128_write(int64_t size, uint8_t* data, size_t bytes)
 {
 	size_t i;
-	for (i = 0; i < 8 && i < bytes;)
+	assert(3 == bytes && size <= 0x1FFFFF);
+	for (i = 0; i < 8 && i < bytes; i++)
 	{
 		data[i] = (uint8_t)(size & 0x7F);
 		size >>= 7;
-		data[i++] |= size > 0 ? 0x80 : 0;
-		if (0 == size)
-			break;
+		data[i] |= (size > 0 || i + 1 < bytes)? 0x80 : 0;
 	}
 	return data + i;
 }
@@ -105,7 +104,7 @@ static int rtp_av1_unpack_obu_append(struct rtp_decode_av1_t* unpacker, const ui
 	const uint8_t* pend;
 
 	pend = data + bytes;
-	size = unpacker->ptr.len + bytes + 3 /*obu_size*/ ;
+	size = unpacker->ptr.len + bytes + 3 /*obu_size*/ + 2 /*obu temporal delimiter*/;
 	if (size > RTP_PAYLOAD_MAX_SIZE || size < 0 || bytes < 2)
 		return -EINVAL;
 
@@ -137,6 +136,15 @@ static int rtp_av1_unpack_obu_append(struct rtp_decode_av1_t* unpacker, const ui
 		unpacker->obu.arr = (struct rtp_decode_av1_obu_t*)p;
 		unpacker->obu.cap += 8;
 	}
+
+	// add temporal delimiter obu
+	//if (0 == unpacker->obu.num && 0 == unpacker->obu.arr[0].len)
+	//{
+	//	static const uint8_t av1_temporal_delimiter[] = { 0x12, 0x00 };
+	//	assert(0 == unpacker->ptr.len);
+	//	memcpy(unpacker->ptr.ptr, av1_temporal_delimiter, sizeof(av1_temporal_delimiter));
+	//	unpacker->ptr.len += sizeof(av1_temporal_delimiter);
+	//}
 
 	if (0 == unpacker->obu.arr[unpacker->obu.num].len)
 	{
@@ -177,6 +185,7 @@ int rtp_av1_unpack_onframe(struct rtp_decode_av1_t* unpacker)
 		// write obu length
 		for (i = 0; i <= unpacker->obu.num; i++)
 		{
+			unpacker->obu.arr[i].ptr[0] |= 0x02; // obu_has_size_field
 			r = unpacker->obu.arr[i].ptr[0] & 0x04; // obu_extension_flag
 			leb128_write(unpacker->obu.arr[i].len, unpacker->obu.arr[i].ptr + (r ? 2 : 1), 3);
 		}
@@ -252,7 +261,6 @@ static int rtp_av1_unpack_input(void* p, const void* packet, int bytes)
 		unpacker->seq = (uint16_t)(pkt.rtp.seq - 1); // disable packet lost
 	}
 
-	printf("seq:  %hu\n", pkt.rtp.seq);
 	if ((uint16_t)pkt.rtp.seq != (uint16_t)(unpacker->seq + 1))
 	{
 		lost = 1;
