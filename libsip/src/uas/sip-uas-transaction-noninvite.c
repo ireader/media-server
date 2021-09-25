@@ -46,14 +46,14 @@
 #include "sip-uas-transaction.h"
 
 // Figure 8: non-INVITE server transaction (p140)
-int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
+int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
 {
 	int r;
 	switch (t->status)
 	{
 	case SIP_UAS_TRANSACTION_INIT:
 		t->status = SIP_UAS_TRANSACTION_TRYING;
-		r = sip_uas_transaction_handler(t, dialog, req);
+		r = sip_uas_transaction_handler(t, dialog, req, param);
 		if (0 != r && SIP_UAS_TRANSACTION_TRYING == t->status)
 		{
 			// user ignore/discard
@@ -71,7 +71,7 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 		// If a retransmission of the request is received while in 
 		// the "Proceeding" state, the most recently sent provisional 
 		// response MUST be passed to the transport layer for retransmission.
-		r = sip_uas_transaction_dosend(t, t->param);
+		r = sip_uas_transaction_dosend(t, param);
 		assert(0 == r); // ignore transport error(client will retransmission request)
 		return 0;
 
@@ -81,7 +81,7 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 		//    whenever a retransmission of the request is received.
 		// 2. Any other final responses passed by the TU to the server
 		//    transaction MUST be discarded while in the "Completed" state
-		r = sip_uas_transaction_dosend(t, t->param);
+		r = sip_uas_transaction_dosend(t, param);
 		assert(0 == r); // ignore transport error(client will retransmission request)
 		return 0;
 
@@ -94,7 +94,7 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 	}
 }
 
-int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
+int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param)
 {
 	assert(SIP_UAS_TRANSACTION_TRYING == t->status || SIP_UAS_TRANSACTION_PROCEEDING == t->status || (SIP_UAS_TRANSACTION_INIT == t->status && code >= 400) );
 	if (SIP_UAS_TRANSACTION_TRYING != t->status && SIP_UAS_TRANSACTION_PROCEEDING != t->status && SIP_UAS_TRANSACTION_INIT != t->status)
@@ -135,5 +135,5 @@ int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int cod
 		sip_uas_transaction_timeout(t, TIMER_H);
 	}
 
-	return sip_uas_transaction_dosend(t, t->param);
+	return sip_uas_transaction_dosend(t, param);
 }

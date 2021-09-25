@@ -1,5 +1,5 @@
 #include "sip-uas.h"
-#include "../sip-internal.h"
+#include "../src/sip-internal.h"
 #include "sip-uas-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
@@ -195,7 +195,7 @@ struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, 
 //	return sip_uas_reply(t, 415/*Unsupported Media Type*/, NULL, 0);
 //}
 
-static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, const struct sip_message_t* msg)
+static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, const struct sip_message_t* msg, void* param)
 {
 	//int r;
 	
@@ -203,7 +203,7 @@ static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transac
 	// If the Max-Forwards value reaches 0 before the request reaches its 
 	// destination, it will be rejected with a 483(Too Many Hops) error response.
 	if (msg->maxforwards <= 0)
-		return sip_uas_reply(t, 483/*Too Many Hops*/, NULL, 0);
+		return sip_uas_reply(t, 483/*Too Many Hops*/, NULL, 0, param);
 
 	//r = sip_uas_check_uri(uas, t, msg);
 	//if (0 == r)
@@ -214,10 +214,10 @@ static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transac
 	return 0;
 }
 
-static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog, struct sip_uas_transaction_t* t)
+static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog, struct sip_uas_transaction_t* t, void* param)
 {
 	int r;
-	r = sip_uas_check_request(sip, t, msg);
+	r = sip_uas_check_request(sip, t, msg, param);
 	if (0 != r)
 		return r;
 
@@ -225,9 +225,9 @@ static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct 
 
 	// 4. handle
 	if (sip_message_isinvite(msg) || sip_message_isack(msg))
-		r = sip_uas_transaction_invite_input(t, dialog, msg);
+		r = sip_uas_transaction_invite_input(t, dialog, msg, param);
 	else
-		r = sip_uas_transaction_noninvite_input(t, dialog, msg);
+		r = sip_uas_transaction_noninvite_input(t, dialog, msg, param);
 
 	// TODO:
 	// 1. A stateless UAS MUST NOT send provisional (1xx) responses.
@@ -262,12 +262,10 @@ static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_m
 			return -1;
 		}
 		assert(t->ref == 3); // +2 linker with timer H
-
-		t->param = param; // first only
 	}
 	locker_unlock(&sip->locker);
 
-    r = sip_uas_input_with_transaction(sip, msg, dialog, t);
+    r = sip_uas_input_with_transaction(sip, msg, dialog, t, param);
 	sip_uas_transaction_release(t);
 	return r;
 }
@@ -285,7 +283,7 @@ int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg, void
 	return r;
 }
 
-int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes)
+int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param)
 {
     int r;
     locker_lock(&t->locker);
@@ -316,11 +314,11 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
 
 	if (sip_message_isinvite(t->reply))
 	{
-		r = sip_uas_transaction_invite_reply(t, code, data, bytes);
+		r = sip_uas_transaction_invite_reply(t, code, data, bytes, param);
 	}
 	else
 	{
-		r = sip_uas_transaction_noninvite_reply(t, code, data, bytes);
+		r = sip_uas_transaction_noninvite_reply(t, code, data, bytes, param);
 	}
     locker_unlock(&t->locker);
     return r;

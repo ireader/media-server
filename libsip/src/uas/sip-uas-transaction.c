@@ -94,61 +94,61 @@ int sip_uas_transaction_addref(struct sip_uas_transaction_t* t)
 //	return sip_uas_transaction_release(t);
 //}
 
-int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req)
+int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
 {
-	assert(t->param == t->initparam);
+	//assert(t->param == t->initparam);
 	if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_CANCEL))
 	{
-		return sip_uas_oncancel(t, dialog, req);
+		return sip_uas_oncancel(t, dialog, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_BYE))
 	{
-		return sip_uas_onbye(t, dialog, req);
+		return sip_uas_onbye(t, dialog, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_PRACK))
 	{
-		return sip_uas_onprack(t, dialog, req);
+		return sip_uas_onprack(t, dialog, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_UPDATE))
 	{
-		return sip_uas_onupdate(t, dialog, req);
+		return sip_uas_onupdate(t, dialog, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_REGISTER))
 	{
-		return sip_uas_onregister(t, req);
+		return sip_uas_onregister(t, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_OPTIONS))
 	{
-		return sip_uas_onoptions(t, req);
+		return sip_uas_onoptions(t, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_SUBSCRIBE))
 	{
-		return sip_uas_onsubscribe(t, dialog, req);
+		return sip_uas_onsubscribe(t, dialog, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_NOTIFY))
 	{
-		return sip_uas_onnotify(t, req);
+		return sip_uas_onnotify(t, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_PUBLISH))
 	{
-		return sip_uas_onpublish(t, req);
+		return sip_uas_onpublish(t, req, param);
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_MESSAGE))
 	{
-		return t->handler->onmessage ? t->handler->onmessage(t->param, req, t, dialog ? dialog->session : NULL, req->payload, req->size) : 0;
+		return t->handler->onmessage ? t->handler->onmessage(param, req, t, dialog ? dialog->session : NULL, req->payload, req->size) : 0;
 	}
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_INFO))
     {
-        return sip_uas_oninfo(t, dialog, req);
+        return sip_uas_oninfo(t, dialog, req, param);
     }
 	else if (0 == cstrcasecmp(&req->u.c.method, SIP_METHOD_REFER))
 	{
-		return sip_uas_onrefer(t, dialog, req);
+		return sip_uas_onrefer(t, dialog, req, param);
 	}
 	else
 	{
 		// 8.2.1 Method Inspection (p46)
-		return sip_uas_reply(t, 405/*Method Not Allowed*/, NULL, 0);
+		return sip_uas_reply(t, 405/*Method Not Allowed*/, NULL, 0, param);
 	}
 }
 

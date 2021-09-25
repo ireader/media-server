@@ -328,7 +328,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
     sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
 	sip_contact_write(&req->to, contact, contact+sizeof(contact));
 	sip_uas_add_header(t, "Contact", contact);
-	assert(0 == sip_uas_reply(t, 200, NULL, 0));
+	assert(0 == sip_uas_reply(t, 200, NULL, 0, param));
 	return 0;
 }
 
@@ -345,7 +345,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// cancel a transaction(should be an invite transaction)
@@ -354,7 +354,7 @@ static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// @param[in] expires in seconds
@@ -363,7 +363,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
@@ -371,7 +371,7 @@ static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struc
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
     sip_uas_transaction_ondestroy(t, sip_uas_task_ondestroy, param);
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static int STDCALL InputThread(struct sip_tu_t* tu, int idx)

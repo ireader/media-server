@@ -92,7 +92,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
 		sip_uas_add_header(t, "Contact", "sip:" NAME "@" HOST);
 		snprintf(reply, sizeof(reply), pattern, HOST, HOST, m->port[0]);
-		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
+		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply), param));
 		*session = m;
 		return 0;
 	}
@@ -138,19 +138,19 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 /// on terminating a session(dialog)
 static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// cancel a transaction(should be an invite transaction)
 static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static void sip_uas_loop(struct sip_uas_test_t *test)

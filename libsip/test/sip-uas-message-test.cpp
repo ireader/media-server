@@ -206,13 +206,13 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 	struct sip_session_t* session = new struct sip_session_t;
 	assert(NULL == dialog); // re-invite
 	//sip_uas_add_header(t, "To", "Bob <sip:bob@biloxi.com>;tag=a6c85cf");
-	assert(0 == sip_uas_reply(t, 100, NULL, 0));
-	assert(0 == sip_uas_reply(t, 100, NULL, 0));
-	assert(0 == sip_uas_reply(t, 180, NULL, 0));
-	assert(0 == sip_uas_reply(t, 180, NULL, 0));
-	assert(0 == sip_uas_reply(t, 180, NULL, 0));
-	assert(0 == sip_uas_reply(t, 200, NULL, 0));
-//	assert(0 == sip_uas_reply(t, 200, NULL, 0));
+	assert(0 == sip_uas_reply(t, 100, NULL, 0, param));
+	assert(0 == sip_uas_reply(t, 100, NULL, 0, param));
+	assert(0 == sip_uas_reply(t, 180, NULL, 0, param));
+	assert(0 == sip_uas_reply(t, 180, NULL, 0, param));
+	assert(0 == sip_uas_reply(t, 180, NULL, 0, param));
+	assert(0 == sip_uas_reply(t, 200, NULL, 0, param));
+//	assert(0 == sip_uas_reply(t, 200, NULL, 0, param));
 	session->t = t;
 	*ptr = session;
 	return 0;
@@ -254,7 +254,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 {
 	struct sip_session_t* s = (struct sip_session_t*)session;
 	struct sip_agent_t* uas = (struct sip_agent_t*)param;
-	assert(0 == sip_uas_reply(t, 200, NULL, 0));
+	assert(0 == sip_uas_reply(t, 200, NULL, 0, param));
 	if(s) delete s;
 	return 0;
 }
@@ -271,12 +271,12 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 //	assert(0 == strcmp(user, "bob"));
 //	assert(0 == strcmp(location, "192.0.2.4"));
 	struct sip_agent_t* uas = (struct sip_agent_t*)param;
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static int sip_uas_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* url, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)

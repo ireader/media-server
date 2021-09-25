@@ -59,7 +59,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		sdp_t* sdp = sdp_parse((const char*)data, bytes);
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
 		sip_uas_add_header(t, "Contact", "sip:34020000001320000001@192.168.154.1");
-		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack)));
+		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack), param));
 		sdp_destroy(sdp);
 		*session = t;
 		return 0;

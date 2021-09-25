@@ -28,7 +28,7 @@ Supported: foo
 Content-Type: application/sdp
 Content-Length: 274
 */
-int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
+int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* p)
 {
 	static const char* headers[] = { "Accept", "Accept-Encoding", "Accept-Language" };
 
@@ -61,5 +61,5 @@ int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_
 
 	// 200 - OK
 	// 486 - Busy Here
-	return sip_uas_transaction_noninvite_reply(t, 200, NULL, 0);
+	return sip_uas_transaction_noninvite_reply(t, 200, NULL, 0, p);
 }

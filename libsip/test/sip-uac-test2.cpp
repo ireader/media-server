@@ -63,8 +63,10 @@ struct sip_uac_transport_address_t
 	struct sockaddr_storage addr;
 };
 
+struct sip_uac_test2_t;
 struct sip_uac_test2_session_t
 {
+	struct sip_uac_test2_t *ctx;
     char buffer[2 * 1024 * 1024];
 	std::string user;
 	std::string from;
@@ -439,13 +441,13 @@ static void ice_transport_onbind(void* param, int code)
 		sip_uas_add_header(s->t, "Content-Type", "application/sdp");
 		//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 		snprintf(reply, sizeof(reply), pattern, s->user.c_str(), host, host, s->audio.m ? (char*)s->audio.sender.buffer : "", s->video.m ? (char*)s->video.sender.buffer : "");
-		assert(0 == sip_uas_reply(s->t, 200, reply, strlen(reply)));
+		assert(0 == sip_uas_reply(s->t, 200, reply, strlen(reply), s->ctx));
 
 		ice_transport_connect(s->avt, s->medias, s->nmedia);
 	}
 	else
 	{
-		assert(0 == sip_uas_reply(s->t, 501, "Internal Server Error", 21));
+		assert(0 == sip_uas_reply(s->t, 501, "Internal Server Error", 21, s->ctx));
 	}
 }
 
@@ -536,7 +538,7 @@ static int STDCALL sip_work_thread(void* param)
 	return 0;
 }
 
-static int sip_uas_oninvite_indialog(sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite_indialog(sip_uac_test2_t* ctx, sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
 	const char* pattern = "v=0\n"
 		"o=%s 0 0 IN IP4 %s\n"
@@ -569,7 +571,7 @@ static int sip_uas_oninvite_indialog(sip_uac_test2_session_t* s, const struct si
 	s->t = t;
 	sip_uas_add_header(t, "Content-Type", "application/sdp");
 	//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
-	assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
+	assert(0 == sip_uas_reply(t, 200, reply, strlen(reply), ctx));
 	return 0;
 }
 
@@ -596,7 +598,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 				return 0; // ignore
 
 			// in dialog
-			return sip_uas_oninvite_indialog(it->second.get(), req, t, dialog, data, bytes, session);
+			return sip_uas_oninvite_indialog(ctx, it->second.get(), req, t, dialog, data, bytes, session);
 		}
 		ctx->sessions.insert(std::make_pair(s->from, s));
 	}
@@ -612,6 +614,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 	memset(&s->audio, 0, sizeof(s->audio));
 	memset(&s->video, 0, sizeof(s->video));
 	s->user = ctx->usr;
+	s->ctx = ctx;
 	s->t = t;
 
 	s->nmedia = rtsp_media_sdp((const char*)data, bytes, s->medias, sizeof(s->medias) / sizeof(s->medias[0]));
@@ -729,7 +732,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 		AutoThreadLocker locker(ctx->locker);
 		it = ctx->sessions.find(p->from);
 		if (it == ctx->sessions.end())
-			return sip_uas_reply(t, 481, NULL, 0);
+			return sip_uas_reply(t, 481, NULL, 0, param);
 
 		s = it->second;
 		ctx->sessions.erase(it);
@@ -739,24 +742,24 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 	s->source->Pause();
 	thread_destroy(s->th);
 
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// cancel a transaction(should be an invite transaction)
 static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static void sip_uac_ice_transport_onbind(void* param, int code)

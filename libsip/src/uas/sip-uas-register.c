@@ -60,7 +60,7 @@ static inline int sip_register_check_to_domain(const struct sip_message_t* req)
 }
 
 // 10.3 Processing REGISTER Requests(p63)
-int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req)
+int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r, expires;
 	struct uri_t* to;
@@ -80,7 +80,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	if (!uri || !uri->host)
 	{
 		uri_free(uri);
-		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
+		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0, param);
 	}
 	assert(/*NULL == uri->userinfo &&*/ uri->host);
 
@@ -107,7 +107,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 		uri_free(uri);
 		// all URI parameters MUST be removed (including the user-param), and
 		// any escaped characters MUST be converted to their unescaped form.
-		return sip_uas_transaction_noninvite_reply(t, 404/*Not Found*/, NULL, 0);
+		return sip_uas_transaction_noninvite_reply(t, 404/*Not Found*/, NULL, 0, param);
 	}
 	uri_free(uri);
 
@@ -118,7 +118,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	if (sip_contacts_match_any(&req->contacts) && (1 != sip_contacts_count(&req->contacts) || 0 < expires) )
 	{
 		uri_free(to);
-		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0);
+		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0, param);
 	}
 
 	// TODO:
@@ -144,7 +144,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	r = t->handler->onregister(t->param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires);
+	r = t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires);
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{
