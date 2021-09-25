@@ -211,6 +211,7 @@
     <ClCompile Include="..\libmov\test\mov-reader-test.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-adts.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-audio.cpp" />
+    <ClCompile Include="..\libmov\test\mov-writer-av1.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-h264.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-h265.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp" />

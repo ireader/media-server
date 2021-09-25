@@ -485,6 +485,9 @@
     <ClCompile Include="..\libmkv\test\mvk-writer-audio.cpp">
       <Filter>libmkv</Filter>
     </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-av1.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
