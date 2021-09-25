@@ -76,8 +76,9 @@ int rtsp_server_reply2(struct rtsp_server_t *rtsp, int code, const char* header,
 	len = snprintf(rtsp->reply, sizeof(rtsp->reply),
 		"RTSP/1.0 %d %s\r\n"
 		"CSeq: %u\r\n"
-		"Date: %s\r\n",
-		code, rtsp_reason_phrase(code), rtsp->cseq, datetime);
+		"Date: %s\r\n"
+		"User-Agent: %s\r\n",
+		code, rtsp_reason_phrase(code), rtsp->cseq, datetime, USER_AGENT);
 
 	// session header
 	if (len > 0 && rtsp->session.session[0])

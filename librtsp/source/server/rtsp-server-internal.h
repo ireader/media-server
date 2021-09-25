@@ -15,6 +15,8 @@
 
 #define MAX_UDP_PACKAGE 1024
 
+#define USER_AGENT "ireader/media-server"
+
 struct rtsp_server_t
 {
 	struct rtsp_handler_t handler;

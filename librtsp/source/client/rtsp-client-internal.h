@@ -21,7 +21,7 @@
 #define strcasecmp	_stricmp
 #endif
 
-#define USER_AGENT "RTSP client v0.1"
+#define USER_AGENT "ireader/media-server"
 #define N_MEDIA 8
 
 enum rtsp_state_t

@@ -17,6 +17,14 @@ struct fmp4_writer_t
 	uint32_t sn; // sample sn
 };
 
+static int fmp4_write_app(struct mov_t* mov)
+{
+	mov_buffer_w32(&mov->io, 8 + strlen(MOV_APP)); /* size */
+	mov_buffer_write(&mov->io, "free", 4);
+	mov_buffer_write(&mov->io, MOV_APP, strlen(MOV_APP));
+	return 0;
+}
+
 static size_t fmp4_write_mvex(struct mov_t* mov)
 {
 	int i;
@@ -242,6 +250,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 		else
 		{
 			mov_write_ftyp(mov);
+			fmp4_write_app(mov);
 			fmp4_write_moov(mov);
 		}
 

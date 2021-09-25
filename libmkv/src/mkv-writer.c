@@ -2,7 +2,7 @@
 #include "mkv-internal.h"
 #include <time.h>
 
-#define MKV_APP "ireader/media-server libmkv"
+#define MKV_APP "ireader/media-server"
 #define MKV_SEEK_HEAD_RESERVED 80
 
 struct mkv_writer_t

@@ -27,6 +27,7 @@ typedef struct _mpeg_ts_enc_context_t
     struct pat_t pat;
     int h264_h265_with_aud;
 
+	int64_t sdt_period;
 	int64_t pat_period;
 	int64_t pcr_period;
 	int64_t pcr_clock; // last pcr time
@@ -297,9 +298,18 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 	{
 		tsctx->pat_period = dts;
 
+		if (0 == tsctx->sdt_period)
+		{
+			// SDT
+			tsctx->sdt_period = dts;
+			n = sdt_write(&tsctx->pat, tsctx->payload);
+			r = mpeg_ts_write_section_header(ts, TS_PID_SDT, &tsctx->pat.cc /*fixme*/ , tsctx->payload, n);
+			if (0 != r) return r;
+		}
+
 		// PAT(program_association_section)
 		n = pat_write(&tsctx->pat, tsctx->payload);
-		r = mpeg_ts_write_section_header(ts, PAT_TID_PAS, &tsctx->pat.cc, tsctx->payload, n); // PID = 0x00 program association table
+		r = mpeg_ts_write_section_header(ts, TS_PID_PAT, &tsctx->pat.cc, tsctx->payload, n); // PID = 0x00 program association table
 		if (0 != r) return r;
 
 		// PMT(Transport stream program map section)
@@ -375,6 +385,7 @@ int mpeg_ts_reset(void* ts)
 {
 	mpeg_ts_enc_context_t *tsctx;
 	tsctx = (mpeg_ts_enc_context_t*)ts;
+//	tsctx->sdt_period = 0;
 	tsctx->pat_period = 0;
 	tsctx->pcr_period = 80 * 90; // 100ms maximum
 	tsctx->pcr_clock = 0;

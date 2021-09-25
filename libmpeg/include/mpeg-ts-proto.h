@@ -197,5 +197,6 @@ size_t pat_write(const struct pat_t *pat, uint8_t *data);
 size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes);
 size_t pmt_write(const struct pmt_t *pmt, uint8_t *data);
 size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
+size_t sdt_write(const struct pat_t* pat, uint8_t* data);
 
 #endif /* !_mpeg_ts_proto_h_ */

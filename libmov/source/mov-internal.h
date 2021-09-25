@@ -7,6 +7,8 @@
 #include "mov-buffer.h"
 #include "mov-ioutil.h"
 
+#define MOV_APP "ireader/media-server"
+
 #define MOV_TAG(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
 #define MOV_MOOV    MOV_TAG('m', 'o', 'o', 'v')
