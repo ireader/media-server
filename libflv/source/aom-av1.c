@@ -513,17 +513,16 @@ static int aom_av1_extra_handler(void* param, const uint8_t* obu, size_t bytes)
 		if (obu[0] & 0x04) // obu_extension_flag
 			av1->data[av1->bytes++] = obu[1];
 
-		if (0 == (obu[0] & 0x02))
+		//if (0 == (obu[0] & 0x02))
 		{
 			// fill obu size, leb128
-			for(i = len; 1; av1->bytes++)
+			for(i = len; i >= 0x80; av1->bytes++)
 			{
 				av1->data[av1->bytes] = (uint8_t)(i & 0x7F);
-				i >>= 7;
-				if (i <= 0)
-					break;
 				av1->data[av1->bytes] |= 0x80;
+				i >>= 7;
 			}
+			av1->data[av1->bytes++] = (uint8_t)(i & 0x7F);
 		}
 		memcpy(av1->data + av1->bytes, ptr, (size_t)len);
 		av1->bytes += (uint16_t)len;
