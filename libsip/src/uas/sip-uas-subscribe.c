@@ -13,6 +13,11 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		return sip_uas_reply(t, 481, NULL, 0, param); // 481 Subscription does not exist
 
 	assert(!dialog || subscribe->dialog == dialog);
+	if (subscribe->dialog)
+	{
+		sip_dialog_setlocaltag(subscribe->dialog, &t->reply->to.tag);
+		sip_dialog_set_local_target(subscribe->dialog, req);
+	}
 
 	// call once only
 	if (added && t->handler->onsubscribe)
@@ -63,11 +68,11 @@ int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t
 
 	// 489 Bad Event
 	if (t->handler->onnotify)
-		r = t->handler->onnotify(param, req, t, subscribe->evtsession, &req->event);
+		r = t->handler->onnotify(param, req, t, subscribe ? subscribe->evtsession : NULL, &req->event);
 	else
 		r = 0; // just ignore
 
-	if (0 == cstrcmp(&req->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
+	if (subscribe && 0 == cstrcmp(&req->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
 		sip_subscribe_remove(t->agent, subscribe);
 
 	sip_subscribe_release(subscribe);
