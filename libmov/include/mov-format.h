@@ -6,8 +6,8 @@
 // http://www.mp4ra.org/object.html
 #define MOV_OBJECT_TEXT		0x08 // Text Stream
 #define MOV_OBJECT_MP4V		0x20 // Visual ISO/IEC 14496-2 (c)
-#define MOV_OBJECT_H264		0x21 // Visual ITU-T Recommendation H.264 | ISO/IEC 14496-10 
-#define MOV_OBJECT_HEVC		0x23 // Visual ISO/IEC 23008-2 | ITU-T Recommendation H.265
+#define MOV_OBJECT_H264		0x21 // Visual ITU-T Recommendation H.264 | ISO/IEC 14496-10
+#define MOV_OBJECT_H265		0x23 // Visual ISO/IEC 23008-2 | ITU-T Recommendation H.265
 #define MOV_OBJECT_AAC		0x40 // Audio ISO/IEC 14496-3
 #define MOV_OBJECT_MP2V		0x60 // Visual ISO/IEC 13818-2 Simple Profile
 #define MOV_OBJECT_AAC_MAIN	0x66 // MPEG-2 AAC Main
@@ -34,6 +34,8 @@
 #define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
 #define MOV_OBJECT_NONE		0x00 // unknown object id
+#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
+#define MOV_OBJECT_AVC		MOV_OBJECT_H264
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001
