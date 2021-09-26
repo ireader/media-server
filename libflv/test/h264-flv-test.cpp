@@ -19,7 +19,7 @@ static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, ui
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static void h264_handler(void* param, const uint8_t* nalu, int bytes)
+static void h264_handler(void* param, const uint8_t* nalu, size_t bytes)
 {
 	struct h264_raw_t* ctx = (struct h264_raw_t*)param;
 	assert(ctx->ptr < nalu);

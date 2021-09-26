@@ -8,6 +8,7 @@
 #include "rtsp-header-session.h"
 #include "rtsp-header-transport.h"
 #include "http-parser.h"
+#include "sdp-options.h"
 #include "sdp.h"
 #include <errno.h>
 #include <stdio.h>
@@ -20,7 +21,7 @@
 #define strcasecmp	_stricmp
 #endif
 
-#define USER_AGENT "RTSP client v0.1"
+#define USER_AGENT "ireader/media-server"
 #define N_MEDIA 8
 
 enum rtsp_state_t

@@ -55,6 +55,9 @@
     <Filter Include="librtsp\sdp">
       <UniqueIdentifier>{65f4c8fc-27c7-4b37-9c1b-de6acfc134bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libmkv">
+      <UniqueIdentifier>{6ad79cfa-2fb8-4e75-b04b-48ad86d6aaa7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\librtmp\aio\aio-rtmp-client.h">
@@ -105,12 +108,6 @@
     <ClInclude Include="..\librtsp\test\media\vod-file-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\avbuffer.h">
-      <Filter>librtsp\media</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\test\media\avpacket.h">
-      <Filter>librtsp\media</Filter>
-    </ClInclude>
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
@@ -122,6 +119,12 @@
     </ClInclude>
     <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h">
       <Filter>librtsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libmov\test\mov-file-buffer.h">
+      <Filter>libmov</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtmp\test\RTMPUrl.h">
+      <Filter>librtmp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -377,12 +380,6 @@
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\avbuffer.c">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\test\media\avpacket.c">
-      <Filter>librtsp\media</Filter>
-    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
@@ -425,13 +422,81 @@
     <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c">
       <Filter>librtsp\sdp</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-vpx.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-2-mp4-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-file-buffer.c">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-reader-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-writer-test.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mkv-writer-test2.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\flv-parser-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\http-flv-live.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\fmp4-writer-test2.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-adts.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ts-multi-program-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtmp\test\rtmp-server-publish-benchmark.cpp">
+      <Filter>librtmp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-dump-replay.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-queue-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtp-streaming-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\sdp-receiver-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-av1.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmkv\test\mvk-writer-audio.cpp">
+      <Filter>libmkv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-av1.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
       <Filter>libflv</Filter>
     </None>
-    <None Include="..\libmpeg\test\fileSequence0.ts">
-      <Filter>libmpeg</Filter>
-    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\librtsp\test\sdp1.txt">
+      <Filter>librtsp</Filter>
+    </Text>
   </ItemGroup>
 </Project>

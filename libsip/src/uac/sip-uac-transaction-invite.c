@@ -51,6 +51,7 @@
 
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
+	int r;
 	struct sip_dialog_t* dialog;
 
 	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
@@ -73,12 +74,12 @@ static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t
 	// 17.1.1.2 Formal Description (p126)
 	// the provisional response MUST be passed to the TU. 
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
-	t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
+	r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, NULL); // ignore session
 
 	// reset timer b for proceeding too long
-	sip_uac_transaction_timeout(t, TIMER_B);
-	sip_dialog_release(dialog);
-	return 0;
+    sip_uac_transaction_timeout(t, TIMER_B);
+    sip_dialog_release(dialog);
+    return r;
 }
 
 static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, int retransmissions)
@@ -97,7 +98,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 		// transport layer for retransmission, but the newly received response
 		// MUST NOT be passed up to the TU
 		assert(!dialog || NULL == dialog->session);
-		t->oninvite(t->param, reply, t, dialog, reply->u.s.code); // ignore session
+		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, NULL); // ignore session
 	}
 	else
 	{
@@ -108,7 +109,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	// 17.1.1.3 Construction of the ACK Request
 	// The ACK MUST be sent to the same address, port, 
 	// and transport to which the original request was sent.
-	sip_uac_ack(t, dialog, 0); // ignore ack transport layer error, retry send on retransmissions
+	sip_uac_ack_3456xx(t, reply, dialog); // ignore ack transport layer error, retry send on retransmissions
 
 	if (!retransmissions)
 	{
@@ -158,9 +159,14 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 
     // update dialog target
     sip_dialog_target_refresh(dialog, reply);
+	sip_dialog_addref(dialog); // for t->dialog
+	t->dialog = dialog;
     
 	if (dialog->state == DIALOG_ERALY)
 	{
+		assert(!retransmissions);
+		t->status = SIP_UAC_TRANSACTION_ACCEPTED_UNACK;
+
 		// transfer dialog state
 		dialog->state = DIALOG_CONFIRMED;
 		
@@ -171,7 +177,7 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 		// response or any additional 2xx responses from other branches of a
 		// downstream fork of the matching request.
 		assert(200 <= reply->u.s.code && reply->u.s.code < 300);
-		dialog->session = t->oninvite(t->param, reply, t, dialog, reply->u.s.code);
+		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, &dialog->session);
 	}
 
 	// 17.1.1.3 Construction of the ACK Request ==> 13.2.2.4 2xx Responses 
@@ -179,7 +185,9 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 	// to send a response to an INVITE request MUST NOT immediately destroy
 	// the associated INVITE server transaction state.  This state is
 	// necessary to ensure correct processing of retransmissions of the request.
-	sip_uac_ack(t, dialog, 1); // ignore ack transport layer error, retry send on retransmissions
+
+	// need user ack
+	//sip_uac_ack(t, reply, dialog); // ignore ack transport layer error, retry send on retransmissions
 	
 	if (!retransmissions)
 	{
@@ -219,6 +227,11 @@ static int sip_uac_transaction_inivte_change_state(struct sip_uac_transaction_t*
 		break;
 
 	case SIP_UAC_TRANSACTION_TERMINATED:
+		// nothing to do
+		break;
+
+	case SIP_UAC_TRANSACTION_ACCEPTED_UNACK:
+	case SIP_UAC_TRANSACTION_ACCEPTED_ACKED:
 		// nothing to do
 		break;
 
@@ -263,6 +276,17 @@ int sip_uac_transaction_invite_input(struct sip_uac_transaction_t* t, const stru
 
 	case SIP_UAC_TRANSACTION_TERMINATED:
 		break; // timeout ?
+
+	case SIP_UAC_TRANSACTION_ACCEPTED_UNACK:
+		// 200 OK -> wait for user ack(sip_uac_ack)
+		// nothing to do
+		break;
+
+	case SIP_UAC_TRANSACTION_ACCEPTED_ACKED:
+		// 200 OK -> ACK(retransmission)
+		if(t->transport.send && t->size > 0)
+			r = t->transport.send(t->transportptr, t->data, t->size);
+		break;
 
 	default:
 		assert(0);

@@ -26,8 +26,9 @@ int rtsp_header_session(const char* field, struct rtsp_header_session_t* session
 		memcpy(session->session, field, n);
         session->session[n] = '\0';
 
-		if(0 == strncmp("timeout=", p+1, 8))
-			session->timeout = (int)(atof(p+9) * 1000);
+		for (++p; ' ' == *p; p++); // skip blank
+		if(0 == strncmp("timeout=", p, 8))
+			session->timeout = (int)(atof(p+8) * 1000);
 	}
 	else
 	{
@@ -56,6 +57,9 @@ void rtsp_header_session_test(void)
 	assert(0 == strcmp("47112344", session.session) && 60000 == session.timeout);
 
 	assert(0 == rtsp_header_session("47112344;timeout=10.1", &session));
+	assert(0 == strcmp("47112344", session.session) && 10100 == session.timeout);
+
+	assert(0 == rtsp_header_session("47112344; timeout=10.1", &session));
 	assert(0 == strcmp("47112344", session.session) && 10100 == session.timeout);
 
 	memset(id1, '1', sizeof(id1));

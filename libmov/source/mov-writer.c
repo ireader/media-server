@@ -13,6 +13,14 @@ struct mov_writer_t
 	uint64_t mdat_offset;
 };
 
+static int mov_write_tail(struct mov_t* mov)
+{
+	mov_buffer_w32(&mov->io, 8 + strlen(MOV_APP)); /* size */
+	mov_buffer_write(&mov->io, "free", 4);
+	mov_buffer_write(&mov->io, MOV_APP, strlen(MOV_APP));
+	return 0;
+}
+
 static size_t mov_write_moov(struct mov_t* mov)
 {
 	int i;
@@ -180,6 +188,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		mov_writer_move(mov, writer->mdat_offset, offset, (size_t)(offset2 - offset));
 	}
 
+	mov_write_tail(mov);
 	for (i = 0; i < mov->track_count; i++)
         mov_free_track(mov->tracks + i);
 	if (mov->tracks)

@@ -8,6 +8,7 @@
 #include "cstringext.h"
 #include "sys/system.h"
 #include "cpm/unuse.h"
+#include "sdp.h"
 
 //#define UDP_MULTICAST_ADDR "239.0.0.2"
 
@@ -39,6 +40,10 @@ static int rtsp_client_send(void* param, const char* uri, const void* req, size_
 static int rtpport(void* param, int media, const char* source, unsigned short rtp[2], char* ip, int len)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
+	int m = rtsp_client_get_media_type(ctx->rtsp, media);
+	if (SDP_M_MEDIA_AUDIO != m && SDP_M_MEDIA_VIDEO != m)
+		return 0; // ignore
+
 	switch (ctx->transport)
 	{
 	case RTSP_TRANSPORT_RTP_UDP:
@@ -87,13 +92,13 @@ static void onrtp(void* param, uint8_t channel, const void* data, uint16_t bytes
 	}
 }
 
-static int ondescribe(void* param, const char* sdp)
+static int ondescribe(void* param, const char* sdp, int len)
 {
 	struct rtsp_client_test_t *ctx = (struct rtsp_client_test_t *)param;
-	return rtsp_client_setup(ctx->rtsp, sdp);
+	return rtsp_client_setup(ctx->rtsp, sdp, len);
 }
 
-static int onsetup(void* param, int64_t duration)
+static int onsetup(void* param, int timeout, int64_t duration)
 {
 	int i;
 	uint64_t npt = 0;

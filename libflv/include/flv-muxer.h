@@ -38,6 +38,9 @@ int flv_muxer_avc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t p
 /// @param[in] data h.265 annexb bitstream: H.265 start code + H.265 NALU, 0x00000001...
 int flv_muxer_hevc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
+/// @param[in] data av1 low overhead bitstream format
+int flv_muxer_av1(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+
 struct flv_metadata_t
 {
 	int audiocodecid;

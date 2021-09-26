@@ -19,6 +19,9 @@ enum
 	SIP_UAC_TRANSACTION_COMPLETED,
 	SIP_UAC_TRANSACTION_ACCEPTED, // rfc6026 7.2. (p9)
 	SIP_UAC_TRANSACTION_TERMINATED,
+
+	SIP_UAC_TRANSACTION_ACCEPTED_UNACK, // wait for user ack, internal state only
+	SIP_UAC_TRANSACTION_ACCEPTED_ACKED, // user acked, internal state only
 };
 
 struct sip_agent_t;
@@ -44,6 +47,7 @@ struct sip_uac_transaction_t
 	sip_timer_t timerd; // wait for all duplicate-reply(ack) message(timer K)
 
 	struct sip_agent_t* agent;
+	struct sip_dialog_t* dialog;
 //	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 	sip_uac_onsubscribe onsubscribe;
 	sip_uac_oninvite oninvite;
@@ -58,7 +62,7 @@ struct sip_uac_transaction_t
 };
 
 struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip, struct sip_message_t* req);
-int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
+//int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
 //int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
 int sip_uac_transaction_send(struct sip_uac_transaction_t* t);
@@ -77,7 +81,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 sip_timer_t sip_uac_start_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, int timeout, sip_timer_handle handler);
 void sip_uac_stop_timer(struct sip_agent_t* sip, struct sip_uac_transaction_t* t, sip_timer_t* id);
 
-int sip_uac_ack(struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int newtransaction);
+int sip_uac_ack_3456xx(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, struct sip_dialog_t* dialog);
 
 int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
 int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);

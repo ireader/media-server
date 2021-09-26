@@ -4,8 +4,11 @@
 #include <assert.h>
 #include <string.h>
 
-// http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
-// metadata keyframes/filepositions
+#define N_ONMETADATA 12 // 2-LEN + 10-onMetaData
+
+/// http://www.cnblogs.com/musicfans/archive/2012/11/07/2819291.html
+/// metadata keyframes/filepositions
+/// @return >0-OK, 0-don't metadata, <0-error 
 int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t bytes)
 {
 	const uint8_t* end;
@@ -77,5 +80,5 @@ int flv_demuxer_script(struct flv_demuxer_t* flv, const uint8_t* data, size_t by
 		return 0; // skip
 
 	(void)flv;
-	return amf_read_items(data, end, items, sizeof(items) / sizeof(items[0])) ? 0 : EINVAL;
+	return amf_read_items(data, end, items, sizeof(items) / sizeof(items[0])) ? N_ONMETADATA : -1;
 }

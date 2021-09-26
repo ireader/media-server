@@ -161,5 +161,8 @@
     <ClCompile Include="source\mov-udta.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\fmp4-reader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 #include "mkv-internal.h"
 #include <time.h>
 
-#define MKV_APP "ireader/media-server libmkv"
+#define MKV_APP "ireader/media-server"
 #define MKV_SEEK_HEAD_RESERVED 80
 
 struct mkv_writer_t
@@ -262,7 +262,7 @@ void mkv_writer_destroy(struct mkv_writer_t* writer)
 int mkv_writer_write(struct mkv_writer_t* writer, int tid, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
     int r;
-    int64_t ts;
+    int64_t ts, diff;
     int64_t duration;
     uint64_t cluster_size;
     int key_frame;
@@ -320,14 +320,18 @@ int mkv_writer_write(struct mkv_writer_t* writer, int tid, const void* data, siz
         mkv_buffer_write_uint_element(&writer->io, 0xE7, ts); // Segment/Cluster/Timestamp
     }
 
+    // fix: case on ts - cluster->timestamp < 0
+    //ts = (ts - cluster->timestamp) * 1000000 / mkv->timescale;
+    diff = ts * 1000000 / mkv->timescale - cluster->timestamp * 1000000 / mkv->timescale;
+
     memset(&sample, 0, sizeof(sample));
     sample.track = tid;
     sample.offset = mkv_buffer_tell(&writer->io);
     sample.bytes = (uint32_t)bytes;
     sample.flags = flags;
     sample.data = (void*)data;
-    sample.pts = (ts - cluster->timestamp) * 1000000 / mkv->timescale;
-    sample.dts = (ts - cluster->timestamp) * 1000000 / mkv->timescale;
+    sample.pts = diff;
+    sample.dts = diff;
 
     r = mkv_cluster_simple_block_write(mkv, &sample, &writer->io);
     if (r < 0)

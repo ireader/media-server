@@ -2,19 +2,11 @@
 #define _flv_header_h_
 
 #include <stdint.h>
+#include <stddef.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-enum
-{
-	FLV_SEQUENCE_HEADER = 0,
-	FLV_AVPACKET = 1,
-	FLV_END_OF_SEQUENCE = 2,
-};
-
-#define FLV_VIDEO_KEY_FRAME 1
 
 struct flv_header_t
 {
@@ -53,7 +45,7 @@ struct flv_video_tag_header_t
 
 /// Read FLV File Header
 /// @return >=0-header length in byte, <0-error
-int flv_header_read(struct flv_header_t* flv, const uint8_t* buf, int len);
+int flv_header_read(struct flv_header_t* flv, const uint8_t* buf, size_t len);
 
 /// Write FLV File Header
 /// @param[in] audio 1-has audio, 0-don't have
@@ -61,18 +53,18 @@ int flv_header_read(struct flv_header_t* flv, const uint8_t* buf, int len);
 /// @param[out] buf flv header buffer
 /// @param[out] len flv header length
 /// @return >=0-header length in byte, <0-error
-int flv_header_write(int audio, int video, uint8_t* buf, int len);
+int flv_header_write(int audio, int video, uint8_t* buf, size_t len);
 
 
 /// Read FLV Tag Header
 /// @return >=0-header length in byte, <0-error
-int flv_tag_header_read(struct flv_tag_header_t* tag, const uint8_t* buf, int len);
+int flv_tag_header_read(struct flv_tag_header_t* tag, const uint8_t* buf, size_t len);
 
 /// Write FLV Tag Header
 /// @param[out] buf flv tag header buffer
 /// @param[out] len flv tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_tag_header_write(const struct flv_tag_header_t* tag, uint8_t* buf, int len);
+int flv_tag_header_write(const struct flv_tag_header_t* tag, uint8_t* buf, size_t len);
 
 
 /// Read FLV Audio Tag Header
@@ -80,14 +72,14 @@ int flv_tag_header_write(const struct flv_tag_header_t* tag, uint8_t* buf, int l
 /// @param[in] buf flv audio tag header buffer
 /// @param[in] len flv audio tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_t* buf, int len);
+int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_t* buf, size_t len);
 
 /// Write FLV Audio Tag Header
 /// @param[in] audio flv audio parameter
 /// @param[out] buf flv audio tag header buffer
 /// @param[out] len flv audio tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8_t* buf, int len);
+int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8_t* buf, size_t len);
 
 
 /// Read FLV Video Tag Header
@@ -95,30 +87,30 @@ int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8
 /// @param[in] buf flv video tag header buffer
 /// @param[in] len flv video tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_video_tag_header_read(struct flv_video_tag_header_t* video, const uint8_t* buf, int len);
+int flv_video_tag_header_read(struct flv_video_tag_header_t* video, const uint8_t* buf, size_t len);
 
 /// Write FLV Video Tag Header
 /// @param[in] video flv video parameter
 /// @param[out] buf flv video tag header buffer
 /// @param[out] len flv video tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_video_tag_header_write(const struct flv_video_tag_header_t* video, uint8_t* buf, int len);
+int flv_video_tag_header_write(const struct flv_video_tag_header_t* video, uint8_t* buf, size_t len);
 
 
 /// Read FLV Data Tag Header
 /// @return >=0-header length in byte, <0-error
-int flv_data_tag_header_read(const uint8_t* buf, int len);
+int flv_data_tag_header_read(const uint8_t* buf, size_t len);
 
 /// Write FLV Data Tag Header
 /// @param[out] buf flv data tag header buffer
 /// @param[out] len flv data tag header length
 /// @return >=0-header length in byte, <0-error
-int flv_data_tag_header_write(uint8_t* buf, int len);
+int flv_data_tag_header_write(uint8_t* buf, size_t len);
 
 
 /// Read/Write FLV previous tag size
-int flv_tag_size_read(const uint8_t* buf, int len, uint32_t* size);
-int flv_tag_size_write(uint8_t* buf, int len, uint32_t size);
+int flv_tag_size_read(const uint8_t* buf, size_t len, uint32_t* size);
+int flv_tag_size_write(uint8_t* buf, size_t len, uint32_t size);
 
 #if defined(__cplusplus)
 }

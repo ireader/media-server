@@ -1,0 +1,12 @@
+v=0
+o=-2208989440 2208989440 IN IP4 192.168.1.119
+s=Unnamed
+i=N/A
+c=IN IP4 192.168.1.107
+t=0 0
+a=recvonly
+m=video 5004 RTP/AVP 96
+b=RR:0
+a=rtpmap:96 H264/90000
+a=fmtp:96 packetization-mode=1;profile-level-id=;sprop-parameter-sets=j4k/ZWfjBMgl,JZuLB3==;
+a=control:trackID=0

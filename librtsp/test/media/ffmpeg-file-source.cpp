@@ -421,9 +421,9 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 			// decoder and the SBR tool are different in most cases. Therefore,
 			// this parameter SHALL NOT be considered as the definitive sampling rate.
 			m->frequency = sample_rate;
-			m->payload = RTP_PAYLOAD_MP4A;
+			m->payload = RTP_PAYLOAD_LATM;
 			snprintf(m->name, sizeof(m->name), "%s", "MP4A-LATM");
-			n = sdp_aac_latm(buffer, sizeof(buffer), 0, RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
+			n = sdp_aac_latm(buffer, sizeof(buffer), 0, RTP_PAYLOAD_LATM, sample_rate, channel_count, extra, bytes);
 		}
 		else
 		{
@@ -535,7 +535,7 @@ void FFFileSource::RTPFree(void* param, void *packet)
 	assert(m->packet == packet);
 }
 
-void FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
+int FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	struct media_t* m = (struct media_t*)param;
 	assert(m->packet == packet);
@@ -547,6 +547,7 @@ void FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_
 	
 	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
+	return 0;
 }
 
 #endif

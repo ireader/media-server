@@ -1,6 +1,7 @@
 #include "rtp-dump.h"
 #include "rtp-demuxer.h"
 #include "rtsp-demuxer.h"
+#include "avpkt2bs.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
@@ -8,27 +9,43 @@
 
 #define RTP_DEMUXER 0
 
+struct rtp_dump_test_t
+{
+#if RTP_DEMUXER
+	struct rtp_demuxer_t* demuxer;
+#else
+	struct rtsp_demuxer_t* demuxer;
+	struct avpkt2bs_t bs;
+#endif
+
+	FILE* fp;
+};
+
 #if RTP_DEMUXER
 static int rtp_onpacket(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
 {
 	int r;
-	r = (int)fwrite(packet, 1, bytes, (FILE*)param);
+	struct rtp_dump_test_t* ctx = (struct rtp_dump_test_t*)param;
+	r = (int)fwrite(packet, 1, bytes, ctx->fp);
 	assert(r == bytes);
-	return r == bytes ? 0 : ferror((FILE*)param);
+	return r == bytes ? 0 : ferror(ctx->fp);
 }
 #else
-static int rtsp_onpacket(void* param, int track, int payload, const char* encoding, int64_t pts, int64_t dts, const void* data, int bytes, int flags)
+static int rtsp_onpacket(void* param, struct avpacket_t* pkt)
 {
 	int r;
+	struct rtp_dump_test_t* ctx = (struct rtp_dump_test_t*)param;
 
 	static int64_t s_dts = 0;
 	if (0 == s_dts)
-		s_dts = dts;
-	printf("[%d:%s] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", track, encoding, pts, dts, pts - dts, dts - s_dts, bytes);
-	s_dts = dts;
+		s_dts = pkt->dts;
+	printf("[%d:0x%x] pts: %" PRId64 ", dts: %" PRId64 ", cts: %" PRId64 ", diff: %" PRId64 ", bytes: %d\n", pkt->stream->stream, (unsigned int)pkt->stream->codecid, pkt->pts, pkt->dts, pkt->pts - pkt->dts, pkt->dts - s_dts, pkt->size);
+	s_dts = pkt->dts;
 
-	r = (int)fwrite(data, 1, bytes, (FILE*)param);
-	assert(r == bytes);
+	r = avpkt2bs_input(&ctx->bs, pkt);
+	fwrite(ctx->bs.ptr, 1, r, ctx->fp);
+	//r = (int)fwrite(pkt->data, 1, pkt->size, ctx->fp);
+	//assert(r == pkt->size);
 	return 0;
 }
 #endif
@@ -41,12 +58,20 @@ void rtp_dump_test(const char* file)
 	struct rtpdump_t* dump;
 	FILE* fp;
 
-	fp = fopen("rtp.bin", "wb");
+	struct rtp_dump_test_t ctx;
+	ctx.fp = fopen("rtp.bin", "wb");
+	
 	dump = rtpdump_open(file, 0);
 #if RTP_DEMUXER
-	struct rtp_demuxer_t* demuxer = rtp_demuxer_create(100, 90000, 100, "MP2P", rtp_onpacket, fp);
+	ctx.demuxer = rtp_demuxer_create(0, 100, 90000, 100, "MP2P", rtp_onpacket, &ctx);
 #else
-	struct rtsp_demuxer_t* demuxer = rtsp_demuxer_create(100, 90000, 96, "H264", NULL, rtsp_onpacket, fp);
+	avpkt2bs_create(&ctx.bs);
+	ctx.demuxer = rtsp_demuxer_create(0, 100, rtsp_onpacket, &ctx);
+	//r = rtsp_demuxer_add_payload(ctx.demuxer, 90000, 96, "PS", "");
+	r = rtsp_demuxer_add_payload(ctx.demuxer, 90000, 100, "H264", "100 profile-level-id=420028;sprop-parameter-sets=Z0IAKOkBQHsg,aM44gA==");
+	//r = rtsp_demuxer_add_payload(ctx.demuxer, 90000, 99, "H264", "99 packetization-mode=1;profile-level-id=4D4033; sprop-parameter-sets=Z01AM5pkAeACH/4C3AQEBQAAAwPoAAB1MOhgAJ/8AAE/8i7y40MABP/gAAn/kXeXCgA=,aO44gA==");
+    //r = rtsp_demuxer_add_payload(ctx.demuxer, 44100, 121, "MP4A-LATM", "121 config=4000242000;cpresent=0;object=2;profile-level-id=1");
+	assert(0 == r);
 #endif
 	while (1)
 	{
@@ -55,18 +80,19 @@ void rtp_dump_test(const char* file)
 			break;
 
 #if RTP_DEMUXER
-		r = rtp_demuxer_input(demuxer, data, r);
+		r = rtp_demuxer_input(ctx.demuxer, data, r);
 #else
-		r = rtsp_demuxer_input(demuxer, data, r);
+		r = rtsp_demuxer_input(ctx.demuxer, data, r);
 #endif
 		assert(r >= 0);
 	}
 
 #if RTP_DEMUXER
-	rtp_demuxer_destroy(&demuxer);
+	rtp_demuxer_destroy(&ctx.demuxer);
 #else
-	rtsp_demuxer_destroy(demuxer);
+	rtsp_demuxer_destroy(ctx.demuxer);
+	avpkt2bs_destroy(&ctx.bs);
 #endif
 	rtpdump_close(dump);
-	fclose(fp);
+	fclose(ctx.fp);
 }

@@ -232,7 +232,7 @@ size_t pmt_write(const struct pmt_t *pmt, uint8_t *data)
 			//assert(pmt->streams[i].esinfo);
 			//memcpy(p, pmt->streams[i].esinfo, pmt->streams[i].esinfo_len);
 			//p += pmt->streams[i].esinfo_len;
-			len = pmt_write_descriptor(&pmt->streams[i], p + 5, 1021 - (p + 5- data));
+			len = pmt_write_descriptor(&pmt->streams[i], p + 5, 1021 - (int)(p + 5 - data));
 		}
 
 		// reserved '1111'

@@ -65,7 +65,7 @@ struct rtsp_handler_t
     /// @param[in] uri request uri
     /// @param[in] sdp RTSP SDP
     /// @return 0-ok, other-error
-    int (*onannounce)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* sdp);
+    int (*onannounce)(void* ptr, rtsp_server_t* rtsp, const char* uri, const char* sdp, int len);
 
     /// RTSP RECORD request(call rtsp_server_reply_record)
     /// @param[in] ptr user-defined parameter
@@ -192,6 +192,8 @@ const char* rtsp_server_get_header(rtsp_server_t* rtsp, const char* name);
 
 /// get client ip/port
 const char* rtsp_server_get_client(rtsp_server_t* rtsp, unsigned short* port);
+/// @timeout set session timeout in seconds, valid only in setup response(set before rtsp_server_reply_setup)
+void rtsp_server_set_session_timeout(rtsp_server_t* rtsp, int timeout);
 
 #if defined(__cplusplus)
 }

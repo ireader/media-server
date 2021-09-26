@@ -22,13 +22,12 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	sample_count = mov_buffer_r32(&mov->io); /* sample_count */
 
 	track = mov->track;
-	if (track->sample_count + sample_count + 1 > track->sample_offset)
+	if (sample_count > 0)
 	{
-		void* p = realloc(track->samples, sizeof(struct mov_sample_t) * (track->sample_count + 2*sample_count + 1));
+		void* p = realloc(track->samples, sizeof(struct mov_sample_t) * (track->sample_count + sample_count + 1));
 		if (NULL == p) return ENOMEM;
 		track->samples = (struct mov_sample_t*)p;
-		track->sample_offset = track->sample_count + 2 * sample_count + 1;
-		memset(track->samples + track->sample_count,  0, sizeof(struct mov_sample_t) * (2 * sample_count + 1));
+		memset(track->samples + track->sample_count, 0, sizeof(struct mov_sample_t) * (sample_count + 1));
 	}
 
 	data_offset = track->tfhd.base_data_offset;

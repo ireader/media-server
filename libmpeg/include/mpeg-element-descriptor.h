@@ -49,10 +49,10 @@ Value Description
 */
 typedef struct _hierarchy_descriptor_t
 {
-	uint32_t reserved0 : 1;
-	uint32_t temporal_scalability_flag : 1;
-	uint32_t spatial_scalability_flag : 1;
-	uint32_t quality_scalability_flag : 1;
+	uint32_t no_view_scalability_flag : 1;
+	uint32_t no_temporal_scalability_flag : 1;
+	uint32_t no_spatial_scalability_flag : 1;
+	uint32_t no_quality_scalability_flag : 1;
 	uint32_t hierarchy_type : 4;
 	uint32_t tref_present_flag : 1;
 	uint32_t reserved1 : 1;

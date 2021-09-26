@@ -7,42 +7,51 @@
 #include <string.h>
 #include <assert.h>
 
+#define DATA(off) data_read_with_boundary_check(data, bytes, off, &overflow)
+static inline uint8_t data_read_with_boundary_check(const uint8_t* data, size_t bytes, size_t off, int *overflow)
+{
+	return (off < bytes) ? (data[off]) : (*overflow = 1, 0);
+}
+
 /// @return 0-error, other-pes header length
 size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 {
-    size_t i;
+	size_t i;
+	int overflow;
 
-    assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
+	overflow = 0;
+	if (bytes < 3 + 6)
+		return 0; // invalid data length
+
+	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
     pes->sid = data[3];
     pes->len = (data[4] << 8) | data[5];
 
-    i = 6;
-    assert(0x02 == ((data[i] >> 6) & 0x3));
-    pes->PES_scrambling_control = (data[i] >> 4) & 0x3;
-    pes->PES_priority = (data[i] >> 3) & 0x1;
-    pes->data_alignment_indicator = (data[i] >> 2) & 0x1;
-    pes->copyright = (data[i] >> 1) & 0x1;
-    pes->original_or_copy = data[i] & 0x1;
+	i = 6;
+    assert(0x02 == ((DATA(i) >> 6) & 0x3));
+    pes->PES_scrambling_control = (DATA(i) >> 4) & 0x3;
+    pes->PES_priority = (DATA(i) >> 3) & 0x1;
+    pes->data_alignment_indicator = (DATA(i) >> 2) & 0x1;
+    pes->copyright = (DATA(i) >> 1) & 0x1;
+    pes->original_or_copy = DATA(i) & 0x1;
 
     i++;
-    pes->PTS_DTS_flags = (data[i] >> 6) & 0x3;
-    pes->ESCR_flag = (data[i] >> 5) & 0x1;
-    pes->ES_rate_flag = (data[i] >> 4) & 0x1;
-    pes->DSM_trick_mode_flag = (data[i] >> 3) & 0x1;
-    pes->additional_copy_info_flag = (data[i] >> 2) & 0x1;
-    pes->PES_CRC_flag = (data[i] >> 1) & 0x1;
-    pes->PES_extension_flag = data[i] & 0x1;
+    pes->PTS_DTS_flags = (DATA(i) >> 6) & 0x3;
+    pes->ESCR_flag = (DATA(i) >> 5) & 0x1;
+    pes->ES_rate_flag = (DATA(i) >> 4) & 0x1;
+    pes->DSM_trick_mode_flag = (DATA(i) >> 3) & 0x1;
+    pes->additional_copy_info_flag = (DATA(i) >> 2) & 0x1;
+    pes->PES_CRC_flag = (DATA(i) >> 1) & 0x1;
+    pes->PES_extension_flag = DATA(i) & 0x1;
 
     i++;
-    pes->PES_header_data_length = data[i];
-    if (bytes < pes->PES_header_data_length + 9)
-        return 0; // invalid data length
+    pes->PES_header_data_length = DATA(i);
 
     i++;
     if (0x02 & pes->PTS_DTS_flags)
     {
-        assert(0x20 == (data[i] & 0x20));
-        pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
+        assert(0x20 == (DATA(i) & 0x20));
+        pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
 
         i += 5;
     }
@@ -53,8 +62,8 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
     if (0x01 & pes->PTS_DTS_flags)
     {
-        assert(0x10 == (data[i] & 0x10));
-        pes->dts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
+        assert(0x10 == (DATA(i) & 0x10));
+        pes->dts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
         i += 5;
     }
     else if(0x02 & pes->PTS_DTS_flags)
@@ -69,14 +78,14 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
     if (pes->ESCR_flag)
     {
-        pes->ESCR_base = ((((uint64_t)data[i] >> 3) & 0x07) << 30) | (((uint64_t)data[i] & 0x03) << 28) | ((uint64_t)data[i + 1] << 20) | ((((uint64_t)data[i + 2] >> 3) & 0x1F) << 15) | (((uint64_t)data[i + 2] & 0x3) << 13) | ((uint64_t)data[i + 3] << 5) | ((data[i + 4] >> 3) & 0x1F);
-        pes->ESCR_extension = ((data[i + 4] & 0x03) << 7) | ((data[i + 5] >> 1) & 0x7F);
+        pes->ESCR_base = ((((uint64_t)DATA(i) >> 3) & 0x07) << 30) | (((uint64_t)DATA(i) & 0x03) << 28) | ((uint64_t)DATA(i + 1) << 20) | ((((uint64_t)DATA(i + 2) >> 3) & 0x1F) << 15) | (((uint64_t)DATA(i + 2) & 0x3) << 13) | ((uint64_t)DATA(i + 3) << 5) | ((DATA(i + 4) >> 3) & 0x1F);
+        pes->ESCR_extension = ((DATA(i + 4) & 0x03) << 7) | ((DATA(i + 5) >> 1) & 0x7F);
         i += 6;
     }
 
     if (pes->ES_rate_flag)
     {
-        pes->ES_rate = ((data[i] & 0x7F) << 15) | (data[i + 1] << 7) | ((data[i + 2] >> 1) & 0x7F);
+        pes->ES_rate = ((DATA(i) & 0x7F) << 15) | (DATA(i + 1) << 7) | ((DATA(i + 2) >> 1) & 0x7F);
         i += 3;
     }
 
@@ -100,10 +109,15 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
     {
     }
 
-    if (pes->len > 0)
-        pes->len -= pes->PES_header_data_length + 3;
-
-    return pes->PES_header_data_length + 9;
+	if (pes->len > 0)
+	{
+		if (pes->len < pes->PES_header_data_length + 3)
+			return 0; // invalid data length
+		pes->len -= pes->PES_header_data_length + 3;
+	}
+    
+	assert(pes->len >= 0); // TS pes->len maybe 0(payload > 65535)
+    return overflow ? 0 : pes->PES_header_data_length + 9;
 }
 
 /// @return 0-error, pes header length
@@ -188,36 +202,44 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 {
 	size_t i;
+	int overflow;
 
+	overflow = 0;
 	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
 	pes->sid = data[3];
 	pes->len = (data[4] << 8) | data[5];
 
-	for (i = 6; data[i] == 0xFF && i < bytes; )
+	for (i = 6; i < bytes && DATA(i) == 0xFF; )
 		i++;
 
-	if (0x40 == (0xC0 & data[i]))
+	if (0x40 == (0xC0 & DATA(i)))
 	{
 		i += 2; // skip STD_buffer_scale / STD_buffer_size
 	}
 
-	if (0x20 == (0xF0 & data[i]))
+	if (0x20 == (0xF0 & DATA(i)))
 	{
-		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
+		pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
 		i += 5;
 	}
-	else if (0x30 == (0xF0 & data[i]))
+	else if (0x30 == (0xF0 & DATA(i)))
 	{
-		pes->pts = ((((uint64_t)data[i] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 1] << 22) | ((((uint64_t)data[i + 2] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 3] << 7) | ((data[i + 4] >> 1) & 0x7F);
-		pes->dts = ((((uint64_t)data[i + 5] >> 1) & 0x07) << 30) | ((uint64_t)data[i + 6] << 22) | ((((uint64_t)data[i + 7] >> 1) & 0x7F) << 15) | ((uint64_t)data[i + 8] << 7) | ((data[i + 9] >> 1) & 0x7F);
+		pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
+		pes->dts = ((((uint64_t)DATA(i + 5) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 6) << 22) | ((((uint64_t)DATA(i + 7) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 8) << 7) | ((DATA(i + 9) >> 1) & 0x7F);
 		i += 10;
 	}
 	else
 	{
-		assert(0x0F == data[i]);
+		assert(0x0F == DATA(i));
 		i += 1;
 	}
 
-	pes->len -= i - 6;
-	return i;
+	if (pes->len > 0)
+	{
+		if (pes->len < i - 6)
+			return 0; // invalid data length
+		pes->len -= i - 6;
+	}
+
+	return overflow ? 0 : i;
 }

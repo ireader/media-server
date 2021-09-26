@@ -1,5 +1,5 @@
 #include "sip-uac.h"
-#include "../sip-internal.h"
+#include "../src/sip-internal.h"
 #include "sip-uac-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
@@ -208,7 +208,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	
 	// Contact: <sip:bob@192.0.2.4>
 	if (0 == sip_contacts_count(&t->req->contacts) && 
-		(sip_message_isinvite(t->req) || sip_message_isregister(t->req) || sip_message_isrefer(t->req)))
+		(sip_message_isinvite(t->req) || sip_message_isregister(t->req) || sip_message_isrefer(t->req) || sip_message_issubscribe(t->req)))
 	{
 		// 12.1.2 UAC Behavior (p71)
 		// When a UAC sends a request that can establish a dialog (such as an

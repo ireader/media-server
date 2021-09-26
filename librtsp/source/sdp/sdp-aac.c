@@ -1,6 +1,7 @@
 // RFC6184 RTP Payload Format for H.264 Video
 
 #include "mpeg4-aac.h"
+#include "sdp-payload.h"
 #include "base64.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -9,14 +10,14 @@
 #include <assert.h>
 
 // RFC6416 RTP Payload Format for MPEG-4 Audio/Visual Streams
-int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
+int sdp_aac_latm(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
 {
 	// In the presence of SBR, the sampling rates for the core encoder/
 	// decoder and the SBR tool are different in most cases. Therefore,
 	// this parameter SHALL NOT be considered as the definitive sampling rate.
 	// profile-level-id --> ISO/IEC 14496-3:2009 audioProfileLevelIndication values
 	static const char* pattern =
-		"m=audio %hu RTP/AVP %d\n"
+		"m=audio %hu %s %d\n"
 		"a=rtpmap:%d MP4A-LATM/%d/%d\n"
 		"a=fmtp:%d profile-level-id=%d;object=%d;cpresent=0;config=";
 
@@ -43,7 +44,8 @@ int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int
 	//	only if they are set to the same value as the audio sampling rate
 	sample_rate = 0 == sample_rate ? 90000 : sample_rate;
 
-	n = snprintf((char*)data, bytes, pattern, port,
+	n = snprintf((char*)data, bytes, pattern, port, 
+		proto && *proto ? proto : "RTP/AVP",
 		payload, payload, sample_rate, channel_count, 
 		payload, mpeg4_aac_profile_level(&aac), aac.profile);
 
@@ -57,7 +59,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int
 }
 
 // RFC 3640 3.3.1. General (p21)
-int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
+int sdp_aac_generic(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
 {
 	// a=rtpmap:<payload type> <encoding name>/<clock rate>[/<encoding parameters > ]
 	// For audio streams, <encoding parameters> specifies the number of audio channels
@@ -67,7 +69,7 @@ int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, 
 	// If an MPEG-4 audio stream is transported, the rate SHOULD be set to the same value as the sampling rate of the audio stream. 
 	// If an MPEG-4 video stream transported, it is RECOMMENDED that the rate be set to 90 kHz.
 	static const char* pattern =
-		"m=audio %hu RTP/AVP %d\n"
+		"m=audio %hu %s %d\n"
 		"a=rtpmap:%d mpeg4-generic/%d/%d\n"
 		"a=fmtp:%d streamtype=5;profile-level-id=%d;mode=AAC-hbr;sizeLength=13;indexLength=3;indexDeltaLength=3;config=";
 
@@ -82,7 +84,7 @@ int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, 
 	assert(aac.sampling_frequency_index == (uint8_t)mpeg4_aac_audio_frequency_from(sample_rate));
 	assert(aac.channel_configuration == channel_count);
 
-	n = snprintf((char*)data, bytes, pattern, port, payload, payload, sample_rate, channel_count, payload, mpeg4_aac_profile_level(&aac));
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, sample_rate, channel_count, payload, mpeg4_aac_profile_level(&aac));
 
 	if (n + extra_size * 2 + 1 > bytes)
 		return -1; // don't have enough memory
@@ -140,7 +142,7 @@ void sdp_aac_test(void)
 	//struct mpeg4_aac_t aac;
 	//int n;
 
-	assert((int)strlen(mpeg4_generic_sdp) == sdp_aac_generic(buffer, sizeof(buffer), 0, 96, 48000, 2, config, sizeof(config)));
+	assert((int)strlen(mpeg4_generic_sdp) == sdp_aac_generic(buffer, sizeof(buffer), "RTP/AVP", 0, 96, 48000, 2, config, sizeof(config)));
 	assert(0 == memcmp(mpeg4_generic_sdp, buffer, strlen(mpeg4_generic_sdp)));
 	assert(sizeof(config) == sdp_aac_mpeg4_load(buffer, sizeof(buffer), "1190"));
 	assert(0 == memcmp(config, buffer, sizeof(config)));

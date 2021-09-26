@@ -80,7 +80,7 @@ static int h265_write(struct mov_h265_test_t* ctx, const void* data, int bytes)
 	return 0;
 }
 
-static void h265_handler(void* param, const uint8_t* nalu, int bytes)
+static void h265_handler(void* param, const uint8_t* nalu, size_t bytes)
 {
 	struct mov_h265_test_t* ctx = (struct mov_h265_test_t*)param;
 	assert(ctx->ptr < nalu);

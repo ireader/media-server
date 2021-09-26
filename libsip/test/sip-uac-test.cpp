@@ -4,6 +4,7 @@
 #include "sip-uac.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -120,7 +121,7 @@ static void sip_uac_recv_reply(struct sip_uac_test_t *test)
 		{
 			struct sip_message_t* reply = sip_message_create(SIP_MESSAGE_REPLY);
 			r = sip_message_load(reply, test->parser);
-			assert(0 == sip_agent_input(test->sip, reply));
+			assert(0 == sip_agent_input(test->sip, reply, NULL));
 			sip_message_destroy(reply);
 
 			http_parser_clear(test->parser);
@@ -216,8 +217,13 @@ static void sip_uac_message_test(struct sip_uac_test_t *test)
 	sip_uac_recv_reply(test);
 }
 
-static void* sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code)
+static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
 {
+	if (200 <= code && code < 300)
+	{
+		*session = NULL;
+		sip_uac_ack(t, NULL, 0);
+	}
 	return NULL;
 }
 
@@ -228,19 +234,9 @@ static void sip_uac_invite_test(struct sip_uac_test_t *test)
 	sip_uac_recv_reply(test);
 }
 
-static int STDCALL TimerThread(void* param)
-{
-	bool *running = (bool*)param;
-	while (*running)
-	{
-		aio_timeout_process();
-		system_sleep(5);
-	}
-	return 0;
-}
-
 void sip_uac_test(void)
 {
+	sip_timer_init();
 	struct sip_uac_test_t test;
 	test.transport = {
 		sip_uac_transport_via,
@@ -249,22 +245,16 @@ void sip_uac_test(void)
 	struct sip_uas_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
 
-	pthread_t th;
-	bool running = true;
-	thread_create(&th, TimerThread, &running);
-
 	test.udp = socket_udp();
-	test.sip = sip_agent_create(&handler, NULL);
+	test.sip = sip_agent_create(&handler);
 	test.parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uac_register_test(&test);
 	sip_uac_message_test(&test);
 	//sip_uac_invite_test(&test);
 
-	running = false;
-	thread_destroy(th);
-
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
+	sip_timer_cleanup();
 }

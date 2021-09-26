@@ -31,7 +31,7 @@ static inline int opus_head_channels(const struct opus_head_t* opus)
     return 0 == opus->channels ? 2 : opus->channels;
 }
 
-int opus_packet_getframes(const void* data, int len, int (*onframe)(uint8_t toc, const void* frame, int size), void* param);
+int opus_packet_getframes(const void* data, size_t len, int (*onframe)(uint8_t toc, const void* frame, size_t size), void* param);
 
 #if defined(__cplusplus)
 }

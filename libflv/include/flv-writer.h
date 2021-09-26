@@ -33,6 +33,8 @@ void flv_writer_destroy(void* flv);
 /// @return 0-ok, other-error
 int flv_writer_input(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp);
 
+int flv_writer_input_v(void* flv, int type, const struct flv_vec_t* vec, int num, uint32_t timestamp);
+
 #if defined(__cplusplus)
 }
 #endif

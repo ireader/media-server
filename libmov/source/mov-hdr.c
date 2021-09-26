@@ -7,6 +7,7 @@
 
 int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box)
 {
+    (void)box;
     mov_buffer_r8(&mov->io); // version
     mov_buffer_r24(&mov->io); // flags
     
@@ -26,6 +27,7 @@ int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box)
 
 int mov_read_coll(struct mov_t* mov, const struct mov_box_t* box)
 {
+    (void)box;
     mov_buffer_r8(&mov->io); // version
     mov_buffer_r24(&mov->io); // flags
     

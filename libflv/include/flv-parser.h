@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "flv-header.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -25,7 +26,26 @@ typedef int (*flv_parser_handler)(void* param, int codec, const void* data, size
 /// @param[in] bytes data length in byte
 /// @param[in] timestamp milliseconds relative to the first tag(DTS)
 /// @return 0-ok, other-error
-int flv_parser_input(int type, const void* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param);
+int flv_parser_tag(int type, const void* data, size_t bytes, uint32_t timestamp, flv_parser_handler handler, void* param);
+
+struct flv_parser_t
+{
+	int state;
+
+	size_t bytes;
+	size_t expect;
+	uint8_t ptr[32];
+	struct flv_header_t header;
+	struct flv_tag_header_t tag;
+	struct flv_audio_tag_header_t audio;
+	struct flv_video_tag_header_t video;
+
+	uint8_t* body;
+	void* (*alloc)(void* param, size_t bytes);
+	void (*free)(void* param, void* ptr);
+};
+
+int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, flv_parser_handler handler, void* param);
 
 #if defined(__cplusplus)
 }

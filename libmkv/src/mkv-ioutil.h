@@ -20,7 +20,11 @@ static inline int mkv_buffer_error(const struct mkv_ioutil_t* io)
 
 static inline uint64_t mkv_buffer_tell(const struct mkv_ioutil_t* io)
 {
-	return io->io.tell(io->param);
+	int64_t v;
+	v = io->io.tell(io->param);
+	if (v < 0)
+		((struct mkv_ioutil_t*)io)->error = -1;
+	return v;
 }
 
 static inline void mkv_buffer_seek(const struct mkv_ioutil_t* io, uint64_t offset)

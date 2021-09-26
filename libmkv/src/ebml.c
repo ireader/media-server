@@ -40,6 +40,7 @@ static uint64_t ebml_read_uint64(struct ebml_t* ebml, int max)
 unsigned int ebml_size_length(uint64_t size)
 {
     unsigned int bytes = 0;
+    size += 1;
     do {
         bytes++;
     } while (size >> (bytes * 7));

@@ -19,7 +19,7 @@ int rtsp_server_announce(struct rtsp_server_t *rtsp, const char* uri)
     }
 
     content = (const char*)http_get_content(rtsp->parser);
-    return rtsp->handler.onannounce(rtsp->param, rtsp, uri, content);
+    return rtsp->handler.onannounce(rtsp->param, rtsp, uri, content, (int)http_get_content_length(rtsp->parser));
 }
 
 int rtsp_server_reply_announce(struct rtsp_server_t *rtsp, int code)

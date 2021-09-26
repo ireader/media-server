@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="payload\rtp-av1-pack.c" />
     <ClCompile Include="payload\rtp-av1-unpack.c" />
+    <ClCompile Include="payload\rtp-h264-bitstream.c" />
     <ClCompile Include="payload\rtp-h265-pack.c" />
     <ClCompile Include="payload\rtp-h265-unpack.c" />
     <ClCompile Include="payload\rtp-h264-pack.c" />

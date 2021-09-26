@@ -95,7 +95,7 @@ int mov_add_audio(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
     audio->stream_type = MP4_STREAM_AUDIO;
     audio->u.audio.channelcount = (uint16_t)channel_count;
     audio->u.audio.samplesize = (uint16_t)bits_per_sample;
-    audio->u.audio.samplerate = (sample_rate > 56635 ? 0 : sample_rate) << 16;
+    audio->u.audio.samplerate = ((uint32_t)(sample_rate > 56635 ? 0 : sample_rate)) << 16;
 
     assert(0 != mov_object_to_tag(object));
     track->tag = mov_object_to_tag(object);

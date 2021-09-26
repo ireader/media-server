@@ -33,9 +33,9 @@ struct aio_rtmp_client_handler_t
 aio_rtmp_client_t* aio_rtmp_client_create(aio_socket_t aio, const char* app, const char* stream, const char* tcurl, struct aio_rtmp_client_handler_t* handler, void* param);
 void aio_rtmp_client_destroy(aio_rtmp_client_t* client);
 
-///@param[in] publish, see @rtmp_client_start
-///@param[in] publish, 0-Publish(push stream to server), 1-LIVE/VOD(pull from server), 2-LIVE only, 3-VOD only
-///@return 0-ok, other-error
+/// @param[in] client see @rtmp_client_start
+/// @param[in] publish 0-Publish(push stream to server), 1-LIVE/VOD(pull from server), 2-LIVE only, 3-VOD only
+/// @return 0-ok, other-error
 int aio_rtmp_client_start(aio_rtmp_client_t* client, int publish);
 int aio_rtmp_client_stop(aio_rtmp_client_t* client);
 int aio_rtmp_client_pause(aio_rtmp_client_t* rtmp, int pause); // VOD only

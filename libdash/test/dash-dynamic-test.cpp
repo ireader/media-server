@@ -138,7 +138,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
 
             timestamp += diff;
             s_timestamp = timestamp > s_timestamp ? timestamp : s_timestamp;
-            r = flv_parser_input(type, dash->packet, taglen, timestamp, dash_live_onflv, dash);
+            r = flv_parser_tag(type, dash->packet, taglen, timestamp, dash_live_onflv, dash);
             if (0 != r)
             {
                 assert(0);

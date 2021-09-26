@@ -70,19 +70,19 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 	return 0;
 }
 
-static int mov_buffer_seek(void* param, uint64_t offset)
+static int mov_buffer_seek(void* param, int64_t offset)
 {
 	struct hls_fmp4_t* fmp4;
 	fmp4 = (struct hls_fmp4_t*)param;
-	if (offset >= fmp4->maxsize)
+    if ((offset >= 0 ? offset : -offset) >= fmp4->maxsize)
 		return E2BIG;
-	fmp4->offset = (size_t)offset;
+    fmp4->offset = (size_t)(offset >= 0 ? offset : fmp4->maxsize+offset);
 	return 0;
 }
 
-static uint64_t mov_buffer_tell(void* param)
+static int64_t mov_buffer_tell(void* param)
 {
-	return ((struct hls_fmp4_t*)param)->offset;
+	return (int64_t)((struct hls_fmp4_t*)param)->offset;
 }
 
 static struct mov_buffer_t s_io = {

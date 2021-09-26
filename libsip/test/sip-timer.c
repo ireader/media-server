@@ -1,6 +1,43 @@
 #include "sip-timer.h"
 #include "aio-timeout.h"
+#include "sys/system.h"
+#include "sys/thread.h"
 #include <stdlib.h>
+
+static pthread_t s_threads[2];
+static volatile int s_running;
+
+static int STDCALL sip_timer_run(void* param)
+{
+	volatile int* running = (int*)param;
+	while (*running)
+	{
+		aio_timeout_process();
+		system_sleep(5);
+	}
+	return 0;
+}
+
+void sip_timer_init(void)
+{
+	int i;
+	s_running = 1;
+	for(i = 0; i < sizeof(s_threads)/sizeof(s_threads[0]); i++)
+	{
+		thread_create(s_threads+i, sip_timer_run, &s_running);
+	}
+}
+
+void sip_timer_cleanup(void)
+{
+	int i;
+
+	s_running = 0;
+	for (i = 0; i < sizeof(s_threads) / sizeof(s_threads[0]); i++)
+	{
+		thread_destroy(s_threads[i]);
+	}
+}
 
 sip_timer_t sip_timer_start(int timeout, sip_timer_handle handler, void* usrptr)
 {

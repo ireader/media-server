@@ -38,7 +38,7 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
 
         fwrite(data, 1, bytes, afp);
     }
-    else if (PSI_STREAM_H264 == avtype)
+    else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
     {
         static int64_t v_pts = 0, v_dts = 0;
         assert(0 == v_dts || dts >= v_dts);
@@ -52,13 +52,13 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
     {
         //assert(0);
 
-        static int64_t a_pts = 0, a_dts = 0;
+        static int64_t x_pts = 0, x_dts = 0;
         if (PTS_NO_VALUE == dts)
             dts = pts;
-        //assert(0 == a_dts || dts >= a_dts);
-        printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90);
-        a_pts = pts;
-        a_dts = dts;
+        //assert(0 == x_dts || dts >= x_dts);
+        //printf("[X] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts), (int)(dts - x_dts));
+        x_pts = pts;
+        x_dts = dts;
     }
 
     return 0;

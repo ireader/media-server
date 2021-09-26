@@ -38,21 +38,21 @@ static int mov_memory_write(void* param, const void* data, uint64_t bytes)
 	return 0;
 }
 
-static int mov_memory_seek(void* param, uint64_t offset)
+static int mov_memory_seek(void* param, int64_t offset)
 {
 	struct mov_memory_buffer_t* ptr;
 	ptr = (struct mov_memory_buffer_t*)param;
-	if (offset > ptr->capacity)
+	if ((uint64_t)(offset >= 0 ? offset : -offset) > ptr->capacity)
 		return -1;
-	ptr->off = offset;
+	ptr->off = offset > 0 ? offset : (ptr->capacity+offset);
 	return 0;
 }
 
-static uint64_t mov_memory_tell(void* param)
+static int64_t mov_memory_tell(void* param)
 {
 	struct mov_memory_buffer_t* ptr;
 	ptr = (struct mov_memory_buffer_t*)param;
-	return ptr->off;
+	return (int64_t)ptr->off;
 }
 
 static inline const struct mov_buffer_t* mov_memory_buffer(void)

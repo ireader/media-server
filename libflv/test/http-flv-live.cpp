@@ -173,7 +173,7 @@ void http_flv_live_test(const char* ip, int port)
 	aio_worker_clean(4);
 }
 
-static void h264_handler(void* param, const uint8_t* nalu, int bytes)
+static void h264_handler(void* param, const uint8_t* nalu, size_t bytes)
 {
 	http_flv_live_t* ctx = (http_flv_live_t*)param;
 	assert(ctx->ptr < nalu);

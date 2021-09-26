@@ -61,7 +61,7 @@ struct aio_rtmp_server_t* aio_rtmp_server_create(const char* ip, int port, struc
 	struct aio_rtmp_server_t *ctx;
 
 	// create server socket
-	socket = socket_tcp_listen(ip, (u_short)port, SOMAXCONN);
+	socket = socket_tcp_listen(0 /*AF_UNSPEC*/, ip, (u_short)port, SOMAXCONN, 0, 1);
 	if (socket_invalid == socket)
 	{
 		printf("%s(%s, %d): create socket error: %d\n", __FUNCTION__, ip, port, socket_geterror());

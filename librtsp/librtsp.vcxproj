@@ -154,6 +154,7 @@
     <ClCompile Include="source\rtsp-reason.c" />
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
+    <ClCompile Include="source\sdp-options.c" />
     <ClCompile Include="source\sdp.c" />
     <ClCompile Include="source\server\rtsp-server-announce.c" />
     <ClCompile Include="source\server\rtsp-server-describe.c" />
@@ -169,16 +170,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtp-over-rtsp.h" />
+    <ClInclude Include="include\rtp-sender.h" />
     <ClInclude Include="include\rtsp-client.h" />
+    <ClInclude Include="include\rtsp-demuxer.h" />
     <ClInclude Include="include\rtsp-header-range.h" />
     <ClInclude Include="include\rtsp-header-rtp-info.h" />
     <ClInclude Include="include\rtsp-header-session.h" />
     <ClInclude Include="include\rtsp-header-transport.h" />
     <ClInclude Include="include\rtsp-media.h" />
+    <ClInclude Include="include\rtsp-muxer.h" />
+    <ClInclude Include="include\rtsp-payloads.h" />
     <ClInclude Include="include\rtsp-reason.h" />
+    <ClInclude Include="include\rtsp-server-aio.h" />
     <ClInclude Include="include\rtsp-server.h" />
     <ClInclude Include="include\sdp-a-fmtp.h" />
     <ClInclude Include="include\sdp-a-rtpmap.h" />
+    <ClInclude Include="include\sdp-options.h" />
     <ClInclude Include="include\sdp.h" />
     <ClInclude Include="source\client\rtsp-client-internal.h" />
     <ClInclude Include="source\server\rtsp-server-internal.h" />

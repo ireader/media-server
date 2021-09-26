@@ -2,7 +2,7 @@
 #include "mov-format.h"
 #include "mov-writer.h"
 #include "webm-vpx.h"
-#include "../../librtsp/source/utils/rtsp-payloads.h"
+#include "rtsp-payloads.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,11 +70,14 @@ static uint8_t mkv_codec_id_to_mov_object_id(enum mkv_codec_t codec)
 
 static void mkv_video_info(void* mov, uint32_t track, enum mkv_codec_t codec, int width, int height, const void* extra, size_t bytes)
 {
+	// TODO:
 	if (bytes < 1 && (MKV_CODEC_VIDEO_VP8 == codec || MKV_CODEC_VIDEO_VP9 == codec))
 	{
+		int w, h;
 		uint8_t buffer[128];
 		struct webm_vpx_t vpx;
-		webm_vpx_codec_configuration_record_from_vp9(&vpx, NULL, 0);
+		memset(&vpx, 0, sizeof(vpx));
+		webm_vpx_codec_configuration_record_from_vp9(&vpx, &w, &h, NULL, 0);
 		bytes = webm_vpx_codec_configuration_record_save(&vpx, buffer, sizeof(buffer));
 		extra = buffer; // override
 	}

@@ -3,6 +3,12 @@
 #include "mov-memory-buffer.h"
 #include "mov-internal.h"
 
+int mov_read_udta(struct mov_t* mov, const struct mov_box_t* box)
+{
+	mov_buffer_skip(&mov->io, box->size);
+	return mov_buffer_error(&mov->io);
+}
+
 size_t mov_write_udta(const struct mov_t* mov)
 {
 	if (!mov->udta || mov->udta_size < 1)

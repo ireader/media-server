@@ -1,6 +1,7 @@
 // RFC7798 RTP Payload Format for High Efficiency Video Coding (HEVC)
 
 #include "mpeg4-hevc.h"
+#include "sdp-payload.h"
 #include "base64.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -8,10 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
-int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
+int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
 	static const char* pattern =
-		"m=video %hu RTP/AVP %d\n"
+		"m=video %hu %s %d\n"
 		"a=rtpmap:%d H265/90000\n"
 		"a=fmtp:%d";
 
@@ -27,7 +28,7 @@ int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int fre
 	if (r < 0) 
 		return r;
 
-	n = snprintf((char*)data, bytes, pattern, port, payload, payload, payload);
+	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload);
 
 	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]); i++)
 	{

@@ -3,7 +3,7 @@
 //#include "sip-uac-transaction.h"
 //#include "sip-uas-transaction.h"
 
-struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler, void* param)
+struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler)
 {
 	struct sip_agent_t* sip;
 	sip = (struct sip_agent_t*)calloc(1, sizeof(*sip));
@@ -17,7 +17,6 @@ struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler, void* pa
 	LIST_INIT_HEAD(&sip->dialogs);
 	LIST_INIT_HEAD(&sip->subscribes);
 	memcpy(&sip->handler, handler, sizeof(sip->handler));
-	sip->param = param;
 	return sip;
 }
 
@@ -67,9 +66,9 @@ int sip_agent_destroy(struct sip_agent_t* sip)
 	return 0;
 }
 
-int sip_agent_input(struct sip_agent_t* sip, struct sip_message_t* msg)
+int sip_agent_input(struct sip_agent_t* sip, struct sip_message_t* msg, void* param)
 {
-	return SIP_MESSAGE_REPLY == msg->mode ? sip_uac_input(sip, msg) : sip_uas_input(sip, msg);
+	return SIP_MESSAGE_REPLY == msg->mode ? sip_uac_input(sip, msg) : sip_uas_input(sip, msg, param);
 }
 
 int sip_agent_set_rport(struct sip_message_t* msg, const char* peer, int port)

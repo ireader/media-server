@@ -7,7 +7,7 @@
 #define H265_NAL_PPS 34
 #define H265_NAL_AUD 35 // Access unit delimiter
 
-int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, int bytes, void* out, int size)
+int h265_mp4toannexb(const struct mpeg4_hevc_t* hevc, const void* data, size_t bytes, void* out, size_t size)
 {
 	int r;
 	uint8_t i;

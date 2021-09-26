@@ -4,6 +4,7 @@
 #include "mpeg4-aac.h"
 #include "opus-head.h"
 #include "webm-vpx.h"
+#include "riff-acm.h"
 #include "aom-av1.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@ static FILE* s_vfp, * s_afp;
 static struct mpeg4_hevc_t s_hevc;
 static struct mpeg4_avc_t s_avc;
 static struct mpeg4_aac_t s_aac;
+static struct wave_format_t s_wav;
 static struct webm_vpx_t s_vpx;
 static struct opus_head_t s_opus;
 static struct aom_av1_t s_av1;
@@ -143,7 +145,7 @@ static void mkv_video_info(void* /*param*/, uint32_t track, enum mkv_codec_t cod
 		s_av1_track = track;
 		aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1);
 	}
-	else if (MKV_CODEC_VIDEO_VP9 == codec)
+	else if (MKV_CODEC_VIDEO_VP9 == codec || MKV_CODEC_VIDEO_VP8 == codec)
 	{
 		s_vfp = fopen("v.vp9", "wb");
 		s_vpx_track = track;
@@ -179,6 +181,12 @@ static void mkv_audio_info(void* /*param*/, uint32_t track, enum mkv_codec_t cod
 	else if (MKV_CODEC_AUDIO_MP3 == codec || MKV_CODEC_AUDIO_MP1 == codec)
 	{
 		s_afp = fopen("a.mp3", "wb");
+		s_mp3_track = track;
+	}
+	else if (MKV_CODEC_AUDIO_ACM == codec)
+	{
+		wave_format_load((const uint8_t*)extra, bytes, &s_wav);
+		s_afp = fopen("a.pcm", "wb");
 		s_mp3_track = track;
 	}
 	else

@@ -122,8 +122,41 @@ int flv_writer_input(void* p, int type, const void* data, size_t bytes, uint32_t
 	vec[0].ptr = buf;  // FLV Tag Header
 	vec[0].len = FLV_TAG_HEADER_SIZE;
 	vec[1].ptr = (void*)data;
-	vec[1].len = bytes;
+	vec[1].len = (int)bytes;
 	vec[2].ptr = buf + FLV_TAG_HEADER_SIZE; // TAG size
 	vec[2].len = 4;
 	return flv->write(flv->param, vec, 3);
+}
+
+int flv_writer_input_v(void* p, int type, const struct flv_vec_t* v, int n, uint32_t timestamp)
+{
+	int i;
+	uint8_t buf[FLV_TAG_HEADER_SIZE + 4];
+	struct flv_vec_t vec[8];
+	struct flv_writer_t* flv;
+	struct flv_tag_header_t tag;
+	flv = (struct flv_writer_t*)p;
+
+	memset(&tag, 0, sizeof(tag));
+	tag.size = 0;
+	tag.type = (uint8_t)type;
+	tag.timestamp = timestamp;
+
+	assert(n + 2 <= sizeof(vec) / sizeof(vec[0]));
+	for (i = 0; i < n && i + 2 < sizeof(vec)/sizeof(vec[0]); i++)
+	{
+		tag.size += v[i].len;
+		vec[i+1].ptr = v[i].ptr;
+		vec[i+1].len = v[i].len;
+	}
+
+	vec[0].ptr = buf;  // FLV Tag Header
+	vec[0].len = FLV_TAG_HEADER_SIZE;
+	vec[n + 1].ptr = buf + FLV_TAG_HEADER_SIZE; // TAG size
+	vec[n + 1].len = 4;
+
+	flv_tag_header_write(&tag, buf, FLV_TAG_HEADER_SIZE);
+	flv_tag_size_write(buf + FLV_TAG_HEADER_SIZE, 4, (uint32_t)tag.size + FLV_TAG_HEADER_SIZE);
+
+	return flv->write(flv->param, vec, n+2);
 }

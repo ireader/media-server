@@ -9,9 +9,9 @@ struct sip_uac_transaction_t* sip_uac_custom(struct sip_agent_t* sip, const char
 	struct sip_uac_transaction_t* t;
 
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
-	if (0 != sip_message_init(req, method, to, from, to))
+    if (0 != sip_message_init(req, method, to, from, to))
 	{
-		sip_message_destroy(req);
+        sip_message_destroy(req);
 		return NULL;
 	}
 

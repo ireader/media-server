@@ -63,3 +63,8 @@ int rtsp_server_reply_setup(struct rtsp_server_t *rtsp, int code, const char* se
 
 	return rtsp_server_reply2(rtsp, code, header, NULL, 0);
 }
+
+void rtsp_server_set_session_timeout(rtsp_server_t* rtsp, int timeout)
+{
+	rtsp->session.timeout = timeout * 1000;
+}

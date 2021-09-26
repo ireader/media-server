@@ -33,7 +33,7 @@ void* rtsp_server_listen(const char* ip, int port, struct aio_rtsp_handler_t* ha
 	struct rtsp_server_listen_t* p;
 
 	// create server socket
-	socket = socket_tcp_listen(ip, (u_short)port, SOMAXCONN);
+	socket = socket_tcp_listen(0 /*AF_UNSPEC*/, ip, (u_short)port, SOMAXCONN, 0, 1);
 	if (socket_invalid == socket)
 		return NULL;
 

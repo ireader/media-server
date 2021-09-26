@@ -9,6 +9,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -59,7 +60,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return r == bytes ? 0 : -1;
 }
 
-static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
 	const char* pattern = "v=0\n"
 		"o=- 0 0 IN IP4 %s\n"
@@ -78,7 +79,7 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		socklen_t len = 0;
 		struct sip_media_t* m = new sip_media_t;
 		m->transport.reset(new RTPUdpTransport());
-		m->nmedia = rtsp_media_sdp((const char*)data, m->medias, sizeof(m->medias) / sizeof(m->medias[0]));
+		m->nmedia = rtsp_media_sdp((const char*)data, bytes, m->medias, sizeof(m->medias) / sizeof(m->medias[0]));
 		assert(m->nmedia > 0);
 		assert(0 == strcasecmp("IP4", m->medias[0].addrtype) || 0 == strcasecmp("IP6", m->medias[0].addrtype));
 		m->port[0] = m->medias[0].port[0];
@@ -91,13 +92,14 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
 		sip_uas_add_header(t, "Contact", "sip:" NAME "@" HOST);
 		snprintf(reply, sizeof(reply), pattern, HOST, HOST, m->port[0]);
-		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply)));
-		return m;
+		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply), param));
+		*session = m;
+		return 0;
 	}
 	else
 	{
 		assert(0);
-		return NULL;
+		return 0;
 	}
 }
 
@@ -136,19 +138,19 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 /// on terminating a session(dialog)
 static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// cancel a transaction(should be an invite transaction)
 static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// @param[in] expires in seconds
 static int sip_uas_onregister(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires)
 {
-	return sip_uas_reply(t, 200, NULL, 0);
+	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 static void sip_uas_loop(struct sip_uas_test_t *test)
@@ -171,7 +173,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
         assert(0 == http_parser_input(parser, buffer, &n));
         struct sip_message_t* msg = sip_message_create(parser==test->response? SIP_MESSAGE_REQUEST : SIP_MESSAGE_REPLY);
         assert(0 == sip_message_load(msg, parser));
-        assert(0 == sip_agent_input(test->sip, msg));
+        assert(0 == sip_agent_input(test->sip, msg, test));
         sip_message_destroy(msg);
         http_parser_clear(parser);
 	} while (1);
@@ -179,6 +181,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 
 void sip_uas_test2(void)
 {
+	sip_timer_init();
 	struct sip_uas_handler_t handler;
 	handler.onregister = sip_uas_onregister;
 	handler.oninvite = sip_uas_oninvite;
@@ -189,7 +192,7 @@ void sip_uas_test2(void)
 
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
-	test.sip = sip_agent_create(&handler, &test);
+	test.sip = sip_agent_create(&handler);
 	test.request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	test.response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
@@ -198,4 +201,5 @@ void sip_uas_test2(void)
 	socket_close(test.udp);
 	http_parser_destroy(test.request);
 	http_parser_destroy(test.response);
+	sip_timer_cleanup();
 }

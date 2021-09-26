@@ -16,7 +16,7 @@ typedef struct mkv_writer_t mkv_writer_t;
 mkv_writer_t* mkv_writer_create(const struct mkv_buffer_t* buffer, void* param, int options);
 void mkv_writer_destroy(mkv_writer_t* mkv);
 
-/// @param[in] object MPEG-4 systems ObjectTypeIndication such as: mkv_OBJECT_H264, see more @mkv-format.h
+/// @param[in] codec MPEG-4 systems ObjectTypeIndication such as: mkv_OBJECT_H264, see more @mkv-format.h
 /// @param[in] extra_data AudioSpecificConfig/AVCDecoderConfigurationRecord/HEVCDecoderConfigurationRecord
 /// @return >=0-track, <0-error
 int mkv_writer_add_audio(mkv_writer_t* mkv, enum mkv_codec_t codec, int channel_count, int bits_per_sample, int sample_rate, const void* extra_data, size_t extra_data_size);

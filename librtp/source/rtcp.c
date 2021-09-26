@@ -130,21 +130,18 @@ static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t
 	header.pt = RTCP_PT(rtcphd);
 	header.length = RTCP_LEN(rtcphd);
 	
-	if (header.length * 4 + 4 > bytes)
+	// 1. RTP version field must equal 2 (p69)
+	// 2. The payload type filed of the first RTCP packet in a compound packet must be SR or RR (p69)
+	// 3. padding only valid at the last packet
+	if (header.length * 4 + 4 > bytes || 2 != header.v || (1 == header.p && header.length < data[bytes - 1]))
 	{
 		assert(0);
 		return -1;
 	}
 
-	// 1. RTP version field must equal 2 (p69)
-	// 2. The payload type filed of the first RTCP packet in a compound packet must be SR or RR (p69)
-	// 3. padding only valid at the last packet
-	assert(2 == header.v);
-
 	if(1 == header.p)
 	{
-		assert((header.length+1)*4 + 4 <= bytes);
-		header.length -= *(data + header.length - 1) * 4;
+		header.length -= data[bytes - 1];
 	}
 
 	switch(header.pt)
@@ -173,7 +170,7 @@ static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t
 		assert(0);
 	}
 
-	return (header.length+1)*4;
+	return (RTCP_LEN(rtcphd) + 1) * 4;
 }
 
 int rtcp_input_rtcp(struct rtp_context *ctx, const void* data, int bytes)

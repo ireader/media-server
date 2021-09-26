@@ -41,7 +41,7 @@ struct rtp_muxer_payload_t
     
     struct ps_muxer_t* ps;
     void* ts; // ts muxer
-    int64_t dts; // ps/ts only
+    int64_t timestamp; // ps/ts only
 
     const char* sdp;
     int len; // sdp size
@@ -98,15 +98,15 @@ static int rtsp_muxer_ts_write(void* param, const void* packet, size_t bytes)
 {
     struct rtp_muxer_payload_t* pt;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->dts);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, (uint32_t)pt->timestamp);
 }
 
-static int rtsp_muxer_ps_write(void* param, int stream, const void* packet, size_t bytes)
+static int rtsp_muxer_ps_write(void* param, int stream, void* packet, size_t bytes)
 {
     struct rtp_muxer_payload_t* pt;
     (void)stream;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, bytes, (uint32_t)pt->dts);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, (uint32_t)pt->timestamp);
 }
 
 static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
@@ -118,20 +118,20 @@ static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int byt
 
 static int rtsp_muxer_ts_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    m->pt->dts = dts * 90; // last dts
+    m->pt->timestamp = pts * 90; // last dts
     return mpeg_ts_write(m->pt->ts, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_ps_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    m->pt->dts = dts * 90; // last dts
+    m->pt->timestamp = pts * 90; // last dts
     return ps_muxer_input(m->pt->ps, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_av_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-    (void)flags, (void)pts; // TODO: rtp timestamp map PTS
-    return rtp_payload_encode_input(m->pt->rtp.encoder, data, bytes, (uint32_t)(dts * m->pt->rtp.frequency / 1000));
+    (void)flags, (void)dts; // TODO: rtp timestamp map PTS
+    return rtp_payload_encode_input(m->pt->rtp.encoder, data, (int)bytes, (uint32_t)(pts * m->pt->rtp.frequency / 1000));
 }
 
 static int rtsp_muxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const uint8_t* data, int bytes, int flags)
@@ -201,7 +201,7 @@ int rtsp_muxer_destroy(struct rtsp_muxer_t* muxer)
 	return 0;
 }
 
-int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payload, const char* encoding, uint16_t seq, uint32_t ssrc, uint16_t port, const void* extra, int size)
+int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int frequence, int payload, const char* encoding, uint16_t seq, uint32_t ssrc, uint16_t port, const void* extra, int size)
 {
     int r = 0;
     struct rtp_muxer_payload_t* pt;
@@ -214,6 +214,10 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
     pt->port = port;
     pt->pid = muxer->payload_count;
     pt->muxer = muxer;
+    pt->rtp.seq = seq;
+    pt->rtp.ssrc = ssrc;
+    pt->rtp.onpacket = rtsp_muxer_rtp_encode_packet;
+    pt->rtp.param = pt;
 
     if (RTP_PAYLOAD_MP2T == payload)
     {
@@ -222,18 +226,28 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
         h.write = rtsp_muxer_ts_write;
         h.free = rtsp_muxer_ts_free;
 
+        for (r = 0; r < muxer->payload_count; r++)
+        {
+            if (muxer->payloads[r].ts)
+                return muxer->payloads[r].pid; // exist
+        }
         pt->ts = mpeg_ts_create(&h, pt);
-        r = rtp_sender_init_video(&pt->rtp, port, payload, encoding, 90000, extra, size);
+        r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, 90000, extra, size);
     }
-    else if (0 == strcasecmp(encoding, "MP2P"))
+    else if (0 == strcasecmp(encoding, "MP2P") || 0 == strcasecmp(encoding, "PS"))
     {
         struct ps_muxer_func_t h;
         h.alloc = rtsp_muxer_ts_alloc;
         h.write = rtsp_muxer_ps_write;
         h.free = rtsp_muxer_ts_free;
 
+        for (r = 0; r < muxer->payload_count; r++)
+        {
+            if (muxer->payloads[r].ps)
+                return muxer->payloads[r].pid; // exist
+        }
         pt->ps = ps_muxer_create(&h, pt);
-        r = rtp_sender_init_video(&pt->rtp, port, payload, encoding, 90000, extra, size);
+        r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, 90000, extra, size);
     }
     else
     {
@@ -243,11 +257,11 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
             // || 0 == strcasecmp(encoding, "AV1")
             || 0 == strcasecmp(encoding, "MP4V-ES"))
         {
-            r = rtp_sender_init_video(&pt->rtp, port, payload, encoding, frequence, extra, size);
+            r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, frequence, extra, size);
         }
         else if (RTP_PAYLOAD_PCMU == payload || RTP_PAYLOAD_PCMA == payload || 0 == strcasecmp(encoding, "MP4A-LATM") || 0 == strcasecmp(encoding, "MPEG4-GENERIC") || 0 == strcasecmp(encoding, "opus"))
         {
-            r = rtp_sender_init_audio(&pt->rtp, port, payload, encoding, frequence, 0 /*from extra*/, extra, size);
+            r = rtp_sender_init_audio(&pt->rtp, proto, port, payload, encoding, frequence, 0 /*from extra*/, extra, size);
         }
         else
         {
@@ -267,11 +281,6 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, int frequence, int payloa
     pt->len = r;
     pt->sdp = (const char*)muxer->ptr + muxer->off;
     memcpy(muxer->ptr + muxer->off, pt->rtp.buffer, r);
-
-    pt->rtp.onpacket = rtsp_muxer_rtp_encode_packet;
-    pt->rtp.param = pt;
-    pt->rtp.ssrc = ssrc ? ssrc : pt->rtp.ssrc; // override
-    pt->rtp.seq = seq ? seq : pt->rtp.seq; // override
 
     muxer->payload_count++;
     muxer->off += r;
@@ -331,7 +340,7 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
         m->stream = mpeg_ts_add_stream(m->pt->ts, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ts_input;
     }
-    else if (0 == strcasecmp(m->pt->rtp.encoding, "MP2P"))
+    else if (0 == strcasecmp(m->pt->rtp.encoding, "MP2P") || 0 == strcasecmp(m->pt->rtp.encoding, "PS"))
     {
         m->stream = ps_muxer_add_stream(m->pt->ps, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ps_input;
@@ -340,6 +349,12 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
     {
         m->stream = 0; // unuse
         m->input = rtsp_muxer_av_input;
+    }
+
+    if (m->stream < 0)
+    {
+        assert(0);
+        return -1;
     }
 
     return muxer->media_count++;
@@ -398,4 +413,13 @@ int rtsp_muxer_rtcp(struct rtsp_muxer_t* muxer, int pid, void* buf, int len)
     }
 
     return r;
+}
+
+int rtsp_muxer_onrtcp(struct rtsp_muxer_t* muxer, int pid, const void* buf, int len)
+{
+    struct rtp_muxer_payload_t* pt;
+    if (pid < 0 || pid >= muxer->payload_count)
+        return -1;
+    pt = &muxer->payloads[pid];
+    return rtp_onreceived_rtcp(pt->rtp.rtp, buf, len);
 }

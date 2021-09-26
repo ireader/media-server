@@ -30,6 +30,17 @@ struct rtcp_xr_t
 	int voip_metrics;
 };
 
+// rfc 5576
+struct sdp_ssrc_t
+{
+	uint32_t ssrc;
+
+	// TODO: 
+	// ssrc attribute(s)
+	// multiple ssrc
+	// ssrc-group
+};
+
 struct sdp_candidate_t
 {
 	char foundation[33];
@@ -73,6 +84,8 @@ struct rtsp_media_t
 	char media[32]; //audio, video, text, application, message
 	char proto[64]; // udp, RTP/AVP, RTP/SAVP, RTP/AVPF
 	int nport, port[8]; // rtcp-mux: port[0] == port[1]
+	int mode; // SDP_A_SENDRECV/SDP_A_SENDONLY/SDP_A_RECVONLY/SDP_A_INACTIVE, @sdp.h
+	int setup; // SDP_A_SETUP_ACTPASS/SDP_A_SETUP_ACTIVE/SDP_A_SETUP_PASSIVE, @sdp-utils.h
 
 	int avformat_count;
 	struct avformat_t
@@ -87,20 +100,25 @@ struct rtsp_media_t
 
 	struct rtcp_xr_t xr;
 	struct sdp_ice_t ice;
+	struct sdp_ssrc_t ssrc; // rfc 5576
 
 	int offset;
 	char ptr[8 * 1024]; // RTP fmtp value
 };
 
 /// @return <0-error, >count-try again, other-ok
-int rtsp_media_sdp(const char* sdp, struct rtsp_media_t* medias, int count);
+int rtsp_media_sdp(const char* sdp, int len, struct rtsp_media_t* medias, int count);
 
-/// update session and media url
+/// Update session and media control url
 /// @param[in] base The RTSP Content-Base field
 /// @param[in] location The RTSP Content-Location field
 /// @param[in] request The RTSP request URL
 /// return 0-ok, other-error
 int rtsp_media_set_url(struct rtsp_media_t* media, const char* base, const char* location, const char* request);
+
+/// create media sdp
+/// @return -0-no media, >0-ok, <0-error
+int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes);
 
 #if defined(__cplusplus)
 }

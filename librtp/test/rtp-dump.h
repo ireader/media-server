@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-typedef struct rtpdump_t;
+struct rtpdump_t;
 
 struct rtpdump_t* rtpdump_open(const char* file, int flags);
 

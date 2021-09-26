@@ -10,10 +10,10 @@ typedef struct sdp_t sdp_t;
 enum { SDP_V_VERSION_0 = 0 };
 enum { SDP_C_NETWORK_UNKNOWN=0, SDP_C_NETWORK_IN };
 enum { SDP_C_ADDRESS_UNKNOWN=0, SDP_C_ADDRESS_IP4, SDP_C_ADDRESS_IP6 };
-enum { SDP_A_SENDRECV = 0, SDP_A_SENDONLY, SDP_A_RECVONLY, SDP_A_INACTIVE, };
-enum { SDP_M_FMT_UDP_AUDIO = 1001, SDP_M_FMT_UDP_VIDEO, SDP_M_FMT_UDP_TEXT, SDP_M_FMT_UDP_APPLICATION, SDP_M_FMT_UDP_MESSAGE };
+enum { SDP_A_INACTIVE = 0, SDP_A_SENDONLY = 0x01, SDP_A_RECVONLY = 0x02, SDP_A_SENDRECV = 0x03 /*default*/, };
+enum { SDP_M_MEDIA_UNKOWN = 0, SDP_M_MEDIA_AUDIO, SDP_M_MEDIA_VIDEO, SDP_M_MEDIA_TEXT, SDP_M_MEDIA_APPLICATION, SDP_M_MEDIA_MESSAGE };
 
-sdp_t* sdp_parse(const char* s);
+sdp_t* sdp_parse(const char* s, int len);
 void sdp_destroy(sdp_t* sdp);
 
 int sdp_version_get(sdp_t* sdp);
@@ -114,6 +114,7 @@ const char* sdp_media_bandwidth_get_type(sdp_t* sdp, int media, int idx); // CT/
 int sdp_media_bandwidth_get_value(sdp_t* sdp, int media, int idx); // kbps-kilobits per second
 
 int sdp_attribute_count(sdp_t* sdp);
+/// param[in] name attrbution name, NULL-for list all attributions
 int sdp_attribute_list(sdp_t* sdp, const char* name, void (*onattr)(void* param, const char* name, const char* value), void* param);
 int sdp_attribute_get(sdp_t* sdp, int idx, const char** name, const char** value);
 const char* sdp_attribute_find(sdp_t* sdp, const char* name);

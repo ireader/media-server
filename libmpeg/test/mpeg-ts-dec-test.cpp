@@ -1,6 +1,7 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "mpeg-ts-proto.h"
+#include "mpeg4-aac.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -36,6 +37,16 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 		a_dts = dts;
 
 		fwrite(data, 1, bytes, afp);
+
+		int count = 0;
+		int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		while (len > 7 && (size_t)len <= bytes)
+		{
+			count++;
+			bytes -= len;
+			data = (const uint8_t*)data + len;
+			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		}
 	}
 	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
 	{

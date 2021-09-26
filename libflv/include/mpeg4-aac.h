@@ -14,8 +14,8 @@ struct mpeg4_aac_t
 	uint8_t sampling_frequency_index; // 0-96000, 1-88200, 2-64000, 3-48000, 4-44100, 5-32000, 6-24000, 7-22050, 8-16000, 9-12000, 10-11025, 11-8000, 12-7350, 13/14-reserved, 15-frequency is written explictly
 	uint8_t channel_configuration; // 0-AOT, 1-1channel,front-center, 2-2channels, front-left/right, 3-3channels: front center/left/right, 4-4channels: front-center/left/right, back-center, 5-5channels: front center/left/right, back-left/right, 6-6channels: front center/left/right, back left/right LFE-channel, 7-8channels
 
-//	uint32_t frequency; // play frequency
-	uint32_t sampling_frequency;  // valid only in decode
+	uint32_t extension_frequency; // play frequency(AAC-HE v1/v2 sbr/ps)
+	uint32_t sampling_frequency;  // codec frequency, valid only in decode
 	uint8_t channels; // valid only in decode
 	int sbr; // sbr flag, valid only in decode
 	int ps; // ps flag, valid only in decode
@@ -139,6 +139,9 @@ int mpeg4_aac_audio_frequency_to(enum mpeg4_aac_frequency index);
 /// 96000 => MPEG4_AAC_96000
 /// @return -1-error, other-frequency index
 int mpeg4_aac_audio_frequency_from(int frequency);
+
+/// @return aac channel count
+uint8_t mpeg4_aac_channel_count(uint8_t channel_configuration);
 
 int mpeg4_aac_adts_frame_length(const uint8_t* data, size_t bytes);
 

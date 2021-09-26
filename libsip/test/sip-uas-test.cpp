@@ -3,6 +3,7 @@
 #include "sip-uas.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-timer.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "http-header-auth.h"
@@ -37,7 +38,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return r == bytes ? 0 : -1;
 }
 
-static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
 {
 	const char* ack = "v=0\n"
 		"o=34020000001320000001 0 0 IN IP4 192.168.128.1\n"
@@ -55,17 +56,19 @@ static void* sip_uas_oninvite(void* param, const struct sip_message_t* req, stru
 	const cstring_t* h = sip_message_get_header_by_name(req, "Content-Type");
 	if (0 == cstrcasecmp(h, "Application/SDP"))
 	{
-		sdp_t* sdp = sdp_parse((const char*)data);
+		sdp_t* sdp = sdp_parse((const char*)data, bytes);
 		sip_uas_add_header(t, "Content-Type", "application/sdp");
 		sip_uas_add_header(t, "Contact", "sip:34020000001320000001@192.168.154.1");
-		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack)));
+		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack), param));
 		sdp_destroy(sdp);
-		return t;
+		*session = t;
+		return 0;
 	}
 	else
 	{
 		assert(0);
-		return t;
+		*session = t;
+		return 0;
 	}
 }
 
@@ -114,7 +117,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 			struct sip_message_t* request = sip_message_create(SIP_MESSAGE_REQUEST);
 			r = sip_message_load(request, test->parser);
 			sip_agent_set_rport(request, received, port);
-			assert(0 == sip_agent_input(test->sip, request));
+			assert(0 == sip_agent_input(test->sip, request, test));
 			sip_message_destroy(request);
 
 			http_parser_clear(test->parser);
@@ -124,6 +127,7 @@ static void sip_uas_loop(struct sip_uas_test_t *test)
 
 void sip_uas_test(void)
 {
+	sip_timer_init();
 	struct sip_uas_handler_t handler;
 	handler.onregister = sip_uas_onregister;
 	handler.oninvite = sip_uas_oninvite;
@@ -134,11 +138,12 @@ void sip_uas_test(void)
 
 	struct sip_uas_test_t test;
 	test.udp = socket_udp();
-	test.sip = sip_agent_create(&handler, &test);
+	test.sip = sip_agent_create(&handler);
 	test.parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	socket_bind_any(test.udp, SIP_PORT);
 	sip_uas_loop(&test);
 	sip_agent_destroy(test.sip);
 	socket_close(test.udp);
 	http_parser_destroy(test.parser);
+	sip_timer_cleanup();
 }

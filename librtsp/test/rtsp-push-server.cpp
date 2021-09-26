@@ -59,7 +59,7 @@ static int rtsp_uri_parse(const char* uri, std::string& path)
 	return 0;
 }
 
-static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* sdp)
+static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, const char* sdp, int len)
 {
 	std::string filename;
 	TSessions::const_iterator it;
@@ -67,7 +67,7 @@ static int rtsp_onannounce(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, 
 
 	rtsp_uri_parse(uri, filename);
 	
-	source->count = rtsp_media_sdp(sdp, source->media, sizeof(source->media)/sizeof(source->media[0]));
+	source->count = rtsp_media_sdp(sdp, len, source->media, sizeof(source->media)/sizeof(source->media[0]));
 	if(source->count < 0 || source->count > sizeof(source->media) / sizeof(source->media[0]))
 		return rtsp_server_reply_announce(rtsp, 451); // Parameter Not Understood
 

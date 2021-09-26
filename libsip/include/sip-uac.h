@@ -11,10 +11,13 @@ extern "C" {
 struct sip_transport_t;
 struct sip_uac_transaction_t;
 
-/// @return user-defined session-id(valid only code=2xx)
-typedef void* (*sip_uac_oninvite)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code);
+/// call sip_uac_ack on 2xx only
+/// @param[out] session user-defined session-id(only code=2xx)
 /// @return 0-ok, other-error
-typedef void* (*sip_uac_onsubscribe)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_subscribe_t* subscribe, int code);
+typedef int (*sip_uac_oninvite)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session);
+/// @param[out] session user-defined session-id(only code=2xx)
+/// @return 0-ok, other-error
+typedef int (*sip_uac_onsubscribe)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_subscribe_t* subscribe, int code, void** session);
 /// @return 0-ok, other-error
 typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code);
 /// @return <0-error, 0-udp, 1-tcp, other-reserved
@@ -25,13 +28,16 @@ typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, s
 /// @param[in] seconds expires seconds
 struct sip_uac_transaction_t* sip_uac_register(struct sip_agent_t* sip, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
 struct sip_uac_transaction_t* sip_uac_options(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onoptins, void* param);
+
 struct sip_uac_transaction_t* sip_uac_invite(struct sip_agent_t* sip, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
-struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip_uac_transaction_t* invit, sip_uac_onreply oncancel, void* param);
+struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip_uac_transaction_t* invite, sip_uac_onreply oncancel, void* param);
 struct sip_uac_transaction_t* sip_uac_bye(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onbye, void* param);
 struct sip_uac_transaction_t* sip_uac_reinvite(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_oninvite oninvite, void* param);
 /// @param[in] req100rel sip 180/183 response with Require: 100rel
 struct sip_uac_transaction_t* sip_uac_prack(struct sip_agent_t* sip, const struct sip_message_t* req100rel, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
 struct sip_uac_transaction_t* sip_uac_update(struct sip_agent_t* sip, struct sip_dialog_t* dialog, sip_uac_onreply onreply, void* param);
+/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
+struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param);
 
 
 /// @param[in] from valid only dialog is null
@@ -44,10 +50,8 @@ struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, struct sip
 struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, int expires, sip_uac_onsubscribe onsubscribe, void* param);
 struct sip_uac_transaction_t* sip_uac_publish(struct sip_agent_t* sip, const char* from, const char* to, const char* event, sip_uac_onreply onreply, void* param);
 
-/// @param[in] dialog exist dialog(by invite), if dialog is not null, ignore from/to parameter
-struct sip_uac_transaction_t* sip_uac_info(struct sip_agent_t* sip, struct sip_dialog_t* dialog, const char* package, sip_uac_onreply oninfo, void* param);
-struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 struct sip_uac_transaction_t* sip_uac_refer(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onreply, void* param);
+struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onmsg, void* param);
 
 int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param);
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
@@ -61,6 +65,14 @@ int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, in
 /// @return 0-ok, other-error
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, struct sip_transport_t* transport, void* param);
 
+/// sip_uac_ack for sip_uac_oninvite 2xx only
+/// @param[in] invite uac transaction, create by sip_uac_invite
+/// @param[in] data message payload(such as SDP), maybe NULL if don't need send anything
+/// @param[in] bytes data length in byte, >=0 only
+/// @return 0-ok, other-error
+int sip_uac_ack(struct sip_uac_transaction_t* invite, const void* data, int bytes);
+
+int sip_uac_transaction_addref(struct sip_uac_transaction_t* t);
 int sip_uac_transaction_release(struct sip_uac_transaction_t* t);
 
 #if defined(__cplusplus)

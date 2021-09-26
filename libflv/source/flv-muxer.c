@@ -8,13 +8,14 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include "aom-av1.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
 #include "mp3-header.h"
 #include "opus-head.h"
 
-#define FLV_MUXER "libflv"
+#define FLV_MUXER "ireader/media-server"
 
 struct flv_muxer_t
 {
@@ -32,8 +33,9 @@ struct flv_muxer_t
 
 	union
 	{
+		struct aom_av1_t av1;
 		struct mpeg4_avc_t avc;
-		struct mpeg4_hevc_t hevc;
+		struct mpeg4_hevc_t hevc;		
 	} v;
 	int vcl; // 0-non vcl, 1-idr, 2-p/b
 	int update; // avc/hevc sequence header update
@@ -176,7 +178,7 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 	(void)pts;
 
 	bytes = (int)sz;
-	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
+	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 29/*OpusHead*/)
 	{
 		if (0 != flv_muxer_alloc(flv, bytes + 4))
 			return ENOMEM;
@@ -197,10 +199,10 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 		
 		// Opus Head
 		m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
-		assert(m + bytes <= (int)flv->capacity);
-		memcpy(flv->ptr + m, data, bytes);
-		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m + bytes, dts);
-		return r;
+        m += opus_head_save(&flv->a.opus, flv->ptr+m, flv->capacity-m);
+		assert(m <= (int)flv->capacity);
+		r = flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, m, dts);
+		if (0 != r) return r;
 	}
 
 	audio.avpacket = FLV_AVPACKET;
@@ -237,7 +239,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	if (flv->vcl && flv->video_sequence_header)
 	{
 		video.cts = pts - dts;
-		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
@@ -248,7 +250,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
+	if ((size_t)flv->capacity < bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
 	{
 		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.avc)))
 			return ENOMEM;
@@ -289,7 +291,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	if (flv->vcl && flv->video_sequence_header)
 	{
 		video.cts = pts - dts;
-		video.keyframe = 1 == flv->vcl ? 1 : 2;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
 		assert(flv->bytes <= (int)flv->capacity);
@@ -300,7 +302,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if (flv->capacity < (int)bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
+	if ((size_t)flv->capacity < bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
 	{
 		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.hevc)))
 			return ENOMEM;
@@ -312,6 +314,47 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 		return ENOMEM;
 
 	return flv_muxer_h265(flv, pts, dts);
+}
+
+int flv_muxer_av1(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+{
+	int r;
+	int m;
+	struct flv_video_tag_header_t video;
+
+	video.codecid = FLV_VIDEO_AV1;
+	if (0 == flv->video_sequence_header)
+	{
+		// load av1 information
+		r = aom_av1_codec_configuration_record_init(&flv->v.av1, data, bytes);
+		if (0 != r || flv->v.av1.width < 1 || flv->v.av1.height < 1)
+			return 0 == r ? -1 : r;
+
+		video.cts = 0;
+		video.keyframe = 1; // keyframe
+		video.avpacket = FLV_SEQUENCE_HEADER;
+		flv_video_tag_header_write(&video, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
+		m = aom_av1_codec_configuration_record_save(&flv->v.av1, flv->ptr + flv->bytes + 5, flv->capacity - flv->bytes - 5);
+		if (m <= 0)
+			return -1; // invalid data
+
+		flv->video_sequence_header = 1; // once only
+		assert(flv->bytes + m + 5 <= (int)flv->capacity);
+		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
+		if (0 != r) return r;
+	}
+
+	// has video frame
+	if (flv->video_sequence_header)
+	{
+		video.cts = pts - dts;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
+		video.avpacket = FLV_AVPACKET;
+		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
+		assert(flv->bytes <= (int)flv->capacity);
+		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
+	}
+	return 0;
 }
 
 int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)

@@ -92,7 +92,7 @@ int mpeg_h265_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
         nal_type = (p[n] >> 1) & 0x3f;
         if (*vcl > 0 && mpeg_h265_is_new_access_unit(p+n, end - p - n))
         {
-            return p - data + n - leading;
+            return (int)(p - data + n - leading);
         }
         else if (nal_type <= 31)
         {
