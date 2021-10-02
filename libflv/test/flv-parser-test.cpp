@@ -60,7 +60,8 @@ static int OnAVPacket(void* param, int codec, const void* data, size_t bytes, ui
 
 void flv_parser_test(const char* flv)
 {
-	uint8_t buffer[1024];
+	uint8_t len[2];
+	static uint8_t buffer[8*1024];
 	snprintf((char*)buffer, sizeof(buffer), "%s.mp4", flv);
 
 	FILE* fp = fopen(flv, "rb");
@@ -70,8 +71,12 @@ void flv_parser_test(const char* flv)
 	flv_parser_t parser;
 	memset(&parser, 0, sizeof(parser));
 
-	for(int r = fread(buffer, 1, sizeof(buffer), fp); r > 0; r = fread(buffer, 1, sizeof(buffer), fp))
+	for (int r = fread(len, 1, sizeof(len), fp); r == 2; r = fread(len, 1, sizeof(len), fp))
 	{
+		unsigned int n = (((unsigned int)len[0]) << 8) | len[1];
+		assert(n <= sizeof(buffer));
+		r = fread(buffer, 1, n, fp);
+		assert(r == n);
 		assert(0 == flv_parser_input(&parser, buffer, r, OnAVPacket, mov));
 	}
 

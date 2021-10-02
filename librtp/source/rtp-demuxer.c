@@ -201,10 +201,10 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
 
             r = rtp_onreceived(rtp->rtp, pkt + 1, bytes);
             r = rtp_payload_decode_input(rtp->payload, pkt + 1, bytes);
+            rtp_demuxer_freepkt(rtp, pkt);
             if(r < 0)
                 return r;
     
-            rtp_demuxer_freepkt(rtp, pkt);
             pkt = rtp_queue_read(rtp->queue);
         }
     }
