@@ -1,9 +1,9 @@
-1. 从github下载依赖的sdk目录，与media-server平级
+1. 浠巊ithub涓嬭浇渚濊禆鐨剆dk鐩綍锛屼笌media-server骞崇骇
    git clone https://github.com/ireader/sdk sdk
 
-2. 分别编译libaio/libhttp/libmpeg/libflv/libhls
+2. 鍒嗗埆缂栬瘧libaio/libhttp/libmpeg/libflv/libhls
    make -C sdk/libaio && make -C sdk/libhttp && make -C media-server/libmpeg && make -C media-server/libflv && make -C media-server/libhls
 
-3. cd media-server/libhls/test目录下执行make
+3. cd media-server/libhls/demo 鐩綍涓嬫墽琛宮ake
 
 4. ./debug.linux/hls-server
