@@ -77,6 +77,12 @@ typedef int (*ps_demuxer_onpacket)(void* param, int stream, int codecid, int fla
 struct ps_demuxer_t; 
 struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param);
 int ps_demuxer_destroy(struct ps_demuxer_t* demuxer);
+
+/// ps_demuxer_input return consumed bytes, the remain data MUST save and merge with next packet
+/// int n = ps_demuxer_input(demuxer, data, bytes);
+/// if(n >= 0 && n < bytes)
+///		memcpy(NEXTBUFFER, data + n, bytes - n);
+/// 
 /// @return >=0-consume bytes, <0-error
 int ps_demuxer_input(struct ps_demuxer_t* demuxer, const uint8_t* data, size_t bytes);
 

@@ -251,7 +251,7 @@ static inline int rtsp_demuxer_onpspacket(void* param, const void* packet, int b
     n = (int)ps_demuxer_input(pt->ps, packet, bytes);
     assert(n <= bytes);
     if (n >= 0 && n < bytes)
-        r = rtsp_demuxer_merge_ps_buffer(pt, (const uint8_t*)packet + (bytes - n), bytes - n);
+        r = rtsp_demuxer_merge_ps_buffer(pt, (const uint8_t*)packet + n, bytes - n);
     else
         r = n < 0 ? n : 0;
 
