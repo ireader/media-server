@@ -37,7 +37,10 @@ size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t 
 		//assert((0xF8 & data[13]) == 0x00); // '00000xxx'
 		stuffing_length = data[13] & 0x07; // stuffing
 
-		return 14 + stuffing_length;
+		int n = 14 + stuffing_length;
+		if (n > bytes)
+			return 0;
+		return n;
 	}
 }
 
