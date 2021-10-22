@@ -8,6 +8,7 @@
 size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t bytes)
 {
     uint8_t stuffing_length;
+	size_t header_length;
 
     if (bytes < 14) return 0;
     assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2] && PES_SID_START == data[3]);
@@ -37,10 +38,10 @@ size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t 
 		//assert((0xF8 & data[13]) == 0x00); // '00000xxx'
 		stuffing_length = data[13] & 0x07; // stuffing
 
-		int n = 14 + stuffing_length;
-		if (n > bytes)
+		header_length = 14 + stuffing_length;
+		if (header_length > bytes)
 			return 0;
-		return n;
+		return header_length;
 	}
 }
 
