@@ -144,7 +144,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	r = t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires);
+	r = t->handler->onregister ? t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires) : 0;
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{
