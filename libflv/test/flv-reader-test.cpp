@@ -52,7 +52,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 		assert(bytes == get_adts_length((const uint8_t*)data, bytes));
 		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_AV1 == codec)
 	{
 		printf("diff: %03d/%03d %s", (int)(pts - v_pts), (int)(dts - v_dts), flags ? "[I]" : "");
 		v_pts = pts;
@@ -64,7 +64,7 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 	{
 		fwrite(data, bytes, 1, aac);
 	}
-	else if (FLV_AUDIO_ASC == codec || FLV_VIDEO_AVCC == codec || FLV_VIDEO_HVCC == codec)
+	else if (FLV_AUDIO_ASC == codec || FLV_VIDEO_AVCC == codec || FLV_VIDEO_HVCC == codec || FLV_VIDEO_AV1C == codec)
 	{
 		// nothing to do
 	}

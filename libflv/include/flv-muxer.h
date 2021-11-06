@@ -29,6 +29,10 @@ int flv_muxer_aac(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t p
 /// @param[in] data mp3 stream
 int flv_muxer_mp3(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
+/// g711 alaw/mu-law
+int flv_muxer_g711a(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+int flv_muxer_g711u(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+
 /// @param[in] data opus stream, first opus head, then opus samples
 int flv_muxer_opus(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
