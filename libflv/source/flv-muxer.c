@@ -94,6 +94,13 @@ int flv_muxer_g711a(struct flv_muxer_t* flv, const void* data, size_t bytes, uin
 {
 	struct flv_audio_tag_header_t audio;
 	(void)pts;
+
+	if (flv->capacity < bytes + 1)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + 4))
+			return ENOMEM;
+	}
+
 	audio.bits = 1; // 16-bit samples
 	audio.channels = 0;
 	audio.rate = 0;
@@ -108,6 +115,13 @@ int flv_muxer_g711u(struct flv_muxer_t* flv, const void* data, size_t bytes, uin
 {
 	struct flv_audio_tag_header_t audio;
 	(void)pts;
+
+	if (flv->capacity < bytes + 1)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + 4))
+			return ENOMEM;
+	}
+
 	audio.bits = 1; // 16-bit samples
 	audio.channels = 0;
 	audio.rate = 0;
