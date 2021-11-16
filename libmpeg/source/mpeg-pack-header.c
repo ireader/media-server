@@ -17,7 +17,7 @@ size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t 
 		// MPEG-1
 		h->mpeg2 = 0;
 		assert(0x20 == (0xF0 & data[4]));
-		h->system_clock_reference_base = ((uint64_t)(data[4] >> 1) << 30) | ((uint64_t)data[5] << 22) | (((uint64_t)data[6] >> 1) << 15) | ((uint64_t)data[7] << 7) | (data[8] >> 1);
+		h->system_clock_reference_base = (((uint64_t)(data[4] >> 1) & 0x07) << 30) | ((uint64_t)data[5] << 22) | (((uint64_t)data[6] >> 1) << 15) | ((uint64_t)data[7] << 7) | (data[8] >> 1);
 		h->system_clock_reference_extension = 1;
 		h->program_mux_rate = ((data[9] >> 1) << 15) | (data[10] << 7) | (data[11] >> 1);
 		return 12;
