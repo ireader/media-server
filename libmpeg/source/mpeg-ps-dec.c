@@ -215,9 +215,13 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
                 if ((pes->codecid == PSI_STREAM_AUDIO_G711A || pes->codecid == PSI_STREAM_AUDIO_G711U)
                     && pes_packet_length + 6 - j > 7 && 0xFF == data[i + j] && 0xF0 == (data[i + j + 1] & 0xF0))
                 {
+                    n = 7;
                     // calc mpeg4_aac_adts_frame_length
-                    for (r = (int)(i + j); (size_t)r + 7 < i + pes_packet_length + 6;)
-                        r += ((uint16_t)(data[r+3] & 0x03) << 11) | ((uint16_t)data[r + 4] << 3) | ((uint16_t)(data[r + 5] >> 5) & 0x07);
+                    for (r = (int)(i + j); (size_t)r + 7 < i + pes_packet_length + 6 && n >= 7; r += n)
+                    {
+                        // fix n == 0
+                        n = ((uint16_t)(data[r + 3] & 0x03) << 11) | ((uint16_t)data[r + 4] << 3) | ((uint16_t)(data[r + 5] >> 5) & 0x07);
+                    }
                     pes->codecid = (size_t)r == i + pes_packet_length + 6 ? PSI_STREAM_AAC : pes->codecid; // fix it
                 }
 #endif

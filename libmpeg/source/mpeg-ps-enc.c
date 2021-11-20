@@ -77,7 +77,7 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 	// http://www.bretl.com/mpeghtml/SCR.HTM
 	//the maximum allowed interval between SCRs is 700ms 
 	//ps->pack.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
-	ps->pack.system_clock_reference_base = dts - 3600;
+	ps->pack.system_clock_reference_base = dts >= 3600 ? (dts - 3600) : 0;
 	ps->pack.system_clock_reference_extension = 0;
 	ps->pack.program_mux_rate = 6106;
 	i += pack_header_write(&ps->pack, packet + i);
