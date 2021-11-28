@@ -144,11 +144,12 @@ static inline int rtsp_demuxer_mpegts_onpacket(void* param, int program, int tra
     struct rtp_payload_info_t* pt;
 
 #if defined(FIX_DAHUA_AAC_FROM_G711)
-    if ((codecid == PSI_STREAM_AUDIO_G711A || codecid == PSI_STREAM_AUDIO_G711U) 
+    if ((codecid == PSI_STREAM_AUDIO_G711A || codecid == PSI_STREAM_AUDIO_G711U)
         && bytes > 7 && 0xFF == ((uint8_t*)data)[0] && 0xF0 == (((uint8_t*)data)[1] & 0xF0))
     {
-        for(i = 0; i + 7 < bytes;)
-            i += mpeg4_aac_adts_frame_length((const uint8_t*)data + i, bytes - i);
+        int n = 7; // fix n = 0
+        for (i = 0; i + 7 < bytes && n >= 7; i += n)
+            n = mpeg4_aac_adts_frame_length((const uint8_t*)data + i, bytes - i);
         codecid = i == bytes ? PSI_STREAM_AAC : codecid; // fix it
     }
 #endif

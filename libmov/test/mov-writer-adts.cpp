@@ -62,6 +62,7 @@ static void adts_reader(struct mov_adts_test_t* ctx, const uint8_t* ptr, size_t 
 			assert(len > 0 && len <= sizeof(asc));
 			ctx->track = mov_writer_add_audio(ctx->mov, MOV_OBJECT_AAC, ctx->aac.channels, 16, ctx->aac.sampling_frequency, asc, len);
 			assert(ctx->track >= 0);
+			assert(ctx->aac.sampling_frequency > 0);
 		}
 
 		assert(0 == mov_writer_write(ctx->mov, ctx->track, ptr + 7, n - 7, pts, pts, 0));
