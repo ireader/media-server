@@ -1,5 +1,5 @@
 #include "sip-uas.h"
-#include "../src/sip-internal.h"
+#include "sip-internal.h"
 #include "sip-uas-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
