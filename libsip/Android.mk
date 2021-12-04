@@ -6,6 +6,7 @@ LOCAL_LDLIBS +=
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/src
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../sdk/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../sdk/libhttp/include
 
