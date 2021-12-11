@@ -29,6 +29,8 @@ struct hls_segment_t
 
 	int64_t pts;		// present timestamp (millisecond)
 	int64_t duration;	// segment duration (millisecond)
+	int64_t offset;		// EXT-X-BYTERANGE offset: a byte offset from the beginning of the resource
+	int64_t bytes;		// EXT-X-BYTERANGE length
 	int discontinuity;	// EXT-X-DISCONTINUITY flag
 
 	char* name;
@@ -75,18 +77,27 @@ static struct hls_segment_t* hls_segment_alloc(size_t bytes)
 	{
 		seg->name = (char*)(seg + 1);
 		seg->capacity = bytes;
+		seg->offset = 0;
+		seg->bytes = 0;
+		seg->pts = 0;
+		seg->discontinuity = 0;
 	}
 	return seg;
 }
 
 int hls_m3u8_add(struct hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t duration, int discontinuity)
 {
+	return hls_m3u8_add_with_offset(m3u8, name, pts, duration, discontinuity, 0, 0);
+}
+
+int hls_m3u8_add_with_offset(hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t duration, int discontinuity, int64_t offset, int64_t bytes)
+{
 	size_t r;
 	struct hls_segment_t* seg;
 	seg = NULL;
 	r = strlen(name);
-	
-	if(0 != m3u8->live && m3u8->count >= (size_t)m3u8->live)
+
+	if (0 != m3u8->live && m3u8->count >= (size_t)m3u8->live)
 	{
 		assert(m3u8->count == (size_t)m3u8->live);
 
@@ -100,7 +111,7 @@ int hls_m3u8_add(struct hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t
 		if (r + 1 > seg->capacity)
 		{
 			free(seg);
-			seg = NULL;	
+			seg = NULL;
 			--m3u8->count;
 		}
 	}
@@ -120,6 +131,8 @@ int hls_m3u8_add(struct hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t
 
 	// segment
 	seg->pts = pts;
+	seg->bytes = bytes;
+	seg->offset = offset;
 	seg->duration = duration;
 	seg->discontinuity = discontinuity; // EXT-X-DISCONTINUITY
 	memcpy(seg->name, name, r + 1); // copy last '\0'
@@ -177,8 +190,14 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 
 		if (seg->discontinuity)
 			n += snprintf(playlist + n, bytes - n, "#EXT-X-DISCONTINUITY\n");
-		if(bytes > n)
-			n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
+		if (bytes > n)
+		{
+			if(seg->bytes > 0)
+				n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n#EXT-X-BYTERANGE:%"PRIu64"@%"PRIu64"\n%s\n", seg->duration / 1000.0, seg->bytes, seg->offset, seg->name);
+			else
+				n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
+		}
+			
 	}
 
 	if (eof && bytes > n + 15)
