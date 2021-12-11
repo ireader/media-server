@@ -180,7 +180,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
 	
-	if (((ts->cc + 1) % 15) != (uint8_t)pkhd.continuity_counter)
+	if (((ts->cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
 	{
 		// 1. PAT/PMT reset
 		// 2. pes packet corrupt
