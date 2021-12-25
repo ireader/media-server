@@ -488,6 +488,12 @@
     <ClCompile Include="..\libmov\test\mov-writer-av1.cpp">
       <Filter>libmov</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtp\test\av1-rtp-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\av1-flv-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">

@@ -187,6 +187,7 @@
     <ClCompile Include="..\libdash\test\dash-dynamic-test.cpp" />
     <ClCompile Include="..\libdash\test\dash-static-test.cpp" />
     <ClCompile Include="..\libflv\test\amf0-test.c" />
+    <ClCompile Include="..\libflv\test\av1-flv-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-parser-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-read-write-test.cpp" />
     <ClCompile Include="..\libflv\test\flv-reader-test.cpp" />
@@ -239,6 +240,7 @@
     <ClCompile Include="..\librtmp\test\rtmp-server-publish-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-aio-test.cpp" />
     <ClCompile Include="..\librtmp\test\rtmp-server-vod-test.cpp" />
+    <ClCompile Include="..\librtp\test\av1-rtp-test.cpp" />
     <ClCompile Include="..\librtp\test\mov-rtp-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump-replay.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump-test.cpp" />
