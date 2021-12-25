@@ -26,7 +26,7 @@ static int rtmp_client_onscript(void* /*param*/, const void* /*data*/, size_t /*
 
 void rtmp_input_test(const char* file)
 {
-	static char packet[8 * 1024 * 1024];
+	static char packet[1024];
 
 	struct rtmp_client_handler_t handler;
 	memset(&handler, 0, sizeof(handler));
