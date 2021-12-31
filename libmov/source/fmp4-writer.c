@@ -278,7 +278,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-		if (mov->track->sample_count > 0)
+		if (mov->track->sample_count > 0 && 0 == (mov->flags & MOV_FLAG_SEGMENT))
 			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].dts, mov->moof_offset);
 
 		// hack: write sidx referenced_size
@@ -340,7 +340,7 @@ static int fmp4_writer_init(struct mov_t* mov)
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_MSDH;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_MSIX;
-		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // defaultï¿½\baseï¿½\isï¿½\moof flag
 		mov->ftyp.compatible_brands[5] = MOV_BRAND_ISO6; // styp
 		mov->header = 0;
 	}
@@ -353,7 +353,7 @@ static int fmp4_writer_init(struct mov_t* mov)
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_AVC1;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_DASH;
-		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // defaultï¿½\baseï¿½\isï¿½\moof flag
 		mov->header = 0;
 	}
 	return 0;
