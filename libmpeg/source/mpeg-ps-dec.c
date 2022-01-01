@@ -225,6 +225,8 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
                     pes->codecid = (size_t)r == i + pes_packet_length + 6 ? PSI_STREAM_AAC : pes->codecid; // fix it
                 }
 #endif
+
+                pes->flags = pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
                 r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
                 ps->start = 0; // clear start flag
                 if (0 != r)

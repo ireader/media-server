@@ -16,7 +16,6 @@
 struct ts_demuxer_t
 {
     struct pat_t pat;
-	uint8_t cc;
 
     ts_demuxer_onpacket onpacket;
     void* param;
@@ -179,13 +178,6 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
-	
-	if (((ts->cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
-	{
-		// 1. PAT/PMT reset
-		// 2. pes packet corrupt
-	}
-	ts->cc = (uint8_t)pkhd.continuity_counter;
 
 //	printf("-----------------------------------------------\n");
 //	printf("PID[%u]: Error: %u, Start:%u, Priority:%u, Scrambler:%u, AF: %u, CC: %u\n", PID, pkhd.transport_error_indicator, pkhd.payload_unit_start_indicator, pkhd.transport_priority, pkhd.transport_scrambling_control, pkhd.adaptation_field_control, pkhd.continuity_counter);
@@ -210,6 +202,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 			if(pkhd.payload_unit_start_indicator)
 				i += 1; // pointer 0x00
 
+			// TODO: PAT lost
 			pat_read(&ts->pat, data + i, bytes - i);
 		}
         else if(TS_PID_SDT == PID)
@@ -224,6 +217,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 			{
 				if(PID == ts->pat.pmts[j].pid)
 				{
+					// TODO: PMT lost
 					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
@@ -241,19 +235,27 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						if (PID != pes->pid)
                             continue;
 
+						pes->flags |= ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != pkhd.continuity_counter ? (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST) : 0;
+						ts->pat.pmts[j].streams[k].cc = pkhd.continuity_counter;
+
                         if (pkhd.payload_unit_start_indicator)
                         {
                             size_t n;
                             n = pes_read_header(pes, data + i, bytes - i);
                             assert(n > 0);
                             i += n;
+
+							pes->flags = (pes->flags & MPEG_FLAG_PACKET_CORRUPT) ? MPEG_FLAG_PACKET_LOST : 0;
+							pes->flags |= pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
+							pes->have_pes_header = n > 0 ? 1 : 0;
 						}
-						else if (0 == pes->sid)
+						else if (!pes->have_pes_header)
 						{
 							continue; // don't have pes header yet
 						}
 
                         r = pes_packet(&pes->pkt, pes, data + i, bytes - i, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
+						pes->have_pes_header = (r || (0 == pes->pkt.size && pes->len > 0)) ? 0 : 1; // packet completed
                         break; // find stream
 					}
 				} // PMT handler

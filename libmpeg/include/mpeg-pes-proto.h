@@ -113,6 +113,8 @@ struct pes_t
 
 	//uint32_t pack_field_length : 8;
 
+	int have_pes_header; // TS demuxer only
+	int flags; // TS/PS demuxer only
     struct packet_t pkt;
 };
 

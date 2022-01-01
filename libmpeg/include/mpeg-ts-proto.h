@@ -186,8 +186,10 @@ enum EPSI_STREAM_TYPE
 
 enum
 {
-    MPEG_FLAG_IDR_FRAME          = 0x0001,
-    MPEG_FLAG_H264_H265_WITH_AUD = 0x8000,
+    MPEG_FLAG_IDR_FRAME				= 0x0001,
+	MPEG_FLAG_PACKET_LOST			= 0x1000, // packet(s) lost before the packet(this packet is ok, but previous packet has missed or corrupted)
+	MPEG_FLAG_PACKET_CORRUPT		= 0x2000, // this packet miss same data(packet lost)
+    MPEG_FLAG_H264_H265_WITH_AUD	= 0x8000,
 };
 
 struct pmt_t* pat_alloc_pmt(struct pat_t* pat);
