@@ -154,6 +154,7 @@
     <ClCompile Include="source\rtsp-reason.c" />
     <ClCompile Include="source\sdp-a-fmtp.c" />
     <ClCompile Include="source\sdp-a-rtpmap.c" />
+    <ClCompile Include="source\sdp-a-webrtc.c" />
     <ClCompile Include="source\sdp-options.c" />
     <ClCompile Include="source\sdp.c" />
     <ClCompile Include="source\server\rtsp-server-announce.c" />
@@ -185,6 +186,7 @@
     <ClInclude Include="include\rtsp-server.h" />
     <ClInclude Include="include\sdp-a-fmtp.h" />
     <ClInclude Include="include\sdp-a-rtpmap.h" />
+    <ClInclude Include="include\sdp-a-webrtc.h" />
     <ClInclude Include="include\sdp-options.h" />
     <ClInclude Include="include\sdp.h" />
     <ClInclude Include="source\client\rtsp-client-internal.h" />
