@@ -245,6 +245,7 @@ int sdp_a_ice_candidate(const char* s, int n, struct sdp_ice_candidate_t* c)
     c->port = uport;
     c->relport = 0;
     c->generation = 0;
+    c->nextension = 0;
 
     if (t.e > t.s)
         c->extensions = sdp_string_split(t.s, (int)(intptr_t)(t.e - t.s), " ", &c->nextension);
@@ -740,8 +741,9 @@ static void sdp_a_ice_candidate_test(void)
     memset(&c, 0, sizeof(c));
     assert(0 == sdp_a_ice_candidate("2 1 UDP 1694498815 192.0.2.3 45664 typ srflx raddr 203.0.113.141 rport 8998", 75, &c)
         && 0 == strcmp(c.foundation, "2") && 1 == c.component && 0 == strcmp(c.transport, "UDP") && 1694498815 == c.priority
-        && 0 == strcmp(c.address, "192.0.2.3") && 45664 == c.port && 0 == strcmp(c.candtype, "srflx") && 0 == strcmp(c.reladdr, "203.0.113.141") && 8998 == c.relport && 0 == c.nextension);
+        && 0 == strcmp(c.address, "192.0.2.3") && 45664 == c.port && 0 == strcmp(c.candtype, "srflx") && 0 == strcmp(c.reladdr, "203.0.113.141") && 8998 == c.relport && 4 == c.nextension);
 
+    memset(&c, 0, sizeof(c));
     assert(0 == sdp_a_ice_candidate("1 1 udp 2013266431 47.95.197.19 50858 typ host generation 0", 59, &c)
         && 0 == strcmp(c.foundation, "1") && 1 == c.component && 0 == strcmp(c.transport, "udp") && 2013266431 == c.priority
         && 0 == strcmp(c.address, "47.95.197.19") && 50858 == c.port && 0 == strcmp(c.candtype, "host") && 0 == strcmp(c.reladdr, "") && 0 == c.relport 

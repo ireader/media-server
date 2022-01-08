@@ -97,7 +97,7 @@ static int hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t ma
 			n += 1;
 	}
 
-	return bytes < n ? (int)n : -1;
+	return bytes >= n ? (int)n : -1;
 }
 
 static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr)
