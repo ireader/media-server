@@ -383,21 +383,21 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	n += ice_transport_getsdp(s->avt, s->audio.stream, (char*)s->audio.sender.buffer + n, sizeof(s->audio.sender.buffer) - n);
 }
 
-static void ice_transport_onconnected(void* param, int64_t streams)
+static void ice_transport_onconnected(void* param, uint64_t flags, uint64_t mask)
 {
 	struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
 
 	for (int stream = 0; stream < 2; stream++)
 	{
 		sip_uac_test2_session_t::av_media_t* av = s->video.stream == stream ? &s->video : &s->audio;
-		av->connected = (streams & ((int64_t)1 << stream)) ? 1 : 0;
+		av->connected = (flags & ((int64_t)1 << stream)) ? 1 : 0;
 		//for (int component = 0; component < 2; component++)
 		//{
 		//	assert(0 == ice_transport_get_candidate(s->ice, av->stream, component + 1, &av->local[component]));
 		//}
 	}
 
-	printf("ice_transport_onconnected 0x%x\n", (unsigned int)streams);
+	printf("ice_transport_onconnected 0x%x\n", (unsigned int)flags);
 	s->source->Play();
 
 	// TODO: reinvite

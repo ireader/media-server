@@ -102,15 +102,22 @@ static char** sdp_string_split(const char* s, int n, const char* c, int* num)
     return pk;
 }
 
+/// @return 0-ok, other-error
+static inline int sdp_str2int(const char* s, int n, int* v)
+{
+    char* e;
+    *v = (int)strtoul(s, &e, 10);
+    return e - s == n ? 0 : -1;
+}
+
 int sdp_a_extmap(const char* s, int n, int* ext, char url[128])
 {
-    int len;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t k, v;
 
     t.s = s;
     t.e = s + n;
-    if (!sdp_get_token(&t, &k, " ") || 1 != _snscanf(k.p, k.n, "%d%n", ext, &len) || len != k.n 
+    if (!sdp_get_token(&t, &k, " ") || 0 != sdp_str2int(k.p, k.n, ext)
         || !sdp_get_token(&t, &v, " ") || v.n >= 128)
         return -1;
 
@@ -120,13 +127,12 @@ int sdp_a_extmap(const char* s, int n, int* ext, char url[128])
 
 int sdp_a_fmtp(const char* s, int n, int* fmt, char** param)
 {
-    int len;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t k, v;
 
     t.s = s;
     t.e = s + n;
-    if (!sdp_get_token(&t, &k, " ") || 1 != _snscanf(k.p, k.n, "%d%n", fmt, &len) || len != k.n || !sdp_get_token(&t, &v, " "))
+    if (!sdp_get_token(&t, &k, " ") || 0 != sdp_str2int(k.p, k.n, fmt) || !sdp_get_token(&t, &v, " "))
         return -1;
 
     *param = sdp_strdup(v.p, v.n);
@@ -218,20 +224,19 @@ int sdp_a_group(const char* s, int n, char semantics[32], char*** groups, int* c
 */
 int sdp_a_ice_candidate(const char* s, int n, struct sdp_ice_candidate_t* c)
 {
-    int i, val, len;
-    unsigned short uid, uport;
-    unsigned int upriority;
+    int i, val;
+    int uid, uport, upriority;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t foundation, component, transport, priority, address, port, candtype;
 
     t.s = s;
     t.e = s + n;
     if (!sdp_get_token(&t, &foundation, " ") || foundation.n >= sizeof(c->foundation)
-        || !sdp_get_token(&t, &component, " ") || 1 != _snscanf(component.p, component.n, "%hu%n", &uid, &len) || len != component.n
+        || !sdp_get_token(&t, &component, " ") || 0 != sdp_str2int(component.p, component.n, &uid)
         || !sdp_get_token(&t, &transport, " ") || transport.n >= sizeof(c->transport)
-        || !sdp_get_token(&t, &priority, " ") || 1 != _snscanf(priority.p, priority.n, "%u%n", &upriority, &len) || len != priority.n
+        || !sdp_get_token(&t, &priority, " ") || 0 != sdp_str2int(priority.p, priority.n, &upriority)
         || !sdp_get_token(&t, &address, " ") || address.n >= sizeof(c->address)
-        || !sdp_get_token(&t, &port, " ") || 1 != _snscanf(port.p, port.n, "%hu%n", &uport, &len) || len != port.n
+        || !sdp_get_token(&t, &port, " ") || 0 != sdp_str2int(port.p, port.n, &uport)
         || !sdp_get_token(&t, &candtype, " ") || 3 != candtype.n || 0 != strncmp("typ", candtype.p, candtype.n)
         || !sdp_get_token(&t, &candtype, " ") || candtype.n >= sizeof(c->candtype))
         return -1;
@@ -240,9 +245,9 @@ int sdp_a_ice_candidate(const char* s, int n, struct sdp_ice_candidate_t* c)
     sdp_strcpy(c->transport, transport.p, transport.n);
     sdp_strcpy(c->candtype, candtype.p, candtype.n);
     sdp_strcpy(c->address, address.p, address.n);
-    c->component = uid;
-    c->priority = upriority;
-    c->port = uport;
+    c->component = (uint16_t)uid;
+    c->priority = (uint32_t)upriority;
+    c->port = (uint16_t)uport;
     c->relport = 0;
     c->generation = 0;
     c->nextension = 0;
@@ -254,13 +259,13 @@ int sdp_a_ice_candidate(const char* s, int n, struct sdp_ice_candidate_t* c)
     {
         if (0 == strcmp("raddr", c->extensions[i]) && strlen(c->extensions[i + 1]) < sizeof(c->reladdr))
         {
-            strcpy(c->reladdr, c->extensions[i+1]);
+            snprintf(c->reladdr, sizeof(c->reladdr), "%s", c->extensions[i + 1]);
         }
-        if (0 == strcmp("rport", c->extensions[i]) && 1 == sscanf(c->extensions[i + 1], "%d%n", &val, &len) && len == strlen(c->extensions[i + 1]))
+        if (0 == strcmp("rport", c->extensions[i]) && 0 == sdp_str2int(c->extensions[i + 1], (int)strlen(c->extensions[i + 1]), &val))
         {
-            c->relport = val;
+            c->relport = (uint16_t)val;
         }
-        else if (0 == strcmp("generation", c->extensions[i]) && 1 == sscanf(c->extensions[i + 1], "%d%n", &val, &len) && len == strlen(c->extensions[i + 1]))
+        else if (0 == strcmp("generation", c->extensions[i]) && 0 == sdp_str2int(c->extensions[i + 1], (int)strlen(c->extensions[i + 1]), &val))
         {
             c->generation = val;
         }
@@ -279,22 +284,20 @@ int sdp_a_ice_candidate(const char* s, int n, struct sdp_ice_candidate_t* c)
 int sdp_a_ice_remote_candidates(const char* s, int n, struct sdp_ice_candidate_t* c)
 {
     // TODO: multiple remote candidates
-
-    int len;
-    unsigned short uid, uport;
+    int uid, uport;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t component, address, port;
 
     t.s = s;
     t.e = s + n;
-    if (!sdp_get_token(&t, &component, " ") || 1 != _snscanf(component.p, component.n, "%hu%n", &uid, &len) || len != component.n
+    if (!sdp_get_token(&t, &component, " ") || 0 != sdp_str2int(component.p, component.n, &uid)
         || !sdp_get_token(&t, &address, " ") || address.n >= sizeof(c->address)
-        || !sdp_get_token(&t, &port, " ") || 1 != _snscanf(port.p, port.n, "%hu%n", &uport, &len) || len != port.n)
+        || !sdp_get_token(&t, &port, " ") || 0 != sdp_str2int(port.p, port.n, &uport))
         return -1;
 
     sdp_strcpy(c->address, address.p, address.n);
-    c->component = uid;
-    c->port = uport;
+    c->component = (uint16_t)uid;
+    c->port = (uint16_t)uport;
     return 0;
 }
 
@@ -307,10 +310,8 @@ int sdp_a_ice_remote_candidates(const char* s, int n, struct sdp_ice_candidate_t
 */
 int sdp_a_ice_pacing(const char* s, int n, int* pacing)
 {
-    int v, len;
-    if (1 != _snscanf(s, n, "%d%n", &v, &len) || len != n)
+    if (0 != sdp_str2int(s, n, pacing))
         return -1;
-    *pacing = v;
     return 0;
 }
 
@@ -447,8 +448,7 @@ int sdp_a_rid(const char* s, int n, struct sdp_rid_t* rid)
 */
 int sdp_a_rtcp(const char* s, int n, struct sdp_address_t* address)
 {
-    int len;
-    unsigned short port;
+    int port;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t k, net, addr, conn;
 
@@ -457,7 +457,7 @@ int sdp_a_rtcp(const char* s, int n, struct sdp_address_t* address)
     if (!sdp_get_token(&t, &k, " "))
         return -1;
 
-    if (1 != _snscanf(k.p, k.n, "%hu%n", &port, &len) || len != k.n)
+    if (0 != sdp_str2int(k.p, k.n, &port))
         return -1;
 
     address->port[1] = address->port[0] = port; // copy
@@ -498,7 +498,6 @@ int sdp_a_rtcp(const char* s, int n, struct sdp_address_t* address)
 */
 int sdp_a_rtcp_fb(const char* s, int n, struct sdp_rtcp_fb_t* fb)
 {
-    int len;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t fmt, k, v;
 
@@ -509,7 +508,7 @@ int sdp_a_rtcp_fb(const char* s, int n, struct sdp_rtcp_fb_t* fb)
 
     if (fmt.n == 1 && '*' == *fmt.p)
         fb->fmt = -1;
-    else if (1 != _snscanf(fmt.p, fmt.n, "%d%n", &fb->fmt, &len) || len != fmt.n)
+    else if (0 != sdp_str2int(fmt.p, fmt.n, &fb->fmt))
         return -1;
 
     sdp_strcpy(fb->feedback, k.p, k.n);
@@ -527,7 +526,7 @@ int sdp_a_rtcp_fb(const char* s, int n, struct sdp_rtcp_fb_t* fb)
         }
         else if (7 == k.n && 0 == strncmp(k.p, "trr-int", 7))
         {
-            if (1 != _snscanf(v.p, v.n, "%d%n", &fb->trr_int, &len) || len != v.n)
+            if (0 != sdp_str2int(v.p, v.n, &fb->trr_int))
                 return -1;
         }
         else
@@ -602,8 +601,7 @@ int sdp_a_simulcast(const char* s, int n, struct sdp_simulcast_t* simulcast)
 */
 int sdp_a_ssrc(const char* s, int n, uint32_t* ssrc, char attribute[64], char value[128])
 {
-    int len;
-    unsigned int u;
+    int u;
     struct sdp_string_parser_t t;
     struct sdp_string_token_t id, k, v;
 
@@ -612,7 +610,7 @@ int sdp_a_ssrc(const char* s, int n, uint32_t* ssrc, char attribute[64], char va
     if (!sdp_get_token(&t, &id, " ") || !sdp_get_token(&t, &k, ":") || k.n >= 64)
         return -1;
 
-    if (1 != _snscanf(id.p, id.n, "%u%n", &u, &len) || len != id.n)
+    if (0 != sdp_str2int(id.p, id.n, &u))
         return -1;
 
     *ssrc = (uint32_t)u;
