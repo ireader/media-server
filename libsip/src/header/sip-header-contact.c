@@ -145,7 +145,7 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 			}
 			else if (0 == cstrcmp(&param->name, "expires"))
 			{
-				c->expires = strtoll(param->value.p, NULL, 10);
+				c->expires = (int64_t)strtoull(param->value.p, NULL, 10);
 			}
 		}
 	}

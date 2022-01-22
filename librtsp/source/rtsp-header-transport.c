@@ -130,7 +130,7 @@ int rtsp_header_transport(const char* field, struct rtsp_header_transport_t* t)
 			{
 				// unicast only
 				assert(0 == t->multicast);
-				t->rtp.u.ssrc = (int)strtol(p+5, NULL, 16);
+				t->rtp.u.ssrc = (unsigned int)strtoul(p+5, NULL, 16);
 			}
 			else if(2 == sscanf(p, "server_port=%hu-%hu", &t->rtp.u.server_port1, &t->rtp.u.server_port2))
 			{

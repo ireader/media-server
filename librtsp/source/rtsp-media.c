@@ -249,7 +249,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("ssrc", name))
 		{
-			media->ssrc.ssrc = atoi(value);
+			media->ssrc.ssrc = (uint32_t)strtoul(value, NULL, 10);
 			// TODO: ssrc attribute
 		}
 		else if (0 == strcmp("ssrc-group", name))

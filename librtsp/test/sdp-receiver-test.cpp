@@ -346,12 +346,12 @@ int rtp_mov_test(int argc, char* argv[])
 		else if (0 == strcmp("-timeout", argv[i]))
 		{
 			if (i + 1 < argc)
-				ctx.timeout = 1000 * (int)strtol(argv[++i], NULL, 10);
+				ctx.timeout = 1000 * (int)strtoul(argv[++i], NULL, 10);
 		}
 		else if (0 == strcmp("-duration", argv[i]))
 		{
 			if (i + 1 < argc)
-				ctx.duration = 1000 * (int)strtol(argv[++i], NULL, 10);
+				ctx.duration = 1000 * (int)strtoul(argv[++i], NULL, 10);
 		}
 		else if (0 == strncmp("-faststart", argv[i], 1))
 		{
