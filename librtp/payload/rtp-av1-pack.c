@@ -181,7 +181,7 @@ static int rtp_av1_pack_obu(struct rtp_encode_av1_t *packer, const uint8_t* obu,
 static int rtp_av1_pack_input_annexb(void* pack, const void* data, int bytes, uint32_t timestamp)
 {
 	int r;
-	uint8_t obu_has_size_field;
+//	uint8_t obu_has_size_field;
 	uint8_t obu_extension_flag;
 	uint8_t temporal_id, temporal_id0;
 	uint8_t spatial_id, spatial_id0;
@@ -219,7 +219,7 @@ static int rtp_av1_pack_input_annexb(void* pack, const void* data, int bytes, ui
 
 			obu_type = (*ptr >> 3) & 0x0F;
 			obu_extension_flag = *ptr & 0x04;
-			obu_has_size_field = *ptr & 0x02;
+			//obu_has_size_field = *ptr & 0x02;
 			if (obu_extension_flag)
 			{
 				temporal_id = (ptr[1] >> 5) & 0x07;

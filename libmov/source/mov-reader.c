@@ -423,9 +423,9 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	int i;
 	for (i = 0; i < reader->mov.track_count; i++)
-        mov_free_track(reader->mov.tracks + i);
-    if (reader->mov.tracks)
-        free(reader->mov.tracks);
+		mov_free_track(reader->mov.tracks + i);
+	if (reader->mov.tracks)
+		free(reader->mov.tracks);
 	free(reader);
 }
 

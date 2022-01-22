@@ -129,8 +129,8 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 	assert(1 == section_syntax_indicator);
 	assert(0 == sector_number);
 	assert(0 == last_sector_number);
-    if(pmt->ver != version_number)
-        pmt->stream_count = 0; // clear all streams
+	if(pmt->ver != version_number)
+		pmt->stream_count = 0; // clear all streams
 
 	pmt->PCR_PID = PCR_PID;
 	pmt->pn = program_number;

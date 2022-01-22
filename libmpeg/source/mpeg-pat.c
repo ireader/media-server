@@ -86,8 +86,8 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 
 	assert(PAT_TID_PAS == table_id);
 	assert(1 == section_syntax_indicator);
-    if(pat->ver != version_number)
-        pat->pmt_count = 0; // clear all pmts
+	if(pat->ver != version_number)
+		pat->pmt_count = 0; // clear all pmts
 	pat->tsid = transport_stream_id;
 	pat->ver = version_number;
 

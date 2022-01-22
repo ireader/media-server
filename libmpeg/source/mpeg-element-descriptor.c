@@ -246,6 +246,7 @@ size_t registration_descriptor(const uint8_t* data, size_t bytes)
 	assert(descriptor_len + 2 <= bytes);
 
 	fourcc = mpeg_bits_read32(&bits);
+	(void)fourcc;
 
 	assert(0 == mpeg_bits_error(&bits));
 	return descriptor_len + 2;

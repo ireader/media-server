@@ -40,8 +40,8 @@ static int rtp_onpacket(void* param, const void *packet, int bytes, uint32_t tim
 
 static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
 {
-    struct rtp_demuxer_t* rtp;
-    rtp = (struct rtp_demuxer_t*)param;
+    //struct rtp_demuxer_t* rtp;
+    //rtp = (struct rtp_demuxer_t*)param;
     if (RTCP_MSG_BYE == msg->type)
     {
         printf("finished\n");

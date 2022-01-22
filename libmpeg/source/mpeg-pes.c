@@ -146,8 +146,8 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 	// copyright '0'
 	// original_or_copy '0'
 	data[6] = 0x80;
-    if(pes->data_alignment_indicator)
-        data[6] |= 0x04;
+	if(pes->data_alignment_indicator)
+		data[6] |= 0x04;
 	//if (IDR | subtitle | raw data)
 		//data[6] |= 0x04;
 
@@ -174,8 +174,8 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 	// PES_header_data_length : 8
 	data[8] = len;
 
-    if ((size_t)len + 9 > bytes)
-        return 0; // error
+	if ((size_t)len + 9 > bytes)
+		return 0; // error
 	p = data + 9;
 
 	if(flags & 0x80)

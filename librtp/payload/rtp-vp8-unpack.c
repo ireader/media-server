@@ -40,7 +40,7 @@ static int rtp_decode_vp8(void* p, const void* packet, int bytes)
 {
 	uint8_t extended_control_bits;
 	uint8_t start_of_vp8_partition;
-	uint8_t PID;
+	//uint8_t PID;
 	const uint8_t *ptr, *pend;
 	struct rtp_packet_t pkt;
 	struct rtp_payload_helper_t *helper;
@@ -57,7 +57,7 @@ static int rtp_decode_vp8(void* p, const void* packet, int bytes)
 	// VP8 payload descriptor
 	extended_control_bits = ptr[0] & 0x80;
 	start_of_vp8_partition = ptr[0] & 0x10;
-	PID = ptr[0] & 0x0f;
+	//PID = ptr[0] & 0x0f;
 	ptr++;
 
 	if (extended_control_bits && ptr < pend)
@@ -139,8 +139,8 @@ static int rtp_decode_vp8(void* p, const void* packet, int bytes)
 		// P: Inverse key frame flag. When set to 0, the current frame is a key
 		//    frame. When set to 1, the current frame is an interframe.
 		//    Defined in [RFC6386]
-		int keyframe;
-		keyframe = ptr[0] & 0x01; // PID == 0
+		//int keyframe;
+		//keyframe = ptr[0] & 0x01; // PID == 0
 
 		// new frame begin
 		rtp_payload_onframe(helper);

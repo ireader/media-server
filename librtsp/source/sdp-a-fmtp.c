@@ -231,7 +231,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 // a=fmtp:98 profile-id=1; sprop-vps=<video parameter sets data>
 int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h265)
 {
-	size_t nc, vc;
+	size_t nc;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
@@ -257,7 +257,7 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 		while (' ' == *p) p++; // skip space
 
 		nc = (size_t)(p1 - p); // ptrdiff_t to size_t
-		vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
+		//vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
 		switch (*p)
 		{
 		case 'i':

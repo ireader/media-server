@@ -274,8 +274,8 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* data, s
 	sample->offset = mov_buffer_tell(&mov->io);
 	mov_buffer_write(&mov->io, data, bytes);
 
-    if (INT64_MIN == mov->track->start_dts)
-        mov->track->start_dts = sample->dts;
+	if (INT64_MIN == mov->track->start_dts)
+		mov->track->start_dts = sample->dts;
 	writer->mdat_size += bytes; // update media data size
 	return mov_buffer_error(&mov->io);
 }

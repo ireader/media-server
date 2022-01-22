@@ -12,7 +12,7 @@
 size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 {
 	size_t i, j, k;
-	uint8_t current_next_indicator;
+	//uint8_t current_next_indicator;
 	uint8_t single_extension_stream_flag;
 	uint16_t program_stream_map_length;
 	uint16_t program_stream_info_length;
@@ -26,7 +26,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 		return 0; // invalid data length
 
 	//assert((0x20 & data[6]) == 0x00); // 'xx0xxxxx'
-	current_next_indicator = (data[6] >> 7) & 0x01;
+	//current_next_indicator = (data[6] >> 7) & 0x01;
 	single_extension_stream_flag = (data[6] >> 6) & 0x01;
 	psm->ver = data[6] & 0x1F;
 	//assert(data[7] == 0x01); // '00000001'

@@ -44,70 +44,70 @@ void usage(int argc, char const *argv[]){
 #define DEF_FUN_VOID(name) int t_##name(int argc, char const *argv[]){\
         name();return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(void)", t_##name)
+    RE_REGISTER(name, "void " #name "(void)", t_##name)
 
 /* 用于套壳调用函数，参数 char* */
 #define DEF_FUN_PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(4 != argc) return -1;\
         name(argv[3]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, char* */
 #define DEF_FUN_2PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(5 != argc) return -1;\
         name(argv[3], argv[4]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*, char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, char*, char*, char* */
 #define DEF_FUN_4PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name(argv[3], argv[4], argv[5], argv[6]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, char*, char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*, char*, char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, int */
 #define DEF_FUN_PCHAR_INT(name) int t_##name(int argc, char const *argv[]){\
         if(5 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]));return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, int)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*, int)", t_##name)
 
 /* 用于套壳调用函数，参数 int, int, char*, char* */
 #define DEF_FUN_INT_INT_PCHAR_PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name((int)atoi(argv[3]), (int)atoi(argv[4]), argv[5], argv[6]);return 0;\
     }\
-     RE_REGISTER(name, "void "#name##"(int, int, char*, char*)", t_##name)
+     RE_REGISTER(name, "void " #name "(int, int, char*, char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, int, char* */
 #define DEF_FUN_PCHAR_INT_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), (int)atoi(argv[5]), argv[6]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, int, int, char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*, int, int, char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, char* */
 #define DEF_FUN_PCHAR_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(6 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, int, char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(char*, int, char*)", t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, char*,int, int */
 #define DEF_FUN_PCHAR_INT_PCHAR_INT_INT(name) int t_##name(int argc, char const *argv[]){\
         if(8 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5], (int)atoi(argv[6]), (int)atoi(argv[7]));return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(char*, int, char*, int, int)", t_##name)
+    RE_REGISTER(name, "void " #name"(char*, int, char*, int, int)", t_##name)
 
 /* 用于套壳调用函数，参数 int, const char*, uint16_t, uint32_t, const char* */
 #define DEF_FUN_INT_PCHAR_INT_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
         if(8 != argc) return -1;\
         name((int)atoi(argv[3]), argv[4], (uint16_t)atoi(argv[5]), (uint32_t)atoi(argv[6]), argv[7]);return 0;\
     } \
-    RE_REGISTER(name, "void "#name##"(int, const char*, uint16_t, uint32_t, const char*)", t_##name)
+    RE_REGISTER(name, "void " #name "(int, const char*, uint16_t, uint32_t, const char*)", t_##name)
 
 extern "C" void amf0_test(void);
 DEF_FUN_VOID(amf0_test);
@@ -172,8 +172,8 @@ DEF_FUN_VOID(rtsp_push_server);
 extern "C" void rtsp_client_test(const char* host, const char* file);
 DEF_FUN_2PCHAR(rtsp_client_test);
 
-void rtsp_client_input_test(const char* host, const char* file);
-DEF_FUN_2PCHAR(rtsp_client_input_test);
+//void rtsp_client_input_test(const char* host, const char* file);
+//DEF_FUN_2PCHAR(rtsp_client_input_test);
 
 void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile);
 DEF_FUN_INT_PCHAR_INT_INT_PCHAR(rstp_demuxer_test);

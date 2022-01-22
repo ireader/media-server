@@ -139,7 +139,7 @@ static int rtp_h264_unpack_stap(struct rtp_decode_h264_t *unpacker, const uint8_
 static int rtp_h264_unpack_mtap(struct rtp_decode_h264_t *unpacker, const uint8_t* ptr, int bytes, uint32_t timestamp, int n)
 {
 	int r;
-	uint16_t dond;
+	//uint16_t dond;
 	uint16_t donb;
 	uint16_t len;
 	uint32_t ts;
@@ -165,7 +165,7 @@ static int rtp_h264_unpack_mtap(struct rtp_decode_h264_t *unpacker, const uint8_
 			return -EINVAL; // error
 		}
 
-		dond = (ptr[2] + donb) % 65536;
+		//dond = (ptr[2] + donb) % 65536;
 		ts = (uint16_t)nbo_r16(ptr + 3);
 		if (3 == n) ts = (ts << 16) | ptr[5]; // MTAP24
 

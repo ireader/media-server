@@ -81,12 +81,12 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 
 		if(adp->adaptation_field_extension_flag)
 		{
-			uint8_t reserved;
+			//uint8_t reserved;
 			adp->adaptation_field_extension_length = data[i++];
 			adp->ltw_flag = (data[i] >> 7) & 0x01;
 			adp->piecewise_rate_flag = (data[i] >> 6) & 0x01;
 			adp->seamless_splice_flag = (data[i] >> 5) & 0x01;
-			reserved = data[i] & 0x1F;
+			//reserved = data[i] & 0x1F;
 
 			i++;
 			if(adp->ltw_flag)
@@ -189,8 +189,8 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
-            int64_t t;
-			t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
+            //int64_t t;
+			//t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
 			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
 	}

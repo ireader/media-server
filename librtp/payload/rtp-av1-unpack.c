@@ -334,7 +334,8 @@ static int rtp_av1_unpack_input(void* p, const void* packet, int bytes)
 	y = ptr[0] & 0x40; // MUST be set to 1 if the last OBU element is an OBU fragment that will continue in the next packet, and MUST be set to 0 otherwise.
 	w = (ptr[0] & 0x30) >> 4; // two bit field that describes the number of OBU elements in the packet. This field MUST be set equal to 0 or equal to the number of OBU elements contained in the packet. If set to 0, each OBU element MUST be preceded by a length field.
 	n = ptr[0] & 0x08; // MUST be set to 1 if the packet is the first packet of a coded video sequence, and MUST be set to 0 otherwise.
-	
+	(void)y;
+
 	// if N equals 1 then Z must equal 0.
 	assert(!n || 0 == z);
 	if (0 == z && 1 == n) {
