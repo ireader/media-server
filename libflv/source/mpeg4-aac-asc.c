@@ -334,7 +334,7 @@ SpatialSpecificConfig()
 */
 static int SpatialSpecificConfig(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
 {
-
+    return 0;
 }
 
 static inline uint8_t mpeg4_aac_get_audio_object_type(struct mpeg4_bits_t* bits)
