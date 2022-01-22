@@ -12,7 +12,6 @@
 		461F0C70231A25A800A995BD /* tools.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0C6F231A25A800A995BD /* tools.c */; };
 		461F0D00232B412300A995BD /* sip-message-test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CFF232B412300A995BD /* sip-message-test.cpp */; };
 		4643D9192455CFB700572339 /* multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D9182455CFB700572339 /* multicast.c */; };
-		4643D91B2455CFDF00572339 /* sample_ts_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 4643D91A2455CFDF00572339 /* sample_ts_utils.c */; };
 		4680237E25997C4200AD5A52 /* rtp-sender.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680237925997C4200AD5A52 /* rtp-sender.c */; };
 		4680237F25997C4200AD5A52 /* rtsp-muxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680237B25997C4200AD5A52 /* rtsp-muxer.c */; };
 		4680238025997C4200AD5A52 /* rtsp-demuxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680237D25997C4200AD5A52 /* rtsp-demuxer.c */; };
@@ -150,7 +149,6 @@
 		461F0CFF232B412300A995BD /* sip-message-test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sip-message-test.cpp"; path = "../libsip/test/sip-message-test.cpp"; sourceTree = "<group>"; };
 		4643D8E32445619600572339 /* libh264.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libh264.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4643D9182455CFB700572339 /* multicast.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = multicast.c; path = ../../sdk/test/multicast/multicast.c; sourceTree = "<group>"; };
-		4643D91A2455CFDF00572339 /* sample_ts_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sample_ts_utils.c; path = ../../sdk/test/multicast/sample_ts_utils.c; sourceTree = "<group>"; };
 		4680237925997C4200AD5A52 /* rtp-sender.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtp-sender.c"; path = "../librtsp/source/utils/rtp-sender.c"; sourceTree = "<group>"; };
 		4680237B25997C4200AD5A52 /* rtsp-muxer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtsp-muxer.c"; path = "../librtsp/source/utils/rtsp-muxer.c"; sourceTree = "<group>"; };
 		4680237D25997C4200AD5A52 /* rtsp-demuxer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtsp-demuxer.c"; path = "../librtsp/source/utils/rtsp-demuxer.c"; sourceTree = "<group>"; };
@@ -319,7 +317,6 @@
 		4643D90D2455CB4700572339 /* multicast */ = {
 			isa = PBXGroup;
 			children = (
-				4643D91A2455CFDF00572339 /* sample_ts_utils.c */,
 				4643D9182455CFB700572339 /* multicast.c */,
 			);
 			name = multicast;
@@ -695,7 +692,6 @@
 				461F0C70231A25A800A995BD /* tools.c in Sources */,
 				46C5B4D52183EF5700419E57 /* rtmp-chunk-test.cpp in Sources */,
 				46C5B5032183EF8900419E57 /* flv-reader-test.cpp in Sources */,
-				4643D91B2455CFDF00572339 /* sample_ts_utils.c in Sources */,
 				46C5B4C12183EF4A00419E57 /* rtp-sender-test.cpp in Sources */,
 				46C5B4992183EF2400419E57 /* sip-uas-message-test.cpp in Sources */,
 				46C5B4D62183EF5700419E57 /* rtmp-publish-aio-test.cpp in Sources */,
