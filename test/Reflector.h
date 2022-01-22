@@ -10,26 +10,24 @@
 #include <vector>
 
 class Reflector{
-    public:
+public:
     typedef std::function<int(int argc, char const *argv[])> FuncType;
-    private:
-    std::map<std::string, FuncType> objectMap;
-    public:
+
+private:
+    std::map<std::string, std::pair<std::string, FuncType>> objectMap;
+
+public:
     std::vector<std::string> getAllRegisterFun(){
         std::vector<std::string> re;
         for(auto& x : objectMap){
-            re.push_back(x.first);
+            re.push_back(x.second.first);
         }
         return re;
     }
 
-    bool registerFun(const char* name, FuncType && generator){
-        for(auto& x : objectMap){
-            if(x.first == name){
-                return false;
-            }
-        }
-        objectMap[name] = generator;
+    bool registerFun(const char* name, const std::string& proto, FuncType && generator){
+        assert(objectMap.find(name) == objectMap.end());
+        objectMap[name] = std::make_pair(proto, generator);
         return true;
     }
 
@@ -39,26 +37,14 @@ class Reflector{
             std::cout << "err! not find "<< name << std::endl;
             return false;
         }
-        ptr->second(argc, argv);
+        ptr->second.second(argc, argv);
         return true;
     }
 
-    static std::shared_ptr<Reflector> Instance(){
-        static std::shared_ptr<Reflector> ptr;
-        if(ptr == nullptr){
-            ptr.reset(new Reflector());
-        }
-        return ptr;
+    static Reflector* Instance(){
+        static Reflector ptr;
+        return &ptr;
     }
 };
-
-#define RE_REGISTER(name) Reflector::Instance()->registerFun(#name, &name)
-
-#define RE_REGISTER_SETNAME(name, func) Reflector::Instance()->registerFun(#name, &func)
-
-#define RE_RUN_REG(name,argc,argv) Reflector::Instance()->runFun(name, argc, argv)
-
-
-#define RE_GET_REG Reflector::Instance()->getAllRegisterFun
 
 #endif
