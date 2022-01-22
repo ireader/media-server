@@ -27,6 +27,7 @@
     <ClInclude Include="include\mov-udta.h" />
     <ClInclude Include="include\mov-writer.h" />
     <ClInclude Include="include\mov-buffer.h" />
+    <ClInclude Include="include\mp4-writer.h" />
     <ClInclude Include="source\mov-internal.h" />
     <ClInclude Include="source\mov-ioutil.h" />
   </ItemGroup>

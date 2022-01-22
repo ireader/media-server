@@ -83,11 +83,9 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 		}
 		break;
 
-	case 0: // script
-		break;
 	default:
 		// nothing to do
-		assert(0);
+		assert(FLV_SCRIPT_METADATA == codec);
 	}
 
 	printf("\n");
