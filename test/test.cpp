@@ -41,300 +41,170 @@ void usage(int argc, char const *argv[]){
 */
 
 /* 用于套壳调用函数，参数 void */
-#define DEF_FUN_VOID(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_VOID2(name, param) void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         name();return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(void)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
+#define DEF_FUN_VOID(name) DEF_FUN_VOID2(name, (void))
 
 /* 用于套壳调用函数，参数 char* */
-#define DEF_FUN_PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(4 != argc) return -1;\
         name(argv[3]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, char* */
-#define DEF_FUN_2PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_2PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(5 != argc) return -1;\
         name(argv[3], argv[4]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*, char*)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, char*, char*, char* */
-#define DEF_FUN_4PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_4PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name(argv[3], argv[4], argv[5], argv[6]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*, char*, char*)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, int */
-#define DEF_FUN_PCHAR_INT(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_PCHAR_INT(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(5 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]));return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*, int)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 int, int, char*, char* */
-#define DEF_FUN_INT_INT_PCHAR_PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_INT_INT_PCHAR_PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name((int)atoi(argv[3]), (int)atoi(argv[4]), argv[5], argv[6]);return 0;\
     }\
-     RE_REGISTER(name, "void " #name "(int, int, char*, char*)", t_##name)
+     RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, int, char* */
-#define DEF_FUN_PCHAR_INT_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_PCHAR_INT_INT_PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(7 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), (int)atoi(argv[5]), argv[6]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*, int, int, char*)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, char* */
-#define DEF_FUN_PCHAR_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_PCHAR_INT_PCHAR(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(6 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(char*, int, char*)", t_##name)
+    RE_REGISTER(name, "void " #name  #param, t_##name)
 
 /* 用于套壳调用函数，参数 char*, int, char*,int, int */
-#define DEF_FUN_PCHAR_INT_PCHAR_INT_INT(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_PCHAR_INT_PCHAR_INT_INT(name, param)  void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(8 != argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5], (int)atoi(argv[6]), (int)atoi(argv[7]));return 0;\
     } \
-    RE_REGISTER(name, "void " #name"(char*, int, char*, int, int)", t_##name)
+    RE_REGISTER(name, "void " #name #param, t_##name)
 
 /* 用于套壳调用函数，参数 int, const char*, uint16_t, uint32_t, const char* */
-#define DEF_FUN_INT_PCHAR_INT_INT_PCHAR(name) int t_##name(int argc, char const *argv[]){\
+#define DEF_FUN_INT_PCHAR_INT_INT_PCHAR(name, param) void name ## param; \
+    int t_##name(int argc, char const *argv[]){\
         if(8 != argc) return -1;\
         name((int)atoi(argv[3]), argv[4], (uint16_t)atoi(argv[5]), (uint32_t)atoi(argv[6]), argv[7]);return 0;\
     } \
-    RE_REGISTER(name, "void " #name "(int, const char*, uint16_t, uint32_t, const char*)", t_##name)
+    RE_REGISTER(name, "void " #name #param, t_##name)
 
-extern "C" void amf0_test(void);
-DEF_FUN_VOID(amf0_test);
+extern "C" DEF_FUN_VOID(amf0_test);
+extern "C" DEF_FUN_VOID(rtp_queue_test);
+extern "C" DEF_FUN_VOID(mpeg4_aac_test);
+extern "C" DEF_FUN_VOID(mpeg4_avc_test);
+extern "C" DEF_FUN_VOID(mpeg4_hevc_test);
+extern "C" DEF_FUN_VOID(mp3_header_test);
+extern "C" DEF_FUN_VOID(sdp_a_fmtp_test);
+extern "C" DEF_FUN_VOID(sdp_a_rtpmap_test);
+extern "C" DEF_FUN_VOID(sdp_a_webrtc_test);
+extern "C" DEF_FUN_VOID(rtsp_client_auth_test);
+extern "C" DEF_FUN_VOID(rtsp_header_range_test);
+extern "C" DEF_FUN_VOID(rtsp_header_rtp_info_test);
+extern "C" DEF_FUN_VOID(rtsp_header_transport_test);
+extern "C" DEF_FUN_VOID(http_header_host_test);
+extern "C" DEF_FUN_VOID(http_header_content_type_test);
+extern "C" DEF_FUN_VOID(http_header_authorization_test);
+extern "C" DEF_FUN_VOID(http_header_www_authenticate_test);
+extern "C" DEF_FUN_VOID(http_header_auth_test);
 
-extern "C" void rtp_queue_test(void);
-DEF_FUN_VOID(rtp_queue_test);
-
-extern "C" void mpeg4_aac_test(void);
-DEF_FUN_VOID(mpeg4_aac_test);
-
-extern "C" void mpeg4_avc_test(void);
-DEF_FUN_VOID(mpeg4_avc_test);
-
-extern "C" void mpeg4_hevc_test(void);
-DEF_FUN_VOID(mpeg4_hevc_test);
-
-extern "C" void mp3_header_test(void);
-DEF_FUN_VOID(mp3_header_test);
-
-extern "C" void sdp_a_fmtp_test(void);
-DEF_FUN_VOID(sdp_a_fmtp_test);
-
-extern "C" void sdp_a_rtpmap_test(void);
-DEF_FUN_VOID(sdp_a_rtpmap_test);
-
-extern "C" void sdp_a_webrtc_test(void);
-DEF_FUN_VOID(sdp_a_webrtc_test);
-
-extern "C" void rtsp_client_auth_test(void);
-DEF_FUN_VOID(rtsp_client_auth_test);
-
-extern "C" void rtsp_header_range_test(void);
-DEF_FUN_VOID(rtsp_header_range_test);
-
-extern "C" void rtsp_header_rtp_info_test(void);
-DEF_FUN_VOID(rtsp_header_rtp_info_test);
-
-extern "C" void rtsp_header_transport_test(void);
-DEF_FUN_VOID(rtsp_header_transport_test);
-
-extern "C" void http_header_host_test(void);
-DEF_FUN_VOID(http_header_host_test);
-
-extern "C" void http_header_content_type_test(void);
-DEF_FUN_VOID(http_header_content_type_test);
-
-extern "C" void http_header_authorization_test(void);
-DEF_FUN_VOID(http_header_authorization_test);
-
-extern "C" void http_header_www_authenticate_test(void);
-DEF_FUN_VOID(http_header_www_authenticate_test);
-
-extern "C" void http_header_auth_test(void);
-DEF_FUN_VOID(http_header_auth_test);
-
-extern "C" void rtsp_example();
-DEF_FUN_VOID(rtsp_example);
-
-extern "C" void rtsp_push_server();
-DEF_FUN_VOID(rtsp_push_server);
-
-extern "C" void rtsp_client_test(const char* host, const char* file);
-DEF_FUN_2PCHAR(rtsp_client_test);
-
-//void rtsp_client_input_test(const char* host, const char* file);
-//DEF_FUN_2PCHAR(rtsp_client_input_test);
-
-void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile);
-DEF_FUN_INT_PCHAR_INT_INT_PCHAR(rstp_demuxer_test);
-
-extern "C" void http_server_test(const char* ip, int port);
-DEF_FUN_PCHAR_INT(http_server_test);
-
-void rtp_payload_test();
+extern "C" DEF_FUN_VOID(rtsp_example);
+extern "C" DEF_FUN_VOID(rtsp_push_server);
+extern "C" DEF_FUN_2PCHAR(rtsp_client_test, (const char* host, const char* file));
+DEF_FUN_INT_PCHAR_INT_INT_PCHAR(rstp_demuxer_test, (int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile));
+DEF_FUN_PCHAR(rtsp_client_input_test, (const char* file));
+DEF_FUN_PCHAR(rtp_dump_test, (const char* file));
 DEF_FUN_VOID(rtp_payload_test);
 
-void rtp_dump_test(const char* file);
-DEF_FUN_PCHAR(rtp_dump_test);
+DEF_FUN_PCHAR(flv_read_write_test, (const char* flv));
+DEF_FUN_2PCHAR(flv2ts_test, (const char* inputFLV, const char* outputTS));
+DEF_FUN_2PCHAR(ts2flv_test, (const char* inputTS, const char* outputFLV));
+DEF_FUN_2PCHAR(avc2flv_test, (const char* inputH264, const char* outputFLV));
+DEF_FUN_2PCHAR(hevc2flv_test, (const char* inputH265, const char* outputFLV));
+DEF_FUN_PCHAR(flv_reader_test, (const char* file));
+DEF_FUN_2PCHAR(av1toflv_test, (const char* obu, const char* outputFLV));
+DEF_FUN_PCHAR(av1_rtp_test, (const char* low_overhead_bitstream_format_obu));
+extern "C" DEF_FUN_PCHAR(aom_av1_obu_test, (const char* file));
 
-void mpeg_ts_dec_test(const char* file);
-DEF_FUN_PCHAR(mpeg_ts_dec_test);
+DEF_FUN_PCHAR(mov_2_flv_test, (const char* mp4));
+DEF_FUN_PCHAR(mov_reader_test, (const char* mp4));
+DEF_FUN_INT_INT_PCHAR_PCHAR(mov_writer_test, (int w, int h, const char* inflv, const char* outmp4));
+DEF_FUN_INT_INT_PCHAR_PCHAR(fmp4_writer_test, (int w, int h, const char* inflv, const char* outmp4));
+DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h264, (const char* h264, int width, int height, const char* mp4));
+DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h265, (const char* h265, int width, int height, const char* mp4));
+DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_av1, (const char* obu, int width, int height, const char* mp4));
+DEF_FUN_PCHAR_INT_PCHAR(mov_writer_audio, (const char* audio, int type, const char* mp4));
+DEF_FUN_2PCHAR(fmp4_writer_test2, (const char* mp4, const char* outmp4));
+DEF_FUN_PCHAR(mov_rtp_test, (const char* mp4));
 
-void mpeg_ts_test(const char* input);
-DEF_FUN_PCHAR(mpeg_ts_test);
+DEF_FUN_PCHAR(mpeg_ts_dec_test, (const char* file));
+DEF_FUN_PCHAR(mpeg_ts_test, (const char* input));
+DEF_FUN_PCHAR(mpeg_ps_test, (const char* input));
+DEF_FUN_PCHAR(flv_2_mpeg_ps_test, (const char* flv));
+DEF_FUN_PCHAR(mpeg_ps_dec_test, (const char* file));
 
-void mpeg_ps_test(const char* input);
-DEF_FUN_PCHAR(mpeg_ps_test);
-
-void flv_2_mpeg_ps_test(const char* flv);
-DEF_FUN_PCHAR(flv_2_mpeg_ps_test);
-
-void mpeg_ps_dec_test(const char* file);
-DEF_FUN_PCHAR(mpeg_ps_dec_test);
-
-void flv_read_write_test(const char* flv);
-DEF_FUN_PCHAR(flv_read_write_test);
-
-void flv2ts_test(const char* inputFLV, const char* outputTS);
-DEF_FUN_2PCHAR(flv2ts_test);
-
-void ts2flv_test(const char* inputTS, const char* outputFLV);
-DEF_FUN_2PCHAR(ts2flv_test);
-
-void avc2flv_test(const char* inputH264, const char* outputFLV);
-DEF_FUN_2PCHAR(avc2flv_test);
-
-void hevc2flv_test(const char* inputH265, const char* outputFLV);
-DEF_FUN_2PCHAR(hevc2flv_test);
-
-void flv_reader_test(const char* file);
-DEF_FUN_PCHAR(flv_reader_test);
-
-void mov_2_flv_test(const char* mp4);
-DEF_FUN_PCHAR(mov_2_flv_test);
-
-void mov_reader_test(const char* mp4);
-DEF_FUN_PCHAR(mov_reader_test);
-
-void mov_writer_test(int w, int h, const char* inflv, const char* outmp4);
-DEF_FUN_INT_INT_PCHAR_PCHAR(mov_writer_test);
-
-void fmp4_writer_test(int w, int h, const char* inflv, const char* outmp4);
-DEF_FUN_INT_INT_PCHAR_PCHAR(fmp4_writer_test);
-
-void mov_writer_h264(const char* h264, int width, int height, const char* mp4);
-DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h264);
-
-void mov_writer_h265(const char* h265, int width, int height, const char* mp4);
-DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h265);
-
-void mov_writer_av1(const char* obu, int width, int height, const char* mp4);
-DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_av1);
-
-void mov_writer_audio(const char* audio, int type, const char* mp4);
-DEF_FUN_PCHAR_INT_PCHAR(mov_writer_audio);
-
-void hls_segmenter_flv(const char* file);
-DEF_FUN_PCHAR(hls_segmenter_flv);
-
+extern "C" DEF_FUN_PCHAR_INT(http_server_test, (const char* ip, int port));
+DEF_FUN_PCHAR_INT_PCHAR_INT_INT(dash_dynamic_test, (const char* ip, int port, const char* file, int width, int height));
+DEF_FUN_2PCHAR(dash_static_test, (const char* mp4, const char* name));
+DEF_FUN_PCHAR_INT(hls_server_test, (const char* ip, int port));
+DEF_FUN_PCHAR(hls_segmenter_flv, (const char* file));
 #if defined(_HAVE_FFMPEG_)
-void hls_segmenter_fmp4_test(const char* file);
-DEF_FUN_PCHAR(hls_segmenter_fmp4_test);
+DEF_FUN_PCHAR(hls_segmenter_fmp4_test, (const char* file));
 #endif
 
-void hls_server_test(const char* ip, int port);
-DEF_FUN_PCHAR_INT(hls_server_test);
+DEF_FUN_4PCHAR(rtmp_play_test, (const char* host, const char* app, const char* stream, const char* flv));
+DEF_FUN_4PCHAR(rtmp_publish_test, (const char* host, const char* app, const char* stream, const char* flv));
+DEF_FUN_4PCHAR(rtmp_play_aio_test, (const char* host, const char* app, const char* stream, const char* file));
+DEF_FUN_4PCHAR(rtmp_publish_aio_test, (const char* host, const char* app, const char* stream, const char* file));
+DEF_FUN_PCHAR(rtmp_server_vod_test, (const char* flv));
+DEF_FUN_PCHAR(rtmp_server_publish_test, (const char* flv));
+DEF_FUN_PCHAR(rtmp_server_vod_aio_test, (const char* flv));
+DEF_FUN_PCHAR(rtmp_server_publish_aio_test, (const char* flv));
+DEF_FUN_PCHAR_INT(rtmp_server_forward_aio_test, (const char* ip, int port));
+DEF_FUN_PCHAR(rtmp_server_input_test, (const char* file));
+DEF_FUN_PCHAR(rtmp_input_test, (const char* file));
 
-void dash_dynamic_test(const char* ip, int port, const char* file, int width, int height);
-DEF_FUN_PCHAR_INT_PCHAR_INT_INT(dash_dynamic_test);
-
-void dash_static_test(const char* mp4, const char* name);
-DEF_FUN_2PCHAR(dash_static_test);
-
-void rtmp_play_test(const char* host, const char* app, const char* stream, const char* flv);
-DEF_FUN_4PCHAR(rtmp_play_test);
-
-void rtmp_publish_test(const char* host, const char* app, const char* stream, const char* flv);
-DEF_FUN_4PCHAR(rtmp_publish_test);
-
-void rtmp_play_aio_test(const char* host, const char* app, const char* stream, const char* file);
-DEF_FUN_4PCHAR(rtmp_play_aio_test);
-
-void rtmp_publish_aio_test(const char* host, const char* app, const char* stream, const char* file);
-DEF_FUN_4PCHAR(rtmp_publish_aio_test);
-
-void rtmp_server_vod_test(const char* flv);
-DEF_FUN_PCHAR(rtmp_server_vod_test);
-
-void rtmp_server_publish_test(const char* flv);
-DEF_FUN_PCHAR(rtmp_server_publish_test);
-
-void rtmp_server_vod_aio_test(const char* flv);
-DEF_FUN_PCHAR(rtmp_server_vod_aio_test);
-
-void rtmp_server_publish_aio_test(const char* flv);
-DEF_FUN_PCHAR(rtmp_server_publish_aio_test);
-
-void rtmp_server_forward_aio_test(const char* ip, int port);
-DEF_FUN_PCHAR_INT(rtmp_server_forward_aio_test);
-
-void rtmp_server_input_test(const char* file);
-DEF_FUN_PCHAR(rtmp_server_input_test);
-
-void rtmp_input_test(const char* file);
-DEF_FUN_PCHAR(rtmp_input_test);
-
-extern "C" void sip_header_test(void);
-DEF_FUN_VOID(sip_header_test);
-
-extern "C" void sip_agent_test(void);
-DEF_FUN_VOID(sip_agent_test);
-
-void sip_uac_message_test(void);
+extern "C" DEF_FUN_VOID(sip_header_test);
+extern "C" DEF_FUN_VOID(sip_agent_test);
 DEF_FUN_VOID(sip_uac_message_test);
-
-void sip_uas_message_test(void);
 DEF_FUN_VOID(sip_uas_message_test);
-
-void sip_uac_test(void);
 DEF_FUN_VOID(sip_uac_test);
-
-void sip_uas_test(void);
 DEF_FUN_VOID(sip_uas_test);
-
-void sip_uac_test2(void);
 DEF_FUN_VOID(sip_uac_test2);
-
-void sip_uas_test2(void);
 DEF_FUN_VOID(sip_uas_test2);
 
-void sdp_test(const char* file);
-DEF_FUN_PCHAR(sdp_test);
-
-extern "C" void aom_av1_obu_test(const char* file);
-DEF_FUN_PCHAR(aom_av1_obu_test);
-
-void av1toflv_test(const char* obu, const char* outputFLV);
-DEF_FUN_2PCHAR(av1toflv_test);
-
-void fmp4_writer_test2(const char* mp4, const char* outmp4);
-DEF_FUN_2PCHAR(fmp4_writer_test2);
-
-void mov_rtp_test(const char* mp4);
-DEF_FUN_PCHAR(mov_rtp_test);
-
-void av1_rtp_test(const char* low_overhead_bitstream_format_obu);
-DEF_FUN_PCHAR(av1_rtp_test);
+DEF_FUN_PCHAR(sdp_test, (const char* file));
 
 int binnary_diff(const char* file1, const char* file2);
 

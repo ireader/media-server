@@ -278,6 +278,7 @@
     <ClCompile Include="..\librtsp\test\media\vod-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\rtp-streaming-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtp-udp-transport.cpp" />
+    <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
     <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />

@@ -494,6 +494,9 @@
     <ClCompile Include="..\libflv\test\av1-flv-test.cpp">
       <Filter>libflv</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
