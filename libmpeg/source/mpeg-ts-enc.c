@@ -12,6 +12,7 @@
 
 #define PCR_DELAY			0 //(700 * 90) // 700ms
 #define PAT_PERIOD			(400 * 90) // 500ms
+#define PAT_CYCLE			50 // 50fps(audio + video)
 
 #define TS_HEADER_LEN		4 // 1-bytes sync byte + 2-bytes PID + 1-byte CC
 #define PES_HEADER_LEN		6 // 3-bytes packet_start_code_prefix + 1-byte stream_id + 2-bytes PES_packet_length
@@ -32,6 +33,7 @@ typedef struct _mpeg_ts_enc_context_t
 	int64_t pcr_period;
 	int64_t pcr_clock; // last pcr time
 
+	int pat_cycle;
 	uint16_t pid;
 
 	struct mpeg_ts_func_t func;
@@ -289,13 +291,15 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
     {
         pmt->PCR_PID = stream->pid;
         tsctx->pat_period = 0;
+		tsctx->pat_cycle = 0;
     }
 
 	if (pmt->PCR_PID == stream->pid)
 		++tsctx->pcr_clock;
 
-	if(0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts)
+	if(0 == ++tsctx->pat_cycle % PAT_CYCLE || 0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts)
 	{
+		tsctx->pat_cycle = 0;
 		tsctx->pat_period = dts;
 
 		if (0 == tsctx->sdt_period)
@@ -389,6 +393,7 @@ int mpeg_ts_reset(void* ts)
 	tsctx->pat_period = 0;
 	tsctx->pcr_period = 80 * 90; // 100ms maximum
 	tsctx->pcr_clock = 0;
+	tsctx->pat_cycle = 0;
 	return 0;
 }
 
