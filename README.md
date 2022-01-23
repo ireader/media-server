@@ -67,4 +67,4 @@
 2. make RELEASE=1 (make release library, default debug)
 3. make PLATFORM=arm-hisiv100nptl-linux (cross compile)
 
-#### (编译说明)[compile.cn.md]
+#### [编译说明](compile.cn.md)
