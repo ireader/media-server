@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#if defined(OS_WINDOWS)
+	#define strncasecmp	_strnicmp
+#endif
+
 struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const char* pwd, const struct rtsp_client_handler_t *handler, void* param)
 {
 	struct rtsp_client_t *rtsp;
@@ -65,6 +69,15 @@ static int rtsp_client_handle(struct rtsp_client_t* rtsp, http_parser_t* parser)
 	}
 }
 
+static int rtsp_check_response_line(const char* data, size_t bytes)
+{
+	const char* line = "RTSP/1.0 ";
+	assert(bytes > 0);
+	if (bytes >= 9)
+		bytes = 9;
+	return strncasecmp(line, data, 9);
+}
+
 int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes)
 {
 	int r;
@@ -77,11 +90,7 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 
 	do
 	{
-		if (0 == rtsp->parser_need_more_data && (*p == '$' || 0 != rtsp->rtp.state))
-		{
-			p = rtp_over_rtsp(&rtsp->rtp, p, end);
-		}
-		else
+		if(rtsp->parser_need_more_data || 0 == rtsp_check_response_line((const char*)p, (size_t)(end - p)))
 		{
 			// TODO: server->client Announce (update sdp)
 
@@ -96,6 +105,12 @@ int rtsp_client_input(struct rtsp_client_t *rtsp, const void* data, size_t bytes
 				assert((size_t)remain < bytes);
 			}
 			p = end - remain;
+		}
+		else
+		{
+			//if (0 == rtsp->parser_need_more_data && (*p == '$' || 0 != rtsp->rtp.state))
+
+			p = rtp_over_rtsp(&rtsp->rtp, p, end);
 		}
 	} while (p < end && r >= 0);
 

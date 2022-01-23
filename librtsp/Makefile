@@ -52,6 +52,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES =
+DEFINES = RTP_OVER_RTSP_TRY_TO_FIND_NEXT_PACKET
 
 include ../gcc.mk
