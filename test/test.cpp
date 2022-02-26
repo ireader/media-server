@@ -126,6 +126,7 @@ extern "C" DEF_FUN_VOID(mpeg4_aac_test);
 extern "C" DEF_FUN_VOID(mpeg4_avc_test);
 extern "C" DEF_FUN_VOID(mpeg4_hevc_test);
 extern "C" DEF_FUN_VOID(mp3_header_test);
+extern "C" DEF_FUN_VOID(h264_mp4toannexb_test);
 extern "C" DEF_FUN_VOID(sdp_a_fmtp_test);
 extern "C" DEF_FUN_VOID(sdp_a_rtpmap_test);
 extern "C" DEF_FUN_VOID(sdp_a_webrtc_test);
@@ -226,6 +227,7 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("mpeg4_avc_test", argc, argv);
         RE_RUN_REG("mpeg4_hevc_test", argc, argv);
         RE_RUN_REG("mp3_header_test", argc, argv);
+        RE_RUN_REG("h264_mp4toannexb_test", argc, argv);
         RE_RUN_REG("sdp_a_fmtp_test", argc, argv);
         RE_RUN_REG("sdp_a_rtpmap_test", argc, argv);
         RE_RUN_REG("sdp_a_webrtc_test", argc, argv);

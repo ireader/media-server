@@ -38,7 +38,7 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
 
         fwrite(data, 1, bytes, afp);
     }
-    else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
+    else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_VIDEO_SVAC == avtype)
     {
         static int64_t v_pts = 0, v_dts = 0;
         assert(0 == v_dts || dts >= v_dts);
