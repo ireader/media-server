@@ -156,6 +156,9 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
 
         // for audio packet only, H.264/H.265 pes->len maybe incorrect
         assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid);
+#if !defined(MPEG_LIVING_VIDEO_FRAME_DEMUX)
+        if (PES_SID_VIDEO != pes->sid)
+#endif
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
             assert(pes->pkt.size == pes->len || (pkt->flags & MPEG_FLAG_PACKET_CORRUPT)); // packet lost
