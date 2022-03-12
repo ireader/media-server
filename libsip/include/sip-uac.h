@@ -27,7 +27,7 @@ typedef int (*sip_uac_onreply)(void* param, const struct sip_message_t* reply, s
 /// @param[in] registrar register server, such as sip:registrar.biloxi.com. can be null.
 /// @param[in] seconds expires seconds
 struct sip_uac_transaction_t* sip_uac_register(struct sip_agent_t* sip, const char* name, const char* registrar, int seconds, sip_uac_onreply onregister, void* param);
-struct sip_uac_transaction_t* sip_uac_options(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onoptins, void* param);
+struct sip_uac_transaction_t* sip_uac_options(struct sip_agent_t* sip, const char* from, const char* to, sip_uac_onreply onoptions, void* param);
 
 struct sip_uac_transaction_t* sip_uac_invite(struct sip_agent_t* sip, const char* name, const char* to, sip_uac_oninvite oninvite, void* param);
 struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip_uac_transaction_t* invite, sip_uac_onreply oncancel, void* param);
