@@ -226,6 +226,14 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
                 }
 #endif
 
+#if defined(MPEG_LIVING_VIDEO_FRAME_DEMUX)
+                // video packet size > 0xFFFF, split by pts/dts
+                if (PES_SID_VIDEO == pes->sid
+                    && PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid
+                    && (pes->pkt.size > 0 || pes->len + pes->PES_header_data_length + 3 == 0xFFFF))
+                    pes->len = 0;
+#endif
+                
                 pes->flags = pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
                 r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
                 ps->start = 0; // clear start flag

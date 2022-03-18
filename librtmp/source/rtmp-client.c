@@ -64,6 +64,7 @@ struct rtmp_client_t
 	uint32_t stream_id; // createStream/deleteStream
 	char stream_name[256]; // Play/Publishing stream name, flv:sample, mp3:sample, H.264/AAC: mp4:sample.m4v
 	enum rtmp_state_t state;
+	uint32_t recv_bytes[2]; // for rtmp_acknowledgement
 
 	struct rtmp_client_handler_t handler;
 	void* param;
@@ -174,6 +175,21 @@ static int rtmp_client_send_set_chunk_size(struct rtmp_client_t* ctx, size_t siz
 	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), (uint32_t)size);
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
+}
+
+/// 5.4.3. Acknowledgement (3)
+static int rtmp_client_send_acknowledgement(struct rtmp_client_t* ctx, size_t size)
+{
+	int n, r;
+	ctx->recv_bytes[0] += (uint32_t)size;
+	if (ctx->rtmp.window_size && ctx->recv_bytes[0] - ctx->recv_bytes[1] > ctx->rtmp.window_size)
+	{
+		n = rtmp_acknowledgement(ctx->payload, sizeof(ctx->payload), ctx->recv_bytes[0]);
+		r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
+		ctx->recv_bytes[1] = ctx->recv_bytes[0];
+		return n == r ? 0 : r;
+	}
+	return 0;
 }
 
 // Window Acknowledgement Size (5)
@@ -469,6 +485,7 @@ int rtmp_client_input(struct rtmp_client_t* ctx, const void* data, size_t bytes)
 			break;
 
 		default:
+			rtmp_client_send_acknowledgement(ctx, bytes);
 			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}

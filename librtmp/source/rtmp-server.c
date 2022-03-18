@@ -20,6 +20,7 @@
 struct rtmp_server_t
 {
 	struct rtmp_t rtmp;
+	uint32_t recv_bytes[2]; // for rtmp_acknowledgement
 
 	void* param;
 	struct rtmp_server_handler_t handler;
@@ -75,6 +76,21 @@ static int rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	ctx->rtmp.out_chunk_size = RTMP_OUTPUT_CHUNK_SIZE;
 	return n == r ? 0 : r;
+}
+
+/// 5.4.3. Acknowledgement (3)
+static int rtmp_server_send_acknowledgement(struct rtmp_server_t* ctx, size_t size)
+{
+	int n, r;
+	ctx->recv_bytes[0] += (uint32_t)size;
+	if (ctx->rtmp.window_size && ctx->recv_bytes[0] - ctx->recv_bytes[1] > ctx->rtmp.window_size)
+	{
+		n = rtmp_acknowledgement(ctx->payload, sizeof(ctx->payload), ctx->recv_bytes[0]);
+		r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
+		ctx->recv_bytes[1] = ctx->recv_bytes[0];
+		return n == r ? 0 : r;
+	}
+	return 0;
 }
 
 /// 5.4.4. Window Acknowledgement Size (5)
@@ -504,6 +520,7 @@ int rtmp_server_input(struct rtmp_server_t* ctx, const uint8_t* data, size_t byt
 
 		case RTMP_HANDSHAKE_2:
 		default:
+			rtmp_server_send_acknowledgement(ctx, bytes);
 			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}

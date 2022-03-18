@@ -51,7 +51,6 @@
     <ClCompile Include="src\uac\sip-uac-info.c" />
     <ClCompile Include="src\uac\sip-uac-invite.c" />
     <ClCompile Include="src\uac\sip-uac-options.c" />
-    <ClCompile Include="src\uac\sip-uac-refer.c" />
     <ClCompile Include="src\uac\sip-uac-register.c" />
     <ClCompile Include="src\uac\sip-uac-subscribe.c" />
     <ClCompile Include="src\uac\sip-uac-transaction-invite.c" />
