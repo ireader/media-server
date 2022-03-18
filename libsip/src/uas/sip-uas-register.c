@@ -68,10 +68,9 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	const struct cstring_t* header;
 	const struct sip_contact_t* contact;
 
-	// If contact.expire is not provided, 
-	// the value of the Expires header field is used instead
+	// If contact.expire is not provided, default equal to 60
 	header = sip_message_get_header_by_name(req, "Expires");
-	expires = header ? atoi(header->p) : 0;
+	expires = header ? atoi(header->p) : 60;
 
 	// 1. Request-URI
 
