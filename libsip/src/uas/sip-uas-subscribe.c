@@ -63,8 +63,8 @@ int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t
 	struct sip_subscribe_t* subscribe;
 
 	subscribe = sip_subscribe_fetch(t->agent, &req->callid, &req->to.tag, &req->from.tag, &req->event);
-	if (!subscribe)
-		return sip_uas_reply(t, 481, NULL, 0, param); // 481 Subscription does not exist
+	//if (!subscribe)
+	//	return sip_uas_reply(t, 481, NULL, 0, param); // 481 Subscription does not exist
 
 	// 489 Bad Event
 	if (t->handler->onnotify)
