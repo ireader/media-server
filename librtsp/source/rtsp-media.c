@@ -107,15 +107,17 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		if (0 == strcmp("rtpmap", name))
 		{
 			int rate = 0;
-			char encoding[sizeof(media->avformats[i].encoding)];
+			char channel[64];
+			char encoding[16 + sizeof(media->avformats[i].encoding)];
 			if (strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
-				sdp_a_rtpmap(value, &payload, encoding, &rate, NULL);
+				sdp_a_rtpmap(value, &payload, encoding, &rate, channel);
 				for (i = 0; i < media->avformat_count; i++)
 				{
 					if (media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
+						media->avformats[i].channel = atoi(channel);
 						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
 						break;
 					}
