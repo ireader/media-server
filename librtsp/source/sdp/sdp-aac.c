@@ -62,7 +62,8 @@ int sdp_aac_latm(uint8_t *data, int bytes, const char* proto, unsigned short por
 int sdp_aac_generic(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size)
 {
 	// a=rtpmap:<payload type> <encoding name>/<clock rate>[/<encoding parameters > ]
-	// For audio streams, <encoding parameters> specifies the number of audio channels
+	// For audio streams, <encoding parameters> specifies the number of audio channels, default value is 1.
+	
 	// streamType: AudioStream --> ISO/IEC 14496-1:2010 streamType Values
 	// profile-level-id --> ISO/IEC 14496-3:2009 audioProfileLevelIndication values
 	// When using SDP, the clock rate of the RTP time stamp MUST be expressed using the "rtpmap" attribute. 

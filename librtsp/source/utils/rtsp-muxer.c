@@ -61,7 +61,7 @@ struct rtp_muxer_media_t
 
 struct rtsp_muxer_t
 {
-	struct rtp_muxer_payload_t payloads[1];
+	struct rtp_muxer_payload_t payloads[3];
 	int payload_capacity;
 	int payload_count;
 

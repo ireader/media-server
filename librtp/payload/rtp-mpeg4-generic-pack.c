@@ -77,6 +77,7 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 
 	r = 0;
 	ptr = (const uint8_t *)data;
+#if defined(RTP_MPEG4_GENERIC_SKIP_ADTS)
 	if (0xFF == ptr[0] && 0xF0 == (ptr[1] & 0xF0) && bytes > 7)
 	{
 		// skip ADTS header
@@ -84,13 +85,14 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 		ptr += 7;
 		bytes -= 7;
 	}
+#endif
 
 	for (size = bytes; 0 == r && bytes > 0; ++packer->pkt.rtp.seq)
 	{
 		// 3.3.6. High Bit-rate AAC
-		// SDP fmtp: sizeLength=13; indexLength=3; indexDeltaLength = 3;
+		// SDP fmtp: mode=AAC-hbr;sizeLength=13;indexLength=3;indexDeltaLength=3;
 		header[0] = 0;
-		header[1] = 16; // 16-bits AU headers-lenght
+		header[1] = 16; // 16-bits AU headers-length
 		header[2] = (uint8_t)(size >> 5);
 		header[3] = (uint8_t)(size & 0x1f) << 3;
 
