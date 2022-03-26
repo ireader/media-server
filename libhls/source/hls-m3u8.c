@@ -178,7 +178,7 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 
 	// #EXT-X-MAP:URI="main.mp4",BYTERANGE="1206@0"
 	if (m3u8->ext_x_map)
-		r += snprintf(playlist + r, bytes - r, "#EXT-X-MAP:URI=\"%s\",\n", m3u8->ext_x_map);
+		r += snprintf(playlist + r, r < bytes ? bytes - r : 0, "#EXT-X-MAP:URI=\"%s\",\n", m3u8->ext_x_map);
 
 	n = r;
 	list_for_each(link, &m3u8->root)
@@ -189,19 +189,19 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 		seg = list_entry(link, struct hls_segment_t, link);
 
 		if (seg->discontinuity)
-			n += snprintf(playlist + n, bytes - n, "#EXT-X-DISCONTINUITY\n");
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXT-X-DISCONTINUITY\n");
 		if (bytes > n)
 		{
 			if(seg->bytes > 0)
-				n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n#EXT-X-BYTERANGE:%"PRIu64"@%"PRIu64"\n%s\n", seg->duration / 1000.0, seg->bytes, seg->offset, seg->name);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXTINF:%.3f,\n#EXT-X-BYTERANGE:%"PRIu64"@%"PRIu64"\n%s\n", seg->duration / 1000.0, seg->bytes, seg->offset, seg->name);
 			else
-				n += snprintf(playlist + n, bytes - n, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
 		}
 			
 	}
 
 	if (eof && bytes > n + 15)
-		n += snprintf(playlist + n, bytes - n, "#EXT-X-ENDLIST\n");
+		n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXT-X-ENDLIST\n");
 
 	return (bytes > n && n > 0) ? 0 : -ENOMEM;
 }

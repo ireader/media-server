@@ -32,9 +32,9 @@ int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands)
 	rtsp->state = RTSP_OPTIONS;
 
 	if (commands && commands[0])
-		snprintf(require, sizeof(require), "Require: %s\r\n", commands);
+		snprintf(require, sizeof(require) - 1, "Require: %s\r\n", commands);
 	if (rtsp->media_count > 0 && *rtsp->session[0].session)
-		snprintf(session, sizeof(session), "Session: %s\r\n", rtsp->session[0].session);
+		snprintf(session, sizeof(session) - 1, "Session: %s\r\n", rtsp->session[0].session);
 
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->cseq++, require, session, USER_AGENT);
 	assert(r > 0 && r < sizeof(rtsp->req));

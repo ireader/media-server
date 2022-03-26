@@ -74,7 +74,7 @@ static void mpeg_ts_file(const char* file, void* muxer)
 void mpeg_ts_test(const char* input)
 {
     char output[256] = { 0 };
-    snprintf(output, sizeof(output), "%s.ts", input);
+    snprintf(output, sizeof(output) - 1, "%s.ts", input);
 
 	struct mpeg_ts_func_t tshandler;
 	tshandler.alloc = ts_alloc;
