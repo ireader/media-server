@@ -50,8 +50,7 @@ static int rtsp_client_media_record(struct rtsp_client_t *rtsp, int i)
 	assert(rtsp->media[i].uri[0] && rtsp->session[i].session[0]);
     r = rtsp_client_authenrization(rtsp, "RECORD", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
     r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->range, rtsp->scale, rtsp->authenrization, USER_AGENT);
-    assert(r > 0 && r < sizeof(rtsp->req));
-    return r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r) ? 0 : -1;
+    return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r)) ? 0 : -1;
 }
 
 int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *scale)
@@ -62,10 +61,9 @@ int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const fl
     rtsp->progress = 0;
     rtsp->scale[0] = rtsp->range[0] = '\0';
 
-    r = scale ? snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %f\r\n", *scale) : 0;
-    r = npt ? snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) : 0;
-    if (r < 0 || r >= sizeof(rtsp->range))
-		return -1;
+    if ( (scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
+        || (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)))
+        return -1;
 
     if (rtsp->aggregate)
     {
@@ -73,8 +71,7 @@ int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const fl
         assert(rtsp->aggregate_uri[0]);
         r = rtsp_client_authenrization(rtsp, "RECORD", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
         r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->range, rtsp->scale, rtsp->authenrization, USER_AGENT);
-        assert(r > 0 && r < sizeof(rtsp->req));
-        return r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r) ? 0 : -1;
+        return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r)) ? 0 : -1;
     }
     else
     {

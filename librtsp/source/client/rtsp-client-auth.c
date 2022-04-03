@@ -46,13 +46,12 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 		n = snprintf(authenrization, bytes, "Authorization: ");
 		n += http_header_auth(&rtsp->auth, rtsp->pwd, method, content, length, authenrization + n, bytes - n);
 		n += snprintf(authenrization + n, n < bytes ? bytes - n : 0, "\r\n");
+		if (n > 0 && n < bytes)
+			return n;
 	}
-	else
-	{
-		n = 0;
-		rtsp->authenrization[0] = 0;
-	}
-	return n;
+	
+	rtsp->authenrization[0] = 0;
+	return 0;
 }
 
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed)

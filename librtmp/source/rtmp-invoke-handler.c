@@ -265,7 +265,7 @@ int rtmp_invoke_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h
 	if (!data)
 		return EINVAL; // invalid data
 	if (-1.0 == transaction)
-		return 0; // no transactionId
+		return 0; // fix: no transactionId onFCPublish
 
 	for (i = 0; i < sizeof(s_command_handler) / sizeof(s_command_handler[0]); i++)
 	{
