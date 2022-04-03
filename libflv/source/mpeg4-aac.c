@@ -168,17 +168,21 @@ int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct m
 // ISO/IEC 14496-3:2009(E) Table 1.42 - Syntax of StreamMuxConfig() (p83)
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes)
 {
+	int profile;
+	int frequncy;
 	if (bytes < 6) return -1;
+
+	profile = aac->ps ? MPEG4_AAC_PS : aac->profile;
+	frequncy = mpeg4_aac_audio_frequency_from(aac->extension_frequency);
+	frequncy = (aac->sbr || aac->ps) && -1 != frequncy ? frequncy : 0;
 
 	assert(aac->profile > 0 && aac->profile < 31);
 	assert(aac->channel_configuration >= 0 && aac->channel_configuration <= 7);
 	assert(aac->sampling_frequency_index >= 0 && aac->sampling_frequency_index <= 0xc);
 	data[0] = 0x40; // 0-audioMuxVersion(1), 1-allStreamsSameTimeFraming(1), 0-numSubFrames(6)
-	//data[1] = 0x00 | ((aac->profile >> 4) & 0x01); // 0-numProgram(4), 0-numLayer(3)
-	//data[2] = ((aac->profile & 0x0F) << 4) | (aac->sampling_frequency_index & 0x0F);
-	data[1] = 0x00;
-	data[2] = 0x20 | (aac->sampling_frequency_index & 0x0F); // AAC_LC profile
-	data[3] = ((aac->channel_configuration & 0x0F) << 4) | 0; // 0-GASpecificConfig(3), 0-frameLengthType(1)
+	data[1] = 0x00 | ((profile >> 4) & 0x01); // 0-numProgram(4), 0-numLayer(3)
+	data[2] = ((profile & 0x0F) << 4) | (aac->sampling_frequency_index & 0x0F);
+	data[3] = ((aac->channel_configuration & 0x0F) << 4) | (-1 != frequncy ? (frequncy & 0x0F) : 0); // 0-GASpecificConfig(3), 0-frameLengthType(1)
 	data[4] = 0x3F; // 0-frameLengthType(2), 111111-latmBufferFullness(6)
 	data[5] = 0xC0; // 11-latmBufferFullness(2), 0-otherDataPresent, 0-crcCheckPresent
 	return 6;
