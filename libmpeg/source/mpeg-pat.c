@@ -93,7 +93,7 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 
     // TODO: version_number change, reload pmts
 	assert(bytes >= section_length + 3); // PAT = section_length + 3
-	for(i = 8; i + 4 <= section_length + 8 - 5 - 4; i += 4) // 4:CRC, 5:follow section_length item
+	for(i = 8; i + 4 <= section_length + 8 - 5 - 4/*CRC32*/ && section_length + 3 <= bytes; i += 4) // 4:CRC, 5:follow section_length item
 	{
         pn = (data[i] << 8) | data[i+1];
         pid = ((data[i+2] & 0x1F) << 8) | data[i+3];

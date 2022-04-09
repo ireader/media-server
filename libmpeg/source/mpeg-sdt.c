@@ -69,7 +69,7 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
     // TODO: version_number change, reload SDT
     
     assert(bytes >= section_length + 3); // PMT = section_length + 3
-    for (i = 11; i + 5 <= section_length + 3 - 4/*CRC32*/; i += 5 + n) // 9: follow section_length item
+    for (i = 11; i + 5 <= section_length + 3 - 4/*CRC32*/ && section_length + 3 <= bytes; i += 5 + n) // 9: follow section_length item
     {
         sid = (data[i] << 8) | data[i + 1];
         n = ((data[i+3] & 0x0F) << 8) | data[i+4];
