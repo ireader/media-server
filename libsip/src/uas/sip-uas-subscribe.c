@@ -20,7 +20,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	}
 
 	// call once only
-	if (added && t->handler->onsubscribe)
+	if ( /*added &&*/ t->handler->onsubscribe)
 		r = t->handler->onsubscribe(param, req, t, subscribe, &subscribe->evtsession);
 
 	if (subscribe)
@@ -30,8 +30,8 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		if (h && 0 == atoi(h->p))
 		{
             // notify expire
-            if (t->handler->onnotify)
-                t->handler->onnotify(param, req, t, subscribe->evtsession, NULL);
+            //if (t->handler->onnotify)
+            //    t->handler->onnotify(param, req, t, subscribe->evtsession, NULL);
 			sip_subscribe_remove(t->agent, subscribe);
 			assert(1 == subscribe->ref);
 		}
