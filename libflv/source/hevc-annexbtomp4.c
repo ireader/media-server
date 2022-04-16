@@ -28,10 +28,11 @@ struct h265_annexbtomp4_handle_t
 
 uint8_t mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset);
 
-static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
+static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb, size_t len)
 {
 	size_t i, j;
-	for (j = i = 0; i < bytes; i++)
+	const size_t max_sps_luma_bit_depth_offset = 256;
+	for (j = i = 0; i < bytes && j < len && i < max_sps_luma_bit_depth_offset; i++)
 	{
 		if (i + 2 < bytes && 0 == nalu[i] && 0 == nalu[i + 1] && 0x03 == nalu[i + 2])
 		{
@@ -100,14 +101,14 @@ static int hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t ma
 	return bytes >= n ? (int)n : -1;
 }
 
-static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr)
+static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t len)
 {
 	size_t sodb;
 	uint8_t vps;
 	uint8_t vps_max_sub_layers_minus1;
 	uint8_t vps_temporal_id_nesting_flag;
 
-	sodb = hevc_rbsp_decode(rbsp, bytes, ptr);
+	sodb = hevc_rbsp_decode(rbsp, bytes, ptr, len);
 	if (sodb < 16 + 2)
 		return 0xFF;
 
@@ -121,7 +122,7 @@ static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_
 	return vps;
 }
 
-static uint8_t hevc_sps_id(const uint8_t* rbsp,size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* vps)
+static uint8_t hevc_sps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t len, uint8_t* vps)
 {
 	size_t n;
 	size_t sodb;
@@ -130,7 +131,7 @@ static uint8_t hevc_sps_id(const uint8_t* rbsp,size_t bytes, struct mpeg4_hevc_t
 	uint8_t sps_temporal_id_nesting_flag;
 	uint8_t conformance_window_flag;
 
-	sodb = hevc_rbsp_decode(rbsp, bytes, ptr);
+	sodb = hevc_rbsp_decode(rbsp, bytes, ptr, len);
 	if (sodb < 12+3)
 		return 0xFF;
 
@@ -164,11 +165,11 @@ static uint8_t hevc_sps_id(const uint8_t* rbsp,size_t bytes, struct mpeg4_hevc_t
 	return sps;
 }
 
-static uint8_t hevc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* sps)
+static uint8_t hevc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t len, uint8_t* sps)
 {
 	size_t sodb;
 	size_t offset = 2 * 8;  // 2-nalu type
-	sodb = hevc_rbsp_decode(rbsp, bytes, ptr);
+	sodb = hevc_rbsp_decode(rbsp, bytes, ptr, len);
 	if (sodb < 3)
 		return 0xFF; (void)hevc;
 	*sps = mpeg4_h264_read_ue(ptr, sodb, &offset);
@@ -241,10 +242,10 @@ static int h265_vps_copy(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t 
 		return -1; // invalid length
 	}
 
-	vpsid = hevc_vps_id(nalu, bytes, hevc, hevc->data + hevc->off);
+	vpsid = hevc_vps_id(nalu, bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data)-hevc->off);
 	for (i = 0; i < hevc->numOfArrays; i++)
 	{
-		if (H265_NAL_VPS == hevc->nalu[i].type && vpsid == hevc_vps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off))
+		if (H265_NAL_VPS == hevc->nalu[i].type && vpsid == hevc_vps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off))
 			return mpeg4_hevc_update2(hevc, i, nalu, bytes);
 	}
 
@@ -263,10 +264,10 @@ static int h265_sps_copy(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t 
 		return -1; // invalid length
 	}
 
-	spsid = hevc_sps_id(nalu, bytes, hevc, hevc->data + hevc->off, &vpsid);
+	spsid = hevc_sps_id(nalu, bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off, &vpsid);
 	for (i = 0; i < hevc->numOfArrays; i++)
 	{
-		if (H265_NAL_SPS == hevc->nalu[i].type && spsid == hevc_sps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, &vpsid2) && vpsid == vpsid2)
+		if (H265_NAL_SPS == hevc->nalu[i].type && spsid == hevc_sps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off, &vpsid2) && vpsid == vpsid2)
 			return mpeg4_hevc_update2(hevc, i, nalu, bytes);
 	}
 
@@ -285,10 +286,10 @@ static int h265_pps_copy(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t 
 		return -1; // invalid length
 	}
 
-	ppsid = hevc_pps_id(nalu, bytes, hevc, hevc->data + hevc->off, &spsid);
+	ppsid = hevc_pps_id(nalu, bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off, &spsid);
 	for (i = 0; i < hevc->numOfArrays; i++)
 	{
-		if (H265_NAL_PPS == hevc->nalu[i].type && ppsid == hevc_pps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, &spsid2) && spsid == spsid2)
+		if (H265_NAL_PPS == hevc->nalu[i].type && ppsid == hevc_pps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off, &spsid2) && spsid == spsid2)
 			return mpeg4_hevc_update2(hevc, i, nalu, bytes);
 	}
 
