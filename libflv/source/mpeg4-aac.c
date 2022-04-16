@@ -304,6 +304,7 @@ void mpeg4_aac_test(void)
 	const unsigned char adts[] = { 0xFF, 0xF1, 0x5C, 0x40, 0x01, 0x1F, 0xFC };
 //	const unsigned char ascsbr[] = { 0x13, 0x10, 0x56, 0xe5, 0x9d, 0x48, 0x00 };
 	const unsigned char ascsbr[] = { 0x2b, 0x92, 0x08, 0x00 };
+	const unsigned char asc8ch[] = { 0x12, 0x00, 0x05, 0x08, 0x48, 0x00, 0x20, 0x00, 0xC6, 0x40, 0x0D, 0x4C, 0x61, 0x76, 0x63, 0x35, 0x38, 0x2E, 0x39, 0x37, 0x2E, 0x31, 0x30, 0x32, 0x56, 0xE5, 0x00 };
 	// https://datatracker.ietf.org/doc/html/rfc6416#page-25
 	const unsigned char mux1[] = { 0x40, 0x00, 0x8B, 0x18, 0x38, 0x83, 0x80 }; // 6 kbit/s CELP
 	const unsigned char mux2[] = { 0x40, 0x00, 0x26, 0x20, 0x3f, 0xc0 }; // 64 kbit/s AAC LC Stereo
@@ -336,6 +337,10 @@ void mpeg4_aac_test(void)
 
 	//assert(sizeof(ascsbr) == mpeg4_aac_audio_specific_config_load(ascsbr, sizeof(ascsbr), &aac));
 	//assert(2 == aac.profile && 6 == aac.sampling_frequency_index && 1 == aac.channel_configuration);
+
+	assert(sizeof(asc8ch) == mpeg4_aac_audio_specific_config_load(asc8ch, sizeof(asc8ch), &aac));
+	assert(2 == aac.profile && 4 == aac.sampling_frequency_index && 8 == aac.channels);
+	assert(29 == mpeg4_aac_adts_save(&aac, 1, data, sizeof(data)));
 
 	memset(&aac, 0, sizeof(aac));
 	mpeg4_aac_stream_mux_config_load(mux1, sizeof(mux1), &aac);
