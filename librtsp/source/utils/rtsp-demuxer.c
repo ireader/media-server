@@ -267,7 +267,7 @@ static inline int rtsp_demuxer_onrtppacket(void* param, const void* data, int by
     pt = (struct rtp_payload_info_t*)param;
 
     // RTP timestamp => PTS/DTS
-    if (0 == pt->last && 0 == pt->pts)
+    if (0 == pt->last && -1 == pt->pts)
     {
         pt->last = timestamp;
         pt->pts = 0;
@@ -296,7 +296,7 @@ static inline int rtsp_demuxer_onh2645nalu(void* param, const void* data, int by
     pt = (struct rtp_payload_info_t*)param;
 
     // RTP timestamp => PTS/DTS
-    if (0 == pt->last && 0 == pt->pts)
+    if (0 == pt->last && INT64_MIN == pt->pts)
     {
         pt->last = timestamp;
         pt->pts = 0;
@@ -395,6 +395,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
     pt->extra = demuxer->ptr + demuxer->off;
     pt->extra_bytes = 0;
     pt->ctx = demuxer;
+    pt->pts = INT64_MIN;
 
     if (RTP_PAYLOAD_MP2T == payload)
     {

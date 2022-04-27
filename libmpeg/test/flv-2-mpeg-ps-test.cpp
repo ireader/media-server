@@ -80,7 +80,7 @@ static int flv_ondemux(void* ps, int codec, const void* data, size_t bytes, uint
 void flv_2_mpeg_ps_test(const char* flv)
 {
 	char output[256] = { 0 };
-	snprintf(output, sizeof(output), "%s.ps", flv);
+	snprintf(output, sizeof(output) - 1, "%s.ps", flv);
 
 	struct ps_muxer_func_t handler;
 	handler.alloc = ps_alloc;

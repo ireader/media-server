@@ -23,21 +23,21 @@ int xs_duration_write(int64_t duration, char* data, int size)
     data[0] = 'P';
     if (duration > 24 * 3600 * 1000)
     {
-        n += snprintf(data + n, size - n, "%dD", (int)(duration / (24 * 3600 * 1000)));
+        n += snprintf(data + n, n < size ? size - n : 0, "%dD", (int)(duration / (24 * 3600 * 1000)));
         duration %= 24 * 3600 * 1000;
     }
 
     data[n++] = 'T';
     if (duration > 3600 * 1000)
     {
-        n += snprintf(data + n, size - n, "%dH", (int)(duration / (3600 * 1000)));
+        n += snprintf(data + n, n < size ? size - n : 0, "%dH", (int)(duration / (3600 * 1000)));
         duration %= 3600 * 1000;
 
-        n += snprintf(data + n, size - n, "%dM", (int)(duration / (60 * 1000)));
+        n += snprintf(data + n, n < size ? size - n : 0, "%dM", (int)(duration / (60 * 1000)));
         duration %= 60 * 1000;
     }
 
-    n += snprintf(data + n, size - n, "%dS", (int)((duration + 999) / 1000));
+    n += snprintf(data + n, n < size ? size - n : 0, "%dS", (int)((duration + 999) / 1000));
     duration %= 1000;
 
     return n;

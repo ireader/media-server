@@ -78,25 +78,25 @@ static int dash_representation_template_replace(const struct dash_representation
 			}
 			else if (0 == strncmp("$RepresentationID$", url + i, 18))
 			{
-				j += snprintf(ptr + j, len - j, "%s", representation->id ? representation->id : "");
+				j += snprintf(ptr + j, j < len ? len - j : 0, "%s", representation->id ? representation->id : "");
 				i += 17;
 			}
 			else if (0 == strncmp("$Number", url + i, 7) && ('$' == url[i + 7] || ('%' == url[i + 7] && 1 == sscanf(url + i + 7 + 1, "%dd$%n", &width, &off) && '$' == url[i + 7 + off])))
 			{
-				snprintf(format, sizeof(format), "%%0%d" PRId64, width);
-				j += snprintf(ptr + j, len - j, format, number);
+				snprintf(format, sizeof(format) - 1, "%%0%d" PRId64, width);
+				j += snprintf(ptr + j, j < len ? len - j : 0, format, number);
 				i += 7 + off;
 			}
 			else if (0 == strncmp("$Bandwidth", url + i, 10) && ('$' == url[i + 10] || ('%' == url[i + 10] && 1 == sscanf(url + i + 10 + 1, "%dd$%n", &width, &off) && '$' == url[i + 10 + off])))
 			{
-				snprintf(format, sizeof(format), "%%0%du", width);
-				j += snprintf(ptr + j, len - j, format, representation->bandwidth);
+				snprintf(format, sizeof(format) - 1, "%%0%du", width);
+				j += snprintf(ptr + j, j < len ? len - j : 0, format, representation->bandwidth);
 				i += 10 + off;
 			}
 			else if (0 == strncmp("$Time", url + i, 5) && ('$' == url[i + 5] || ('%' == url[i + 5] && 1 == sscanf(url + i + 5 + 1, "%dd$%n", &width, &off) && '$' == url[i + 5 + off])))
 			{
-				snprintf(format, sizeof(format), "%%0%d" PRId64, width);
-				j += snprintf(ptr + j, len - j, format, start);
+				snprintf(format, sizeof(format) - 1, "%%0%d" PRId64, width);
+				j += snprintf(ptr + j, j < len ? len - j : 0, format, start);
 				i += 5 + off;
 			}
 			else if (0 == strncmp("$SubNumber", url + i, 10) && ('$' == url[i + 10] || '%' == url[i + 10]))

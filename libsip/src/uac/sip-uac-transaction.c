@@ -32,8 +32,8 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip
 
 int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 {
-	assert(t->ref > 0);
-	if (0 != atomic_decrement32(&t->ref))
+	assert(!t || t->ref > 0);
+	if (!t || 0 != atomic_decrement32(&t->ref))
 		return 0;
 
 	assert(0 == t->ref);

@@ -178,9 +178,13 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes)
     
     if (bytes < 12 || bytes > rtp->max)
         return -EINVAL;
-    pt = ((uint8_t*)data)[1];
 
-    if(pt < RTCP_FIR || pt > RTCP_TOKEN)
+    pt = ((uint8_t*)data)[1];
+    // RFC7983 SRTP: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+    // http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4
+    // RFC 5761 (RTCP-mux) states this range for secure RTCP/RTP detection.
+    // RTCP packet types in the ranges 1-191 and 224-254 SHOULD only be used when other values have been exhausted.
+    if(pt < RTCP_FIR || pt > RTCP_LIMIT)
     {
         pkt = rtp_demuxer_alloc(rtp, data, bytes);
         if (!pkt)

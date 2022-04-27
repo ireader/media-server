@@ -65,7 +65,7 @@ static int hls_handler(void* param, const void* data, size_t bytes, int64_t pts,
 	playlist->last_pts = pts + duration;
 
 	char name[128] = { 0 };
-	snprintf(name, sizeof(name), "%s/%d.ts", playlist->file.c_str(), playlist->i++);
+	snprintf(name, sizeof(name) - 1, "%s/%d.ts", playlist->file.c_str(), playlist->i++);
 	hls_m3u8_add(playlist->m3u8, name, pts, duration, discontinue);
 
 	// add new segment

@@ -193,6 +193,10 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 			//t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
 			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
+
+		assert(i < bytes);
+		if (i >= bytes)
+			return 0;
 	}
     
 	if(0x01 & pkhd.adaptation_field_control)

@@ -29,8 +29,7 @@ static int rtsp_client_media_teardown(struct rtsp_client_t* rtsp, int i)
 	assert(rtsp->media[i].uri[0] && rtsp->session[i].session[0]);
 	r = rtsp_client_authenrization(rtsp, "TEARDOWN", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->authenrization, USER_AGENT);
-	assert(r > 0 && r < sizeof(rtsp->req));
-	return r = rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r) ? 0 : -1;
+	return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r)) ? 0 : -1;
 }
 
 int rtsp_client_teardown(struct rtsp_client_t* rtsp)
@@ -44,8 +43,7 @@ int rtsp_client_teardown(struct rtsp_client_t* rtsp)
 		assert(rtsp->aggregate_uri[0]);
 		r = rtsp_client_authenrization(rtsp, "TEARDOWN", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
 		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->authenrization, USER_AGENT);
-		assert(r > 0 && r < sizeof(rtsp->req));
-		return r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r) ? 0 : -1;
+		return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r)) ? 0 : -1;
 	}
 	else
 	{

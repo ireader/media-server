@@ -290,7 +290,7 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
     
     // Contact: <sip:bob@192.0.2.4>
     if (200 <= code && code < 300 && 0 == sip_contacts_count(&t->reply->contacts) &&
-        (sip_message_isinvite(t->reply) || sip_message_isregister(t->reply)))
+        (sip_message_isinvite(t->reply) || sip_message_isregister(t->reply) || sip_message_issubscribe(t->reply)))
     {
 		// 12.1.1 UAS behavior (p70)
 		// The UAS MUST add a Contact header field to the response. The Contact 

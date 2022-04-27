@@ -89,7 +89,7 @@ static void ps_demuxer(const char* file, ps_muxer_t* muxer)
 void mpeg_ps_test(const char* input)
 {
     char output[256] = { 0 };
-    snprintf(output, sizeof(output), "%s.ps", input);
+    snprintf(output, sizeof(output) - 1, "%s.ps", input);
 
     struct ps_muxer_func_t handler;
     handler.alloc = ps_alloc;

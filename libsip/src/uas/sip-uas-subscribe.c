@@ -20,7 +20,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	}
 
 	// call once only
-	if (added && t->handler->onsubscribe)
+	if ( /*added &&*/ t->handler->onsubscribe)
 		r = t->handler->onsubscribe(param, req, t, subscribe, &subscribe->evtsession);
 
 	if (subscribe)
@@ -30,8 +30,8 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		if (h && 0 == atoi(h->p))
 		{
             // notify expire
-            if (t->handler->onnotify)
-                t->handler->onnotify(param, req, t, subscribe->evtsession, NULL);
+            //if (t->handler->onnotify)
+            //    t->handler->onnotify(param, req, t, subscribe->evtsession, NULL);
 			sip_subscribe_remove(t->agent, subscribe);
 			assert(1 == subscribe->ref);
 		}
@@ -63,8 +63,8 @@ int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t
 	struct sip_subscribe_t* subscribe;
 
 	subscribe = sip_subscribe_fetch(t->agent, &req->callid, &req->to.tag, &req->from.tag, &req->event);
-	if (!subscribe)
-		return sip_uas_reply(t, 481, NULL, 0, param); // 481 Subscription does not exist
+	//if (!subscribe)
+	//	return sip_uas_reply(t, 481, NULL, 0, param); // 481 Subscription does not exist
 
 	// 489 Bad Event
 	if (t->handler->onnotify)

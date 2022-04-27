@@ -46,7 +46,7 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 		switch (tag)
 		{
 		case 0x05: // 2.6.8 Registration descriptor(p94)
-			if ('O' == data[2] && 'p' == data[3] && 'u' == data[4] && 's' == data[5])
+			if (len >= 4 && 'O' == data[2] && 'p' == data[3] && 'u' == data[4] && 's' == data[5])
 			{
 				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
 				stream->codecid = PSI_STREAM_AUDIO_OPUS;
@@ -55,7 +55,7 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 
 		case 0x7f: // DVB-Service Information: 6.1 Descriptor identification and location (p38)
 			// 2.6.90 Extension descriptor
-			if (PSI_STREAM_AUDIO_OPUS == stream->codecid && OPUS_EXTENSION_DESCRIPTOR_TAG == data[2]) // User defined (provisional Opus)
+			if (len >= 2 && PSI_STREAM_AUDIO_OPUS == stream->codecid && OPUS_EXTENSION_DESCRIPTOR_TAG == data[2]) // User defined (provisional Opus)
 			{
 				channels = data[3];
 				stream->esinfo = (uint8_t*)calloc(1, sizeof(opus_default_extradata));
@@ -143,7 +143,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 	}
 
 	assert(bytes >= section_length + 3); // PMT = section_length + 3
-    for (i = 12 + program_info_length; i + 5 <= section_length + 3 - 4/*CRC32*/; i += len + 5) // 9: follow section_length item
+    for (i = 12 + program_info_length; i + 5 <= section_length + 3 - 4/*CRC32*/ && section_length + 3 <= bytes; i += len + 5) // 9: follow section_length item
 	{
         pid = ((data[i+1] & 0x1F) << 8) | data[i+2];
         len = ((data[i+3] & 0x0F) << 8) | data[i+4];

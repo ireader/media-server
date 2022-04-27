@@ -24,7 +24,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 		subscribe = sip_subscribe_internal_fetch(t->agent, reply, &t->req->event, 1, &added);
 
 		// call once only
-		if (added)
+		//if (added)
 			r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, &subscribe->evtsession);
 	}
 

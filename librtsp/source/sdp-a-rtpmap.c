@@ -14,8 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
-int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, char *parameters)
+int sdp_a_rtpmap(const char* rtpmap, int *payload, char encoding[16], int* rate, char parameters[64])
 {
 	const char *p1;
 	const char *p = rtpmap;
@@ -39,8 +40,10 @@ int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, ch
 
 	if(encoding)
 	{
-        memcpy(encoding, p, p1-p);
-		encoding[p1-p] = '\0';
+		if (p1 - p < 16)
+			snprintf(encoding, 16, "%.*s", (int)(p1 - p), p);
+		else
+			*encoding = 0;
 	}
 
 	// clock rate	
@@ -51,17 +54,13 @@ int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, ch
 	}
 
 	// encoding parameters
-    if(parameters)
+	if(parameters)
     {
-        p1 = strchr(p1+1, '/');
-        if(p1)
-        {
-            strcpy(parameters, p1+1);
-        }
-        else
-        {
-            parameters[0] = '\0';
-        }
+		p1 = strchr(p1 + 1, '/');
+		if (p1 && strlen(p1) < 64)
+			snprintf(parameters, 64, "%s", p1 + 1);
+		else
+			*parameters = 0;
     }
 
 	return 0;
@@ -72,8 +71,8 @@ void sdp_a_rtpmap_test(void)
 {
 	int payload = 0;
 	int rate = 0;
-	char encoding[32];
-	char parameters[64];
+	char encoding[32] = { 0 };
+	char parameters[64] = { 0 };
 
 	assert(0 == sdp_a_rtpmap("96 L8/8000", &payload, encoding, &rate, parameters));
 	assert(96 == payload && 8000 == rate && 0 == strcmp(encoding, "L8") && '\0' == parameters[0]);
