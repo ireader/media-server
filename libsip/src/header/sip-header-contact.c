@@ -80,7 +80,7 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 		return sip_header_contact_star(c);
 	}
 
-	p = strpbrk(s ? s : "", "<;\"");
+	p = (s && s < end) ? strpbrk(s, "<;\"") : NULL;
 	if (!p || p > end)
 	{
 		// addr-spec only

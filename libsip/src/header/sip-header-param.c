@@ -17,7 +17,7 @@ int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 	const char* p;
 	param->name.p = s;
 
-	p = strchr(s, '=');
+	p = s < end ? strchr(s, '=') : NULL;
 	if (p && p < end)
 	{
 		param->name.n = p - s;
