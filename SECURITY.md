@@ -8,4 +8,6 @@
 
 ## Reporting a Vulnerability
 
-QQ: 579575545
+mail: tao3@outlook.com
+
+qq: 579575545
