@@ -9,7 +9,7 @@ int sip_header_cseq(const char* s, const char* end, struct sip_cseq_t* cseq)
 {
 	char* p;
 
-	p = s;
+	p = (char*)s;
 	cseq->id = (s && s < end) ? (uint32_t)strtoul(s, &p, 10) : 0;
 
 	cseq->method.p = p;

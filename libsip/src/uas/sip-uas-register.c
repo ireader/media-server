@@ -70,7 +70,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 
 	// If contact.expire is not provided, default equal to 60
 	header = sip_message_get_header_by_name(req, "Expires");
-	expires = header ? atoi(header->p) : 60;
+	expires = header ? (unsigned int)cstrtol(header, NULL, 10) : 60;
 
 	// 1. Request-URI
 

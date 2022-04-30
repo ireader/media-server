@@ -89,7 +89,7 @@ int sip_header_via(const char* s, const char* end, struct sip_via_t* via)
 			}
 			else if (0 == cstrcmp(&param->name, "ttl"))
 			{
-				via->ttl = atoi(param->value.p);
+				via->ttl = (int)cstrtol(&param->value, NULL, 10);
 			}
 			else if (0 == cstrcmp(&param->name, "rport"))
 			{

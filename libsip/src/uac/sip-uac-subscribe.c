@@ -32,7 +32,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 	{
 		// delete subscribe if expires is 0
 		h = sip_message_get_header_by_name(t->req, "Expires");
-		if (h && 0 == atoi(h->p))
+		if (h && 0 == cstrtol(h, NULL, 10))
 		{
 			sip_subscribe_remove(t->agent, subscribe);
 			assert(1 == subscribe->ref);

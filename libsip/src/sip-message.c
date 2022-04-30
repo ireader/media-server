@@ -657,7 +657,7 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 
 		if (0 == cstrcasecmp(&param->name, "Content-Length") || 0 == cstrcasecmp(&param->name, SIP_HEADER_ABBR_CONTENT_LENGTH))
 		{
-			assert(msg->size == atoi(param->value.p));
+			assert(msg->size == (int)cstrtol(&param->value, NULL, 10));
 			content_length = 1; // has content length
 		}
 
@@ -786,7 +786,7 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	}
 	else if (0 == strcasecmp(SIP_HEADER_RSEQ, name))
 	{
-		msg->rseq = atoi(header.value.p);
+		msg->rseq = (uint32_t)cstrtol(&header.value, NULL, 10);
 	}
 	else
 	{

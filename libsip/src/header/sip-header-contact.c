@@ -109,7 +109,7 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 		cstrtrim(&c->nickname, "\""); // "nickname" => nickname
 
 		s = p + 1;
-		p = strchr(s, '>');
+		p = s < end ? strchr(s, '>') : NULL;
 		if (!p || p > end)
 			return EINVAL;
 
@@ -141,11 +141,11 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 			}
 			else if (0 == cstrcmp(&param->name, "q"))
 			{
-				c->q = strtod(param->value.p, NULL);
+				c->q = cstrtod(&param->value, NULL);
 			}
 			else if (0 == cstrcmp(&param->name, "expires"))
 			{
-				c->expires = (int64_t)strtoull(param->value.p, NULL, 10);
+				c->expires = (int64_t)cstrtoll(&param->value, NULL, 10);
 			}
 		}
 	}
@@ -163,7 +163,7 @@ int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* c
 	{
 		// filter ","
 		p = strpbrk(s, ",\"");
-		while (p && p < end && '"' == *p)
+		while (p && p + 1 < end && '"' == *p)
 		{
 			p = strchr(p + 1, '"');
 			if(p && p < end)

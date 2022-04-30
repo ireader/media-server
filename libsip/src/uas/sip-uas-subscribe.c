@@ -20,7 +20,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	}
 
 	h = sip_message_get_header_by_name(req, "Expires");
-	subscribe->expires = h ? atoi(h->p) : 0;
+	subscribe->expires = h ? (uint64_t)cstrtoll(h, NULL, 10) : 0;
 
 	// call once only
 	if ( /*added &&*/ t->handler->onsubscribe)

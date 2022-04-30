@@ -44,11 +44,11 @@ int sip_header_substate(const char* s, const char* end, struct sip_substate_t* s
 			}
 			else if (0 == cstrcmp(&param->name, "expires"))
 			{
-				substate->expires = atoi(param->value.p);
+				substate->expires = (uint32_t)cstrtol(&param->value, NULL, 10);
 			}
 			else if (0 == cstrcmp(&param->name, "retry-after"))
 			{
-				substate->retry = atoi(param->value.p);
+				substate->retry = (uint32_t)cstrtol(&param->value, NULL, 10);
 			}
 		}
 	}
