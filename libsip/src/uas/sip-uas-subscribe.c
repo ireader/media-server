@@ -19,6 +19,9 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 		sip_dialog_set_local_target(subscribe->dialog, req);
 	}
 
+	h = sip_message_get_header_by_name(req, "Expires");
+	subscribe->expires = h ? atoi(h->p) : 0;
+
 	// call once only
 	if ( /*added &&*/ t->handler->onsubscribe)
 		r = t->handler->onsubscribe(param, req, t, subscribe, &subscribe->evtsession);
@@ -26,8 +29,7 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
 	if (subscribe)
 	{
 		// delete subscribe if expires is 0
-		h = sip_message_get_header_by_name(req, "Expires");
-		if (h && 0 == atoi(h->p))
+		if (h && 0 == subscribe->expires)
 		{
             // notify expire
             //if (t->handler->onnotify)

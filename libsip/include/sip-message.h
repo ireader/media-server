@@ -63,6 +63,8 @@ extern "C" {
 
 #define SIP_OPTION_TAG_100REL	"100rel"  // rfc3262
 
+#define SIP_HEADER_USER_AGENT "ireader/media-server"
+
 enum { SIP_MESSAGE_REQUEST = 0, SIP_MESSAGE_REPLY = 1 };
 struct sip_message_t
 {

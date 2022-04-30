@@ -59,6 +59,12 @@ int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transacti
 
 	assert(sip->ref > 0);
 	locker_lock(&sip->locker);
+	if (t->link.next == NULL)
+	{
+		// fix remove twice
+		locker_unlock(&sip->locker);
+		return 0;
+	}
 
 	// unlink transaction
 	list_remove(&t->link);

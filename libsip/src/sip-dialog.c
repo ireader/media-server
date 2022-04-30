@@ -228,6 +228,13 @@ int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog)
 	// unlink dialog
 	locker_lock(&sip->locker);
 	//assert(1 == dialog->ref);
+	if (dialog->link.next == NULL)
+	{
+		// fix remove twice
+		locker_unlock(&sip->locker);
+		return -1;
+	}
+
 	list_remove(&dialog->link);
 	locker_unlock(&sip->locker);
 	sip_dialog_release(dialog);
@@ -239,7 +246,7 @@ int sip_dialog_remove2(struct sip_agent_t* sip, const struct cstring_t* callid, 
 	struct sip_dialog_t* dialog;
 	locker_lock(&sip->locker);
 	dialog = sip_dialog_find(sip, callid, local, remote);
-	if (dialog)
+	if (dialog && dialog->link.next)
 		list_remove(&dialog->link);
 	locker_unlock(&sip->locker);
 

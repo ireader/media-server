@@ -101,6 +101,13 @@ int sip_subscribe_remove(struct sip_agent_t* sip, struct sip_subscribe_t* subscr
 {
 	// unlink dialog
 	locker_lock(&sip->locker);
+	if (subscribe->link.next == NULL)
+	{
+		// fix remove twice
+		locker_unlock(&sip->locker);
+		return 0;
+	}
+
 	//assert(1 == subscribe->ref);
 	if (subscribe->newdiaolog)
 	{
@@ -149,6 +156,7 @@ struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, co
 			sip_subscribe_release(subscribe);
 			return NULL; // exist
 		}
+		subscribe->dialog->state = DIALOG_CONFIRMED; // confirm dialog
 
 		// link to tail (add ref later)
 		list_insert_after(&subscribe->link, sip->subscribes.prev);

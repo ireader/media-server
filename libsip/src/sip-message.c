@@ -45,6 +45,8 @@ struct sip_message_t* sip_message_create(int mode)
 	sip_uris_init(&msg->record_routers);
 	sip_contacts_init(&msg->contacts);
 	sip_params_init(&msg->headers);
+
+	sip_message_add_header(msg, "User-Agent", SIP_HEADER_USER_AGENT);
 	return msg;
 }
 

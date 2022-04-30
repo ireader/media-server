@@ -1,6 +1,10 @@
 #ifndef _sip_subscribe_h_
 #define _sip_subscribe_h_
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "sip-dialog.h"
 
 #define SIP_SUBSCRIPTION_STATE_ACTIVE		"active"
@@ -51,4 +55,8 @@ struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struc
 /// call sip_subscribe_release
 struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct cstring_t* event, int uac, int* added);
 
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* !_sip_subscribe_h_ */
