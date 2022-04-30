@@ -39,6 +39,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+          path: media-server
       
     - name: Sdk
       uses: actions/checkout@v3
