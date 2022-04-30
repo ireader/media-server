@@ -340,7 +340,7 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
         m->stream = mpeg_ts_add_stream(m->pt->ts, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ts_input;
     }
-    else if (0 == strcasecmp(m->pt->rtp.encoding, "MP2P") || 0 == strcasecmp(m->pt->rtp.encoding, "PS"))
+    else if (RTP_PAYLOAD_MP2P != codec && (0 == strcasecmp(m->pt->rtp.encoding, "MP2P") || 0 == strcasecmp(m->pt->rtp.encoding, "PS")))
     {
         m->stream = ps_muxer_add_stream(m->pt->ps, s_payloads[mpeg2].mpeg2, NULL, 0);
         m->input = rtsp_muxer_ps_input;

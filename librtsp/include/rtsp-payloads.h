@@ -57,6 +57,7 @@ static struct
 
     // data
     CODEC(AVCODEC_DATA_RAW,     MOV_OBJECT_NONE,   MKV_CODEC_UNKNOWN,      FLV_SCRIPT_METADATA, PSI_STREAM_RESERVED,    RTP_PAYLOAD_DYNAMIC,0,      "raw",      "raw"),
+    CODEC(AVCODEC_DATA_MP2P,    MOV_OBJECT_NONE,   MKV_CODEC_UNKNOWN,      0,                   PSI_STREAM_RESERVED,    RTP_PAYLOAD_MP2P,   90000,  "MP2P",     "PS"),
     
     // PS/TS
     CODEC(AVCODEC_NONE,         MOV_OBJECT_NONE,    MKV_CODEC_UNKNOWN,      0,                  PSI_STREAM_RESERVED,    RTP_PAYLOAD_MP2T,   90000,  "TS",       "TS"), // rtp standard payload id    
