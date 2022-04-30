@@ -5,8 +5,10 @@
 #include "mpeg-ps-proto.h"
 #include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 /*
 2.6 Program and program element descriptors
@@ -133,6 +135,10 @@ size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes)
 
 	case 49:
 		mvc_extension_descriptor(data, bytes);
+		break;
+
+	case 0x40:
+		clock_extension_descriptor(data, bytes);
 		break;
 
 	//default:
@@ -586,4 +592,89 @@ size_t mvc_extension_descriptor(const uint8_t* data, size_t bytes)
 
 	assert(0 == mpeg_bits_error(&bits));
 	return descriptor_len + 2;
+}
+
+size_t service_extension_descriptor_write(uint8_t* data, size_t bytes)
+{
+	uint8_t n;
+	n = (uint8_t)strlen(SERVICE_NAME);
+	if (bytes < 2 + n)
+		return 0;
+	data[0] = SERVICE_ID;
+	data[1] = 2 + n;
+	memcpy(data + 2, SERVICE_NAME, n);
+	return 2 + n;
+}
+
+typedef struct _clock_extension_descriptor_t
+{
+	uint8_t year; // base 2000, 8-bit
+	uint8_t month; // 1-12, 4-bit
+	uint8_t day; // 1-31, 5-bit
+	uint8_t hour; // 0-23, 5-bit
+	uint8_t minute; // 0-59, 6-bit
+	uint8_t second; // 0-59, 6-bit
+	uint16_t microsecond; // 14-bit
+} clock_extension_descriptor_t;
+
+size_t clock_extension_descriptor(const uint8_t* data, size_t bytes)
+{
+	uint32_t v;
+	struct tm t;
+	time_t clock;
+	size_t descriptor_len;
+	struct mpeg_bits_t bits;
+
+	mpeg_bits_init(&bits, data, bytes);
+	mpeg_bits_read8(&bits); // descriptor_tag
+	descriptor_len = mpeg_bits_read8(&bits);
+	assert(descriptor_len + 2 <= bytes);
+
+	v = mpeg_bits_read32(&bits); // skip 4-bytes leading
+	memset(&t, 0, sizeof(t));
+	t.tm_year = mpeg_bits_read8(&bits) + 2000 - 1900;
+	v = mpeg_bits_read32(&bits);
+	t.tm_mon = ((v >> 28) & 0x0F) - 1;
+	t.tm_mday = (v >> 23) & 0x1F;
+	t.tm_hour = (v >> 18) & 0x1F;
+	t.tm_min = (v >> 12) & 0x3F;
+	t.tm_sec = (v >> 6) & 0x3F;
+	//desc.microsecond = v & 0x3F;
+	clock = mktime(&t) * 1000;
+
+	assert(0 == mpeg_bits_error(&bits));
+	return descriptor_len + 2;
+}
+
+size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clock)
+{
+	struct tm t;
+	time_t seconds;
+	if (bytes < 15)
+		return 0;
+
+	seconds = (time_t)(clock / 1000);
+#if defined(OS_WINDOWS)
+	localtime_s(&t, &seconds);
+#else
+	localtime_r(&seconds, &t);
+#endif
+
+	data[0] = 0x40;
+	data[1] = 0x0E;
+	data[2] = 0x48;
+	data[3] = 0x4B;
+	data[4] = 0x01;
+	data[5] = 0x00;
+	data[6] = (uint8_t)(t.tm_year + 1900 - 2000); // base 2000
+	data[7] = (uint8_t)((t.tm_mon + 1) << 4) | ((t.tm_mday >> 1) & 0x0F);
+	data[8] = (uint8_t)((t.tm_mday & 0x01) << 7) | ((t.tm_hour & 0x1F) << 2) | ((t.tm_min >> 4) & 0x03);
+	data[9] = (uint8_t)((t.tm_min & 0x0F) << 4) | ((t.tm_sec >> 2) & 0x0F);
+	data[10] = (uint8_t)((t.tm_sec & 0x03) << 6);
+	data[11] = 0x00;
+	data[12] = 0x00;
+	data[13] = 0xFF;
+	data[14] = 0xFF;
+	data[15] = 0xFF;
+	return 15;
 }

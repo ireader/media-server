@@ -1,6 +1,9 @@
 #ifndef _mpeg_element_descriptor_h_
 #define _mpeg_element_descriptor_h_
 
+#define SERVICE_ID		0x80
+#define SERVICE_NAME	"ireader/media-server"
+
 size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes);
 
 typedef struct _video_stream_descriptor_t
@@ -198,5 +201,10 @@ typedef struct _mvc_extension_descriptor_t
 } mvc_extension_descriptor_t;
 
 size_t mvc_extension_descriptor(const uint8_t* data, size_t bytes);
+
+size_t clock_extension_descriptor(const uint8_t* data, size_t bytes);
+size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clock);
+
+size_t service_extension_descriptor_write(uint8_t* data, size_t bytes);
 
 #endif /* !_mpeg_element_descriptor_h_ */

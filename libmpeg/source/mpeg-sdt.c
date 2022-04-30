@@ -3,12 +3,12 @@
 // 5.2.3 Service Description Table (SDT) (p27)
 
 #include "mpeg-ts-proto.h"
+#include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include <string.h>
 #include <assert.h>
 
-#define SERVICE_NAME    "encoder"
-#define SERVICE_VALUE   "ireader/media-server"
+#define SERVICE_ENCODER "encoder"
 
 /*
 service_description_section(){ 
@@ -113,12 +113,12 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 
 size_t sdt_write(const struct pat_t* pat, uint8_t* data)
 {
-    uint32_t i, j;
-    uint32_t len, s1, n1, v1;
+    size_t i, j;
+    size_t len, s1, n1, v1;
     uint32_t crc = 0;
 
-    n1 = strlen(SERVICE_NAME);
-    v1 = strlen(SERVICE_VALUE);
+    n1 = strlen(SERVICE_ENCODER);
+    v1 = strlen(SERVICE_NAME);
     s1 = 3 /*tag*/ + 1 + n1 + 1 + v1;
     len = 3 /*nid*/ + s1 + 5 /*service head*/ + 5 + 4; // 5 bytes remain header and 4 bytes crc32
 
@@ -160,12 +160,12 @@ size_t sdt_write(const struct pat_t* pat, uint8_t* data)
         nbo_w16(data + j + 3, (uint16_t)(0x8000 | s1));
 
         data[j + 5] = 0x48; // tag id
-        data[j + 6] = 3 + n1 + v1; // tag len
+        data[j + 6] = (uint8_t)(3 + n1 + v1); // tag len
         data[j + 7] = 1; // service type
-        data[j + 8] = n1;
+        data[j + 8] = (uint8_t)n1;
         memcpy(data + j + 9, SERVICE_NAME, n1);
-        data[j + 9 + n1] = v1;
-        memcpy(data + j + 10 + n1, SERVICE_VALUE, v1);
+        data[j + 9 + n1] = (uint8_t)v1;
+        memcpy(data + j + 10 + n1, SERVICE_NAME, v1);
         j += 10 + v1 + n1;
     }
 

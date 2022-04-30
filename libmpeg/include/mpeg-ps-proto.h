@@ -48,6 +48,8 @@ struct psm_t
 	
     struct pes_t streams[16];
 	size_t stream_count;
+
+	int64_t clock; // ms
 };
 
 struct psd_t
