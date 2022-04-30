@@ -163,6 +163,8 @@
     <ClInclude Include="..\librtsp\test\media\avpacket-queue.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\ffmpeg-live-source.h" />
+    <ClInclude Include="..\librtsp\test\media\h265-file-reader.h" />
+    <ClInclude Include="..\librtsp\test\media\h265-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\mp4-file-reader.h" />
     <ClInclude Include="..\librtsp\test\media\vod-file-source.h" />
     <ClInclude Include="..\librtsp\test\media\h264-file-reader.h" />
@@ -271,6 +273,8 @@
     <ClCompile Include="..\librtsp\test\media\ffmpeg-live-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\h264-file-source.cpp" />
+    <ClCompile Include="..\librtsp\test\media\h265-file-reader.cpp" />
+    <ClCompile Include="..\librtsp\test\media\h265-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\mp4-file-reader.cpp" />
     <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp" />
     <ClCompile Include="..\librtsp\test\media\pcm-file-source.cpp" />

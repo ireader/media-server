@@ -11,6 +11,7 @@
 #include "rtsp-server.h"
 #include "media/ps-file-source.h"
 #include "media/h264-file-source.h"
+#include "media/h265-file-source.h"
 #include "media/mp4-file-source.h"
 #include "rtp-udp-transport.h"
 #include "rtp-tcp-transport.h"
@@ -129,6 +130,8 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 					source.reset(new PSFileSource(filename.c_str()));
 				else if (strendswith(filename.c_str(), ".h264"))
 					source.reset(new H264FileSource(filename.c_str()));
+				else if (strendswith(filename.c_str(), ".h265"))
+					source.reset(new H265FileSource(filename.c_str()));					
 				else
 				{
 #if defined(_HAVE_FFMPEG_)
@@ -221,6 +224,8 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 				item.media.reset(new PSFileSource(filename.c_str()));
 			else if (strendswith(filename.c_str(), ".h264"))
 				item.media.reset(new H264FileSource(filename.c_str()));
+			else if (strendswith(filename.c_str(), ".h265"))
+				item.media.reset(new H265FileSource(filename.c_str()));				
 			else
 			{
 #if defined(_HAVE_FFMPEG_)
