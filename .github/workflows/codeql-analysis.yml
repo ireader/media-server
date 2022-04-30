@@ -39,6 +39,18 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      
+    - name: Sdk
+      uses: actions/checkout@v3
+      with:
+        repository: ireader/sdk
+        path: sdk
+
+    - name: avcodec
+      uses: actions/checkout@v3
+      with:
+        repository: ireader/avcodec
+        path: avcodec
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
