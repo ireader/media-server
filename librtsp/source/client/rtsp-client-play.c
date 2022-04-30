@@ -117,9 +117,9 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 
 	if (prange && 0 == rtsp_header_range(prange, &range))
 	{
-		assert(range.from_value == RTSP_RANGE_TIME_NORMAL);
+		assert(range.from_value == RTSP_RANGE_TIME_NORMAL || range.from_value == RTSP_RANGE_TIME_NOW);
 		assert(range.to_value != RTSP_RANGE_TIME_NOW);
-		npt0 = range.from;
+		npt0 = range.from_value == RTSP_RANGE_TIME_NOW ? -1 : range.from;
 		npt1 = range.to_value == RTSP_RANGE_TIME_NOVALUE ? -1 : range.to;
 	}
 
