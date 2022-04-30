@@ -49,7 +49,7 @@ static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
 
 int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int frequence, const void* extra, size_t bytes)
 {
-    int r;
+    int avp, r;
     struct rtp_event_t event;
     struct rtp_payload_t handler = {
         rtp_alloc,
@@ -57,7 +57,6 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
         rtp_packet,
     };
     
-    r = 0;
     //memset(s, 0, sizeof(*s));
     s->seq = s->seq ? s->seq : (uint16_t)rtp_ssrc();
     s->ssrc = s->ssrc ? s->ssrc : rtp_ssrc();
@@ -67,14 +66,14 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
-    r = avpayload_find_by_rtp(payload, encoding);
-    if (r < 0)
+    avp = avpayload_find_by_rtp(payload, encoding);
+    if (avp < 0)
     {
         assert(0);
         return -1;
     }
 
-    r = sdp_payload_video(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, s->frequency, extra, (int)bytes);
+    r = sdp_payload_video(s->buffer, sizeof(s->buffer), s_payloads[avp].payload, proto, port, payload, s->frequency, extra, (int)bytes);
     if (r < 0)
     {
         assert(0);
@@ -96,7 +95,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
 
 int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned short port, int payload, const char* encoding, int sample_rate, int channel_count, const void* extra, size_t bytes)
 {
-    int r;
+    int avp, r;
     struct rtp_event_t event;
     struct rtp_payload_t handler = {
         rtp_alloc,
@@ -114,21 +113,21 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
-    r = avpayload_find_by_rtp(payload, encoding);
+    avp = avpayload_find_by_rtp(payload, encoding);
+    if (avp < 0)
+    {
+        assert(0);
+        return -1;
+    }
+
+    r = sdp_payload_audio(s->buffer, sizeof(s->buffer), s_payloads[avp].payload, proto, port, payload, sample_rate, channel_count, extra, (int)bytes);
     if (r < 0)
     {
         assert(0);
         return -1;
     }
 
-    r = sdp_payload_audio(s->buffer, sizeof(s->buffer), s_payloads[r].payload, proto, port, payload, sample_rate, channel_count, extra, (int)bytes);
-    if (r < 0)
-    {
-        assert(0);
-        return -1;
-    }
-
-    switch(s_payloads[r].payload)
+    switch(s_payloads[avp].payload)
     {
     case RTP_PAYLOAD_MP4A: // RFC 3640 3.3.1. General (p21)
     case RTP_PAYLOAD_LATM: // RFC 6416
