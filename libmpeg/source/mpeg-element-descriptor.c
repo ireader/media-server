@@ -654,7 +654,7 @@ size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clo
 		return 0;
 
 	seconds = (time_t)(clock / 1000);
-#if defined(OS_WINDOWS)
+#if defined(WIN32)
 	localtime_s(&t, &seconds);
 #else
 	localtime_r(&seconds, &t);
