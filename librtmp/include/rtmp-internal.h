@@ -119,34 +119,31 @@ struct rtmp_t
 
 	void (*onabort)(void* param, uint32_t chunk_stream_id);
 
-	union
+	struct
 	{
-		struct
-		{
-			// server side
-			int (*onconnect)(void* param, int r, double transaction, const struct rtmp_connect_t* connect);
-			int (*oncreate_stream)(void* param, int r, double transaction);
-			int (*onplay)(void* param, int r, double transaction, const char* stream_name, double start, double duration, uint8_t reset);
-			int (*ondelete_stream)(void* param, int r, double transaction, double stream_id);
-			int (*onreceive_audio)(void* param, int r, double transaction, uint8_t audio);
-			int (*onreceive_video)(void* param, int r, double transaction, uint8_t video);
-			int (*onpublish)(void* param, int r, double transaction, const char* stream_name, const char* stream_type);
-			int (*onseek)(void* param, int r, double transaction, double milliSeconds);
-			int (*onpause)(void* param, int r, double transaction, uint8_t pause, double milliSeconds);
-			int (*onget_stream_length)(void* param, int r, double transaction, const char* stream_name);
-		} server;
+		// server side
+		int (*onconnect)(void* param, int r, double transaction, const struct rtmp_connect_t* connect);
+		int (*oncreate_stream)(void* param, int r, double transaction);
+		int (*onplay)(void* param, int r, double transaction, const char* stream_name, double start, double duration, uint8_t reset);
+		int (*ondelete_stream)(void* param, int r, double transaction, double stream_id);
+		int (*onreceive_audio)(void* param, int r, double transaction, uint8_t audio);
+		int (*onreceive_video)(void* param, int r, double transaction, uint8_t video);
+		int (*onpublish)(void* param, int r, double transaction, const char* stream_name, const char* stream_type);
+		int (*onseek)(void* param, int r, double transaction, double milliSeconds);
+		int (*onpause)(void* param, int r, double transaction, uint8_t pause, double milliSeconds);
+		int (*onget_stream_length)(void* param, int r, double transaction, const char* stream_name);
+	} server;
 
-		struct
-		{
-			// client side
-			int (*onconnect)(void* param);
-			int (*oncreate_stream)(void* param, double stream_id);
-			int (*onnotify)(void* param, enum rtmp_notify_t notify);
-            int (*oneof)(void* param, uint32_t stream_id); // EOF event
-			int (*onping)(void* param, uint32_t stream_id); // send pong
-			int (*onbandwidth)(void* param); // send window acknowledgement size
-		} client;
-	} u;
+	struct
+	{
+		// client side
+		int (*onconnect)(void* param);
+		int (*oncreate_stream)(void* param, double stream_id);
+		int (*onnotify)(void* param, enum rtmp_notify_t notify);
+        int (*oneof)(void* param, uint32_t stream_id); // EOF event
+		int (*onping)(void* param, uint32_t stream_id); // send pong
+		int (*onbandwidth)(void* param); // send window acknowledgement size
+	} client;
 };
 
 /// @return 0-ok, other-error

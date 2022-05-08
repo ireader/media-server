@@ -374,12 +374,12 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->rtmp.onvideo = rtmp_client_onvideo;
 	ctx->rtmp.onabort = rtmp_client_onabort;
 	ctx->rtmp.onscript = rtmp_client_onscript;
-	ctx->rtmp.u.client.onconnect = rtmp_client_onconnect;
-	ctx->rtmp.u.client.oncreate_stream = rtmp_client_oncreate_stream;
-	ctx->rtmp.u.client.onnotify = rtmp_client_onnotify;
-	ctx->rtmp.u.client.onping = rtmp_client_onping;
-    ctx->rtmp.u.client.oneof = rtmp_client_oneof;
-	ctx->rtmp.u.client.onbandwidth = rtmp_client_onbandwidth;
+	ctx->rtmp.client.onconnect = rtmp_client_onconnect;
+	ctx->rtmp.client.oncreate_stream = rtmp_client_oncreate_stream;
+	ctx->rtmp.client.onnotify = rtmp_client_onnotify;
+	ctx->rtmp.client.onping = rtmp_client_onping;
+    ctx->rtmp.client.oneof = rtmp_client_oneof;
+	ctx->rtmp.client.onbandwidth = rtmp_client_onbandwidth;
 
 	snprintf(ctx->connect.app, sizeof(ctx->connect.app) - 1, "%s", appname);
 	if (tcurl) snprintf(ctx->connect.tcUrl, sizeof(ctx->connect.tcUrl) - 1, "%s", tcurl);

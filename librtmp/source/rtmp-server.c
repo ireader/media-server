@@ -427,16 +427,16 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
 	ctx->rtmp.onabort = rtmp_server_onabort;
 	ctx->rtmp.onscript = rtmp_server_onscript;
-	ctx->rtmp.u.server.onconnect = rtmp_server_onconnect;
-	ctx->rtmp.u.server.oncreate_stream = rtmp_server_oncreate_stream;
-	ctx->rtmp.u.server.ondelete_stream = rtmp_server_ondelete_stream;
-	ctx->rtmp.u.server.onget_stream_length = rtmp_server_onget_stream_length;
-	ctx->rtmp.u.server.onpublish = rtmp_server_onpublish;
-	ctx->rtmp.u.server.onplay = rtmp_server_onplay;
-	ctx->rtmp.u.server.onpause = rtmp_server_onpause;
-	ctx->rtmp.u.server.onseek = rtmp_server_onseek;
-	ctx->rtmp.u.server.onreceive_audio = rtmp_server_onreceive_audio;
-	ctx->rtmp.u.server.onreceive_video = rtmp_server_onreceive_video;
+	ctx->rtmp.server.onconnect = rtmp_server_onconnect;
+	ctx->rtmp.server.oncreate_stream = rtmp_server_oncreate_stream;
+	ctx->rtmp.server.ondelete_stream = rtmp_server_ondelete_stream;
+	ctx->rtmp.server.onget_stream_length = rtmp_server_onget_stream_length;
+	ctx->rtmp.server.onpublish = rtmp_server_onpublish;
+	ctx->rtmp.server.onplay = rtmp_server_onplay;
+	ctx->rtmp.server.onpause = rtmp_server_onpause;
+	ctx->rtmp.server.onseek = rtmp_server_onseek;
+	ctx->rtmp.server.onreceive_audio = rtmp_server_onreceive_audio;
+	ctx->rtmp.server.onreceive_video = rtmp_server_onreceive_video;
 	
 	ctx->rtmp.out_packets[RTMP_CHANNEL_PROTOCOL].header.cid = RTMP_CHANNEL_PROTOCOL;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_INVOKE].header.cid = RTMP_CHANNEL_INVOKE;
