@@ -88,9 +88,10 @@ struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struc
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!sip || !subscribe)
+	if (!sip || !subscribe || !subscribe->dialog)
 		return NULL;
 
+	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_SUBSCRIBE, subscribe->dialog)
 		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)

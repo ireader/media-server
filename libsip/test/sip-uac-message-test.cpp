@@ -8,6 +8,7 @@
 #include "uri-parse.h"
 
 static struct sip_dialog_t* s_dialog;
+static struct sip_subscribe_t* s_subscribe;
 
 static struct sip_message_t* req2sip(const char* req)
 {
@@ -89,7 +90,6 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 //	assert(sip_contact_write(&msg->from, p1, p1 + sizeof(p1)) > 0 && sip_contact_write(&req->from, p2, p2 + sizeof(p2)) > 0 && 0 == strcmp(p1, p2));
 	return 0;
 }
-
 static int sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
 {
 	s_dialog = dialog;
@@ -101,12 +101,22 @@ static int sip_uac_message_oninvite(void* param, const struct sip_message_t* rep
 	return 0;
 }
 
-static int sip_uac_message_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
+static int sip_uac_message_onbye(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
 	return 0;
 }
 
-static int sip_uac_message_onbye(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
+static int sip_uac_message_onsubscribe(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_subscribe_t* subscribe, int code, void** session)
+{
+	s_subscribe = subscribe;
+	if (200 <= code && code < 300)
+	{
+		*session = NULL;
+	}
+	return 0;
+}
+
+static int sip_uac_message_onregister(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
 	return 0;
 }
@@ -279,6 +289,89 @@ static void sip_uac_message_bye(struct sip_agent_t* sip, struct sip_transport_t*
 	sip_message_destroy(reply);
 }
 
+static void sip_uac_message_subscribe(struct sip_agent_t* sip, struct sip_transport_t* udp)
+{
+	const char* f1 = "SUBSCRIBE sip:bob@biloxi.com SIP/2.0\r\n"
+		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds10\r\n"
+		"Max-Forwards: 70\r\n"
+		"To: Bob <sip:bob@biloxi.com>\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314159 SUBSCRIBE\r\n"
+		"Contact: <sip:alice@pc33.atlanta.com>\r\n"
+		"Event: presence\r\n"
+		"Expires: 60\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	const char* f2 = "SIP/2.0 200 OK\r\n"
+		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds10;received=192.0.2.1\r\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314159 SUBSCRIBE\r\n"
+		"Contact: <sip:bob@192.0.2.4>\r\n"
+		"Event: presence\r\n"
+		"Expires: 60\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	// re-subscribe
+	const char* f3 = "SUBSCRIBE sip:bob@biloxi.com SIP/2.0\r\n"
+		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds11\r\n"
+		"Max-Forwards: 70\r\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314160 SUBSCRIBE\r\n"
+		"Contact: <sip:alice@pc33.atlanta.com>\r\n"
+		"Event: presence\r\n"
+		"Expires: 60\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	const char* f4 = "SIP/2.0 200 OK\r\n"
+		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds11;received=192.0.2.1\r\n"
+		"To: Bob <sip:bob@biloxi.com>;tag=a6c85cf\r\n"
+		"From: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+		"Call-ID: a84b4c76e66710\r\n"
+		"CSeq: 314160 SUBSCRIBE\r\n"
+		"Contact: <sip:bob@192.0.2.4>\r\n"
+		"Event: presence\r\n"
+		"Expires: 60\r\n"
+		"Content-Type: application/sdp\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+	struct sip_message_t* req = req2sip(f1);
+	struct sip_message_t* reply200 = reply2sip(f2);
+
+	std::shared_ptr<sip_uac_transaction_t> t(sip_uac_subscribe(sip, "Alice <sip:alice@atlanta.com>;tag=1928301774", "Bob <sip:bob@biloxi.com>", "presence", 60, sip_uac_message_onsubscribe, NULL), sip_uac_transaction_release);
+	sip_uac_add_header(t.get(), "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds10");
+	sip_uac_add_header(t.get(), "Call-ID", "a84b4c76e66710");// modify call-id
+	sip_uac_add_header(t.get(), "CSeq", "314159 SUBSCRIBE");// modify cseq.id
+	sip_uac_add_header(t.get(), "Content-Type", "application/sdp");
+	sip_uac_add_header_int(t.get(), "Content-Length", 0);
+	sip_uac_send(t.get(), "", 0, udp, req);
+	sip_agent_input(sip, reply200, NULL);
+	sip_agent_input(sip, reply200, NULL);
+	sip_message_destroy(req);
+	sip_message_destroy(reply200);
+
+	struct sip_message_t* req2 = req2sip(f3);
+	struct sip_message_t* reply2 = reply2sip(f4);
+	std::shared_ptr<sip_uac_transaction_t> t2(sip_uac_resubscribe(sip, s_subscribe, 60, sip_uac_message_onsubscribe, NULL), sip_uac_transaction_release);
+	sip_uac_add_header(t2.get(), "Via", "SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds11");
+//	sip_uac_add_header(t2.get(), "Call-ID", "a84b4c76e66710");// modify call-id
+//	sip_uac_add_header(t2.get(), "CSeq", "314160 SUBSCRIBE");// modify cseq.id
+	sip_uac_add_header(t2.get(), "Content-Type", "application/sdp");
+	sip_uac_add_header_int(t2.get(), "Content-Length", 0);
+	sip_uac_send(t2.get(), "", 0, udp, req);
+	sip_agent_input(sip, reply2, NULL);
+	sip_agent_input(sip, reply2, NULL);
+	sip_message_destroy(req2);
+	sip_message_destroy(reply2);
+}
+
 // 24 Examples (p213)
 void sip_uac_message_test(void)
 {
@@ -292,5 +385,7 @@ void sip_uac_message_test(void)
 	sip_uac_message_register(sip, &udp);
 	sip_uac_message_invite(sip, &udp);
 	sip_uac_message_bye(sip, &udp);
+
+	sip_uac_message_subscribe(sip, &udp);
 	sip_agent_destroy(sip);
 }
