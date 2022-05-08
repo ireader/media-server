@@ -82,7 +82,8 @@ int opus_head_load(const uint8_t* data, size_t bytes, struct opus_head_t* opus)
         bytes -= 8;
     }
 
-    if (bytes < 11)
+    // check channels: [1, 8]
+    if (bytes < 11 || data[1] > 8 || data[1] < 1)
         return -1;
 
     memset(opus, 0, sizeof(*opus));
