@@ -284,7 +284,8 @@ const uint8_t* AMFReadDate(const uint8_t* ptr, const uint8_t* end, double *milli
     if (ptr)
     {
         ptr = AMFReadInt16(ptr, end, &v);
-        *timezone = (int16_t)v;
+		if(timezone)
+			*timezone = (int16_t)v;
     }
     return ptr;
 }

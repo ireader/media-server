@@ -161,6 +161,7 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 			{
 				flv_tag_header_read(&parser->tag, parser->ptr, parser->bytes);
 				parser->bytes = 0;
+				parser->expect = 0;
 				parser->state = FLV_AVHEADER_CODEC;
 			}
 			break;
