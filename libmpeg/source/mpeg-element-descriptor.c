@@ -648,17 +648,13 @@ size_t clock_extension_descriptor(const uint8_t* data, size_t bytes)
 
 size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clock)
 {
-	struct tm t;
+	struct tm* t;
 	time_t seconds;
 	if (bytes < 15)
 		return 0;
 
 	seconds = (time_t)(clock / 1000);
-#if defined(OS_WINDOWS)
-	localtime_s(&t, &seconds);
-#else
-	localtime_r(&seconds, &t);
-#endif
+	t = localtime(&seconds);
 
 	data[0] = 0x40;
 	data[1] = 0x0E;
@@ -666,11 +662,11 @@ size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clo
 	data[3] = 0x4B;
 	data[4] = 0x01;
 	data[5] = 0x00;
-	data[6] = (uint8_t)(t.tm_year + 1900 - 2000); // base 2000
-	data[7] = (uint8_t)((t.tm_mon + 1) << 4) | ((t.tm_mday >> 1) & 0x0F);
-	data[8] = (uint8_t)((t.tm_mday & 0x01) << 7) | ((t.tm_hour & 0x1F) << 2) | ((t.tm_min >> 4) & 0x03);
-	data[9] = (uint8_t)((t.tm_min & 0x0F) << 4) | ((t.tm_sec >> 2) & 0x0F);
-	data[10] = (uint8_t)((t.tm_sec & 0x03) << 6);
+	data[6] = (uint8_t)(t->tm_year + 1900 - 2000); // base 2000
+	data[7] = (uint8_t)((t->tm_mon + 1) << 4) | ((t->tm_mday >> 1) & 0x0F);
+	data[8] = (uint8_t)((t->tm_mday & 0x01) << 7) | ((t->tm_hour & 0x1F) << 2) | ((t->tm_min >> 4) & 0x03);
+	data[9] = (uint8_t)((t->tm_min & 0x0F) << 4) | ((t->tm_sec >> 2) & 0x0F);
+	data[10] = (uint8_t)((t->tm_sec & 0x03) << 6);
 	data[11] = 0x00;
 	data[12] = 0x00;
 	data[13] = 0xFF;
