@@ -1,7 +1,7 @@
 #ifndef _mpeg_element_descriptor_h_
 #define _mpeg_element_descriptor_h_
 
-#define SERVICE_ID		0x80
+#define SERVICE_ID		0x71
 #define SERVICE_NAME	"ireader/media-server"
 
 size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes);

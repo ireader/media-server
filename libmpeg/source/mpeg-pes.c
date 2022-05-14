@@ -238,7 +238,7 @@ size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t byte
 	{
 		if (pes->len < i - 6)
 			return 0; // invalid data length
-		pes->len -= i - 6;
+		pes->len -= (uint32_t)i - 6;
 	}
 
 	return overflow ? 0 : i;

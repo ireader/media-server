@@ -47,7 +47,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 		adp->adaptation_field_extension_flag = (data[i] >> 0) & 0x01;
 		i++;
 
-		if(adp->PCR_flag)
+		if(adp->PCR_flag && i + 6 <= adp->adaptation_field_length + 1)
 		{
 			adp->program_clock_reference_base = ((uint64_t)data[i] << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
@@ -55,7 +55,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 			i += 6;
 		}
 
-		if(adp->OPCR_flag)
+		if(adp->OPCR_flag && i + 6 <= adp->adaptation_field_length + 1)
 		{
 			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
 			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
@@ -63,12 +63,12 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 			i += 6;
 		}
 
-		if(adp->splicing_point_flag)
+		if(adp->splicing_point_flag && i + 1 <= adp->adaptation_field_length + 1)
 		{
 			adp->splice_countdown = data[i++];
 		}
 
-		if(adp->transport_private_data_flag)
+		if(adp->transport_private_data_flag && i + 1 <= adp->adaptation_field_length + 1)
 		{
 			adp->transport_private_data_length = data[i++];
 			for(j = 0; j < adp->transport_private_data_length; j++)
@@ -79,7 +79,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 			i += adp->transport_private_data_length;
 		}
 
-		if(adp->adaptation_field_extension_flag)
+		if(adp->adaptation_field_extension_flag && i + 2 <= adp->adaptation_field_length + 1)
 		{
 			//uint8_t reserved;
 			adp->adaptation_field_extension_length = data[i++];
@@ -89,20 +89,20 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 			//reserved = data[i] & 0x1F;
 
 			i++;
-			if(adp->ltw_flag)
+			if(adp->ltw_flag && i + 2 <= adp->adaptation_field_length + 1)
 			{
 //				uint8_t ltw_valid_flag = (data[i] >> 7) & 0x01;
 //				uint16_t ltw_offset = ((data[i] & 0x7F) << 8) | data[i+1];
 				i += 2;
 			}
 
-			if(adp->piecewise_rate_flag)
+			if(adp->piecewise_rate_flag && i + 3 <= adp->adaptation_field_length + 1)
 			{
 //				uint32_t piecewise_rate = ((data[i] & 0x3F) << 16) | (data[i+1] << 8) | data[i+2];
 				i += 3;
 			}
 
-			if(adp->seamless_splice_flag)
+			if(adp->seamless_splice_flag && i + 5 <= adp->adaptation_field_length + 1)
 			{
 //				uint8_t Splice_type = (data[i] >> 4) & 0x0F;
 //				uint32_t DTS_next_AU = (((data[i] >> 1) & 0x07) << 30) | (data[i+1] << 22) | (((data[i+2] >> 1) & 0x7F) << 15) | (data[i+3] << 7) | ((data[i+4] >> 1) & 0x7F);
@@ -193,10 +193,10 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 			//t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
 			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
-                 //Comment out unnecessary assertions
-		//assert(i < bytes);
+
+		assert(i <= bytes);
 		if (i >= bytes)
-			return 0;
+			return 0; // ignore
 	}
     
 	if(0x01 & pkhd.adaptation_field_control)
@@ -239,15 +239,15 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						if (PID != pes->pid)
                             continue;
 
-						pes->flags |= ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != pkhd.continuity_counter ? (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST) : 0;
-						ts->pat.pmts[j].streams[k].cc = pkhd.continuity_counter;
+						pes->flags |= ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter ? (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST) : 0;
+						ts->pat.pmts[j].streams[k].cc = (uint8_t)pkhd.continuity_counter;
 
                         if (pkhd.payload_unit_start_indicator)
                         {
                             size_t n;
                             n = pes_read_header(pes, data + i, bytes - i);
                             assert(n > 0);
-                            i += n;
+                            i += (uint32_t)n;
 
 							pes->flags = (pes->flags & MPEG_FLAG_PACKET_CORRUPT) ? MPEG_FLAG_PACKET_LOST : 0;
 							pes->flags |= pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;

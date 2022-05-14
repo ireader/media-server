@@ -650,7 +650,7 @@ size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clo
 {
 	struct tm* t;
 	time_t seconds;
-	if (bytes < 15)
+	if (bytes < 16)
 		return 0;
 
 	seconds = (time_t)(clock / 1000);
@@ -672,5 +672,5 @@ size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clo
 	data[13] = 0xFF;
 	data[14] = 0xFF;
 	data[15] = 0xFF;
-	return 15;
+	return 16;
 }

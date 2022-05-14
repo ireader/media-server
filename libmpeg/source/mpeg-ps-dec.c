@@ -217,7 +217,7 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
                 {
                     n = 7;
                     // calc mpeg4_aac_adts_frame_length
-                    for (r = (int)(i + j); (size_t)r + 7 < i + pes_packet_length + 6 && n >= 7; r += n)
+                    for (r = (int)(i + j); (size_t)r + 7 < i + pes_packet_length + 6 && n >= 7; r += (int)n)
                     {
                         // fix n == 0
                         n = ((uint16_t)(data[r + 3] & 0x03) << 11) | ((uint16_t)data[r + 4] << 3) | ((uint16_t)(data[r + 5] >> 5) & 0x07);

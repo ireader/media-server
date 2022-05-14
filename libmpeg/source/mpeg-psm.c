@@ -112,11 +112,9 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	data[7] = 0x01;
 
 	extlen = 0;
-#if defined(_SERVICE_EXTENSION_DESCRIPTOR_)
-	extlen += service_extension_descriptor_write(data + 10 + extlen, 32);
-#endif
-#if defined(_CLOCK_EXTENSION_DESCRIPTOR_)
-	extlen += clock_extension_descriptor_write(data + 10 + extlen, 32, psm->clock);
+	extlen += (uint16_t)service_extension_descriptor_write(data + 10 + extlen, 32);
+#if defined(MPEG_CLOCK_EXTENSION_DESCRIPTOR)
+	extlen += (uint16_t)clock_extension_descriptor_write(data + 10 + extlen, 32, psm->clock);
 #endif
 
 	// program_stream_info_length 16-bits

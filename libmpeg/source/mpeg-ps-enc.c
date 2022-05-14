@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 #define MAX_PES_HEADER	1024	// pack_header + system_header + psm
 #define MAX_PES_PACKET	0xFFFF	// 64k pes data
@@ -94,8 +95,13 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 #endif
 
 	// write program_stream_map(p79)
-	if(0 == (ps->psm_period % 30))
+	if (0 == (ps->psm_period % 30))
+	{
+#if defined(MPEG_CLOCK_EXTENSION_DESCRIPTOR)
+		ps->psm.clock = time() * 1000; // todo: gettimeofday
+#endif
 		i += psm_write(&ps->psm, packet + i);
+	}
 
 	// check packet size
 	assert(i < MAX_PES_HEADER);

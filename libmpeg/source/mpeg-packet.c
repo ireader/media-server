@@ -54,7 +54,7 @@ static int mpeg_packet_h264_h265_filter(uint16_t program, uint16_t stream, struc
         if (PSI_STREAM_H264 == pkt->codecid ? 9 == (data[off + i] & 0x1f) : 35 == ((data[off + i] >> 1) & 0x3f))
             continue;
 
-        i -= leading; // rewind to 0x00 00 00 01
+        i -= (int)leading; // rewind to 0x00 00 00 01
         break;
     }
 
