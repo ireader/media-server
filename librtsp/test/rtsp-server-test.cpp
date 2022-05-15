@@ -31,8 +31,11 @@
 #define UDP_MULTICAST_ADDR "239.0.0.2"
 #define UDP_MULTICAST_PORT 6000
 
-static const char* s_workdir = "e:\\";
-//static const char* s_workdir = "/Users/ireader/video/";
+#if defined(OS_WINDOWS)
+static const char* s_workdir = "d:\\";
+#else
+static const char* s_workdir = "./";
+#endif
 
 static ThreadLocker s_locker;
 

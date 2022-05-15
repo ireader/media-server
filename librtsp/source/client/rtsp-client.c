@@ -56,7 +56,6 @@ static int rtsp_client_handle(struct rtsp_client_t* rtsp, http_parser_t* parser)
 {
 	switch (rtsp->state)
 	{
-	case RTSP_ANNOUNCE:	return rtsp_client_announce_onreply(rtsp, parser);
 	case RTSP_DESCRIBE: return rtsp_client_describe_onreply(rtsp, parser);
 	case RTSP_SETUP:	return rtsp_client_setup_onreply(rtsp, parser);
 	case RTSP_PLAY:		return rtsp_client_play_onreply(rtsp, parser);
@@ -65,6 +64,8 @@ static int rtsp_client_handle(struct rtsp_client_t* rtsp, http_parser_t* parser)
 	case RTSP_OPTIONS:	return rtsp_client_options_onreply(rtsp, parser);
 	case RTSP_GET_PARAMETER: return rtsp_client_get_parameter_onreply(rtsp, parser);
 	case RTSP_SET_PARAMETER: return rtsp_client_set_parameter_onreply(rtsp, parser);
+	case RTSP_ANNOUNCE:	return rtsp_client_announce_onreply(rtsp, parser);
+	case RTSP_RECORD:	return rtsp_client_record_onreply(rtsp, parser);
 	default: assert(0); return -1;
 	}
 }

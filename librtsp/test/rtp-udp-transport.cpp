@@ -31,6 +31,18 @@ int RTPUdpTransport::Init(const char* ip, unsigned short port[2])
 	return sockpair_create(0==r1 ? local : NULL, m_socket, port);
 }
 
+int RTPUdpTransport::Init(socket_t socket[2], const char* peer, unsigned short port[2])
+{
+	int r1 = socket_addr_from(&m_addr[0], &m_addrlen[0], peer, port[0]);
+	int r2 = socket_addr_from(&m_addr[1], &m_addrlen[1], peer, port[1]);
+	if (0 != r1 || 0 != r2)
+		return 0 != r1 ? r1 : r2;
+	
+	m_socket[0] = socket[0];
+	m_socket[1] = socket[1];
+	return 0;
+}
+
 int RTPUdpTransport::Send(bool rtcp, const void* data, size_t bytes)
 {
 	int i = rtcp ? 1 : 0;

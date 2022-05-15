@@ -15,6 +15,7 @@ public:
 
 public:
 	int Init(const char* ip, unsigned short port[2]);
+	int Init(socket_t socket[2], const char* peer, unsigned short port[2]);
 
 private:
 	socket_t m_socket[2];
