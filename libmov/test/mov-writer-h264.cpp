@@ -1,10 +1,12 @@
-#include "mov-writer.h"
+#include "mp4-writer.h"
 #include "mov-format.h"
 #include "mpeg4-avc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#define MOV_WRITER_H264_FMP4 0
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
@@ -15,7 +17,7 @@ static uint8_t s_extra_data[64 * 1024];
 
 struct mov_h264_test_t
 {
-	mov_writer_t* mov;
+	struct mp4_writer_t* mov;
 	struct mpeg4_avc_t avc;
 
 	int track;
@@ -69,12 +71,13 @@ static int h264_write(struct mov_h264_test_t* ctx, const void* data, int bytes)
         }
 
         // TODO: waiting for key frame ???
-        ctx->track = mov_writer_add_video(ctx->mov, MOV_OBJECT_H264, ctx->width, ctx->height, s_extra_data, extra_data_size);
+        ctx->track = mp4_writer_add_video(ctx->mov, MOV_OBJECT_H264, ctx->width, ctx->height, s_extra_data, extra_data_size);
         if (ctx->track < 0)
             return -1;
+		mp4_writer_init_segment(ctx->mov);
     }
 
-    mov_writer_write(ctx->mov, ctx->track, s_buffer, n, ctx->pts, ctx->pts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
+    mp4_writer_write(ctx->mov, ctx->track, s_buffer, n, ctx->pts, ctx->pts, 1 == vcl ? MOV_AV_FLAG_KEYFREAME : 0);
     ctx->pts += 40;
     ctx->dts += 40;
     return 0;
@@ -116,9 +119,9 @@ void mov_writer_h264(const char* h264, int width, int height, const char* mp4)
 	ctx.ptr = ptr;
 
 	FILE* fp = fopen(mp4, "wb+");
-	ctx.mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
+	ctx.mov = mp4_writer_create(MOV_WRITER_H264_FMP4, mov_file_buffer(), fp, MOV_FLAG_FASTSTART | MOV_FLAG_SEGMENT);
 	mpeg4_h264_annexb_nalu(ptr, bytes, h264_handler, &ctx);
-	mov_writer_destroy(ctx.mov);
+	mp4_writer_destroy(ctx.mov);
 
 	fclose(fp);
 	free(ptr);
