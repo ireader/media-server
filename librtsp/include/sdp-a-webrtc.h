@@ -113,8 +113,9 @@ struct sdp_rid_t
 	int nparam;
 };
 
+/// @param[out] direction sendonly/receonly/sendrecv/inactive, default sendrecv
 /// @return 0-ok, other-error
-int sdp_a_extmap(const char* s, int n, int* ext, char url[128]);
+int sdp_a_extmap(const char* s, int n, int* ext, int* direction, char url[128]);
 
 /// free(*param)
 /// @return 0-ok, other-error

@@ -1,4 +1,5 @@
 #include "sdp-a-webrtc.h"
+#include "sdp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,15 +111,41 @@ static inline int sdp_str2int(const char* s, int n, int* v)
     return e - s == n ? 0 : -1;
 }
 
-int sdp_a_extmap(const char* s, int n, int* ext, char url[128])
+// "extmap:" 1*5DIGIT ["/" direction]
+// direction = "sendonly" / "recvonly" / "sendrecv" / "inactive"
+int sdp_a_extmap(const char* s, int n, int* ext, int* direction, char url[128])
 {
     struct sdp_string_parser_t t;
-    struct sdp_string_token_t k, v;
+    struct sdp_string_token_t k, v, d;
 
     t.s = s;
     t.e = s + n;
-    if (!sdp_get_token(&t, &k, " ") || 0 != sdp_str2int(k.p, k.n, ext)
-        || !sdp_get_token(&t, &v, " ") || v.n >= 128)
+    if (!sdp_get_token(&t, &k, "/ ") || 0 != sdp_str2int(k.p, k.n, ext))
+        return -1;
+
+    // direction
+    if (direction)
+        *direction = SDP_A_SENDRECV;
+
+    if (t.s > s && '/' == *(t.s-1))
+    {
+        if (!sdp_get_token(&t, &d, " ") || d.n != 8)
+            return -1;
+
+        if (direction)
+        {
+            if (0 == strncmp(d.p, "sendonly", d.n))
+                *direction = SDP_A_SENDONLY;
+            else if (0 == strncmp(d.p, "recvonly", d.n))
+                *direction = SDP_A_RECVONLY;
+            else if (0 == strncmp(d.p, "sendrecv", d.n))
+                *direction = SDP_A_SENDRECV;
+            else if (0 == strncmp(d.p, "inactive", d.n))
+                *direction = SDP_A_INACTIVE;
+        }
+    }
+
+    if(!sdp_get_token(&t, &v, " ") || v.n >= 128)
         return -1;
 
     sdp_strcpy(url, v.p, v.n);
@@ -652,6 +679,19 @@ int sdp_a_ssrc_group(const char* s, int n, struct sdp_ssrc_group_t* group)
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
+static void sdp_a_extmap_test(void)
+{
+    char url[128];
+    int ext, direction;
+    const char* s = "6/recvonly http://www.webrtc.org/experiments/rtp-hdrext/playout-delay";
+    assert(0 == sdp_a_extmap(s, strlen(s), &ext, &direction, url));
+    assert(6 == ext && SDP_A_RECVONLY == direction && 0 == strcmp("http://www.webrtc.org/experiments/rtp-hdrext/playout-delay", url));
+
+    s = "7 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+    assert(0 == sdp_a_extmap(s, strlen(s), &ext, &direction, url));
+    assert(7 == ext && SDP_A_SENDRECV == direction && 0 == strcmp("http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01", url));
+}
+
 static void sdp_a_simulcast_test(void)
 {
     struct sdp_simulcast_t simulcast;
@@ -767,6 +807,7 @@ static void sdp_a_rtcp_fb_test(void)
 
 void sdp_a_webrtc_test(void)
 {
+    sdp_a_extmap_test();
     sdp_a_fingerprint_test();
     sdp_a_group_test();
     sdp_a_ice_candidate_test();
