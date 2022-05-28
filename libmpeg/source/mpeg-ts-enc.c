@@ -49,7 +49,7 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
 	int r;
 	uint8_t *data = NULL;
 	data = ts->func.alloc(ts->param, TS_PACKET_SIZE);
-	if(!data) return ENOMEM;
+	if(!data) return -ENOMEM;
 
 	assert(len < TS_PACKET_SIZE - 5); // TS-header + pointer
 
@@ -109,7 +109,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 	while(0 == r && bytes > 0)
 	{
 		data = tsctx->func.alloc(tsctx->param, TS_PACKET_SIZE);
-		if(!data) return ENOMEM;
+		if(!data) return -ENOMEM;
 
 		// TS Header
 		data[0] = 0x47;	// sync_byte

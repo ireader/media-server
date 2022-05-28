@@ -73,7 +73,7 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 	// alloc once (include Multi-PES packet)
 	sz = bytes + MAX_PES_HEADER + (bytes/MAX_PES_PACKET+1) * 64; // 64 = 0x000001 + stream_id + PES_packet_length + other
 	packet = ps->func.alloc(ps->param, sz);
-	if(!packet) return ENOMEM;
+	if(!packet) return -ENOMEM;
 
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference

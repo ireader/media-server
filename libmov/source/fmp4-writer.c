@@ -217,7 +217,7 @@ static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uin
 	if (track->frag_count >= track->frag_capacity)
 	{
 		void* p = realloc(track->frags, sizeof(struct mov_fragment_t) * (track->frag_capacity + 64));
-		if (!p) return ENOMEM;
+		if (!p) return -ENOMEM;
 		track->frags = p;
 		track->frag_capacity += 64;
 	}

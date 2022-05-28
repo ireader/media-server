@@ -96,7 +96,7 @@ static int mov_buffer_read(void* param, void* data, uint64_t bytes)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if (dash->offset + bytes > dash->bytes)
-		return E2BIG;
+		return -E2BIG;
 	memcpy(data, dash->ptr + dash->offset, (size_t)bytes);
 	return 0;
 }
@@ -108,7 +108,7 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if (dash->offset + bytes > dash->maxsize)
-		return E2BIG;
+		return -E2BIG;
 
 	if (dash->offset + (size_t)bytes > dash->capacity)
 	{
@@ -116,7 +116,7 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 		capacity = capacity > dash->maxsize ? dash->maxsize : capacity;
 		ptr = realloc(dash->ptr, capacity);
 		if (NULL == ptr)
-			return ENOMEM;
+			return -ENOMEM;
 		dash->ptr = ptr;
 		dash->capacity = capacity;
 	}
@@ -133,7 +133,7 @@ static int mov_buffer_seek(void* param, int64_t offset)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if ((offset >= 0 ? offset : -offset) >= dash->maxsize)
-		return E2BIG;
+		return -E2BIG;
 	dash->offset = (size_t)(offset >= 0 ? offset : (dash->maxsize+offset));
 	return 0;
 }

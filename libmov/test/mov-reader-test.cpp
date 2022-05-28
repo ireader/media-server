@@ -76,6 +76,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		v_pts = pts;
 		v_dts = dts;
 
+		assert(h264_is_new_access_unit((const uint8_t*)buffer + 4, bytes - 4));
 		int n = h264_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}

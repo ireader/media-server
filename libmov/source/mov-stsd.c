@@ -313,7 +313,7 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 	if (track->stsd.entry_count < entry_count)
 	{
 		void* p = realloc(track->stsd.entries, sizeof(track->stsd.entries[0]) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		track->stsd.entries = (struct mov_sample_entry_t*)p;
 	}
 

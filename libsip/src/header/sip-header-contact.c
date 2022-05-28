@@ -92,12 +92,12 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 		// name-addr: [ display-name ]
 		p = strchr(p + 1, '"');
 		if (!p || p > end)
-			return EINVAL;
+			return -EINVAL;
 
 		// LAQUOT addr-spec RAQUOT
 		p = strchr(p + 1, '<');
 		if (!p || p > end)
-			return EINVAL;
+			return -EINVAL;
 	}
 
 	if ('<' == *p)
@@ -111,7 +111,7 @@ int sip_header_contact(const char* s, const char* end, struct sip_contact_t* c)
 		s = p + 1;
 		p = s < end ? strchr(s, '>') : NULL;
 		if (!p || p > end)
-			return EINVAL;
+			return -EINVAL;
 
 		r = sip_header_uri(s, p, &c->uri);
 		if (0 != r)

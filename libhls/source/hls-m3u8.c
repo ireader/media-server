@@ -121,7 +121,7 @@ int hls_m3u8_add_with_offset(hls_m3u8_t* m3u8, const char* name, int64_t pts, in
 		// reserve more space for reuse segment
 		seg = hls_segment_alloc(r + (m3u8->live ? 16 : 1));
 		if (!seg)
-			return ENOMEM;
+			return -ENOMEM;
 
 		++m3u8->count;
 	}
@@ -146,7 +146,7 @@ int hls_m3u8_set_x_map(hls_m3u8_t* m3u8, const char* name)
 	if (m3u8->ext_x_map)
 		free(m3u8->ext_x_map);
 	m3u8->ext_x_map = name ? strdup(name) : NULL;
-	return m3u8->ext_x_map ? 0 : ENOMEM;
+	return m3u8->ext_x_map ? 0 : -ENOMEM;
 }
 
 size_t hls_m3u8_count(struct hls_m3u8_t* m3u8)

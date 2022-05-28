@@ -1009,7 +1009,7 @@ int mkv_reader_read2(mkv_reader_t* reader, mkv_reader_onread2 onread, void* para
 	sample = &reader->mkv.samples[reader->offset];
 	ptr = onread(param, sample->track, sample->bytes, sample->pts * reader->mkv.timescale / 1000000, sample->dts * reader->mkv.timescale / 1000000, sample->flags);
 	if (!ptr)
-		return ENOMEM;
+		return -ENOMEM;
 
 	mkv_buffer_seek(&reader->io, sample->offset);
 	mkv_buffer_read(&reader->io, ptr, sample->bytes);

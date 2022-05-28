@@ -14,7 +14,7 @@ public:
 	{
 		assert(bytes < (1 << 16));
 		if (bytes >= (1 << 16))
-			return E2BIG;
+			return -E2BIG;
 
 		m_packet[0] = '$';
 		m_packet[1] = rtcp ? m_rtcp : m_rtp;

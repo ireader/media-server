@@ -131,7 +131,7 @@ static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const u
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		return EINVAL; // format error
+		return -EINVAL; // format error
 	}
 
 	//rtmp->onerror(rtmp->param, -1, result.code);
@@ -156,7 +156,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		return EINVAL;
+		return -EINVAL;
 	}
 
 	assert(0 == strcmp(RTMP_LEVEL_ERROR, result.level)

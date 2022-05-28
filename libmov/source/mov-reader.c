@@ -74,7 +74,7 @@ static int mov_index_build(struct mov_track_t* track)
 	}
 
 	p = realloc(stbl->stss, sizeof(stbl->stss[0]) * stbl->stss_count);
-	if (!p) return ENOMEM;
+	if (!p) return -ENOMEM;
 	stbl->stss = p;
 
 	for (j = i = 0; i < track->sample_count && j < stbl->stss_count; i++)
@@ -479,7 +479,7 @@ FMP4_NEXT_FRAGMENT:
 	assert(sample->sample_description_index > 0);
 	ptr = onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	if(!ptr)
-		return ENOMEM;
+		return -ENOMEM;
 
 	mov_buffer_seek(&reader->mov.io, sample->offset);
 	mov_buffer_read(&reader->mov.io, ptr, sample->bytes);

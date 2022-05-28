@@ -33,7 +33,7 @@ int mov_read_stco(struct mov_t* mov, const struct mov_box_t* box)
 	if (stbl->stco_count < entry_count)
 	{
 		void* p = realloc(stbl->stco, sizeof(stbl->stco[0]) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		stbl->stco = p;
 	}
 	stbl->stco_count = entry_count;

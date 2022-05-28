@@ -73,7 +73,7 @@ int rtp_pack_input(void* p, const void* data, int bytes, uint32_t timestamp)
 
 		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-		if (!rtp) return ENOMEM;
+		if (!rtp) return -ENOMEM;
 
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);
 		if (n != RTP_FIXED_HEADER + packer->pkt.payloadlen)

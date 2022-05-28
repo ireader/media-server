@@ -84,7 +84,7 @@ int rtp_member_list_add(void* members, struct rtp_member* s)
 			void* ptr;
 			ptr = (struct rtp_member **)realloc(p->ptr, (p->capacity+8)*sizeof(struct rtp_member*));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 			p->ptr = ptr;
 			p->capacity += 8;
 		}

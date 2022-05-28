@@ -119,7 +119,7 @@ int FFFileSource::Open(const char* file)
 	if (NULL == m_ic)
 	{
 		printf("%s(%s): avformat_alloc_context failed.\n", __FUNCTION__, file);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	//if (!av_dict_get(ff->opt, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {

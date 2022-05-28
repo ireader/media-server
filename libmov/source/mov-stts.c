@@ -17,7 +17,7 @@ int mov_read_stts(struct mov_t* mov, const struct mov_box_t* box)
 	if (stbl->stts_count < entry_count)
 	{
 		void* p = realloc(stbl->stts, sizeof(struct mov_stts_t) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		stbl->stts = (struct mov_stts_t*)p;
 	}
 	stbl->stts_count = entry_count;
@@ -46,7 +46,7 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box)
 	if (stbl->ctts_count < entry_count)
 	{
 		void* p = realloc(stbl->ctts, sizeof(struct mov_stts_t) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		stbl->ctts = (struct mov_stts_t*)p;
 	}
 	stbl->ctts_count = entry_count;

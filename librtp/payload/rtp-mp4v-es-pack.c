@@ -91,7 +91,7 @@ static int rtp_mp4v_es_encode_input(void* pack, const void* data, int bytes, uin
 
 		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-		if (!rtp) return ENOMEM;
+		if (!rtp) return -ENOMEM;
 
 		packer->pkt.rtp.m = (0 == bytes) ? 1 : 0;
 		n = rtp_packet_serialize(&packer->pkt, rtp, n);

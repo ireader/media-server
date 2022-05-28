@@ -48,7 +48,7 @@ static int rtpport(void* param, int media, const char* source, unsigned short rt
 	{
 	case RTSP_TRANSPORT_RTP_UDP:
 		// TODO: ipv6
-		assert(0 == sockpair_create("127.0.0.1", ctx->rtp[media], ctx->port[media]));
+		assert(0 == sockpair_create("0.0.0.0", ctx->rtp[media], ctx->port[media]));
         rtp[0] = ctx->port[media][0];
         rtp[1] = ctx->port[media][1];
         

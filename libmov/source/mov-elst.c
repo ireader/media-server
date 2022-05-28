@@ -18,7 +18,7 @@ int mov_read_elst(struct mov_t* mov, const struct mov_box_t* box)
 	if (track->elst_count < entry_count)
 	{
 		void* p = realloc(track->elst, sizeof(struct mov_elst_t) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		track->elst = (struct mov_elst_t*)p;
 	}
 	track->elst_count = entry_count;
