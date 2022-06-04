@@ -64,7 +64,7 @@ int rtp_packet_deserialize(struct rtp_packet_t *pkt, const void* data, int bytes
 		const uint8_t *rtpext = ptr + hdrlen;
 		assert(pkt->payloadlen >= 4);
 		pkt->extension = rtpext + 4;
-		pkt->reserved = nbo_r16(rtpext);
+		pkt->extprofile = nbo_r16(rtpext);
 		pkt->extlen = nbo_r16(rtpext + 2) * 4;
 		if (pkt->extlen + 4 > pkt->payloadlen)
 		{
@@ -128,7 +128,7 @@ int rtp_packet_serialize_header(const struct rtp_packet_t *pkt, void* data, int 
 	{
 		// 5.3.1 RTP Header Extension
 		assert(0 == (pkt->extlen % 4));
-		nbo_w16(ptr, pkt->reserved);
+		nbo_w16(ptr, pkt->extprofile);
 		nbo_w16(ptr + 2, pkt->extlen / 4);
 		memcpy(ptr + 4, pkt->extension, pkt->extlen);
 		ptr += pkt->extlen + 4;
