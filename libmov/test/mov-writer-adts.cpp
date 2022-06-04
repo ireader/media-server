@@ -45,6 +45,7 @@ static uint8_t* file_read(const char* file, long* size)
 static void adts_reader(struct mov_adts_test_t* ctx, const uint8_t* ptr, size_t bytes)
 {
 	int64_t pts = 0;
+	int64_t samples = 0;
 	while(ptr && bytes > 7)
 	{
 		int n = mpeg4_aac_adts_frame_length(ptr, bytes);
@@ -68,7 +69,8 @@ static void adts_reader(struct mov_adts_test_t* ctx, const uint8_t* ptr, size_t 
 		assert(0 == mov_writer_write(ctx->mov, ctx->track, ptr + 7, n - 7, pts, pts, 0));
 		ptr += n;
 		bytes -= n;
-		pts += 1024 /*samples*/ * 1000 / ctx->aac.sampling_frequency;
+		samples += 1024;
+		pts = samples * 1000 / ctx->aac.sampling_frequency;
 	}
 }
 
