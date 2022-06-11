@@ -22,6 +22,7 @@ public:
 
 public:
 	int GetInfo();
+	int GetInfo(struct mov_reader_trackinfo_t* info, void* param);
 
 private:
 	static void OnVideoInfo(void* param, uint32_t track, uint8_t object, int width, int height, const void* extra, size_t bytes);

@@ -39,6 +39,13 @@ int MP4FileReader::GetInfo()
 	return mov_reader_getinfo(m_reader, &info, this);
 }
 
+int MP4FileReader::GetInfo(struct mov_reader_trackinfo_t* info, void* param)
+{
+	if (!m_reader)
+		return -1;
+	return mov_reader_getinfo(m_reader, info, param);
+}
+
 int MP4FileReader::Read(struct avpacket_t** pkt)
 {
 	m_pkt = pkt;
