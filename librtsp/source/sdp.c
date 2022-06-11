@@ -299,7 +299,7 @@ static int sdp_parse_version(struct sdp_t* sdp)
 static int sdp_parse_origin(struct sdp_t* sdp)
 {
 	char* v[6];
-	const char** vv[6];
+	char** vv[6];
 	int i, j, n[6];
 	struct sdp_origin *o;
 	static const char* default_username = "-";
@@ -320,7 +320,7 @@ static int sdp_parse_origin(struct sdp_t* sdp)
 	if (i < 5)
 		return 0;
 
-	o->username = default_username; // default value
+	o->username = (char*)default_username; // default value
 	vv[0] = &o->username;
 	vv[1] = &o->session;
 	vv[2] = &o->session_version;

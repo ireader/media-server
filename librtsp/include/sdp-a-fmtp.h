@@ -123,4 +123,11 @@ struct sdp_a_fmtp_mpeg4_t
 
 int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *mpeg4);
 
+struct sdp_a_fmtp_rtx_t
+{
+	int apt;
+	int rtx_time; // milliseconds 
+};
+int sdp_a_fmtp_rtx(const char* fmtp, int* format, struct sdp_a_fmtp_rtx_t* rtx);
+
 #endif /* !_sdp_a_fmtp_h_ */
