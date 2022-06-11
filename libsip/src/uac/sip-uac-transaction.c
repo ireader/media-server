@@ -123,7 +123,6 @@ static int sip_uac_transaction_terminate(struct sip_uac_transaction_t* t)
 
 static void sip_uac_transaction_ontimeout(void* usrptr)
 {
-	int r;
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)usrptr;
 	
@@ -143,7 +142,7 @@ static void sip_uac_transaction_ontimeout(void* usrptr)
 		else if (t->onsubscribe)
 			t->onsubscribe(t->param, NULL, t, NULL, 408/*Request Timeout*/, NULL);
 		else
-			r = t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
+			t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
 
 		// ignore return value, nothing to do
 	}
