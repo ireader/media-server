@@ -19,17 +19,17 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 		return 0; // invalid data length
 
 	assert((0x01 & data[7]) == 0x01); // 'xxxxxxx1'
-	number_of_access_units = (data[6] << 8) | ((data[7] >> 7) & 0x7F);
+	number_of_access_units = (data[6] << 7) | ((data[7] >> 1) & 0x7F);
 	assert(number_of_access_units <= N_ACCESS_UNIT);
 
 	assert((0x01 & data[9]) == 0x01); // 'xxxxxxx1'
 	assert((0x01 & data[11]) == 0x01); // 'xxxxxxx1'
 	assert((0x01 & data[13]) == 0x01); // 'xxxxxxx1'
-	psd->prev_directory_offset = (uint64_t)(((uint64_t)data[8] << 38) | ((((uint64_t)data[9] >> 7) & 0x7F) << 30) | ((uint64_t)data[10] << 22) | ((((uint64_t)data[11] >> 7) & 0x7F) << 15) | ((uint64_t)data[12] << 7) | (((uint64_t)data[13] >> 7) & 0x7F));
+	psd->prev_directory_offset = (uint64_t)(((uint64_t)data[8] << 38) | ((((uint64_t)data[9] >> 1) & 0x7F) << 30) | ((uint64_t)data[10] << 22) | ((((uint64_t)data[11] >> 1) & 0x7F) << 15) | ((uint64_t)data[12] << 7) | (((uint64_t)data[13] >> 1) & 0x7F));
 	assert((0x01 & data[15]) == 0x01); // 'xxxxxxx1'
 	assert((0x01 & data[17]) == 0x01); // 'xxxxxxx1'
 	assert((0x01 & data[19]) == 0x01); // 'xxxxxxx1'
-	psd->next_directory_offset = (uint64_t)(((uint64_t)data[14] << 38) | ((((uint64_t)data[15] >> 7) & 0x7F) << 30) | ((uint64_t)data[16] << 22) | ((((uint64_t)data[17] >> 7) & 0x7F) << 15) | ((uint64_t)data[18] << 7) | (((uint64_t)data[19] >> 7) & 0x7F));
+	psd->next_directory_offset = (uint64_t)(((uint64_t)data[14] << 38) | ((((uint64_t)data[15] >> 1) & 0x7F) << 30) | ((uint64_t)data[16] << 22) | ((((uint64_t)data[17] >> 1) & 0x7F) << 15) | ((uint64_t)data[18] << 7) | (((uint64_t)data[19] >> 1) & 0x7F));
 
 	// access unit
 	j = 20;
@@ -40,7 +40,7 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 		assert((0x01 & data[j+2]) == 0x01); // 'xxxxxxx1'
 		assert((0x01 & data[j+4]) == 0x01); // 'xxxxxxx1'
 		assert((0x01 & data[j+6]) == 0x01); // 'xxxxxxx1'
-		psd->units[i].pes_header_position_offset = (uint64_t)(((uint64_t)(data[j+1] & 0x7F) << 38) | ((((uint64_t)data[j+2] >> 7) & 0x7F) << 30) | ((uint64_t)data[j+3] << 22) | ((((uint64_t)data[j+4] >> 7) & 0x7F) << 15) | ((uint64_t)data[j+5] << 7) | (((uint64_t)data[j+6] >> 7) & 0x7F));
+		psd->units[i].pes_header_position_offset = (uint64_t)(((uint64_t)(data[j+1] & 0x7F) << 37) | ((((uint64_t)data[j+2] >> 1) & 0x7F) << 30) | ((uint64_t)data[j+3] << 22) | ((((uint64_t)data[j+4] >> 1) & 0x7F) << 15) | ((uint64_t)data[j+5] << 7) | (((uint64_t)data[j+6] >> 1) & 0x7F));
 		psd->units[i].reference_offset = (data[j+7] << 8) | data[j+8];
 
 		assert((0x81 & data[j+9]) == 0x81); // '1xxxxxx1'
@@ -55,7 +55,7 @@ size_t psd_read(struct psd_t *psd, const uint8_t* data, size_t bytes)
 
 		assert((0x01 & data[j+11]) == 0x01); // 'xxxxxxx1'
 		assert((0x01 & data[j+13]) == 0x01); // 'xxxxxxx1'
-		psd->units[i].PTS = (uint64_t)(((uint64_t)((data[j+9] >> 1) & 0x07) << 30) | ((uint64_t)data[j+10] << 22) | ((((uint64_t)data[j+11] >> 7) & 0x7F) << 15) | ((uint64_t)data[j+12] << 7) | (((uint64_t)data[j+13] >> 7) & 0x7F));
+		psd->units[i].PTS = (uint64_t)(((uint64_t)((data[j+9] >> 1) & 0x07) << 30) | ((uint64_t)data[j+10] << 22) | ((((uint64_t)data[j+11] >> 1) & 0x7F) << 15) | ((uint64_t)data[j+12] << 7) | (((uint64_t)data[j+13] >> 1) & 0x7F));
 
 		assert((0x01 & data[j+15]) == 0x01); // 'xxxxxxx1'
 		psd->units[i].bytes_to_read = (uint32_t)( ((uint32_t)data[j+14] << 15) | (((data[j+15] >> 1) & 0x7F) << 8) | data[j+16]);
