@@ -81,7 +81,7 @@ static int sip_uac_transaction_dosend(struct sip_uac_transaction_t* t)
 
 static void sip_uac_transaction_onretransmission(void* usrptr)
 {
-	int r;
+	int r, timeout;
 	struct sip_uac_transaction_t* t;
 	t = (struct sip_uac_transaction_t*)usrptr;
 
@@ -102,7 +102,8 @@ static void sip_uac_transaction_onretransmission(void* usrptr)
 			//	r = t->onreply(t->param, t, 503/*Service Unavailable*/);
 		}
 
-		t->timera = sip_uac_start_timer(t->agent, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uac_transaction_onretransmission);
+		timeout = T1 * (1 << t->retries++);
+		t->timera = sip_uac_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uac_transaction_onretransmission);
 	}
 	locker_unlock(&t->locker);
 

@@ -273,7 +273,7 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 
 static void sip_uas_transaction_onretransmission(void* usrptr)
 {
-	int r;
+	int r, timeout;
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)usrptr;
 	locker_lock(&t->locker);
@@ -290,7 +290,8 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 		}
 
 		assert(!t->reliable);
-		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
+		timeout = T1 * (1 << t->retries++);
+		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uas_transaction_onretransmission);
 	}
 
 	locker_unlock(&t->locker);
