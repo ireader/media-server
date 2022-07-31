@@ -517,7 +517,6 @@ int fmp4_writer_save_segment(fmp4_writer_t* writer)
 
 	// flush fragment
 	fmp4_write_fragment(writer);
-	writer->has_moov = 0; // clear moov flags
 
 	// write mfra
 	if (0 == (mov->flags & MOV_FLAG_SEGMENT))
@@ -525,6 +524,10 @@ int fmp4_writer_save_segment(fmp4_writer_t* writer)
 		fmp4_write_mfra(mov);
 		for (i = 0; i < mov->track_count; i++)
 			mov->tracks[i].frag_count = 0; // don't free frags memory
+	}
+	else
+	{
+		writer->has_moov = 0; // clear moov flags
 	}
 
 	return mov_buffer_error(&mov->io);
