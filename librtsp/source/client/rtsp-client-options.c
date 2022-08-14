@@ -29,6 +29,7 @@ int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands)
 
 	rtsp->state = RTSP_OPTIONS;
 
+	require[0] = session[0] = '\0';
 	if ((commands && commands[0] && sizeof(require) <= snprintf(require, sizeof(require), "Require: %s\r\n", commands))
 		|| (rtsp->media_count > 0 && *rtsp->session[0].session && sizeof(session) <= snprintf(session, sizeof(session) - 1, "Session: %s\r\n", rtsp->session[0].session)))
 		return -1;
