@@ -1056,7 +1056,7 @@ static int sdp_parse_media(struct sdp_t* sdp)
 	fmt = sdp->raw + sdp->offset;
 	n[3] = sdp_token_word(sdp, " \t\r\n");
 
-	while(' ' == fmt[n[3]] || '\t' == fmt[n[3]])
+	while(n[3] > 0)
 	{
 		fmt[n[3]] = '\0';
 		ret = sdp_append_media_format(m, fmt);

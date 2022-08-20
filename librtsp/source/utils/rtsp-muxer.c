@@ -257,7 +257,7 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
             || 0 == strcasecmp(encoding, "AV1")
             || 0 == strcasecmp(encoding, "MP4V-ES"))
         {
-            r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, frequence, extra, size);
+            r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, frequence ? frequence : 90000, extra, size);
         }
         else if (RTP_PAYLOAD_PCMU == payload || RTP_PAYLOAD_PCMA == payload || 0 == strcasecmp(encoding, "MP4A-LATM") || 0 == strcasecmp(encoding, "MPEG4-GENERIC") || 0 == strcasecmp(encoding, "opus"))
         {
