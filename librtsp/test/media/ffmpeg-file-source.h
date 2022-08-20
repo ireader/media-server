@@ -51,7 +51,6 @@ private:
 	double m_speed;
 	
 	AVFormatContext* m_ic;
-	AVBSFContext* m_h264bsf;
 	AVPacket m_pkt;
 
 	struct media_t

@@ -47,8 +47,7 @@
 */
 
 #include "sip-uas-transaction.h"
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#include "cpm/param.h"
 
 static void sip_uas_transaction_onretransmission(void* usrptr);
 

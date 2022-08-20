@@ -144,11 +144,13 @@ extern "C" DEF_FUN_VOID(rtsp_example);
 extern "C" DEF_FUN_VOID(rtsp_push_server);
 extern "C" DEF_FUN_2PCHAR(rtsp_client_test, const char* host, const char* file);
 DEF_FUN_INT_PCHAR_INT_INT_PCHAR(rstp_demuxer_test, int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile);
+DEF_FUN_2PCHAR(rtsp_client_push_test, const char* host, const char* file);
 DEF_FUN_PCHAR(rtsp_client_input_test, const char* file);
 DEF_FUN_PCHAR(rtp_dump_test, const char* file);
 //DEF_FUN_PCHAR(rtp_header_ext_test, const char* rtpfile);
 DEF_FUN_VOID(rtp_payload_test);
 
+DEF_FUN_PCHAR(flv_parser_test, const char* flv);
 DEF_FUN_PCHAR(flv_read_write_test, const char* flv);
 DEF_FUN_2PCHAR(flv2ts_test, const char* inputFLV, const char* outputTS);
 DEF_FUN_2PCHAR(ts2flv_test, const char* inputTS, const char* outputFLV);

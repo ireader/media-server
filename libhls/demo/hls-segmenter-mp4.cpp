@@ -15,8 +15,6 @@ static char s_packet[2 * 1024 * 1024];
 
 static void ffmpeg_init()
 {
-	avcodec_register_all();
-	av_register_all();
 	avformat_network_init();
 }
 

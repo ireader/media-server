@@ -16,7 +16,7 @@ extern "C" uint32_t rtp_ssrc(void);
 static AVCodecContext* FFLiveCreateEncoder(AVCodecParameters* codecpar, AVDictionary** opts)
 {
 	int ret;
-	AVCodec* codec = NULL;
+	const AVCodec* codec = NULL;
 	AVCodecContext* avctx = NULL;
 
 	codec = avcodec_find_encoder(codecpar->codec_id);
@@ -68,17 +68,17 @@ static AVCodecContext* FFLiveCreateEncoder(AVCodecParameters* codecpar, AVDictio
 static AVCodecContext* FFLiveCreateDecoder(AVStream* stream)
 {
 	int ret;
-	AVCodec* codec = NULL;
+	const AVCodec* codec = NULL;
 	AVDictionary *opts = NULL;
 	AVCodecContext* avctx = NULL;
 
-	if (!stream || !stream->codec)
+	if (!stream || !stream->codecpar)
 		return NULL;
 
-	codec = avcodec_find_decoder(stream->codec->codec_id);
+	codec = avcodec_find_decoder(stream->codecpar->codec_id);
 	if (NULL == codec)
 	{
-		printf("[%s] avcodec_find_decoder(%d) not found.\n", __FUNCTION__, stream->codec->codec_id);
+		printf("[%s] avcodec_find_decoder(%d) not found.\n", __FUNCTION__, stream->codecpar->codec_id);
 		return NULL;
 	}
 
@@ -101,7 +101,7 @@ static AVCodecContext* FFLiveCreateDecoder(AVStream* stream)
 	av_dict_free(&opts);
 	if (ret < 0)
 	{
-		printf("[%s] avcodec_open2(%d) => %d.\n", __FUNCTION__, stream->codec->codec_id, ret);
+		printf("[%s] avcodec_open2(%d) => %d.\n", __FUNCTION__, stream->codecpar->codec_id, ret);
 		avcodec_free_context(&avctx);
 		return NULL;
 	}
@@ -115,7 +115,6 @@ FFLiveSource::FFLiveSource(const char *camera)
 	if (0 == s_init)
 	{
 		s_init = 1;
-		av_register_all();
 		avformat_network_init();
 		avdevice_register_all();
 	}
@@ -130,12 +129,11 @@ FFLiveSource::FFLiveSource(const char *camera)
 	{
 		for (unsigned int i = 0; i < m_ic->nb_streams; i++)
 		{
-			AVMediaType codec_type = m_ic->streams[i]->codecpar ? m_ic->streams[i]->codecpar->codec_type : (m_ic->streams[i]->codec ? m_ic->streams[i]->codec->codec_type : AVMEDIA_TYPE_UNKNOWN);
-			if ( AVMEDIA_TYPE_VIDEO == codec_type)
+			if ( AVMEDIA_TYPE_VIDEO == m_ic->streams[i]->codecpar->codec_type)
 			{
 				OnVideo(m_ic->streams[i]);
 			}
-			else if (AVMEDIA_TYPE_AUDIO == codec_type)
+			else if (AVMEDIA_TYPE_AUDIO == m_ic->streams[i]->codecpar->codec_type)
 			{
 				OnAudio(m_ic->streams[i]);
 			}
@@ -197,7 +195,7 @@ int FFLiveSource::Open(const char* camera)
 	//	scan_all_pmts_set = 1;
 	//}
 
-	AVInputFormat *ifmt = av_find_input_format("dshow");
+	const AVInputFormat *ifmt = av_find_input_format("dshow");
 	r = avformat_open_input(&m_ic, camera, ifmt, NULL/*&opt*/);
 	if (0 != r)
 	{

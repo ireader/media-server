@@ -47,7 +47,6 @@ FFFileSource::FFFileSource(const char *file)
 	if(0 == s_init)
 	{
 		s_init = 1;
-		av_register_all();
 		avformat_network_init();
 	}
 

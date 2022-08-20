@@ -155,8 +155,6 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
 static int dash_server_mpd(http_session_t* session, dash_playlist_t* dash)
 {
 	http_server_set_header(session, "Content-Type", "application/xml+dash");
-	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
     AutoThreadLocker locker(s_locker);
 	http_server_reply(session, 200, dash->playlist, strlen(dash->playlist));
 	return 0;
@@ -168,6 +166,12 @@ static int dash_server_onlive(void* dash, http_session_t* session, const char* /
     int r = path_concat(path + 6 /* /live/ */, LOCALPATH, fullpath);
 	printf("live: %s\n", fullpath);
 
+    // HTTP CORS
+    http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+    http_server_set_header(session, "Access-Control-Allow-Headers", "*");
+    http_server_set_header(session, "Access-Control-Allow-Credentials", "true");
+    http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, CONNECT");
+
 	const char* name = path_basename(fullpath);
 	if (strendswith(name, ".mpd"))
 	{
@@ -176,8 +180,6 @@ static int dash_server_onlive(void* dash, http_session_t* session, const char* /
 	else if (path_testfile(name))
 	{
 		// cross domain
-		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 		return http_server_sendfile(session, name, NULL, NULL);
 	}
 
@@ -191,6 +193,12 @@ static int dash_server_onvod(void* /*dash*/, http_session_t* session, const char
     int r = path_concat(path + 5 /* /vod/ */, LOCALPATH, fullpath);
 	printf("vod: %s\n", fullpath);
 
+    // HTTP CORS
+    http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+    http_server_set_header(session, "Access-Control-Allow-Headers", "*");
+    http_server_set_header(session, "Access-Control-Allow-Credentials", "true");
+    http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, CONNECT");
+
 	if (0 == r && path_testfile(fullpath))
 	{
 		// MIME
@@ -202,11 +210,6 @@ static int dash_server_onvod(void* /*dash*/, http_session_t* session, const char
             http_server_set_header(session, "content-type", "audio/mp4");
 
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
-
-		// cross domain
-		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
-
 		return http_server_sendfile(session, fullpath, NULL, NULL);
 	}
 

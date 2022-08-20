@@ -1,8 +1,7 @@
 #include "sip-uac-transaction.h"
 #include "sip-transport.h"
 #include "uri-parse.h"
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#include "cpm/param.h"
 
 int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);
 int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t);

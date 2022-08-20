@@ -545,6 +545,8 @@ extern "C" void rtsp_example()
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
+	// 1. check s_workdir, MUST be end with '/' or '\\'
+	// 2. url: rtsp://127.0.0.1:8554/vod/<filename>
 	void* tcp = rtsp_server_listen("0.0.0.0", 8554, &handler, NULL); assert(tcp);
 //	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL); assert(udp);
 
