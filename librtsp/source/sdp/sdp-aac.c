@@ -51,7 +51,7 @@ int sdp_aac_latm(uint8_t *data, int bytes, const char* proto, unsigned short por
 
 	if (n + r * 2 + 1 > bytes)
 		return -1; // don't have enough memory
-	n += base16_encode((char*)data + n, config, r);
+	n += (int)base16_encode((char*)data + n, config, r);
 
 	if (n < bytes)
 		data[n++] = '\n';
@@ -92,7 +92,7 @@ int sdp_aac_generic(uint8_t *data, int bytes, const char* proto, unsigned short 
 
 	// For MPEG-4 Audio streams, config is the audio object type specific
 	// decoder configuration data AudioSpecificConfig()
-	n += base16_encode((char*)data + n, extra, extra_size);
+	n += (int)base16_encode((char*)data + n, extra, extra_size);
 
 	if (n < bytes)
 		data[n++] = '\n';

@@ -58,7 +58,7 @@ int MP4FileReader::Read(struct avpacket_t** pkt)
 	return r;
 }
 
-int MP4FileReader::Seek(uint64_t* pos, int strategy)
+int MP4FileReader::Seek(uint64_t* pos, int /*strategy*/)
 {
 	int r = mov_reader_seek(m_reader, (int64_t*)pos);
 	if (0 == r)

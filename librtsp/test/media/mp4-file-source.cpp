@@ -196,7 +196,7 @@ int MP4FileSource::Seek(int64_t pos)
 		//m_media[i].dts = -1;
 		//m_media[i].timestamp += 1;
 		if (-1 != m_media[i].dts_first)
-			m_media[i].rtp.timestamp += m_media[i].dts_last - m_media[i].dts_first + 1;
+			m_media[i].rtp.timestamp += (uint32_t)(m_media[i].dts_last - m_media[i].dts_first + 1);
 		m_media[i].dts_first = -1;
 		avpacket_queue_clear(m_media[i].pkts); // clear buffered frame
 	}
@@ -336,11 +336,11 @@ void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int 
 	self->m_sdp += (const char*)self->m_packet;
 }
 
-void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int flags)
+void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, size_t bytes, int64_t pts, int64_t dts, int /*flags*/)
 {
 	MP4FileSource *self = (MP4FileSource *)param;
 
-	std::shared_ptr<struct avpacket_t> pkt(avpacket_alloc(bytes), avpacket_release);
+	std::shared_ptr<struct avpacket_t> pkt(avpacket_alloc((int)bytes), avpacket_release);
 	memcpy(pkt->data, buffer, bytes);
 	//pkt->codecid = track;
 	pkt->pts = pts;
@@ -349,7 +349,7 @@ void MP4FileSource::MP4OnRead(void* param, uint32_t track, const void* buffer, s
 	for (int i = 0; i < self->m_count; i++)
 	{
 		struct media_t* m = &self->m_media[i];
-		if (m->track == track)
+		if (m->track == (int)track)
 		{
 			// TODO: overflow
 			assert(0 == avpacket_queue_push(m->pkts, pkt.get()));
@@ -409,7 +409,7 @@ int MP4FileSource::SendRTCP(uint64_t clock)
 	return 0;
 }
 
-int MP4FileSource::OnRTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
+int MP4FileSource::OnRTPPacket(void* param, const void *packet, int bytes, uint32_t /*timestamp*/, int /*flags*/)
 {
 	struct media_t* m = (struct media_t*)param;
 	int r = m->transport->Send(false, packet, bytes);

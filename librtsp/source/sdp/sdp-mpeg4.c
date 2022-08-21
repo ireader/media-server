@@ -27,7 +27,7 @@ int sdp_mpeg4_es(uint8_t *data, int bytes, const char* proto, unsigned short por
 
 	// It is a hexadecimal representation of an octet string that 
 	// expresses the MPEG-4 Visual configuration information
-	n += base16_encode((char*)data + n, extra, extra_size);
+	n += (int)base16_encode((char*)data + n, extra, extra_size);
 
 	if (n < bytes)
 		data[n++] = '\n';

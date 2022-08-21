@@ -45,7 +45,7 @@ int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 				return -1; // don't have enough memory
 
 			if (k++ > 0 && n < bytes) data[n++] = ',';
-			n += base64_encode((char*)data + n, hevc.nalu[j].data, hevc.nalu[j].bytes);
+			n += (int)base64_encode((char*)data + n, hevc.nalu[j].data, hevc.nalu[j].bytes);
 		}
 	}
 

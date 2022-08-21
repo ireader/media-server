@@ -60,7 +60,7 @@ int H264FileSource::Play()
 		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_payload_encode_input(m_rtppacker, ptr, bytes, m_timestamp * 90 /*kHz*/);
+			rtp_payload_encode_input(m_rtppacker, ptr, (int)bytes, m_timestamp * 90 /*kHz*/);
 			m_rtp_clock += 40;
 			m_timestamp += 40;
 

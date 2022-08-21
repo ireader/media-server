@@ -34,7 +34,7 @@ int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 			return -1; // // don't have enough memory
 
 		if (i > 0 && n < bytes) data[n++] = ',';
-		n += base64_encode((char*)data + n, avc.sps[i].data, avc.sps[i].bytes);
+		n += (int)base64_encode((char*)data + n, avc.sps[i].data, avc.sps[i].bytes);
 	}
 
 	for (i = 0; i < avc.nb_pps; i++)
@@ -43,7 +43,7 @@ int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 			return -1; // // don't have enough memory
 
 		if (n < bytes) data[n++] = ',';
-		n += base64_encode((char*)data + n, avc.pps[i].data, avc.pps[i].bytes);
+		n += (int)base64_encode((char*)data + n, avc.pps[i].data, avc.pps[i].bytes);
 	}
 
 	if (n < bytes)

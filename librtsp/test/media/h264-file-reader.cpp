@@ -140,7 +140,7 @@ int H264FileReader::Init()
 
 			vframe_t frame;
 			frame.nalu = nalu;
-			frame.bytes = bytes;
+			frame.bytes = (long)bytes;
 			frame.time = 40 * count++;
 			frame.idr = 5 == nal_unit_type; // IDR-frame
 			m_videos.push_back(frame);

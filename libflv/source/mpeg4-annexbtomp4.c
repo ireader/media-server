@@ -325,9 +325,9 @@ int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 	{
 	case H264_NAL_SPS:
 		r = h264_sps_copy(avc, nalu, bytes);
-		if (1 == avc->nb_sps)
+		if (1 == r || 1 == avc->nb_sps)
 		{
-			// update profile/level once only
+			// update profile/level
 			avc->profile = nalu[1];
 			avc->compatibility = nalu[2];
 			avc->level = nalu[3];

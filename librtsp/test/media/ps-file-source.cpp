@@ -170,7 +170,7 @@ int PSFileSource::Packet(void* param, int /*avtype*/, void* pes, size_t bytes)
 {
 	PSFileSource* self = (PSFileSource*)param;
 	time64_t clock = time64_now();
-	return rtp_payload_encode_input(self->m_pspacker, pes, bytes, clock * 90 /*kHz*/);
+	return rtp_payload_encode_input(self->m_pspacker, pes, (int)bytes, (uint32_t)(clock * 90 /*kHz*/));
 }
 
 void* PSFileSource::RTPAlloc(void* param, int bytes)

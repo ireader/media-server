@@ -66,7 +66,7 @@ int rtp_sender_init_video(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
 
-    avp = avpayload_find_by_rtp(payload, encoding);
+    avp = avpayload_find_by_rtp((uint8_t)payload, encoding);
     if (avp < 0)
     {
         assert(0);
@@ -113,7 +113,7 @@ int rtp_sender_init_audio(struct rtp_sender_t* s, const char* proto, unsigned sh
     s->payload = payload;
     snprintf(s->encoding, sizeof(s->encoding)-1, "%s", encoding);
     
-    avp = avpayload_find_by_rtp(payload, encoding);
+    avp = avpayload_find_by_rtp((uint8_t)payload, encoding);
     if (avp < 0)
     {
         assert(0);
