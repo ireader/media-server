@@ -54,6 +54,7 @@ FFFileSource::FFFileSource(const char *file)
 	m_status = 0;
 	m_clock = 0;
 	m_count = 0;
+	m_dts = -1;
 	av_init_packet(&m_pkt);
 
 	if (0 == Open(file))

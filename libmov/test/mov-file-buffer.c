@@ -62,7 +62,7 @@ static int mov_file_cache_read(void* fp, void* data, uint64_t bytes)
 			else
 			{
 				file->off = 0;
-				file->len = fread(file->ptr, 1, (int)sizeof(file->ptr), file->fp);
+				file->len = (unsigned int)fread(file->ptr, 1, sizeof(file->ptr), file->fp);
 				if (file->len < 1)
 					return 0 != ferror(file->fp) ? ferror(file->fp) : -1 /*EOF*/;
 			}
@@ -71,7 +71,7 @@ static int mov_file_cache_read(void* fp, void* data, uint64_t bytes)
 		if (file->off < file->len)
 		{
 			unsigned int n = file->len - file->off;
-			n = n > bytes ? bytes : n;
+			n = n > bytes ? (unsigned int)bytes : n;
 			memcpy(p, file->ptr + file->off, n);
 			file->tell += n;
 			file->off += n;
@@ -92,7 +92,7 @@ static int mov_file_cache_write(void* fp, const void* data, uint64_t bytes)
 	if (file->off + bytes < sizeof(file->ptr))
 	{
 		memcpy(file->ptr + file->off, data, bytes);
-		file->off += bytes;
+		file->off += (unsigned int)bytes;
 		return 0;
 	}
 
@@ -132,7 +132,7 @@ static int mov_file_cache_seek(void* fp, int64_t offset)
 static int64_t mov_file_cache_tell(void* fp)
 {
 	struct mov_file_cache_t* file = (struct mov_file_cache_t*)fp;
-	if (ftell64(file->fp) != file->tell + (int)(file->len - file->off))
+	if (ftell64(file->fp) != (int64_t)(file->tell + (uint64_t)(int)(file->len - file->off)))
 		return -1;
 	return (int64_t)file->tell;
 	//return ftell64(file->fp);

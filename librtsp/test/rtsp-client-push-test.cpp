@@ -188,7 +188,11 @@ static int onsetup(void* param, int timeout, int64_t duration)
 		const struct rtsp_header_transport_t* transport;
 
 		char track[16] = { 0 };
+#if defined(_HAVE_FFMPEG_)
 		snprintf(track, sizeof(track) - 1, "track%d", i);
+#else
+		snprintf(track, sizeof(track) - 1, "track%d", i + 1); // mp4 track base 1
+#endif
 
 		transport = rtsp_client_get_media_transport(ctx->rtsp, i);
 		encoding = rtsp_client_get_media_encoding(ctx->rtsp, i);

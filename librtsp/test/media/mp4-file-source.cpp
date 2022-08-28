@@ -15,6 +15,7 @@ MP4FileSource::MP4FileSource(const char *file)
 	m_status = 0;
 	m_clock = 0;
 	m_count = 0;
+	m_dts = -1;
 
 	m_fp = fopen(file, "rb");
 	m_reader = mov_reader_create(mov_file_buffer(), m_fp);
@@ -250,9 +251,11 @@ int MP4FileSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) cons
 
 void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int /*width*/, int /*height*/, const void* extra, size_t bytes)
 {
+	assert(track > 0);
 	int n = 0;
 	MP4FileSource* self = (MP4FileSource*)param;
 	struct media_t* m = &self->m_media[self->m_count++];
+	memset(&m->rtp, 0, sizeof(m->rtp));
 	m->pkts = avpacket_queue_create(100);
 	m->track = track;
 	m->rtcp_clock = 0;
@@ -287,9 +290,11 @@ void MP4FileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int 
 
 void MP4FileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int channel_count, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
+	assert(track > 0);
 	int n = 0;
 	MP4FileSource* self = (MP4FileSource*)param;
 	struct media_t* m = &self->m_media[self->m_count++];
+	memset(&m->rtp, 0, sizeof(m->rtp));
 	m->pkts = avpacket_queue_create(100);
 	m->track = track;
 	m->rtcp_clock = 0;

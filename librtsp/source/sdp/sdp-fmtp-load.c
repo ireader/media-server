@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 /// @return >0-ok, other-error
 int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t* fmtp)
@@ -19,7 +20,7 @@ int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t*
 	memset(avc, 0, sizeof(*avc));
 	avc->nalu = 4;
 	if (3 != sscanf(fmtp->profile_level_id, "%2hhx%2hhx%2hhx", &avc->profile, &avc->compatibility, &avc->level))
-		return -1;
+		return -EINVAL;
 
 	off = 0;
 	p = fmtp->sprop_parameter_sets;
@@ -28,7 +29,7 @@ int mpeg4_avc_from_fmtp(struct mpeg4_avc_t* avc, const struct sdp_a_fmtp_h264_t*
 		next = strchr(p, ',');
 		n = next ? (int)(next - p) : (int)strlen(p);
 		if (off + (n + 3) / 4 * 3 > sizeof(avc->data))
-			return -1; // don't have enough space
+			return -ENOMEM; // don't have enough space
 
 		n = (int)base64_decode(avc->data + off, p, n);
 		t = avc->data[off] & 0x1f;
@@ -81,7 +82,7 @@ int mpeg4_hevc_from_fmtp(struct mpeg4_hevc_t* hevc, const struct sdp_a_fmtp_h265
 			next = strchr(p, ',');
 			n = next ? (int)(next - p) : (int)strlen(p);
 			if (off + (n + 3) / 4 * 3 > sizeof(hevc->data))
-				return -1; // don't have enough space
+				return -ENOMEM; // don't have enough space
 
 			n = (int)base64_decode(hevc->data + off, p, n);
 			hevc->nalu[hevc->numOfArrays].data = hevc->data + off;
@@ -105,7 +106,7 @@ int aac_from_sdp_latm_config(struct mpeg4_aac_t* aac, struct sdp_a_fmtp_mpeg4_t*
 
 	n = (int)strlen(fmtp->config);
 	if (n / 2 > sizeof(buf))
-		return -1;
+		return -E2BIG;
 
 	n = (int)base16_decode(buf, fmtp->config, n);
 	return mpeg4_aac_stream_mux_config_load(buf, n, aac);
@@ -119,7 +120,7 @@ int aac_from_sdp_mpeg4_config(struct mpeg4_aac_t* aac, struct sdp_a_fmtp_mpeg4_t
 
 	n = (int)strlen(fmtp->config);
 	if ((n + 3) / 4 * 3 > sizeof(buf))
-		return -1;
+		return -E2BIG;
 
 	n = (int)base64_decode(buf, fmtp->config, n);
 	return mpeg4_aac_audio_specific_config_load(buf, n, aac);
