@@ -73,6 +73,8 @@ uint64_t MP4FileReader::GetPosotion()
 
 uint64_t MP4FileReader::GetDuration()
 {
+	if (!m_reader)
+		return 0;
 	return mov_reader_getduration(m_reader);
 }
 

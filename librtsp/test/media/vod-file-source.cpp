@@ -27,6 +27,8 @@ int VodFileSource::Worker()
 {
 	int r = 0;
 	struct avpacket_t* pkt = NULL;
+	if (!m_reader)
+		return -1;
 
 	do 
 	{
