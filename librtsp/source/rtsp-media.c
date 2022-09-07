@@ -107,15 +107,17 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		if (0 == strcmp("rtpmap", name))
 		{
 			int rate = 0;
-			char encoding[sizeof(media->avformats[i].encoding)];
+			char channel[64];
+			char encoding[16 + sizeof(media->avformats[i].encoding)];
 			if (strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
-				sdp_a_rtpmap(value, &payload, encoding, &rate, NULL);
+				sdp_a_rtpmap(value, &payload, encoding, &rate, channel);
 				for (i = 0; i < media->avformat_count; i++)
 				{
 					if (media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
+						media->avformats[i].channel = atoi(channel);
 						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
 						break;
 					}
@@ -249,7 +251,7 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 		}
 		else if (0 == strcmp("ssrc", name))
 		{
-			media->ssrc.ssrc = atoi(value);
+			media->ssrc.ssrc = (uint32_t)strtoul(value, NULL, 10);
 			// TODO: ssrc attribute
 		}
 		else if (0 == strcmp("ssrc-group", name))
@@ -403,15 +405,27 @@ int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
 	}
 	n += snprintf(line + n, bytes - n, "\n");
 
-	for (i = 0; i < m->avformat_count; i++)
+	for (i = 0; i < m->avformat_count && n >= 0 && n < bytes; i++)
 	{
 		if (!m->avformats[i].encoding[0])
 			continue;
 
 		if (SDP_M_MEDIA_VIDEO == sdp_option_media_from(m->media))
+		{
 			n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate ? m->avformats[i].rate : 90000);
+			if(n >= 0 && n < bytes && m->avformats[i].fmtp && m->avformats[i].fmtp[0])
+				n += snprintf(line + n, bytes - n, "a=fmtp:%s\n", m->avformats[i].fmtp);
+		}
 		else if (SDP_M_MEDIA_AUDIO == sdp_option_media_from(m->media))
-			n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate, m->avformats[i].channel);
+		{
+			if(m->avformats[i].channel > 0)
+				n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate, m->avformats[i].channel);
+			else
+				n += snprintf(line + n, bytes - n, "a=rtpmap:%d %s/%d\n", m->avformats[i].fmt, m->avformats[i].encoding, m->avformats[i].rate);
+
+			if (n >= 0 && n < bytes && m->avformats[i].fmtp && m->avformats[i].fmtp[0])
+				n += snprintf(line + n, bytes - n, "a=fmtp:%s\n", m->avformats[i].fmtp);
+		}
 	}
 
 	//for (int j = 0; j < 128 && j < 8 * sizeof(m->payloads) / sizeof(m->payloads[0]); j++)
@@ -437,5 +451,5 @@ int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
 		n += snprintf(line + n, bytes - n, "a=ssrc:%u\n", m->ssrc.ssrc);
 	}
 
-	return n;
+	return n > 0 && n < bytes ? n : -1;
 }

@@ -66,6 +66,12 @@ int rtmp_server_send_audio(rtmp_server_t* rtmp, const void* data, size_t bytes, 
 int rtmp_server_send_video(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 int rtmp_server_send_script(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 
+/// [OPTIONAL] call on between onplay and rtmp_server_send_audio/video/script
+/// @param[in] code 0-ok, other-error
+/// @param[in] msg error message
+/// @return 0-ok, other-error
+int rtmp_server_start(rtmp_server_t* rtmp, int code, const char* msg);
+
 #ifdef __cplusplus
 }
 #endif

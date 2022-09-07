@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 #define MAX_PES_HEADER	1024	// pack_header + system_header + psm
 #define MAX_PES_PACKET	0xFFFF	// 64k pes data
@@ -61,6 +62,8 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
     stream->pts = pts;
     stream->dts = dts;
 
+	// Add PSM for IDR frame
+	ps->psm_period = ((flags & MPEG_FLAG_IDR_FRAME) && mpeg_stream_type_video(stream->codecid)) ? 0 : ps->psm_period;
     ps->h264_h265_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
 
 	// TODO: 
@@ -70,14 +73,14 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 	// alloc once (include Multi-PES packet)
 	sz = bytes + MAX_PES_HEADER + (bytes/MAX_PES_PACKET+1) * 64; // 64 = 0x000001 + stream_id + PES_packet_length + other
 	packet = ps->func.alloc(ps->param, sz);
-	if(!packet) return ENOMEM;
+	if(!packet) return -ENOMEM;
 
 	// write pack_header(p74)
 	// 2.7.1 Frequency of coding the system clock reference
 	// http://www.bretl.com/mpeghtml/SCR.HTM
 	//the maximum allowed interval between SCRs is 700ms 
 	//ps->pack.system_clock_reference_base = (dts-3600) % (((int64_t)1)<<33);
-	ps->pack.system_clock_reference_base = dts - 3600;
+	ps->pack.system_clock_reference_base = dts >= 3600 ? (dts - 3600) : 0;
 	ps->pack.system_clock_reference_extension = 0;
 	ps->pack.program_mux_rate = 6106;
 	i += pack_header_write(&ps->pack, packet + i);
@@ -92,8 +95,13 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 #endif
 
 	// write program_stream_map(p79)
-	if(0 == (ps->psm_period % 30))
+	if (0 == (ps->psm_period % 30))
+	{
+#if defined(MPEG_CLOCK_EXTENSION_DESCRIPTOR)
+		ps->psm.clock = time() * 1000; // todo: gettimeofday
+#endif
 		i += psm_write(&ps->psm, packet + i);
+	}
 
 	// check packet size
 	assert(i < MAX_PES_HEADER);

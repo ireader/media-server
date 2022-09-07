@@ -55,13 +55,13 @@ int flv_tag_header_read(struct flv_tag_header_t* tag, const uint8_t* buf, size_t
 	assert(FLV_TYPE_VIDEO == tag->type || FLV_TYPE_AUDIO == tag->type || FLV_TYPE_SCRIPT == tag->type);
 
 	// DataSize
-	tag->size = (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	tag->size = ((uint32_t)buf[1] << 16) | ((uint32_t)buf[2] << 8) | buf[3];
 
 	// TimestampExtended | Timestamp
-	tag->timestamp = (buf[4] << 16) | (buf[5] << 8) | buf[6] | (buf[7] << 24);
+	tag->timestamp = ((uint32_t)buf[4] << 16) | ((uint32_t)buf[5] << 8) | buf[6] | ((uint32_t)buf[7] << 24);
 
 	// StreamID Always 0
-	tag->streamId = (buf[8] << 16) | (buf[9] << 8) | buf[10];
+	tag->streamId = ((uint32_t)buf[8] << 16) | ((uint32_t)buf[9] << 8) | buf[10];
 	//assert(0 == tag->streamId);
 
 	return FLV_TAG_HEADER_SIZE;
@@ -104,7 +104,7 @@ int flv_video_tag_header_read(struct flv_video_tag_header_t* video, const uint8_
 			return -1;
 
 		video->avpacket = buf[1]; // AVCPacketType
-		video->cts = (buf[2] << 16) | (buf[3] << 8) | buf[4];
+		video->cts = ((uint32_t)buf[2] << 16) | ((uint32_t)buf[3] << 8) | buf[4];
 		//if (video->cts >= (1 << 23)) video->cts -= (1 << 24);
 		video->cts = (video->cts + 0xFF800000) ^ 0xFF800000; // signed 24-integer
 		assert(FLV_SEQUENCE_HEADER == video->avpacket || FLV_AVPACKET == video->avpacket || FLV_END_OF_SEQUENCE == video->avpacket);

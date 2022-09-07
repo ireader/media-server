@@ -89,7 +89,7 @@ int PCMFileSource::Seek(int64_t pos)
 	if (!m_fp) return -1;
 	m_pos = pos;
 	m_rtp_clock = 0;
-	return fseek(m_fp, pos * 8, SEEK_CUR);
+	return fseek(m_fp, (long)pos * 8, SEEK_CUR);
 }
 
 int PCMFileSource::SetSpeed(double speed)

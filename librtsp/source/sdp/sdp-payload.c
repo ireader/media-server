@@ -1,6 +1,7 @@
 #include "sdp-payload.h"
 #include "rtp-profile.h"
 #include <assert.h>
+#include <errno.h>
 
 int sdp_payload_video(uint8_t* data, int bytes, int rtp, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
@@ -33,7 +34,7 @@ int sdp_payload_video(uint8_t* data, int bytes, int rtp, const char* proto, unsi
 
     default:
         assert(0);
-        return -1;
+        return -EPROTONOSUPPORT;
     }
 }
 
@@ -58,6 +59,6 @@ int sdp_payload_audio(uint8_t* data, int bytes, int rtp, const char* proto, unsi
 
     default:
         assert(0);
-        return -1;
+        return -EPROTONOSUPPORT;
     }
 }

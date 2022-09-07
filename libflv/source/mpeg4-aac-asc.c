@@ -334,7 +334,7 @@ SpatialSpecificConfig()
 */
 static int SpatialSpecificConfig(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
 {
-
+    return 0;
 }
 
 static inline uint8_t mpeg4_aac_get_audio_object_type(struct mpeg4_bits_t* bits)
@@ -537,8 +537,8 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 	mpeg4_bits_init(&adts, (uint8_t*)data + 7, bytes - 7);
 	mpeg4_bits_write_uint8(&adts, ID_PCE, 3);
 	mpeg4_aac_pce_load(&pce, &src, &adts);
-	assert(src.channels == aac->channels);
-	return mpeg4_bits_error(&pce) ? 0 : (int)((7 + (adts.bits+7) / 8));
+	assert(src.channels == aac->channels && (adts.bits + 7) / 8 <= bytes);
+	return mpeg4_bits_error(&pce) ? 0 : (int)((adts.bits+7) / 8);
 }
 
 static size_t mpeg4_aac_stream_mux_config_load3(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)

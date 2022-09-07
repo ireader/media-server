@@ -62,8 +62,7 @@ static int rtsp_client_media_play(struct rtsp_client_t *rtsp, int i)
 	assert(rtsp->media[i].uri[0] && rtsp->session[i].session[0]);
 	r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
-	assert(r > 0 && r < sizeof(rtsp->req));
-	return r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r) ? 0 : -1;
+	return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r)) ? 0 : -1;
 }
 
 int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *speed)
@@ -73,10 +72,9 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;
     rtsp->speed[0] = rtsp->range[0] = '\0';
-    
-    r = speed ? snprintf(rtsp->speed, sizeof(rtsp->speed), "Speed: %f\r\n", *speed) : 0;
-    r = npt ? snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt/1000, *npt%1000) : 0;
-	if (r < 0 || r >= sizeof(rtsp->range))
+
+	if ( (speed && snprintf(rtsp->speed, sizeof(rtsp->speed), "Speed: %.2f\r\n", *speed) >= sizeof(rtsp->speed))
+		|| (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)) )
 		return -1;
 	
 	if(rtsp->aggregate)
@@ -85,8 +83,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 		assert(rtsp->aggregate_uri[0]);
 		r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
 		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
-		assert(r > 0 && r < sizeof(rtsp->req));
-		return r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r) ? 0 : -1;
+		return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r)) ? 0 : -1;
 	}
 	else
 	{
@@ -120,9 +117,9 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 
 	if (prange && 0 == rtsp_header_range(prange, &range))
 	{
-		assert(range.from_value == RTSP_RANGE_TIME_NORMAL);
+		assert(range.from_value == RTSP_RANGE_TIME_NORMAL || range.from_value == RTSP_RANGE_TIME_NOW);
 		assert(range.to_value != RTSP_RANGE_TIME_NOW);
-		npt0 = range.from;
+		npt0 = range.from_value == RTSP_RANGE_TIME_NOW ? -1 : range.from;
 		npt1 = range.to_value == RTSP_RANGE_TIME_NOVALUE ? -1 : range.to;
 	}
 

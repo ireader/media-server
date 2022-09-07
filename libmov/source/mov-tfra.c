@@ -26,7 +26,7 @@ int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
 	if (number_of_entry > 0)
 	{
 		void* p = realloc(track->frags, sizeof(struct mov_fragment_t) * number_of_entry);
-		if (!p) return ENOMEM;
+		if (!p) return -ENOMEM;
 		track->frags = p;
 	}	
 	track->frag_count = number_of_entry;

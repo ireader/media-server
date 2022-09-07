@@ -64,6 +64,7 @@ struct rtmp_client_t
 	uint32_t stream_id; // createStream/deleteStream
 	char stream_name[256]; // Play/Publishing stream name, flv:sample, mp3:sample, H.264/AAC: mp4:sample.m4v
 	enum rtmp_state_t state;
+	uint32_t recv_bytes[2]; // for rtmp_acknowledgement
 
 	struct rtmp_client_handler_t handler;
 	void* param;
@@ -174,6 +175,21 @@ static int rtmp_client_send_set_chunk_size(struct rtmp_client_t* ctx, size_t siz
 	n = rtmp_set_chunk_size(ctx->payload, sizeof(ctx->payload), (uint32_t)size);
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	return n == r ? 0 : r;
+}
+
+/// 5.4.3. Acknowledgement (3)
+static int rtmp_client_send_acknowledgement(struct rtmp_client_t* ctx, size_t size)
+{
+	int n, r;
+	ctx->recv_bytes[0] += (uint32_t)size;
+	if (ctx->rtmp.window_size && ctx->recv_bytes[0] - ctx->recv_bytes[1] > ctx->rtmp.window_size)
+	{
+		n = rtmp_acknowledgement(ctx->payload, sizeof(ctx->payload), ctx->recv_bytes[0]);
+		r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
+		ctx->recv_bytes[1] = ctx->recv_bytes[0];
+		return n == r ? 0 : r;
+	}
+	return 0;
 }
 
 // Window Acknowledgement Size (5)
@@ -340,7 +356,7 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	if (!ctx) return NULL;
 
 	memcpy(&ctx->handler, handler, sizeof(ctx->handler));
-	snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", playpath);
+	snprintf(ctx->stream_name, sizeof(ctx->stream_name) - 1, "%s", playpath);
 	ctx->stream_id = 0;
 	ctx->param = param;
 	ctx->state = RTMP_STATE_UNINIT;
@@ -358,18 +374,18 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->rtmp.onvideo = rtmp_client_onvideo;
 	ctx->rtmp.onabort = rtmp_client_onabort;
 	ctx->rtmp.onscript = rtmp_client_onscript;
-	ctx->rtmp.u.client.onconnect = rtmp_client_onconnect;
-	ctx->rtmp.u.client.oncreate_stream = rtmp_client_oncreate_stream;
-	ctx->rtmp.u.client.onnotify = rtmp_client_onnotify;
-	ctx->rtmp.u.client.onping = rtmp_client_onping;
-    ctx->rtmp.u.client.oneof = rtmp_client_oneof;
-	ctx->rtmp.u.client.onbandwidth = rtmp_client_onbandwidth;
+	ctx->rtmp.client.onconnect = rtmp_client_onconnect;
+	ctx->rtmp.client.oncreate_stream = rtmp_client_oncreate_stream;
+	ctx->rtmp.client.onnotify = rtmp_client_onnotify;
+	ctx->rtmp.client.onping = rtmp_client_onping;
+    ctx->rtmp.client.oneof = rtmp_client_oneof;
+	ctx->rtmp.client.onbandwidth = rtmp_client_onbandwidth;
 
-	snprintf(ctx->connect.app, sizeof(ctx->connect.app), "%s", appname);
-	if (tcurl) snprintf(ctx->connect.tcUrl, sizeof(ctx->connect.tcUrl), "%s", tcurl);
-	//snprintf(ctx->connect.swfUrl, sizeof(ctx->connect.swfUrl), "%s", tcurl ? tcurl : url);
-	//snprintf(ctx->connect.pageUrl, sizeof(ctx->connect.pageUrl), "%s", tcurl ? tcurl : url);
-	snprintf(ctx->connect.flashver, sizeof(ctx->connect.flashver), "%s", FLASHVER);
+	snprintf(ctx->connect.app, sizeof(ctx->connect.app) - 1, "%s", appname);
+	if (tcurl) snprintf(ctx->connect.tcUrl, sizeof(ctx->connect.tcUrl) - 1, "%s", tcurl);
+	//snprintf(ctx->connect.swfUrl, sizeof(ctx->connect.swfUrl) - 1, "%s", tcurl ? tcurl : url);
+	//snprintf(ctx->connect.pageUrl, sizeof(ctx->connect.pageUrl) - 1, "%s", tcurl ? tcurl : url);
+	snprintf(ctx->connect.flashver, sizeof(ctx->connect.flashver) - 1, "%s", FLASHVER);
 	ctx->connect.fpad = 0;
 	ctx->connect.capabilities = 15;
 	ctx->connect.audioCodecs = 3191; //SUPPORT_SND_AAC;
@@ -469,6 +485,7 @@ int rtmp_client_input(struct rtmp_client_t* ctx, const void* data, size_t bytes)
 			break;
 
 		default:
+			rtmp_client_send_acknowledgement(ctx, bytes);
 			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}

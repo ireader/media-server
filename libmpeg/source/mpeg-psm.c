@@ -12,7 +12,7 @@
 size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 {
 	size_t i, j, k;
-	uint8_t current_next_indicator;
+	//uint8_t current_next_indicator;
 	uint8_t single_extension_stream_flag;
 	uint16_t program_stream_map_length;
 	uint16_t program_stream_info_length;
@@ -26,7 +26,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 		return 0; // invalid data length
 
 	//assert((0x20 & data[6]) == 0x00); // 'xx0xxxxx'
-	current_next_indicator = (data[6] >> 7) & 0x01;
+	//current_next_indicator = (data[6] >> 7) & 0x01;
 	single_extension_stream_flag = (data[6] >> 6) & 0x01;
 	psm->ver = data[6] & 0x1F;
 	//assert(data[7] == 0x01); // '00000001'
@@ -37,6 +37,11 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 		return 0; // TODO: error
 
 	// TODO: parse descriptor
+	//for (i = 10; i + 2 <= 10 + program_stream_info_length;)
+	//{
+	//	// descriptor()
+	//	i += mpeg_elment_descriptor(data + i, 10 + program_stream_info_length - i);
+	//}
 
 	// program element stream
 	i = 10 + program_stream_info_length;
@@ -87,6 +92,7 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	// Table 2-41 - Program stream map(p79)
 
 	size_t i,j;
+	uint16_t extlen;
 	unsigned int crc;
 
 	nbo_w32(data, 0x00000100);
@@ -105,13 +111,19 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	// marker_bit '1'
 	data[7] = 0x01;
 
+	extlen = 0;
+	extlen += (uint16_t)service_extension_descriptor_write(data + 10 + extlen, 32);
+#if defined(MPEG_CLOCK_EXTENSION_DESCRIPTOR)
+	extlen += (uint16_t)clock_extension_descriptor_write(data + 10 + extlen, 32, psm->clock);
+#endif
+
 	// program_stream_info_length 16-bits
-	nbo_w16(data+8, 0); // program_stream_info_length = 0
+	nbo_w16(data + 8, extlen); // program_stream_info_length = 0
 
 	// elementary_stream_map_length 16-bits
-	//nbo_w16(data+10, psm->stream_count*4);
+	//nbo_w16(data+10+extlen, psm->stream_count*4);
 
-	j = 12;
+	j = 12 + extlen;
 	for(i = 0; i < psm->stream_count; i++)
 	{
 		assert(PES_SID_EXTEND != psm->streams[i].sid);
@@ -129,9 +141,9 @@ size_t psm_write(const struct psm_t *psm, uint8_t *data)
 	}
 
 	// elementary_stream_map_length 16-bits
-	nbo_w16(data+10, (uint16_t)(j-12));
+	nbo_w16(data + 10 + extlen, (uint16_t)(j - 12 - extlen));
 	// program_stream_map_length:16
-	nbo_w16(data+4, (uint16_t)(j-6+4)); // 4-bytes crc32
+	nbo_w16(data + 4, (uint16_t)(j-6+4)); // 4-bytes crc32
 
 	// crc32
 	crc = mpeg_crc32(0xffffffff, data, (uint32_t)j);

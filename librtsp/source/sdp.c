@@ -299,7 +299,7 @@ static int sdp_parse_version(struct sdp_t* sdp)
 static int sdp_parse_origin(struct sdp_t* sdp)
 {
 	char* v[6];
-	const char** vv[6];
+	char** vv[6];
 	int i, j, n[6];
 	struct sdp_origin *o;
 	static const char* default_username = "-";
@@ -320,7 +320,7 @@ static int sdp_parse_origin(struct sdp_t* sdp)
 	if (i < 5)
 		return 0;
 
-	o->username = default_username; // default value
+	o->username = (char*)default_username; // default value
 	vv[0] = &o->username;
 	vv[1] = &o->session;
 	vv[2] = &o->session_version;
@@ -425,7 +425,7 @@ static int sdp_parse_email(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_email*)realloc(sdp->e.ptr, (sdp->e.capacity+8)*sizeof(struct sdp_email));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			sdp->e.ptr = ptr;
 			sdp->e.capacity += 8;
@@ -462,7 +462,7 @@ static int sdp_parse_phone(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_phone*)realloc(sdp->p.ptr, (sdp->p.capacity+8)*sizeof(struct sdp_phone));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			sdp->p.ptr = ptr;
 			sdp->p.capacity += 8;
@@ -514,7 +514,7 @@ static int sdp_parse_connection(struct sdp_t* sdp)
 				void* ptr;
 				ptr = (struct sdp_connection*)realloc(m->c.ptr, (m->c.capacity+8)*sizeof(struct sdp_connection));
 				if(!ptr)
-					return ENOMEM;
+					return -ENOMEM;
 
 				m->c.ptr = ptr;
 				m->c.capacity += 8;
@@ -589,7 +589,7 @@ static int sdp_parse_bandwidth(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_bandwidth*)realloc(bs->ptr, (bs->capacity+8)*sizeof(struct sdp_bandwidth));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			bs->ptr = ptr;
 			bs->capacity += 8;
@@ -650,7 +650,7 @@ static int sdp_parse_timing(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_timing*)realloc(sdp->t.ptr, (sdp->t.capacity+8)*sizeof(struct sdp_timing));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			sdp->t.ptr = ptr;
 			sdp->t.capacity += 8;
@@ -694,7 +694,7 @@ static int sdp_append_timing_repeat_offset(struct sdp_repeat *r, char* offset)
 			void* ptr;
 			ptr = (char**)realloc(r->offsets.ptr, (r->offsets.capacity+8)*sizeof(char*));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			r->offsets.ptr = ptr;
 			r->offsets.capacity += 8;
@@ -736,7 +736,7 @@ static int sdp_parse_repeat(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_repeat*)realloc(t->r.ptr, (t->r.capacity+8)*sizeof(struct sdp_repeat));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			t->r.ptr = ptr;
 			t->r.capacity += 8;
@@ -828,7 +828,7 @@ static int sdp_parse_timezone(struct sdp_t* sdp)
 				void* ptr;
 				ptr = (struct sdp_timezone*)realloc(t->z.ptr, (t->z.capacity+8)*sizeof(struct sdp_timezone));
 				if(!ptr)
-					return ENOMEM;
+					return -ENOMEM;
 
 				t->z.ptr = ptr;
 				t->z.capacity += 8;
@@ -939,7 +939,7 @@ static int sdp_parse_attribute(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_attribute*)realloc(as->ptr, (as->capacity+8)*sizeof(struct sdp_attribute));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			as->ptr = ptr;
 			as->capacity += 8;
@@ -986,7 +986,7 @@ static int sdp_append_media_format(struct sdp_media *m, char* fmt)
 			void* ptr;
 			ptr = (char**)realloc(m->fmt.ptr, (m->fmt.capacity+8)*sizeof(char*));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			m->fmt.ptr = ptr;
 			m->fmt.capacity += 8;
@@ -1025,7 +1025,7 @@ static int sdp_parse_media(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_media*)realloc(sdp->m.ptr, (sdp->m.capacity+8)*sizeof(struct sdp_media));
 			if(!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			sdp->m.ptr = ptr;
 			sdp->m.capacity += 8;
@@ -1056,7 +1056,7 @@ static int sdp_parse_media(struct sdp_t* sdp)
 	fmt = sdp->raw + sdp->offset;
 	n[3] = sdp_token_word(sdp, " \t\r\n");
 
-	while(' ' == fmt[n[3]] || '\t' == fmt[n[3]])
+	while (' ' == fmt[n[3]] || '\t' == fmt[n[3]])
 	{
 		fmt[n[3]] = '\0';
 		ret = sdp_append_media_format(m, fmt);
@@ -1111,7 +1111,7 @@ static int sdp_parse_gb28181_ssrc(struct sdp_t* sdp)
 			void* ptr;
 			ptr = (struct sdp_attribute*)realloc(as->ptr, (as->capacity + 8) * sizeof(struct sdp_attribute));
 			if (!ptr)
-				return ENOMEM;
+				return -ENOMEM;
 
 			as->ptr = ptr;
 			as->capacity += 8;

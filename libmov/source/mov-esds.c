@@ -156,7 +156,7 @@ static int mp4_read_decoder_specific_info(struct mov_t* mov, int len)
 	if (entry->extra_data_size < len)
 	{
 		void* p = realloc(entry->extra_data, len);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		entry->extra_data = p;
 	}
 

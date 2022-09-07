@@ -3,12 +3,12 @@
 // 5.2.3 Service Description Table (SDT) (p27)
 
 #include "mpeg-ts-proto.h"
+#include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include <string.h>
 #include <assert.h>
 
-#define SERVICE_NAME    "encoder"
-#define SERVICE_VALUE   "ireader/media-server"
+#define SERVICE_ENCODER "encoder"
 
 /*
 service_description_section(){ 
@@ -44,14 +44,17 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 {
     struct pmt_t* pmt;
     uint16_t sid;
-    uint32_t i, k, n;
+    uint32_t i, k, n, section_length;
     uint8_t tagid, taglen, tagn1, tagn2;
     
-    uint32_t table_id = data[0];
+    if (bytes < 11)
+        return 0;
+//    printf("SDT: %0x %0x %0x %0x %0x %0x %0x %0x, %0x, %0x, %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6],(unsigned int)data[7],(unsigned int)data[8],(unsigned int)data[9],(unsigned int)data[10]);
+//    uint32_t table_id = data[0];
 //    uint32_t section_syntax_indicator = (data[1] >> 7) & 0x01;
 //    uint32_t zero = (data[1] >> 6) & 0x01;
 //    uint32_t reserved = (data[1] >> 4) & 0x03;
-    uint32_t section_length = ((data[1] & 0x0F) << 8) | data[2];
+    section_length = ((data[1] & 0x0F) << 8) | data[2];
 //    uint32_t transport_stream_id = (data[3] << 8) | data[4];
 //    uint32_t reserved2 = (data[5] >> 6) & 0x03;
 //    uint32_t version_number = (data[5] >> 1) & 0x1F;
@@ -61,15 +64,13 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 //    uint32_t original_network_id = (data[8] << 8) | data[9];
 //    uint32_t reserved4 = data[10];
     
-//    printf("SDT: %0x %0x %0x %0x %0x %0x %0x %0x, %0x, %0x, %0x\n", (unsigned int)data[0], (unsigned int)data[1], (unsigned int)data[2], (unsigned int)data[3], (unsigned int)data[4], (unsigned int)data[5], (unsigned int)data[6],(unsigned int)data[7],(unsigned int)data[8],(unsigned int)data[9],(unsigned int)data[10]);
-    
-    if(PAT_TID_SDT != table_id || section_length + 3 > bytes)
+    if(PAT_TID_SDT != data[0] || section_length + 3 > bytes)
         return 0;
     
     // TODO: version_number change, reload SDT
     
     assert(bytes >= section_length + 3); // PMT = section_length + 3
-    for (i = 11; i + 5 <= section_length + 3 - 4/*CRC32*/; i += 5 + n) // 9: follow section_length item
+    for (i = 11; i + 5 <= section_length + 3 - 4/*CRC32*/ && section_length + 3 <= bytes; i += 5 + n) // 9: follow section_length item
     {
         sid = (data[i] << 8) | data[i + 1];
         n = ((data[i+3] & 0x0F) << 8) | data[i+4];
@@ -108,17 +109,17 @@ size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
     //assert(j+4 == bytes);
     //crc = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | data[j+3];
 //    assert(0 == mpeg_crc32(0xffffffff, data, section_length+3));
-    return 0;
+    return section_length + 3;
 }
 
 size_t sdt_write(const struct pat_t* pat, uint8_t* data)
 {
-    uint32_t i, j;
-    uint32_t len, s1, n1, v1;
+    size_t i, j;
+    size_t len, s1, n1, v1;
     uint32_t crc = 0;
 
-    n1 = strlen(SERVICE_NAME);
-    v1 = strlen(SERVICE_VALUE);
+    n1 = strlen(SERVICE_ENCODER);
+    v1 = strlen(SERVICE_NAME);
     s1 = 3 /*tag*/ + 1 + n1 + 1 + v1;
     len = 3 /*nid*/ + s1 + 5 /*service head*/ + 5 + 4; // 5 bytes remain header and 4 bytes crc32
 
@@ -160,12 +161,12 @@ size_t sdt_write(const struct pat_t* pat, uint8_t* data)
         nbo_w16(data + j + 3, (uint16_t)(0x8000 | s1));
 
         data[j + 5] = 0x48; // tag id
-        data[j + 6] = 3 + n1 + v1; // tag len
+        data[j + 6] = (uint8_t)(3 + n1 + v1); // tag len
         data[j + 7] = 1; // service type
-        data[j + 8] = n1;
+        data[j + 8] = (uint8_t)n1;
         memcpy(data + j + 9, SERVICE_NAME, n1);
-        data[j + 9 + n1] = v1;
-        memcpy(data + j + 10 + n1, SERVICE_VALUE, v1);
+        data[j + 9 + n1] = (uint8_t)v1;
+        memcpy(data + j + 10 + n1, SERVICE_NAME, v1);
         j += 10 + v1 + n1;
     }
 

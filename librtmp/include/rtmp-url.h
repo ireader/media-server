@@ -35,7 +35,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
     
     n = 0;
     memset(u, 0, sizeof(*u));
-    u->port = 0 == uri->port ? PORT : uri->port;
+    u->port = (u_short)(0 == uri->port ? PORT : uri->port);
     
     u->host = u->__ptr + n;
     r = snprintf(u->host, sizeof(u->__ptr) - n, "%s", uri->host);

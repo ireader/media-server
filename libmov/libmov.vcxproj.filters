@@ -45,6 +45,9 @@
     <ClInclude Include="include\mov-udta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mp4-writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\mov-reader.c">

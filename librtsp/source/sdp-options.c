@@ -42,6 +42,8 @@ static struct sdp_attr_value_t s_protos[] = {
 	{ SDP_M_PROTO_UDP,					"udp"},
 	{ SDP_M_PROTO_SCTP_DTLS,			"UDP/DTLS/SCTP"},
 	{ SDP_M_PROTO_SCTP_DTLS_TCP,		"TCP/DTLS/SCTP"},
+	{ SDP_M_PROTO_TCP,					"TCP"},
+	{ SDP_M_PROTO_TLS_TCP,				"TCP/TLS"},
 
 	// other
 	{ SDP_M_PROTO_RTP_AVP,				"RTP/AVP/UDP"},

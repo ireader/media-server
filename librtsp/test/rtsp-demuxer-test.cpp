@@ -71,10 +71,12 @@ void rstp_demuxer_test(int payload, const char* encoding, uint16_t seq, uint32_t
         assert(size < sizeof(buffer));
         assert(size == (int)fread(buffer, 1, size, fp));
 #if USE_RTP_DEMUXER
-        assert(rtp_demuxer_input(ctx.demuxer, buffer, size) >= 0);
+        int r = rtp_demuxer_input(ctx.demuxer, buffer, size);
 #else
-        assert(rtsp_demuxer_input(ctx.demuxer, buffer, size) >= 0);
+        int r = rtsp_demuxer_input(ctx.demuxer, buffer, size);
+        
 #endif
+        assert(r >= 0);
         
     }
 

@@ -74,7 +74,7 @@ static int mov_index_build(struct mov_track_t* track)
 	}
 
 	p = realloc(stbl->stss, sizeof(stbl->stss[0]) * stbl->stss_count);
-	if (!p) return ENOMEM;
+	if (!p) return -ENOMEM;
 	stbl->stss = p;
 
 	for (j = i = 0; i < track->sample_count && j < stbl->stss_count; i++)
@@ -370,7 +370,7 @@ static int mov_reader_init(struct mov_reader_t* reader)
 
 	mov = &reader->mov;
 	r = mov_reader_root(mov);
-//	if (0 != r) return r;  // ignore file read error(for streaming file)
+	if (0 != r) { /*return r;*/ }  // ignore file read error(for streaming file)
 
 	for (i = 0; i < mov->track_count; i++)
 	{
@@ -423,9 +423,9 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	int i;
 	for (i = 0; i < reader->mov.track_count; i++)
-        mov_free_track(reader->mov.tracks + i);
-    if (reader->mov.tracks)
-        free(reader->mov.tracks);
+		mov_free_track(reader->mov.tracks + i);
+	if (reader->mov.tracks)
+		free(reader->mov.tracks);
 	free(reader);
 }
 
@@ -479,7 +479,7 @@ FMP4_NEXT_FRAGMENT:
 	assert(sample->sample_description_index > 0);
 	ptr = onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	if(!ptr)
-		return ENOMEM;
+		return -ENOMEM;
 
 	mov_buffer_seek(&reader->mov.io, sample->offset);
 	mov_buffer_read(&reader->mov.io, ptr, sample->bytes);

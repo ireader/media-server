@@ -47,8 +47,7 @@
 */
 
 #include "sip-uas-transaction.h"
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#include "cpm/param.h"
 
 static void sip_uas_transaction_onretransmission(void* usrptr);
 
@@ -273,7 +272,7 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
 
 static void sip_uas_transaction_onretransmission(void* usrptr)
 {
-	int r;
+	int r, timeout;
 	struct sip_uas_transaction_t* t;
 	t = (struct sip_uas_transaction_t*)usrptr;
 	locker_lock(&t->locker);
@@ -283,14 +282,15 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 	{
 		assert(SIP_UAS_TRANSACTION_COMPLETED == t->status || SIP_UAS_TRANSACTION_ACCEPTED == t->status);
 		r = sip_uas_transaction_dosend(t, t->initparam); // fixme
-		//if (0 != r)
-		//{
-		//	// 8.1. 3.1 Transaction Layer Errors (p42)
-		//	r = t->handler.onack(t->initparam, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
-		//}
+		if (0 != r)
+		{
+			// 8.1. 3.1 Transaction Layer Errors (p42)
+			//r = t->handler.onack(t->initparam, t, t->session, t->dialog, 503/*Service Unavailable*/, NULL, 0);
+		}
 
 		assert(!t->reliable);
-		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, T1 * (1 << t->retries++)), sip_uas_transaction_onretransmission);
+		timeout = T1 * (1 << t->retries++);
+		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uas_transaction_onretransmission);
 	}
 
 	locker_unlock(&t->locker);

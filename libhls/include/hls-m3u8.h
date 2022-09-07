@@ -24,6 +24,12 @@ int hls_m3u8_set_x_map(hls_m3u8_t* m3u8, const char* name);
 ///@return 0-ok, other-error
 int hls_m3u8_add(hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t duration, int discontinuity);
 
+/// EXT-X-BYTERANGE(version 4 and above)
+/// @param[in] offset offset position in file
+/// @param[in] bytes length (offset, offset + bytes)
+///@return 0-ok, other-error
+int hls_m3u8_add_with_offset(hls_m3u8_t* m3u8, const char* name, int64_t pts, int64_t duration, int discontinuity, int64_t offset, int64_t bytes);
+
 ///@return media segment count
 size_t hls_m3u8_count(hls_m3u8_t* m3u8);
 

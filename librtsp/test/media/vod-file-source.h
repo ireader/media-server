@@ -9,6 +9,13 @@
 class VodFileSource
 {
 public:
+	struct IListener
+	{
+		virtual ~IListener() {}
+
+		virtual int OnPacket(struct avpacket_t* pkt) = 0;
+	};
+
 	struct IFileReader
 	{
 		virtual ~IFileReader() {}
@@ -24,7 +31,7 @@ public:
 	};
 
 public:
-	VodFileSource(std::shared_ptr<IFileReader> reader, std::shared_ptr<AVPacketQueue> pkts);
+	VodFileSource(std::shared_ptr<IFileReader> reader, std::shared_ptr<IListener> listener);
 	~VodFileSource();
 
 public:
@@ -56,7 +63,7 @@ private:
 	ThreadEvent m_event;
 	ThreadLocker m_locker;
 	std::shared_ptr<IFileReader> m_reader;
-	std::shared_ptr<AVPacketQueue> m_avpkts;
+	std::shared_ptr<IListener> m_listener;
 };
 
 #endif /* _vod_file_source_h_ */

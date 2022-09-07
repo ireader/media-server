@@ -98,14 +98,14 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 		// 2. createStream
 		// 3. FCSubscribe
 		r = rtmp_command_onconnect_reply(&result, data, bytes);
-		return 0 == r ? rtmp->u.client.onconnect(rtmp->param) : r;
+		return 0 == r ? (rtmp->client.onconnect ? rtmp->client.onconnect(rtmp->param) : -1) : r;
 
 	case RTMP_TRANSACTION_CREATE_STREAM:
 		// next: 
 		// publish 
 		// or play/user control message event buffer time
 		r = rtmp_command_oncreate_stream_reply(data, bytes, &stream_id);
-		return 0 == r ? rtmp->u.client.oncreate_stream(rtmp->param, stream_id) : r;
+		return 0 == r ? (rtmp->client.oncreate_stream ? rtmp->client.oncreate_stream(rtmp->param, stream_id) : -1) : r;
 
 	case RTMP_TRANSACTION_GET_STREAM_LENGTH:
 		return rtmp_command_oncreate_stream_reply(data, bytes, &duration);
@@ -131,7 +131,7 @@ static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const u
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		return EINVAL; // format error
+		return -EINVAL; // format error
 	}
 
 	//rtmp->onerror(rtmp->param, -1, result.code);
@@ -156,7 +156,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 
 	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
 	{
-		return EINVAL;
+		return -EINVAL;
 	}
 
 	assert(0 == strcmp(RTMP_LEVEL_ERROR, result.level)
@@ -175,19 +175,19 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 			|| 0 == strcasecmp(result.code, "NetStream.Record.Start")
 			|| 0 == strcasecmp(result.code, "NetStream.Publish.Start"))
 		{
-			rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_START);
+			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
 		}
 		else if (0 == strcasecmp(result.code, "NetStream.Seek.Notify"))
 		{
-			rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_SEEK);
+			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_SEEK) : 0;
 		}
 		else if (0 == strcasecmp(result.code, "NetStream.Pause.Notify"))
 		{
-			rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_PAUSE);
+			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_PAUSE) : 0;
 		}
 		else if (0 == strcasecmp(result.code, "NetStream.Unpause.Notify"))
 		{
-			rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_START);
+			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
 		}
 		else if (0 == strcasecmp(result.code, "NetStream.Play.Reset"))
 		{
@@ -197,7 +197,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 				|| 0 == strcasecmp(result.code, "NetStream.Record.Stop")
 				|| 0 == strcasecmp(result.code, "NetStream.Play.Complete"))
 		{
-			rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_STOP);
+			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_STOP) : 0;
 		}
 		else if (0 == strcasecmp(result.code, "NetStream.Play.PublishNotify") 
 			|| 0 == strcasecmp(result.code, "NetStream.Play.UnpublishNotify"))

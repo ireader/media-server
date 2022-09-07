@@ -1,5 +1,5 @@
 #include "sip-uas.h"
-#include "../src/sip-internal.h"
+#include "sip-internal.h"
 #include "sip-uas-transaction.h"
 #include "sip-timer.h"
 #include "sip-header.h"
@@ -59,6 +59,12 @@ int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transacti
 
 	assert(sip->ref > 0);
 	locker_lock(&sip->locker);
+	if (t->link.next == NULL)
+	{
+		// fix remove twice
+		locker_unlock(&sip->locker);
+		return 0;
+	}
 
 	// unlink transaction
 	list_remove(&t->link);
@@ -290,7 +296,7 @@ int sip_uas_reply(struct sip_uas_transaction_t* t, int code, const void* data, i
     
     // Contact: <sip:bob@192.0.2.4>
     if (200 <= code && code < 300 && 0 == sip_contacts_count(&t->reply->contacts) &&
-        (sip_message_isinvite(t->reply) || sip_message_isregister(t->reply)))
+        (sip_message_isinvite(t->reply) || sip_message_isregister(t->reply) || sip_message_issubscribe(t->reply)))
     {
 		// 12.1.1 UAS behavior (p70)
 		// The UAS MUST add a Contact header field to the response. The Contact 

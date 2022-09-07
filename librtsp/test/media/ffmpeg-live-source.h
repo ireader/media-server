@@ -2,8 +2,12 @@
 
 #if defined(_HAVE_FFMPEG_)
 extern "C" {
+#include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavdevice/avdevice.h"
+#include "libavutil/avutil.h"
+#include "libavutil/audio_fifo.h"
+#include "libswresample/swresample.h"
 }
 #include "media-source.h"
 #include <string>
@@ -38,8 +42,9 @@ private:
 	static void RTPFree(void* param, void *packet);
 	static int RTPPacket(void* param, const void *packet, int bytes, uint32_t timestamp, int flags);
 
-	void OnVideo(AVCodecParameters* codecpar);
-	void OnAudio(AVCodecParameters* codecpar);
+	void OnVideo(AVStream* stream);
+	void OnAudio(AVStream* stream);
+	int ReadFrame(AVPacket* avpkt);
 
 private:
 	int64_t m_dts;
@@ -52,13 +57,14 @@ private:
 	double m_speed;
 
 	AVFormatContext* m_ic;
-	AVBSFContext* m_h264bsf;
 	AVPacket m_pkt;
 
 	struct media_t
 	{
-		AVCodecContext* encoder;
 		AVCodecContext* decoder;
+		AVCodecContext* encoder;
+		SwrContext* audio_swr; // audio only
+		std::shared_ptr<AVAudioFifo> audio_fifo; // audio only
 
 		void* rtp;
 		int64_t dts_first; // first frame dts

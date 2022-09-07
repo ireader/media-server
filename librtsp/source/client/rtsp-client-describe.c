@@ -67,10 +67,9 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 		contentBase = http_get_header_by_name(parser, "Content-Base");
 		contentLocation = http_get_header_by_name(parser, "Content-Location");
 
-		if (contentBase)
-			snprintf(rtsp->baseuri, sizeof(rtsp->baseuri), "%s", contentBase);
-		if (contentLocation)
-			snprintf(rtsp->location, sizeof(rtsp->location), "%s", contentLocation);
+		if ((contentBase && snprintf(rtsp->baseuri, sizeof(rtsp->baseuri), "%s", contentBase) >= sizeof(rtsp->baseuri))
+			|| (contentLocation && snprintf(rtsp->location, sizeof(rtsp->location), "%s", contentLocation) >= sizeof(rtsp->location)))
+			return -1;
 
 		rtsp->auth_failed = 0;
 		if (!contentType || 0 == strcasecmp("application/sdp", contentType))

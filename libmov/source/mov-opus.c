@@ -35,7 +35,7 @@ int mov_read_dops(struct mov_t* mov, const struct mov_box_t* box)
         if (entry->extra_data_size < box->size + 8)
         {
             void* p = realloc(entry->extra_data, (size_t)box->size + 8);
-            if (NULL == p) return ENOMEM;
+            if (NULL == p) return -ENOMEM;
             entry->extra_data = p;
         }
         

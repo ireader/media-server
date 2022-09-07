@@ -51,7 +51,7 @@ static void aac_read_frame(mov_writer_t* mov, const uint8_t* ptr, const uint8_t*
 	int rate = 1;
 	int track = -1;
 	int64_t pts = 0;
-	uint64_t samples = 0;
+	uint64_t samples = 1024; // aac frame
 	struct mpeg4_aac_t aac;
 	uint8_t extra_data[64 * 1024];
 
@@ -67,10 +67,10 @@ static void aac_read_frame(mov_writer_t* mov, const uint8_t* ptr, const uint8_t*
 			assert(rate != 0);
 		}
 
-		samples += 1024; // aac frame
 		int framelen = mpeg4_aac_adts_frame_length(ptr, end - ptr);
 		mov_writer_write(mov, track, ptr + 7, framelen - 7, pts, pts, 0);
-		pts += samples * 1000 / rate;
+		samples += 1024;
+		pts = samples * 1000 / rate;
 		ptr += framelen;
 	}
 }

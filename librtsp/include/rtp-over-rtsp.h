@@ -16,6 +16,11 @@ struct rtp_over_rtsp_t
 	uint16_t capacity;
 	uint8_t* data;
 
+//#if defined(RTP_OVER_RTSP_TRY_TO_FIND_NEXT_PACKET)
+	int check; // should check flag
+	uint32_t ssrc[8];
+//#endif
+
 	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
 	void* param;
 };

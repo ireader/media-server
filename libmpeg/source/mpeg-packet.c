@@ -54,7 +54,7 @@ static int mpeg_packet_h264_h265_filter(uint16_t program, uint16_t stream, struc
         if (PSI_STREAM_H264 == pkt->codecid ? 9 == (data[off + i] & 0x1f) : 35 == ((data[off + i] >> 1) & 0x3f))
             continue;
 
-        i -= leading; // rewind to 0x00 00 00 01
+        i -= (int)leading; // rewind to 0x00 00 00 01
         break;
     }
 
@@ -81,7 +81,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
         pkt->dts = pes->dts;
         pkt->sid = pes->sid;
         pkt->codecid = pes->codecid;
-        pkt->flags = pes->data_alignment_indicator ? 1 : 0;
+        pkt->flags = pes->flags;
     }
 
     // PES contain multiple packet
@@ -105,7 +105,7 @@ static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, 
     pkt->dts = pes->dts;
     pkt->sid = pes->sid;
     pkt->codecid = pes->codecid;
-    pkt->flags = pes->data_alignment_indicator ? 1 : 0;
+    pkt->flags = pes->flags;
 //    assert(0 == find(p, end - p)); // start with AUD
 
     // remain data
@@ -152,13 +152,16 @@ int pes_packet(struct packet_t* pkt, const struct pes_t* pes, const void* data, 
         pkt->dts = pes->dts;
         pkt->sid = pes->sid;
         pkt->codecid = pes->codecid;
-        pkt->flags = pes->data_alignment_indicator ? 1 : 0;
+        pkt->flags = pes->flags;
 
         // for audio packet only, H.264/H.265 pes->len maybe incorrect
         assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid);
+#if !defined(MPEG_LIVING_VIDEO_FRAME_DEMUX)
+        if (PES_SID_VIDEO != pes->sid)
+#endif
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
-            assert(pes->pkt.size == pes->len); // packet lost
+            assert(pes->pkt.size == pes->len || (pkt->flags & MPEG_FLAG_PACKET_CORRUPT)); // packet lost
             r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);
             pkt->size = 0; // new packet start
         }

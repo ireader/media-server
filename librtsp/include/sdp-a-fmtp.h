@@ -1,6 +1,10 @@
 #ifndef _sdp_a_fmtp_h_
 #define _sdp_a_fmtp_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // H.264
 enum { 
 	SDP_A_FMTP_H264_PROFILE_LEVEL_ID			= 0x00000001,
@@ -123,4 +127,14 @@ struct sdp_a_fmtp_mpeg4_t
 
 int sdp_a_fmtp_mpeg4(const char* fmtp, int *format, struct sdp_a_fmtp_mpeg4_t *mpeg4);
 
+struct sdp_a_fmtp_rtx_t
+{
+	int apt;
+	int rtx_time; // milliseconds 
+};
+int sdp_a_fmtp_rtx(const char* fmtp, int* format, struct sdp_a_fmtp_rtx_t* rtx);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* !_sdp_a_fmtp_h_ */

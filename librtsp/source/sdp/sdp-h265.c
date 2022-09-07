@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
@@ -42,10 +43,10 @@ int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 				continue;
 
 			if (n + 1 + hevc.nalu[j].bytes * 2 > bytes)
-				return -1; // don't have enough memory
+				return -ENOMEM; // don't have enough memory
 
 			if (k++ > 0 && n < bytes) data[n++] = ',';
-			n += base64_encode((char*)data + n, hevc.nalu[j].data, hevc.nalu[j].bytes);
+			n += (int)base64_encode((char*)data + n, hevc.nalu[j].data, hevc.nalu[j].bytes);
 		}
 	}
 
@@ -74,7 +75,7 @@ int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, co
 			next = strchr(p, ',');
 			len = next ? (int)(next - p) : (int)strlen(p);
 			if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
-				return -1; // don't have enough space
+				return -ENOMEM; // don't have enough space
 
 			memcpy(data + off, startcode, sizeof(startcode));
 			n = (int)base64_decode(data + off + sizeof(startcode), p, len);

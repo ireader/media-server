@@ -96,7 +96,7 @@ static int mov_buffer_read(void* param, void* data, uint64_t bytes)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if (dash->offset + bytes > dash->bytes)
-		return E2BIG;
+		return -E2BIG;
 	memcpy(data, dash->ptr + dash->offset, (size_t)bytes);
 	return 0;
 }
@@ -108,7 +108,7 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if (dash->offset + bytes > dash->maxsize)
-		return E2BIG;
+		return -E2BIG;
 
 	if (dash->offset + (size_t)bytes > dash->capacity)
 	{
@@ -116,7 +116,7 @@ static int mov_buffer_write(void* param, const void* data, uint64_t bytes)
 		capacity = capacity > dash->maxsize ? dash->maxsize : capacity;
 		ptr = realloc(dash->ptr, capacity);
 		if (NULL == ptr)
-			return ENOMEM;
+			return -ENOMEM;
 		dash->ptr = ptr;
 		dash->capacity = capacity;
 	}
@@ -133,7 +133,7 @@ static int mov_buffer_seek(void* param, int64_t offset)
 	struct dash_adaptation_set_t* dash;
 	dash = (struct dash_adaptation_set_t*)param;
 	if ((offset >= 0 ? offset : -offset) >= dash->maxsize)
-		return E2BIG;
+		return -E2BIG;
 	dash->offset = (size_t)(offset >= 0 ? offset : (dash->maxsize+offset));
 	return 0;
 }
@@ -168,9 +168,9 @@ static int dash_adaptation_set_segment(struct dash_mpd_t* mpd, struct dash_adapt
 	seg->duration = track->dts_last - track->dts;
 
 	if(MOV_OBJECT_AAC == track->object)
-		snprintf(name, sizeof(name), "%s-%" PRId64 ".m4a", track->prefix, seg->timestamp);
+		snprintf(name, sizeof(name) - 1, "%s-%" PRId64 ".m4a", track->prefix, seg->timestamp);
 	else
-		snprintf(name, sizeof(name), "%s-%" PRId64 ".m4v", track->prefix, seg->timestamp);
+		snprintf(name, sizeof(name) - 1, "%s-%" PRId64 ".m4v", track->prefix, seg->timestamp);
 	r = mpd->handler(mpd->param, track->setid, track->ptr, track->bytes, track->pts, track->dts, seg->duration, name);
 	if (0 != r)
 	{
@@ -305,7 +305,7 @@ int dash_mpd_add_video_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	r = fmp4_writer_init_segment(track->fmp4);
 	if (0 == r)
 	{
-		snprintf(name, sizeof(name), "%s-init.m4v", prefix);
+		snprintf(name, sizeof(name) - 1, "%s-init.m4v", prefix);
 		r = mpd->handler(mpd->param, mpd->count, track->ptr, track->bytes, 0, 0, 0, name);
 	}
 
@@ -348,7 +348,7 @@ int dash_mpd_add_audio_adaptation_set(struct dash_mpd_t* mpd, const char* prefix
 	r = fmp4_writer_init_segment(track->fmp4);
 	if (0 == r)
 	{
-		snprintf(name, sizeof(name), "%s-init.m4a", prefix);
+		snprintf(name, sizeof(name) - 1, "%s-init.m4a", prefix);
 		r = mpd->handler(mpd->param, mpd->count, track->ptr, track->bytes, 0, 0, 0, name);
 	}
 
@@ -468,12 +468,12 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 	{
 		timeShiftBufferDepth = minimumUpdatePeriod * N_COUNT + 1;
 		n = snprintf(playlist, bytes, s_mpd_dynamic, minimumUpdatePeriod, timeShiftBufferDepth, availabilityStartTime, minimumUpdatePeriod, publishTime);
-		n += snprintf(playlist + n, bytes - n, "  <Period start=\"PT0S\" id=\"dash\">\n");
+		n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "  <Period start=\"PT0S\" id=\"dash\">\n");
 	}
 	else
 	{
 		n = snprintf(playlist, bytes, s_mpd_static, (unsigned int)(mpd->duration / 1000), minimumUpdatePeriod);
-		n += snprintf(playlist + n, bytes - n, "  <Period start=\"PT0S\" id=\"dash\">\n");
+		n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "  <Period start=\"PT0S\" id=\"dash\">\n");
 	}
 
 	for (i = 0; i < mpd->count; i++)
@@ -481,33 +481,33 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		track = &mpd->tracks[i];
 		if (MOV_OBJECT_H264 == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_h264, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, track->prefix, track->prefix);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, s_h264, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, track->prefix, track->prefix);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
-				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "%s", s_footer);
 		}
 		else if (MOV_OBJECT_HEVC == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_h265, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, track->prefix, track->prefix);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, s_h265, (unsigned int)track->u.video.avc.profile, (unsigned int)track->u.video.avc.compatibility, (unsigned int)track->u.video.avc.level, track->u.video.width, track->u.video.height, track->u.video.frame_rate, track->bitrate, track->prefix, track->prefix);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
-				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "%s", s_footer);
 		}
 		else if (MOV_OBJECT_AAC == track->object)
 		{
-			n += snprintf(playlist + n, bytes - n, s_aac, (unsigned int)track->u.audio.profile, track->u.audio.sample_rate, track->bitrate, track->u.audio.channel, track->prefix, track->prefix);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, s_aac, (unsigned int)track->u.audio.profile, track->u.audio.sample_rate, track->bitrate, track->u.audio.channel, track->prefix, track->prefix);
 			list_for_each(link, &track->root)
 			{
 				seg = list_entry(link, struct dash_segment_t, link);
-				n += snprintf(playlist + n, bytes - n, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "             <S t=\"%" PRId64 "\" d=\"%u\"/>\n", seg->timestamp, (unsigned int)seg->duration);
 			}
-			n += snprintf(playlist + n, bytes - n, "%s", s_footer);
+			n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "%s", s_footer);
 		}
 		else
 		{
@@ -515,6 +515,6 @@ size_t dash_mpd_playlist(struct dash_mpd_t* mpd, char* playlist, size_t bytes)
 		}
 	}
 
-	n += snprintf(playlist + n, bytes - n, "  </Period>\n</MPD>\n");
-	return n;
+	n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "  </Period>\n</MPD>\n");
+	return n >= bytes ? 0 : n;
 }

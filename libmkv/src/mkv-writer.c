@@ -183,7 +183,7 @@ struct mkv_writer_t* mkv_writer_create(const struct mkv_buffer_t* buffer, void* 
     writer->cluster_limit_size = 5000000;
 
     mkv->timescale = 1000000;
-    snprintf(mkv->doc, sizeof(mkv->doc), "%s", (MKV_OPTION_WEBM & options) ? "webm" : "matroska");
+    snprintf(mkv->doc, sizeof(mkv->doc) - 1, "%s", (MKV_OPTION_WEBM & options) ? "webm" : "matroska");
     mkv_write_ebml_header(&writer->io, mkv);
     return writer;
 }

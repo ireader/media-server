@@ -1,5 +1,5 @@
-#ifndef _mp4_writer_h_
-#define _mp4_writer_h_
+#ifndef _mov_writer_h_
+#define _mov_writer_h_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -37,4 +37,4 @@ int mov_writer_write(mov_writer_t* mov, int track, const void* data, size_t byte
 #ifdef __cplusplus
 }
 #endif
-#endif /* !_mp4_writer_h_ */
+#endif /* !_mov_writer_h_ */

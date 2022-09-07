@@ -24,7 +24,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 		subscribe = sip_subscribe_internal_fetch(t->agent, reply, &t->req->event, 1, &added);
 
 		// call once only
-		if (added)
+		//if (added)
 			r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, &subscribe->evtsession);
 	}
 
@@ -32,7 +32,7 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 	{
 		// delete subscribe if expires is 0
 		h = sip_message_get_header_by_name(t->req, "Expires");
-		if (h && 0 == atoi(h->p))
+		if (h && 0 == cstrtol(h, NULL, 10))
 		{
 			sip_subscribe_remove(t->agent, subscribe);
 			assert(1 == subscribe->ref);
@@ -88,9 +88,10 @@ struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struc
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!sip || !subscribe)
+	if (!sip || !subscribe || !subscribe->dialog)
 		return NULL;
 
+	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_SUBSCRIBE, subscribe->dialog)
 		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)

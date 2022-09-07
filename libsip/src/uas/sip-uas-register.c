@@ -68,10 +68,9 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	const struct cstring_t* header;
 	const struct sip_contact_t* contact;
 
-	// If contact.expire is not provided, 
-	// the value of the Expires header field is used instead
+	// If contact.expire is not provided, default equal to 60
 	header = sip_message_get_header_by_name(req, "Expires");
-	expires = header ? atoi(header->p) : 0;
+	expires = header ? (unsigned int)cstrtol(header, NULL, 10) : 60;
 
 	// 1. Request-URI
 
@@ -144,7 +143,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	r = t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires);
+	r = t->handler->onregister ? t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires) : 0;
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{

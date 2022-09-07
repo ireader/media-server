@@ -22,7 +22,7 @@
 #define MOV_OBJECT_VC1      0xA3 // SMPTE VC-1 Video
 #define MOV_OBJECT_DIRAC    0xA4 // Dirac Video Coder
 #define MOV_OBJECT_AC3      0xA5 // AC-3
-#define MOV_OBJECT_EAC3     0xA5 // Enhanced AC-3
+#define MOV_OBJECT_EAC3     0xA6 // Enhanced AC-3
 #define MOV_OBJECT_G719		0xA8 // ITU G.719 Audio
 #define MOV_OBJECT_DTS      0xA9 // Core Substream
 #define MOV_OBJECT_OPUS		0xAD // Opus audio

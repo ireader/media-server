@@ -10,6 +10,6 @@
 /// @param[out] rate bit rate [optional, null acceptable]
 /// @param[out] parameters payload parameters [optional, null acceptable]
 /// @return 0-ok, other-error
-int sdp_a_rtpmap(const char* rtpmap, int *payload, char *encoding, int *rate, char *parameters);
+int sdp_a_rtpmap(const char* rtpmap, int* payload, char encoding[16], int* rate, char parameters[64]);
 
 #endif /* !_sdp_a_rtpmap_h_ */

@@ -45,7 +45,7 @@
 
 #define SIP_PWD "1234"
 #define SIP_HOST "119.23.15.234"
-#define SIP_FROM "sip:1002@119.23.15.234"
+#define SIP_FROM "sip:1002@127.0.0.1:5061"
 #define SIP_PEER "sip:1001@192.168.1.100"
 #define SIP_EXPIRED 60
 #define TURN_SERVER NULL
@@ -64,7 +64,7 @@ struct sip_uac_transport_address_t
 };
 
 struct sip_uac_test2_t;
-struct sip_uac_test2_session_t
+struct sip_uac_test2_session_t : public VodFileSource::IListener
 {
 	struct sip_uac_test2_t *ctx;
     char buffer[2 * 1024 * 1024];
@@ -111,6 +111,10 @@ struct sip_uac_test2_session_t
 	pthread_t th;
 	std::shared_ptr<AVPacketQueue> pkts;
 	std::shared_ptr<VodFileSource> source;
+
+	virtual int OnPacket(struct avpacket_t* pkt) {
+		return pkts->Push(pkt);
+	}
 };
 
 struct sip_uac_test2_t
@@ -383,21 +387,21 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	n += ice_transport_getsdp(s->avt, s->audio.stream, (char*)s->audio.sender.buffer + n, sizeof(s->audio.sender.buffer) - n);
 }
 
-static void ice_transport_onconnected(void* param, int64_t streams)
+static void ice_transport_onconnected(void* param, uint64_t flags, uint64_t mask)
 {
 	struct sip_uac_test2_session_t* s = (struct sip_uac_test2_session_t*)param;
 
 	for (int stream = 0; stream < 2; stream++)
 	{
 		sip_uac_test2_session_t::av_media_t* av = s->video.stream == stream ? &s->video : &s->audio;
-		av->connected = (streams & ((int64_t)1 << stream)) ? 1 : 0;
+		av->connected = (flags & ((int64_t)1 << stream)) ? 1 : 0;
 		//for (int component = 0; component < 2; component++)
 		//{
 		//	assert(0 == ice_transport_get_candidate(s->ice, av->stream, component + 1, &av->local[component]));
 		//}
 	}
 
-	printf("ice_transport_onconnected 0x%x\n", (unsigned int)streams);
+	printf("ice_transport_onconnected 0x%x\n", (unsigned int)flags);
 	s->source->Play();
 
 	// TODO: reinvite
@@ -420,7 +424,8 @@ static void ice_transport_onbind(void* param, int code)
 		std::shared_ptr<MP4FileReader> reader(new MP4FileReader("e:\\video\\mp4\\name.opus.mp4"));
 		struct mov_reader_trackinfo_t info = { mp4_onvideo, mp4_onaudio };
 		reader->GetInfo(&info, s);
-		std::shared_ptr<VodFileSource> source(new VodFileSource(reader, s->pkts));
+		std::shared_ptr<sip_uac_test2_session_t> listener(s); // fixme: s->addref()
+		std::shared_ptr<VodFileSource> source(new VodFileSource(reader, listener));
 		s->source = source;
 
 		// default connect address
@@ -779,7 +784,8 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 		std::shared_ptr<MP4FileReader> reader(new MP4FileReader("e:\\video\\mp4\\name.opus.mp4"));
 		struct mov_reader_trackinfo_t info = { mp4_onvideo, mp4_onaudio };
 		reader->GetInfo(&info, s);
-		std::shared_ptr<VodFileSource> source(new VodFileSource(reader, s->pkts));
+		std::shared_ptr<sip_uac_test2_session_t> listener(s); // fixme: s->addref()
+		std::shared_ptr<VodFileSource> source(new VodFileSource(reader, listener));
 		s->source = source;
 
 		// default connect address

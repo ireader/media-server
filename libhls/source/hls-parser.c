@@ -57,11 +57,11 @@ static int hls_attr_read(const char* value, size_t n, int cls, void* ptr)
 		return 0;
 
 	case ATTR_VALUE_TYPE_UINT32:
-		*(uint32_t*)ptr = (uint32_t)strtol(value, NULL, 10);
+		*(uint32_t*)ptr = (uint32_t)strtoul(value, NULL, 10);
 		break;
 
 	case ATTR_VALUE_TYPE_UINT64:
-		*(uint64_t*)ptr = (uint64_t)strtoll(value, NULL, 10);
+		*(uint64_t*)ptr = (uint64_t)strtoull(value, NULL, 10);
 		break;
 
 	case ATTR_VALUE_TYPE_FLOAT32:
@@ -142,11 +142,11 @@ static int hls_ext_x_byterange(struct hls_parser_t* parser, const char* data, si
 
 	n = hls_strsplit(data, data + bytes, "@", "", &next);
 	ptr = hls_strtrim(data, &n, " \t", " \t"); // trim SP/HTAB
-	segment->bytes = (int64_t)strtoll(ptr, NULL, 10); // decimal-integer
+	segment->bytes = (int64_t)strtoull(ptr, NULL, 10); // decimal-integer
 
 	n = data + bytes - next;
 	next = hls_strtrim(next, &n, " \t'\"", " \t'\""); // trim SP/HTAB/'/"
-	segment->offset = n > 0 ? (int64_t)strtoll(next, NULL, 10) : segment->offset;
+	segment->offset = n > 0 ? (int64_t)strtoull(next, NULL, 10) : segment->offset;
 	return 0;
 }
 
@@ -210,11 +210,11 @@ static int hls_ext_x_map(struct hls_parser_t* parser, const char* data, size_t b
 	{
 		n = hls_strsplit(byterange, byterange + n, "@", "", &next);
 		ptr = hls_strtrim(byterange, &n, " \t", " \t"); // trim SP/HTAB
-		segment->map.bytes = (int64_t)strtoll(ptr, NULL, 10); // decimal-integer
+		segment->map.bytes = (int64_t)strtoull(ptr, NULL, 10); // decimal-integer
 
 		n = byterange + n - next;
 		next = hls_strtrim(next, &n, " \t'\"", " \t'\""); // trim SP/HTAB/'/"
-		segment->map.offset = n > 0 ? (int64_t)strtoll(next, NULL, 10) : segment->map.offset;
+		segment->map.offset = n > 0 ? (int64_t)strtoull(next, NULL, 10) : segment->map.offset;
 	}
 	return 0;
 }
@@ -247,21 +247,21 @@ static int hls_ext_x_daterange(struct hls_parser_t* parser, const char* data, si
 static int hls_ext_x_targetduration(struct hls_parser_t* parser, const char* data, size_t bytes)
 {
 	data = hls_strtrim(data, &bytes, " \t'\"", " \t'\""); // trim SP/HTAB/'/"
-	parser->playlist->target_duration = (uint64_t)strtoll(data, NULL, 10); // decimal-integer
+	parser->playlist->target_duration = (uint64_t)strtoull(data, NULL, 10); // decimal-integer
 	return 0;
 }
 
 static int hls_ext_x_media_sequence(struct hls_parser_t* parser, const char* data, size_t bytes)
 {
 	data = hls_strtrim(data, &bytes, " \t'\"", " \t'\""); // trim SP/HTAB/'/"
-	parser->playlist->media_sequence = (uint64_t)strtoll(data, NULL, 10); // decimal-integer
+	parser->playlist->media_sequence = (uint64_t)strtoull(data, NULL, 10); // decimal-integer
 	return 0;
 }
 
 static int hls_ext_x_discontinuity_sequence(struct hls_parser_t* parser, const char* data, size_t bytes)
 {
 	data = hls_strtrim(data, &bytes, " \t'\"", " \t'\""); // trim SP/HTAB/'/"
-	parser->playlist->discontinuity_sequence = (uint64_t)strtoll(data, NULL, 10); // decimal-integer
+	parser->playlist->discontinuity_sequence = (uint64_t)strtoull(data, NULL, 10); // decimal-integer
 	return 0;
 }
 
@@ -477,7 +477,7 @@ static int hls_ext_x_version(struct hls_parser_t* parser, const char* data, size
 {
 	int version;
 	data = hls_strtrim(data, &bytes, " \t", " \t"); // trim SP/HTAB
-	version = (int)strtol(data, NULL, 10);
+	version = (int)strtoul(data, NULL, 10);
 	if (parser->playlist)
 		parser->playlist->version = version;
 	else

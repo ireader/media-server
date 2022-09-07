@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 static pthread_t s_threads[2];
-static volatile int s_running;
+static int s_running;
 
 static int STDCALL sip_timer_run(void* param)
 {

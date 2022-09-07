@@ -25,7 +25,7 @@ int mov_read_trun(struct mov_t* mov, const struct mov_box_t* box)
 	if (sample_count > 0)
 	{
 		void* p = realloc(track->samples, sizeof(struct mov_sample_t) * (track->sample_count + sample_count + 1));
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		track->samples = (struct mov_sample_t*)p;
 		memset(track->samples + track->sample_count, 0, sizeof(struct mov_sample_t) * (sample_count + 1));
 	}

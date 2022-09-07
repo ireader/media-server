@@ -126,6 +126,12 @@
     <ClInclude Include="..\librtmp\test\RTMPUrl.h">
       <Filter>librtmp</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\h265-file-reader.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\h265-file-source.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -487,6 +493,27 @@
     </ClCompile>
     <ClCompile Include="..\libmov\test\mov-writer-av1.cpp">
       <Filter>libmov</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\av1-rtp-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libflv\test\av1-flv-test.cpp">
+      <Filter>libflv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtp\test\rtp-header-ext-test.cpp">
+      <Filter>librtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h265-file-reader.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\h265-file-source.cpp">
+      <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-client-push-test.cpp">
+      <Filter>librtsp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

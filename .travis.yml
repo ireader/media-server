@@ -5,7 +5,11 @@ before_script:
  - unzip /tmp/sdk.zip
  - echo $PWD
  - mv sdk-master ../sdk
-
+ - wget https://github.com/ireader/avcodec/archive/master.zip -O /tmp/avcodec.zip
+ - unzip /tmp/avcodec.zip
+ - echo $PWD
+ - mv avcodec-master ../avcodec
+ 
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created

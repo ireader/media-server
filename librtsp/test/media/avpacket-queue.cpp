@@ -37,7 +37,7 @@ void avpacket_queue_clear(struct avpacket_queue_t* q)
 int avpacket_queue_count(struct avpacket_queue_t* q)
 {
 	AutoThreadLocker locker(q->locker);
-	return q->q.size();
+	return (int)q->q.size();
 }
 
 int avpacket_queue_pop(struct avpacket_queue_t* q)

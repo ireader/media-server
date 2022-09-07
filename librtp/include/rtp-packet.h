@@ -11,7 +11,7 @@ struct rtp_packet_t
 	uint32_t csrc[16];
 	const void* extension; // extension(valid only if rtp.x = 1)
 	uint16_t extlen; // extension length in bytes
-	uint16_t reserved; // extension reserved
+	uint16_t extprofile; // extension reserved
 	const void* payload; // payload
 	int payloadlen; // payload length in bytes
 };

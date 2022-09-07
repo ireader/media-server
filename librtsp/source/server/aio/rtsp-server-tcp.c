@@ -145,7 +145,7 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	rtsphandler.send = rtsp_session_send;
 
 	session = (struct rtsp_session_t*)calloc(1, sizeof(*session));
-	if (!session) return -1;
+	if (!session) return -ENOMEM;
 
 	session->socket = socket;
 	socket_addr_to(addr, addrlen, ip, &port);
@@ -160,7 +160,7 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	if (!session->rtsp || !session->aio)
 	{
 		rtsp_session_ondestroy(session);
-		return -1;
+		return -ENOMEM;
 	}
 	
 	session->rtp.param = param;
@@ -169,7 +169,7 @@ int rtsp_transport_tcp_create(socket_t socket, const struct sockaddr* addr, sock
 	if (0 != aio_transport_recv(session->aio, session->buffer, sizeof(session->buffer)))
 	{
 		rtsp_session_ondestroy(session);
-		return -1;
+		return -ENOTCONN;
 	}
 
 	return 0;

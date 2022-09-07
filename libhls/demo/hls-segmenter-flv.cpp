@@ -18,7 +18,7 @@ static int hls_handler(void* m3u8, const void* data, size_t bytes, int64_t pts, 
 
 	static int i = 0;
 	char name[128] = {0};
-	snprintf(name, sizeof(name), "%d.ts", i++);
+	snprintf(name, sizeof(name) - 1, "%d.ts", i++);
 	hls_m3u8_add((hls_m3u8_t*)m3u8, name, pts, duration, discontinue);
 
 	FILE* fp = fopen(name, "wb");

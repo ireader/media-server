@@ -122,6 +122,9 @@
     <ClCompile Include="source\sdp-options.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\sdp-a-webrtc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtsp-header-range.h">
@@ -182,6 +185,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sdp-options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sdp-a-webrtc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

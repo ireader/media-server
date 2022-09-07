@@ -70,7 +70,7 @@ static int rtp_h265_pack_nalu(struct rtp_encode_h265_t *packer, const uint8_t* n
 	packer->pkt.payloadlen = bytes;
 	n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 	rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-	if (!rtp) return ENOMEM;
+	if (!rtp) return -ENOMEM;
 
 	//packer->pkt.rtp.m = 1; // set marker flag
 	packer->pkt.rtp.m = ((*nalu >> 1) & 0x3f) < 32 ? mark : 0; // VCL only
@@ -116,7 +116,7 @@ static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr
 		packer->pkt.payload = ptr;
 		n = RTP_FIXED_HEADER + N_FU_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-		if (!rtp) return ENOMEM;
+		if (!rtp) return -ENOMEM;
 
 		packer->pkt.rtp.m = (FU_END & fu_header) ? mark : 0; // set marker flag
 		n = rtp_packet_serialize_header(&packer->pkt, rtp, n);

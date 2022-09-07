@@ -173,8 +173,5 @@
     <ClCompile Include="src\uas\sip-uas-prack.c">
       <Filter>Source Files\uas</Filter>
     </ClCompile>
-    <ClCompile Include="src\uac\sip-uac-refer.c">
-      <Filter>Source Files\uac</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

@@ -217,7 +217,7 @@ static int fmp4_add_fragment_entry(struct mov_track_t* track, uint64_t time, uin
 	if (track->frag_count >= track->frag_capacity)
 	{
 		void* p = realloc(track->frags, sizeof(struct mov_fragment_t) * (track->frag_capacity + 64));
-		if (!p) return ENOMEM;
+		if (!p) return -ENOMEM;
 		track->frags = p;
 		track->frag_capacity += 64;
 	}
@@ -278,7 +278,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
-		if (mov->track->sample_count > 0)
+		if (mov->track->sample_count > 0 && 0 == (mov->flags & MOV_FLAG_SEGMENT))
 			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].dts, mov->moof_offset);
 
 		// hack: write sidx referenced_size
@@ -340,7 +340,7 @@ static int fmp4_writer_init(struct mov_t* mov)
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_MSDH;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_MSIX;
-		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // defaultï¿½\baseï¿½\isï¿½\moof flag
 		mov->ftyp.compatible_brands[5] = MOV_BRAND_ISO6; // styp
 		mov->header = 0;
 	}
@@ -353,7 +353,7 @@ static int fmp4_writer_init(struct mov_t* mov)
 		mov->ftyp.compatible_brands[1] = MOV_BRAND_MP42;
 		mov->ftyp.compatible_brands[2] = MOV_BRAND_AVC1;
 		mov->ftyp.compatible_brands[3] = MOV_BRAND_DASH;
-		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // default©\base©\is©\moof flag
+		mov->ftyp.compatible_brands[4] = MOV_BRAND_ISO5; // defaultï¿½\baseï¿½\isï¿½\moof flag
 		mov->header = 0;
 	}
 	return 0;
@@ -443,8 +443,8 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 		return -ENOMEM;
 	memcpy(sample->data, data, bytes);
 
-    if (INT64_MIN == track->start_dts)
-        track->start_dts = sample->dts;
+	if (INT64_MIN == track->start_dts)
+		track->start_dts = sample->dts;
 	writer->mdat_size += bytes; // update media data size
 	track->sample_count += 1;
     track->last_dts = sample->dts;
@@ -517,7 +517,6 @@ int fmp4_writer_save_segment(fmp4_writer_t* writer)
 
 	// flush fragment
 	fmp4_write_fragment(writer);
-	writer->has_moov = 0; // clear moov flags
 
 	// write mfra
 	if (0 == (mov->flags & MOV_FLAG_SEGMENT))
@@ -525,6 +524,10 @@ int fmp4_writer_save_segment(fmp4_writer_t* writer)
 		fmp4_write_mfra(mov);
 		for (i = 0; i < mov->track_count; i++)
 			mov->tracks[i].frag_count = 0; // don't free frags memory
+	}
+	else
+	{
+		writer->has_moov = 0; // clear moov flags
 	}
 
 	return mov_buffer_error(&mov->io);

@@ -93,7 +93,14 @@ int flv_parser_tag(int type, const void* data, size_t bytes, uint32_t timestamp,
 static size_t flv_parser_append(struct flv_parser_t* parser, const uint8_t* data, size_t bytes, size_t expect)
 {
 	size_t n;
-	assert(parser->bytes <= expect && expect <= sizeof(parser->ptr));
+	if (parser->bytes > expect || expect > sizeof(parser->ptr))
+	{
+		// invalid status, consume all
+		assert(0);
+		parser->bytes = expect;
+		return bytes;
+	}
+
 	n = parser->bytes + bytes >= expect ? expect - parser->bytes : bytes;
 	if (n > 0)
 	{
@@ -154,6 +161,7 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 			{
 				flv_tag_header_read(&parser->tag, parser->ptr, parser->bytes);
 				parser->bytes = 0;
+				parser->expect = 0;
 				parser->state = FLV_AVHEADER_CODEC;
 			}
 			break;
@@ -180,6 +188,11 @@ int flv_parser_input(struct flv_parser_t* parser, const uint8_t* data, size_t by
 			case FLV_TYPE_SCRIPT:
 				parser->expect = 0;
 				n = 0; // noops
+				break;
+
+			default:
+				assert(0);
+				return -1; // invalid flv file
 			}
 			parser->state = FLV_AVHEADER_EXTRA;
 			break;

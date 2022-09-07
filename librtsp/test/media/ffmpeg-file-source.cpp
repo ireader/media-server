@@ -13,14 +13,14 @@
 
 extern "C" uint32_t rtp_ssrc(void);
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
-extern "C" int sdp_h264(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-extern "C" int sdp_h265(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-extern "C" int sdp_mpeg4_es(uint8_t *data, int bytes, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
-extern "C" int sdp_aac_latm(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-extern "C" int sdp_aac_generic(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-extern "C" int sdp_opus(uint8_t *data, int bytes, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
-extern "C" int sdp_g711u(uint8_t *data, int bytes, unsigned short port);
-extern "C" int sdp_g711a(uint8_t *data, int bytes, unsigned short port);
+extern "C" int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_mpeg4_es(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size);
+extern "C" int sdp_aac_latm(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_aac_generic(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_opus(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int sample_rate, int channel_count, const void* extra, int extra_size);
+extern "C" int sdp_g711u(uint8_t *data, int bytes, const char* proto, unsigned short port);
+extern "C" int sdp_g711a(uint8_t *data, int bytes, const char* proto, unsigned short port);
 
 inline uint8_t ffmpeg_codec_id_2_mp4_object(AVCodecID codecid)
 {
@@ -47,7 +47,6 @@ FFFileSource::FFFileSource(const char *file)
 	if(0 == s_init)
 	{
 		s_init = 1;
-		av_register_all();
 		avformat_network_init();
 	}
 
@@ -55,6 +54,7 @@ FFFileSource::FFFileSource(const char *file)
 	m_status = 0;
 	m_clock = 0;
 	m_count = 0;
+	m_dts = -1;
 	av_init_packet(&m_pkt);
 
 	if (0 == Open(file))
@@ -119,7 +119,7 @@ int FFFileSource::Open(const char* file)
 	if (NULL == m_ic)
 	{
 		printf("%s(%s): avformat_alloc_context failed.\n", __FUNCTION__, file);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	//if (!av_dict_get(ff->opt, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
@@ -361,14 +361,14 @@ void FFFileSource::MP4OnVideo(void* param, uint32_t track, uint8_t object, int /
 		m->frequency = 90000;
 		m->payload = RTP_PAYLOAD_H264;
 		snprintf(m->name, sizeof(m->name), "%s", "H264");
-		n = sdp_h264(buffer, sizeof(buffer), 0, RTP_PAYLOAD_H264, 90000, extra, bytes);
+		n = sdp_h264(buffer, sizeof(buffer), "RTP/AVP", 0, RTP_PAYLOAD_H264, 90000, extra, bytes);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		m->frequency = 90000;
 		m->payload = RTP_PAYLOAD_H265;
 		snprintf(m->name, sizeof(m->name), "%s", "H265");
-		n = sdp_h265(buffer, sizeof(buffer), 0, RTP_PAYLOAD_H265, 90000, extra, bytes);
+		n = sdp_h265(buffer, sizeof(buffer), "RTP/AVP", 0, RTP_PAYLOAD_H265, 90000, extra, bytes);
 	}
 	else
 	{
@@ -423,7 +423,7 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 			m->frequency = sample_rate;
 			m->payload = RTP_PAYLOAD_LATM;
 			snprintf(m->name, sizeof(m->name), "%s", "MP4A-LATM");
-			n = sdp_aac_latm(buffer, sizeof(buffer), 0, RTP_PAYLOAD_LATM, sample_rate, channel_count, extra, bytes);
+			n = sdp_aac_latm(buffer, sizeof(buffer), "RTP/AVP", 0, RTP_PAYLOAD_LATM, sample_rate, channel_count, extra, bytes);
 		}
 		else
 		{
@@ -437,7 +437,7 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 			m->frequency = sample_rate;
 			m->payload = RTP_PAYLOAD_MP4A;
 			snprintf(m->name, sizeof(m->name), "%s", "MPEG4-GENERIC");
-			n = sdp_aac_generic(buffer, sizeof(buffer), 0, RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
+			n = sdp_aac_generic(buffer, sizeof(buffer), "RTP/AVP", 0, RTP_PAYLOAD_MP4A, sample_rate, channel_count, extra, bytes);
 		}
 	}
 	else if (MOV_OBJECT_OPUS == object)
@@ -446,14 +446,14 @@ void FFFileSource::MP4OnAudio(void* param, uint32_t track, uint8_t object, int c
 		m->frequency = sample_rate;
 		m->payload = RTP_PAYLOAD_OPUS;
 		snprintf(m->name, sizeof(m->name), "%s", "opus");
-		n = sdp_opus(buffer, sizeof(buffer), 0, RTP_PAYLOAD_OPUS, sample_rate, channel_count, extra, bytes);
+		n = sdp_opus(buffer, sizeof(buffer), "RTP/AVP", 0, RTP_PAYLOAD_OPUS, sample_rate, channel_count, extra, bytes);
 	}
 	else if (MOV_OBJECT_G711u == object)
 	{
 		m->frequency = sample_rate;
 		m->payload = RTP_PAYLOAD_PCMU;
 		snprintf(m->name, sizeof(m->name), "%s", "PCMU");
-		n = sdp_g711u(buffer, sizeof(buffer), 0);
+		n = sdp_g711u(buffer, sizeof(buffer), "RTP/AVP", 0);
 	}
 	else
 	{

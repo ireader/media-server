@@ -44,4 +44,7 @@ size_t aio_rtmp_transport_get_unsend(aio_rtmp_transport_t* transport);
 /// set recv/send timeout in ms(default 2min, 0-infinite)
 void aio_rtmp_transport_set_timeout(aio_rtmp_transport_t* transport, int recv, int send);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !_aio_rtmp_transport_h_ */

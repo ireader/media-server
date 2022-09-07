@@ -17,7 +17,7 @@ int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box)
 	if (stbl->stss_count < entry_count)
 	{
 		void* p = realloc(stbl->stss, sizeof(stbl->stss[0]) * entry_count);
-		if (NULL == p) return ENOMEM;
+		if (NULL == p) return -ENOMEM;
 		stbl->stss = p;
 	}
 	stbl->stss_count = entry_count;

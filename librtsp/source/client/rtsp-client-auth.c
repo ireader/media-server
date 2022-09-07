@@ -40,25 +40,24 @@ int rtsp_client_authenrization(struct rtsp_client_t* rtsp, const char* method, c
 	if (0 != rtsp->auth.scheme)
 	{
 		rtsp->auth.nc += 1;
-		snprintf(rtsp->auth.uri, sizeof(rtsp->auth.uri), "%s", uri);
+		snprintf(rtsp->auth.uri, sizeof(rtsp->auth.uri) - 1, "%s", uri);
 		//snprintf(rtsp->auth.cnonce, sizeof(rtsp->auth.cnonce), "%p", rtsp); // TODO
 
 		n = snprintf(authenrization, bytes, "Authorization: ");
 		n += http_header_auth(&rtsp->auth, rtsp->pwd, method, content, length, authenrization + n, bytes - n);
-		n += snprintf(authenrization + n, bytes - n, "\r\n");
+		n += snprintf(authenrization + n, n < bytes ? bytes - n : 0, "\r\n");
+		if (n > 0 && n < bytes)
+			return n;
 	}
-	else
-	{
-		n = 0;
-		rtsp->authenrization[0] = 0;
-	}
-	return n;
+	
+	rtsp->authenrization[0] = 0;
+	return 0;
 }
 
 int rtsp_client_www_authenticate(struct rtsp_client_t* rtsp, const char* filed)
 {
 	memset(&rtsp->auth, 0, sizeof(rtsp->auth));
-	snprintf(rtsp->auth.username, sizeof(rtsp->auth.username), "%s", rtsp->usr);
+	snprintf(rtsp->auth.username, sizeof(rtsp->auth.username) - 1, "%s", rtsp->usr);
 
 	if (0 != http_header_www_authenticate(filed, &rtsp->auth))
 	{

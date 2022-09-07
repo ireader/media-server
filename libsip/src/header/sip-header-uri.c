@@ -35,7 +35,7 @@ int sip_header_uri(const char* s, const char* end, struct sip_uri_t* uri)
 	sip_params_init(&uri->headers);
 	sip_params_init(&uri->parameters);
 
-	p = strchr(s, ':');
+	p = (s && s < end) ? strchr(s, ':') : NULL;
 	if (!p || p >= end)
 		return -1;
 	

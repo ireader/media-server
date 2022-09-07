@@ -11,20 +11,12 @@
 #include "rtp.h"
 #include <assert.h>
 
-#pragma comment(lib, "../../3rd/ffmpeg/lib/avcodec.lib")
-#pragma comment(lib, "../../3rd/ffmpeg/lib/avformat.lib")
-#pragma comment(lib, "../../3rd/ffmpeg/lib/avutil.lib")
-#pragma comment(lib, "../../3rd/ffmpeg/lib/avdevice.lib")
-#pragma comment(lib, "../../3rd/ffmpeg/lib/swresample.lib")
-#pragma comment(lib, "../../3rd/ffmpeg/lib/swscale.lib")
-
 extern "C" uint32_t rtp_ssrc(void);
 
-AVCodecContext* ffencoder_create(AVCodecParameters* codecpar)
+static AVCodecContext* FFLiveCreateEncoder(AVCodecParameters* codecpar, AVDictionary** opts)
 {
 	int ret;
-	AVCodec* codec = NULL;
-	AVDictionary *opts = NULL;
+	const AVCodec* codec = NULL;
 	AVCodecContext* avctx = NULL;
 
 	codec = avcodec_find_encoder(codecpar->codec_id);
@@ -44,10 +36,24 @@ AVCodecContext* ffencoder_create(AVCodecParameters* codecpar)
 		avcodec_free_context(&avctx);
 		return NULL;
 	}
+	avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+	{
+		avctx->time_base = av_make_q(1, 90000); // 90kHZ
+		avctx->max_b_frames = 1;
+		avctx->thread_count = 4;
+		avctx->gop_size = 25;
+		//av_dict_set(&opts, "preset", "fast", 0);
+		//av_dict_set(&opts, "crt", "23", 0);
+	}
+	else if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+	{
+		avctx->time_base = av_make_q(1, codecpar->sample_rate);
+	}
 	avctx->time_base = av_make_q(1, 1000); // 1ms
 
-	ret = avcodec_open2(avctx, codec, &opts);
-	av_dict_free(&opts);
+	ret = avcodec_open2(avctx, codec, opts);
 	if (ret < 0)
 	{
 		printf("[%s] avcodec_open2(%d) => %d.\n", __FUNCTION__, codecpar->codec_id, ret);
@@ -59,17 +65,20 @@ AVCodecContext* ffencoder_create(AVCodecParameters* codecpar)
 	return avctx;
 }
 
-AVCodecContext* ffdecoder_create(AVCodecParameters* codecpar)
+static AVCodecContext* FFLiveCreateDecoder(AVStream* stream)
 {
 	int ret;
-	AVCodec* codec = NULL;
+	const AVCodec* codec = NULL;
 	AVDictionary *opts = NULL;
 	AVCodecContext* avctx = NULL;
 
-	codec = avcodec_find_decoder(codecpar->codec_id);
+	if (!stream || !stream->codecpar)
+		return NULL;
+
+	codec = avcodec_find_decoder(stream->codecpar->codec_id);
 	if (NULL == codec)
 	{
-		printf("[%s] avcodec_find_decoder(%d) not found.\n", __FUNCTION__, codecpar->codec_id);
+		printf("[%s] avcodec_find_decoder(%d) not found.\n", __FUNCTION__, stream->codecpar->codec_id);
 		return NULL;
 	}
 
@@ -77,11 +86,14 @@ AVCodecContext* ffdecoder_create(AVCodecParameters* codecpar)
 	if (NULL == avctx)
 		return NULL;
 
-	ret = avcodec_parameters_to_context(avctx, codecpar);
-	if (ret < 0)
+	if (stream->codecpar)
 	{
-		avcodec_free_context(&avctx);
-		return NULL;
+		ret = avcodec_parameters_to_context(avctx, stream->codecpar);
+		if (ret < 0)
+		{
+			avcodec_free_context(&avctx);
+			return NULL;
+		}
 	}
 	avctx->time_base = av_make_q(1, 1000); // 1ms
 
@@ -89,41 +101,12 @@ AVCodecContext* ffdecoder_create(AVCodecParameters* codecpar)
 	av_dict_free(&opts);
 	if (ret < 0)
 	{
-		printf("[%s] avcodec_open2(%d) => %d.\n", __FUNCTION__, codecpar->codec_id, ret);
+		printf("[%s] avcodec_open2(%d) => %d.\n", __FUNCTION__, stream->codecpar->codec_id, ret);
 		avcodec_free_context(&avctx);
 		return NULL;
 	}
 
-	avcodec_parameters_from_context(codecpar, avctx);
 	return avctx;
-}
-
-int ffencoder_input(AVCodecContext *avctx, const AVFrame* frame)
-{
-	int ret = avcodec_send_frame(avctx, frame);
-	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
-	{
-		printf("[%s] avcodec_send_frame() => %d\n", __FUNCTION__, ret);
-		return ret;
-	}
-	//if (ret >= 0)
-	//	pkt.size = 0;
-
-	return 0;
-}
-
-int ffencoder_getpacket(AVCodecContext *avctx, AVPacket* pkt)
-{
-	int ret = avcodec_receive_packet(avctx, pkt);
-	if (ret >= 0)
-	{
-		// ok
-	}
-
-	//if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-	//	ret = 0;
-
-	return ret;
 }
 
 FFLiveSource::FFLiveSource(const char *camera)
@@ -132,7 +115,6 @@ FFLiveSource::FFLiveSource(const char *camera)
 	if (0 == s_init)
 	{
 		s_init = 1;
-		av_register_all();
 		avformat_network_init();
 		avdevice_register_all();
 	}
@@ -147,14 +129,13 @@ FFLiveSource::FFLiveSource(const char *camera)
 	{
 		for (unsigned int i = 0; i < m_ic->nb_streams; i++)
 		{
-			AVCodecParameters* codecpar = m_ic->streams[i]->codecpar;
-			if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
+			if ( AVMEDIA_TYPE_VIDEO == m_ic->streams[i]->codecpar->codec_type)
 			{
-				OnVideo(codecpar);
+				OnVideo(m_ic->streams[i]);
 			}
-			else if (AVMEDIA_TYPE_AUDIO == codecpar->codec_type)
+			else if (AVMEDIA_TYPE_AUDIO == m_ic->streams[i]->codecpar->codec_type)
 			{
-				OnAudio(codecpar);
+				OnAudio(m_ic->streams[i]);
 			}
 		}
 	}
@@ -187,6 +168,8 @@ FFLiveSource::~FFLiveSource()
 			avcodec_free_context(&m->encoder);
 		if (m->decoder)
 			avcodec_free_context(&m->decoder);
+		if (m->audio_swr)
+			swr_free(&m->audio_swr);
 	}
 
 	if (m_ic)
@@ -204,7 +187,7 @@ int FFLiveSource::Open(const char* camera)
 	if (NULL == m_ic)
 	{
 		printf("%s(%s): avformat_alloc_context failed.\n", __FUNCTION__, camera);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	//if (!av_dict_get(ff->opt, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
@@ -212,7 +195,7 @@ int FFLiveSource::Open(const char* camera)
 	//	scan_all_pmts_set = 1;
 	//}
 
-	AVInputFormat *ifmt = av_find_input_format("dshow");
+	const AVInputFormat *ifmt = av_find_input_format("dshow");
 	r = avformat_open_input(&m_ic, camera, ifmt, NULL/*&opt*/);
 	if (0 != r)
 	{
@@ -253,6 +236,104 @@ int FFLiveSource::SetTransport(const char* track, std::shared_ptr<IRTPTransport>
 	return -1;
 }
 
+
+int FFLiveSource::ReadFrame(AVPacket* avpkt)
+{
+	AVPacket* pkt = av_packet_alloc();
+	std::shared_ptr<AVPacket*> __packet(&pkt, av_packet_free);
+
+	int r = av_read_frame(m_ic, pkt);
+	if (r < 0)
+		return r;
+	
+	struct media_t* m = NULL;
+	for (r = 0; r < m_count; r++)
+	{
+		m = &m_media[r];
+		if (m->track == pkt->stream_index)
+			break;
+	}
+	if (r == m_count)
+	{
+		assert(0);
+		return AVERROR(EAGAIN);
+	}
+
+	r = avcodec_send_packet(m->decoder, pkt);
+	if (r < 0)
+	{
+		if(r != AVERROR(EAGAIN) && r != AVERROR_EOF)
+			printf("[%s] avcodec_send_packet(%d) => %d\n", __FUNCTION__, pkt->size, r);
+		return r;
+	}
+
+	AVFrame* frame = av_frame_alloc();
+	std::shared_ptr<AVFrame*> __frame(&frame, av_frame_free);
+
+	if (AVMEDIA_TYPE_AUDIO == m->encoder->codec_type)
+	{
+		// audio
+		if (!m->audio_swr || !m->audio_fifo)
+			return AVERROR(EAGAIN);
+
+		AVFrame* out = av_frame_alloc();
+		out->format = AV_SAMPLE_FMT_FLTP;
+		out->channels = 2;
+		out->channel_layout = av_get_default_channel_layout(frame->channels);
+		out->sample_rate = frame->sample_rate;
+		out->nb_samples = frame->nb_samples;
+		out->pkt_dts = frame->pkt_dts;
+		out->pts = frame->pts;
+		av_frame_get_buffer(out, 0);
+		std::shared_ptr<AVFrame*> ___out(&out, av_frame_free);
+
+		r = swr_convert(m->audio_swr, out->data, out->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
+		if (r < 0)
+			return r;
+
+		r = av_audio_fifo_write(m->audio_fifo.get(), (void**)out->data, r);
+		if (av_audio_fifo_size(m->audio_fifo.get()) < 1024)
+			return AVERROR(EAGAIN);
+		
+		AVFrame* audio = av_frame_alloc();
+		audio->nb_samples = 1024;
+		audio->sample_rate = out->sample_rate;
+		audio->format = out->format;
+		audio->channels = out->channels;
+		audio->channel_layout = out->channel_layout;
+		audio->pkt_dts = frame->pkt_dts;
+		audio->pts = frame->pts;
+		r = av_frame_get_buffer(audio, 0);
+		std::shared_ptr<AVFrame*> __audio(&audio, av_frame_free);
+		if (r < 0)
+		{
+			printf("[%s] av_frame_get_buffer() => %d\n", __FUNCTION__, r);
+			return r;
+		}
+
+		if (av_audio_fifo_read(m->audio_fifo.get(), (void**)audio->data, 1024) != 1024)
+			return AVERROR(EAGAIN);
+		return avcodec_send_frame(m->decoder, audio);
+	}
+	else
+	{
+		// video
+		r = avcodec_receive_frame(m->decoder, frame);
+		if (r < 0)
+			return r;
+
+		r = avcodec_send_frame(m->encoder, frame);
+		if (r < 0)
+		{
+			if (r != AVERROR(EAGAIN) && r != AVERROR_EOF)
+				printf("[%s] avcodec_send_frame() => %d\n", __FUNCTION__, r);
+			return r;
+		}
+
+		return avcodec_receive_packet(m->encoder, avpkt);
+	}
+}
+
 int FFLiveSource::Play()
 {
 	bool sendframe = false;
@@ -262,7 +343,7 @@ int FFLiveSource::Play()
 SEND_PACKET:
 	if (0 == m_pkt.buf)
 	{
-		int r = av_read_frame(m_ic, &m_pkt);
+		int r = ReadFrame(&m_pkt);
 		if (r == AVERROR_EOF)
 		{
 			// 0-EOF
@@ -270,23 +351,14 @@ SEND_PACKET:
 			SendBye();
 			return 0;
 		}
+		else if (r == AVERROR(EAGAIN))
+		{
+			goto SEND_PACKET;
+		}
 		else if (r < 0)
 		{
 			// error
 			return r;
-		}
-
-		for (r = 0; r < m_count; r++)
-		{
-			struct media_t* m = &m_media[r];
-			if (m->track == m_pkt.stream_index)
-				break;
-		}
-		if (r == m_count)
-		{
-			av_packet_unref(&m_pkt); // send flag
-			sendframe = 1;
-			goto SEND_PACKET;
 		}
 
 		AVRational time_base = { 1, 1000/*ms*/ };
@@ -309,51 +381,46 @@ SEND_PACKET:
 		if (-1 == m_dts)
 			m_dts = m_pkt.dts;
 
-		if (int64_t(clock - m_clock) + m_dts >= m_pkt.dts)
+		if (0 == strcmp("H264", m->name))
 		{
-			if (0 == strcmp("H264", m->name))
-			{
-				// MPEG4 -> H.264 byte stream
-				uint8_t* p = m_pkt.data;
-				size_t bytes = m_pkt.size;
-				while (bytes > 0)
-				{
-					// nalu size -> start code
-					assert(bytes > 4);
-					uint32_t n = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-					p[0] = 0;
-					p[1] = 0;
-					p[2] = 0;
-					p[3] = 1;
-					bytes -= n + 4;
-					p += n + 4;
-				}
+			// MPEG4 -> H.264 byte stream
+			//uint8_t* p = m_pkt.data;
+			//size_t bytes = m_pkt.size;
+			//while (bytes > 0)
+			//{
+			//	// nalu size -> start code
+			//	assert(bytes > 4);
+			//	uint32_t n = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+			//	p[0] = 0;
+			//	p[1] = 0;
+			//	p[2] = 0;
+			//	p[3] = 1;
+			//	bytes -= n + 4;
+			//	p += n + 4;
+			//}
 
-				//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
-			}
-			else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
-			{
-				// add ADTS header
-				//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
-			}
-			else
-			{
-				assert(0);
-			}
-
-			if (-1 == m->dts_first)
-				m->dts_first = m_pkt.pts;
-			m->dts_last = m_pkt.pts;
-			uint32_t timestamp = m->timestamp + m->dts_last - m->dts_first;
-
-			rtp_payload_encode_input(m->packer, m_pkt.data, m_pkt.size, (uint32_t)(timestamp * (m->frequency / 1000) /*kHz*/));
-
-			av_packet_unref(&m_pkt); // send flag
-			sendframe = 1;
-			goto SEND_PACKET;
+			//printf("[V] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
+		}
+		else if (0 == strcmp("MP4A-LATM", m->name) || 0 == strcmp("MPEG4-GENERIC", m->name))
+		{
+			// add ADTS header
+			//printf("[A] pts: %lld, dts: %lld, clock: %llu\n", m_pkt.pts, m_pkt.dts, clock);
+		}
+		else
+		{
+			assert(0);
 		}
 
-		break;
+		if (-1 == m->dts_first)
+			m->dts_first = m_pkt.pts;
+		m->dts_last = m_pkt.pts;
+		uint32_t timestamp = m->timestamp + m->dts_last - m->dts_first;
+
+		rtp_payload_encode_input(m->packer, m_pkt.data, m_pkt.size, (uint32_t)(timestamp * (m->frequency / 1000) /*kHz*/));
+
+		av_packet_unref(&m_pkt); // send flag
+		sendframe = 1;
+		goto SEND_PACKET;
 	}
 
 	return sendframe ? 1 : 0;
@@ -369,12 +436,12 @@ int FFLiveSource::Pause()
 
 int FFLiveSource::Seek(int64_t pos)
 {
-	return -1;
+	return 0;
 }
 
 int FFLiveSource::SetSpeed(double speed)
 {
-	return -1;
+	return 0;
 }
 
 int FFLiveSource::GetDuration(int64_t& duration) const
@@ -408,31 +475,44 @@ int FFLiveSource::GetRTPInfo(const char* uri, char *rtpinfo, size_t bytes) const
 	return 0;
 }
 
-void FFLiveSource::OnVideo(AVCodecParameters* codecpar)
+void FFLiveSource::OnVideo(AVStream* stream)
 {
 	int n = 0;
 	uint8_t buffer[8 * 1024];
-	AVCodecParameters* par;
 	struct media_t* m = &m_media[m_count++];
-
-	m->decoder = ffdecoder_create(codecpar);
-	par = avcodec_parameters_alloc();
-	avcodec_parameters_copy(par, codecpar);
-	par->codec_id = AV_CODEC_ID_H264;
-	m->encoder = ffencoder_create(par);
-	avcodec_parameters_free(&par);
+	
+	AVCodecParameters* codecpar = avcodec_parameters_alloc();
+	std::shared_ptr<AVCodecParameters*> __codecpar(&codecpar, avcodec_parameters_free);
+	codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+	codecpar->codec_id = AV_CODEC_ID_H264;
+	codecpar->format = AV_PIX_FMT_YUV420P;
+	codecpar->width = 1280;
+	codecpar->height = 720;
+	codecpar->bit_rate = 2000000;
+	AVDictionary* opts = NULL;
+	av_dict_set(&opts, "preset", "fast", 0);
+	av_dict_set(&opts, "crt", "23", 0);
+	//av_dict_set(&opts, "x264opts", "annexb=0", 0);
+	m->encoder = FFLiveCreateEncoder(codecpar, &opts);
+	av_dict_free(&opts);
 
 	m->track = m_count-1;
 	m->rtcp_clock = 0;
 	m->ssrc = rtp_ssrc();
 	m->timestamp = rtp_ssrc();
-	m->bandwidth = 4 * 1024 * 1024;
+	m->bandwidth = codecpar->bit_rate;
 	m->dts_last = m->dts_first = -1;
-
-	if (AV_CODEC_ID_H264 == par->codec_id)
+	m->decoder = FFLiveCreateDecoder(stream);
+	m->audio_swr = NULL;
+	
+	if (AV_CODEC_ID_H264 == codecpar->codec_id)
 	{
+		int vcl, update;
 		struct mpeg4_avc_t avc;
-		mpeg4_avc_decoder_configuration_record_load(m->encoder->extradata, m->encoder->extradata_size, &avc);
+		memset(&avc, 0, sizeof(avc));
+		uint8_t extra[128] = { 0 };
+		h264_annexbtomp4(&avc, m->encoder->extradata, m->encoder->extradata_size, extra, sizeof(extra), &vcl, &update);
+		//mpeg4_avc_decoder_configuration_record_load(m->encoder->extradata, m->encoder->extradata_size, &avc);
 		assert(avc.nb_pps + avc.nb_sps > 0);
 
 		static const char* pattern =
@@ -484,28 +564,38 @@ void FFLiveSource::OnVideo(AVCodecParameters* codecpar)
 	m_sdp += (const char*)buffer;
 }
 
-void FFLiveSource::OnAudio(AVCodecParameters* codecpar)
+void FFLiveSource::OnAudio(AVStream* stream)
 {
 	int n = 0;
 	uint8_t buffer[2 * 1024];
-	AVCodecParameters* par;
 	struct media_t* m = &m_media[m_count++];
+	if (!stream->codecpar)
+		return;
 
-	m->decoder = ffdecoder_create(codecpar);
-	par = avcodec_parameters_alloc();
-	avcodec_parameters_copy(par, codecpar);
-	par->codec_id = AV_CODEC_ID_H264;
-	m->encoder = ffencoder_create(par);
-	avcodec_parameters_free(&par);
+	AVCodecParameters* codecpar = avcodec_parameters_alloc();
+	std::shared_ptr<AVCodecParameters*> __codecpar(&codecpar, avcodec_parameters_free);
+	codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+	codecpar->codec_id = AV_CODEC_ID_AAC;
+	codecpar->format = AV_SAMPLE_FMT_FLTP;
+	codecpar->channels = 2;
+	codecpar->sample_rate = stream->codecpar->sample_rate;
+	codecpar->channel_layout = av_get_default_channel_layout(codecpar->channels);
+	codecpar->bit_rate = 128000;
+	m->encoder = FFLiveCreateEncoder(codecpar, NULL);
+
+	m->audio_swr = swr_alloc_set_opts(NULL, av_get_default_channel_layout(codecpar->channels), (AVSampleFormat)codecpar->format, codecpar->sample_rate, av_get_default_channel_layout(stream->codecpar->channels), (AVSampleFormat)stream->codecpar->format, stream->codecpar->sample_rate, 0, NULL);
+	swr_init(m->audio_swr);
+	m->audio_fifo.reset(av_audio_fifo_alloc((AVSampleFormat)codecpar->format, codecpar->channels, codecpar->sample_rate / 2), av_audio_fifo_free); // 500ms
 
 	m->track = m_count-1;
 	m->rtcp_clock = 0;
 	m->ssrc = rtp_ssrc();
 	m->timestamp = rtp_ssrc();
-	m->bandwidth = 128 * 1024;
+	m->bandwidth = codecpar->bit_rate;
 	m->dts_last = m->dts_first = -1;
+	m->decoder = FFLiveCreateDecoder(stream);
 
-	if (AV_CODEC_ID_AAC == par->codec_id)
+	if (AV_CODEC_ID_AAC == codecpar->codec_id)
 	{
 		struct mpeg4_aac_t aac;
 		//aac.profile = MPEG4_AAC_LC;

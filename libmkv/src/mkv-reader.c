@@ -750,13 +750,13 @@ static struct mkv_element_t* mkv_element_find(struct mkv_element_t *elements, si
 
 static int mkv_reader_open(mkv_reader_t* reader, struct mkv_element_t *elements, size_t count, int level)
 {
-	int r, i;
+	int r;
 	uint64_t pos;
 	struct mkv_element_node_t tree[32]; // max level
 	struct mkv_element_node_t *node;
 	struct mkv_element_t* e;
 
-	i = r = 0;
+	r = 0;
 	memset(tree, 0, sizeof(tree));
 	while (0 == reader->io.error && 0 == r)
 	{
@@ -791,6 +791,7 @@ static int mkv_reader_open(mkv_reader_t* reader, struct mkv_element_t *elements,
 		if (e)
 		{
 #if defined(MKV_PRINT_ELEMENT) && (defined(DEBUG) || defined(_DEBUG))
+			int i;
 			for (i = e->level >= 0 ? e->level : level; i > 0; i--)
 				printf("\t");
 			printf("%s (%" PRId64 ") off: %u\n", e->name, node->size, (unsigned int)node->off);
@@ -1009,7 +1010,7 @@ int mkv_reader_read2(mkv_reader_t* reader, mkv_reader_onread2 onread, void* para
 	sample = &reader->mkv.samples[reader->offset];
 	ptr = onread(param, sample->track, sample->bytes, sample->pts * reader->mkv.timescale / 1000000, sample->dts * reader->mkv.timescale / 1000000, sample->flags);
 	if (!ptr)
-		return ENOMEM;
+		return -ENOMEM;
 
 	mkv_buffer_seek(&reader->io, sample->offset);
 	mkv_buffer_read(&reader->io, ptr, sample->bytes);

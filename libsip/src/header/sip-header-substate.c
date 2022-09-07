@@ -22,7 +22,7 @@ int sip_header_substate(const char* s, const char* end, struct sip_substate_t* s
 	memset(substate, 0, sizeof(*substate));
 	sip_params_init(&substate->params);
 
-	sscanf(s, " %n%*[^ ;\t\r\n]%n", &i, &r);
+	sscanf((s && s < end) ? s : "", " %n%*[^ ;\t\r\n]%n", &i, &r);
 	substate->state.p = s + i;
 	substate->state.n = r - i;
 
@@ -44,11 +44,11 @@ int sip_header_substate(const char* s, const char* end, struct sip_substate_t* s
 			}
 			else if (0 == cstrcmp(&param->name, "expires"))
 			{
-				substate->expires = atoi(param->value.p);
+				substate->expires = (uint32_t)cstrtol(&param->value, NULL, 10);
 			}
 			else if (0 == cstrcmp(&param->name, "retry-after"))
 			{
-				substate->retry = atoi(param->value.p);
+				substate->retry = (uint32_t)cstrtol(&param->value, NULL, 10);
 			}
 		}
 	}

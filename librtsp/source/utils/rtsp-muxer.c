@@ -11,6 +11,7 @@
 #include "mpeg4-aac.h"
 #include "rtp-sender.h"
 #include "rtsp-payloads.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +62,7 @@ struct rtp_muxer_media_t
 
 struct rtsp_muxer_t
 {
-	struct rtp_muxer_payload_t payloads[1];
+	struct rtp_muxer_payload_t payloads[3];
 	int payload_capacity;
 	int payload_count;
 
@@ -207,7 +208,7 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
     struct rtp_muxer_payload_t* pt;
 
 	if (muxer->payload_count >= muxer->payload_capacity)
-		return -1;
+		return -E2BIG;
 
 	pt = &muxer->payloads[muxer->payload_count];
     memset(pt, 0, sizeof(*pt));
@@ -254,10 +255,10 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
         if (0 == strcasecmp(encoding, "H264") 
             || 0 == strcasecmp(encoding, "H265") || 0 == strcasecmp(encoding, "HEVC")
             || 0 == strcasecmp(encoding, "VP8") || 0 == strcasecmp(encoding, "VP9")
-            // || 0 == strcasecmp(encoding, "AV1")
+            || 0 == strcasecmp(encoding, "AV1")
             || 0 == strcasecmp(encoding, "MP4V-ES"))
         {
-            r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, frequence, extra, size);
+            r = rtp_sender_init_video(&pt->rtp, proto, port, payload, encoding, frequence ? frequence : 90000, extra, size);
         }
         else if (RTP_PAYLOAD_PCMU == payload || RTP_PAYLOAD_PCMA == payload || 0 == strcasecmp(encoding, "MP4A-LATM") || 0 == strcasecmp(encoding, "MPEG4-GENERIC") || 0 == strcasecmp(encoding, "opus"))
         {
@@ -266,7 +267,7 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
         else
         {
             assert(0);
-            return -1;
+            return -EPROTONOSUPPORT;
         }
 
     }
@@ -293,14 +294,14 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
     struct rtp_muxer_media_t* m;
 
     if (muxer->media_count >= muxer->media_capacity)
-        return -1;
+        return -E2BIG;
 
     if (pid < 0 || pid >= muxer->payload_count)
-        return -1;
+        return -ENOENT;
 
     mpeg2 = avpayload_find_by_payload((uint8_t)codec);
     if (mpeg2 < 0)
-        return -1;
+        return -EPROTONOSUPPORT;
 
     m = &muxer->medias[muxer->media_count];
     memset(m, 0, sizeof(*m));
@@ -364,7 +365,7 @@ int rtsp_muxer_getinfo(struct rtsp_muxer_t* muxer, int pid, uint16_t* seq, uint3
 {
     struct rtp_muxer_payload_t* pt;
     if (pid < 0 || pid >= muxer->payload_count)
-        return -1;
+        return -ENOENT;
 
     pt = &muxer->payloads[pid];
     *sdp = pt->sdp;
@@ -379,7 +380,7 @@ int rtsp_muxer_input(struct rtsp_muxer_t* muxer, int mid, int64_t pts, int64_t d
     struct rtp_muxer_media_t* m;
     
     if (mid < 0 ||  mid >= muxer->media_count)
-        return -1;
+        return -ENOENT;
 
     m = &muxer->medias[mid];
 
@@ -399,7 +400,7 @@ int rtsp_muxer_rtcp(struct rtsp_muxer_t* muxer, int pid, void* buf, int len)
     struct rtp_muxer_payload_t* pt;
 
     if (pid < 0 || pid >= muxer->payload_count)
-        return -1;
+        return -ENOENT;
     pt = &muxer->payloads[pid];
 
     r = 0;
@@ -419,7 +420,7 @@ int rtsp_muxer_onrtcp(struct rtsp_muxer_t* muxer, int pid, const void* buf, int 
 {
     struct rtp_muxer_payload_t* pt;
     if (pid < 0 || pid >= muxer->payload_count)
-        return -1;
+        return -ENOENT;
     pt = &muxer->payloads[pid];
     return rtp_onreceived_rtcp(pt->rtp.rtp, buf, len);
 }

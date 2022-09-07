@@ -65,7 +65,7 @@ static int hls_handler(void* param, const void* data, size_t bytes, int64_t pts,
 	playlist->last_pts = pts + duration;
 
 	char name[128] = { 0 };
-	snprintf(name, sizeof(name), "%s/%d.ts", playlist->file.c_str(), playlist->i++);
+	snprintf(name, sizeof(name) - 1, "%s/%d.ts", playlist->file.c_str(), playlist->i++);
 	hls_m3u8_add(playlist->m3u8, name, pts, duration, discontinue);
 
 	// add new segment
@@ -171,8 +171,6 @@ static int hls_server_m3u8(http_session_t* session, const std::string& path)
 	assert(0 == hls_m3u8_playlist(m3u8, 0, playlist, sizeof(playlist)));
 	
 	http_server_set_header(session, "content-type", HLS_M3U8_TYPE);
-	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 	http_server_reply(session, 200, playlist, strlen(playlist));
 
 	printf("load %s.m3u8 file\n", path.c_str());
@@ -203,8 +201,6 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
 		if(ts->name == file)
 		{
             std::atomic_fetch_add(&ts->ref, 1);
-			http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-			http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 			http_server_send(session, ts->data, ts->size, hls_server_ts_onsend, ts);
 			printf("load file %s\n", file.c_str());
 			return 0;
@@ -217,7 +213,13 @@ static int hls_server_ts(http_session_t* session, const std::string& path, const
 }
 
 static int hls_server_onlive(void* /*http*/, http_session_t* session, const char* /*method*/, const char* path)
-{
+{    
+	// HTTP CORS
+	http_server_set_header(session, "Access-Control-Allow-Origin", "*");
+	http_server_set_header(session, "Access-Control-Allow-Headers", "*");
+	http_server_set_header(session, "Access-Control-Allow-Credentials", "true");
+	http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, CONNECT");
+
 	path = path + 6;
 	if (strendswith(path, ".m3u8"))
 	{
@@ -263,8 +265,6 @@ static int hls_server_onvod(void* /*http*/, http_session_t* session, const char*
 	}
 	else if (path_testfile(fullpath.c_str()))
 	{
-		http_server_set_header(session, "Access-Control-Allow-Origin", "*");
-		http_server_set_header(session, "Access-Control-Allow-Methods", "GET, POST, PUT");
 		//http_server_set_header(session, "Transfer-Encoding", "chunked");
 		if (std::string::npos != fullpath.find(".m3u8"))
 			http_server_set_header(session, "content-type", HLS_M3U8_TYPE);

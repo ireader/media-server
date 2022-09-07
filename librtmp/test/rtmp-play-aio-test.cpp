@@ -36,7 +36,7 @@ static int rtmp_client_play_onscript(void* flv, const void* script, size_t bytes
 	return flv_writer_input(flv, FLV_TYPE_SCRIPT, script, bytes, timestamp);
 }
 
-static void rtmp_onconnect(void* flv, int code, aio_socket_t aio)
+static void rtmp_onconnect(void* flv, int code, socket_t tcp, aio_socket_t aio)
 {
 	assert(0 == code);
 

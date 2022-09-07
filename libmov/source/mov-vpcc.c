@@ -15,7 +15,7 @@ int mov_read_vpcc(struct mov_t* mov, const struct mov_box_t* box)
     if (entry->extra_data_size < box->size-4)
     {
         void* p = realloc(entry->extra_data, (size_t)box->size-4);
-        if (NULL == p) return ENOMEM;
+        if (NULL == p) return -ENOMEM;
         entry->extra_data = p;
     }
 

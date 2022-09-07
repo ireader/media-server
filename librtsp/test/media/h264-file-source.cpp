@@ -60,7 +60,7 @@ int H264FileSource::Play()
 		const uint8_t* ptr;
 		if(0 == m_reader.GetNextFrame(m_pos, ptr, bytes))
 		{
-			rtp_payload_encode_input(m_rtppacker, ptr, bytes, m_timestamp * 90 /*kHz*/);
+			rtp_payload_encode_input(m_rtppacker, ptr, (int)bytes, m_timestamp * 90 /*kHz*/);
 			m_rtp_clock += 40;
 			m_timestamp += 40;
 
@@ -99,12 +99,13 @@ int H264FileSource::GetDuration(int64_t& duration) const
 
 int H264FileSource::GetSDPMedia(std::string& sdp) const
 {
-    static const char* pattern =
-        "m=video 0 RTP/AVP %d\n"
-        "a=rtpmap:%d H264/90000\n"
-        "a=fmtp:%d profile-level-id=%02X%02X%02X;"
-    			 "packetization-mode=1;"
-    			 "sprop-parameter-sets=";
+	static const char* pattern =
+		"m=video 0 RTP/AVP %d\n"
+		"a=control:track0\n"
+		"a=rtpmap:%d H264/90000\n"
+		"a=fmtp:%d profile-level-id=%02X%02X%02X;"
+				"packetization-mode=1;"
+				"sprop-parameter-sets=";
 
     char base64[512] = {0};
     std::string parameters;

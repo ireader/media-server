@@ -15,8 +15,6 @@ static char s_packet[2 * 1024 * 1024];
 
 static void ffmpeg_init()
 {
-	avcodec_register_all();
-	av_register_all();
 	avformat_network_init();
 }
 
@@ -77,7 +75,7 @@ static int hls_segment(void* m3u8, const void* data, size_t bytes, int64_t /*pts
 {
 	static int i = 0;
 	static char name[128] = { 0 };
-	snprintf(name, sizeof(name), "hls/%d.mp4", ++i);
+	snprintf(name, sizeof(name) - 1, "hls/%d.mp4", ++i);
 	FILE* fp = fopen(name, "wb");
 	fwrite(data, 1, bytes, fp);
 	fclose(fp);

@@ -279,14 +279,14 @@ static int rtp_mpeg2es_pack_video(struct rtp_encode_mpeg2es_t *packer, const uin
 	p = mpeg2_start_code_prefix_find(video, pend);
 	for (r = 0; p < pend && 0 == r; p = pnext)
 	{
-		size_t nalu_size;
+		//size_t nalu_size;
 
 		mpeg2vh.begin_of_sequence = 0;
 		mpeg2_video_header_parse(&mpeg2vh, p, (int)(pend - p));
 		
 		if (pend - p + N_MPEG12_HEADER + RTP_FIXED_HEADER <= packer->size)
 		{
-			nalu_size = pend - p;
+			//nalu_size = pend - p;
 			pnext = pend;
 		}
 		else

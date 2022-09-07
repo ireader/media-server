@@ -148,8 +148,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else if(FLV_AVPACKET == video.avpacket)
 		{
-			assert(flv->v.avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
-			if (flv->v.avc.nalu > 0 && bytes > n) // 5 ==  bytes flv eof
+			// feat: h264_mp4toannexb support flv->v.avc.nalu == 0
+			//assert(flv->v.avc.nalu > 0); // parse AVCDecoderConfigurationRecord failed
+			//if (flv->v.avc.nalu > 0 && bytes > n) // 5 ==  bytes flv eof
 			{
 				// H.264
 				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
@@ -187,8 +188,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else if (FLV_AVPACKET == video.avpacket)
 		{
-			assert(flv->v.hevc.numOfArrays > 0); // parse HEVCDecoderConfigurationRecord failed
-			if (flv->v.hevc.numOfArrays > 0 && bytes > n) // 5 ==  bytes flv eof
+			// feat: h265_mp4toannexb support flv->v.hevc.numOfArrays == 0
+			//assert(flv->v.hevc.numOfArrays > 0); // parse HEVCDecoderConfigurationRecord failed
+			//if (flv->v.hevc.numOfArrays > 0 && bytes > n) // 5 ==  bytes flv eof
 			{
 				// H.265
 				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))

@@ -25,7 +25,7 @@ struct sip_uas_handler_t
 	/// @return 0-ok, <0-error, other-reserved
 	int (*send)(void* param, const struct cstring_t* protocol, const struct cstring_t* url, const struct cstring_t *received, int rport, const void* data, int bytes);
 
-	/// @param[in] expires in seconds
+	/// @param[in] expires in seconds. if not provided, default equal to 60
 	int (*onregister)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
 
 	/// @param[in] dialog nil-new invite, not nil-reinvite

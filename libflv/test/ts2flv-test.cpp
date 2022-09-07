@@ -5,6 +5,8 @@
 #include "mpeg-ts-proto.h"
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int on_flv_packet(void* flv, int type, const void* data, size_t bytes, uint32_t timestamp)
 {
@@ -26,6 +28,11 @@ static int on_ts_packet(void* param, int program, int /*stream*/, int avtype, in
 		while (len > 0 && len <= bytes)
 		{
 			flv_muxer_aac(muxer, data, len, (uint32_t)(pts / 90), (uint32_t)(pts / 90));
+
+			mpeg4_aac_t aac;
+			memset(&aac, 0, sizeof(aac));
+			if(mpeg4_aac_adts_load((const uint8_t*)data, bytes, &aac) > 0 && aac.sampling_frequency > 0)
+				pts += 1024 /*frame*/ * 1000 / aac.sampling_frequency;
 			data = (const uint8_t*)data + len;
 			bytes -= len;
 			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);

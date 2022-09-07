@@ -300,9 +300,23 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 		}
 	}
 
+	// fix openh264 sps/pps id cycle (0/0, 1/1, 2/2, ..., 31/31, 0/32, 1/33, ...)
+	if ((unsigned int)avc->nb_pps + 1 >= sizeof(avc->pps) / sizeof(avc->pps[0]) && avc->nb_sps > 16)
+	{
+		// replace the oldest pps
+		mpeg4_avc_remove(avc, avc->pps[0].data, avc->pps[0].bytes, avc->data + avc->off);
+		avc->off -= avc->pps[0].bytes;
+
+		avc->pps[0].data = avc->data + avc->off;
+		avc->pps[0].bytes = (uint16_t)bytes;
+		memcpy(avc->pps[0].data, nalu, bytes);
+		avc->off += bytes;
+		return 1; // set update flag
+	}
+
 	// copy new
-	assert((unsigned int)avc->nb_pps < sizeof(avc->pps) / sizeof(avc->pps[0]));
-	if ((unsigned int)avc->nb_pps >= sizeof(avc->pps) / sizeof(avc->pps[0])
+	assert((unsigned int)avc->nb_pps + 1 < sizeof(avc->pps) / sizeof(avc->pps[0]));
+	if ((unsigned int)avc->nb_pps + 1 >= sizeof(avc->pps) / sizeof(avc->pps[0])
 		|| avc->off + bytes > sizeof(avc->data))
 	{
 		assert(0);
@@ -313,7 +327,7 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 	avc->pps[avc->nb_pps].bytes = (uint16_t)bytes;
 	memcpy(avc->pps[avc->nb_pps].data, nalu, bytes);
 	avc->off += bytes;
-	++avc->nb_pps;
+	++avc->nb_pps; // fixme: uint8_t overflow
 	return 1; // set update flag
 }
 
@@ -325,9 +339,9 @@ int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 	{
 	case H264_NAL_SPS:
 		r = h264_sps_copy(avc, nalu, bytes);
-		if (1 == avc->nb_sps)
+		if (1 == r || 1 == avc->nb_sps)
 		{
-			// update profile/level once only
+			// update profile/level
 			avc->profile = nalu[1];
 			avc->compatibility = nalu[2];
 			avc->level = nalu[3];

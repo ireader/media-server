@@ -14,6 +14,7 @@ extern "C" {
 enum {
 	DIALOG_ERALY = 0,
 	DIALOG_CONFIRMED,
+	DIALOG_TERMINATED,
 };
 
 struct sip_agent_t;

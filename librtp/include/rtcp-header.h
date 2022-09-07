@@ -5,10 +5,10 @@
 
 enum
 {
-    RTCP_FIR    = 192,
-    RTCP_NACK   = 193,
-    RTCP_SMPTETC= 194,
-    RTCP_IJ     = 195,
+    RTCP_FIR    = 192, // RFC2032
+    RTCP_NACK   = 193, // RFC2032
+    RTCP_SMPTETC= 194, // RFC5484
+    RTCP_IJ     = 195, // RFC5450
     
 	RTCP_SR		= 200,
 	RTCP_RR		= 201,
@@ -16,12 +16,16 @@ enum
 	RTCP_BYE	= 203,
 	RTCP_APP	= 204,
     
-    RTCP_RTPFB  = 205,
-    RTCP_PSFB   = 206,
-    RTCP_XR     = 207,
+    RTCP_RTPFB  = 205, // RFC4585
+    RTCP_PSFB   = 206, // RFC4585
+    RTCP_XR     = 207, // RFC3611
     RTCP_AVB    = 208,
-    RTCP_RSI    = 209,
-    RTCP_TOKEN  = 210,
+    RTCP_RSI    = 209, // RFC5760
+    RTCP_TOKEN  = 210, // RFC6284
+	RTCP_IDMS	= 211, // RFC7272
+	RTCP_RGRS	= 212, // RFC8861
+
+	RTCP_LIMIT  = 223, // RFC5761 RTCP packet types in the ranges 1-191 and 224-254 SHOULD only be used when other values have been exhausted.
 };
 
 enum

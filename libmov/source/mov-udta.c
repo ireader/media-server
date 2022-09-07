@@ -26,6 +26,7 @@ int mov_udta_meta_write(const struct mov_udta_meta_t* meta, void* data, int byte
 	struct mov_memory_buffer_t ptr;
 	uint64_t pmeta, pilst, n;
 
+	ptr.maxsize = bytes;
 	ptr.capacity = bytes;
 	ptr.off = 0;
 	ptr.ptr = (uint8_t*)data;
@@ -69,5 +70,5 @@ int mov_udta_meta_write(const struct mov_udta_meta_t* meta, void* data, int byte
 	mov_buffer_w32(&w, (uint32_t)(n - pmeta));
 	mov_buffer_seek(&w, n); // rewind
 
-	return (int)ptr.off;
+	return (int)ptr.bytes;
 }

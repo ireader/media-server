@@ -105,7 +105,7 @@ int rtmp_control_handler(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* 
 		assert(5 == header->length);
 		if (5 == rtmp_read_set_peer_bandwidth(data, header->length, &rtmp->peer_bandwidth, &rtmp->limit_type))
 		{
-			rtmp->u.client.onbandwidth(rtmp->param);
+			rtmp->client.onbandwidth ? rtmp->client.onbandwidth(rtmp->param) : 0;
 			return 5;
 		}
 		return 0;

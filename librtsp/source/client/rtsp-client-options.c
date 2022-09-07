@@ -27,18 +27,15 @@ int rtsp_client_options(struct rtsp_client_t *rtsp, const char* commands)
 	char require[128];
 	char session[128];
 
-	require[0] = '\0';
-	session[0] = '\0';
 	rtsp->state = RTSP_OPTIONS;
 
-	if (commands && commands[0])
-		snprintf(require, sizeof(require), "Require: %s\r\n", commands);
-	if (rtsp->media_count > 0 && *rtsp->session[0].session)
-		snprintf(session, sizeof(session), "Session: %s\r\n", rtsp->session[0].session);
+	require[0] = session[0] = '\0';
+	if ((commands && commands[0] && sizeof(require) <= snprintf(require, sizeof(require), "Require: %s\r\n", commands))
+		|| (rtsp->media_count > 0 && *rtsp->session[0].session && sizeof(session) <= snprintf(session, sizeof(session) - 1, "Session: %s\r\n", rtsp->session[0].session)))
+		return -1;
 
 	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->cseq++, require, session, USER_AGENT);
-	assert(r > 0 && r < sizeof(rtsp->req));
-	return r == rtsp->handler.send(rtsp->param, rtsp->uri, rtsp->req, r) ? 0 : -1;
+	return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->uri, rtsp->req, r)) ? 0 : -1;
 }
 
 int rtsp_client_options_onreply(struct rtsp_client_t* rtsp, void* parser)

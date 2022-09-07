@@ -184,7 +184,7 @@ void rtsp_client_test(const char* host, const char* file)
 	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
 	socket_init();
-	ctx.socket = socket_connect_host(host, 554, 2000);
+	ctx.socket = socket_connect_host(host, 8554, 2000);
 	assert(socket_invalid != ctx.socket);
 	//ctx.rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
 	ctx.rtsp = rtsp_client_create(packet, "username1", "password1", &handler, &ctx);

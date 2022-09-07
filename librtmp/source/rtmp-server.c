@@ -20,6 +20,7 @@
 struct rtmp_server_t
 {
 	struct rtmp_t rtmp;
+	uint32_t recv_bytes[2]; // for rtmp_acknowledgement
 
 	void* param;
 	struct rtmp_server_handler_t handler;
@@ -35,6 +36,14 @@ struct rtmp_server_t
 	uint32_t stream_id; // createStream/deleteStream
 	uint8_t receiveAudio; // 1-enable audio, 0-no audio
 	uint8_t receiveVideo; // 1-enable video, 0-no video
+
+	// onpublish/onplay only
+	struct
+	{
+		double transaction;
+		int reset;
+		int play; // 1-play, 2-publish, other-error
+	} start;
 };
 
 static int rtmp_server_send_control(struct rtmp_t* rtmp, const uint8_t* payload, uint32_t bytes, uint32_t stream_id)
@@ -75,6 +84,21 @@ static int rtmp_server_send_set_chunk_size(struct rtmp_server_t* ctx)
 	r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
 	ctx->rtmp.out_chunk_size = RTMP_OUTPUT_CHUNK_SIZE;
 	return n == r ? 0 : r;
+}
+
+/// 5.4.3. Acknowledgement (3)
+static int rtmp_server_send_acknowledgement(struct rtmp_server_t* ctx, size_t size)
+{
+	int n, r;
+	ctx->recv_bytes[0] += (uint32_t)size;
+	if (ctx->rtmp.window_size && ctx->recv_bytes[0] - ctx->recv_bytes[1] > ctx->rtmp.window_size)
+	{
+		n = rtmp_acknowledgement(ctx->payload, sizeof(ctx->payload), ctx->recv_bytes[0]);
+		r = ctx->handler.send(ctx->param, ctx->payload, n, NULL, 0);
+		ctx->recv_bytes[1] = ctx->recv_bytes[0];
+		return n == r ? 0 : r;
+	}
+	return 0;
 }
 
 /// 5.4.4. Window Acknowledgement Size (5)
@@ -250,12 +274,12 @@ static int rtmp_server_onpublish(void* param, int r, double transaction, const c
 
 	if (0 == r)
 	{
+		snprintf(ctx->stream_name, sizeof(ctx->stream_name) - 1, "%s", stream_name ? stream_name : "");
+		snprintf(ctx->stream_type, sizeof(ctx->stream_type) - 1, "%s", stream_type ? stream_type : "");
+
 		r = ctx->handler.onpublish(ctx->param, ctx->info.app, stream_name, stream_type);
 		if (0 == r)
 		{
-			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
-			snprintf(ctx->stream_type, sizeof(ctx->stream_type), "%s", stream_type);
-
 			// User Control (StreamBegin)
 			r = rtmp_server_send_stream_begin(ctx);
 			if(0 != r)
@@ -277,26 +301,29 @@ static int rtmp_server_onplay(void* param, int r, double transaction, const char
 
 	if (0 == r)
 	{
+		ctx->start.play = 1;
+		ctx->start.reset = reset;
+		ctx->start.transaction = transaction;
+		snprintf(ctx->stream_name, sizeof(ctx->stream_name) - 1, "%s", stream_name ? stream_name : "");
+		snprintf(ctx->stream_type, sizeof(ctx->stream_type) - 1, "%s", -1 == start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD);
+
 		r = ctx->handler.onplay(ctx->param, ctx->info.app, stream_name, start, duration, reset);
-		if (0 == r)
-		{
-			snprintf(ctx->stream_name, sizeof(ctx->stream_name), "%s", stream_name);
-			snprintf(ctx->stream_type, sizeof(ctx->stream_type), "%s", -1==start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD);
+		//if (0 == r)
+		//{
+		//	// User Control (StreamBegin)
+		//	r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;
 
-			// User Control (StreamBegin)
-			r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;
+		//	// NetStream.Play.Reset
+		//	if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed", "") : r;
 
-			// NetStream.Play.Reset
-			if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed", "") : r;
+		//	if(0 != r)
+		//		return r;
+		//}
 
-			if(0 != r)
-				return r;
-		}
-
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
-		// User Control (StreamIsRecorded)
-		r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
-		r = 0 == r ? rtmp_server_rtmp_sample_access(ctx) : r;
+		//r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
+		//// User Control (StreamIsRecorded)
+		//r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
+		//r = 0 == r ? rtmp_server_rtmp_sample_access(ctx) : r;
 	}
 
 	return r;
@@ -411,16 +438,16 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.onvideo = rtmp_server_onvideo;
 	ctx->rtmp.onabort = rtmp_server_onabort;
 	ctx->rtmp.onscript = rtmp_server_onscript;
-	ctx->rtmp.u.server.onconnect = rtmp_server_onconnect;
-	ctx->rtmp.u.server.oncreate_stream = rtmp_server_oncreate_stream;
-	ctx->rtmp.u.server.ondelete_stream = rtmp_server_ondelete_stream;
-	ctx->rtmp.u.server.onget_stream_length = rtmp_server_onget_stream_length;
-	ctx->rtmp.u.server.onpublish = rtmp_server_onpublish;
-	ctx->rtmp.u.server.onplay = rtmp_server_onplay;
-	ctx->rtmp.u.server.onpause = rtmp_server_onpause;
-	ctx->rtmp.u.server.onseek = rtmp_server_onseek;
-	ctx->rtmp.u.server.onreceive_audio = rtmp_server_onreceive_audio;
-	ctx->rtmp.u.server.onreceive_video = rtmp_server_onreceive_video;
+	ctx->rtmp.server.onconnect = rtmp_server_onconnect;
+	ctx->rtmp.server.oncreate_stream = rtmp_server_oncreate_stream;
+	ctx->rtmp.server.ondelete_stream = rtmp_server_ondelete_stream;
+	ctx->rtmp.server.onget_stream_length = rtmp_server_onget_stream_length;
+	ctx->rtmp.server.onpublish = rtmp_server_onpublish;
+	ctx->rtmp.server.onplay = rtmp_server_onplay;
+	ctx->rtmp.server.onpause = rtmp_server_onpause;
+	ctx->rtmp.server.onseek = rtmp_server_onseek;
+	ctx->rtmp.server.onreceive_audio = rtmp_server_onreceive_audio;
+	ctx->rtmp.server.onreceive_video = rtmp_server_onreceive_video;
 	
 	ctx->rtmp.out_packets[RTMP_CHANNEL_PROTOCOL].header.cid = RTMP_CHANNEL_PROTOCOL;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_INVOKE].header.cid = RTMP_CHANNEL_INVOKE;
@@ -504,6 +531,7 @@ int rtmp_server_input(struct rtmp_server_t* ctx, const uint8_t* data, size_t byt
 
 		case RTMP_HANDSHAKE_2:
 		default:
+			rtmp_server_send_acknowledgement(ctx, bytes);
 			return rtmp_chunk_read(&ctx->rtmp, (const uint8_t*)p, bytes);
 		}
 	}
@@ -511,9 +539,52 @@ int rtmp_server_input(struct rtmp_server_t* ctx, const uint8_t* data, size_t byt
 	return 0;
 }
 
+int rtmp_server_start(rtmp_server_t* rtmp, int r, const char* msg)
+{
+	(void)msg; // ignore
+	if (1 == rtmp->start.play)
+	{
+		if (0 == r)
+		{
+			// User Control (StreamBegin)
+			r = 0 == r ? rtmp_server_send_stream_begin(rtmp) : r;
+
+			// NetStream.Play.Reset
+			if (rtmp->start.reset) r = 0 == r ? rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed", "") : r;
+
+			if (0 != r)
+				return r;
+		}
+
+		r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
+
+		// User Control (StreamIsRecorded)
+		r = 0 == r ? rtmp_server_send_stream_is_record(rtmp) : r;
+		r = 0 == r ? rtmp_server_rtmp_sample_access(rtmp) : r;
+	}
+	//else if(2 == rtmp->start.play)
+	//{
+	//	if (0 == r)
+	//	{
+	//		// User Control (StreamBegin)
+	//		r = rtmp_server_send_stream_begin(rtmp);
+	//		if (0 != r)
+	//			return r;
+	//	}
+
+	//	r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName", "");
+	//}
+
+	rtmp->start.play = 0;
+	return r;
+}
+
+#define RTMP_SERVER_CHECK_START(rtmp) do {int r; r = rtmp->start.play ? rtmp_server_start(rtmp, 0, NULL) : 0; if (0 != r) return r; } while(0)
+
 int rtmp_server_send_audio(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
+	RTMP_SERVER_CHECK_START(ctx);
 	if (0 == ctx->receiveAudio)
 		return 0; // client don't want receive audio
 
@@ -530,6 +601,7 @@ int rtmp_server_send_audio(struct rtmp_server_t* ctx, const void* data, size_t b
 int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
+	RTMP_SERVER_CHECK_START(ctx);
 	if (0 == ctx->receiveVideo)
 		return 0; // client don't want receive video
 
@@ -546,6 +618,7 @@ int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t b
 int rtmp_server_send_script(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
+	RTMP_SERVER_CHECK_START(ctx);
 
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_INVOKE;

@@ -113,11 +113,11 @@ static int dash_attr_read(const char* value, size_t n, int cls, void* ptr)
 		return 0;
 
 	case ATTR_VALUE_TYPE_UINT32:
-		*(uint32_t*)ptr = (uint32_t)strtol(value, NULL, 10);
+		*(uint32_t*)ptr = (uint32_t)strtoul(value, NULL, 10);
 		break;
 
 	case ATTR_VALUE_TYPE_UINT64:
-		*(uint64_t*)ptr = (uint64_t)strtoll(value, NULL, 10);
+		*(uint64_t*)ptr = (uint64_t)strtoull(value, NULL, 10);
 		break;
 
 	case ATTR_VALUE_TYPE_FLOAT64:

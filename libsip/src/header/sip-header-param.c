@@ -17,7 +17,7 @@ int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 	const char* p;
 	param->name.p = s;
 
-	p = strchr(s, '=');
+	p = (s && s < end) ? strchr(s, '=') : NULL;
 	if (p && p < end)
 	{
 		param->name.n = p - s;
@@ -51,7 +51,7 @@ int sip_header_params(char sep, const char* s, const char* end, struct sip_param
 	{
 		s = p;
 		p = strpbrk(s, seps);
-		while (p && p < end && '"' == *p)
+		while (p && p + 1 < end && '"' == *p)
 		{
 			p = strchr(p + 1, '"');
 			if (p && p < end)

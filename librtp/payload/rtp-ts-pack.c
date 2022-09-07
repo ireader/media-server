@@ -96,7 +96,7 @@ static int rtp_ts_pack_input(void* pack, const void* data, int bytes, uint32_t t
 
 		n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
 		rtp = (uint8_t*)packer->handler.alloc(packer->cbparam, n);
-		if (!rtp) return ENOMEM;
+		if (!rtp) return -ENOMEM;
 
 		// M bit: Set to 1 whenever the timestamp is discontinuous
 		//packer->pkt.rtp.m = (bytes <= packer->size) ? 1 : 0;

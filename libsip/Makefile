@@ -12,6 +12,7 @@ OUTFILE = libsip.a
 #--------------------------------------------------------------------
 INCLUDES = . \
 					./include \
+					./src \
 					$(ROOT)/include \
 					$(ROOT)/libhttp/include
 

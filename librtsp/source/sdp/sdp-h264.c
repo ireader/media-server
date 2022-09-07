@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
@@ -31,19 +32,19 @@ int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 	for (i = 0; i < avc.nb_sps; i++)
 	{
 		if (n + 1 + avc.sps[i].bytes * 2 > bytes)
-			return -1; // // don't have enough memory
+			return -ENOMEM; // // don't have enough memory
 
 		if (i > 0 && n < bytes) data[n++] = ',';
-		n += base64_encode((char*)data + n, avc.sps[i].data, avc.sps[i].bytes);
+		n += (int)base64_encode((char*)data + n, avc.sps[i].data, avc.sps[i].bytes);
 	}
 
 	for (i = 0; i < avc.nb_pps; i++)
 	{
 		if (n + 1 + avc.sps[i].bytes * 2 > bytes)
-			return -1; // // don't have enough memory
+			return -ENOMEM; // // don't have enough memory
 
 		if (n < bytes) data[n++] = ',';
-		n += base64_encode((char*)data + n, avc.pps[i].data, avc.pps[i].bytes);
+		n += (int)base64_encode((char*)data + n, avc.pps[i].data, avc.pps[i].bytes);
 	}
 
 	if (n < bytes)
@@ -64,7 +65,7 @@ int sdp_h264_load(uint8_t* data, int bytes, const char* config)
 		next = strchr(p, ',');
 		len = next ? (int)(next - p) : (int)strlen(p);
 		if (off + (len + 3) / 4 * 3 + (int)sizeof(startcode) > bytes)
-			return -1; // don't have enough space
+			return -ENOMEM; // don't have enough space
 
 		memcpy(data + off, startcode, sizeof(startcode));
 		n = (int)base64_decode(data + off + sizeof(startcode), p, len);

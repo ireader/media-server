@@ -11,6 +11,7 @@
 #include "rtsp-server.h"
 #include "media/ps-file-source.h"
 #include "media/h264-file-source.h"
+#include "media/h265-file-source.h"
 #include "media/mp4-file-source.h"
 #include "rtp-udp-transport.h"
 #include "rtp-tcp-transport.h"
@@ -30,8 +31,11 @@
 #define UDP_MULTICAST_ADDR "239.0.0.2"
 #define UDP_MULTICAST_PORT 6000
 
-static const char* s_workdir = "e:\\";
-//static const char* s_workdir = "/Users/ireader/video/";
+#if defined(OS_WINDOWS)
+static const char* s_workdir = "d:\\";
+#else
+static const char* s_workdir = "./";
+#endif
 
 static ThreadLocker s_locker;
 
@@ -129,6 +133,8 @@ static int rtsp_ondescribe(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri)
 					source.reset(new PSFileSource(filename.c_str()));
 				else if (strendswith(filename.c_str(), ".h264"))
 					source.reset(new H264FileSource(filename.c_str()));
+				else if (strendswith(filename.c_str(), ".h265"))
+					source.reset(new H265FileSource(filename.c_str()));					
 				else
 				{
 #if defined(_HAVE_FFMPEG_)
@@ -221,6 +227,8 @@ static int rtsp_onsetup(void* /*ptr*/, rtsp_server_t* rtsp, const char* uri, con
 				item.media.reset(new PSFileSource(filename.c_str()));
 			else if (strendswith(filename.c_str(), ".h264"))
 				item.media.reset(new H264FileSource(filename.c_str()));
+			else if (strendswith(filename.c_str(), ".h265"))
+				item.media.reset(new H265FileSource(filename.c_str()));				
 			else
 			{
 #if defined(_HAVE_FFMPEG_)
@@ -537,6 +545,8 @@ extern "C" void rtsp_example()
 //	handler.base.send; // ignore
 	handler.onerror = rtsp_onerror;
     
+	// 1. check s_workdir, MUST be end with '/' or '\\'
+	// 2. url: rtsp://127.0.0.1:8554/vod/<filename>
 	void* tcp = rtsp_server_listen("0.0.0.0", 8554, &handler, NULL); assert(tcp);
 //	void* udp = rtsp_transport_udp_create(NULL, 554, &handler, NULL); assert(udp);
 

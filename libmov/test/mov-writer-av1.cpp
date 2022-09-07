@@ -1,10 +1,12 @@
-#include "mov-writer.h"
+#include "mp4-writer.h"
 #include "mov-format.h"
 #include "aom-av1.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#define MOV_WRITER_AV1_FMP4 0
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
 
@@ -20,7 +22,7 @@ static uint8_t s_extra_data[64 * 1024];
 
 struct mov_av1_test_t
 {
-	mov_writer_t* mov;
+	mp4_writer_t* mov;
 	struct aom_av1_t av1;
 
 	int track;
@@ -73,12 +75,13 @@ static int av1_write(struct mov_av1_test_t* ctx, const void* data, int bytes)
 		}
 
 		// TODO: waiting for key frame ???
-		ctx->track = mov_writer_add_video(ctx->mov, MOV_OBJECT_AV1, ctx->width, ctx->height, s_extra_data, extra_data_size);
+		ctx->track = mp4_writer_add_video(ctx->mov, MOV_OBJECT_AV1, ctx->width, ctx->height, s_extra_data, extra_data_size);
 		if (ctx->track < 0)
 			return -1;
+		mp4_writer_init_segment(ctx->mov);
 	}
 
-	mov_writer_write(ctx->mov, ctx->track, data, bytes, ctx->pts, ctx->pts, ctx->keyframe ? MOV_AV_FLAG_KEYFREAME : 0);
+	mp4_writer_write(ctx->mov, ctx->track, data, bytes, ctx->pts, ctx->pts, ctx->keyframe ? MOV_AV_FLAG_KEYFREAME : 0);
 	ctx->pts += 40;
 	ctx->dts += 40;
 	return 0;
@@ -126,9 +129,9 @@ void mov_writer_av1(const char* obu, int width, int height, const char* mp4)
 	if (NULL == ptr) return;
 
 	FILE* fp = fopen(mp4, "wb+");
-	ctx.mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
+	ctx.mov = mp4_writer_create(MOV_WRITER_AV1_FMP4, mov_file_buffer(), fp, MOV_FLAG_FASTSTART | MOV_FLAG_SEGMENT);
 	aom_av1_obu_split(ptr, bytes, av1_handler, &ctx);
-	mov_writer_destroy(ctx.mov);
+	mp4_writer_destroy(ctx.mov);
 
 	fclose(fp);
 	free(ptr);
