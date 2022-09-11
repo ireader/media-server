@@ -95,7 +95,7 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = OS_INT64_TYPE
+DEFINES = OS_INT64_TYPE __ERROR__=00*10000000+__LINE__*1000 
 
 include $(ROOT)/gcc.mk
 

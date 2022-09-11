@@ -105,7 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_;__ERROR__=(00 * 10000000 + __LINE__ * 1000);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../libmkv/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include;../../avcodec/h264/include</AdditionalIncludeDirectories>
     </ClCompile>
