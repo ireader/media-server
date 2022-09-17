@@ -9,9 +9,29 @@
 #include <assert.h>
 #include <string.h>
 
+static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
+{
+	size_t i;
+	for (i = 0; i < psm->stream_count; i++)
+	{
+		if (psm->streams[i].sid == sid)
+			return &psm->streams[i];
+	}
+
+	if (psm->stream_count >= sizeof(psm->streams) / sizeof(psm->streams[0]))
+	{
+		assert(0);
+		return NULL;
+	}
+
+	// new stream
+	return &psm->streams[psm->stream_count++];
+}
+
 size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 {
 	size_t i, j, k;
+	struct pes_t* stream;
 	//uint8_t current_next_indicator;
 	uint8_t single_extension_stream_flag;
 	uint16_t program_stream_map_length;
@@ -50,18 +70,21 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	element_stream_map_length = program_stream_map_length - program_stream_info_length - 10;
 	
 	i += 2;
-	psm->stream_count = 0;
 	for(j = i; j + 4/*element_stream_info_length*/ <= i+element_stream_map_length && psm->stream_count < sizeof(psm->streams)/sizeof(psm->streams[0]); j += 4 + element_stream_info_length)
 	{
-		psm->streams[psm->stream_count].codecid = data[j];
-		psm->streams[psm->stream_count].sid = data[j+1];
-		psm->streams[psm->stream_count].pid = psm->streams[psm->stream_count].sid; // for ts PID
-		element_stream_info_length = (data[j+2] << 8) | data[j+3];
-		if (j + 4 + element_stream_info_length > i+element_stream_map_length)
+		element_stream_info_length = (data[j + 2] << 8) | data[j + 3];
+		if (j + 4 + element_stream_info_length > i + element_stream_map_length)
 			return 0; // TODO: error
 
+		stream = psm_fetch(psm, data[j + 1]); // sid
+		if (NULL == stream)
+			continue;
+		stream->codecid = data[j];
+		stream->sid = data[j+1];
+		stream->pid = stream->sid; // for ts PID
+
 		k = j + 4;
-		if(0xFD == psm->streams[psm->stream_count].sid && 0 == single_extension_stream_flag)
+		if(0xFD == stream->sid && 0 == single_extension_stream_flag)
 		{
 			if(element_stream_info_length < 3)
 				return 0; // TODO: error 
@@ -78,7 +101,6 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 			k += mpeg_elment_descriptor(data+k, j + 4 + element_stream_info_length - k);
 		}
 
-		++psm->stream_count;
 		assert(k - j - 4 == element_stream_info_length);
 	}
 
