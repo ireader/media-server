@@ -34,7 +34,7 @@ static int flv_write_eos(struct flv_writer_t* flv)
 	struct flv_video_tag_header_t video;
 	memset(&video, 0, sizeof(video));
 	video.codecid = FLV_VIDEO_H264;
-	video.keyframe = 1;
+	video.keyframe = FLV_VIDEO_KEY_FRAME;
 	video.avpacket = FLV_END_OF_SEQUENCE;
 	video.cts = 0;
 
