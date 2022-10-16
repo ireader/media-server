@@ -9,7 +9,7 @@ extern "C" {
 
 // RFC4585 Extended RTP Profile for Real-time Transport Control Protocol (RTCP)-Based Feedback (RTP/AVPF)
 // RFC5104 Codec Control Messages in the RTP Audio-Visual Profile with Feedback (AVPF)
-struct rtcp_fb_t
+struct rtsp_fb_t
 {
 	int fb_id;
 	int trr_int;
@@ -19,7 +19,7 @@ struct rtcp_fb_t
 };
 
 // RFC3611 RTP Control Protocol Extended Reports (RTCP XR)
-struct rtcp_xr_t
+struct rtsp_xr_t
 {
 	int loss; // pkt-loss-rle
 	int dup; // pkt-dup-rle
@@ -95,10 +95,10 @@ struct rtsp_media_t
 		int channel; // RTP payload channel
 		char encoding[64]; // RTP payload encoding
 		char *fmtp; // RTP fmtp value
-		struct rtcp_fb_t fb;
+		struct rtsp_fb_t fb;
 	} avformats[16];
 
-	struct rtcp_xr_t xr;
+	struct rtsp_xr_t xr;
 	struct sdp_ice_t ice;
 	struct sdp_ssrc_t ssrc; // rfc 5576
 
