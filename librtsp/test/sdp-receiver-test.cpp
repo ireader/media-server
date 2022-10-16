@@ -120,7 +120,7 @@ static int rtsp_receiver_onpacket(void* param, struct avpacket_t* pkt)
 
 	// map timestamp
 	int discontinuity = 0;
-	int64_t timestamp = avtimeline_input64(&t->line, track, pkt->dts, &discontinuity);
+	int64_t timestamp = avtimeline_input64(&t->line, track, pkt->dts, pkt->pts, &discontinuity);
 	if (discontinuity)
 		printf("dts/pts discontinuity\n");
 	return mov_writer_write(t->ctx->mov, track, pkt->data, pkt->size, timestamp + (pkt->pts - pkt->dts), timestamp, (pkt->flags & AVPACKET_FLAG_KEY) ? MOV_AV_FLAG_KEYFREAME : 0);
