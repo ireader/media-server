@@ -2,12 +2,21 @@ RELEASE ?= 0 # default debug
 UNICODE ?= 0 # default ansi
 VERSION ?= 0
 FILENAME ?= 1
+ARCHBITS ?=  # 32/64 bits
+
+ifeq ($(shell uname -m), x86_64)
+	ARCHBITS = 64
+else ifeq ($(shell getconf LONG_BIT), 64)
+	ARCHBITS = 64
+else ifeq ($(shell arch), x86_64)
+	ARCHBITS = 64
+endif
 
 ifdef PLATFORM
 	CROSS:=$(PLATFORM)-
 else 
 	CROSS:=
-	PLATFORM:=linux
+	PLATFORM:=linux$(ARCHBITS)
 endif
 
 ifeq ($(RELEASE),1)
@@ -85,10 +94,10 @@ MKDIR = @mkdir -p $(dir $@)
 #--------------------------------------------------------------------
 $(OUTPATH)/$(OUTFILE): $(OBJECT_FILES) $(STATIC_LIBS) $(VERSIONFILE) 
 ifeq ($(OUTTYPE),0)
-	$(CXX) -o $@ -Wl,-rpath . $(LDFLAGS) $^ $(addprefix -L,$(LIBPATHS)) $(addprefix -l,$(LIBS))
+	$(CXX) -o $@ -Wl,-rpath=. $(LDFLAGS) $^ $(addprefix -L,$(LIBPATHS)) $(addprefix -l,$(LIBS))
 else
 ifeq ($(OUTTYPE),1)
-	$(CXX) -o $@ -shared -fPIC -rdynamic -Wl,-rpath . $(LDFLAGS) $^ $(addprefix -L,$(LIBPATHS)) $(addprefix -l,$(LIBS))
+	$(CXX) -o $@ -shared -fPIC -rdynamic -Wl,-rpath=. $(LDFLAGS) $^ $(addprefix -L,$(LIBPATHS)) $(addprefix -l,$(LIBS))
 else
 	@echo -e "\033[35m	AR	$(notdir $@)\033[0m"
 	@$(AR) -rc $@ $^
