@@ -41,8 +41,8 @@ struct flv_muxer_t
 	int update; // avc/hevc sequence header update
 
 	uint8_t* ptr;
-	int bytes;
-	int capacity;
+	size_t bytes;
+	size_t capacity;
 };
 
 struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
@@ -78,7 +78,7 @@ int flv_muxer_reset(struct flv_muxer_t* flv)
 	return 0;
 }
 
-static int flv_muxer_alloc(struct flv_muxer_t* flv, int bytes)
+static int flv_muxer_alloc(struct flv_muxer_t* flv, size_t bytes)
 {
 	void* p;
 	p = realloc(flv->ptr, bytes);
@@ -101,8 +101,8 @@ int flv_muxer_g711a(struct flv_muxer_t* flv, const void* data, size_t bytes, uin
 			return -ENOMEM;
 	}
 
-	audio.bits = 1; // 16-bit samples
-	audio.channels = 0;
+	audio.bits = FLV_SOUND_BIT_16; // 16-bit samples
+	audio.channels = FLV_SOUND_CHANNEL_MONO;
 	audio.rate = 0;
 	audio.codecid = FLV_AUDIO_G711A;
 	audio.avpacket = FLV_AVPACKET;
@@ -122,8 +122,8 @@ int flv_muxer_g711u(struct flv_muxer_t* flv, const void* data, size_t bytes, uin
 			return -ENOMEM;
 	}
 
-	audio.bits = 1; // 16-bit samples
-	audio.channels = 0;
+	audio.bits = FLV_SOUND_BIT_16; // 16-bit samples
+	audio.channels = FLV_SOUND_CHANNEL_MONO;
 	audio.rate = 0;
 	audio.codecid = FLV_AUDIO_G711U;
 	audio.avpacket = FLV_AVPACKET;
@@ -132,28 +132,26 @@ int flv_muxer_g711u(struct flv_muxer_t* flv, const void* data, size_t bytes, uin
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
 }
 
-int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, uint32_t dts)
+int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-    int bytes;
 	struct mp3_header_t mp3;
 	struct flv_audio_tag_header_t audio;
 	(void)pts;
 
-    bytes = (int)sz;
-	if (0 == mp3_header_load(&mp3, data, bytes))
+	if (0 == mp3_header_load(&mp3, data, (int)bytes))
 	{
 		return -EINVAL;
 	}
 	else
 	{
-		audio.channels = 3 == mp3.mode ? 0 : 1;
+		audio.channels = 3 == mp3.mode ? FLV_SOUND_CHANNEL_MONO : FLV_SOUND_CHANNEL_STEREO;
 		switch (mp3_get_frequency(&mp3))
 		{
-		case 5500: audio.rate = 0; break;
-		case 11025: audio.rate = 1; break;
-		case 22050: audio.rate = 2; break;
-		case 44100: audio.rate = 3; break;
-		default: audio.rate = 3;
+		case 5500: audio.rate = FLV_SOUND_RATE_5500; break;
+		case 11025: audio.rate = FLV_SOUND_RATE_11025; break;
+		case 22050: audio.rate = FLV_SOUND_RATE_22050; break;
+		case 44100: audio.rate = FLV_SOUND_RATE_44100; break;
+		default: audio.rate = FLV_SOUND_RATE_44100;
 		}
 	}
 
@@ -163,7 +161,7 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 			return -ENOMEM;
 	}
 
-	audio.bits = 1; // 16-bit samples
+	audio.bits = FLV_SOUND_BIT_16; // 16-bit samples
 	audio.codecid = FLV_AUDIO_MP3;
 	audio.avpacket = FLV_AVPACKET;
 	flv_audio_tag_header_write(&audio, flv->ptr, 1);
@@ -171,13 +169,12 @@ int flv_muxer_mp3(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
 }
 
-int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, uint32_t dts)
+int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-    int r, n, m, bytes;
+    int r, n, m;
 	struct flv_audio_tag_header_t audio;
 	(void)pts;
 
-    bytes = (int)sz;
 	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 2/*AudioSpecificConfig*/)
 	{
 		if (0 != flv_muxer_alloc(flv, bytes + 4))
@@ -190,9 +187,9 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 		return -1; // invalid data
 
 	audio.codecid = FLV_AUDIO_AAC;
-	audio.rate = 3; // 44k-SoundRate
-	audio.bits = 1; // 16-bit samples
-	audio.channels = 1; // Stereo sound
+	audio.rate = FLV_SOUND_RATE_44100; // 44k-SoundRate
+	audio.bits = FLV_SOUND_BIT_16; // 16-bit samples
+	audio.channels = FLV_SOUND_CHANNEL_STEREO; // Stereo sound
 	if (0 == flv->audio_sequence_header)
 	{
 		flv->audio_sequence_header = 1; // once only
@@ -209,17 +206,16 @@ int flv_muxer_aac(struct flv_muxer_t* flv, const void* data, size_t sz, uint32_t
 	audio.avpacket = FLV_AVPACKET;
 	flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
 	memcpy(flv->ptr + 2, (uint8_t*)data + n, bytes - n); // AAC exclude ADTS
-	assert(bytes - n + 2 <= (int)flv->capacity);
+	assert(bytes - n + 2 <= flv->capacity);
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes - n + 2, dts);
 }
 
-int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, uint32_t dts)
+int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	int r, m, bytes;
+	int r, m;
 	struct flv_audio_tag_header_t audio;
 	(void)pts;
 
-	bytes = (int)sz;
 	if (flv->capacity < bytes + 2/*AudioTagHeader*/ + 29/*OpusHead*/)
 	{
 		if (0 != flv_muxer_alloc(flv, bytes + 4))
@@ -227,9 +223,9 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 	}
 
 	audio.codecid = FLV_AUDIO_OPUS;
-	audio.rate = 3; // 44k-SoundRate
-	audio.bits = 1; // 16-bit samples
-	audio.channels = 1; // Stereo sound
+	audio.rate = FLV_SOUND_RATE_44100; // 44k-SoundRate
+	audio.bits = FLV_SOUND_BIT_16; // 16-bit samples
+	audio.channels = FLV_SOUND_CHANNEL_STEREO; // Stereo sound
 
 	if (0 == flv->audio_sequence_header)
 	{
@@ -250,7 +246,7 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t sz, uint32_t pts, 
 	audio.avpacket = FLV_AVPACKET;
 	m = flv_audio_tag_header_write(&audio, flv->ptr, flv->capacity);
 	memcpy(flv->ptr + m, (uint8_t*)data, bytes);
-	assert(bytes - m <= (int)flv->capacity);
+	assert(bytes - m <= flv->capacity);
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + m, dts);
 }
 
@@ -272,7 +268,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 			return -1; // invalid data
 
 		flv->video_sequence_header = 1; // once only
-		assert(flv->bytes + m + 5 <= (int)flv->capacity);
+		assert(flv->bytes + m + 5 <= flv->capacity);
 		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
 		if (0 != r) return r;
 	}
@@ -284,7 +280,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
-		assert(flv->bytes <= (int)flv->capacity);
+		assert(flv->bytes <= flv->capacity);
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
@@ -292,14 +288,14 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 
 int flv_muxer_avc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
 {
-	if ((size_t)flv->capacity < bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
+	if (flv->capacity < bytes + sizeof(flv->v.avc) /*AVCDecoderConfigurationRecord*/)
 	{
-		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.avc)))
+		if (0 != flv_muxer_alloc(flv, bytes + sizeof(flv->v.avc)))
 			return -ENOMEM;
 	}
 
 	flv->bytes = 5;
-	flv->bytes += h264_annexbtomp4(&flv->v.avc, data, (int)bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
+	flv->bytes += h264_annexbtomp4(&flv->v.avc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;
 
@@ -324,7 +320,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 			return -1; // invalid data
 
 		flv->video_sequence_header = 1; // once only
-		assert(flv->bytes + m + 5 <= (int)flv->capacity);
+		assert(flv->bytes + m + 5 <= flv->capacity);
 		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
 		if (0 != r) return r;
 	}
@@ -336,7 +332,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
-		assert(flv->bytes <= (int)flv->capacity);
+		assert(flv->bytes <= flv->capacity);
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
@@ -346,12 +342,12 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 {
 	if ((size_t)flv->capacity < bytes + sizeof(flv->v.hevc) /*HEVCDecoderConfigurationRecord*/)
 	{
-		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.hevc)))
+		if (0 != flv_muxer_alloc(flv, bytes + sizeof(flv->v.hevc)))
 			return -ENOMEM;
 	}
 
 	flv->bytes = 5;
-	flv->bytes += h265_annexbtomp4(&flv->v.hevc, data, (int)bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
+	flv->bytes += h265_annexbtomp4(&flv->v.hevc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;
 
@@ -366,7 +362,7 @@ int flv_muxer_av1(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts
 
 	if ((size_t)flv->capacity < bytes + 5 + sizeof(flv->v.av1) /*HEVCDecoderConfigurationRecord*/)
 	{
-		if (0 != flv_muxer_alloc(flv, (int)bytes + sizeof(flv->v.av1)))
+		if (0 != flv_muxer_alloc(flv, bytes + sizeof(flv->v.av1)))
 			return -ENOMEM;
 	}
 
@@ -387,7 +383,7 @@ int flv_muxer_av1(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts
 			return -1; // invalid data
 
 		flv->video_sequence_header = 1; // once only
-		assert(flv->bytes + m + 5 <= (int)flv->capacity);
+		assert(flv->bytes + m + 5 <= flv->capacity);
 		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
 		if (0 != r) return r;
 	}

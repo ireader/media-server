@@ -167,7 +167,7 @@ int aio_rtmp_transport_send(struct aio_rtmp_transport_t* t, const void* header, 
 {
 	struct aio_rtmp_chunk_t* c;
 	if (0 != t->code)
-		return -1;
+		return -ENOTCONN;
 
 	c = (struct aio_rtmp_chunk_t*)malloc(sizeof(*c) + len + bytes + 12);
 	if (NULL == c)

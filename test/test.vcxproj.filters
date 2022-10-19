@@ -503,9 +503,6 @@
     <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp">
       <Filter>librtsp</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtp\test\rtp-header-ext-test.cpp">
-      <Filter>librtp</Filter>
-    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\h265-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
