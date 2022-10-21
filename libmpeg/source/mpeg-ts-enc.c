@@ -297,8 +297,7 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 		++tsctx->pcr_clock;
 
 	// Add PAT and PMT for video IDR frame
-	tsctx->pat_period = ((flags & MPEG_FLAG_IDR_FRAME) && mpeg_stream_type_video(stream->codecid)) ? 0 : tsctx->pat_period;
-	if(0 == ++tsctx->pat_cycle % PAT_CYCLE || 0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts)
+	if(0 == ++tsctx->pat_cycle % PAT_CYCLE || 0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts || ((flags & MPEG_FLAG_IDR_FRAME) && mpeg_stream_type_video(stream->codecid)))
 	{
 		tsctx->pat_cycle = 0;
 		tsctx->pat_period = dts;
