@@ -1,6 +1,5 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
 #include <assert.h>
 #include <stdio.h>
 #include <map>

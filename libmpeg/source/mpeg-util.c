@@ -1,4 +1,4 @@
-#include "mpeg-ts-proto.h"
+#include "mpeg-proto.h"
 #include "mpeg-util.h"
 
 void pcr_write(uint8_t *ptr, int64_t pcr)

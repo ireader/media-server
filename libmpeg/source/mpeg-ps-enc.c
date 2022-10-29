@@ -2,9 +2,8 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.5.3.1 Program stream(p74)
 
-#include "mpeg-ts-proto.h"
-#include "mpeg-ps-proto.h"
-#include "mpeg-pes-proto.h"
+#include "mpeg-pes-internal.h"
+#include "mpeg-ps-internal.h"
 #include "mpeg-util.h"
 #include "mpeg-ps.h"
 #include <errno.h>

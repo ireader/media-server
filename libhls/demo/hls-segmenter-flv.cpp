@@ -38,16 +38,16 @@ static int flv_handler(void* param, int codec, const void* data, size_t bytes, u
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		return hls_media_input(hls, STREAM_AUDIO_AAC, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, PSI_STREAM_AAC, data, bytes, pts, dts, 0);
 
 	case FLV_AUDIO_MP3:
-		return hls_media_input(hls, STREAM_AUDIO_MP3, data, bytes, pts, dts, 0);
+		return hls_media_input(hls, PSI_STREAM_MP3, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
-		return hls_media_input(hls, STREAM_VIDEO_H264, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
+		return hls_media_input(hls, PSI_STREAM_H264, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
 
 	case FLV_VIDEO_H265:
-		return hls_media_input(hls, STREAM_VIDEO_H265, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
+		return hls_media_input(hls, PSI_STREAM_H265, data, bytes, pts, dts, flags ? HLS_FLAGS_KEYFRAME : 0);
 
 	default:
 		// nothing to do
@@ -73,7 +73,7 @@ void hls_segmenter_flv(const char* file)
 	}
 
 	// write m3u8 file
-	hls_media_input(hls, STREAM_VIDEO_H264, NULL, 0, 0, 0, 0);
+	hls_media_input(hls, PSI_STREAM_H264, NULL, 0, 0, 0, 0);
 	hls_m3u8_playlist(m3u, 1, data, sizeof(data));
 	FILE* fp = fopen("playlist.m3u8", "wb");
     if(fp)

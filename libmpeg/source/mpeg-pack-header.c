@@ -1,10 +1,73 @@
-#include "mpeg-ps-proto.h"
-#include "mpeg-util.h"
+#include "mpeg-ps-internal.h"
 #include <assert.h>
 
 // 2.5.3.3 Pack layer of program stream (p78)
 // Table 2-38 - Program stream pack
 // Table 2-39 - Program stream pack header
+#if 1
+int pack_header_read(struct ps_pack_header_t* h, struct mpeg_bits_t* reader)
+{
+	uint8_t v8;
+	uint64_t v64;
+	uint8_t stuffing_length;
+	size_t header_length;
+
+	v8 = mpeg_bits_read8(reader); // data[4]
+	if (0 == (0xC0 & v8))
+	{
+		// MPEG-1
+		// ISO/IEC 11172-1
+		/*
+		pack() {
+			pack_start_code						32 bslbf
+			'0010'								4 bslbf
+			system_clock_reference [32..30]		3 bslbf
+			marker_bit							1 bslbf
+			system_clock_reference [29..15]		15 bslbf
+			marker_bit							1 bslbf
+			system_clock_reference [14..0]		15 bslbf
+			marker_bit							1 bslbf
+			marker_bit							1 bslbf
+			mux_rate							22 uimsbf
+			marker_bit							1 bslbf
+			if (nextbits() == system_header_start_code)
+				system_header ()
+			while (nextbits() == packet_start_code)
+				packet()
+		}
+		*/
+		h->mpeg2 = 0;
+		//assert(0x20 == (0xF0 & v8));
+		h->system_clock_reference_base = (((uint64_t)(v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
+		h->system_clock_reference_extension = 1;
+		h->program_mux_rate = (mpeg_bits_read8(reader) & 0x7F) << 15;
+		h->program_mux_rate |= mpeg_bits_read15(reader);
+		return mpeg_bits_error(reader) ? MPEG_ERROR_NEED_MORE_DATA : MPEG_ERROR_OK;
+	}
+	else
+	{
+		h->mpeg2 = 1;
+		v64 = mpeg_bits_read64(reader); // data[5-12]
+		//assert((0x44 & data[4]) == 0x44); // '01xxx1xx'
+		//assert((0x04 & data[6]) == 0x04); // 'xxxxx1xx'
+		//assert((0x04 & data[8]) == 0x04); // 'xxxxx1xx'
+		//assert((0x01 & data[9]) == 0x01); // 'xxxxxxx1'
+		h->system_clock_reference_base = (((v8 >> 3) & 0x07) << 30) | ((v8 & 0x03) << 28) | (((v64 >> 51) & 0x1FFF) << 15) | ((v64 >> 35) & 0x7FFF);
+		h->system_clock_reference_extension = (uint32_t)((v64 >> 25) & 0x1F);
+
+		//assert((0x03 & v64) == 0x03); // 'xxxxxx11'
+		h->program_mux_rate = (uint32_t)((v64 >> 2) & 0x3FFFFF);
+
+		//assert((0xF8 & data[13]) == 0x00); // '00000xxx'
+		stuffing_length = mpeg_bits_read8(reader) & 0x07; // stuffing
+
+		header_length = 14 + stuffing_length;
+		mpeg_bits_skip(reader, stuffing_length);
+		return mpeg_bits_error(reader) ? MPEG_ERROR_NEED_MORE_DATA : MPEG_ERROR_OK;
+	}
+}
+
+#else
 size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t bytes)
 {
     uint8_t stuffing_length;
@@ -44,6 +107,7 @@ size_t pack_header_read(struct ps_pack_header_t *h, const uint8_t* data, size_t 
 		return header_length;
 	}
 }
+#endif
 
 size_t pack_header_write(const struct ps_pack_header_t *h, uint8_t *data)
 {

@@ -1,7 +1,6 @@
 #include "flv-demuxer.h"
 #include "flv-reader.h"
 #include "flv-proto.h"
-#include "mpeg-ps-proto.h"
 #include "mpeg-ps.h"
 #include "sys/system.h"
 #include <stdio.h>
@@ -51,18 +50,18 @@ static int flv_ondemux(void* ps, int codec, const void* data, size_t bytes, uint
 		switch (codec)
 		{
 		case FLV_AUDIO_MP3:
-			i = ps_muxer_add_stream((ps_muxer_t*)ps, STREAM_AUDIO_MP3, NULL, 0);
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_MP3, NULL, 0);
 			break;
 		case FLV_AUDIO_ASC:
-			i = ps_muxer_add_stream((ps_muxer_t*)ps, STREAM_AUDIO_AAC, NULL, 0);
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_AAC, NULL, 0);
 			streams[FLV_AUDIO_AAC] = i;
 			return 0;
 		case FLV_VIDEO_AVCC:
-			i = ps_muxer_add_stream((ps_muxer_t*)ps, STREAM_VIDEO_H264, NULL, 0);
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H264, NULL, 0);
 			streams[FLV_VIDEO_H264] = i;
 			return 0;
 		case FLV_VIDEO_HVCC:
-			i = ps_muxer_add_stream((ps_muxer_t*)ps, STREAM_VIDEO_H265, NULL, 0);
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H265, NULL, 0);
 			streams[FLV_VIDEO_H265] = i;
 			return 0;
 		default: return 0;

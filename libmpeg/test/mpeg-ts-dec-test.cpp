@@ -1,6 +1,6 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
+#include "mpeg-types.h"
 #include "mpeg4-aac.h"
 #include <stdio.h>
 #include <assert.h>

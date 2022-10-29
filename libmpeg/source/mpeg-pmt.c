@@ -2,7 +2,7 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.4.8 Program map table(p68)
 
-#include "mpeg-ts-proto.h"
+#include "mpeg-ts-internal.h"
 #include "mpeg-ts-opus.h"
 #include "mpeg-util.h"
 #include <stdlib.h>

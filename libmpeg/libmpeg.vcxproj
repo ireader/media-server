@@ -155,11 +155,15 @@
   <ItemGroup>
     <ClInclude Include="include\mpeg-element-descriptor.h" />
     <ClInclude Include="include\mpeg-pes-proto.h" />
+    <ClInclude Include="include\mpeg-proto.h" />
     <ClInclude Include="include\mpeg-ps-proto.h" />
     <ClInclude Include="include\mpeg-ps.h" />
     <ClInclude Include="include\mpeg-ts-proto.h" />
     <ClInclude Include="include\mpeg-ts.h" />
     <ClInclude Include="include\mpeg-types.h" />
+    <ClInclude Include="source\mpeg-pes-internal.h" />
+    <ClInclude Include="source\mpeg-ps-internal.h" />
+    <ClInclude Include="source\mpeg-ts-internal.h" />
     <ClInclude Include="source\mpeg-ts-opus.h" />
     <ClInclude Include="source\mpeg-util.h" />
   </ItemGroup>

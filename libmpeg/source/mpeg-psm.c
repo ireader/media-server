@@ -2,8 +2,8 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.5.4 Program stream map(p82)
 
-#include "mpeg-ps-proto.h"
-#include "mpeg-pes-proto.h"
+#include "mpeg-ps-internal.h"
+#include "mpeg-pes-internal.h"
 #include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include <assert.h>
@@ -28,6 +28,100 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 	return &psm->streams[psm->stream_count++];
 }
 
+#if 1
+int psm_read(struct psm_t* psm, struct mpeg_bits_t* reader)
+{
+	uint8_t v8;
+	size_t end, off;
+	struct pes_t* stream;
+	//uint8_t current_next_indicator;
+	uint8_t single_extension_stream_flag;
+	uint16_t program_stream_map_length;
+	uint16_t program_stream_info_length;
+	uint16_t element_stream_map_length;
+	uint16_t element_stream_info_length;
+	uint8_t cid, sid;
+
+	// Table 2-41 - Program stream map(p79)
+	program_stream_map_length = mpeg_bits_read16(reader); // (data[4] << 8)  | data[5];
+	end = mpeg_bits_tell(reader) + program_stream_map_length;
+	if (mpeg_bits_error(reader) || end > mpeg_bits_length(reader))
+		return MPEG_ERROR_NEED_MORE_DATA;
+
+	v8 = mpeg_bits_read8(reader); // data[6]
+	//assert((0x20 & data[6]) == 0x00); // 'xx0xxxxx'
+	//current_next_indicator = (data[6] >> 7) & 0x01;
+	single_extension_stream_flag = (uint8_t)(v8 >> 6) & 0x01; //(data[6] >> 6) & 0x01;
+	psm->ver = v8 & 0x1F;
+	mpeg_bits_read8(reader); //assert(data[7] == 0x01); // '00000001'
+
+	// program stream descriptor
+	program_stream_info_length = mpeg_bits_read16(reader); //(data[8] << 8) | data[9];
+	if ((uint32_t)program_stream_info_length + 4 + 2 /*element_stream_map_length*/ > (uint32_t)program_stream_map_length)
+		return MPEG_ERROR_INVALID_DATA;
+
+	// TODO: parse descriptor
+	//for (i = 10; i + 2 <= 10 + program_stream_info_length;)
+	//{
+	//	// descriptor()
+	//	i += mpeg_elment_descriptor(data + i, 10 + program_stream_info_length - i);
+	//}
+	mpeg_bits_skip(reader, program_stream_info_length); // 10 + program_stream_info_length;
+
+	// program element stream
+	element_stream_map_length = mpeg_bits_read16(reader);
+	/* Ignore es_map_length, trust psm_length */
+	element_stream_map_length = program_stream_map_length - program_stream_info_length - 10;
+	end = mpeg_bits_tell(reader) + element_stream_map_length;
+
+	while (0 == mpeg_bits_error(reader) 
+		&& mpeg_bits_tell(reader) + 4 /*element_stream_info_length*/ <= end
+		&& psm->stream_count < sizeof(psm->streams) / sizeof(psm->streams[0]))
+	{
+		cid = mpeg_bits_read8(reader);
+		sid = mpeg_bits_read8(reader);
+		element_stream_info_length = mpeg_bits_read16(reader);
+		if (mpeg_bits_tell(reader) + element_stream_info_length > end)
+			return MPEG_ERROR_INVALID_DATA;
+
+		stream = psm_fetch(psm, sid); // sid
+		if (NULL == stream)
+			continue;
+		stream->codecid = cid;
+		stream->sid = sid;
+		stream->pid = stream->sid; // for ts PID
+
+		off = mpeg_bits_tell(reader);
+		if (0xFD == stream->sid && 0 == single_extension_stream_flag)
+		{
+			if (element_stream_info_length < 3)
+				return MPEG_ERROR_INVALID_DATA;
+			//uint8_t pseudo_descriptor_tag = mpeg_bits_read8(reader);
+			//uint8_t pseudo_descriptor_length = mpeg_bits_read8(reader)
+			//uint8_t element_stream_id_extension = mpeg_bits_read8(reader) & 0x7F;
+			//assert((0x80 & data[k + 2]) == 0x80); // '1xxxxxxx'
+			mpeg_bits_skip(reader, 3);
+		}
+
+		while (0 == mpeg_bits_error(reader) && mpeg_bits_tell(reader) < off + element_stream_info_length)
+		{
+			// descriptor()
+			mpeg_elment_descriptor(reader);
+		}
+
+		assert(mpeg_bits_tell(reader) == off + element_stream_info_length);
+		mpeg_bits_seek(reader, off + element_stream_info_length); // make sure
+	}
+
+	mpeg_bits_read32(reader); // crc32
+	// assert(j+4 == program_stream_map_length+6);
+	// assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
+	assert(0 == mpeg_bits_error(reader));
+	assert(end + 4 /*crc32*/ == mpeg_bits_tell(reader));
+	return MPEG_ERROR_OK;
+}
+
+#else
 size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 {
 	size_t i, j, k;
@@ -108,6 +202,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 //	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
+#endif
 
 size_t psm_write(const struct psm_t *psm, uint8_t *data)
 {

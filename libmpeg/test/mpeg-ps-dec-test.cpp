@@ -1,5 +1,5 @@
 #include "mpeg-ps.h"
-#include "mpeg-ts-proto.h"
+#include "mpeg-types.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -42,7 +42,7 @@ static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int6
     {
         static int64_t v_pts = 0, v_dts = 0;
         assert(0 == v_dts || dts >= v_dts);
-        printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, size: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes);
+        printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, size: %u%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes, (flags & MPEG_FLAG_IDR_FRAME) ? " [I]": "");
         v_pts = pts;
         v_dts = dts;
 

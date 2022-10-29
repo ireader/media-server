@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "mpeg-proto.h"
+
 struct mpeg_ts_func_t
 {
 	/// alloc new packet

@@ -2,7 +2,7 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
-#include "mpeg-ts-proto.h"
+#include "mpeg-ts-internal.h"
 #include "mpeg-util.h"
 #include "mpeg-ts.h"
 #include <errno.h>
@@ -297,7 +297,7 @@ int mpeg_ts_write(void* ts, int pid, int flags, int64_t pts, int64_t dts, const 
 		++tsctx->pcr_clock;
 
 	// Add PAT and PMT for video IDR frame
-	if(0 == ++tsctx->pat_cycle % PAT_CYCLE || 0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts || ((flags & MPEG_FLAG_IDR_FRAME) && mpeg_stream_type_video(stream->codecid)))
+	if(0 == ++tsctx->pat_cycle % PAT_CYCLE || 0 == tsctx->pat_period || tsctx->pat_period + PAT_PERIOD <= dts || (PES_SID_VIDEO == (stream->sid & PES_SID_VIDEO) && (flags & MPEG_FLAG_IDR_FRAME)))
 	{
 		tsctx->pat_cycle = 0;
 		tsctx->pat_period = dts;

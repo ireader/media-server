@@ -96,7 +96,7 @@ int mpeg_h265_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
         }
         else if (nal_type <= 31)
         {
-            ++* vcl;
+            *vcl = (16 <= nal_type && nal_type <= 23) ? 1 : 2;
         }
         else
         {

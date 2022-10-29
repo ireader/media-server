@@ -1,9 +1,66 @@
-#include "mpeg-ps-proto.h"
+#include "mpeg-ps-internal.h"
 #include "mpeg-util.h"
 #include <assert.h>
 
 // 2.5.3.5 System header (p79)
 // Table 2-40 - Program stream system header
+#if 1
+int system_header_read(struct ps_system_header_t* h, struct mpeg_bits_t* reader)
+{
+    uint8_t v8;
+    uint16_t v16;
+    size_t i, len, end;
+
+    len = mpeg_bits_read16(reader);
+    end = mpeg_bits_tell(reader) + len;
+    if (mpeg_bits_error(reader) || end > mpeg_bits_length(reader))
+        return MPEG_ERROR_NEED_MORE_DATA;
+
+    //assert((0x80 & data[6]) == 0x80); // '1xxxxxxx'
+    //assert((0x01 & data[8]) == 0x01); // 'xxxxxxx1'
+    h->rate_bound = (mpeg_bits_read8(reader) & 0x7F) << 15;
+    h->rate_bound |= mpeg_bits_read15(reader);
+
+    v8 = mpeg_bits_read8(reader);
+    h->audio_bound = (v8 >> 2) & 0x3F;
+    h->fixed_flag = (v8 >> 1) & 0x01;
+    h->CSPS_flag = (v8 >> 0) & 0x01;
+
+    v8 = mpeg_bits_read8(reader);
+    assert((0x20 & v8) == 0x20); // 'xx1xxxxx'
+    h->system_audio_lock_flag = (v8 >> 7) & 0x01;
+    h->system_video_lock_flag = (v8 >> 6) & 0x01;
+    h->video_bound = v8 & 0x1F;
+
+    //	assert((0x7F & data[11]) == 0x00); // 'x0000000'
+    h->packet_rate_restriction_flag = (mpeg_bits_read8(reader) >> 7) & 0x01;
+
+    for (i = 0; 0 == mpeg_bits_error(reader) && mpeg_bits_tell(reader) + 1 < end && i < sizeof(h->streams) / sizeof(h->streams[0]); i++)
+    {
+        v8 = mpeg_bits_read8(reader);
+        if ((v8 & 0x80) != 0x80)
+            break;
+
+        h->streams[i].stream_id = v8;
+        if (h->streams[i].stream_id == PES_SID_EXTENSION) // '10110111'
+        {
+            v8 = mpeg_bits_read8(reader); assert(v8 == 0xC0); // '11000000'
+            h->streams[i].stream_id = mpeg_bits_read8(reader) & 0x7F;
+            v8 = mpeg_bits_read8(reader); assert(v8 == 0xB6); // '10110110'
+        }
+
+        v16 = mpeg_bits_read16(reader);
+        assert((v16 & 0xC000) == 0xC000); // '11xxxxxx'
+        h->streams[i].buffer_bound_scale = (v16 >> 13) & 0x01;
+        h->streams[i].buffer_size_bound = v16 & 0x1FFF;
+    }
+
+    assert(0 == mpeg_bits_error(reader));
+    assert(end == mpeg_bits_tell(reader));
+    return MPEG_ERROR_OK;
+}
+
+#else
 size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, size_t bytes)
 {
     size_t i, j;
@@ -56,6 +113,7 @@ size_t system_header_read(struct ps_system_header_t *h, const uint8_t* data, siz
 
     return len + 4 + 2;
 }
+#endif
 
 size_t system_header_write(const struct ps_system_header_t *h, uint8_t *data)
 {

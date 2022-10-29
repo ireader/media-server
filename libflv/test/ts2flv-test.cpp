@@ -2,7 +2,7 @@
 #include "flv-muxer.h"
 #include "mpeg4-aac.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
+#include "mpeg-types.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>

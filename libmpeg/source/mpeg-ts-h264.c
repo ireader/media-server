@@ -16,7 +16,7 @@
 int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading)
 {
     size_t i, zeros;
-    for (zeros = i = 0; i + 1 < bytes; i++)
+    for (zeros = i = 0; i + 2 /*naltype + 1-data*/ < bytes; i++)
     {
         if (0x01 == p[i] && zeros >= 2)
         {
@@ -118,7 +118,7 @@ int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
         }
         else if (nal_type > 0 && nal_type < 6)
         {
-            ++* vcl;
+            *vcl = H264_NAL_IDR == nal_type ? 1 : 2;
         }
         else
         {

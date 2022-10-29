@@ -2,9 +2,8 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
-#include "mpeg-ts-proto.h"
-#include "mpeg-ps-proto.h"
-#include "mpeg-pes-proto.h"
+#include "mpeg-pes-internal.h"
+#include "mpeg-ts-internal.h"
 #include "mpeg-util.h"
 #include "mpeg-ts.h"
 #include <stdlib.h>
@@ -161,6 +160,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
     uint32_t i, j, k;
 	uint32_t PID;
 	unsigned int count;
+	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
@@ -244,14 +244,20 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 
                         if (pkhd.payload_unit_start_indicator)
                         {
-                            size_t n;
-                            n = pes_read_header(pes, data + i, bytes - i);
-                            assert(n > 0);
-                            i += (uint32_t)n;
+                            size_t s;
+							mpeg_bits_init(&reader, data + i, bytes - i);
+							s = mpeg_bits_readn(&reader, 3);
+							pes->sid = mpeg_bits_read8(&reader);
+                            if (MPEG_ERROR_OK != pes_read_header(pes, &reader) || s != 0x000001)
+							{
+								assert(0);
+								return 0; // ignore
+							}
+                            i += (uint32_t)mpeg_bits_tell(&reader);
 
 							pes->flags = (pes->flags & MPEG_FLAG_PACKET_CORRUPT) ? MPEG_FLAG_PACKET_LOST : 0;
 							pes->flags |= pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
-							pes->have_pes_header = n > 0 ? 1 : 0;
+							pes->have_pes_header = 1;
 						}
 						else if (!pes->have_pes_header)
 						{

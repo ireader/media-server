@@ -1,10 +1,12 @@
 #ifndef _mpeg_element_descriptor_h_
 #define _mpeg_element_descriptor_h_
 
+#include "mpeg-util.h"
+
 #define SERVICE_ID		0x71
 #define SERVICE_NAME	"ireader/media-server"
 
-size_t mpeg_elment_descriptor(const uint8_t* data, size_t bytes);
+int mpeg_elment_descriptor(struct mpeg_bits_t* reader);
 
 typedef struct _video_stream_descriptor_t
 {
@@ -22,7 +24,7 @@ typedef struct _video_stream_descriptor_t
 	uint32_t frame_rate_extension_flag : 1;
 } video_stream_descriptor_t;
 
-size_t video_stream_descriptor(const uint8_t* data, size_t bytes);
+int video_stream_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _audio_stream_descriptor_t
 {
@@ -32,7 +34,7 @@ typedef struct _audio_stream_descriptor_t
 	uint32_t variable_rate_audio_indicator : 1;
 } audio_stream_descriptor_t;
 
-size_t audio_stream_descriptor(const uint8_t* data, size_t bytes);
+int audio_stream_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 /*
 Table 2-50 - Hierarchy_type field values
@@ -66,9 +68,9 @@ typedef struct _hierarchy_descriptor_t
 	uint32_t hierarchy_channel : 6;
 } hierarchy_descriptor_t;
 
-size_t hierarchy_descriptor(const uint8_t* data, size_t bytes);
+int hierarchy_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
-size_t registration_descriptor(const uint8_t* data, size_t bytes);
+int registration_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _language_descriptor_t
 {
@@ -76,7 +78,7 @@ typedef struct _language_descriptor_t
 	uint32_t audio : 8;
 } language_descriptor_t;
 
-size_t language_descriptor(const uint8_t* data, size_t bytes);
+int language_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _system_clock_descriptor_t
 {
@@ -85,14 +87,14 @@ typedef struct _system_clock_descriptor_t
 	uint32_t clock_accuracy_exponent : 3;
 } system_clock_descriptor_t;
 
-size_t system_clock_descriptor(const uint8_t* data, size_t bytes);
+int system_clock_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _mpeg4_video_descriptor_t
 {
 	uint8_t visual_profile_and_level;
 } mpeg4_video_descriptor_t;
 
-size_t mpeg4_video_descriptor(const uint8_t* data, size_t bytes);
+int mpeg4_video_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _metadata_pointer_descriptor
 {
@@ -106,7 +108,7 @@ typedef struct _metadata_pointer_descriptor
 	uint16_t transport_stream_id;
 } metadata_pointer_descriptor_t;
 
-size_t metadata_pointer_descriptor(const uint8_t* data, size_t bytes);
+int metadata_pointer_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _metadata_descriptor_t
 {
@@ -120,14 +122,14 @@ typedef struct _metadata_descriptor_t
 	uint8_t decoder_config_metadata_service_id;
 } metadata_descriptor_t;
 
-size_t metadata_descriptor(const uint8_t* data, size_t bytes);
+int metadata_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _mpeg4_audio_descriptor_t
 {
 	uint8_t profile_and_level;
 } mpeg4_audio_descriptor_t;
 
-size_t mpeg4_audio_descriptor(const uint8_t* data, size_t bytes);
+int mpeg4_audio_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _avc_video_descriptor_t
 {
@@ -145,7 +147,7 @@ typedef struct _avc_video_descriptor_t
 	uint32_t frame_packing_SEI_not_present_flag : 1;
 } avc_video_descriptor_t;
 
-size_t avc_video_descriptor(const uint8_t* data, size_t bytes);
+int avc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _avc_timing_hrd_descriptor_t
 {
@@ -160,7 +162,7 @@ typedef struct _avc_timing_hrd_descriptor_t
 	uint32_t num_unit_in_tick;
 } avc_timing_hrd_descriptor_t;
 
-size_t avc_timing_hrd_descriptor(const uint8_t* data, size_t bytes);
+int avc_timing_hrd_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _mpeg2_aac_descriptor_t
 {
@@ -169,7 +171,7 @@ typedef struct _mpeg2_aac_descriptor_t
 	uint32_t additional_information : 8;
 } mpeg2_aac_descriptor_t;
 
-size_t mpeg2_aac_descriptor(const uint8_t* data, size_t bytes);
+int mpeg2_aac_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _svc_extension_descriptor_t
 {
@@ -186,7 +188,7 @@ typedef struct _svc_extension_descriptor_t
 	uint32_t no_sei_nal_unit_present : 1;
 } svc_extension_descriptor_t;
 
-size_t svc_extension_descriptor(const uint8_t* data, size_t bytes);
+int svc_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
 typedef struct _mvc_extension_descriptor_t
 {
@@ -200,9 +202,9 @@ typedef struct _mvc_extension_descriptor_t
 	uint32_t no_prefix_nal_unit_present : 1;
 } mvc_extension_descriptor_t;
 
-size_t mvc_extension_descriptor(const uint8_t* data, size_t bytes);
+int mvc_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
-size_t clock_extension_descriptor(const uint8_t* data, size_t bytes);
+int clock_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clock);
 
 size_t service_extension_descriptor_write(uint8_t* data, size_t bytes);

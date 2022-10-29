@@ -91,8 +91,8 @@ struct hls_media_t* hls_media_create(int64_t duration, hls_media_handler handler
 		return NULL;
 	}
 
-    hls->audio = mpeg_ts_add_stream(hls->ts, STREAM_AUDIO_AAC, NULL, 0);
-    hls->video = mpeg_ts_add_stream(hls->ts, STREAM_VIDEO_H264, NULL, 0);
+    hls->audio = mpeg_ts_add_stream(hls->ts, PSI_STREAM_AAC, NULL, 0);
+    hls->video = mpeg_ts_add_stream(hls->ts, PSI_STREAM_H264, NULL, 0);
 
 	hls->maxsize = N_TS_FILESIZE;
 	hls->dts = hls->pts = PTS_NO_VALUE;
@@ -169,10 +169,10 @@ int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_
 		hls->audio_only_flag = 1;
 	}
 
-    assert(STREAM_VIDEO_H264 == avtype || STREAM_AUDIO_AAC == avtype);
-	if (hls->audio_only_flag && STREAM_VIDEO_H264 == avtype)
+    assert(PSI_STREAM_H264 == avtype || PSI_STREAM_AAC == avtype);
+	if (hls->audio_only_flag && PSI_STREAM_H264 == avtype)
 		hls->audio_only_flag = 0; // clear audio only flag
 
 	hls->dts_last = dts;
-	return mpeg_ts_write(hls->ts, STREAM_VIDEO_H264 == avtype ? hls->video : hls->audio, HLS_FLAGS_KEYFRAME & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
+	return mpeg_ts_write(hls->ts, PSI_STREAM_H264 == avtype ? hls->video : hls->audio, HLS_FLAGS_KEYFRAME & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
 }
