@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+//enum { 
+//	RTCP_MSG_MEMBER,	/// new member(re-calculate RTCP Transmission Interval)
+//	RTCP_MSG_EXPIRED,	/// member leave(re-calculate RTCP Transmission Interval)
+//};
+
 static void rtp_seq_init(struct rtp_member *sender, uint16_t seq)
 {
 	sender->rtp_seq = seq;
@@ -92,9 +97,9 @@ struct rtp_member* rtp_member_fetch(struct rtp_context *ctx, uint32_t ssrc)
 			rtp_member_list_add(ctx->members, p);
 			rtp_member_release(p);
 
-			msg.type = RTCP_MSG_MEMBER;
-			msg.u.member.ssrc = ssrc;
-			ctx->handler.on_rtcp(ctx->cbparam, &msg);
+			//msg.type = RTCP_MSG_MEMBER;
+			//msg.u.member.ssrc = ssrc;
+			//ctx->handler.on_rtcp(ctx->cbparam, &msg);
 		}
 	}
 	return p;
@@ -118,6 +123,7 @@ struct rtp_member* rtp_sender_fetch(struct rtp_context *ctx, uint32_t ssrc)
 
 static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t bytes)
 {
+	int n;
 	uint32_t rtcphd;
 	rtcp_header_t header;
 
@@ -129,41 +135,52 @@ static int rtcp_parse(struct rtp_context *ctx, const unsigned char* data, size_t
 	header.rc = RTCP_RC(rtcphd);
 	header.pt = RTCP_PT(rtcphd);
 	header.length = RTCP_LEN(rtcphd);
-	
+	n = header.length * 4 + 4;
+
 	// 1. RTP version field must equal 2 (p69)
 	// 2. The payload type filed of the first RTCP packet in a compound packet must be SR or RR (p69)
 	// 3. padding only valid at the last packet
-	if (header.length * 4 + 4 > bytes || 2 != header.v || (1 == header.p && header.length < data[bytes - 1]))
+	if (n > bytes || 2 != header.v || (header.p && (header.length < 1 || header.length * 4 < data[n - 1])))
 	{
 		assert(0);
 		return -1;
 	}
 
-	if(1 == header.p)
-	{
-		header.length -= data[bytes - 1];
-	}
+	if(header.p)
+		n -= data[n - 1];
 
 	switch(header.pt)
 	{
 	case RTCP_SR:
-		rtcp_sr_unpack(ctx, &header, data+4);
+		rtcp_sr_unpack(ctx, &header, data + 4, n - 4);
 		break;
 
 	case RTCP_RR:
-		rtcp_rr_unpack(ctx, &header, data+4);
+		rtcp_rr_unpack(ctx, &header, data + 4, n - 4);
 		break;
 
 	case RTCP_SDES:
-		rtcp_sdes_unpack(ctx, &header, data+4);
+		rtcp_sdes_unpack(ctx, &header, data + 4, n - 4);
 		break;
 
 	case RTCP_BYE:
-		rtcp_bye_unpack(ctx, &header, data+4);
+		rtcp_bye_unpack(ctx, &header, data + 4, n - 4);
 		break;
 
 	case RTCP_APP:
-		rtcp_app_unpack(ctx, &header, data+4);
+		rtcp_app_unpack(ctx, &header, data + 4, n - 4);
+		break;
+
+	case RTCP_RTPFB:
+		rtcp_rtpfb_unpack(ctx, &header, data + 4, n - 4);
+		break;
+
+	case RTCP_PSFB:
+		rtcp_psfb_unpack(ctx, &header, data + 4, n - 4);
+		break;
+
+	case RTCP_XR:
+		rtcp_xr_unpack(ctx, &header, data + 4, n - 4);
 		break;
 
 	default:

@@ -14,6 +14,28 @@ extern "C" {
 #define RTP_PORT_INACTIVE	0 // inactive
 #define RTP_PORT_UNDEFINED	9 // port by ice candidate
 
+
+// https://www.rfc-editor.org/rfc/rfc8888.html#name-sdp-signaling
+// a=rtcp-fb:* ack ccfb
+// a=ecn-capable-rtp:
+#define RTCP_FEEDBACK_ACK	"ack" // https://datatracker.ietf.org/doc/html/rfc4585#section-9
+#define RTCP_FEEDBACK_NACK	"nack" // https://datatracker.ietf.org/doc/html/rfc4585#section-9
+#define RTCP_FEEDBACK_CCM	"ccm" // https://www.rfc-editor.org/rfc/rfc5104.html#section-8
+// a=extmap:5 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+#define RTCP_FEEDBACK_TCC	"transport-cc" // https://datatracker.ietf.org/doc/html/draft-holmer-rmcat-transport-wide-cc-extensions-01#section-5
+// a=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+#define RTCP_FEEDBACK_REMB	"goog-remb" // https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#section-3
+
+#define RTCP_FEEDBACK_ACK_RPSI	"rpsi"
+#define RTCP_FEEDBACK_ACK_CCFB	"ccfb"
+#define RTCP_FEEDBACK_NACK_PLI	"pli"
+#define RTCP_FEEDBACK_NACK_SLI	"sli"
+#define RTCP_FEEDBACK_NACK_RPSI	"rpsi"
+#define RTCP_FEEDBACK_CCM_FIR	"fir"
+#define RTCP_FEEDBACK_CCM_TMMBR	"tmmbr"
+#define RTCP_FEEDBACK_CCM_VBCM	"vbcm"
+#define RTCP_FEEDBACK_CCM_TSTR	"tstr"
+
 enum OPTIONAL_BOOL { OPTIONAL_BOOL_UNSET = -1, OPTIONAL_BOOL_FALSE = 0, OPTIONAL_BOOL_TRUE = 1, };
 
 // sdp c: connection, address: unicast-source address, mulitcast-multicast address(RFC4566 4.1.  Media and Transport Information)

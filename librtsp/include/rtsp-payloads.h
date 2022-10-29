@@ -5,7 +5,7 @@
 #include "mov-format.h"
 #include "mkv-format.h"
 #include "rtp-profile.h"
-#include "mpeg-ts-proto.h"
+#include "mpeg-proto.h"
 #include <stdlib.h>
 #include <string.h>
 

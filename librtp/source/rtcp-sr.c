@@ -3,28 +3,30 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
+void rtcp_sr_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* ptr, size_t bytes)
 {
-	uint32_t ssrc, i;
+	uint32_t i;
 	rtcp_sr_t *sr;
 	rtcp_rb_t *rb;
+	struct rtcp_msg_t msg;
 	struct rtp_member *sender;
 
 	assert(24 == sizeof(rtcp_sr_t));
 	assert(24 == sizeof(rtcp_rb_t));
-	if (header->length * 4 < 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/)
+	if (bytes < 24/*sizeof(rtcp_sr_t)*/ + header->rc * 24/*sizeof(rtcp_rb_t)*/)
 	{
 		assert(0);
 		return;
 	}
-	ssrc = nbo_r32(ptr);
+	msg.ssrc = nbo_r32(ptr);
+	msg.type = RTCP_RR;
 
-	sender = rtp_sender_fetch(ctx, ssrc);
+	sender = rtp_sender_fetch(ctx, msg.ssrc);
 	if(!sender) return; // error
 
 	assert(sender != ctx->self);
-	assert(sender->rtcp_sr.ssrc == ssrc);
-	assert(sender->rtcp_rb.ssrc == ssrc);
+	assert(sender->rtcp_sr.ssrc == msg.ssrc);
+	//assert(sender->rtcp_rb.ssrc == msg.ssrc);
 	sender->rtcp_clock = rtpclock();
 
 	// update sender information
@@ -39,17 +41,20 @@ void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_
 	// report block
 	for(i = 0; i < header->rc; i++, ptr+=24/*sizeof(rtcp_rb_t)*/) 
 	{
-		ssrc = nbo_r32(ptr);
-		if(ssrc != ctx->self->ssrc)
-			continue; // ignore
+		msg.u.sr.ssrc = nbo_r32(ptr);
+		//if(msg.u.rr.ssrc != ctx->self->ssrc)
+		//	continue; // ignore
+		//rb = &sender->rtcp_rb;
 
-		rb = &sender->rtcp_rb;
+		rb = &msg.u.sr;
 		rb->fraction = ptr[4];
 		rb->cumulative = (((uint32_t)ptr[5])<<16) | (((uint32_t)ptr[6])<<8)| ptr[7];
 		rb->exthsn = nbo_r32(ptr+8);
 		rb->jitter = nbo_r32(ptr+12);
 		rb->lsr = nbo_r32(ptr+16);
 		rb->dlsr = nbo_r32(ptr+20);
+
+		ctx->handler.on_rtcp(ctx->cbparam, &msg);
 	}
 }
 

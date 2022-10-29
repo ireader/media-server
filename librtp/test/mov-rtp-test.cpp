@@ -9,7 +9,6 @@
 #include "rtp-profile.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

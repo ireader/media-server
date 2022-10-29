@@ -16,7 +16,7 @@ struct rtp_member* rtp_member_create(uint32_t ssrc)
 	p->jitter = 0.0;
 	p->rtp_probation = RTP_PROBATION;
 	p->rtcp_sr.ssrc = ssrc;
-	p->rtcp_rb.ssrc = ssrc;
+	//p->rtcp_rb.ssrc = ssrc;
 	return p;
 }
 

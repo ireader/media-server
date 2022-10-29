@@ -111,13 +111,14 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 			char encoding[16 + sizeof(media->avformats[i].encoding)];
 			if (strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
+				channel[0] = '\0';
 				sdp_a_rtpmap(value, &payload, encoding, &rate, channel);
 				for (i = 0; i < media->avformat_count; i++)
 				{
 					if (media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
-						media->avformats[i].channel = atoi(channel);
+						media->avformats[i].channel = *channel ? atoi(channel) : 1; // default 1-channel
 						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
 						break;
 					}

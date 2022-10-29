@@ -122,6 +122,30 @@ int rtp_rtcp_bye(void* rtp, void* data, int bytes)
 	return rtcp_bye_pack(ctx, (uint8_t*)data, bytes);
 }
 
+int rtp_rtcp_app(void* rtp, void* data, int bytes, const char name[4], const void* app, int len)
+{
+	struct rtp_context* ctx = (struct rtp_context*)rtp;
+	return rtcp_app_pack(ctx, (uint8_t*)data, bytes, name, app, len);
+}
+
+int rtp_rtcp_rtpfb(void* rtp, void* data, int bytes, enum rtcp_rtpfb_type_t id, const rtcp_rtpfb_t* rtpfb)
+{
+	struct rtp_context* ctx = (struct rtp_context*)rtp;
+	return rtcp_rtpfb_pack(ctx, (uint8_t*)data, bytes, id, rtpfb);
+}
+
+int rtp_rtcp_psfb(void* rtp, void* data, int bytes, enum rtcp_psfb_type_t id, const rtcp_psfb_t* psfb)
+{
+	struct rtp_context* ctx = (struct rtp_context*)rtp;
+	return rtcp_psfb_pack(ctx, (uint8_t*)data, bytes, id, psfb);
+}
+
+int rtp_rtcp_xr(void* rtp, void* data, int bytes, enum rtcp_xr_type_t id, const rtcp_xr_t* xr)
+{
+	struct rtp_context* ctx = (struct rtp_context*)rtp;
+	return rtcp_xr_pack(ctx, (uint8_t*)data, bytes, id, xr);
+}
+
 int rtp_rtcp_interval(void* rtp)
 {
 	double interval;

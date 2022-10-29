@@ -42,11 +42,17 @@ int rtcp_sr_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
 int rtcp_sdes_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
 int rtcp_bye_pack(struct rtp_context *ctx, uint8_t* data, int bytes);
 int rtcp_app_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes, const char name[4], const void* app, int len);
-void rtcp_rr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
-void rtcp_sr_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
-void rtcp_sdes_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
-void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
-void rtcp_app_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* data);
+int rtcp_rtpfb_pack(struct rtp_context* ctx, uint8_t* data, int bytes, enum rtcp_rtpfb_type_t id, const rtcp_rtpfb_t* rtpfb);
+int rtcp_psfb_pack(struct rtp_context* ctx, uint8_t* data, int bytes, enum rtcp_psfb_type_t id, const rtcp_psfb_t* psfb);
+int rtcp_xr_pack(struct rtp_context* ctx, uint8_t* data, int bytes, enum rtcp_xr_type_t id, const rtcp_xr_t* xr);
+void rtcp_rr_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* data, size_t bytes);
+void rtcp_sr_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* data, size_t bytes);
+void rtcp_sdes_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* data, size_t bytes);
+void rtcp_bye_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* data, size_t bytes);
+void rtcp_app_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* data, size_t bytes);
+void rtcp_rtpfb_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const uint8_t* data, size_t bytes);
+void rtcp_psfb_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const uint8_t* data, size_t bytes);
+void rtcp_xr_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const uint8_t* data, size_t bytes);
 
 int rtcp_report_block(struct rtp_member* sender, uint8_t* ptr, int bytes);
 
