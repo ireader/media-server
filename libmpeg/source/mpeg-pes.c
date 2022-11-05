@@ -300,7 +300,7 @@ int pes_read_mpeg1_header(struct pes_t *pes, struct mpeg_bits_t* reader)
 uint16_t mpeg_bits_read15(struct mpeg_bits_t* reader)
 {
 	uint16_t v;
-	v = mpeg_bits_read8(reader) << 7;
+	v = ((uint16_t)mpeg_bits_read8(reader)) << 7;
 	v |= (mpeg_bits_read8(reader) >> 1) & 0x7F;
 	return v;
 }
@@ -308,16 +308,16 @@ uint16_t mpeg_bits_read15(struct mpeg_bits_t* reader)
 uint32_t mpeg_bits_read30(struct mpeg_bits_t* reader)
 {
 	uint32_t v;
-	v = mpeg_bits_read15(reader) << 15;
+	v = ((uint32_t)mpeg_bits_read15(reader)) << 15;
 	v |= mpeg_bits_read15(reader);
 	return v;
 }
 
 uint64_t mpeg_bits_read45(struct mpeg_bits_t* reader)
 {
-	uint32_t v;
-	v = mpeg_bits_read15(reader) << 30;
-	v |= mpeg_bits_read15(reader) << 15;
+	uint64_t v;
+	v = ((uint64_t)mpeg_bits_read15(reader)) << 30;
+	v |= ((uint64_t)mpeg_bits_read15(reader)) << 15;
 	v |= mpeg_bits_read15(reader);
 	return v;
 }

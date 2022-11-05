@@ -107,7 +107,7 @@
     <ClInclude Include="source\mpeg-ts-internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\mpeg-util.h">
+    <ClInclude Include="include\mpeg-util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

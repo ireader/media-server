@@ -100,7 +100,7 @@ static inline uint16_t mpeg_bits_read16(struct mpeg_bits_t* bits)
 static inline uint32_t mpeg_bits_read32(struct mpeg_bits_t* bits)
 {
 	uint32_t v;
-	v = (uint32_t)mpeg_bits_read16(bits) << 16;
+	v = ((uint32_t)mpeg_bits_read16(bits)) << 16;
 	v |= mpeg_bits_read16(bits);
 	return v;
 }
@@ -108,7 +108,7 @@ static inline uint32_t mpeg_bits_read32(struct mpeg_bits_t* bits)
 static inline uint64_t mpeg_bits_read64(struct mpeg_bits_t* bits)
 {
 	uint64_t v;
-	v = (uint64_t)mpeg_bits_read32(bits) << 32;
+	v = ((uint64_t)mpeg_bits_read32(bits)) << 32;
 	v |= mpeg_bits_read32(bits);
 	return v;
 }

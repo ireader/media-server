@@ -161,11 +161,11 @@
     <ClInclude Include="include\mpeg-ts-proto.h" />
     <ClInclude Include="include\mpeg-ts.h" />
     <ClInclude Include="include\mpeg-types.h" />
+    <ClInclude Include="include\mpeg-util.h" />
     <ClInclude Include="source\mpeg-pes-internal.h" />
     <ClInclude Include="source\mpeg-ps-internal.h" />
     <ClInclude Include="source\mpeg-ts-internal.h" />
     <ClInclude Include="source\mpeg-ts-opus.h" />
-    <ClInclude Include="source\mpeg-util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

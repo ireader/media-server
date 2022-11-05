@@ -315,9 +315,14 @@ int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
                     i += r;
                     ps->buffer.len = 0;
                 }
+                else if(r > 0)
+                {
+                    memmove(ps->buffer.ptr, ps->buffer.ptr + r, ps->buffer.len - r);
+                    ps->buffer.len -= r;
+                }
                 else
                 {
-                    ps->buffer.len -= r;
+                    assert(0 == r);
                 }
 
                 if (PS_DEMUXER_STATE_START == ps->state && i < bytes)
