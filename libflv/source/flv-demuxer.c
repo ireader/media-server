@@ -88,6 +88,12 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int
 		//assert(3 == audio.bitrate && 1 == audio.channel);
 		if (FLV_SEQUENCE_HEADER == audio.avpacket)
 		{
+			flv->a.aac.profile = MPEG4_AAC_LC;
+			flv->a.aac.sampling_frequency_index = MPEG4_AAC_44100;
+			flv->a.aac.channel_configuration = 2;
+			flv->a.aac.channels = 2;
+			flv->a.aac.sampling_frequency = 44100;
+			flv->a.aac.extension_frequency = 44100;
 			mpeg4_aac_audio_specific_config_load(data + n, bytes - n, &flv->a.aac);
 			return flv->handler(flv->param, FLV_AUDIO_ASC, data + n, bytes - n, timestamp, timestamp, 0);
 		}
