@@ -74,6 +74,7 @@ int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_
 	audio->rate = (buf[0] & 0x0C) >> 2;
 	audio->bits = (buf[0] & 0x02) >> 1;
 	audio->channels = buf[0] & 0x01;
+	audio->avpacket = FLV_AVPACKET;
 
 	if (FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)
 	{
@@ -97,6 +98,7 @@ int flv_video_tag_header_read(struct flv_video_tag_header_t* video, const uint8_
 	assert(len > 0);
 	video->keyframe = (buf[0] & 0xF0) >> 4;
 	video->codecid = (buf[0] & 0x0F);
+	video->avpacket = FLV_AVPACKET;
 
 	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_AV1 == video->codecid)
 	{
