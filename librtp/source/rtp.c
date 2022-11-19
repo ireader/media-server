@@ -67,8 +67,8 @@ int rtp_onsend(void* rtp, const void* data, int bytes)
 	if(0 != rtp_packet_deserialize(&pkt, data, bytes))
 		return -1; // packet error
 
-	//ctx->self->rtp_clock = rtpclock();
-	//ctx->self->rtp_timestamp = pkt.rtp.timestamp; // RTP timestamp
+	ctx->self->rtp_clock = rtpclock();
+	ctx->self->rtp_timestamp = pkt.rtp.timestamp; // RTP timestamp
 	ctx->self->rtp_bytes += pkt.payloadlen;
 	ctx->self->rtp_packets += 1;
 	return 0;
