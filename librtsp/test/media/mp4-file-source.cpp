@@ -168,7 +168,7 @@ int MP4FileSource::Play()
 			m->dts_first = pkt->pts;
 		m->dts_last = pkt->pts;
 		uint32_t timestamp = m->rtp.timestamp + (uint32_t)((m->dts_last - m->dts_first) * (m->rtp.frequency / 1000) /*kHz*/);
-		//printf("[%d] pts: %lld, dts: %lld, clock: %u\n", pkt->stream, pkt->pts, pkt->dts, timestamp);
+		//printf("[%s] pts: %lld, dts: %lld, timestamp: %u(%u)\n", m->rtp.encoding, pkt->pts, pkt->dts, (unsigned int)timestamp, (unsigned int)m->timestamp);
 		rtp_payload_encode_input(m->rtp.encoder, m_packet, bytes, timestamp);
 
 		avpacket_queue_pop(m->pkts);
