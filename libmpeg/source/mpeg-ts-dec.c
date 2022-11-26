@@ -195,7 +195,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 		}
 
 		assert(i <= bytes);
-		if (i >= bytes)
+		if (i + (pkhd.payload_unit_start_indicator ? 1 : 0) >= bytes)
 			return 0; // ignore
 	}
     
