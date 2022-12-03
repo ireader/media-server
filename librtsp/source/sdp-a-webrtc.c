@@ -464,7 +464,7 @@ int sdp_a_rid(const char* s, int n, struct sdp_rid_t* rid)
             rid->payloads = sdp_string_split(rid->params[i] + 3, len, ",", &rid->npayload);
     }
 
-    return rid->rid ? 0 : -1;
+    return rid->rid[0] ? 0 : -1;
 }
 
 /*
@@ -675,7 +675,7 @@ int sdp_a_ssrc_group(const char* s, int n, struct sdp_ssrc_group_t* group)
 
     sdp_strcpy(group->key, k.p, k.n);
     group->values = sdp_string_split(t.s, (int)(intptr_t)(t.e - t.s), " ", &group->count);
-    return group->key ? 0 : -1;
+    return group->key[0] ? 0 : -1;
 }
 
 #if defined(DEBUG) || defined(_DEBUG)
