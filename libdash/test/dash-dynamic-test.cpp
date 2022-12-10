@@ -10,6 +10,7 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
+#include "mpeg4-vvc.h"
 #include "cstringext.h"
 #include "sys/sync.hpp"
 #include "sys/thread.h"
@@ -75,6 +76,7 @@ static int dash_live_onflv(void* param, int codec, const void* data, size_t byte
     struct mpeg4_aac_t aac;
     struct mpeg4_avc_t avc;
     struct mpeg4_hevc_t hevc;
+    struct mpeg4_vvc_t vvc;
     dash_playlist_t* dash = (dash_playlist_t*)param;
 
     switch (codec)
@@ -86,8 +88,14 @@ static int dash_live_onflv(void* param, int codec, const void* data, size_t byte
 
     case FLV_VIDEO_HVCC:
         if (-1 == dash->adapation_video && mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)data, bytes, &hevc) > 0)
-            dash->adapation_video = dash_mpd_add_video_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_HEVC, dash->width, dash->height, data, bytes);
+            dash->adapation_video = dash_mpd_add_video_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_H265, dash->width, dash->height, data, bytes);
         break;
+
+    case FLV_VIDEO_VVCC:
+        if (-1 == dash->adapation_video && mpeg4_vvc_decoder_configuration_record_load((const uint8_t*)data, bytes, &vvc) > 0)
+            dash->adapation_video = dash_mpd_add_video_adaptation_set(dash->mpd, dash->name.c_str(), MOV_OBJECT_H266, dash->width, dash->height, data, bytes);
+        break;
+
 
     case FLV_AUDIO_ASC:
         if (-1 == dash->adapation_audio && mpeg4_aac_audio_specific_config_load((const uint8_t*)data, bytes, &aac) > 0)
@@ -101,9 +109,8 @@ static int dash_live_onflv(void* param, int codec, const void* data, size_t byte
         return dash_mpd_input(dash->mpd, dash->adapation_audio, data, bytes, pts, dts, 0);
 
     case FLV_VIDEO_H264:
-        return dash_mpd_input(dash->mpd, dash->adapation_video, data, bytes, pts, dts, flags ? MOV_AV_FLAG_KEYFREAME : 0);
-
     case FLV_VIDEO_H265:
+    case FLV_VIDEO_H266:
         return dash_mpd_input(dash->mpd, dash->adapation_video, data, bytes, pts, dts, flags ? MOV_AV_FLAG_KEYFREAME : 0);
 
     default:

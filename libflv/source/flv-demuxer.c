@@ -4,6 +4,7 @@
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
 #include "mpeg4-hevc.h"
+#include "mpeg4-vvc.h"
 #include "opus-head.h"
 #include "aom-av1.h"
 #include "amf0.h"
@@ -25,6 +26,7 @@ struct flv_demuxer_t
 		struct aom_av1_t av1;
 		struct mpeg4_avc_t avc;
 		struct mpeg4_hevc_t hevc;
+		struct mpeg4_vvc_t vvc;
 	} v;
 
 	flv_demuxer_handler handler;
@@ -209,6 +211,45 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 					return -ENOMEM;
 				}
 				return flv->handler(flv->param, FLV_VIDEO_H265, flv->ptr, n, timestamp + video.cts, timestamp, (FLV_VIDEO_KEY_FRAME == video.keyframe) ? 1 : 0);
+			}
+			return -EINVAL;
+		}
+		else if (FLV_END_OF_SEQUENCE == video.avpacket)
+		{
+			return 0; // AVC end of sequence (lower level NALU sequence ender is not required or supported)
+		}
+		else
+		{
+			assert(0);
+			return -EINVAL;
+		}
+	}
+	else if (FLV_VIDEO_H266 == video.codecid)
+	{
+		if (FLV_SEQUENCE_HEADER == video.avpacket)
+		{
+			// VVCDecoderConfigurationRecord
+			//assert(bytes > n + 5);
+			//mpeg4_vvc_decoder_configuration_record_load(data + n, bytes - n, &flv->v.vvc);
+			//return flv->handler(flv->param, FLV_VIDEO_VVCC, data + n, bytes - n, timestamp + video.cts, timestamp, 0);
+		}
+		else if (FLV_AVPACKET == video.avpacket)
+		{
+			// feat: h266_mp4toannexb support flv->v.vvc.numOfArrays == 0
+			//assert(flv->v.vvc.numOfArrays > 0); // parse VVCDecoderConfigurationRecord failed
+			//if (flv->v.vvc.numOfArrays > 0 && bytes > n) // 5 ==  bytes flv eof
+			{
+				// H.266
+				if (0 != flv_demuxer_check_and_alloc(flv, bytes + 4 * 1024))
+					return -ENOMEM;
+
+				n = h266_mp4toannexb(&flv->v.vvc, data + n, bytes - n, flv->ptr, flv->capacity);
+				if (n <= 0 || n > flv->capacity)
+				{
+					assert(0);
+					return -ENOMEM;
+				}
+				return flv->handler(flv->param, FLV_VIDEO_H266, flv->ptr, n, timestamp + video.cts, timestamp, (FLV_VIDEO_KEY_FRAME == video.keyframe) ? 1 : 0);
 			}
 			return -EINVAL;
 		}

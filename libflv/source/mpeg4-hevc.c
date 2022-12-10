@@ -189,7 +189,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 //	data[22] = hevc->numOfArrays;
 
 	p = data + 23;
-	for (k = i = 0; i < sizeof(nalu)/sizeof(nalu[0]); i++)
+	for (k = i = 0; i < sizeof(nalu)/sizeof(nalu[0]) && p + 3 <= end; i++)
 	{
 		ptr = p + 3;
 		for (n = j = 0; j < hevc->numOfArrays; j++)

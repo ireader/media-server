@@ -207,6 +207,12 @@
     <ClCompile Include="rtpext\rtp-ext-csrc-audio-level.c">
       <Filter>rtpext</Filter>
     </ClCompile>
+    <ClCompile Include="payload\rtp-h266-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-h266-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">

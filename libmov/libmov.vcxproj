@@ -70,6 +70,7 @@
     <ClCompile Include="source\mov-trun.c" />
     <ClCompile Include="source\mov-tx3g.c" />
     <ClCompile Include="source\mov-vpcc.c" />
+    <ClCompile Include="source\mov-vvc.c" />
     <ClCompile Include="source\mov-writer.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

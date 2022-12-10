@@ -115,6 +115,7 @@ enum
 	RTP_PAYLOAD_VP8			= 105, // RTP Payload Format for VP8 Video (rfc7741)
 	RTP_PAYLOAD_VP9			= 106, // RTP Payload Format for VP9 Video draft-ietf-payload-vp9-03
 	RTP_PAYLOAD_AV1			= 107, // https://aomediacodec.github.io/av1-rtp-spec/
+	RTP_PAYLOAD_H266		= 108, // https://www.ietf.org/archive/id/draft-ietf-avtcore-rtp-vvc-18.html
 
 	RTP_PAYLOAD_RTX			= 110, // RTP Retransmission Payload Format (rfc4588)
 	RTP_PAYLOAD_RED			= 111, // RTP Payload for Redundant Audio Data (rfc2198)

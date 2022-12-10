@@ -29,13 +29,15 @@
 #define MOV_OBJECT_VP9      0xB1 // VP9 Video
 #define MOV_OBJECT_FLAC     0xC1 // nonstandard from FFMPEG
 #define MOV_OBJECT_VP8      0xC2 // nonstandard
+#define MOV_OBJECT_H266		0xFC // ITU-T Recommendation H.266
 #define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
 #define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
 #define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
 #define MOV_OBJECT_NONE		0x00 // unknown object id
-#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
 #define MOV_OBJECT_AVC		MOV_OBJECT_H264
+#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
+#define MOV_OBJECT_VVC		MOV_OBJECT_H266
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001

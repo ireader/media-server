@@ -37,6 +37,7 @@ enum mkv_codec_t
 	MKV_CODEC_VIDEO_AV1,			// AV1 Codec format
 	MKV_CODEC_VIDEO_DIRAC,			// ffmpeg
 	MKV_CODEC_VIDEO_MJPEG,			// ffmpeg
+	MKV_CODEC_VIDEO_H266,			// VVC/H.266
 
 	MKV_CODEC_AUDIO_MP3 = 0x1000,	// MPEG Audio 1, 2, 2.5 Layer III
 	MKV_CODEC_AUDIO_MP2,			// MPEG Audio 1, 2 Layer II

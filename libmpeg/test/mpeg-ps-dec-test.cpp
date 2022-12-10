@@ -87,6 +87,7 @@ void mpeg_ps_dec_test(const char* file)
     while ((n = fread(s_packet + i, 1, sizeof(s_packet) - i, fp)) > 0)
     {
         r = ps_demuxer_input(ps, s_packet, n + i);
+        assert(r == n + i);
         memmove(s_packet, s_packet + r, n + i - r);
         i = n + i - r;
     }

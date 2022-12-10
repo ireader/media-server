@@ -7,10 +7,10 @@
 #include <assert.h>
 #include <errno.h>
 
-#define H264_NAL(v)	(v & 0x1F)
-#define FU_START(v) (v & 0x80)
-#define FU_END(v)	(v & 0x40)
-#define FU_NAL(v)	(v & 0x1F)
+#define H264_NAL(v)	((v) & 0x1F)
+#define FU_START(v) ((v) & 0x80)
+#define FU_END(v)	((v) & 0x40)
+#define FU_NAL(v)	((v) & 0x1F)
 
 struct rtp_decode_h264_t
 {
@@ -92,7 +92,7 @@ static int rtp_h264_unpack_stap(struct rtp_decode_h264_t *unpacker, const uint8_
 	for(bytes -= n; 0 == r && bytes > 2; bytes -= len + 2)
 	{
 		len = nbo_r16(ptr);
-		if(len + 2 > bytes)
+		if(len + 2 > bytes || len < 2)
 		{
 			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;

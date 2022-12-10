@@ -34,6 +34,7 @@
     <ClInclude Include="include\mpeg4-avc.h" />
     <ClInclude Include="include\mpeg4-bits.h" />
     <ClInclude Include="include\mpeg4-hevc.h" />
+    <ClInclude Include="include\mpeg4-vvc.h" />
     <ClInclude Include="include\opus-head.h" />
     <ClInclude Include="include\riff-acm.h" />
     <ClInclude Include="include\webm-vpx.h" />
@@ -52,6 +53,7 @@
     <ClCompile Include="source\hevc-annexbtomp4.c" />
     <ClCompile Include="source\hevc-mp4toannexb.c" />
     <ClCompile Include="source\mp3-header.c" />
+    <ClCompile Include="source\mpeg4-vvc.c" />
     <ClCompile Include="source\mpeg4-aac-asc.c" />
     <ClCompile Include="source\mpeg4-aac.c" />
     <ClCompile Include="source\mpeg4-annexbtomp4.c" />
@@ -60,6 +62,8 @@
     <ClCompile Include="source\mpeg4-mp4toannexb.c" />
     <ClCompile Include="source\opus-head.c" />
     <ClCompile Include="source\riff-acm.c" />
+    <ClCompile Include="source\vvc-annexbtomp4.c" />
+    <ClCompile Include="source\vvc-mp4toannexb.c" />
     <ClCompile Include="source\webm-vpx.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

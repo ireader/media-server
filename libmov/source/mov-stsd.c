@@ -426,10 +426,12 @@ static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_e
 
 	if(MOV_OBJECT_H264 == entry->object_type_indication)
 		size += mov_write_avcc(mov);
-	else if(MOV_OBJECT_MP4V == entry->object_type_indication)
-		size += mov_write_esds(mov);
-	else if (MOV_OBJECT_HEVC == entry->object_type_indication)
+	else if (MOV_OBJECT_H265 == entry->object_type_indication)
 		size += mov_write_hvcc(mov);
+	else if (MOV_OBJECT_H266 == entry->object_type_indication)
+		size += mov_write_vvcc(mov);
+	else if (MOV_OBJECT_MP4V == entry->object_type_indication)
+		size += mov_write_esds(mov);
 	else if (MOV_OBJECT_AV1 == entry->object_type_indication)
 		size += mov_write_av1c(mov);
 	else if (MOV_OBJECT_VP8 == entry->object_type_indication || MOV_OBJECT_VP9 == entry->object_type_indication)

@@ -11,6 +11,7 @@
 #include "aom-av1.h"
 #include "mpeg4-aac.h"
 #include "mpeg4-avc.h"
+#include "mpeg4-vvc.h"
 #include "mpeg4-hevc.h"
 #include "mp3-header.h"
 #include "opus-head.h"
@@ -35,7 +36,8 @@ struct flv_muxer_t
 	{
 		struct aom_av1_t av1;
 		struct mpeg4_avc_t avc;
-		struct mpeg4_hevc_t hevc;		
+		struct mpeg4_hevc_t hevc;
+		struct mpeg4_vvc_t vvc;
 	} v;
 	int vcl; // 0-non vcl, 1-idr, 2-p/b
 	int update; // avc/hevc sequence header update
@@ -352,6 +354,58 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 		return -ENOMEM;
 
 	return flv_muxer_h265(flv, pts, dts);
+}
+
+static int flv_muxer_h266(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
+{
+	int r;
+	int m;
+	struct flv_video_tag_header_t video;
+
+	video.codecid = FLV_VIDEO_H266;
+	if ( /*0 == flv->avc_sequence_header &&*/ flv->update && flv->v.vvc.numOfArrays >= 3) // vps + sps + pps
+	{
+		video.cts = 0;
+		video.keyframe = 1; // keyframe
+		video.avpacket = FLV_SEQUENCE_HEADER;
+		flv_video_tag_header_write(&video, flv->ptr + flv->bytes, flv->capacity - flv->bytes);
+		m = mpeg4_vvc_decoder_configuration_record_save(&flv->v.vvc, flv->ptr + flv->bytes + 5, flv->capacity - flv->bytes - 5);
+		if (m <= 0)
+			return -1; // invalid data
+
+		flv->video_sequence_header = 1; // once only
+		assert(flv->bytes + m + 5 <= flv->capacity);
+		r = flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr + flv->bytes, m + 5, dts);
+		if (0 != r) return r;
+	}
+
+	// has video frame
+	if (flv->vcl && flv->video_sequence_header)
+	{
+		video.cts = pts - dts;
+		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
+		video.avpacket = FLV_AVPACKET;
+		flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
+		assert(flv->bytes <= flv->capacity);
+		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
+	}
+	return 0;
+}
+
+int flv_muxer_vvc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+{
+	if ((size_t)flv->capacity < bytes + sizeof(flv->v.vvc) /*HEVCDecoderConfigurationRecord*/)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + sizeof(flv->v.vvc)))
+			return -ENOMEM;
+	}
+
+	flv->bytes = 5;
+	flv->bytes += h266_annexbtomp4(&flv->v.vvc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
+	if (flv->bytes <= 5)
+		return -ENOMEM;
+
+	return flv_muxer_h266(flv, pts, dts);
 }
 
 int flv_muxer_av1(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)

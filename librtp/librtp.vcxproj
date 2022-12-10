@@ -140,6 +140,8 @@
     <ClCompile Include="payload\rtp-h265-unpack.c" />
     <ClCompile Include="payload\rtp-h264-pack.c" />
     <ClCompile Include="payload\rtp-h264-unpack.c" />
+    <ClCompile Include="payload\rtp-h266-pack.c" />
+    <ClCompile Include="payload\rtp-h266-unpack.c" />
     <ClCompile Include="payload\rtp-mp4a-latm-pack.c" />
     <ClCompile Include="payload\rtp-mp4a-latm-unpack.c" />
     <ClCompile Include="payload\rtp-mp4v-es-pack.c" />

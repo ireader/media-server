@@ -39,7 +39,8 @@
 // https://developer.apple.com/library/content/documentation/General/Reference/HLSAuthoringSpec/Requirements.html#//apple_ref/doc/uid/TP40016596-CH2-SW1
 // Video encoding requirements 1.10: Use 'avc1', 'hvc1', or 'dvh1' rather than 'avc3', 'hev1', or 'dvhe'
 #define MOV_H264    MOV_TAG('a', 'v', 'c', '1') // H.264 ISO/IEC 14496-15:2010(E) 5.3.4 AVC Video Stream Definition (18)
-#define MOV_HEVC    MOV_TAG('h', 'v', 'c', '1') // H.265
+#define MOV_H265    MOV_TAG('h', 'v', 'c', '1') // H.265
+#define MOV_H266    MOV_TAG('v', 'v', 'c', '1') // H.266
 #define MOV_MP4V    MOV_TAG('m', 'p', '4', 'v') // MPEG-4 Video
 #define MOV_MP4A    MOV_TAG('m', 'p', '4', 'a') // AAC
 #define MOV_MP4S    MOV_TAG('m', 'p', '4', 's') // ISO/IEC 14496-14:2003(E) 5.6 Sample Description Boxes (p14)
@@ -236,6 +237,7 @@ int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_avcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_hvcc(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_vvcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_av1c(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_vpcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tx3g(struct mov_t* mov, const struct mov_box_t* box);
@@ -278,6 +280,7 @@ size_t mov_write_stsz(const struct mov_t* mov);
 size_t mov_write_esds(const struct mov_t* mov);
 size_t mov_write_avcc(const struct mov_t* mov);
 size_t mov_write_hvcc(const struct mov_t* mov);
+size_t mov_write_vvcc(const struct mov_t* mov);
 size_t mov_write_av1c(const struct mov_t* mov);
 size_t mov_write_vpcc(const struct mov_t* mov);
 size_t mov_write_tx3g(const struct mov_t* mov);

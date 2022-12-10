@@ -3,6 +3,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define H265_NAL_BLA_W_LP	16
+#define H265_NAL_RSV_IRAP	23
 #define H265_NAL_VPS		32
 #define H265_NAL_SPS		33
 #define H265_NAL_PPS		34
@@ -374,7 +376,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 
 	// IRAP-1, B/P-2, other-0
 	if (mp4->vcl && nalutype < H265_NAL_VPS)
-		*mp4->vcl = 16<=nalutype && nalutype<=23 ? 1 : 2;
+		*mp4->vcl = H265_NAL_BLA_W_LP<=nalutype && nalutype<=H265_NAL_RSV_IRAP ? 1 : 2;
 
 	if (mp4->capacity >= mp4->bytes + bytes + 4)
 	{
