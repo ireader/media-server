@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #define H266_OPI		12
 #define H266_DCI		13
@@ -157,6 +158,7 @@ int mpeg4_vvc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 		vvc->chroma_format_idc = mpeg4_bits_read_uint32(&bits, 2);
 		vvc->bit_depth_minus8 = mpeg4_bits_read_uint32(&bits, 3);
 		mpeg4_bits_read_n(&bits, 5); // reserved '11111'b
+		mpeg4_vvc_ptl_record_load(&bits, vvc);
 		vvc->max_picture_width = mpeg4_bits_read_uint16(&bits, 16);
 		vvc->max_picture_height = mpeg4_bits_read_uint16(&bits, 16);
 		vvc->avg_frame_rate = mpeg4_bits_read_uint16(&bits, 16);

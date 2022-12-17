@@ -462,7 +462,6 @@ int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
 
 	if (!metadata) return -1;
 
-	count = (metadata->audiocodecid ? 5 : 0) + (metadata->videocodecid ? 5 : 0) + 1;
 	if (flv->capacity < 1024)
 	{
 		if (0 != flv_muxer_alloc(flv, 1024))
@@ -471,7 +470,7 @@ int flv_muxer_metadata(flv_muxer_t* flv, const struct flv_metadata_t* metadata)
 
 	ptr = flv->ptr;
 	end = flv->ptr + flv->capacity;
-	count = (metadata->audiocodecid ? 5 : 0) + (metadata->videocodecid ? 5 : 0) + 1;
+	count = (metadata->audiocodecid ? 5 : 0) + (metadata->videocodecid ? 7 : 0) + 1;
 
 	// ScriptTagBody
 
