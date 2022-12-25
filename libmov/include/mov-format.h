@@ -44,6 +44,8 @@
 #define MOV_FLAG_SEGMENT	0x00000002 // fmp4_writer only
 
 /// MOV av stream flag
-#define MOV_AV_FLAG_KEYFREAME 0x0001
+#define MOV_AV_FLAG_KEYFREAME		0x0001
+#define MOV_AV_FLAG_SEGMENT_FORCE	0x8000 // exclude with MOV_AV_FLAG_SEGMENT_DISABLE, fmp4_writer only
+#define MOV_AV_FLAG_SEGMENT_DISABLE	0x4000 // exclude with MOV_AV_FLAG_SEGMENT_FORCE, fmp4_writer only
 
 #endif /* !_mov_format_h_ */

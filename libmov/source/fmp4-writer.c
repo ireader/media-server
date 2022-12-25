@@ -416,7 +416,9 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
     track->turn_last_duration = track->turn_last_duration > 0 ? track->turn_last_duration * 7 / 8 + duration / 8 : duration;
 #endif
     
-	if (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME) )
+	// 1. force segment or
+	// 2. video key frame
+	if (0 == (flags & MOV_AV_FLAG_SEGMENT_DISABLE) && (0 != (flags & MOV_AV_FLAG_SEGMENT_FORCE) || (MOV_VIDEO == track->handler_type && (flags & MOV_AV_FLAG_KEYFREAME)))  )
 		fmp4_write_fragment(writer); // fragment per video keyframe
 
 	if (track->sample_count + 1 >= track->sample_offset)
