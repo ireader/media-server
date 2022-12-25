@@ -229,9 +229,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		if (FLV_SEQUENCE_HEADER == video.avpacket)
 		{
 			// VVCDecoderConfigurationRecord
-			//assert(bytes > n + 5);
-			//mpeg4_vvc_decoder_configuration_record_load(data + n, bytes - n, &flv->v.vvc);
-			//return flv->handler(flv->param, FLV_VIDEO_VVCC, data + n, bytes - n, timestamp + video.cts, timestamp, 0);
+			assert(bytes > n + 5);
+			mpeg4_vvc_decoder_configuration_record_load(data + n, bytes - n, &flv->v.vvc);
+			return flv->handler(flv->param, FLV_VIDEO_VVCC, data + n, bytes - n, timestamp + video.cts, timestamp, 0);
 		}
 		else if (FLV_AVPACKET == video.avpacket)
 		{

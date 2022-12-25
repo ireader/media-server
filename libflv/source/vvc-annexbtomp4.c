@@ -250,7 +250,7 @@ int mpeg4_vvc_update(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 {
 	int r;
 
-	switch ((nalu[0] >> 1) & 0x3f)
+	switch ((nalu[1] >> 1) & 0x3f)
 	{
 	case H266_NAL_VPS:
 		h266_sei_clear(vvc); // remove all prefix/suffix sei
@@ -290,7 +290,7 @@ static void vvc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	struct h266_annexbtomp4_handle_t* mp4;
 	mp4 = (struct h266_annexbtomp4_handle_t*)param;
 
-	nalutype = (nalu[0] >> 1) & 0x3f;
+	nalutype = (nalu[1] >> 1) & 0x3f;
 #if defined(H2645_FILTER_AUD)
 	if (H266_NAL_AUD == nalutype)
 		return; // ignore AUD

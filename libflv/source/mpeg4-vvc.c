@@ -54,9 +54,12 @@ static int mpeg4_vvc_ptl_record_load(struct mpeg4_bits_t* bits, struct mpeg4_vvc
 	vvc->native_ptl.ptl_frame_only_constraint_flag = (vvc->native_ptl.general_constraint_info[0] & 0x80) ? 1 : 0;
 	vvc->native_ptl.ptl_multi_layer_enabled_flag = (vvc->native_ptl.general_constraint_info[0] & 0x40) ? 1 : 0;
 
+	vvc->native_ptl.ptl_sublayer_level_present_flag = 0;
 	assert(vvc->num_sublayers >= 0 && vvc->num_sublayers <= 8);
-	vvc->native_ptl.ptl_sublayer_level_present_flag = mpeg4_bits_read_uint32(bits, 8);
-	for (i = (int)vvc->num_sublayers - 2; i >= 0 && i < 6; i--)
+	for (i = (int)vvc->num_sublayers - 2; i >= 0; i-=8)
+		vvc->native_ptl.ptl_sublayer_level_present_flag = mpeg4_bits_read_uint8(bits, 8);
+
+	for (i = (int)vvc->num_sublayers - 2; i >= 0 && i < sizeof(vvc->native_ptl.sublayer_level_idc)/sizeof(vvc->native_ptl.sublayer_level_idc[0]); i--)
 	{
 		if(vvc->native_ptl.ptl_sublayer_level_present_flag & (1 << i))
 			vvc->native_ptl.sublayer_level_idc[i] = mpeg4_bits_read_uint8(bits, 8);
@@ -89,8 +92,10 @@ static int mpeg4_vvc_ptl_record_save(struct mpeg4_bits_t* bits, const struct mpe
 	}
 
 	assert(vvc->num_sublayers >= 0 && vvc->num_sublayers <= 8);
-	mpeg4_bits_write_n(bits, vvc->native_ptl.ptl_sublayer_level_present_flag, 8);
-	for (i = (int)vvc->num_sublayers - 2; i >= 0 && i < 6; i--)
+	for (i = (int)vvc->num_sublayers - 2; i >= 0; i -= 8)
+		mpeg4_bits_write_n(bits, vvc->native_ptl.ptl_sublayer_level_present_flag, 8);
+
+	for (i = (int)vvc->num_sublayers - 2; i >= 0 && i < sizeof(vvc->native_ptl.sublayer_level_idc) / sizeof(vvc->native_ptl.sublayer_level_idc[0]); i--)
 	{
 		if (vvc->native_ptl.ptl_sublayer_level_present_flag & (1 << i))
 			mpeg4_bits_write_uint8(bits, vvc->native_ptl.sublayer_level_idc[i], 8);
@@ -178,7 +183,7 @@ int mpeg4_vvc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	{
 		nalutype = mpeg4_bits_read_uint8(&bits, 8);
 		
-		n = 0;
+		n = 1;
 		if ((nalutype & 0x1f) != H266_DCI && (nalutype & 0x1f) != H266_OPI)
 			n = mpeg4_bits_read_uint16(&bits, 16);
 
@@ -204,7 +209,7 @@ int mpeg4_vvc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	}
 
 	vvc->off = (int)(dst - vvc->data);
-	return (int)(bits.bits / 8);
+	return mpeg4_bits_error(&bits) ? -1 : (int)(bits.bits / 8);
 }
 
 int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, uint8_t* data, size_t bytes)
@@ -218,6 +223,7 @@ int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, u
 	const uint8_t nalu[] = { H266_VPS, H266_SPS, H266_PPS, H266_PREFIX_SEI, H266_SUFFIX_SEI };
 
 	assert(vvc->lengthSizeMinusOne <= 3);
+	memset(data, 0, bytes);
 	mpeg4_bits_init(&bits, (void*)data, bytes);
 	mpeg4_bits_write_n(&bits, 0x1F, 5);
 	mpeg4_bits_write_n(&bits, vvc->lengthSizeMinusOne, 2);
@@ -244,9 +250,9 @@ int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, u
 	}
 
 	//mpeg4_bits_write_uint8(&bits, vvc->numOfArrays, 8);
-	p = data + bits.bits / 8;
+	p = data + bits.bits / 8 + 1 /*num_of_arrays*/;
 	end = data + bytes;
-	for (k = i = 0; i < sizeof(nalu) / sizeof(nalu[0]) && p + 3 <= end; i++)
+	for (k = i = 0; i < sizeof(nalu) / sizeof(nalu[0]) && p + 5 <= end; i++)
 	{
 		ptr = p + 3;
 		for (n = j = 0; j < vvc->numOfArrays; j++)
@@ -259,8 +265,8 @@ int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, u
 
 			array_completeness = vvc->nalu[j].array_completeness;
 			assert(vvc->nalu[i].data + vvc->nalu[j].bytes <= vvc->data + sizeof(vvc->data));
-			ptr[0] = vvc->nalu[j].bytes & 0xFF;
-			ptr[1] = (vvc->nalu[j].bytes >> 8) & 0xFF;
+			ptr[0] = (vvc->nalu[j].bytes >> 8) & 0xFF;
+			ptr[1] = vvc->nalu[j].bytes & 0xFF;
 			memcpy(ptr + 2, vvc->nalu[j].data, vvc->nalu[j].bytes);
 			ptr += 2 + vvc->nalu[j].bytes;
 			n++;
@@ -270,16 +276,16 @@ int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, u
 		{
 			// array_completeness + NAL_unit_type
 			p[0] = (array_completeness << 7) | (nalu[i] & 0x1F);
-			p[1] = n & 0xFF;
-			p[2] = (n >> 8) & 0xFF;
+			p[1] = (n >> 8) & 0xFF;
+			p[2] = n & 0xFF;
 			p = ptr;
 			k++;
 		}
 	}
 
-	data[bits.bits / 8] = k;
+	data[bits.bits / 8] = k; // num_of_arrays
 
-	return (int)(p - data);
+	return mpeg4_bits_error(&bits) ? -1 : (int)(p - data);
 }
 
 int mpeg4_vvc_to_nalu(const struct mpeg4_vvc_t* vvc, uint8_t* data, size_t bytes)
@@ -398,5 +404,16 @@ static void mpeg4_vvc_codecs_test(void)
 
 void mpeg4_vvc_test(void)
 {
+	const uint8_t data[] = { 0xff, 0x00, 0x11, 0x1f, 0x01, 0x02, 0x69, 0x00, 0x00, 0x02, 0xd0, 0x05, 0x00, 0x00, 0x00, 0x02, 0x8f, 0x00, 0x01, 0x00, 0x2a, 0x00, 0x79, 0x00, 0x0b, 0x02, 0x69, 0x00, 0x00, 0x03, 0x00, 0x16, 0x88, 0x01, 0x40, 0x48, 0x80, 0x2b, 0x49, 0xff, 0x45, 0x19, 0x18, 0xe0, 0x0c, 0x42, 0x55, 0x5a, 0xab, 0xd5, 0xeb, 0x33, 0x25, 0x5a, 0x12, 0xe4, 0x72, 0xd4, 0x56, 0x5a, 0x32, 0x30, 0x40, 0x90, 0x00, 0x01, 0x00, 0x0c, 0x00, 0x81, 0x00, 0x00, 0x0b, 0x44, 0x00, 0xa0, 0x22, 0x24, 0x18, 0x20 };
+	uint8_t buffer[sizeof(data)];
+	struct mpeg4_vvc_t vvc;
+	memset(&vvc, 0, sizeof(vvc));
+	assert(sizeof(data) == mpeg4_vvc_decoder_configuration_record_load(data, sizeof(data), &vvc));
+	assert(3 == vvc.lengthSizeMinusOne && 1 == vvc.ptl_present_flag && 1 == vvc.num_sublayers);
+	assert(1 == vvc.chroma_format_idc && 0 == vvc.bit_depth_minus8);
+	assert(720 == vvc.max_picture_width && 1280 == vvc.max_picture_height && 0 == vvc.avg_frame_rate);
+	assert(1 == vvc.native_ptl.num_bytes_constraint_info && 1 == vvc.native_ptl.general_profile_idc && 0 == vvc.native_ptl.general_tier_flag && 0x69 == vvc.native_ptl.general_level_idc);
+	assert(2 == vvc.numOfArrays && H266_SPS == vvc.nalu[0].type && 0x2a == vvc.nalu[0].bytes && H266_PPS == vvc.nalu[1].type && 0x0c == vvc.nalu[1].bytes);
+	assert(sizeof(data) == mpeg4_vvc_decoder_configuration_record_save(&vvc, buffer, sizeof(buffer)) && 0 == memcmp(buffer, data, sizeof(data)));
 }
 #endif

@@ -54,7 +54,7 @@ static inline size_t mpeg4_bits_remain(struct mpeg4_bits_t* bits)
 static inline void mpeg4_bits_skip(struct mpeg4_bits_t* bits, size_t n)
 {
 	bits->bits += n;
-	if (bits->bits >= bits->size * 8)
+	if (bits->bits > bits->size * 8)
 	{
 		bits->error = -1;
 	}
