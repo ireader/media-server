@@ -44,14 +44,14 @@ static void h266_mp4toannexb_handler(void* param, const uint8_t* nalu, size_t by
 	struct h266_mp4toannexb_handle_t* mp4;
 	mp4 = (struct h266_mp4toannexb_handle_t*)param;
 
-	if (bytes < 1)
+	if (bytes < 2)
 	{
 		assert(0);
 		mp4->errcode = -EINVAL;
 		return;
 	}
 
-	nalu_type = (nalu[0] >> 1) & 0x3F;
+	nalu_type = (nalu[1] >> 3) & 0x1F;
 #if defined(H2645_FILTER_AUD)
 	if (H266_NAL_AUD == nalu_type)
 		continue; // ignore AUD

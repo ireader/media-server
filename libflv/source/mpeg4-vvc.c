@@ -299,12 +299,12 @@ int mpeg4_vvc_to_nalu(const struct mpeg4_vvc_t* vvc, uint8_t* data, size_t bytes
 
 	for (i = 0; i < vvc->numOfArrays; i++)
 	{
-		if (p + vvc->nalu[i].bytes + 4 > end)
+		if (p + vvc->nalu[i].bytes + 4 > end || vvc->nalu[i].bytes < 2)
 			return -1;
 
 		memcpy(p, startcode, 4);
 		memcpy(p + 4, vvc->nalu[i].data, vvc->nalu[i].bytes);
-		assert(vvc->nalu[i].type == ((vvc->nalu[i].data[0] >> 1) & 0x3F));
+		assert(vvc->nalu[i].type == ((vvc->nalu[i].data[1] >> 3) & 0x1F));
 		p += 4 + vvc->nalu[i].bytes;
 	}
 
@@ -377,16 +377,18 @@ int mpeg4_vvc_codecs(const struct mpeg4_vvc_t* vvc, char* codecs, size_t bytes)
 	int i, n;
 	char buffer[129];
 
+	// 1. trailing zero bits of the general_constraint_info() syntax structure may be omitted from the input bits to base32 encoding
 	n = (int)vvc->native_ptl.num_bytes_constraint_info;
-	for (i = (int)vvc->native_ptl.num_bytes_constraint_info - 1; i >= 0; i--)
+	for (i = (int)vvc->native_ptl.num_bytes_constraint_info - 1; i >= 0 && n > 1; i--)
 	{
 		if (0 == vvc->native_ptl.general_constraint_info[i])
 			n--;
 		else
 			break;
 	}
-
 	i = base32_encode(buffer, vvc->native_ptl.general_constraint_info, n);
+	//2, the trailing padding with the "=" character may be omitted from the base32 string;
+	while (i > 0 && buffer[i - 1] == '=') i--;
 
 	return snprintf(codecs, bytes, "vvc1.%u.%c%u.C%.*s",
 		(unsigned int)vvc->native_ptl.general_profile_idc,
@@ -395,11 +397,16 @@ int mpeg4_vvc_codecs(const struct mpeg4_vvc_t* vvc, char* codecs, size_t bytes)
 
 #if defined(_DEBUG) || defined(DEBUG)
 void vvc_annexbtomp4_test(void);
-static void mpeg4_vvc_codecs_test(void)
+static void mpeg4_vvc_codecs_test(struct mpeg4_vvc_t* vvc)
 {
+	int r;
+	char buffer[129];
 	//const char* s = "vvc1.1.L51.CQA.O1+3";
 	//const char* s1 = "vvc1.17.L83.CYA.O1+3";
 	//const char* s2 = "vvc1.17.L83.CYA.O1+3";
+	const char* s3 = "vvc1.1.L105.CAA";
+	r = mpeg4_vvc_codecs(vvc, buffer, sizeof(buffer));
+	assert(r == strlen(s3) && 0 == memcmp(buffer, s3, r));
 }
 
 void mpeg4_vvc_test(void)
@@ -415,5 +422,6 @@ void mpeg4_vvc_test(void)
 	assert(1 == vvc.native_ptl.num_bytes_constraint_info && 1 == vvc.native_ptl.general_profile_idc && 0 == vvc.native_ptl.general_tier_flag && 0x69 == vvc.native_ptl.general_level_idc);
 	assert(2 == vvc.numOfArrays && H266_SPS == vvc.nalu[0].type && 0x2a == vvc.nalu[0].bytes && H266_PPS == vvc.nalu[1].type && 0x0c == vvc.nalu[1].bytes);
 	assert(sizeof(data) == mpeg4_vvc_decoder_configuration_record_save(&vvc, buffer, sizeof(buffer)) && 0 == memcmp(buffer, data, sizeof(data)));
+	mpeg4_vvc_codecs_test(&vvc);
 }
 #endif
