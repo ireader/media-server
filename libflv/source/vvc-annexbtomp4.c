@@ -2,6 +2,7 @@
 #include "mpeg4-avc.h"
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #define H266_NAL_IDR_W_RADL	7
 #define H266_NAL_RSV_IRAP	11
