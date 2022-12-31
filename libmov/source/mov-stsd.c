@@ -430,7 +430,7 @@ static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_e
 		size += mov_write_hvcc(mov);
 	else if (MOV_OBJECT_H266 == entry->object_type_indication)
 		size += mov_write_vvcc(mov);
-	else if (MOV_OBJECT_MP4V == entry->object_type_indication)
+	else if (MOV_OBJECT_MP4V == entry->object_type_indication || MOV_OBJECT_JPEG == entry->object_type_indication || MOV_OBJECT_PNG == entry->object_type_indication || MOV_OBJECT_JPEG2000 == entry->object_type_indication)
 		size += mov_write_esds(mov);
 	else if (MOV_OBJECT_AV1 == entry->object_type_indication)
 		size += mov_write_av1c(mov);
