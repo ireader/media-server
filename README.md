@@ -2,38 +2,36 @@
 * Build Dependence: https://github.com/ireader/sdk
  
 # libflv
-1. Adobe FLV muxer/demuxer
-2. MPEG-4 AVCDecoderConfigurationRecord/HEVCDecoderConfigurationRecord/AV1CodecConfigurationRecord/VPCodecConfigurationRecord/AudioSpecificConfig
-3. H.264/H.265 AnnexB to/from MP4 stream
-4. AAC ADTS to/from ASC/MUX
-5. FLV with H.264/H.264/AV1/VPX(vp8/vp9/vp10)
-6. FLV with AAC/mp3/G.711/Opus
+1. FLV video codec: H.264/H.265/H.266/AV1/VP8/VP9/VP10
+2. FLV audio codec: AAC/MP3/G.711/Opus
+3. FLV file read/write
+4. H.264/H.265/H.266/AV1 bitstream filter: annex-b <-> mp4 stream
+5. AAC bitstream filter: ADTS <-> ASC
 
 # librtmp
 1. rtmp-client: RTMP publish/play
 2. rtmp-server: RTMP Server live/vod streaming
 
 # libmpeg
-1. MPEG-2 PS packer/unpacker
-2. MPEG-2 TS packer/unpacker
-3. ps/ts with H.264/H.265/AAC/MP3/G.711/Opus
+1. ITU-T H.222.0 PS/TS read/write
+2. ps/ts codec: H.264/H.265/H.266/AAC/MP3/G.711/Opus
 
 # librtp
 1. RFC3550 RTP/RTCP
-2. RTP with H.264/H.265/MPEG-2/MPEG-4/VP8/VP9/AV1
-2. RTP with G.711/G.726/G.729/MP3/AAC/Opus
-3. RTP with MPEG-2 PS/TS
+2. RTP with H.264/H.265/H.266/MPEG-2/MPEG-4/VP8/VP9/AV1
+3. RTP with G.711/G.726/G.729/MP3/AAC/Opus
+4. RTP with MPEG-2 PS/TS
+5. RTP Header Extension
+6. RTCP PSFB/RTPFB/XR
 
 # librtsp
-1. RFC 2326 RTSP client
-2. RFC 2326 RTSP Server
-3. RTSP parser
-4. RFC 4566 SDP parser
-5. SDP with H.264/H.265/AAC/Opus/G.711 fmtp
+1. RFC2326 RTSP
+2. RFC4566 SDP
+3. SDP fmtp: H.264/H.265/H.266/AAC/Opus/G.711 
 
 # libhls
-1. HLS Media: TS segmenter
-2. HLS M3U8: generate m3u8 file
+1. HLS M3U8: generate m3u8 file
+2. HLS Media: TS segmenter
 3. HLS fmp4 segmenter
 4. HLS Master/Playlist m3u8 parser
 
@@ -43,15 +41,15 @@
 3. DASH MPD v3/v4 parser
 
 # libmov
-1. MP4 File reader/writer
+1. ISO/IEC 14496-12 MP4 File reader/writer
 2. MP4 faststart(moov box before mdat)
-3. Fragment MP4 writer
-4. MP4 with H.264/H.265/AV1/VP9
+3. fMP4(Fragment MP4) writer
+4. MP4 with H.264/H.265/H.266/AV1/VP8/VP9/JPEG/PNG
 5. MP4 with AAC/Opus/MP3/G.711
 
 # libmkv
 1. MKV/WebM file read/write
-2. Live MKV/WebM streaming
+2. MKV/WebM live streaming
 
 # libsip
 1. sip user-agent (UAC/UAS)
