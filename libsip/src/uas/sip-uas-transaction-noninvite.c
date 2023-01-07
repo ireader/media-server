@@ -96,7 +96,8 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 
 int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param)
 {
-	assert(SIP_UAS_TRANSACTION_TRYING == t->status || SIP_UAS_TRANSACTION_PROCEEDING == t->status || (SIP_UAS_TRANSACTION_INIT == t->status && code >= 400) );
+	// fix timeout(triggle by timer) before reply any code
+	assert(SIP_UAS_TRANSACTION_COMPLETED != t->status); // 200~700 reply once only
 	if (SIP_UAS_TRANSACTION_TRYING != t->status && SIP_UAS_TRANSACTION_PROCEEDING != t->status && SIP_UAS_TRANSACTION_INIT != t->status)
 		return 0; // discard
 
