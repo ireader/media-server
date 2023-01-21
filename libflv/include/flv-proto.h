@@ -18,8 +18,8 @@
 #define FLV_AUDIO_OPUS		(13 << 4)
 #define FLV_AUDIO_MP3_8K	(14 << 4) // MP3 8 kHz
 #define FLV_AUDIO_DEVIDE	(15 << 4) // Device-specific sound
-#define FLV_AUDIO_ASC		0x100 // AudioSpecificConfig(ISO-14496-3)
-#define FLV_AUDIO_OPUS_HEAD	0x101 // opus-codec.org
+#define FLV_AUDIO_ASC		(0x1000 | FLV_AUDIO_AAC)	// AudioSpecificConfig(ISO-14496-3)
+#define FLV_AUDIO_OPUS_HEAD	(0x1100 | FLV_AUDIO_OPUS)// opus-codec.org
 
 // FLV Video Type
 #define FLV_VIDEO_H263		2 // Sorenson H.263
@@ -29,12 +29,12 @@
 #define FLV_VIDEO_H265		12 // https://github.com/CDN-Union/H265
 #define FLV_VIDEO_AV1		13 // https://aomediacodec.github.io/av1-isobmff
 #define FLV_VIDEO_H266		14
-#define FLV_VIDEO_AVCC		0x200 // AVCDecoderConfigurationRecord(ISO-14496-15)
-#define FLV_VIDEO_HVCC		0x201 // HEVCDecoderConfigurationRecord(ISO-14496-15)
-#define FLV_VIDEO_AV1C		0x202 // AV1CodecConfigurationRecord(av1-isobmff)
-#define FLV_VIDEO_VVCC		0x203 // VVCDecoderConfigurationRecord(ISO-14496-15)
+#define FLV_VIDEO_AVCC		(0x2000 | FLV_VIDEO_H264) // AVCDecoderConfigurationRecord(ISO-14496-15)
+#define FLV_VIDEO_HVCC		(0x2100 | FLV_VIDEO_H265) // HEVCDecoderConfigurationRecord(ISO-14496-15)
+#define FLV_VIDEO_AV1C		(0x2200 | FLV_VIDEO_AV1)  // AV1CodecConfigurationRecord(av1-isobmff)
+#define FLV_VIDEO_VVCC		(0x2300 | FLV_VIDEO_H266) // VVCDecoderConfigurationRecord(ISO-14496-15)
 
-#define FLV_SCRIPT_METADATA	0x300 // onMetaData
+#define FLV_SCRIPT_METADATA	0x4000 // onMetaData
 
 enum
 {

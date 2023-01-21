@@ -42,9 +42,13 @@ struct mpeg4_hevc_t
 	size_t off;
 };
 
+// load hevc from HEVCDecoderConfigurationRecord
 int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc);
 
 int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes);
+
+// load hevc from annex-b bitstream
+int mpeg4_hevc_from_nalu(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc);
 
 int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes);
 

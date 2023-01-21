@@ -44,7 +44,7 @@ aligned(8) class AVCDecoderConfigurationRecord {
 	}
 }
 */
-int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc)
+static int _mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc)
 {
     uint8_t i;
 	uint32_t j;
@@ -176,6 +176,13 @@ int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, u
 
 #define H264_STARTCODE(p) (p[0]==0 && p[1]==0 && (p[2]==1 || (p[2]==0 && p[3]==1)))
 
+int mpeg4_avc_from_nalu(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc)
+{
+	int r;
+	r = h264_annexbtomp4(avc, data, bytes, NULL, 0, NULL, NULL);
+	return avc->nb_sps > 0 && avc->nb_pps > 0 ? bytes : r;
+}
+
 int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes)
 {
 	uint8_t i;
@@ -223,6 +230,18 @@ int mpeg4_avc_codecs(const struct mpeg4_avc_t* avc, char* codecs, size_t bytes)
 	// https://tools.ietf.org/html/rfc6381#section-3.3
 	// https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter
     return snprintf(codecs, bytes, "avc1.%02x%02x%02x", avc->profile, avc->compatibility, avc->level);
+}
+
+int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc)
+{
+	int r;
+	r = _mpeg4_avc_decoder_configuration_record_load(data, bytes, avc);
+	if (r > 0 && avc->nb_sps > 0 && avc->nb_pps > 0)
+		return r;
+
+	// try annexb
+	memset(avc, 0, sizeof(*avc));
+	return mpeg4_avc_from_nalu(data, bytes, avc);
 }
 
 #if defined(_DEBUG) || defined(DEBUG)

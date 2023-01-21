@@ -40,9 +40,13 @@ struct mpeg4_avc_t
 	size_t off;
 };
 
+// load avc from AVCDecoderConfigurationRecord
 int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc);
 
 int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes);
+
+// load avc from annex-b bitstream
+int mpeg4_avc_from_nalu(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc);
 
 int mpeg4_avc_to_nalu(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes);
 
