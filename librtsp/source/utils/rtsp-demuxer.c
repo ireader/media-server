@@ -431,7 +431,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         case AVCODEC_VIDEO_H264:
             if (fmtp && *fmtp && 0 == sdp_a_fmtp_h264(fmtp, &payload, &pt->fmtp.h264))
                 pt->extra_bytes = sdp_h264_load(pt->extra, len, pt->fmtp.h264.sprop_parameter_sets);
-            pt->avbsf = avbsf_h264();
+            pt->avbsf = avbsf_find(AVCODEC_VIDEO_H264);
             pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
             onpacket = rtsp_demuxer_onh2645nalu;
             break;
@@ -439,7 +439,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         case AVCODEC_VIDEO_H265:
             if (fmtp && *fmtp && 0 == sdp_a_fmtp_h265(fmtp, &payload, &pt->fmtp.h265))
                 pt->extra_bytes = sdp_h265_load(pt->extra, len, pt->fmtp.h265.sprop_vps, pt->fmtp.h265.sprop_sps, pt->fmtp.h265.sprop_pps, pt->fmtp.h265.sprop_sei);
-            pt->avbsf = avbsf_h265();
+            pt->avbsf = avbsf_find(AVCODEC_VIDEO_H265);
             pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
             onpacket = rtsp_demuxer_onh2645nalu;
             break;
