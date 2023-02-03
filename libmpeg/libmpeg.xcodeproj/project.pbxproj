@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C9FC5FF298D053A00FB85DD /* mpeg-muxer.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC5FE298D053A00FB85DD /* mpeg-muxer.c */; };
 		4605125C24D6B4F300B04B70 /* mpeg-ts-opus.h in Headers */ = {isa = PBXBuildFile; fileRef = 4605125B24D6B4F300B04B70 /* mpeg-ts-opus.h */; };
 		46AC02CE21BA5907003CF43D /* mpeg-sdt.c in Sources */ = {isa = PBXBuildFile; fileRef = 46AC02CD21BA5907003CF43D /* mpeg-sdt.c */; };
 		46C5B3542183EE0100419E57 /* mpeg-psm.c in Sources */ = {isa = PBXBuildFile; fileRef = 46C5B3422183EE0100419E57 /* mpeg-psm.c */; };
@@ -30,6 +31,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C9FC5FE298D053A00FB85DD /* mpeg-muxer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg-muxer.c"; sourceTree = "<group>"; };
 		4605125B24D6B4F300B04B70 /* mpeg-ts-opus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mpeg-ts-opus.h"; sourceTree = "<group>"; };
 		46AC02CD21BA5907003CF43D /* mpeg-sdt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mpeg-sdt.c"; sourceTree = "<group>"; };
 		46C5B2622183EB8F00419E57 /* libmpeg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,6 +87,7 @@
 		46C5B3412183EE0100419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				0C9FC5FE298D053A00FB85DD /* mpeg-muxer.c */,
 				46C5B3492183EE0100419E57 /* mpeg-crc32.c */,
 				46C5B3502183EE0100419E57 /* mpeg-element-descriptor.c */,
 				46C5B34A2183EE0100419E57 /* mpeg-pack-header.c */,
@@ -185,6 +188,7 @@
 				46C5B3612183EE0100419E57 /* mpeg-ts-enc.c in Sources */,
 				46C5B3602183EE0100419E57 /* mpeg-pat.c in Sources */,
 				46C5B35D2183EE0100419E57 /* mpeg-ts-h265.c in Sources */,
+				0C9FC5FF298D053A00FB85DD /* mpeg-muxer.c in Sources */,
 				46C5B3582183EE0100419E57 /* mpeg-util.c in Sources */,
 				46C5B3552183EE0100419E57 /* mpeg-system-header.c in Sources */,
 				46C5B3562183EE0100419E57 /* mpeg-packet.c in Sources */,

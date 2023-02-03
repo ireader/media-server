@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C9FC5FD298D04E500FB85DD /* mov-vvc.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC5FC298D04E500FB85DD /* mov-vvc.c */; };
 		461F0BEC22F80F1400A995BD /* mov-opus.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0BEB22F80F1400A995BD /* mov-opus.c */; };
 		4680238625997F1500AD5A52 /* mov-udta.c in Sources */ = {isa = PBXBuildFile; fileRef = 4680238525997F1500AD5A52 /* mov-udta.c */; };
 		468B916223B8AE8700EA99A3 /* mov-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B916123B8AE8700EA99A3 /* mov-av1.c */; };
@@ -51,6 +52,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C9FC5FC298D04E500FB85DD /* mov-vvc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-vvc.c"; sourceTree = "<group>"; };
 		461F0BEB22F80F1400A995BD /* mov-opus.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "mov-opus.c"; sourceTree = "<group>"; };
 		4680238525997F1500AD5A52 /* mov-udta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-udta.c"; sourceTree = "<group>"; };
 		468B916123B8AE8700EA99A3 /* mov-av1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mov-av1.c"; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 		46C5B2F92183EDEE00419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				0C9FC5FC298D04E500FB85DD /* mov-vvc.c */,
 				469AADD3264416A800559AA2 /* fmp4-reader.c */,
 				4680238525997F1500AD5A52 /* mov-udta.c */,
 				46C5B30E2183EDEE00419E57 /* fmp4-writer.c */,
@@ -249,6 +252,7 @@
 				46C5B3352183EDEE00419E57 /* mov-minf.c in Sources */,
 				46C5B31F2183EDEE00419E57 /* mov-mehd.c in Sources */,
 				46C5B3322183EDEE00419E57 /* mov-trex.c in Sources */,
+				0C9FC5FD298D04E500FB85DD /* mov-vvc.c in Sources */,
 				46C5B3292183EDEE00419E57 /* mov-iods.c in Sources */,
 				46C5B33D2183EDEE00419E57 /* mov-stco.c in Sources */,
 				46E55E4F24694AAE00D8BDBA /* mov-vpcc.c in Sources */,
