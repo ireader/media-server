@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C9FC5FA298D04A500FB85DD /* vvc-annexbtomp4.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC5F8298D04A500FB85DD /* vvc-annexbtomp4.c */; };
+		0C9FC5FB298D04A500FB85DD /* vvc-mp4toannexb.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC5F9298D04A500FB85DD /* vvc-mp4toannexb.c */; };
+		0C9FC601298D056E00FB85DD /* mpeg4-vvc.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC600298D056E00FB85DD /* mpeg4-vvc.c */; };
 		4605125A24D6B4D500B04B70 /* opus-head.c in Sources */ = {isa = PBXBuildFile; fileRef = 4605125924D6B4D500B04B70 /* opus-head.c */; };
 		46733799219B2315009F658F /* mpeg4-aac-asc.c in Sources */ = {isa = PBXBuildFile; fileRef = 46733798219B2315009F658F /* mpeg4-aac-asc.c */; };
 		468B915C23B8ADAA00EA99A3 /* aom-av1.c in Sources */ = {isa = PBXBuildFile; fileRef = 468B915B23B8ADAA00EA99A3 /* aom-av1.c */; };
@@ -32,6 +35,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C9FC5F8298D04A500FB85DD /* vvc-annexbtomp4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "vvc-annexbtomp4.c"; sourceTree = "<group>"; };
+		0C9FC5F9298D04A500FB85DD /* vvc-mp4toannexb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "vvc-mp4toannexb.c"; sourceTree = "<group>"; };
+		0C9FC600298D056E00FB85DD /* mpeg4-vvc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-vvc.c"; sourceTree = "<group>"; };
 		4605125924D6B4D500B04B70 /* opus-head.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "opus-head.c"; sourceTree = "<group>"; };
 		46733798219B2315009F658F /* mpeg4-aac-asc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mpeg4-aac-asc.c"; sourceTree = "<group>"; };
 		468B915B23B8ADAA00EA99A3 /* aom-av1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "aom-av1.c"; sourceTree = "<group>"; };
@@ -89,6 +95,9 @@
 		46C5B2CA2183EDA200419E57 /* source */ = {
 			isa = PBXGroup;
 			children = (
+				0C9FC600298D056E00FB85DD /* mpeg4-vvc.c */,
+				0C9FC5F8298D04A500FB85DD /* vvc-annexbtomp4.c */,
+				0C9FC5F9298D04A500FB85DD /* vvc-mp4toannexb.c */,
 				4CEE46E627A70C1900740460 /* riff-acm.c */,
 				46C5B2CE2183EDA200419E57 /* amf0.c */,
 				46C5B2D22183EDA200419E57 /* amf3.c */,
@@ -188,13 +197,16 @@
 				468B916023B8AE3100EA99A3 /* flv-header.c in Sources */,
 				46C5B2E62183EDA200419E57 /* mpeg4-annexbtomp4.c in Sources */,
 				468B915C23B8ADAA00EA99A3 /* aom-av1.c in Sources */,
+				0C9FC601298D056E00FB85DD /* mpeg4-vvc.c in Sources */,
 				46C5B2E02183EDA200419E57 /* mpeg4-hevc.c in Sources */,
 				46C5B2DC2183EDA200419E57 /* mp3-header.c in Sources */,
 				46C5B2EA2183EDA200419E57 /* hevc-mp4toannexb.c in Sources */,
 				46C5B2DD2183EDA200419E57 /* flv-writer.c in Sources */,
 				46C5B2E82183EDA200419E57 /* flv-muxer.c in Sources */,
+				0C9FC5FA298D04A500FB85DD /* vvc-annexbtomp4.c in Sources */,
 				46C5B2E42183EDA200419E57 /* flv-reader.c in Sources */,
 				46C5B2E52183EDA200419E57 /* flv-demuxer-script.c in Sources */,
+				0C9FC5FB298D04A500FB85DD /* vvc-mp4toannexb.c in Sources */,
 				46C5B2E72183EDA200419E57 /* flv-parser.c in Sources */,
 				46C5B2DF2183EDA200419E57 /* hevc-annexbtomp4.c in Sources */,
 				46C5B2E22183EDA200419E57 /* amf3.c in Sources */,

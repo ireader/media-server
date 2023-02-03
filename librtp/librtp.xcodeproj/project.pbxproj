@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C9FC604298D059900FB85DD /* rtp-h266-pack.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC602298D059900FB85DD /* rtp-h266-pack.c */; };
+		0C9FC605298D059900FB85DD /* rtp-h266-unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C9FC603298D059900FB85DD /* rtp-h266-unpack.c */; };
 		461263D9263BE34000E07FD8 /* rtp-h264-bitstream.c in Sources */ = {isa = PBXBuildFile; fileRef = 461263D8263BE34000E07FD8 /* rtp-h264-bitstream.c */; };
 		4638E8882938D5480018F1E7 /* rtp-ext-transport-wide-cc.c in Sources */ = {isa = PBXBuildFile; fileRef = 4638E8772938D5480018F1E7 /* rtp-ext-transport-wide-cc.c */; };
 		4638E8892938D5480018F1E7 /* rtp-ext.c in Sources */ = {isa = PBXBuildFile; fileRef = 4638E8782938D5480018F1E7 /* rtp-ext.c */; };
@@ -74,6 +76,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C9FC602298D059900FB85DD /* rtp-h266-pack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtp-h266-pack.c"; path = "payload/rtp-h266-pack.c"; sourceTree = SOURCE_ROOT; };
+		0C9FC603298D059900FB85DD /* rtp-h266-unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rtp-h266-unpack.c"; path = "payload/rtp-h266-unpack.c"; sourceTree = SOURCE_ROOT; };
 		461263D8263BE34000E07FD8 /* rtp-h264-bitstream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-h264-bitstream.c"; sourceTree = "<group>"; };
 		4638E8772938D5480018F1E7 /* rtp-ext-transport-wide-cc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-ext-transport-wide-cc.c"; sourceTree = "<group>"; };
 		4638E8782938D5480018F1E7 /* rtp-ext.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "rtp-ext.c"; sourceTree = "<group>"; };
@@ -206,6 +210,8 @@
 				46C5B3872183EE2C00419E57 /* rtp-h264-unpack.c */,
 				46C5B39A2183EE2C00419E57 /* rtp-h265-pack.c */,
 				46C5B3862183EE2C00419E57 /* rtp-h265-unpack.c */,
+				0C9FC602298D059900FB85DD /* rtp-h266-pack.c */,
+				0C9FC603298D059900FB85DD /* rtp-h266-unpack.c */,
 				46C5B3982183EE2C00419E57 /* rtp-mp4a-latm-pack.c */,
 				46C5B38B2183EE2C00419E57 /* rtp-mp4a-latm-unpack.c */,
 				46C5B38F2183EE2C00419E57 /* rtp-mp4v-es-pack.c */,
@@ -352,7 +358,9 @@
 				4638E88C2938D5480018F1E7 /* rtp-ext-abs-send-time.c in Sources */,
 				46C5B3A72183EE2C00419E57 /* rtp-mp4v-es-pack.c in Sources */,
 				46C5B3B02183EE2C00419E57 /* rtp-mp4a-latm-pack.c in Sources */,
+				0C9FC605298D059900FB85DD /* rtp-h266-unpack.c in Sources */,
 				4638E8942938D5480018F1E7 /* rtp-ext-playout-delay.c in Sources */,
+				0C9FC604298D059900FB85DD /* rtp-h266-pack.c in Sources */,
 				4643D901244A894B00572339 /* rtp-demuxer.c in Sources */,
 				46C5B3D32183EE4800419E57 /* rtp-time.c in Sources */,
 				46C5B3A82183EE2C00419E57 /* rtp-h264-pack.c in Sources */,
