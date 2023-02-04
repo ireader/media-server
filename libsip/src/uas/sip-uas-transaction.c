@@ -203,7 +203,7 @@ void sip_uas_transaction_ontimeout(void* usrptr)
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
 		if (t->dialog)
-			t->handler->onack(t->initparam, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
+			t->handler->onack(t->initparam, NULL, t, t->dialog->session, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, 408/*Invite Timeout*/, NULL, 0);
 	}
 
 	locker_unlock(&t->locker);
