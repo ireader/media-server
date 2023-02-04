@@ -40,6 +40,9 @@ static int on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t pt
 {
     printf("[%s] pts: %08lu, dts: %08lu%s\n", ps_type(codecid), (unsigned long)pts, (unsigned long)dts, flags ? " [I]" : "");
 
+    if (0 == codecid)
+        return bytes;
+
     int i;
     static std::map<int, int> streams;
     if (0 == streams.size())

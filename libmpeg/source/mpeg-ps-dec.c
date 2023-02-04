@@ -233,7 +233,12 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         default:
             pes = psm_fetch(&ps->psm, v8);
             if (NULL == pes)
+            {
+                // skip PES
+                mpeg_bits_skip(reader, mpeg_bits_read16(reader));
+                r = mpeg_bits_error(reader) ? MPEG_ERROR_NEED_MORE_DATA : MPEG_ERROR_OK;
                 continue;
+            }   
 
             pes->sid = v8;
             r = ps->pkhd.mpeg2 ? pes_read_header(pes, reader) : pes_read_mpeg1_header(pes, reader);
