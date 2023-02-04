@@ -151,12 +151,18 @@ static void pes_packet_codec_verify(struct pes_t* pes, const struct packet_t* pk
 int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, int start, pes_packet_handler handler, void* param)
 {
     int r;
+    size_t total;
 
+    total = size;
     // use timestamp to split packet
     assert(PTS_NO_VALUE != pes->dts);
-    if (pkt->size > 0 && (pkt->dts != pes->dts || start))
+    if (pkt->size > 0 && (pkt->dts != pes->dts || start) 
+        // WARNING: don't use pes->codecid
+        && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid)
     {
-        pes_packet_codec_verify(pes, pkt); // verify on packet complete
+        if(0 == pes->codecid)
+            pes_packet_codec_verify(pes, pkt); // verify on packet complete
+
         if (PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid)
         {
             assert(PTS_NO_VALUE != pkt->dts);
@@ -164,6 +170,12 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
             pkt->size = 0; // new packet start
             if (0 != r)
                 return r;
+        }
+        else
+        {
+            assert(0 == pkt->codecid);
+            pkt->codecid = pes->codecid; // update previous packet codec id
+            total += pkt->size; // find nalu vcl
         }
     }
 
@@ -174,7 +186,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
 
     if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
     {
-        return mpeg_packet_h264_h265(pkt, pes, size, handler, param);
+        return mpeg_packet_h264_h265(pkt, pes, total, handler, param);
     }
     else
     {
