@@ -512,6 +512,9 @@
     <ClCompile Include="..\librtsp\test\rtsp-client-push-test.cpp">
       <Filter>librtsp</Filter>
     </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-2-flv-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">
