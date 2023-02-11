@@ -60,7 +60,7 @@ static int mpeg_packet_h264_h265_filter(uint16_t program, uint16_t stream, struc
     return handler(param, program, stream, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, data + off + i, size - off - i);
 }
 
-static int mpeg_packet_h264_h265(struct packet_t* pkt, const struct pes_t* pes, size_t size, pes_packet_handler handler, void* param)
+static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_t size, pes_packet_handler handler, void* param)
 {
     int r, n;
     const uint8_t* p, *end, *data;
@@ -127,7 +127,7 @@ static void pes_packet_codec_verify(struct pes_t* pes, const struct packet_t* pk
     if (pes->codecid == PSI_STREAM_RESERVED && 0 == mpeg_h26x_verify(pkt->data, pkt->size, &r))
     {
         // modify codecid
-        static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_MPEG4, };
+        static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266, PSI_STREAM_MPEG4, };
         pes->codecid = sc_codecid[(r < 0 || r >= sizeof(sc_codecid) / sizeof(sc_codecid[0])) ? PSI_STREAM_RESERVED : r];
     }
 #endif
@@ -158,12 +158,12 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     assert(PTS_NO_VALUE != pes->dts);
     if (pkt->size > 0 && (pkt->dts != pes->dts || start) 
         // WARNING: don't use pes->codecid
-        && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid)
+        && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid && PSI_STREAM_H266 != pkt->codecid)
     {
         if(0 == pes->codecid)
             pes_packet_codec_verify(pes, pkt); // verify on packet complete
 
-        if (PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid)
+        if (PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid && PSI_STREAM_H266 != pes->codecid)
         {
             assert(PTS_NO_VALUE != pkt->dts);
             r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pkt->data, pkt->size);
@@ -184,9 +184,9 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     if (0 != r)
         return r;
 
-    if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
+    if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid || PSI_STREAM_H266 == pes->codecid)
     {
-        return mpeg_packet_h264_h265(pkt, pes, total, handler, param);
+        return mpeg_packet_h26x(pkt, pes, total, handler, param);
     }
     else
     {
@@ -198,15 +198,15 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         pkt->flags = pes->flags;
 
         // for audio packet only, H.264/H.265 pes->len maybe incorrect
-        assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid);
+        assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid && PSI_STREAM_H266 != pes->codecid);
 #if !defined(MPEG_LIVING_VIDEO_FRAME_DEMUX)
         if (PES_SID_VIDEO != pes->sid)
 #endif
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
             pes_packet_codec_verify(pes, pkt); // verify on packet complete
-            if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid)
-                return mpeg_packet_h264_h265(pkt, pes, size, handler, param);
+            if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid || PSI_STREAM_H266 == pes->codecid)
+                return mpeg_packet_h26x(pkt, pes, size, handler, param);
 
             assert(pes->pkt.size == pes->len || (pkt->flags & MPEG_FLAG_PACKET_CORRUPT)); // packet lost
             r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags, pkt->pts, pkt->dts, pes->pkt.data, pes->len);

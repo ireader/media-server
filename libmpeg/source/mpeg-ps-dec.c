@@ -153,7 +153,7 @@ static int ps_demuxer_packet(struct ps_demuxer_t *ps, const uint8_t* data, size_
 #if defined(MPEG_LIVING_VIDEO_FRAME_DEMUX)
     // video packet size > 0xFFFF, split by pts/dts
     if (PES_SID_VIDEO == pes->sid
-        && PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid
+        && PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid && PSI_STREAM_H266 != pes->codecid
         && (pes->pkt.size > 0 || pes->len + pes->PES_header_data_length + 3 == 0xFFFF))
         pes->len = 0;
 #endif

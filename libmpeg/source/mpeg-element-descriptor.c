@@ -137,6 +137,18 @@ int mpeg_elment_descriptor(struct mpeg_bits_t* reader)
 		mvc_extension_descriptor(reader, len);
 		break;
 
+	case 56:
+		hevc_video_descriptor(reader, len);
+		break;
+
+	case 57:
+		vvc_video_descriptor(reader, len);
+		break;
+
+	case 58:
+		evc_video_descriptor(reader, len);
+		break;
+
 	case 0x40:
 		clock_extension_descriptor(reader, len);
 		break;
@@ -505,6 +517,127 @@ int mvc_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len)
 	desc.temporal_id_end = (v >> 2) & 0x07;
 	desc.no_sei_nal_unit_present = (v >> 1) & 0x01;
 	desc.no_prefix_nal_unit_present = (v >> 0) & 0x01;
+
+	assert(0 == mpeg_bits_error(reader));
+	return mpeg_bits_error(reader) ? -1 : 0;
+}
+
+int hevc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len)
+{
+	// 2.6.95 HEVC video descriptor(p146)
+
+	uint64_t v;
+	hevc_video_descriptor_t desc;
+
+	(void)len; assert(len >= 13);
+	memset(&desc, 0, sizeof(desc));
+	v = mpeg_bits_read8(reader);
+	desc.profile_space = (v >> 6) & 0x03;
+	desc.tier_flag = (v >> 5) & 0x01;
+	desc.profile_idc = (v >> 0) & 0x1F;
+	desc.profile_compatibility_indication = mpeg_bits_read32(reader);
+	v = mpeg_bits_read64(reader);
+	desc.progressive_source_flag = (v >> 63) & 0x01;
+	desc.interlaced_source_flag = (v >> 62) & 0x01;
+	desc.non_packed_constraint_flag = (v >> 61) & 0x01;
+	desc.frame_only_constraint_flag = (v >> 60) & 0x01;
+	desc.copied_44bits = (v >> 16) & 0xFFFFFFFFFFFULL;
+	desc.level_idc = (v >> 8) & 0xFF;
+	desc.temporal_layer_subset_flag = (v >> 7) & 0x01;
+	desc.HEVC_still_present_flag = (v >> 6) & 0x01;
+	desc.HEVC_24hr_picture_present_flag = (v >> 5) & 0x01;
+	desc.sub_pic_hrd_params_not_present_flag = (v >> 4) & 0x01;
+	desc.HDR_WCG_idc = v & 0x03;
+	if (desc.temporal_layer_subset_flag) {
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_min = (v >> 5) & 0x07;
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_max = (v >> 5) & 0x07;
+	}
+
+	assert(0 == mpeg_bits_error(reader));
+	return mpeg_bits_error(reader) ? -1 : 0;
+}
+
+int vvc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len)
+{
+	// 2.6.129 VVC video descriptor(p172)
+
+	int i;
+	uint8_t v;
+	vvc_video_descriptor_t desc;
+
+	(void)len; assert(len >= 6);
+	memset(&desc, 0, sizeof(desc));
+	v = mpeg_bits_read8(reader);
+	desc.profile_idc = (v >> 1) & 0x7F;
+	desc.tier_flag = v & 0x01;
+	desc.num_sub_profiles = mpeg_bits_read8(reader);
+	for(i = 0; i < desc.num_sub_profiles && i < sizeof(desc.sub_profile_idc)/sizeof(desc.sub_profile_idc[0]); i++)
+		desc.sub_profile_idc[i] = mpeg_bits_read32(reader);
+
+	v = mpeg_bits_read8(reader);
+	desc.progressive_source_flag = (v >> 7) & 0x01;
+	desc.interlaced_source_flag = (v >> 6) & 0x01;
+	desc.non_packed_constraint_flag = (v >> 5) & 0x01;
+	desc.frame_only_constraint_flag = (v >> 4) & 0x01;
+	desc.reserved_zero_4bits = (v >> 0) & 0x0F;
+	desc.level_idc = mpeg_bits_read8(reader);
+
+	v = mpeg_bits_read8(reader);
+	desc.temporal_layer_subset_flag = (v >> 7) & 0x01;
+	desc.VVC_still_present_flag = (v >> 6) & 0x01;
+	desc.VVC_24hr_picture_present_flag = (v >> 5) & 0x01;
+
+	v = mpeg_bits_read8(reader);
+	desc.HDR_WCG_idc = (v >> 6) & 0x03;
+	desc.video_properties_tag = v & 0x0F;
+
+	if (desc.temporal_layer_subset_flag) {
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_min = v & 0x07;
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_max = v & 0x07;
+	}
+
+	assert(0 == mpeg_bits_error(reader));
+	return mpeg_bits_error(reader) ? -1 : 0;
+}
+
+int evc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len)
+{
+	// 2.6.133 EVC video descriptor(p176)
+
+	uint8_t v;
+	evc_video_descriptor_t desc;
+
+	(void)len; assert(len >= 6);
+	memset(&desc, 0, sizeof(desc));
+	desc.profile_idc = mpeg_bits_read8(reader);
+	desc.level_idc = mpeg_bits_read8(reader);
+	desc.toolset_idc_h = mpeg_bits_read32(reader);
+	desc.toolset_idc_l = mpeg_bits_read32(reader);
+
+	v = mpeg_bits_read8(reader);
+	desc.progressive_source_flag = (v >> 7) & 0x01;
+	desc.interlaced_source_flag = (v >> 6) & 0x01;
+	desc.non_packed_constraint_flag = (v >> 5) & 0x01;
+	desc.frame_only_constraint_flag = (v >> 4) & 0x01;
+	desc.reserved = (v >> 3) & 0x01;
+	desc.temporal_layer_subset_flag = (v >> 2) & 0x01;
+	desc.EVC_still_present_flag = (v >> 1) & 0x01;
+	desc.EVC_24hr_picture_present_flag = (v >> 0) & 0x01;
+
+	v = mpeg_bits_read8(reader);
+	desc.HDR_WCG_idc = (v >> 6) & 0x03;
+	desc.video_properties_tag = v & 0x0F;
+
+	if (desc.temporal_layer_subset_flag) {
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_min = v & 0x07;
+		v = mpeg_bits_read8(reader);
+		desc.temporal_id_max = v & 0x07;
+	}
 
 	assert(0 == mpeg_bits_error(reader));
 	return mpeg_bits_error(reader) ? -1 : 0;

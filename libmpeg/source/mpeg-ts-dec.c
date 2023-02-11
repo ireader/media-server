@@ -144,6 +144,11 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
                 const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
                 pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
             }
+			else if (PSI_STREAM_H266 == pes->codecid)
+			{
+				const uint8_t aud[] = { 0,0,0,1,0x00,0xA1,0x18 };
+				pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+			}
             else
             {
                 //assert(0);

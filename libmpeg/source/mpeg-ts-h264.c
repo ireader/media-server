@@ -135,10 +135,11 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
 {
     uint32_t h264_flags = 0x01A0U; // sps/pps/idr
     uint64_t h265_flags = 0x700000000ULL; // vps/sps/pps
+    uint32_t h266_flags = 0xC000U; // <vps/>sps/pps
 
     int n, count;
     size_t leading;
-    uint8_t h26x[4][10];
+    uint8_t h26x[5][10];
     const uint8_t* p, * end;
 
     count = 0;
@@ -149,10 +150,11 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
         if (n < 0 || p + n + 1 > end)
             break;
 
-        h26x[0][count] = p[n] & 0x1f;
-        h26x[1][count] = (p[n] >> 1) & 0x3f;
-        h26x[2][count] = p[n]; // for mpeg4 vop_start_code
-        h26x[3][count] = p[n+1]; // for mpeg4 vop_coding_type
+        h26x[0][count] = p[n] & 0x1f; // h264
+        h26x[1][count] = (p[n] >> 1) & 0x3f; // h265
+        h26x[2][count] = (p[n+1] >> 3) & 0x1f; // h266
+        h26x[3][count] = p[n]; // for mpeg4 vop_start_code
+        h26x[4][count] = p[n+1]; // for mpeg4 vop_coding_type
         ++count;
     }
 
@@ -160,24 +162,31 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
     {
         h264_flags &= ~(1U << h26x[0][n]);
         h265_flags &= ~(1ULL << h26x[1][n]);
+        h266_flags &= ~(1ULL << h26x[2][n]);
     }
     
-    if (0 == h264_flags && 0 != h265_flags)
+    if (0 == h264_flags && 0 != h265_flags && 0 != h266_flags)
     {
         // match sps/pps/idr
         *codec = 1;
         return 0;
     }
-    else if (0 == h265_flags && 0 != h264_flags)
+    else if (0 == h265_flags && 0 != h264_flags && 0 != h266_flags)
     {
         // match vps/sps/pps
         *codec = 2;
         return 0;
     }
-    else if (0xB0 == h26x[2][0] && 0 == (0x30 & h26x[3][0]))
+    else if (0 == h266_flags && 0 != h264_flags && 0 != h265_flags)
+    {
+        // match sps/pps
+        *codec = 3;
+        return 0;
+    }
+    else if (0xB0 == h26x[3][0] && 0 == (0x30 & h26x[4][0]))
     {
         // match VOP start code
-        *codec = 3;
+        *codec = 4;
         return 0;
     }
 

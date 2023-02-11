@@ -34,7 +34,7 @@ enum mkv_codec_t
 	MKV_CODEC_VIDEO_VP8,			// VP8 Codec format
 	MKV_CODEC_VIDEO_VP9,			// VP9 Codec format
 	MKV_CODEC_VIDEO_FFV1,			// FF Video Codec 1
-	MKV_CODEC_VIDEO_AV1,			// AV1 Codec format
+	MKV_CODEC_VIDEO_AV1,			// https://github.com/ietf-wg-cellar/matroska-specification/blob/master/codec/av1.md
 	MKV_CODEC_VIDEO_DIRAC,			// ffmpeg
 	MKV_CODEC_VIDEO_MJPEG,			// ffmpeg
 	MKV_CODEC_VIDEO_H266,			// VVC/H.266

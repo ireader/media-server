@@ -22,7 +22,7 @@ struct ps_muxer_t
     struct ps_pack_header_t pack;
     struct ps_system_header_t system;
     
-    int h264_h265_with_aud;
+    int h26x_with_aud;
 	unsigned int psm_period;
 	unsigned int scr_period;
 
@@ -63,7 +63,7 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 
 	// Add PSM for IDR frame
 	ps->psm_period = ((flags & MPEG_FLAG_IDR_FRAME) && mpeg_stream_type_video(stream->codecid)) ? 0 : ps->psm_period;
-    ps->h264_h265_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
+    ps->h26x_with_aud = (flags & MPEG_FLAG_H264_H265_WITH_AUD) ? 1 : 0;
 
 	// TODO: 
 	// 1. update packet header program_mux_rate
@@ -112,11 +112,13 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 		uint8_t *pes = packet + i;
 		
 		p = pes + pes_write_header(stream, pes, sz - i);
+		stream->pts = stream->dts = PTS_NO_VALUE; // clear pts/dts flags
+		stream->data_alignment_indicator = 0; // clear flags
 		assert(p - pes < 64);
 
 		if(first)
 		{
-			if (PSI_STREAM_H264 == stream->codecid && !ps->h264_h265_with_aud)
+			if (PSI_STREAM_H264 == stream->codecid && !ps->h26x_with_aud)
 			{
 				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
 				// Each AVC access unit shall contain an access unit delimiter NAL Unit
@@ -125,14 +127,24 @@ int ps_muxer_input(struct ps_muxer_t* ps, int streamid, int flags, int64_t pts, 
 				p[5] = 0xE0; // any slice type (0xe) + rbsp stop one bit
 				p += 6;
 			}
-			else if (PSI_STREAM_H265 == stream->codecid && !ps->h264_h265_with_aud)
+			else if (PSI_STREAM_H265 == stream->codecid && !ps->h26x_with_aud)
 			{
 				// 2.17 Carriage of HEVC
 				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
 				nbo_w32(p, 0x00000001);
 				p[4] = 0x46; // 35-AUD_NUT
-				p[5] = 01;
+				p[5] = 0x01;
 				p[6] = 0x50; // B&P&I (0x2) + rbsp stop one bit
+				p += 7;
+			}
+			else if (PSI_STREAM_H266 == stream->codecid && !ps->h26x_with_aud)
+			{
+				// 2.23 Carriage of VVC
+				// Each VVC access unit shall contain an access unit delimiter NAL unit
+				nbo_w32(p, 0x00000001);
+				p[4] = 0x00; // 20-AUD_NUT
+				p[5] = 0xA1;
+				p[6] = 0x18; // B&P&I (0x1) + rbsp stop one bit
 				p += 7;
 			}
 		}

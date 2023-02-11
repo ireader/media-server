@@ -20,6 +20,7 @@ int mpeg_stream_type_video(int codecid)
     {
     case PSI_STREAM_H264:
     case PSI_STREAM_H265:
+    case PSI_STREAM_H266:
     case PSI_STREAM_MPEG1:
     case PSI_STREAM_MPEG2:
     case PSI_STREAM_MPEG4:

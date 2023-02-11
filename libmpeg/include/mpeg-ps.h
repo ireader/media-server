@@ -57,7 +57,7 @@ struct ps_muxer_t;
 struct ps_muxer_t* ps_muxer_create(const struct ps_muxer_func_t *func, void* param);
 int ps_muxer_destroy(struct ps_muxer_t* muxer);
 /// Add audio/video stream
-/// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
+/// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_H266/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
 /// @param[in] extradata itu h.222.0 program and program element descriptors, NULL for H.264/H.265/AAC
 /// @param[in] bytes extradata size in byte
 /// @return <=0-error, >0-audio/video stream id

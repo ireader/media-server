@@ -204,6 +204,83 @@ typedef struct _mvc_extension_descriptor_t
 
 int mvc_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 
+typedef struct _hevc_video_descriptor_t
+{
+	uint8_t profile_space : 2;
+	uint8_t tier_flag : 1;
+	uint8_t profile_idc : 5;
+	uint32_t profile_compatibility_indication;
+
+	uint64_t progressive_source_flag : 1;
+	uint64_t interlaced_source_flag : 1;
+	uint64_t non_packed_constraint_flag : 1;
+	uint64_t frame_only_constraint_flag : 1;
+	uint64_t copied_44bits : 44;
+	uint64_t level_idc : 8;
+	uint64_t temporal_layer_subset_flag : 1;
+	uint64_t HEVC_still_present_flag : 1;
+	uint64_t HEVC_24hr_picture_present_flag : 1;
+	uint64_t sub_pic_hrd_params_not_present_flag : 1;
+	uint64_t reserved : 2;
+	uint64_t HDR_WCG_idc : 2;
+
+	uint8_t temporal_id_min : 3;
+	uint8_t temporal_id_max : 3;
+} hevc_video_descriptor_t;
+
+int hevc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len);
+
+typedef struct _vvc_video_descriptor_t
+{
+	uint8_t profile_idc : 7;
+	uint8_t tier_flag : 1;
+	uint8_t num_sub_profiles;
+	uint32_t sub_profile_idc[32];
+
+	uint32_t progressive_source_flag : 1;
+	uint32_t interlaced_source_flag : 1;
+	uint32_t non_packed_constraint_flag : 1;
+	uint32_t frame_only_constraint_flag : 1;
+	uint32_t reserved_zero_4bits : 4;
+	uint32_t level_idc : 8;
+	uint32_t temporal_layer_subset_flag : 1;
+	uint32_t VVC_still_present_flag : 1;
+	uint32_t VVC_24hr_picture_present_flag : 1;
+	uint32_t reserved1 : 5;
+	uint32_t HDR_WCG_idc : 2;
+	uint32_t reserved2 : 2;
+	uint32_t video_properties_tag : 4;
+
+	uint8_t temporal_id_min : 3;
+	uint8_t temporal_id_max : 3;
+} vvc_video_descriptor_t;
+
+int vvc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len);
+
+typedef struct _evc_video_descriptor_t
+{
+	uint8_t profile_idc;
+	uint8_t level_idc;
+	uint32_t toolset_idc_h;
+	uint32_t toolset_idc_l;
+
+	uint32_t progressive_source_flag : 1;
+	uint32_t interlaced_source_flag : 1;
+	uint32_t non_packed_constraint_flag : 1;
+	uint32_t frame_only_constraint_flag : 1;
+	uint32_t reserved : 1;
+	uint32_t temporal_layer_subset_flag : 1;
+	uint32_t EVC_still_present_flag : 1;
+	uint32_t EVC_24hr_picture_present_flag : 1;
+	uint32_t HDR_WCG_idc : 2;
+	uint32_t reserved2 : 2;
+	uint32_t video_properties_tag : 4;
+	uint32_t temporal_id_min : 3;
+	uint32_t temporal_id_max : 3;
+} evc_video_descriptor_t;
+
+int evc_video_descriptor(struct mpeg_bits_t* reader, uint8_t len);
+
 int clock_extension_descriptor(struct mpeg_bits_t* reader, uint8_t len);
 size_t clock_extension_descriptor_write(uint8_t* data, size_t bytes, int64_t clock);
 
