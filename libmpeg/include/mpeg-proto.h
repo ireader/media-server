@@ -100,7 +100,7 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_AUDIO_G722		= 0x92,
 	PSI_STREAM_AUDIO_G723		= 0x93,
 	PSI_STREAM_AUDIO_G729		= 0x99,
-	PSI_STREAM_AUDIO_OPUS		= 0x9c,
+	PSI_STREAM_AUDIO_OPUS		= 0x9c, // https://opus-codec.org/docs/ETSI_TS_opus-v0.1.3-draft.pdf
 };
 
 // ISO/IEC 13818-1:2015 (E)

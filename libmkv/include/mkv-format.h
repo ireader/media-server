@@ -64,7 +64,7 @@ enum mkv_codec_t
 	MKV_CODEC_AUDIO_QUICKTIME,		// Audio taken from QuickTime(TM) files
 	MKV_CODEC_AUDIO_TTA1,			// The True Audio lossless audio compressor
 	MKV_CODEC_AUDIO_WAVPACK4,		// WavPack lossless audio compressor
-	MKV_CODEC_AUDIO_OPUS,			// Opus
+	MKV_CODEC_AUDIO_OPUS,			// Opus https://wiki.xiph.org/MatroskaOpus
 	MKV_CODEC_AUDIO_TRUEHD,			// ffmpeg
 	MKV_CODEC_AUDIO_EAC3,			// ffmpeg
 

@@ -25,7 +25,7 @@
 #define MOV_OBJECT_EAC3     0xA6 // Enhanced AC-3
 #define MOV_OBJECT_G719		0xA8 // ITU G.719 Audio
 #define MOV_OBJECT_DTS      0xA9 // Core Substream
-#define MOV_OBJECT_OPUS		0xAD // Opus audio
+#define MOV_OBJECT_OPUS		0xAD // Opus audio https://opus-codec.org/docs/opus_in_isobmff.html
 #define MOV_OBJECT_VP9      0xB1 // VP9 Video
 #define MOV_OBJECT_FLAC     0xC1 // nonstandard from FFMPEG
 #define MOV_OBJECT_VP8      0xC2 // nonstandard
