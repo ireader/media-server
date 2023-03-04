@@ -56,7 +56,6 @@ struct sip_uac_transaction_t* sip_uac_message(struct sip_agent_t* sip, const cha
 int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param);
 int sip_uac_add_header(struct sip_uac_transaction_t* t, const char* name, const char* value);
 int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, int value);
-const struct cstring_t* sip_uac_get_header(struct sip_uac_transaction_t* t, const char* name);
 
 /// @param[in] t sip uac transaction, create by sip_uac_invite/sip_uac_register/...
 /// @param[in] data message payload(such as SDP), maybe NULL if don't need send anything

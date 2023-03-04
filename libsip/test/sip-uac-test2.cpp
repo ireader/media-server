@@ -164,7 +164,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 
 	t->addrlen = sizeof(t->addr);
 	memset(&t->addr, 0, sizeof(t->addr));
-	strcpy(protocol, socket_invalid == t->tcp ? "UDP" : "TCP");
+	snprintf(protocol, 16, "%s", socket_invalid == t->tcp ? "UDP" : "TCP");
 
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)

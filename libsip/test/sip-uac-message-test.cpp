@@ -47,7 +47,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 	
 	len = sizeof(ss);
 	memset(&ss, 0, sizeof(ss));
-	strcpy(protocol, "UDP");
+	snprintf(protocol, 16, "%s", "UDP");
 	
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)

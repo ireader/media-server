@@ -313,11 +313,6 @@ int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, in
 	return sip_message_add_header_int(t->req, name, value);
 }
 
-const struct cstring_t* sip_uac_get_header(struct sip_uac_transaction_t* t, const char* name)
-{
-	return sip_message_get_header_by_name(t->req, name);
-}
-
 int sip_uac_transaction_ondestroy(struct sip_uac_transaction_t* t, sip_transaction_ondestroy ondestroy, void* param)
 {
     t->ondestroy = ondestroy;
