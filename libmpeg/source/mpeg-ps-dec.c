@@ -40,6 +40,7 @@ struct ps_demuxer_t
     } buffer;
 
     int start;
+    int sync;
 
     ps_demuxer_onpacket onpacket;
 	void* param;
@@ -179,6 +180,9 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         if (mpeg_bits_error(reader))
             break;
 
+        if (!ps->sync && v8 != PES_SID_START)
+            continue; // wait for 00 00 01 BA
+
         // fix HIK H.265: 00 00 01 BA 00 00 01 E0 ...
         if (0x000001 == (mpeg_bits_tryread(reader, 3) & 0xFFFFFF))
             continue;
@@ -188,6 +192,7 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         case PES_SID_START:
             ps->start = 1;
             r = pack_header_read(&ps->pkhd, reader);
+            ps->sync = MPEG_ERROR_OK == r ? 1 : ps->sync;
             break;
             
         case PES_SID_SYS:
@@ -234,9 +239,15 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
             pes = psm_fetch(&ps->psm, v8);
             if (NULL == pes)
             {
+                ps->sync = 0; // wait for next packet
+
                 // skip PES
-                mpeg_bits_skip(reader, mpeg_bits_read16(reader));
-                r = mpeg_bits_error(reader) ? MPEG_ERROR_NEED_MORE_DATA : MPEG_ERROR_OK;
+                //mpeg_bits_skip(reader, mpeg_bits_read16(reader));
+                //if(mpeg_bits_error(reader))
+                //{
+                //    r = MPEG_ERROR_NEED_MORE_DATA;
+                //    break;
+                //}
                 continue;
             }   
 
