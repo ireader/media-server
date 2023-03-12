@@ -218,22 +218,17 @@ static inline int sdp_token_word(struct sdp_t* sdp, const char* escape)
 
 static inline int sdp_token_crlf(struct sdp_t* sdp)
 {
+	int i;
 	sdp_skip_space(sdp);
 
-	if('\r' == sdp->raw[sdp->offset])
+	for(i = 0; '\r' == sdp->raw[sdp->offset] || '\n' == sdp->raw[sdp->offset]; i++)
 		++sdp->offset;
 	
-	if('\n' == sdp->raw[sdp->offset])
-	{
-		++sdp->offset;
-		return 0;
-	}
-
 	// sdp end line
 	if('\0' == sdp->raw[sdp->offset])
 		return 0;
 
-	return -1;
+	return i > 0 ? 0 : -1;
 }
 
 static inline void trim_right(const char* s, int *len)

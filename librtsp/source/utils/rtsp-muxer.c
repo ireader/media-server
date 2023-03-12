@@ -310,15 +310,19 @@ int rtsp_muxer_add_media(struct rtsp_muxer_t* muxer, int pid, int codec, const v
     switch (codec)
     {
     case RTP_PAYLOAD_H264:
-        //m->bsf = avbsf_h264();
+        //m->bsf = avbsf_find(AVCODEC_VIDEO_H264);
         break;
 
     case RTP_PAYLOAD_H265:
-        //m->bsf = avbsf_h265();
+        //m->bsf = avbsf_find(AVCODEC_VIDEO_H265);
+        break;
+
+    case RTP_PAYLOAD_H266:
+        //m->bsf = avbsf_find(AVCODEC_VIDEO_H266);
         break;
 
     case RTP_PAYLOAD_MP4A:
-        //m->bsf = avbsf_aac();
+        //m->bsf = avbsf_find(AVCODEC_AUDIO_AAC);
         break;
 
     default:
