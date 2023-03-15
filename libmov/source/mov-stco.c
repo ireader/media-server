@@ -65,7 +65,7 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 	const struct mov_sample_t* sample;
 	const struct mov_track_t* track = mov->track;
 
-	sample = track->sample_count > 0 ? &track->samples[track->sample_count - 1] : NULL;
+	sample = track->sample_count > 0 ? mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1) : NULL;
 	co64 = (sample && sample->offset + track->offset > UINT32_MAX) ? 1 : 0;
 	size = 12/* full box */ + 4/* entry count */ + count * (co64 ? 8 : 4);
 
@@ -76,7 +76,7 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 
 	for (i = 0; i < track->sample_count; i++)
 	{
-		sample = track->samples + i;
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, i);
 		if(0 == sample->first_chunk)
 			continue;
 
@@ -89,7 +89,7 @@ size_t mov_write_stco(const struct mov_t* mov, uint32_t count)
 	return size;
 }
 
-size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset)
+size_t mov_stco_size(const struct mov_t* mov, const struct mov_track_t* track, uint64_t offset)
 {
 	size_t i, j;
 	uint64_t co64;
@@ -98,14 +98,14 @@ size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset)
 	if (track->sample_count < 1)
 		return 0;
 
-	sample = &track->samples[track->sample_count - 1];
+	sample = mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1);
 	co64 = sample->offset + track->offset;
 	if (co64 > UINT32_MAX || co64 + offset <= UINT32_MAX)
 		return 0;
 
 	for (i = 0, j = 0; i < track->sample_count; i++)
 	{
-		sample = track->samples + i;
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, i);
 		if (0 != sample->first_chunk)
 			j++;
 	}
@@ -113,7 +113,7 @@ size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset)
 	return j * 4;
 }
 
-uint32_t mov_build_stco(struct mov_track_t* track)
+uint32_t mov_build_stco(const struct mov_t* mov, struct mov_track_t* track)
 {
     size_t i;
     size_t bytes = 0;
@@ -124,16 +124,16 @@ uint32_t mov_build_stco(struct mov_track_t* track)
     for (i = 0; i < track->sample_count; i++)
     {
         if (NULL != sample
-            && sample->offset + bytes == track->samples[i].offset
-            && sample->sample_description_index == track->samples[i].sample_description_index)
+            && sample->offset + bytes == mov_sample_t_at(&mov->blocks, track->track_id, i)->offset
+            && sample->sample_description_index == mov_sample_t_at(&mov->blocks, track->track_id, i)->sample_description_index)
         {
-            track->samples[i].first_chunk = 0; // mark invalid value
-            bytes += track->samples[i].bytes;
+			mov_sample_t_at(&mov->blocks, track->track_id, i)->first_chunk = 0; // mark invalid value
+            bytes += mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes;
             ++sample->samples_per_chunk;
         }
         else
         {
-            sample = &track->samples[i];
+            sample = mov_sample_t_at(&mov->blocks, track->track_id, i);
             sample->first_chunk = ++count; // chunk start from 1
             sample->samples_per_chunk = 1;
             bytes = sample->bytes;
@@ -143,7 +143,7 @@ uint32_t mov_build_stco(struct mov_track_t* track)
     return count;
 }
 
-void mov_apply_stco(struct mov_track_t* track)
+void mov_apply_stco(const struct mov_t* mov, struct mov_track_t* track)
 {
     uint32_t i, j, k;
     uint64_t n, chunk_offset;
@@ -160,12 +160,13 @@ void mov_apply_stco(struct mov_track_t* track)
             chunk_offset = stbl->stco[j - 1]; // chunk start from 1
             for (k = 0; k < stbl->stsc[i].samples_per_chunk; k++, n++)
             {
-                track->samples[n].sample_description_index = stbl->stsc[i].sample_description_index;
-                track->samples[n].offset = chunk_offset;
-                track->samples[n].data = NULL;
-                chunk_offset += track->samples[n].bytes;
-                assert(track->samples[n].bytes > 0);
-                assert(0 == n || track->samples[n - 1].offset + track->samples[n - 1].bytes <= track->samples[n].offset);
+				
+                mov_sample_t_at(&mov->blocks, track->track_id, n)->sample_description_index = stbl->stsc[i].sample_description_index;
+                mov_sample_t_at(&mov->blocks, track->track_id, n)->offset = chunk_offset;
+                mov_sample_t_at(&mov->blocks, track->track_id, n)->data = NULL;
+                chunk_offset += mov_sample_t_at(&mov->blocks, track->track_id, n)->bytes;
+                assert(mov_sample_t_at(&mov->blocks, track->track_id, n)->bytes > 0);
+                assert(0 == n || mov_sample_t_at(&mov->blocks, track->track_id, n-1)->offset + mov_sample_t_at(&mov->blocks, track->track_id, n-1)->bytes <= mov_sample_t_at(&mov->blocks, track->track_id, n)->offset);
             }
         }
     }

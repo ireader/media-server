@@ -47,7 +47,7 @@ size_t mov_write_stss(const struct mov_t* mov)
 
 	for (i = 0, j = 0; i < track->sample_count; i++)
 	{
-		sample = &track->samples[i];
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, i);
 		if (sample->flags & MOV_AV_FLAG_KEYFREAME)
 		{
 			++j;
@@ -65,7 +65,7 @@ size_t mov_write_stss(const struct mov_t* mov)
 	return size;
 }
 
-void mov_apply_stss(struct mov_track_t* track)
+void mov_apply_stss(const struct mov_t* mov, struct mov_track_t* track)
 {
 	size_t i, j;
 	struct mov_stbl_t* stbl = &track->stbl;
@@ -74,6 +74,6 @@ void mov_apply_stss(struct mov_track_t* track)
 	{
 		j = stbl->stss[i]; // start from 1
 		if (j > 0 && j <= track->sample_count)
-			track->samples[j - 1].flags |= MOV_AV_FLAG_KEYFREAME;
+			mov_sample_t_at(&mov->blocks, track->track_id, j-1)->flags |= MOV_AV_FLAG_KEYFREAME;
 	}
 }

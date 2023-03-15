@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "mov-buffer.h"
+#include "mov-blocks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,7 +13,7 @@ extern "C" {
 typedef struct mov_writer_t mov_writer_t;
 
 /// @param[in] flags mov flags, such as: MOV_FLAG_FASTSTART, see more @mov-format.h
-mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* param, int flags);
+mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, const struct mov_blocks_t* blocks, void* buffer_param, void* blocks_param, int flags);
 void mov_writer_destroy(mov_writer_t* mov);
 
 /// @param[in] object MPEG-4 systems ObjectTypeIndication such as: MOV_OBJECT_H264, see more @mov-format.h

@@ -28,13 +28,13 @@ struct mov_track_t* mov_add_track(struct mov_t* mov)
     return track;
 }
 
-void mov_free_track(struct mov_track_t* track)
+void mov_free_track(const struct mov_t* mov, struct mov_track_t* track)
 {
     size_t i;
     for (i = 0; i < track->sample_count; i++)
     {
-        if (track->samples[i].data)
-            free(track->samples[i].data);
+        if (mov_sample_t_at(&mov->blocks, track->track_id, i)->data)
+            free(mov_sample_t_at(&mov->blocks, track->track_id, i)->data);
     }
 	
 	for (i = 0; i < track->stsd.entry_count; i++)
@@ -45,7 +45,7 @@ void mov_free_track(struct mov_track_t* track)
 
     FREE(track->elst);
     FREE(track->frags);
-    FREE(track->samples);
+//    FREE(track->samples);
 //    FREE(track->extra_data);
     FREE(track->stsd.entries);
     FREE(track->stbl.stco);
@@ -232,15 +232,15 @@ size_t mov_write_stbl(const struct mov_t* mov)
 
     size += mov_write_stsd(mov);
 
-    count = mov_build_stts(track);
+    count = mov_build_stts(mov, track);
     size += mov_write_stts(mov, count);
     if (track->tkhd.width > 0 && track->tkhd.height > 0)
         size += mov_write_stss(mov); // video only
-    count = mov_build_ctts(track);
-    if (track->sample_count > 0 && (count > 1 || track->samples[0].samples_per_chunk != 0))
+    count = mov_build_ctts(mov, track);
+    if (track->sample_count > 0 && (count > 1 || mov_sample_t_at(&mov->blocks, track->track_id, 0)->samples_per_chunk != 0))
         size += mov_write_ctts(mov, count);
 
-    count = mov_build_stco(track);
+    count = mov_build_stco(mov, track);
     size += mov_write_stsc(mov);
     size += mov_write_stsz(mov);
     size += mov_write_stco(mov, count);

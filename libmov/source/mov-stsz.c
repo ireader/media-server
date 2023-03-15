@@ -15,25 +15,25 @@ int mov_read_stsz(struct mov_t* mov, const struct mov_box_t* box)
 	sample_size = mov_buffer_r32(&mov->io);
 	sample_count = mov_buffer_r32(&mov->io);
 
-	assert(0 == track->sample_count && NULL == track->samples); // duplicated STSZ atom
+	assert(0 == track->sample_count); // duplicated STSZ atom
 	if (track->sample_count < sample_count)
 	{
-		void* p = realloc(track->samples, sizeof(struct mov_sample_t) * (sample_count + 1));
-		if (NULL == p) return -ENOMEM;
-		track->samples = (struct mov_sample_t*)p;
-		memset(track->samples, 0, sizeof(struct mov_sample_t) * (sample_count + 1));
+		if (mov_blocks_set_capacity(&mov->blocks, track->track_id, sample_count + 1) < 0)
+		{
+			return -ENOMEM;
+		}
 	}
 	track->sample_count = sample_count;
 
 	if (0 == sample_size)
 	{
 		for (i = 0; i < sample_count; i++)
-			track->samples[i].bytes = mov_buffer_r32(&mov->io); // uint32_t entry_size
+			mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes = mov_buffer_r32(&mov->io); // uint32_t entry_size
 	}
 	else
 	{
 		for (i = 0; i < sample_count; i++)
-			track->samples[i].bytes = sample_size;
+			mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes = sample_size;
 	}
 
 	(void)box;
@@ -54,13 +54,13 @@ int mov_read_stz2(struct mov_t* mov, const struct mov_box_t* box)
 	sample_count = mov_buffer_r32(&mov->io);
 
 	assert(4 == field_size || 8 == field_size || 16 == field_size);
-	assert(0 == track->sample_count && NULL == track->samples); // duplicated STSZ atom
+	assert(0 == track->sample_count); // duplicated STSZ atom
 	if (track->sample_count < sample_count)
 	{
-		void* p = realloc(track->samples, sizeof(struct mov_sample_t) * (sample_count + 1));
-		if (NULL == p) return -ENOMEM;
-		track->samples = (struct mov_sample_t*)p;
-		memset(track->samples, 0, sizeof(struct mov_sample_t) * (sample_count + 1));
+		if (mov_blocks_set_capacity(&mov->blocks, track->track_id, sample_count + 1) < 0)
+		{
+			return -ENOMEM;
+		}
 	}
 	track->sample_count = sample_count;
 
@@ -69,24 +69,24 @@ int mov_read_stz2(struct mov_t* mov, const struct mov_box_t* box)
 		for (i = 0; i < sample_count/2; i++)
 		{
 			v = mov_buffer_r8(&mov->io);
-			track->samples[i * 2].bytes = (v >> 4) & 0x0F;
-			track->samples[i * 2 + 1].bytes = v & 0x0F;
+			mov_sample_t_at(&mov->blocks, track->track_id, i*2)->bytes = (v >> 4) & 0x0F;
+			mov_sample_t_at(&mov->blocks, track->track_id, i*2 + 1)->bytes = v & 0x0F;
 		}
 		if (sample_count % 2)
 		{
 			v = mov_buffer_r8(&mov->io);
-			track->samples[i * 2].bytes = (v >> 4) & 0x0F;
+			mov_sample_t_at(&mov->blocks, track->track_id, i*2)->bytes = (v >> 4) & 0x0F;
 		}
 	}
 	else if (8 == field_size)
 	{
 		for (i = 0; i < sample_count; i++)
-			track->samples[i].bytes = mov_buffer_r8(&mov->io);
+			mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes = mov_buffer_r8(&mov->io);
 	}
 	else if (16 == field_size)
 	{
 		for (i = 0; i < sample_count; i++)
-			track->samples[i].bytes = mov_buffer_r16(&mov->io);
+			mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes = mov_buffer_r16(&mov->io);
 	}
 	else
 	{
@@ -105,7 +105,7 @@ size_t mov_write_stsz(const struct mov_t* mov)
 
 	for(i = 1; i < track->sample_count; i++)
 	{
-		if(track->samples[i].bytes != track->samples[i-1].bytes)
+		if(mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes != mov_sample_t_at(&mov->blocks, track->track_id, i-1)->bytes)
 			break;
 	}
 
@@ -119,11 +119,11 @@ size_t mov_write_stsz(const struct mov_t* mov)
 		mov_buffer_w32(&mov->io, 0);
 		mov_buffer_w32(&mov->io, track->sample_count);
 		for(i = 0; i < track->sample_count; i++)
-			mov_buffer_w32(&mov->io, track->samples[i].bytes);
+			mov_buffer_w32(&mov->io, mov_sample_t_at(&mov->blocks, track->track_id, i)->bytes);
 	}
 	else
 	{
-		mov_buffer_w32(&mov->io, track->sample_count < 1 ? 0 : track->samples[0].bytes);
+		mov_buffer_w32(&mov->io, track->sample_count < 1 ? 0 : mov_sample_t_at(&mov->blocks, track->track_id, 0)->bytes);
 		mov_buffer_w32(&mov->io, track->sample_count);
 	}
 

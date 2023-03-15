@@ -6,6 +6,7 @@
 #include "mov-format.h"
 #include "mov-buffer.h"
 #include "mov-ioutil.h"
+#include "mov-blocks-util.h"
 
 #define MOV_APP "ireader/media-server"
 
@@ -163,6 +164,8 @@ struct mov_track_t
 	uint32_t handler_type; // MOV_VIDEO/MOV_AUDIO
 	const char* handler_descr; // VideoHandler/SoundHandler/SubtitleHandler
 
+	uint32_t track_id; // todo : correctly assign track id when track change
+
 	struct mov_tkhd_t tkhd;
 	struct mov_mdhd_t mdhd;
 	struct mov_stbl_t stbl;
@@ -178,7 +181,7 @@ struct mov_track_t
 	struct mov_elst_t* elst;
 	size_t elst_count;
 	
-	struct mov_sample_t* samples;
+	struct mov_sample_t* samples; // todo : remove it use mov_blocks_utli_t instead
 	uint32_t sample_count;
 	size_t sample_offset; // sample_capacity
 
@@ -193,7 +196,8 @@ struct mov_track_t
 
 struct mov_t
 {
-	struct mov_ioutil_t io;
+	struct mov_ioutil_t       io;
+	struct mov_blocks_utli_t  blocks;
 	
 	struct mov_ftyp_t ftyp;
 	struct mov_mvhd_t mvhd;
@@ -300,19 +304,19 @@ size_t mov_write_trak(const struct mov_t* mov);
 size_t mov_write_dops(const struct mov_t* mov);
 size_t mov_write_udta(const struct mov_t* mov);
 
-uint32_t mov_build_stts(struct mov_track_t* track);
-uint32_t mov_build_ctts(struct mov_track_t* track);
-uint32_t mov_build_stco(struct mov_track_t* track);
-void mov_apply_stco(struct mov_track_t* track);
-void mov_apply_elst(struct mov_track_t *track);
-void mov_apply_stts(struct mov_track_t* track);
-void mov_apply_ctts(struct mov_track_t* track);
-void mov_apply_stss(struct mov_track_t* track);
-void mov_apply_elst_tfdt(struct mov_track_t *track);
+uint32_t mov_build_stts(const struct mov_t* mov, struct mov_track_t* track);
+uint32_t mov_build_ctts(const struct mov_t* mov, struct mov_track_t* track);
+uint32_t mov_build_stco(const struct mov_t* mov, struct mov_track_t* track);
+void mov_apply_stco(const struct mov_t* mov, struct mov_track_t* track);
+void mov_apply_elst(const struct mov_t* mov, struct mov_track_t *track);
+void mov_apply_stts(const struct mov_t* mov, struct mov_track_t* track);
+void mov_apply_ctts(const struct mov_t* mov, struct mov_track_t* track);
+void mov_apply_stss(const struct mov_t* mov, struct mov_track_t* track);
+void mov_apply_elst_tfdt(const struct mov_t* mov, struct mov_track_t *track);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);
 
-size_t mov_stco_size(const struct mov_track_t* track, uint64_t offset);
+size_t mov_stco_size(const struct mov_t* mov, const struct mov_track_t* track, uint64_t offset);
 
 int mov_fragment_read_next_moof(struct mov_t* mov);
 int mov_fragment_seek_read_mfra(struct mov_t* mov);
@@ -321,7 +325,7 @@ int mov_fragment_seek(struct mov_t* mov, int64_t* timestamp);
 uint8_t mov_tag_to_object(uint32_t tag);
 uint32_t mov_object_to_tag(uint8_t object);
 
-void mov_free_track(struct mov_track_t* track);
+void mov_free_track(const struct mov_t* mov, struct mov_track_t* track);
 struct mov_track_t* mov_add_track(struct mov_t* mov);
 struct mov_track_t* mov_find_track(const struct mov_t* mov, uint32_t track);
 struct mov_track_t* mov_fetch_track(struct mov_t* mov, uint32_t track); // find and add
