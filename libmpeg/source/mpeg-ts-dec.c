@@ -316,22 +316,7 @@ struct ts_demuxer_t* ts_demuxer_create(ts_demuxer_onpacket onpacket, void* param
 
 int ts_demuxer_destroy(struct ts_demuxer_t* ts)
 {
-    size_t i, j;
-    struct pes_t* pes;
-    for (i = 0; i < ts->pat.pmt_count; i++)
-    {
-        for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
-        {
-            pes = &ts->pat.pmts[i].streams[j];
-            if (pes->pkt.data)
-                free(pes->pkt.data);
-            pes->pkt.data = NULL;
-        }
-    }
-
-	if (ts->pat.pmts && ts->pat.pmts != ts->pat.pmt_default)
-		free(ts->pat.pmts);
-
+	pat_clear(&ts->pat);
     free(ts);
     return 0;
 }

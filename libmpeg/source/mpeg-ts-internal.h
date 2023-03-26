@@ -96,5 +96,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes);
 size_t pmt_write(const struct pmt_t *pmt, uint8_t *data);
 size_t sdt_read(struct pat_t *pat, const uint8_t* data, size_t bytes);
 size_t sdt_write(const struct pat_t* pat, uint8_t* data);
+void pat_clear(struct pat_t* pat);
+void pmt_clear(struct pmt_t* pmt);
 
 #endif /* !_mpeg_ts_internal_h_ */

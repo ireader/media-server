@@ -42,8 +42,6 @@ typedef struct _mpeg_ts_enc_context_t
 	uint8_t payload[1024]; // maximum PAT/PMT payload length
 } mpeg_ts_enc_context_t;
 
-static void mpeg_ts_pmt_destroy(struct pmt_t* pmt);
-
 static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid, unsigned int* cc, const void* payload, size_t len)
 {
 	int r;
@@ -378,19 +376,10 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param)
 
 int mpeg_ts_destroy(void* ts)
 {
-	uint32_t i;
-	struct pmt_t* pmt;
 	mpeg_ts_enc_context_t *tsctx;
 	tsctx = (mpeg_ts_enc_context_t*)ts;
 
-	for(i = 0; i < tsctx->pat.pmt_count; i++)
-	{
-		pmt = &tsctx->pat.pmts[i];
-		mpeg_ts_pmt_destroy(pmt);
-	}
-
-	if (tsctx->pat.pmts && tsctx->pat.pmts != tsctx->pat.pmt_default)
-		free(tsctx->pat.pmts);
+	pat_clear(&tsctx->pat);
 	free(tsctx);
 	return 0;
 }
@@ -461,9 +450,8 @@ int mpeg_ts_remove_program(void* ts, uint16_t pn)
 		pmt = &tsctx->pat.pmts[i];
 		if (pmt->pn != pn)
 			continue;
-
-		mpeg_ts_pmt_destroy(pmt);
-
+		
+		pmt_clear(pmt);
 		if (i + 1 < tsctx->pat.pmt_count)
 			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], (tsctx->pat.pmt_count - i - 1) * sizeof(tsctx->pat.pmts[0]));
 		tsctx->pat.pmt_count--;
@@ -472,19 +460,6 @@ int mpeg_ts_remove_program(void* ts, uint16_t pn)
 	}
 
 	return -1; // ENOTFOUND
-}
-
-static void mpeg_ts_pmt_destroy(struct pmt_t* pmt)
-{
-	unsigned int i;
-	for (i = 0; i < pmt->stream_count; i++)
-	{
-		if (pmt->streams[i].esinfo)
-			free(pmt->streams[i].esinfo);
-	}
-
-	if (pmt->pminfo)
-		free(pmt->pminfo);
 }
 
 static int mpeg_ts_pmt_add_stream(mpeg_ts_enc_context_t* ts, struct pmt_t* pmt, int codecid, const void* extra_data, size_t extra_data_size)
