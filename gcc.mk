@@ -16,7 +16,9 @@ ifdef PLATFORM
 	CROSS:=$(PLATFORM)-
 else 
 	CROSS:=
-	PLATFORM:=linux$(ARCHBITS)
+	OSID := $(shell awk -F'=' '/^ID=/ {print $$2}' /etc/os-release | tr -d '"')
+	OSVERSIONID := $(shell awk -F'=' '/^VERSION_ID=/ {print $$2}' /etc/os-release | tr -d '"')
+	PLATFORM:=${OSID}$(OSVERSIONID)-linux$(ARCHBITS)
 endif
 
 ifeq ($(RELEASE),1)
@@ -43,7 +45,7 @@ CFLAGS += -Wall -fPIC
 CXXFLAGS += -Wall
 
 ifeq ($(RELEASE),1)
-	CFLAGS += -Wall -O2
+	CFLAGS += -Wall -O2 -s
 	CXXFLAGS += $(CFLAGS)
 	DEFINES += NDEBUG
 else
