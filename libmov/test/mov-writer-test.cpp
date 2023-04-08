@@ -27,8 +27,6 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 	switch(codec)
 	{
 	case FLV_AUDIO_AAC:
-		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1==flags ? MOV_AV_FLAG_KEYFREAME : 0);
-	
 	case FLV_AUDIO_OPUS:
 		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
 
@@ -44,6 +42,14 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 		if (-1 == s_audio_track)
 			return -1;
 		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
+	
+	case FLV_AUDIO_G711A:
+	case FLV_AUDIO_G711U:
+		if (-1 == s_audio_track)
+			s_audio_track = mov_writer_add_audio(mov, codec==FLV_AUDIO_G711A?MOV_OBJECT_G711a:MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+		if (-1 == s_audio_track)
+			return -1;
+		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
 	case FLV_VIDEO_H265:

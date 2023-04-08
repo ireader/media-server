@@ -1,6 +1,8 @@
 #include "fmp4-writer.h"
 #include "mov-format.h"
 #include "mpeg4-aac.h"
+#include "opus-head.h"
+#include "mp3-header.h"
 #include "flv-proto.h"
 #include "flv-reader.h"
 #include "flv-parser.h"
@@ -16,17 +18,35 @@ static int s_width, s_height;
 static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
 	fmp4_writer_t* mov = (fmp4_writer_t*)param;
-	static int s_aac_track = -1;
+	static int s_audio_track = -1;
 	static int s_avc_track = -1;
 
 	switch (codec)
 	{
 	case FLV_AUDIO_AAC:
-		return fmp4_writer_write(mov, s_aac_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
+	case FLV_AUDIO_OPUS:
+		return fmp4_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
 
 	case FLV_AUDIO_MP3:
-		assert(0);
-		break;
+		if (-1 == s_audio_track)
+		{
+			struct mp3_header_t mp3;
+			if (0 == mp3_header_load(&mp3, data, bytes))
+				return -1;
+			s_audio_track = fmp4_writer_add_audio(mov, MOV_OBJECT_MP3, mp3_get_channel(&mp3), 16, mp3_get_frequency(&mp3), NULL, 0);
+		}
+
+		if (-1 == s_audio_track)
+			return -1;
+		return fmp4_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
+
+	case FLV_AUDIO_G711A:
+	case FLV_AUDIO_G711U:
+		if (-1 == s_audio_track)
+			s_audio_track = fmp4_writer_add_audio(mov, codec == FLV_AUDIO_G711A ? MOV_OBJECT_G711a : MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+		if (-1 == s_audio_track)
+			return -1;
+		return fmp4_writer_write(mov, s_audio_track, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
 		return fmp4_writer_write(mov, s_avc_track, data, bytes, pts, dts, flags);
@@ -39,12 +59,21 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 		break;
 
 	case FLV_AUDIO_ASC:
-		if (-1 == s_aac_track)
+		if (-1 == s_audio_track)
 		{
 			struct mpeg4_aac_t aac;
 			mpeg4_aac_audio_specific_config_load((const uint8_t*)data, bytes, &aac);
 			int rate = mpeg4_aac_audio_frequency_to((enum mpeg4_aac_frequency)aac.sampling_frequency_index);
-			s_aac_track = fmp4_writer_add_audio(mov, MOV_OBJECT_AAC, aac.channel_configuration, 16, rate, data, bytes);
+			s_audio_track = fmp4_writer_add_audio(mov, MOV_OBJECT_AAC, aac.channel_configuration, 16, rate, data, bytes);
+		}
+		break;
+
+	case FLV_AUDIO_OPUS_HEAD:
+		if (-1 == s_audio_track)
+		{
+			struct opus_head_t opus;
+			opus_head_load((const uint8_t*)data, bytes, &opus);
+			s_audio_track = fmp4_writer_add_audio(mov, MOV_OBJECT_OPUS, opus.channels, 16, opus.input_sample_rate, data, bytes);
 		}
 		break;
 

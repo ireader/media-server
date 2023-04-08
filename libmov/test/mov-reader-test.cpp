@@ -11,6 +11,8 @@
 #include <string.h>
 #include <assert.h>
 #include "mov-file-buffer.h"
+#include <map>
+#include <string>
 
 #define USE_NEW_MOV_READ_API 1
 
@@ -23,14 +25,7 @@ static struct mpeg4_aac_t s_aac;
 static struct webm_vpx_t s_vpx;
 static struct opus_head_t s_opus;
 static struct aom_av1_t s_av1;
-static uint32_t s_aac_track = 0xFFFFFFFF;
-static uint32_t s_avc_track = 0xFFFFFFFF;
-static uint32_t s_av1_track = 0xFFFFFFFF;
-static uint32_t s_vpx_track = 0xFFFFFFFF;
-static uint32_t s_hevc_track = 0xFFFFFFFF;
-static uint32_t s_opus_track = 0xFFFFFFFF;
-static uint32_t s_mp3_track = 0xFFFFFFFF;
-static uint32_t s_subtitle_track = 0xFFFFFFFF;
+static std::map<int, std::string> s_tracks;
 
 #if defined(USE_NEW_MOV_READ_API)
 struct mov_packet_test_t
@@ -69,8 +64,16 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	static char s_pts[64], s_dts[64];
 	static int64_t v_pts, v_dts;
 	static int64_t a_pts, a_dts;
+	static int64_t x_pts, x_dts;
 
-	if (s_avc_track == track)
+	auto it = s_tracks.find(track);
+	if (it == s_tracks.end())
+	{
+		assert(0);
+		return;
+	}
+
+	if (it->second == "H264")
 	{
 		printf("[H264] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
 		v_pts = pts;
@@ -80,7 +83,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		int n = h264_mp4toannexb(&s_avc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
-	else if (s_hevc_track == track)
+	else if (it->second == "H265")
 	{
 		uint8_t nalu_type = (((const uint8_t*)buffer)[4] >> 1) & 0x3F;
 		uint8_t irap = 16 <= nalu_type && nalu_type <= 23;
@@ -93,7 +96,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		int n = h265_mp4toannexb(&s_hevc, buffer, bytes, s_packet, sizeof(s_packet));
 		fwrite(s_packet, 1, n, s_vfp);
 	}
-	else if (s_av1_track == track)
+	else if (it->second == "AV1")
 	{
 		printf("[AV1] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
 		v_pts = pts;
@@ -102,16 +105,17 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		//int n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
 		//fwrite(s_packet, 1, n, s_vfp);
 	}
-    else if (s_vpx_track == track)
+	else if (it->second == "VPX")
     {
-        printf("[VP9] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
+        printf("[VPX] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (unsigned int)bytes, flags ? " [I]" : "");
         v_pts = pts;
         v_dts = dts;
 
         //int n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
         //fwrite(s_packet, 1, n, s_vfp);
     }
-	else if (s_aac_track == track)
+
+	else if (it->second == "ACC")
 	{
 		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
 		a_pts = pts;
@@ -122,29 +126,31 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 		fwrite(adts, 1, n, s_afp);
 		fwrite(buffer, 1, bytes, s_afp);
 	}
-	else if (s_opus_track == track)
+	else if (it->second == "OPUS")
 	{
 		printf("[OPUS] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
 	}
-	else if (s_mp3_track == track)
+	else if (it->second == "MP3")
 	{
 		printf("[MP3] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
 		a_pts = pts;
 		a_dts = dts;
 		fwrite(buffer, 1, bytes, s_afp);
 	}
-	else if (s_subtitle_track == track)
+	else if (it->second == "G711")
 	{
 		static int64_t t_pts, t_dts;
-		printf("[TEXT] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, text: %.*s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - t_pts), (int)(dts - t_dts), (unsigned int)bytes, (int)bytes-2, (const char*)buffer+2);
+		printf("[G711] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, text: %.*s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - t_pts), (int)(dts - t_dts), (unsigned int)bytes, (int)bytes-2, (const char*)buffer+2);
 		t_pts = pts;
 		t_dts = dts;
 	}
 	else
 	{
-		printf("%d\n", track);
+		printf("[%s] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", it->second.c_str(), ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - x_pts), (int)(dts - x_dts), (unsigned int)bytes);
+		x_pts = pts;
+		x_dts = dts;
 		//assert(0);
 	}
 }
@@ -154,30 +160,30 @@ static void mov_video_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	if (MOV_OBJECT_H264 == object)
 	{
 		s_vfp = fopen("v.h264", "wb");
-		s_avc_track = track;
+		s_tracks[track] = "H264";
 		mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc);
 	}
 	else if (MOV_OBJECT_HEVC == object)
 	{
 		s_vfp = fopen("v.h265", "wb");
-		s_hevc_track = track;
+		s_tracks[track] = "H265";
 		mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_hevc);
 	}
 	else if (MOV_OBJECT_AV1 == object)
 	{
 		s_vfp = fopen("v.obus", "wb");
-		s_av1_track = track;
+		s_tracks[track] = "AV1";
 		aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1);
 	}
     else if (MOV_OBJECT_VP9 == object)
     {
         s_vfp = fopen("v.vp9", "wb");
-        s_vpx_track = track;
+		s_tracks[track] = "VP9";
         webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx);
     }
 	else
 	{
-		assert(0);
+		s_tracks[track] = "VIDEO";
 	}
 }
 
@@ -186,7 +192,7 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	if (MOV_OBJECT_AAC == object)
 	{
 		s_afp = fopen("a.aac", "wb");
-		s_aac_track = track;
+		s_tracks[track] = "AAC";
 		assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
 		assert(channel_count == s_aac.channels);
 		assert(MOV_OBJECT_AAC == object);
@@ -197,26 +203,32 @@ static void mov_audio_info(void* /*param*/, uint32_t track, uint8_t object, int 
 	else if (MOV_OBJECT_OPUS == object)
 	{
 		s_afp = fopen("a.opus", "wb");
-		s_opus_track = track;
+		s_tracks[track] = "OPUS";
 		assert(bytes == opus_head_load((const uint8_t*)extra, bytes, &s_opus));
 		assert(s_opus.input_sample_rate == 48000);
 	}
 	else if (MOV_OBJECT_MP3 == object || MOV_OBJECT_MP1A == object)
 	{
 		s_afp = fopen("a.mp3", "wb");
-		s_mp3_track = track;
+		s_tracks[track] = "MP3";
+	}
+	else if (MOV_OBJECT_G711a == object || MOV_OBJECT_G711u == object)
+	{
+		s_afp = fopen("a.raw", "wb");
+		s_tracks[track] = "G711";
 	}
 	else
 	{
-		s_aac_track = track;
-		s_aac.channel_configuration = channel_count;
+		//s_aac_track = track;
+		//s_aac.channel_configuration = channel_count;
 		//s_aac.sampling_frequency_index = mpeg4_aac_audio_frequency_from(sample_rate);
+		s_tracks[track] = "AUDIO";
 	}
 }
 
 static void mov_subtitle_info(void* /*param*/, uint32_t track, uint8_t object, const void* /*extra*/, size_t /*bytes*/)
 {
-	s_subtitle_track = track;
+	s_tracks[track] = "SUBTITLE";
 }
 
 void mov_reader_test(const char* mp4)
