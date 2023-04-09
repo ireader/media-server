@@ -1,4 +1,4 @@
-* Build status: [![Build Status](https://travis-ci.org/ireader/media-server.svg?branch=master)](https://travis-ci.org/ireader/media-server) <a href="https://scan.coverity.com/projects/ireader-media-server"> <img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/14645/badge.svg"/> </a>
+* Build status: <a href="https://scan.coverity.com/projects/ireader-media-server"> <img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/14645/badge.svg"/> </a>
 * Build Dependence: https://github.com/ireader/sdk
  
 # libflv
