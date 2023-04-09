@@ -31,7 +31,7 @@ int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 
 	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, payload);
 
-	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]); i++)
+	for (i = 0; i < sizeof(nalu) / sizeof(nalu[0]) && n < bytes; i++)
 	{
 		if (i > 0 && n < bytes) data[n++] = ';';
 		n += snprintf((char*)data + n, bytes - n, " %s=", sprop[i]);

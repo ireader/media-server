@@ -615,7 +615,7 @@ static int rtcp_rtpfb_tcc01_unpack(struct rtp_context* ctx, const rtcp_header_t*
 		if (0 == (0x8000 & chunk))
 		{
 			// Run Length Chunk
-			for (j = 0; j < (chunk & 0x1FFF) && i < num; j++, i++)
+			for (j = 0; j < (uint16_t)(chunk & 0x1FFF) && i < num; j++, i++)
 			{
 				ccfb[i].seq = seq++;
 				ccfb[i].ecn = (chunk >> 13) & 0x03;
@@ -691,9 +691,9 @@ static int rtcp_rtpfb_tcc01_unpack(struct rtp_context* ctx, const rtcp_header_t*
 
 static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int count, uint32_t timestamp, uint8_t cc, uint8_t* ptr, uint32_t bytes)
 {
-	int i, n;
+	int i, k, n;
 	int16_t ato;
-	uint16_t k, chunk, two;
+	uint16_t chunk, two;
 	uint32_t seq, received;
 	const uint8_t* p;
 	if (bytes < 8 || count < 1)
@@ -723,7 +723,7 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 		if (k > 14 / two)
 		{
 			// Run Length Chunk
-			chunk = 0x0000 | (received ? (2 == two ? 0x4000 : 0x2000) : 0x0000) | k;
+			chunk = 0x0000 | (received ? (2 == two ? 0x4000 : 0x2000) : 0x0000) | (uint16_t)k;
 		}
 		else
 		{
@@ -760,7 +760,7 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 		{
 			// Run Length Chunk
 			seq = ccfb[i].seq;
-			for (k = 0; k < (chunk & 0x1FFF) && i < count; k++)
+			for (k = 0; k < (uint16_t)(chunk & 0x1FFF) && i < count; k++)
 			{
 				assert(seq + k == ccfb[i].seq);
 				if (seq + k != ccfb[i].seq)

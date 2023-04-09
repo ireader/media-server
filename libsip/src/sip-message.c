@@ -555,7 +555,7 @@ static char* sip_message_routers(const struct sip_message_t* msg, char* p, const
 
 	// METHOD sip:proxy1
 	// Route: <sip:proxy2>,<sip:proxy3;lr>,<sip:proxy4>,<sip:user@remoteua>
-	for (i = strict_router; i < sip_uris_count((struct sip_uris_t*)&msg->routers); i++)
+	for (i = strict_router; i < sip_uris_count((struct sip_uris_t*)&msg->routers) && p < end; i++)
 	{
 		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_ROUTE);
 		if (p < end) p += sip_uri_write(sip_uris_get((struct sip_uris_t*)&msg->routers, i), p, end);

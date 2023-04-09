@@ -398,13 +398,13 @@ int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
 	}
 
 	n = snprintf(line, bytes, "m=%s %d %s", m->media, port, m->proto);
-	for (i = 0; i < m->avformat_count; i++)
+	for (i = 0; i < m->avformat_count && n < bytes; i++)
 	{
 		if (m->avformats[i].fmt >= 96 && !m->avformats[i].encoding[0])
 			continue; // ignore empty encoding
 		n += snprintf(line + n, bytes - n, " %d", m->avformats[i].fmt);
 	}
-	n += snprintf(line + n, bytes - n, "\n");
+	n += snprintf(line + n, bytes > n ? bytes - n : 0, "\n");
 
 	for (i = 0; i < m->avformat_count && n >= 0 && n < bytes; i++)
 	{
