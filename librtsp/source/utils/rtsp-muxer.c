@@ -34,6 +34,10 @@ struct rtp_muxer_payload_t
 {
     struct rtsp_muxer_t* muxer;
     struct rtp_sender_t rtp;
+    struct {
+        uint32_t rtp; // rtp timestamp
+        int64_t pts;
+    } timeline; // map a/v pts -> rtp timestamp
 
     int pid;
     int port;
@@ -76,6 +80,16 @@ struct rtsp_muxer_t
     int off;
 };
 
+static inline uint32_t rtsp_muxer_timeline_update(struct rtp_muxer_payload_t* pt, int64_t pts)
+{
+    if (0 == pt->timeline.pts)
+        pt->timeline.rtp = pt->rtp.timestamp;
+    else
+        pt->timeline.rtp += (int32_t)(pts - pt->timeline.pts);
+    pt->timeline.pts = pts;
+    return pt->timeline.rtp;
+}
+
 static void* rtsp_muxer_ts_alloc(void* param, size_t bytes)
 {
     struct rtp_muxer_payload_t* pt;
@@ -98,7 +112,7 @@ static int rtsp_muxer_ts_write(void* param, const void* packet, size_t bytes)
 {
     struct rtp_muxer_payload_t* pt;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, (uint32_t)pt->timestamp);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, rtsp_muxer_timeline_update(pt, pt->timestamp));
 }
 
 static int rtsp_muxer_ps_write(void* param, int stream, void* packet, size_t bytes)
@@ -106,7 +120,7 @@ static int rtsp_muxer_ps_write(void* param, int stream, void* packet, size_t byt
     struct rtp_muxer_payload_t* pt;
     (void)stream;
     pt = (struct rtp_muxer_payload_t*)param;
-    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, (uint32_t)pt->timestamp);
+    return rtp_payload_encode_input(pt->rtp.encoder, packet, (int)bytes, rtsp_muxer_timeline_update(pt, pt->timestamp));
 }
 
 static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int bytes, uint32_t timestamp, int flags)
@@ -131,7 +145,7 @@ static int rtsp_muxer_ps_input(struct rtp_muxer_media_t* m, int flags, int64_t p
 static int rtsp_muxer_av_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     (void)flags, (void)dts; // TODO: rtp timestamp map PTS
-    return rtp_payload_encode_input(m->pt->rtp.encoder, data, (int)bytes, (uint32_t)(pts * m->pt->rtp.frequency / 1000));
+    return rtp_payload_encode_input(m->pt->rtp.encoder, data, (int)bytes, rtsp_muxer_timeline_update(m->pt, pts * m->pt->rtp.frequency / 1000));
 }
 
 static int rtsp_muxer_bsf_onpacket(void* param, int64_t pts, int64_t dts, const uint8_t* data, int bytes, int flags)
@@ -276,6 +290,10 @@ int rtsp_muxer_add_payload(struct rtsp_muxer_t* muxer, const char* proto, int fr
         rtsp_muxer_payload_close(pt);
         return -1;
     }
+
+    // init timeline
+    pt->timeline.rtp = pt->rtp.timestamp;
+    pt->timeline.pts = 0;
 
     // copy sdp
     pt->len = r;
