@@ -180,9 +180,6 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         if (mpeg_bits_error(reader))
             break;
 
-        if (!ps->sync && v8 != PES_SID_START)
-            continue; // wait for 00 00 01 BA
-
         // fix HIK H.265: 00 00 01 BA 00 00 01 E0 ...
         if (0x000001 == (mpeg_bits_tryread(reader, 3) & 0xFFFFFF))
             continue;
@@ -214,6 +211,7 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
             r = psd_read(&ps->psd, reader);
             break;
 
+        case PES_SID_PRIVATE_1:
         case PES_SID_PRIVATE_2:
         case PES_SID_ECM:
         case PES_SID_EMM:
@@ -236,6 +234,9 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         //	break;
 
         default:
+            if (!ps->sync && v8 != PES_SID_START){
+                break;
+            }
             pes = psm_fetch(&ps->psm, v8);
             if (NULL == pes)
             {
