@@ -165,21 +165,6 @@ static int ps_demuxer_packet(struct ps_demuxer_t *ps, const uint8_t* data, size_
     return r;
 }
 
-static int ps_demuxer_sid_can_skip(uint8_t sid){
-     switch (sid)
-        {
-        case PES_SID_PRIVATE_1:
-        case PES_SID_PRIVATE_2:
-        case PES_SID_ECM:
-        case PES_SID_EMM:
-        case PES_SID_DSMCC:
-        case PES_SID_H222_E:
-        case PES_SID_PADDING:
-            return 1;
-        default:
-            return 0;
-        }
-}
 static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader)
 {
     int r;
@@ -194,14 +179,6 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         v8 = mpeg_bits_read8(reader);
         if (mpeg_bits_error(reader))
             break;
-        
-        if (!ps->sync && v8 != PES_SID_START){
-            if(ps_demuxer_sid_can_skip(v8)){
-                // skip some useless data
-            }else{
-                continue; // wait for 00 00 01 BA
-            }
-        }
 
         // fix HIK H.265: 00 00 01 BA 00 00 01 E0 ...
         if (0x000001 == (mpeg_bits_tryread(reader, 3) & 0xFFFFFF))
@@ -257,6 +234,9 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         //	break;
 
         default:
+            if (!ps->sync && v8 != PES_SID_START){
+                break;
+            }
             pes = psm_fetch(&ps->psm, v8);
             if (NULL == pes)
             {
