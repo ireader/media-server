@@ -71,7 +71,7 @@ static int rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_handshake_s0(ctx->handshake, RTMP_VERSION);
-	n += rtmp_handshake_s1(ctx->handshake + n, (uint32_t)time(NULL));
+	n += rtmp_handshake_s1(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	n += rtmp_handshake_s2(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	assert(n == 1 + RTMP_HANDSHAKE_SIZE + RTMP_HANDSHAKE_SIZE);
 	r = ctx->handler.send(ctx->param, ctx->handshake, n, NULL, 0);

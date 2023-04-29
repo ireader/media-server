@@ -242,14 +242,22 @@ int rtmp_handshake_s0(uint8_t* s0, int version)
 	return 1;
 }
 
-int rtmp_handshake_s1(uint8_t* s1, uint32_t timestamp)
+int rtmp_handshake_s1(uint8_t* s1, uint32_t timestamp, const uint8_t* c1, size_t bytes)
 {
-	be_write_uint32(s1, timestamp);
 #if defined(_FLASH_HANDSHAKE_)
-	memcpy(s1 + 4, rtmp_server_version, 4);
-	rtmp_handshake_random(s1 + 8, timestamp);
-	rtmp_handshake_create_challenge(s1, rtmp_server_key, 36);
+	uint8_t digest[SHA256_DIGEST_LENGTH];
+	assert(RTMP_HANDSHAKE_SIZE == bytes);
+	if (1 == rtmp_handshake_parse_challenge(c1, rtmp_client_key, 30, digest))
+	{
+		be_write_uint32(s1, timestamp);
+		memcpy(s1 + 4, rtmp_server_version, 4);
+		rtmp_handshake_random(s1 + 8, timestamp);
+		rtmp_handshake_create_challenge(s1, rtmp_server_key, 36);
+		return RTMP_HANDSHAKE_SIZE;
+	}
 #else
+	(void)c1, (void)bytes;
+	be_write_uint32(s1, timestamp);
 	be_write_uint32(s1 + 4, 0);
 	rtmp_handshake_random(s1 + 8, timestamp);
 #endif
@@ -266,16 +274,13 @@ int rtmp_handshake_s2(uint8_t* s2, uint32_t timestamp, const uint8_t* c1, size_t
 		rtmp_handshake_make_digest(rtmp_server_key, sizeof(rtmp_server_key), digest, SHA256_DIGEST_LENGTH, NULL, digest);
 		rtmp_handshake_random(s2, timestamp);
 		rtmp_handshake_create_response(s2, digest, SHA256_DIGEST_LENGTH);
-	}
-	else
-	{
-		memmove(s2, c1, bytes);
-		//be_write_uint32(s2 + 4, timestamp);
+		return RTMP_HANDSHAKE_SIZE;
 	}
 #else
+	(void)timestamp;
 	assert(RTMP_HANDSHAKE_SIZE == bytes);
 	memmove(s2, c1, bytes);
-	be_write_uint32(s2 + 4, timestamp);
+	//be_write_uint32(s2 + 4, timestamp); // for hik ipc
 #endif
-	return (int)bytes;
+	return RTMP_HANDSHAKE_SIZE;
 }
