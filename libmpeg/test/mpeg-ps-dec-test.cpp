@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
+#include <map>
 
 static FILE* vfp;
 static FILE* afp;
@@ -22,45 +24,38 @@ inline const char* ftimestamp(int64_t t, char* buf)
     return buf;
 }
 
-static int onpacket(void* /*param*/, int /*stream*/, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+static int onpacket(void* /*param*/, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
+    static std::map<int, std::pair<int64_t, int64_t>> s_streams;
     static char s_pts[64], s_dts[64];
+
+    auto it = s_streams.find(stream);
+    if (it == s_streams.end())
+        it = s_streams.insert(std::make_pair(stream, std::pair<int64_t, int64_t>(pts, dts))).first;
+
+    if (PTS_NO_VALUE == dts)
+        dts = pts;
 
     if (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_G711A == avtype || PSI_STREAM_AUDIO_G711U == avtype)
     {
-        static int64_t a_pts = 0, a_dts = 0;
-        if (PTS_NO_VALUE == dts)
-            dts = pts;
         //assert(0 == a_dts || dts >= a_dts);
-        printf("[A] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, size: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - a_pts) / 90, (int)(dts - a_dts) / 90, (unsigned int)bytes);
-        a_pts = pts;
-        a_dts = dts;
-
+        printf("[A] pts: %s(%" PRId64 "), dts: %s(%" PRId64 "), diff: %03d/%03d, size: %u\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - it->second.first) / 90, (int)(dts - it->second.second) / 90, (unsigned int)bytes);
         fwrite(data, 1, bytes, afp);
     }
     else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_VIDEO_SVAC == avtype)
     {
-        static int64_t v_pts = 0, v_dts = 0;
-        assert(0 == v_dts || dts >= v_dts);
-        printf("[V] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, size: %u%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - v_pts) / 90, (int)(dts - v_dts) / 90, (unsigned int)bytes, (flags & MPEG_FLAG_IDR_FRAME) ? " [I]": "");
-        v_pts = pts;
-        v_dts = dts;
-
+        //assert(0 == v_dts || dts >= v_dts);
+        printf("[V] pts: %s(%" PRId64 "), dts: %s(%" PRId64 "), diff: %03d/%03d, size: %u%s\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - it->second.first) / 90, (int)(dts - it->second.second) / 90, (unsigned int)bytes, (flags & MPEG_FLAG_IDR_FRAME) ? " [I]": "");
         fwrite(data, 1, bytes, vfp);
     }
     else
     {
         //assert(0);
-
-        static int64_t x_pts = 0, x_dts = 0;
-        if (PTS_NO_VALUE == dts)
-            dts = pts;
         //assert(0 == x_dts || dts >= x_dts);
-        printf("[X] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts), (int)(dts - x_dts));
-        x_pts = pts;
-        x_dts = dts;
+        printf("[X] pts: %s(%" PRId64 "), dts: %s(%" PRId64 "), diff: %03d/%03d\n", ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - it->second.first), (int)(dts - it->second.second));
     }
 
+    it->second = std::make_pair(pts, dts);
     return 0;
 }
 
