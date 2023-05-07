@@ -72,7 +72,7 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 		// the "Proceeding" state, the most recently sent provisional 
 		// response MUST be passed to the transport layer for retransmission.
 		r = sip_uas_transaction_dosend(t, param);
-		assert(0 == r); // ignore transport error(client will retransmission request)
+		//assert(0 == r); // ignore transport error(client will retransmission request)
 		return 0;
 
 	case SIP_UAS_TRANSACTION_COMPLETED:
@@ -82,7 +82,7 @@ int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct 
 		// 2. Any other final responses passed by the TU to the server
 		//    transaction MUST be discarded while in the "Completed" state
 		r = sip_uas_transaction_dosend(t, param);
-		assert(0 == r); // ignore transport error(client will retransmission request)
+		//assert(0 == r); // ignore transport error(client will retransmission request)
 		return 0;
 
 	case SIP_UAS_TRANSACTION_TERMINATED:

@@ -139,6 +139,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 #if defined(MPEG_GUESS_STREAM) || defined(MPEG_H26X_VERIFY)
         if (0xE0 <= sid && sid <= 0xEF)
         {
+            psm->streams[psm->stream_count].pid = sid;
             psm->streams[psm->stream_count].codecid = PSI_STREAM_RESERVED; // unknown
             return &psm->streams[psm->stream_count++];
         }
@@ -146,6 +147,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
 #if defined(MPEG_GUESS_STREAM)
         if(0xC0 <= sid && sid <= 0xDF)
         {
+            psm->streams[psm->stream_count].pid = sid;
             psm->streams[psm->stream_count].codecid = PSI_STREAM_AAC;
             return &psm->streams[psm->stream_count++];
         }
