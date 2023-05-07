@@ -92,6 +92,41 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
 	return r;
 }
 
+static uint8_t* mpeg_ts_write_aud(const mpeg_ts_enc_context_t* tsctx, const struct pes_t* stream, const uint8_t* payload, size_t bytes, uint8_t* p)
+{
+	if (PSI_STREAM_H264 == stream->codecid && !tsctx->h26x_with_aud && !mpeg_h264_start_with_access_unit_delimiter(payload, bytes))
+	{
+		// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
+		// Each AVC access unit shall contain an access unit delimiter NAL Unit
+		nbo_w32(p, 0x00000001);
+		p[4] = 0x09; // AUD
+		p[5] = 0xF0; // any slice type (0xe) + rbsp stop one bit
+		p += 6;
+	}
+	else if (PSI_STREAM_H265 == stream->codecid && !tsctx->h26x_with_aud && !mpeg_h265_start_with_access_unit_delimiter(payload, bytes))
+	{
+		// 2.17 Carriage of HEVC
+		// Each HEVC access unit shall contain an access unit delimiter NAL unit.
+		nbo_w32(p, 0x00000001);
+		p[4] = 0x46; // 35-AUD_NUT
+		p[5] = 0x01;
+		p[6] = 0x50; // B&P&I (0x2) + rbsp stop one bit
+		p += 7;
+	}
+	else if (PSI_STREAM_H266 == stream->codecid && !tsctx->h26x_with_aud && !mpeg_h266_start_with_access_unit_delimiter(payload, bytes))
+	{
+		// 2.23 Carriage of VVC
+		// Each VVC access unit shall contain an access unit delimiter NAL unit
+		nbo_w32(p, 0x00000001);
+		p[4] = 0x00; // 20-AUD_NUT
+		p[5] = 0xA1;
+		p[6] = 0x28; // B&P&I (0x2) + rbsp stop one bit
+		p += 7;
+	}
+
+	return p;
+}
+
 static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, struct pes_t *stream, const uint8_t* payload, size_t bytes)
 {
 	// 2.4.3.6 PES packet
@@ -164,36 +199,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 			data[1] |= TS_PAYLOAD_UNIT_START_INDICATOR; // payload_unit_start_indicator
 
             p += pes_write_header(stream, header, TS_PACKET_SIZE - (header - data));
-
-			if(PSI_STREAM_H264 == stream->codecid && !tsctx->h26x_with_aud)
-			{
-				// 2.14 Carriage of Rec. ITU-T H.264 | ISO/IEC 14496-10 video
-				// Each AVC access unit shall contain an access unit delimiter NAL Unit
-				nbo_w32(p, 0x00000001);
-				p[4] = 0x09; // AUD
-				p[5] = 0xF0; // any slice type (0xe) + rbsp stop one bit
-				p += 6;
-			}
-			else if (PSI_STREAM_H265 == stream->codecid && !tsctx->h26x_with_aud)
-			{
-				// 2.17 Carriage of HEVC
-				// Each HEVC access unit shall contain an access unit delimiter NAL unit.
-				nbo_w32(p, 0x00000001);
-				p[4] = 0x46; // 35-AUD_NUT
-				p[5] = 0x01;
-				p[6] = 0x50; // B&P&I (0x2) + rbsp stop one bit
-				p += 7;
-			}
-			else if (PSI_STREAM_H266 == stream->codecid && !tsctx->h26x_with_aud)
-			{
-				// 2.23 Carriage of VVC
-				// Each VVC access unit shall contain an access unit delimiter NAL unit
-				nbo_w32(p, 0x00000001);
-				p[4] = 0x00; // 20-AUD_NUT
-				p[5] = 0xA1;
-				p[6] = 0x28; // B&P&I (0x2) + rbsp stop one bit
-				p += 7;
-			}
+			p = mpeg_ts_write_aud(tsctx, stream, payload, bytes, p);
 
 			// PES_packet_length = PES-Header + Payload-Size
 			// A value of 0 indicates that the PES packet length is neither specified nor bounded 

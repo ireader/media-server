@@ -26,6 +26,20 @@ static int mpeg_h265_find_access_unit_delimiter(const uint8_t* p, size_t bytes, 
 	return -1;
 }
 
+/// @return 0-not find, 1-find ok
+int mpeg_h265_start_with_access_unit_delimiter(const uint8_t* p, size_t bytes)
+{
+    int i;
+    uint8_t nalu;
+    i = mpeg_h264_find_nalu(p, bytes, NULL);
+    if (-1 == i)
+        return 0;
+
+    assert(i > 0);
+    nalu = (p[i] >> 1) & 0x3f;
+    return H265_NAL_AUD == nalu ? 1 : 0;
+}
+
 // Rec. ITU-T H.265 v4 (12/2016) (p26)
 // intra random access point (IRAP) picture: 
 //   A coded picture for which each VCL NAL unit has nal_unit_type 

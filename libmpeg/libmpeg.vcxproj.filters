@@ -69,6 +69,9 @@
     <ClCompile Include="source\mpeg-sdt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mpeg-ts-h266.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mpeg-element-descriptor.h">

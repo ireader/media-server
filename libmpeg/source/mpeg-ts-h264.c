@@ -38,7 +38,7 @@ static int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, 
 {
     int i;
     size_t off;
-    for (off = 0; off < bytes; off += i + 1)
+    for (off = i = 0; off < bytes; off += i) // 00 00 00 01 00 ?
 	{
         i = mpeg_h264_find_nalu(p + off, bytes - off, leading);
         if (-1 == i)
@@ -49,6 +49,28 @@ static int mpeg_h264_find_access_unit_delimiter(const uint8_t* p, size_t bytes, 
 	}
 
 	return -1;
+}
+
+/// @return 0-not find, 1-find ok
+int mpeg_h264_start_with_access_unit_delimiter(const uint8_t* p, size_t bytes)
+{
+    int i;
+    size_t off;
+    uint8_t nalu;
+    for (off = i = 0; off < bytes; off += i)
+    {
+        i = mpeg_h264_find_nalu(p + off, bytes - off, NULL);
+        if (-1 == i)
+            return 0;
+
+        assert(i > 0);
+        nalu = p[i + off] & 0x1f;
+        if (0 == nalu)
+            continue; // 00 00 00 01 00 ?
+        return H264_NAL_AUD == nalu ? 1 : 0;
+    }
+
+    return 0;
 }
 
 int mpeg_h264_find_keyframe(const uint8_t* p, size_t bytes)
