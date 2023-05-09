@@ -171,7 +171,7 @@ struct hls_master_t
 };
 
 /// Probe m3u8 content type(HLS_M3U8_MASTER/HLS_M3U8_PLAYLIST)
-/// @return 1-master playlist, 2-media playlist, other-unknown
+/// @return 1-media playlist, 2-master playlist, other-unknown
 int hls_parser_probe(const char* m3u8, size_t len);
 
 /// Parse m3u8 master playlist
