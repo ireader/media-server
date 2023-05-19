@@ -36,7 +36,7 @@ static size_t fmp4_write_mvex(struct mov_t* mov)
 	mov_buffer_w32(&mov->io, 0); /* size */
 	mov_buffer_write(&mov->io, "mvex", 4);
 
-	//size += fmp4_write_mehd(mov);
+	size += mov_write_mehd(mov);
 	for (i = 0; i < mov->track_count; i++)
 	{
 		mov->track = mov->tracks + i;
@@ -384,6 +384,16 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 
 	fmp4_writer_save_segment(writer);
 
+	// write mfra
+	if (0 == (mov->flags & MOV_FLAG_SEGMENT))
+	{
+		fmp4_write_mfra(mov);
+		for (i = 0; i < mov->track_count; i++)
+			mov->tracks[i].frag_count = 0; // don't free frags memory
+	}
+
+	// mov_buffer_error(&mov->io);
+
 	for (i = 0; i < mov->track_count; i++)
         mov_free_track(mov->tracks + i);
 	if (mov->tracks)
@@ -506,22 +516,22 @@ int fmp4_writer_add_udta(fmp4_writer_t* writer, const void* data, size_t size)
 
 int fmp4_writer_save_segment(fmp4_writer_t* writer)
 {
-	int i;
-	struct mov_t* mov;
-	mov = &writer->mov;
+	//int i;
+	//struct mov_t* mov;
+	//mov = &writer->mov;
 
 	// flush fragment
-	fmp4_write_fragment(writer);
+	return fmp4_write_fragment(writer);
 
-	// write mfra
-	if (0 == (mov->flags & MOV_FLAG_SEGMENT))
-	{
-		fmp4_write_mfra(mov);
-		for (i = 0; i < mov->track_count; i++)
-			mov->tracks[i].frag_count = 0; // don't free frags memory
-	}
+	//// write mfra
+	//if (0 == (mov->flags & MOV_FLAG_SEGMENT))
+	//{
+	//	fmp4_write_mfra(mov);
+	//	for (i = 0; i < mov->track_count; i++)
+	//		mov->tracks[i].frag_count = 0; // don't free frags memory
+	//}
 
-	return mov_buffer_error(&mov->io);
+	//return mov_buffer_error(&mov->io);
 }
 
 int fmp4_writer_init_segment(fmp4_writer_t* writer)

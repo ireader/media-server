@@ -290,6 +290,7 @@ size_t mov_write_trun(const struct mov_t* mov, uint32_t from, uint32_t count, ui
 size_t mov_write_tfra(const struct mov_t* mov);
 size_t mov_write_styp(const struct mov_t* mov);
 size_t mov_write_tfdt(const struct mov_t* mov);
+size_t mov_write_mehd(const struct mov_t* mov);
 size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset);
 size_t mov_write_mfhd(const struct mov_t* mov, uint32_t fragment);
 size_t mov_write_edts(const struct mov_t* mov);
