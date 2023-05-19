@@ -164,6 +164,30 @@ static int mpeg4_vvc_add(struct mpeg4_vvc_t* vvc, uint8_t type, const uint8_t* n
 	return 1;
 }
 
+static int h266_opi_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
+{
+	int i;
+	for (i = 0; i < vvc->numOfArrays; i++)
+	{
+		if (H266_NAL_OPI == vvc->nalu[i].type)
+			return mpeg4_vvc_update2(vvc, i, nalu, bytes);
+	}
+
+	return mpeg4_vvc_add(vvc, H266_NAL_OPI, nalu, bytes);
+}
+
+static int h266_dci_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
+{
+	int i;
+	for (i = 0; i < vvc->numOfArrays; i++)
+	{
+		if (H266_NAL_DCI == vvc->nalu[i].type)
+			return mpeg4_vvc_update2(vvc, i, nalu, bytes);
+	}
+
+	return mpeg4_vvc_add(vvc, H266_NAL_DCI, nalu, bytes);
+}
+
 static int h266_vps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 {
 	int i;
@@ -253,6 +277,14 @@ int mpeg4_vvc_update(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 
 	switch ((nalu[1] >> 3) & 0x1f)
 	{
+	case H266_NAL_OPI:
+		r = h266_opi_copy(vvc, nalu, bytes);
+		break;
+
+	case H266_NAL_DCI:
+		r = h266_dci_copy(vvc, nalu, bytes);
+		break;
+
 	case H266_NAL_VPS:
 		h266_sei_clear(vvc); // remove all prefix/suffix sei
 		r = h266_vps_copy(vvc, nalu, bytes);

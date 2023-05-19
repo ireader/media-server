@@ -220,7 +220,7 @@ int mpeg4_vvc_decoder_configuration_record_save(const struct mpeg4_vvc_t* vvc, u
 	uint8_t* p;
 	uint8_t array_completeness = 1;
 	struct mpeg4_bits_t bits;
-	const uint8_t nalu[] = { H266_VPS, H266_SPS, H266_PPS, H266_PREFIX_SEI, H266_SUFFIX_SEI };
+	const uint8_t nalu[] = { H266_OPI, H266_DCI, H266_VPS, H266_SPS, H266_PPS, H266_PREFIX_SEI, H266_SUFFIX_SEI };
 
 	assert(vvc->lengthSizeMinusOne <= 3);
 	memset(data, 0, bytes);
