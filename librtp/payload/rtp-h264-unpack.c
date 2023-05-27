@@ -167,7 +167,7 @@ static int rtp_h264_unpack_mtap(struct rtp_decode_h264_t *unpacker, const uint8_
 
 		//dond = (ptr[2] + donb) % 65536;
 		ts = (uint16_t)nbo_r16(ptr + 3);
-		if (3 == n) ts = (ts << 16) | ptr[5]; // MTAP24
+		if (3 == n) ts = (ts << 8) | ptr[5]; // MTAP24
 
 		// if the NALU-time is larger than or equal to the RTP timestamp of the packet, 
 		// then the timestamp offset equals (the NALU - time of the NAL unit - the RTP timestamp of the packet).
