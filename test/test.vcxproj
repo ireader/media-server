@@ -288,6 +288,7 @@
     <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-push-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
+    <ClCompile Include="..\librtsp\test\rtsp-client-test2.c" />
     <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp" />

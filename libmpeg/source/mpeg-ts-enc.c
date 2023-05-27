@@ -180,6 +180,7 @@ static int ts_write_pes(mpeg_ts_enc_context_t *tsctx, const struct pmt_t* pmt, s
 			{
 				int64_t pcr = 0;
 				pcr = (PTS_NO_VALUE==stream->dts) ? stream->pts : stream->dts;
+				// timebase 90kHz -> 27MHz
 				pcr_write(data + 6, (pcr - PCR_DELAY) * 300); // TODO: delay???
 				data[4] += 6; // 6-PCR
 			}

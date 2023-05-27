@@ -64,6 +64,13 @@ void usage(int argc, char const *argv[]){
     } \
     RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
 
+#define DEF_FUN_3PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
+    int t_##name(int argc, char const *argv[]){\
+        if(6 != argc) return -1;\
+        name(argv[3], argv[4], argv[5]);return 0;\
+    } \
+    RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
+
 /* 用于套壳调用函数，参数 char*, char*, char*, char* */
 #define DEF_FUN_4PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
@@ -144,6 +151,7 @@ extern "C" DEF_FUN_VOID(http_header_auth_test);
 extern "C" DEF_FUN_VOID(rtsp_example);
 extern "C" DEF_FUN_VOID(rtsp_push_server);
 extern "C" DEF_FUN_2PCHAR(rtsp_client_test, const char* host, const char* file);
+extern "C" DEF_FUN_3PCHAR(rtsp_client_test2, const char* url, const char* username, const char* password);
 DEF_FUN_INT_PCHAR_INT_INT_PCHAR(rstp_demuxer_test, int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile);
 DEF_FUN_2PCHAR(rtsp_client_push_test, const char* host, const char* file);
 DEF_FUN_PCHAR(rtsp_client_input_test, const char* file);
