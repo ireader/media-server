@@ -50,7 +50,8 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 	{
 		sip_dialog_release(t->dialog);
 	}
-
+	
+	assert(NULL == t->onhandle);
 	sip_message_destroy(t->req);
 	locker_destroy(&t->locker);
 	free(t);
@@ -102,7 +103,7 @@ static void sip_uac_transaction_onretransmission(void* usrptr)
 		}
 
 		timeout = T1 * (1 << t->retries++);
-		t->timera = sip_uac_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uac_transaction_onretransmission);
+		t->timera = sip_uac_start_timer(t->agent, t, MIN(t->t2, MAX(T1, timeout)), sip_uac_transaction_onretransmission);
 	}
 	locker_unlock(&t->locker);
 
@@ -145,6 +146,13 @@ static void sip_uac_transaction_ontimeout(void* usrptr)
 			t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
 
 		// ignore return value, nothing to do
+
+		// post-handle
+		if (t->onhandle)
+		{
+			t->onhandle(t, 408);
+			t->onhandle = NULL;
+		}
 	}
 	locker_unlock(&t->locker);
 	sip_uac_transaction_release(t);

@@ -117,6 +117,9 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 	if (0 != atomic_decrement32(&dialog->ref))
 		return 0;
 
+	if (dialog->ondestroy)
+		dialog->ondestroy(dialog->ondestroyparam);
+
 	sip_uri_free(&dialog->local.target);
 	sip_contact_free(&dialog->local.uri);
 	sip_uri_free(&dialog->remote.target);
@@ -132,6 +135,13 @@ int sip_dialog_addref(struct sip_dialog_t* dialog)
 	r = atomic_increment32(&dialog->ref);
 	assert(r > 1);
 	return r;
+}
+
+int sip_dialog_ondestroy(struct sip_dialog_t* dialog, void (*ondestroy)(void* param), void* param)
+{
+	dialog->ondestroy = ondestroy;
+	dialog->ondestroyparam = param;
+	return 0;
 }
 
 int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* tag)

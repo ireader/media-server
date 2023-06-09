@@ -291,7 +291,7 @@ static void sip_uas_transaction_onretransmission(void* usrptr)
 
 		assert(!t->reliable);
 		timeout = T1 * (1 << t->retries++);
-		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, timeout), sip_uas_transaction_onretransmission);
+		t->timerg = sip_uas_start_timer(t->agent, t, MIN(t->t2, MAX(T1, timeout)), sip_uas_transaction_onretransmission);
 	}
 
 	locker_unlock(&t->locker);

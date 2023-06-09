@@ -79,12 +79,11 @@ static int sip_uac_transaction_noninvite_completed(struct sip_uac_transaction_t*
 		r = t->onreply(t->param, reply, t, reply->u.s.code);
 	
 	// post-handle
-    if(sip_message_isbye(t->req))
-        sip_uac_onbye(t, reply);
-    else if(sip_message_iscancel(t->req))
-        sip_uac_oncancel(t, reply);
-//	if (t->onhandle)
-//		t->onhandle(t, reply);
+	if (t->onhandle)
+	{
+		t->onhandle(t, reply->u.s.code);
+		t->onhandle = NULL;
+	}
 
 	// wait for in-flight response
 	sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_K);
