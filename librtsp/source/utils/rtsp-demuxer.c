@@ -346,11 +346,24 @@ static int rtsp_demuxer_onh2645packet(void* param, int64_t pts, int64_t dts, con
 
 static int rtsp_demuxer_payload_close(struct rtp_payload_info_t* pt)
 {
+    int i;
+
     if (pt->ptr.ptr)
     {
         assert(pt->ptr.cap > 0);
         free(pt->ptr.ptr);
         pt->ptr.ptr = NULL;
+    }
+
+    for (i = 0; i < sizeof(pt->tracks) / sizeof(pt->tracks[0]); i++)
+    {
+        if (pt->tracks[i].bs && pt->tracks[i].filter)
+        {
+            pt->tracks[i].bs->destroy(&pt->tracks[i].filter);
+            pt->tracks[i].filter = NULL;
+            pt->tracks[i].bs = NULL;
+            pt->tracks[i].pid = 0;
+        }
     }
 
     if (pt->bs && pt->filter)
