@@ -718,10 +718,12 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 
 	if (0 == strcasecmp(SIP_HEADER_FROM, name) || 0 == strcasecmp(SIP_HEADER_ABBR_FROM, name))
 	{
+		sip_contact_free(&msg->from);
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->from);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_TO, name) || 0 == strcasecmp(SIP_HEADER_ABBR_TO, name))
 	{
+		sip_contact_free(&msg->to);
 		r = sip_header_contact(header.value.p, header.value.p + header.value.n, &msg->to);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_CALLID, name) || 0 == strcasecmp(SIP_HEADER_ABBR_CALLID, name))
