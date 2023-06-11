@@ -1,5 +1,6 @@
 #include "sip-uac-transaction.h"
 #include "sip-transport.h"
+#include "sip-internal.h"
 #include "uri-parse.h"
 #include "cpm/param.h"
 
@@ -26,6 +27,7 @@ struct sip_uac_transaction_t* sip_uac_transaction_create(struct sip_agent_t* sip
 	// For unreliable transports, requests are retransmitted at an interval which starts at T1 and doubles until it hits T2.
 	t->t2 = sip_message_isinvite(req) ? (64 * T1) : T2;
 
+	atomic_increment32(&s_gc.uac);
 	return t;
 }
 
@@ -55,6 +57,7 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 	sip_message_destroy(t->req);
 	locker_destroy(&t->locker);
 	free(t);
+	atomic_decrement32(&s_gc.uac);
 	return 0;
 }
 

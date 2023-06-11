@@ -25,6 +25,7 @@ struct sip_dialog_t* sip_dialog_create(void)
         LIST_INIT_HEAD(&dialog->link);
         dialog->state = DIALOG_ERALY;
         dialog->ptr = (char*)(dialog + 1);
+		atomic_increment32(&s_gc.dialog);
     }
     return dialog;
 }
@@ -126,6 +127,7 @@ int sip_dialog_release(struct sip_dialog_t* dialog)
 	sip_contact_free(&dialog->remote.uri);
 	sip_uris_free(&dialog->routers);
 	free(dialog);
+	atomic_decrement32(&s_gc.dialog);
 	return 0;
 }
 
@@ -161,7 +163,10 @@ int sip_dialog_set_local_target(struct sip_dialog_t* dialog, const struct sip_me
 
 	contact = sip_contacts_get(&msg->contacts, 0);
 	if (contact && cstrvalid(&contact->uri.host) && !sip_uri_equal(&dialog->local.target, &contact->uri))
+	{
+		sip_uri_free(&dialog->local.target);
 		dialog->ptr = sip_uri_clone(dialog->ptr, end, &dialog->local.target, &contact->uri);
+	}
 	return dialog->ptr < end ? 0 : -1;
 }
 

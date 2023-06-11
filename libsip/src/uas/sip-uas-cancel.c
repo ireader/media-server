@@ -2,6 +2,7 @@
 
 int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
 {
+	int r;
 	struct sip_uas_transaction_t* origin;
 
 	// 487 Request Terminated
@@ -21,12 +22,17 @@ int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialo
 		// request, no effect on any session state, and no effect on the 
 		// responses generated for the original request.
 
-		return sip_uas_transaction_noninvite_reply(t, 200, NULL, 0, param);
+		r = sip_uas_transaction_noninvite_reply(t, 200, NULL, 0, param);
 	}
-	
-	// the To tag of the response to the CANCEL and the To tag
-	// in the response to the original request SHOULD be the same.
-	t->reply->ptr.ptr = cstring_clone(t->reply->ptr.ptr, t->reply->ptr.end, &t->reply->to.tag, origin->reply->to.tag.p, origin->reply->to.tag.n);
-	
-	return t->handler->oncancel(param, req, t, dialog ? dialog->session : NULL);
+	else
+	{
+		// the To tag of the response to the CANCEL and the To tag
+		// in the response to the original request SHOULD be the same.
+		t->reply->ptr.ptr = cstring_clone(t->reply->ptr.ptr, t->reply->ptr.end, &t->reply->to.tag, origin->reply->to.tag.p, origin->reply->to.tag.n);
+
+		r = t->handler->oncancel(param, req, t, dialog ? dialog->session : NULL);
+	}
+
+	sip_uas_transaction_release(t);
+	return r;
 }

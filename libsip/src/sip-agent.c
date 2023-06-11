@@ -75,3 +75,13 @@ int sip_agent_set_rport(struct sip_message_t* msg, const char* peer, int port)
 {
 	return sip_message_set_rport(msg, peer, port);
 }
+
+struct sip_gc_t s_gc;
+void sip_gc_get(int32_t* uac, int32_t* uas, int32_t* dialog, int32_t* message, int32_t* subscribe)
+{
+	*uac = s_gc.uac;
+	*uas = s_gc.uas;
+	*dialog = s_gc.dialog;
+	*message = s_gc.message;
+	*subscribe = s_gc.subscribe;
+}
