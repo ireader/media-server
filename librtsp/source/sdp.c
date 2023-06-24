@@ -1006,6 +1006,7 @@ static int sdp_append_media_format(struct sdp_media *m, char* fmt)
 // m=video 49170/2 RTP/AVP 31
 // c=IN IP4 224.2.1.1/127/2
 // m=video 49170/2 RTP/AVP 31
+// m=application 9 UDP/DTLS/SCTP webrtc-datachannel
 static int sdp_parse_media(struct sdp_t* sdp)
 {
 	int ret;
@@ -1539,6 +1540,7 @@ static inline int sdp_media_format_value(const char* format)
 	case 'v': return SDP_M_MEDIA_VIDEO;
 	case 't': return SDP_M_MEDIA_TEXT;
 	case 'm': return SDP_M_MEDIA_MESSAGE;
+	case 'w': return 0 == strcmp("webrtc-datachannel", format) ? SDP_M_MEDIA_APPLICATION : -1;
 	default: return atoi(format);
 	}
 	//if(0 == strcasecmp("video", format))
