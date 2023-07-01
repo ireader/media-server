@@ -83,7 +83,7 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_EVC				= 0x35, // EVC video stream or an EVC temporal video sub-bitstream conforming to one or more profiles defined in ISO/IEC 23094-1
 	PSI_STREAM_VP8				= 0x9d,
 	PSI_STREAM_VP9				= 0x9e,
-	PSI_STREAM_AV1				= 0x9f,
+	PSI_STREAM_AV1				= 0x9f, // https://aomediacodec.github.io/av1-mpeg2-ts/
 	// 0x27-0x7E Rec. ITU-T H.222.0 | ISO/IEC 13818-1 Reserved
 	PSI_STREAM_IPMP				= 0x7F, // IPMP stream
 	// 0x80-0xFF User Private
@@ -92,6 +92,7 @@ enum EPSI_STREAM_TYPE
     PSI_STREAM_AUDIO_EAC3       = 0x87, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_AUDIO_DTS		= 0x8a, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_DIRAC		= 0xd1, // ffmpeg/libavformat/mpegts.h
+	PSI_STREAM_VIDEO_AVS3		= 0xd4, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_SVAC		= 0x80, // GBT 25724-2010 SVAC(2014)
 	PSI_STREAM_AUDIO_SVAC		= 0x9B, // GBT 25724-2010 SVAC(2014)

@@ -48,7 +48,7 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
 		}
 	}
-	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
+	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_VIDEO_AVS3 == avtype)
 	{
 		static int64_t v_pts = 0, v_dts = 0;
 		//assert(0 == v_dts || dts >= v_dts);

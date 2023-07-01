@@ -51,6 +51,17 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
 				stream->codecid = PSI_STREAM_AUDIO_OPUS;
 			}
+			if (len >= 4 && 'A' == data[2] && 'V' == data[3] && '0' == data[4] && '1' == data[5])
+			{
+				// https://aomediacodec.github.io/av1-mpeg2-ts/
+				// Constraints on AV1 streams in MPEG-2 TS
+				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
+				stream->codecid = PSI_STREAM_AV1;
+			}
+			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && 'S' == data[4] && '3' == data[5])
+			{
+				stream->codecid = PSI_STREAM_VIDEO_AVS3;
+			}
 			break;
 
 		case 0x7f: // DVB-Service Information: 6.1 Descriptor identification and location (p38)

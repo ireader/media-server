@@ -28,6 +28,7 @@ int mpeg_stream_type_video(int codecid)
     case PSI_STREAM_VIDEO_SVAC:
     case PSI_STREAM_VIDEO_DIRAC:
     case PSI_STREAM_VIDEO_CAVS:
+    case PSI_STREAM_VIDEO_AVS3:
     case PSI_STREAM_VP8:
     case PSI_STREAM_VP9:
     case PSI_STREAM_AV1:
