@@ -133,13 +133,13 @@ static int rtsp_muxer_rtp_encode_packet(void* param, const void* packet, int byt
 static int rtsp_muxer_ts_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     m->pt->timestamp = pts * 90; // last dts
-    return mpeg_ts_write(m->pt->ts, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
+    return mpeg_ts_write(m->pt->ts, m->stream, flags & (MPEG_FLAG_IDR_FRAME | MPEG_FLAG_H264_H265_WITH_AUD) /* ? 0x01 : 0 */, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_ps_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     m->pt->timestamp = pts * 90; // last dts
-    return ps_muxer_input(m->pt->ps, m->stream, flags ? 0x01 : 0, pts * 90, dts * 90, data, bytes);
+    return ps_muxer_input(m->pt->ps, m->stream, flags & (MPEG_FLAG_IDR_FRAME | MPEG_FLAG_H264_H265_WITH_AUD) /* ? 0x01 : 0 */, pts * 90, dts * 90, data, bytes);
 }
 
 static int rtsp_muxer_av_input(struct rtp_muxer_media_t* m, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
