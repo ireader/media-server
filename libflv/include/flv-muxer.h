@@ -45,6 +45,9 @@ int flv_muxer_hevc(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t 
 /// @param[in] data av1 low overhead bitstream format
 int flv_muxer_av1(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 
+/// @param[in] data avs3 bitstream (00 00 01 B0 ...)
+int flv_muxer_avs3(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
+
 struct flv_metadata_t
 {
 	int audiocodecid;
