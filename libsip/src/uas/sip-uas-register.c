@@ -63,8 +63,8 @@ static inline int sip_register_check_to_domain(const struct sip_message_t* req)
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r, expires;
-	struct uri_t* to;
 	struct uri_t* uri;
+	struct uri_t* from;
 	const struct cstring_t* header;
 	const struct sip_contact_t* contact;
 
@@ -99,10 +99,10 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// 4. authorized modify registrations(403 Forbidden)
 
 	// 5. To domain check (404 Not Found)
-	to = uri_parse(req->to.uri.host.p, (int)req->to.uri.host.n);
-	if (!to || !to->host /*|| 0 != strcasecmp(to->host, uri->host)*/)
+	from = uri_parse(req->from.uri.host.p, (int)req->from.uri.host.n);
+	if (!from || !from->host /*|| 0 != strcasecmp(from->host, uri->host)*/)
 	{
-		uri_free(to);
+		uri_free(from);
 		uri_free(uri);
 		// all URI parameters MUST be removed (including the user-param), and
 		// any escaped characters MUST be converted to their unescaped form.
@@ -116,7 +116,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//    cseq
 	if (sip_contacts_match_any(&req->contacts) && (1 != sip_contacts_count(&req->contacts) || 0 < expires) )
 	{
-		uri_free(to);
+		uri_free(from);
 		return sip_uas_transaction_noninvite_reply(t, 400/*Invalid Request*/, NULL, 0, param);
 	}
 
@@ -143,7 +143,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	r = t->handler->onregister ? t->handler->onregister(param, req, t, to ? to->userinfo : NULL, uri ? uri->host : NULL, expires) : 0;
+	r = t->handler->onregister ? t->handler->onregister(param, req, t, from ? from->userinfo : NULL, uri ? uri->host : NULL, expires) : 0;
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{
@@ -154,6 +154,6 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//// and MUST be ignored if present.
 	//return sip_uas_transaction_noninvite_reply(t, r, NULL, 0);
     free(uri);
-	free(to);
+	free(from);
 	return r;
 }
