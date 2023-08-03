@@ -10,9 +10,11 @@ endif
 
 ifdef PLATFORM
 	CROSS:=$(PLATFORM)-
-else 
+else
+	OSID := $(shell awk -F'=' '/^ID=/ {print $$2}' /etc/os-release | tr -d '"')
+	OSVERSIONID := $(shell awk -F'=' '/^VERSION_ID=/ {print $$2"-"}' /etc/os-release | tr -d '"')
 	CROSS:=
-	PLATFORM:=linux$(ARCHBITS)
+	PLATFORM:=${OSID}$(OSVERSIONID)linux$(ARCHBITS)
 endif
 
 ifeq ($(RELEASE),1)
