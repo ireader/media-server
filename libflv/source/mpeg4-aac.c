@@ -172,7 +172,7 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	int frequncy;
 	if (bytes < 6) return -1;
 
-	profile = aac->ps ? MPEG4_AAC_PS : aac->profile;
+	profile = aac->sbr ? aac->extension_audio_object_type : aac->profile;
 	frequncy = mpeg4_aac_audio_frequency_from(aac->extension_frequency);
 	frequncy = (aac->sbr || aac->ps) && -1 != frequncy ? frequncy : 0;
 
