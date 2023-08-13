@@ -34,6 +34,8 @@ static inline const char* ps_type(int type)
 	case FLV_AUDIO_AAC: return "AAC";
 	case FLV_VIDEO_H264: return "H264";
 	case FLV_VIDEO_H265: return "H265";
+	case FLV_VIDEO_H266: return "H266";
+	case FLV_VIDEO_AVS3: return "AVS3";
 	default: return "*";
 	}
 }
@@ -63,6 +65,14 @@ static int flv_ondemux(void* ps, int codec, const void* data, size_t bytes, uint
 		case FLV_VIDEO_HVCC:
 			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H265, NULL, 0);
 			streams[FLV_VIDEO_H265] = i;
+			return 0;
+		case FLV_VIDEO_VVCC:
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_H266, NULL, 0);
+			streams[FLV_VIDEO_H266] = i;
+			return 0;
+		case FLV_VIDEO_AVSC:
+			i = ps_muxer_add_stream((ps_muxer_t*)ps, PSI_STREAM_VIDEO_AVS3, NULL, 0);
+			streams[FLV_VIDEO_AVS3] = i;
 			return 0;
 		default: return 0;
 		}

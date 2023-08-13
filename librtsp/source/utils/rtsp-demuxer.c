@@ -577,11 +577,23 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
 
 int rtsp_demuxer_rtcp(struct rtsp_demuxer_t* demuxer, void* buf, int len)
 {
-    if (demuxer->idx >= demuxer->count || demuxer->idx < 0)
+    if (!demuxer || demuxer->idx >= demuxer->count || demuxer->idx < 0 || !demuxer->pt[demuxer->idx].rtp)
     {
         assert(0);
         return -ENOENT;
     }
 
     return rtp_demuxer_rtcp(demuxer->pt[demuxer->idx].rtp, buf, len);
+}
+
+int rtsp_demuxer_stats(struct rtsp_demuxer_t* demuxer, int* lost, int* late, int* misorder, int* duplicate)
+{
+    if (!demuxer || demuxer->idx >= demuxer->count || demuxer->idx < 0 || !demuxer->pt[demuxer->idx].rtp)
+    {
+        assert(0);
+        return -1;
+    }
+
+    rtp_demuxer_stats(demuxer->pt[demuxer->idx].rtp, lost, late, misorder, duplicate);
+    return 0;
 }

@@ -44,7 +44,7 @@ static void rtp_on_rtcp(void* param, const struct rtcp_msg_t* msg)
     //rtp = (struct rtp_demuxer_t*)param;
     if (RTCP_BYE == msg->type)
     {
-        printf("finished\n");
+        printf("finished: %p\n", param);
         //rtp->onpkt(rtp->param, NULL, 0, 0, 0);
     }
 }
@@ -240,4 +240,14 @@ int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len)
     }
     
     return r;
+}
+
+void rtp_demuxer_stats(struct rtp_demuxer_t* rtp, int* lost, int* late, int* misorder, int* duplicate)
+{
+    struct rtp_queue_stats_t stats;
+    rtp_queue_stats(rtp->queue, &stats);
+    if (lost) *lost = stats.lost;
+    if (late) *late = stats.late;
+    if (misorder) *misorder = stats.reorder;
+    if (duplicate) *duplicate = stats.duplicate;
 }

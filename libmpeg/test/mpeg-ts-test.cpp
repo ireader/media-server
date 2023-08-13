@@ -30,6 +30,7 @@ inline const char* ts_type(int type)
 	case PSI_STREAM_AAC: return "AAC";
 	case PSI_STREAM_H264: return "H264";
 	case PSI_STREAM_H265: return "H265";
+	case PSI_STREAM_VIDEO_AVS3: return "AVS3";
 	default: return "*";
 	}
 }
