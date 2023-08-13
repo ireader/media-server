@@ -28,11 +28,13 @@
 #define FLV_VIDEO_H264		7 // AVC
 #define FLV_VIDEO_H265		12 // https://github.com/CDN-Union/H265
 #define FLV_VIDEO_AV1		13 // https://aomediacodec.github.io/av1-isobmff
-#define FLV_VIDEO_H266		14
+#define FLV_VIDEO_AVS3		14
+#define FLV_VIDEO_H266		15
 #define FLV_VIDEO_AVCC		(0x2000 | FLV_VIDEO_H264) // AVCDecoderConfigurationRecord(ISO-14496-15)
 #define FLV_VIDEO_HVCC		(0x2100 | FLV_VIDEO_H265) // HEVCDecoderConfigurationRecord(ISO-14496-15)
 #define FLV_VIDEO_AV1C		(0x2200 | FLV_VIDEO_AV1)  // AV1CodecConfigurationRecord(av1-isobmff)
-#define FLV_VIDEO_VVCC		(0x2300 | FLV_VIDEO_H266) // VVCDecoderConfigurationRecord(ISO-14496-15)
+#define FLV_VIDEO_AVSC		(0x2300 | FLV_VIDEO_AVS3) // AVS3DecoderConfigurationRecord
+#define FLV_VIDEO_VVCC		(0x2400 | FLV_VIDEO_H266) // VVCDecoderConfigurationRecord(ISO-14496-15)
 
 #define FLV_SCRIPT_METADATA	0x4000 // onMetaData
 

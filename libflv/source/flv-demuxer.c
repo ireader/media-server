@@ -7,6 +7,7 @@
 #include "mpeg4-vvc.h"
 #include "opus-head.h"
 #include "aom-av1.h"
+#include "avswg-avs3.h"
 #include "amf0.h"
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,7 @@ struct flv_demuxer_t
 		struct mpeg4_avc_t avc;
 		struct mpeg4_hevc_t hevc;
 		struct mpeg4_vvc_t vvc;
+		struct avswg_avs3_t avs3;
 	} v;
 
 	flv_demuxer_handler handler;
@@ -279,6 +281,29 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		else if (FLV_END_OF_SEQUENCE == video.avpacket)
 		{
 			return 0; // AV1 end of sequence (lower level NALU sequence ender is not required or supported)
+		}
+		else
+		{
+			assert(0);
+			return -EINVAL;
+		}
+	}
+	else if (FLV_VIDEO_AVS3 == video.codecid)
+	{
+		if (FLV_SEQUENCE_HEADER == video.avpacket)
+		{
+			// AVS3DecoderConfigurationRecord
+			assert(bytes > n + 5);
+			avswg_avs3_decoder_configuration_record_load(data + n, bytes - n, &flv->v.avs3);
+			return flv->handler(flv->param, FLV_VIDEO_AVSC, data + n, bytes - n, timestamp + video.cts, timestamp, 0);
+		}
+		else if (FLV_AVPACKET == video.avpacket)
+		{
+			return flv->handler(flv->param, FLV_VIDEO_AVS3, data + n, bytes - n, timestamp + video.cts, timestamp, (FLV_VIDEO_KEY_FRAME == video.keyframe) ? 1 : 0);
+		}
+		else if (FLV_END_OF_SEQUENCE == video.avpacket)
+		{
+			return 0; // AVC end of sequence (lower level NALU sequence ender is not required or supported)
 		}
 		else
 		{

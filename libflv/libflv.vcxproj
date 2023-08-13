@@ -22,6 +22,7 @@
     <ClInclude Include="include\amf0.h" />
     <ClInclude Include="include\amf3.h" />
     <ClInclude Include="include\aom-av1.h" />
+    <ClInclude Include="include\avswg-avs3.h" />
     <ClInclude Include="include\flv-demuxer.h" />
     <ClInclude Include="include\flv-header.h" />
     <ClInclude Include="include\flv-muxer.h" />
@@ -43,6 +44,7 @@
     <ClCompile Include="source\amf0.c" />
     <ClCompile Include="source\amf3.c" />
     <ClCompile Include="source\aom-av1.c" />
+    <ClCompile Include="source\avswg-avs3.c" />
     <ClCompile Include="source\flv-demuxer-script.c" />
     <ClCompile Include="source\flv-demuxer.c" />
     <ClCompile Include="source\flv-header.c" />

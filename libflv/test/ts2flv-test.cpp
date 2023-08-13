@@ -51,6 +51,10 @@ static int on_ts_packet(void* param, int program, int /*stream*/, int avtype, in
 	{
 		flv_muxer_hevc(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(dts / 90));
 	}
+	else if (PSI_STREAM_VIDEO_AVS3 == avtype)
+	{
+		flv_muxer_avs3(muxer, data, bytes, (uint32_t)(pts / 90), (uint32_t)(dts / 90));
+	}
     
     return 0;
 }

@@ -100,7 +100,7 @@ int flv_video_tag_header_read(struct flv_video_tag_header_t* video, const uint8_
 	video->codecid = (buf[0] & 0x0F);
 	video->avpacket = FLV_AVPACKET;
 
-	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_H266 == video->codecid || FLV_VIDEO_AV1 == video->codecid)
+	if (FLV_VIDEO_H264 == video->codecid || FLV_VIDEO_H265 == video->codecid || FLV_VIDEO_H266 == video->codecid || FLV_VIDEO_AV1 == video->codecid || FLV_VIDEO_AVS3 == video->codecid)
 	{
 		if (len < 5)
 			return -1;

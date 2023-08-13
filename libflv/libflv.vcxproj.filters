@@ -72,6 +72,9 @@
     <ClInclude Include="include\mpeg4-vvc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\avswg-avs3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\flv-demuxer.c">
@@ -147,6 +150,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\vvc-mp4toannexb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\avswg-avs3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
