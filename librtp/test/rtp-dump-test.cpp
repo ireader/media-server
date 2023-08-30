@@ -1,13 +1,18 @@
+#define RTP_DEMUXER 0
+
+#if RTP_DEMUXER
 #include "rtp-dump.h"
 #include "rtp-demuxer.h"
+#else
 #include "rtsp-demuxer.h"
+#endif
 #include "avpkt2bs.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
 #include <inttypes.h>
 
-#define RTP_DEMUXER 0
+
 
 struct rtp_dump_test_t
 {
@@ -63,7 +68,7 @@ void rtp_dump_test(const char* file)
 	
 	dump = rtpdump_open(file, 0);
 #if RTP_DEMUXER
-	ctx.demuxer = rtp_demuxer_create(0, 100, 90000, 100, "MP2P", rtp_onpacket, &ctx);
+	ctx.demuxer = rtp_demuxer_create(100, 90000, 100, "MP2P", rtp_onpacket, &ctx);
 #else
 	avpkt2bs_create(&ctx.bs);
 	ctx.demuxer = rtsp_demuxer_create(0, 100, rtsp_onpacket, &ctx);
