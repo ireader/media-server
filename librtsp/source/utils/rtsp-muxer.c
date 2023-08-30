@@ -391,7 +391,7 @@ int rtsp_muxer_getinfo(struct rtsp_muxer_t* muxer, int pid, uint16_t* seq, uint3
     pt = &muxer->payloads[pid];
     *sdp = pt->sdp;
     *size = pt->len;
-    rtp_payload_encode_getinfo(pt->rtp.rtp, seq, timestamp);
+    rtp_payload_encode_getinfo(pt->rtp.encoder, seq, timestamp);
     return 0;
 }
 
