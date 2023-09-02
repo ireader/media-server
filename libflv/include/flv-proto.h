@@ -43,6 +43,27 @@ enum
 	FLV_SEQUENCE_HEADER					= 0, // AVC/AAC sequence header
 	FLV_AVPACKET						= 1, // AVC NALU / AAC raw
 	FLV_END_OF_SEQUENCE					= 2, // AVC end of sequence (lower level NALU sequence ender is not required or supported)
+
+	// CompositionTime Offset is implied to equal zero. This is
+	// an optimization to save putting SI24 composition time value of zero on
+	// the wire. See pseudo code below in the VideoTagBody section
+	FLV_PACKET_TYPE_CODED_FRAMES_X = 3,
+
+	// VideoTagBody does not contain video data. VideoTagBody
+	// instead contains an AMF encoded metadata. See Metadata Frame
+	// section for an illustration of its usage. As an example, the metadata
+	// can be HDR information. This is a good way to signal HDR
+	// information. This also opens up future ways to express additional
+	// metadata that is meant for the next video sequence.
+	//
+	// note: presence of PacketTypeMetadata means that FrameType
+	// flags at the top of this table should be ignored
+	FLV_PACKET_TYPE_METADATA = 4,
+
+	// Carriage of bitstream in MPEG-2 TS format
+	// note: PacketTypeSequenceStart and PacketTypeMPEG2TSSequenceStart
+	// are mutually exclusive
+	FLV_PACKET_TYPE_MPEG2TS_SEQUENCE_START = 5,
 };
 
 enum
@@ -73,5 +94,12 @@ enum
 	FLV_SOUND_CHANNEL_MONO				= 0, // 1-channel
 	FLV_SOUND_CHANNEL_STEREO			= 1, // 2-channels
 };
+
+#define FLV_VIDEO_FOURCC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
+
+#define FLV_VIDEO_FOURCC_AV1    FLV_VIDEO_FOURCC('a', 'v', '0', '1')
+#define FLV_VIDEO_FOURCC_VP9    FLV_VIDEO_FOURCC('v', '9', '0', '9')
+#define FLV_VIDEO_FOURCC_HEVC	FLV_VIDEO_FOURCC('h', 'v', 'c', '1')
+#define FLV_VIDEO_FOURCC_VVC	FLV_VIDEO_FOURCC('v', 'v', 'c', '1')
 
 #endif /* !_flv_proto_h_ */
