@@ -118,7 +118,7 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
     return 0;
 }
 
-static void pes_packet_codec_verify(struct pes_t* pes, const struct packet_t* pkt)
+static void pes_packet_codec_verify(struct pes_t* pes, struct packet_t* pkt)
 {
     int r;
     size_t i, n;
@@ -128,7 +128,7 @@ static void pes_packet_codec_verify(struct pes_t* pes, const struct packet_t* pk
     {
         // modify codecid
         static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266, PSI_STREAM_MPEG4, };
-        pes->codecid = sc_codecid[(r < 0 || r >= sizeof(sc_codecid) / sizeof(sc_codecid[0])) ? PSI_STREAM_RESERVED : r];
+        pkt->codecid = pes->codecid = sc_codecid[(r < 0 || r >= sizeof(sc_codecid) / sizeof(sc_codecid[0])) ? PSI_STREAM_RESERVED : r];
     }
 #endif
 
@@ -143,7 +143,7 @@ static void pes_packet_codec_verify(struct pes_t* pes, const struct packet_t* pk
             // fix n == 0
             n = ((size_t)(pkt->data[i + 3] & 0x03) << 11) | ((size_t)pkt->data[i + 4] << 3) | ((size_t)(pkt->data[i + 5] >> 5) & 0x07);
         }
-        pes->codecid = i == pkt->size ? PSI_STREAM_AAC : pes->codecid; // fix it
+        pkt->codecid = pes->codecid = i == pkt->size ? PSI_STREAM_AAC : pes->codecid; // fix it
     }
 #endif
 }
