@@ -70,8 +70,7 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
     data = pkt->data;
     end = pkt->data + pkt->size;
     p = pkt->size - size < n ? pkt->data : end - size - n; // start from trailing nalu
-    find = PSI_STREAM_H264 == pes->codecid ? mpeg_h264_find_new_access_unit : mpeg_h265_find_new_access_unit;
-
+ 
     // TODO: The first frame maybe not a valid frame, filter it
 
     if (0 == pkt->codecid)
@@ -84,6 +83,7 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
     }
 
     // PES contain multiple packet
+    find = PSI_STREAM_H264 == pkt->codecid ? mpeg_h264_find_new_access_unit : mpeg_h265_find_new_access_unit;
     n = find(p, end - p, &pkt->vcl);
     while (n >= 0)
     {
@@ -104,9 +104,19 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
     pkt->pts = pes->pts;
     pkt->dts = pes->dts;
     pkt->sid = pes->sid;
-    pkt->codecid = pes->codecid;
     pkt->flags = pes->flags;
 //    assert(0 == find(p, end - p)); // start with AUD
+
+#if !defined(MPEG_KEDA_H265_FROM_H264)
+    pkt->codecid = pes->codecid;
+#else
+    // fix: keda h.265 stream psm codec id incorrect, e.g. psm codec id 36 -> 27 -> 27 -> 27
+    if (pkt->codecid != pes->codecid && 0 == mpeg_h26x_verify(data, end - data, &r))
+    {
+        static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266, PSI_STREAM_MPEG4, };
+        pkt->codecid = sc_codecid[(r < 0 || r >= sizeof(sc_codecid) / sizeof(sc_codecid[0])) ? PSI_STREAM_RESERVED : r];
+    }
+#endif
 
     // remain data
     if (data != pkt->data)
