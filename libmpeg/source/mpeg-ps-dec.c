@@ -157,7 +157,7 @@ static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
     return NULL;
 }
 
-static int ps_demuxer_packet(struct ps_demuxer_t *ps, const uint8_t* data, size_t bytes)
+static int ps_demuxer_packet(struct ps_demuxer_t *ps, const uint8_t* data, size_t bytes, size_t *consume)
 {
     int r;
     struct pes_t* pes;
@@ -173,7 +173,7 @@ static int ps_demuxer_packet(struct ps_demuxer_t *ps, const uint8_t* data, size_
 #endif
 
     pes->flags = pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
-    r = pes_packet(&pes->pkt, pes, data, bytes, ps->start, ps_demuxer_onpes, ps);
+    r = pes_packet(&pes->pkt, pes, data, bytes, consume, ps->start, ps_demuxer_onpes, ps);
     ps->start = 0; // clear start flags
     return r;
 }
@@ -346,7 +346,7 @@ static int ps_demuxer_buffer(struct ps_demuxer_t* ps, const uint8_t* data, size_
 int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
 {
     int r;
-    size_t i;
+    size_t i, consume;
     struct mpeg_bits_t reader;
 
     for(i = 0; i < bytes; )
@@ -391,8 +391,8 @@ int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
             assert(ps->pes && ps->pes_length <= ps->pes->len);
             if (bytes - i >= ps->pes->len - ps->pes_length)
             {
-                r = ps_demuxer_packet(ps, data + i, ps->pes->len - ps->pes_length);
-                i += ps->pes->len - ps->pes_length;
+                r = ps_demuxer_packet(ps, data + i, ps->pes->len - ps->pes_length, &consume);
+                i += consume; // ps->pes->len - ps->pes_length; // fix: pack start code in video data
                 ps->pes_length = 0;
                 ps->start = 0; // clear start flag
                 ps->state = PS_DEMUXER_STATE_START; // next round
@@ -400,9 +400,11 @@ int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
             else
             {
                 // need more data
-                r = ps_demuxer_packet(ps, data + i, bytes - i);
-                ps->pes_length += bytes - i;
-                i = bytes;
+                r = ps_demuxer_packet(ps, data + i, bytes - i, &consume);
+                ps->pes_length = consume == bytes - i ? ps->pes_length + (bytes - i) : 0;
+                ps->start = consume == bytes - i ? ps->start : 0;
+                ps->state = consume == bytes - i ? ps->state : PS_DEMUXER_STATE_START;
+                i += consume; //i = bytes; // fix: pack start code in video data                
             }
 
             break;

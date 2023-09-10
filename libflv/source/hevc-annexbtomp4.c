@@ -2,6 +2,7 @@
 #include "mpeg4-avc.h"
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #define H265_NAL_BLA_W_LP	16
 #define H265_NAL_RSV_IRAP	23
@@ -361,6 +362,12 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	uint8_t nalutype;
 	struct h265_annexbtomp4_handle_t* mp4;
 	mp4 = (struct h265_annexbtomp4_handle_t*)param;
+
+	if (bytes < 2)
+	{
+		assert(0);
+		return;
+	}
 
 	nalutype = (nalu[0] >> 1) & 0x3f;
 #if defined(H2645_FILTER_AUD)

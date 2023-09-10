@@ -1,5 +1,6 @@
 #include "mpeg-types.h"
 #include "mpeg-util.h"
+#include "mpeg-proto.h"
 #include <assert.h>
 #include <string.h>
 
@@ -140,7 +141,13 @@ int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
         }
         else if (nal_type > 0 && nal_type < 6)
         {
-            *vcl = H264_NAL_IDR == nal_type ? 1 : 2;
+            *vcl = H264_NAL_IDR == nal_type ? MPEG_VCL_IDR : MPEG_VCL_P;
+        }
+        else if (PES_SID_START == p[n])
+        {
+            // pes data loss ???
+            *vcl = MPEG_VCL_CORRUPT;
+            return (int)(p - data + n - leading);
         }
         else
         {

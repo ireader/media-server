@@ -90,7 +90,7 @@ int pes_read_mpeg1_header(struct pes_t* pes, struct mpeg_bits_t* reader);
 size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes);
 
 typedef int (*pes_packet_handler)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
-int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, int start, pes_packet_handler handler, void* param);
+int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, size_t* consume, int start, pes_packet_handler handler, void* param);
 
 uint16_t mpeg_bits_read15(struct mpeg_bits_t* reader);
 uint32_t mpeg_bits_read30(struct mpeg_bits_t* reader);

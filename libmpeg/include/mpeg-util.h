@@ -160,6 +160,7 @@ int mpeg_stream_type_video(int codecid);
 int mpeg_h264_find_nalu(const uint8_t* p, size_t bytes, size_t* leading);
 int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl);
 int mpeg_h265_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl);
+int mpeg_h266_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl);
 int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec);
 
 int mpeg_h264_start_with_access_unit_delimiter(const uint8_t* p, size_t bytes);

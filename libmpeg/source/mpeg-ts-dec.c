@@ -126,6 +126,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     uint32_t i, j;
+	size_t consume;
     for (i = 0; i < ts->pat.pmt_count; i++)
     {
         for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
@@ -137,22 +138,22 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
             if (PSI_STREAM_H264 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x09,0xf0};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
             else if (PSI_STREAM_H265 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
 			else if (PSI_STREAM_H266 == pes->codecid)
 			{
 				const uint8_t aud[] = { 0,0,0,1,0x00,0xA1,0x18 };
-				pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+				pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
 			}
             else
             {
                 //assert(0);
-                pes_packet(&pes->pkt, pes, NULL, 0, 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ts->onpacket, ts->param);
             }
         }
     }
@@ -164,6 +165,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
     int r = 0;
     uint32_t i, j, k;
 	uint32_t PID;
+	size_t consume;
 	unsigned int count;
 	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
@@ -269,7 +271,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 							continue; // don't have pes header yet
 						}
 
-                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
+                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, &consume, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
 						pes->have_pes_header = (r || (0 == pes->pkt.size && pes->len > 0)) ? 0 : 1; // packet completed
                         break; // find stream
 					}
