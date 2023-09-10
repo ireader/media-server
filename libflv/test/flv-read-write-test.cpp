@@ -71,6 +71,8 @@ void flv_read_write_test(const char* flv)
 	uint32_t timestamp;
 	while (1 == flv_reader_read(r, &tag, &timestamp, &taglen, packet, sizeof(packet)))
 	{
+		if(FLV_TYPE_SCRIPT == tag)
+			flv_writer_input(w, tag, packet, taglen, timestamp);
 		ret = flv_demuxer_input(d, tag, packet, taglen, timestamp);
 		assert(0 == ret);
 	}

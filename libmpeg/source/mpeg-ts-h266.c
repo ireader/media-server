@@ -44,8 +44,8 @@ static int mpeg_h266_is_new_access_unit(const uint8_t* nalu, size_t bytes)
     nuh_layer_id = nalu[0] & 0x3F;
 
     // 7.4.2.4.3 Order of PUs and their association to AUs
-    if (H266_NAL_OPI == nal_type || H266_NAL_DCI == nal_type || H266_NAL_VPS == nal_type || H266_NAL_SPS == nal_type || H266_NAL_PPS == nal_type ||
-        (nuh_layer_id == 0 && (H266_NAL_AUD == nal_type || H266_PREFIX_APS_NUT == nal_type || H266_PH_NUT == nal_type || H266_NAL_PREFIX_SEI == nal_type || 
+    if (H266_NAL_AUD == nal_type || H266_NAL_OPI == nal_type || H266_NAL_DCI == nal_type || H266_NAL_VPS == nal_type || H266_NAL_SPS == nal_type || H266_NAL_PPS == nal_type ||
+        (nuh_layer_id == 0 && (H266_PREFIX_APS_NUT == nal_type || H266_PH_NUT == nal_type || H266_NAL_PREFIX_SEI == nal_type || 
                                 26 == nal_type || (28 <= nal_type && nal_type <= 29))))
         return 1;
 
