@@ -51,10 +51,16 @@ int sip_uac_notify_onreply(struct sip_uac_transaction_t* t, const struct sip_mes
 
 	subscribe = sip_subscribe_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag, &t->req->event);
 	if (!subscribe)
-		return 0; // receive notify message before subscribe reply, discard it
+	{
+		//return 0; // receive notify message before subscribe reply, discard it
+		
+		// custom notify message ???
+		assert(t->req && !cstrvalid(&t->req->to.tag));
+		return t->onreply(t->param, reply, t, reply->u.s.code);
+	}
 
 	// NOTICE: ignore notify before subscribe created
-	r = t->onreply(t->param, reply, t, 200 <= reply->u.s.code);
+	r = t->onreply(t->param, reply, t, reply->u.s.code);
 
 	if (0 == cstrcmp(&reply->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
 		sip_subscribe_remove(t->agent, subscribe);
