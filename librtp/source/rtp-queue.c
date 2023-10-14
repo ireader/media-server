@@ -13,6 +13,9 @@
 #define RTP_SEQUENTIAL 3
 #define RTP_SEQMOD	 (1 << 16)
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 struct rtp_item_t
 {
 	struct rtp_packet_t* pkt;
@@ -307,7 +310,7 @@ struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
 		threshold = (q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp);
 		threshold = (int32_t)threshold < 0 ? (uint32_t)(-(int32_t)threshold) : threshold; // fix h.264 b-frames pts order
 		threshold = (uint32_t)(((uint64_t)threshold) * 1000 / (uint64_t)q->frequency);
-		if (threshold < (uint32_t)q->threshold)
+		if (threshold < (uint32_t)q->threshold && q->size + 5 < MIN(RTP_DROPOUT, MAX_PACKET) )
 			return NULL;
 
 		q->stats.lost += pkt->rtp.seq - q->first_seq;
