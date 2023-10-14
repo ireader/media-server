@@ -104,7 +104,7 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
         }
 
         p += n;
-        pkt->flags = (pkt->flags ^ MPEG_FLAG_IDR_FRAME) | (1 == pkt->vcl ? MPEG_FLAG_IDR_FRAME : 0); // update key frame flags
+        pkt->flags = (pkt->flags & (~MPEG_FLAG_IDR_FRAME)) | (1 == pkt->vcl ? MPEG_FLAG_IDR_FRAME : 0); // update key frame flags
         r = mpeg_packet_h264_h265_filter(pes->pn, pes->pid, pkt, data, p - data, handler, param);
         if (0 != r)
             return r;
