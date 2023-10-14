@@ -283,7 +283,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 	int formats[16];
 	const char* control;
 	const char* start, *stop;
-	const char* iceufrag, *icepwd;
+	const char* iceufrag, *icepwd, *setup;
 	const char* username, *session, *version;
 	const char* network, *addrtype, *address, *source;
 	struct rtsp_media_t* m;
@@ -319,6 +319,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 	// session ice-ufrag/ice-pwd
 	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
 	icepwd = sdp_attribute_find(sdp, "ice-pwd");
+	setup = sdp_attribute_find(sdp, "setup");
 
 	for (i = 0; i < sdp_media_count(sdp) && i < count; i++)
 	{
@@ -365,7 +366,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 
 		// TODO: plan-B streams
 		m->mode = sdp_media_mode(sdp, i);
-		m->setup = SDP_A_SETUP_NONE;
+		m->setup = setup ? sdp_option_setup_from(setup) : SDP_A_SETUP_NONE;
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);
