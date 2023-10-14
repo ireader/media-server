@@ -205,8 +205,8 @@ static int mov_read_default(struct mov_t* mov, const struct mov_box_t* box)
 }
 
 static struct mov_parse_t s_mov_parse_table[] = {
-	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_av1c }, // av1-isobmff
-	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
+	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_extra }, // av1-isobmff
+	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_extra }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
     { MOV_TAG('C', 'o', 'L', 'L'), MOV_STBL, mov_read_coll },
@@ -223,7 +223,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('g', 'm', 'i', 'n'), MOV_GMHD, mov_read_gmin }, // Apple QuickTime gmin
 	{ MOV_TAG('g', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // Apple QuickTime gmhd
 	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr }, // Apple QuickTime minf also has hdlr
-	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2014 hvcC
+	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_extra }, // ISO/IEC 14496-15:2014 hvcC
 	{ MOV_TAG('l', 'e', 'v', 'a'), MOV_MVEX, mov_read_leva },
 	{ MOV_TAG('m', 'd', 'a', 't'), MOV_ROOT, mov_read_mdat },
 	{ MOV_TAG('m', 'd', 'h', 'd'), MOV_MDIA, mov_read_mdhd },
@@ -265,6 +265,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
     { MOV_TAG('v', 'p', 'c', 'C'), MOV_NULL, mov_read_vpcc },
+	{ MOV_TAG('d', 'e', 'c', '3'), MOV_NULL, mov_read_extra }, // dolby EC-3
 
 	{ 0, 0, NULL } // last
 };

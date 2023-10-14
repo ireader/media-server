@@ -142,7 +142,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
 	else if (it->second == "G711")
 	{
 		static int64_t t_pts, t_dts;
-		printf("[G711] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u, text: %.*s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - t_pts), (int)(dts - t_dts), (unsigned int)bytes, (int)bytes-2, (const char*)buffer+2);
+		printf("[G711] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - t_pts), (int)(dts - t_dts), (unsigned int)bytes);
 		t_pts = pts;
 		t_dts = dts;
 	}

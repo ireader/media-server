@@ -35,6 +35,8 @@ static struct mov_object_tag s_tags[] = {
     { MOV_OBJECT_DTS,		MOV_DTS },
     { MOV_OBJECT_VC1,		MOV_VC1 },
     { MOV_OBJECT_DIRAC,		MOV_DIRAC },
+
+	{ MOV_OBJECT_H265,		MOV_TAG('d', 'v', 'h', '1') }, // Dolby Vision HEVC(H.265) dvhe
 };
 
 uint32_t mov_object_to_tag(uint8_t object)

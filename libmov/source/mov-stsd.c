@@ -177,7 +177,7 @@ static int mov_read_video(struct mov_t* mov, struct mov_sample_entry_t* entry)
 }
 
 /*
-class PixelAspectRatioBox extends Box(‘pasp?{
+class PixelAspectRatioBox extends Box(pasp){
 	unsigned int(32) hSpacing;
 	unsigned int(32) vSpacing;
 }
