@@ -386,25 +386,54 @@ int ps_demuxer_input(struct ps_demuxer_t* ps, const uint8_t* data, size_t bytes)
             break;
 
         case PS_DEMUXER_STATE_DATA:
-            assert(0 == ps->buffer.len);
-
             assert(ps->pes && ps->pes_length <= ps->pes->len);
-            if (bytes - i >= ps->pes->len - ps->pes_length)
+
+            // cache
+            if (ps->buffer.len > 0)
             {
-                r = ps_demuxer_packet(ps, data + i, ps->pes->len - ps->pes_length, &consume);
-                i += consume; // ps->pes->len - ps->pes_length; // fix: pack start code in video data
-                ps->pes_length = 0;
-                ps->start = 0; // clear start flag
-                ps->state = PS_DEMUXER_STATE_START; // next round
+                if (ps->buffer.len >= ps->pes->len - ps->pes_length)
+                {
+                    r = ps_demuxer_packet(ps, ps->buffer.ptr, ps->pes->len - ps->pes_length, &consume);
+                    memmove(ps->buffer.ptr, ps->buffer.ptr + consume, ps->buffer.len - consume);
+                    ps->buffer.len -= consume; // ps->pes->len - ps->pes_length; // fix: pack start code in video data
+                    ps->pes_length = 0;
+                    ps->start = 0; // clear start flag
+                    ps->state = PS_DEMUXER_STATE_START; // next round
+
+                    //next round
+                }
+                else
+                {
+                    // need more data
+                    r = ps_demuxer_packet(ps, ps->buffer.ptr, ps->buffer.len, &consume);
+                    ps->pes_length = consume == ps->buffer.len ? ps->pes_length + consume : 0;
+                    ps->start = consume == ps->buffer.len ? ps->start : 0;
+                    ps->state = consume == ps->buffer.len ? ps->state : PS_DEMUXER_STATE_START;
+                    ps->buffer.len = 0; // clear
+
+                    // fall through
+                }
             }
-            else
+
+            if (PS_DEMUXER_STATE_DATA == ps->state)
             {
-                // need more data
-                r = ps_demuxer_packet(ps, data + i, bytes - i, &consume);
-                ps->pes_length = consume == bytes - i ? ps->pes_length + (bytes - i) : 0;
-                ps->start = consume == bytes - i ? ps->start : 0;
-                ps->state = consume == bytes - i ? ps->state : PS_DEMUXER_STATE_START;
-                i += consume; //i = bytes; // fix: pack start code in video data                
+                if (bytes - i >= ps->pes->len - ps->pes_length)
+                {
+                    r = ps_demuxer_packet(ps, data + i, ps->pes->len - ps->pes_length, &consume);
+                    i += consume; // ps->pes->len - ps->pes_length; // fix: pack start code in video data
+                    ps->pes_length = 0;
+                    ps->start = 0; // clear start flag
+                    ps->state = PS_DEMUXER_STATE_START; // next round
+                }
+                else
+                {
+                    // need more data
+                    r = ps_demuxer_packet(ps, data + i, bytes - i, &consume);
+                    ps->pes_length = consume == bytes - i ? ps->pes_length + (bytes - i) : 0;
+                    ps->start = consume == bytes - i ? ps->start : 0;
+                    ps->state = consume == bytes - i ? ps->state : PS_DEMUXER_STATE_START;
+                    i += consume; //i = bytes; // fix: pack start code in video data                
+                }
             }
 
             break;
