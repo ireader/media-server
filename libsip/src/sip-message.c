@@ -519,6 +519,9 @@ static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, c
 	if (p < end) p += cstrcpy(&msg->u.c.method, p, end - p);
 	if (p < end) *p++ = ' ';
 	
+#if defined(SIP_REGISTER_WITH_USERINFO)
+	if (p < end) p += sip_request_uri_write(host, p, end);
+#else
 	if (0 != cstrcasecmp(&msg->u.c.method, SIP_METHOD_REGISTER))
 	{
 		// INVITE sip:bob@biloxi.com SIP/2.0
@@ -540,7 +543,8 @@ static char* sip_message_request_uri(const struct sip_message_t* msg, char* p, c
 
 		// REGISTER sip:registrar.biloxi.com SIP/2.0
 		if (p < end) p += sip_request_uri_write(&uri, p, end);
-	}
+	}	
+#endif
 
 	n = snprintf(p, end - p, " SIP/2.0");
 	if (n < 0 || n >= end - p)
