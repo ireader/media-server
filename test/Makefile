@@ -35,7 +35,7 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				../libdash/test ../libmov/test \
 				../libflv/test ../librtmp/aio ../librtmp/test \
 				../librtp/test ../librtsp/source/server/aio ../librtsp/test ../librtsp/test/media \
-				../libsip/test
+				../libsip/test ../libmkv/test
 				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
@@ -78,6 +78,7 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				../libflv/$(BUILD).$(PLATFORM)/libflv.a \
 				../libhls/$(BUILD).$(PLATFORM)/libhls.a \
 				../libmov/$(BUILD).$(PLATFORM)/libmov.a \
+				../libmkv/$(BUILD).$(PLATFORM)/libmkv.a \
 				../libmpeg/$(BUILD).$(PLATFORM)/libmpeg.a \
 				../librtmp/$(BUILD).$(PLATFORM)/librtmp.a \
 				../librtsp/$(BUILD).$(PLATFORM)/librtsp.a \
