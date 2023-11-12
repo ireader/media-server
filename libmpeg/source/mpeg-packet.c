@@ -94,8 +94,8 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
             // video data contain 00 00 01 BA
             // maybe previous packet data lost
             r = (p + n - pkt->data) - (pkt->size - *consume);
-            assert(r > 0 && r <= *consume);
-            *consume = (r <= 0 || r > *consume) ? *consume : r;
+            assert(r >= 0 && r <= *consume); // r == 0: previous packet lost, new start code find
+            *consume = (r < 0 || r > *consume) ? *consume : r;
             pkt->flags |= MPEG_FLAG_PACKET_CORRUPT;
             pkt->size = 0; // clear
             pkt->vcl = 0;

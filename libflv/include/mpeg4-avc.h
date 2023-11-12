@@ -41,8 +41,10 @@ struct mpeg4_avc_t
 };
 
 // load avc from AVCDecoderConfigurationRecord
+/// @return <=0-error, >0-output bytes
 int mpeg4_avc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_avc_t* avc);
 
+/// @return <=0-error, >0-output bytes
 int mpeg4_avc_decoder_configuration_record_save(const struct mpeg4_avc_t* avc, uint8_t* data, size_t bytes);
 
 // load avc from annex-b bitstream

@@ -133,6 +133,7 @@ extern "C" DEF_FUN_VOID(mpeg4_aac_test);
 extern "C" DEF_FUN_VOID(mpeg4_avc_test);
 extern "C" DEF_FUN_VOID(mpeg4_hevc_test);
 extern "C" DEF_FUN_VOID(mpeg4_vvc_test);
+extern "C" DEF_FUN_VOID(avswg_avs3_test);
 extern "C" DEF_FUN_VOID(mp3_header_test);
 extern "C" DEF_FUN_VOID(h264_mp4toannexb_test);
 extern "C" DEF_FUN_VOID(sdp_a_fmtp_test);
@@ -180,6 +181,12 @@ DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_av1, const char* obu, int width, int heig
 DEF_FUN_PCHAR_INT_PCHAR(mov_writer_audio, const char* audio, int type, const char* mp4);
 DEF_FUN_2PCHAR(fmp4_writer_test2, const char* mp4, const char* outmp4);
 DEF_FUN_PCHAR(mov_rtp_test, const char* mp4);
+
+DEF_FUN_PCHAR(mkv_reader_test, const char* mkv);
+DEF_FUN_INT_INT_PCHAR_PCHAR(mkv_writer_test, int w, int h, const char* inflv, const char* outmkv);
+DEF_FUN_2PCHAR(mkv_writer_test2, const char* mkv, const char* newmkv);
+DEF_FUN_2PCHAR(mkv_2_mp4_test, const char* mkv, const char* mp4);
+DEF_FUN_PCHAR_INT_PCHAR(mkv_writer_audio, const char* audio, int type, const char* mkv);
 
 DEF_FUN_PCHAR(mpeg_ts_dec_test, const char* file);
 DEF_FUN_PCHAR(mpeg_ts_test, const char* input);
@@ -239,6 +246,7 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("mpeg4_avc_test", argc, argv);
         RE_RUN_REG("mpeg4_hevc_test", argc, argv);
         RE_RUN_REG("mpeg4_vvc_test", argc, argv);
+        RE_RUN_REG("avswg_avs3_test", argc, argv);
         RE_RUN_REG("mp3_header_test", argc, argv);
         RE_RUN_REG("h264_mp4toannexb_test", argc, argv);
         RE_RUN_REG("sdp_a_fmtp_test", argc, argv);

@@ -72,7 +72,7 @@ else
 LIBPATHS +=
 endif
 
-LIBS = rt pthread dl aio ssl crypt
+LIBS = rt pthread dl aio #ssl crypt
 
 STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				../libflv/$(BUILD).$(PLATFORM)/libflv.a \
