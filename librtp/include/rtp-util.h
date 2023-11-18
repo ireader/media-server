@@ -22,7 +22,7 @@ static inline uint32_t rtp_read_uint32(const uint8_t* ptr)
 
 static inline uint64_t rtp_read_uint64(const uint8_t* ptr)
 {
-	return (((uint64_t)rtp_read_uint32(ptr)) << 32) | rtp_read_uint32(ptr + 8);
+	return (((uint64_t)rtp_read_uint32(ptr)) << 32) | rtp_read_uint32(ptr + 4);
 }
 
 static inline void rtp_write_uint16(uint8_t* ptr, uint16_t val)
@@ -42,7 +42,7 @@ static inline void rtp_write_uint32(uint8_t* ptr, uint32_t val)
 static inline void rtp_write_uint64(uint8_t* ptr, uint64_t val)
 {
 	rtp_write_uint32(ptr, (uint32_t)(val >> 32));
-	rtp_write_uint32(ptr + 8, (uint32_t)val);
+	rtp_write_uint32(ptr + 4, (uint32_t)val);
 }
 
 static inline void nbo_write_rtp_header(uint8_t *ptr, const rtp_header_t *header)
