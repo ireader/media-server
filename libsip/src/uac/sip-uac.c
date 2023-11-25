@@ -265,7 +265,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 
 	uri = sip_message_get_next_hop(t->req);
 	if (!uri || cstrcpy(&uri->host, remote, sizeof(remote)) >= sizeof(remote) - 1)
-		return -1;
+		remote[0] = 0; // fix uri->host too long
 
 	// rfc3263 4-Client Usage (p5)
 	// once a SIP server has successfully been contacted (success is defined below), 
