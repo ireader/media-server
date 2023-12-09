@@ -27,6 +27,10 @@ int sip_uac_subscribe_onreply(struct sip_uac_transaction_t* t, const struct sip_
 		//if (added)
 			r = t->onsubscribe(t->param, reply, t, subscribe, reply->u.s.code, &subscribe->evtsession);
 	}
+	else
+	{
+		r = t->onsubscribe(t->param, reply, t, NULL, reply->u.s.code, NULL);
+	}
 
 	if (subscribe)
 	{
