@@ -63,6 +63,7 @@ static inline int sip_register_check_to_domain(const struct sip_message_t* req)
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r, expires;
+	char location[128];
 	struct uri_t* uri;
 	struct uri_t* from;
 	const struct cstring_t* header;
@@ -143,7 +144,8 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.
 
-	r = t->handler->onregister ? t->handler->onregister(param, req, t, from ? from->userinfo : NULL, uri ? uri->host : NULL, expires) : 0;
+	snprintf(location, sizeof(location), "%s:%d", uri ? uri->host : "", uri ? (uri->port ? uri->port : SIP_PORT): 0);
+	r = t->handler->onregister ? t->handler->onregister(param, req, t, from ? from->userinfo : NULL, uri ? location : NULL, expires) : 0;
 	
 	//if (423/*Interval Too Brief*/ == r)
 	//{
@@ -153,7 +155,7 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	//// The Record-Route header field has no meaning in REGISTER requests or responses, 
 	//// and MUST be ignored if present.
 	//return sip_uas_transaction_noninvite_reply(t, r, NULL, 0);
-    free(uri);
-	free(from);
+	uri_free(uri);
+	uri_free(from);
 	return r;
 }
