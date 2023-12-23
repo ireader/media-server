@@ -1,6 +1,7 @@
 #include "mpeg4-aac.h"
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_t* aac);
@@ -186,6 +187,12 @@ int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* dat
 	data[4] = 0x3F; // 0-frameLengthType(2), 111111-latmBufferFullness(6)
 	data[5] = 0xC0; // 11-latmBufferFullness(2), 0-otherDataPresent, 0-crcCheckPresent
 	return 6;
+}
+
+int mpeg4_aac_codecs(const struct mpeg4_aac_t* aac, char* codecs, size_t bytes)
+{
+	// https://tools.ietf.org/html/rfc6381#section-3.4
+	return snprintf(codecs, bytes, "mp4a.40.%u", (unsigned int)aac->profile);
 }
 
 // Table 1.6 ¨C Levels for the High Quality Audio Profile

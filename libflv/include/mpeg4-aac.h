@@ -132,6 +132,9 @@ int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct m
 /// @return >=0-stream mux config length, <0-error
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
 
+/// @return >=0-length, <0-error
+int mpeg4_aac_codecs(const struct mpeg4_aac_t* aac, char* codecs, size_t bytes);
+
 /// get AAC profile level indication value
 int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac);
 
