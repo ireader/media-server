@@ -679,7 +679,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 {
 	assert(expires == 7200);
 	assert(0 == strcmp(user, "bob"));
-	assert(0 == strcmp(location, "192.0.2.4"));
+	assert(0 == strcmp(location, "192.0.2.4:5060"));
 	struct sip_message_test_t* test = (struct sip_message_test_t*)param;
     sip_uas_transaction_addref(t);
     test->st.reset(t, sip_uas_transaction_release);

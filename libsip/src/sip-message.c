@@ -47,7 +47,9 @@ struct sip_message_t* sip_message_create(int mode)
 	sip_contacts_init(&msg->contacts);
 	sip_params_init(&msg->headers);
 
+#if !defined(DEBUG) && !defined(_DEBUG)
 	sip_message_add_header(msg, "User-Agent", SIP_HEADER_USER_AGENT);
+#endif
 	atomic_increment32(&s_gc.message);
 	return msg;
 }
