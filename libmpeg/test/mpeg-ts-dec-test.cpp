@@ -38,15 +38,15 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 
 		fwrite(data, 1, bytes, afp);
 
-		int count = 0;
-		int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-		while (len > 7 && (size_t)len <= bytes)
-		{
-			count++;
-			bytes -= len;
-			data = (const uint8_t*)data + len;
-			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-		}
+		//int count = 0;
+		//int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		//while (len > 7 && (size_t)len <= bytes)
+		//{
+		//	count++;
+		//	bytes -= len;
+		//	data = (const uint8_t*)data + len;
+		//	len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		//}
 	}
 	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_H266 == avtype || PSI_STREAM_VIDEO_AVS3 == avtype)
 	{

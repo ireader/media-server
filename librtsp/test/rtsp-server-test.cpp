@@ -575,7 +575,7 @@ extern "C" void rtsp_example()
 		u_short port = 0;
 		socket_setnonblock(tcp, 0); // block io
 		socket_addr_to((const sockaddr*)&addr, len, buffer, &port);
-		struct rtsp_server_t* rtsp = rtsp_server_create(buffer, port, &handler, NULL, &tcp); // reuse-able, don't need create in every link
+		struct rtsp_server_t* rtsp = rtsp_server_create(buffer, port, &handler, NULL, (void*)(intptr_t)tcp); // reuse-able, don't need create in every link
 
 		while (1)
 		{

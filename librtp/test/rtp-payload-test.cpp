@@ -1,10 +1,13 @@
 #include "rtp-payload.h"
 #include "rtp-profile.h"
 #include "rtcp-header.h"
+#include "mpeg-ps.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define strcasecmp _stricmp
@@ -22,6 +25,7 @@ struct rtp_payload_test_t
 
 	void* encoder;
 	void* decoder;
+	ps_demuxer_t* ps;
 
 	size_t size;
 	uint8_t packet[64 * 1024];
@@ -46,6 +50,12 @@ static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_
 	size[1] = (uint8_t)(uint32_t)bytes;
 	fwrite(size, 1, sizeof(size), ctx->frtp2);
 	fwrite(packet, 1, bytes, ctx->frtp2);
+	return 0;
+}
+
+static int mpeg_ps_demuxer_onpacket(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+	printf("[%d] codec: %d, pts: %" PRId64 ", dts: %" PRId64 ", bytes: %d, flags: 0x%x\n", stream, codecid, pts, dts, (int)bytes, flags);
 	return 0;
 }
 
@@ -85,6 +95,12 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 		memcpy(buffer, av1_temporal_delimiter, sizeof(av1_temporal_delimiter));
 		size += sizeof(av1_temporal_delimiter);
 	}
+	else if (0 == strcmp("PS", ctx->encoding))
+	{
+		if(!ctx->ps)
+			ctx->ps = ps_demuxer_create(mpeg_ps_demuxer_onpacket, ctx);
+		ps_demuxer_input(ctx->ps, (const uint8_t*)packet, bytes);
+	}
 
 	memcpy(buffer + size, packet, bytes);
 	size += bytes;
@@ -99,6 +115,7 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile, const char* sourcefile)
 {
 	struct rtp_payload_test_t ctx;
+	memset(&ctx, 0, sizeof(ctx));
 	ctx.payload = payload;
 	ctx.encoding = encoding;
 

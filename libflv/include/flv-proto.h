@@ -98,7 +98,7 @@ enum
 #define FLV_VIDEO_FOURCC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
 #define FLV_VIDEO_FOURCC_AV1    FLV_VIDEO_FOURCC('a', 'v', '0', '1')
-#define FLV_VIDEO_FOURCC_VP9    FLV_VIDEO_FOURCC('v', '9', '0', '9')
+#define FLV_VIDEO_FOURCC_VP9    FLV_VIDEO_FOURCC('v', 'p', '0', '9')
 #define FLV_VIDEO_FOURCC_HEVC	FLV_VIDEO_FOURCC('h', 'v', 'c', '1')
 #define FLV_VIDEO_FOURCC_VVC	FLV_VIDEO_FOURCC('v', 'v', 'c', '1')
 
