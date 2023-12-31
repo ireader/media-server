@@ -78,8 +78,10 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
     if (track->sample_count > 0)
     {
         track->tfhd.flags |= MOV_TFHD_FLAG_DEFAULT_DURATION | MOV_TFHD_FLAG_DEFAULT_SIZE;
-        track->tfhd.default_sample_duration = track->sample_count > 1 ? (uint32_t)(track->samples[1].dts - track->samples[0].dts) : (uint32_t)track->turn_last_duration;
-        track->tfhd.default_sample_size = track->samples[0].bytes;
+        track->tfhd.default_sample_duration = track->sample_count > 1 ? 
+			(uint32_t)(mov_sample_t_at(&mov->blocks, track->track_id, 1)->dts - mov_sample_t_at(&mov->blocks, track->track_id, 0)->dts) : 
+			(uint32_t)track->turn_last_duration;
+        track->tfhd.default_sample_size = mov_sample_t_at(&mov->blocks, track->track_id, 0)->bytes;
     }
     else
     {
@@ -95,7 +97,8 @@ static size_t fmp4_write_traf(struct mov_t* mov, uint32_t moof)
 
 	for (start = 0, i = 1; i < track->sample_count; i++)
 	{
-        if (track->samples[i - 1].offset + track->samples[i - 1].bytes != track->samples[i].offset)
+        if (mov_sample_t_at(&mov->blocks, track->track_id, i - 1)->offset + mov_sample_t_at(&mov->blocks, track->track_id, i - 1)->bytes 
+			!= mov_sample_t_at(&mov->blocks, track->track_id, i)->offset)
         {
             size += mov_write_trun(mov, start, i-start, moof);
             start = i;
@@ -130,8 +133,8 @@ static size_t fmp4_write_moof(struct mov_t* mov, uint32_t fragment, uint32_t moo
 		// 2017/10/17 Dale Curtis SHA-1: a5fd8aa45b11c10613e6e576033a6b5a16b9cbb9 (libavformat/mov.c)
 		for (j = 0; j < mov->track->sample_count; j++)
 		{
-			mov->track->samples[j].offset = n;
-			n += mov->track->samples[j].bytes;
+			mov_sample_t_at(&mov->blocks, mov->track->track_id, j)->offset = n;
+			n += mov_sample_t_at(&mov->blocks, mov->track->track_id, j)->bytes;
 		}
 
 		if (mov->track->sample_count > 0)
@@ -272,7 +275,7 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 	{
 		mov->track = mov->tracks + i;
 		if (mov->track->sample_count > 0 && 0 == (mov->flags & MOV_FLAG_SEGMENT))
-			fmp4_add_fragment_entry(mov->track, mov->track->samples[0].dts, mov->moof_offset);
+			fmp4_add_fragment_entry(mov->track, mov_sample_t_at(&mov->blocks, mov->track->track_id, 0)->dts, mov->moof_offset);
 
 		// hack: write sidx referenced_size
 		if (mov->flags & MOV_FLAG_SEGMENT)
@@ -301,11 +304,13 @@ static int fmp4_write_fragment(struct fmp4_writer_t* writer)
 		for (i = 0; i < mov->track_count; i++)
 		{
 			mov->track = mov->tracks + i;
-			while (mov->track->offset < mov->track->sample_count && n == mov->track->samples[mov->track->offset].offset)
+			while (mov->track->offset < mov->track->sample_count && n == mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->offset)->offset)
             {
-                mov_buffer_write(&mov->io, mov->track->samples[mov->track->offset].data, mov->track->samples[mov->track->offset].bytes);
-                free(mov->track->samples[mov->track->offset].data); // free av packet memory
-                n += mov->track->samples[mov->track->offset].bytes;
+				
+                mov_buffer_write(&mov->io, mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->offset)->data,
+					 mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->offset)->bytes);
+                free(mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->offset)->data); // free av packet memory
+                n += mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->offset)->bytes;
                 ++mov->track->offset;
             }
 		}
@@ -354,6 +359,8 @@ static int fmp4_writer_init(struct mov_t* mov)
 
 struct fmp4_writer_t* fmp4_writer_create(const struct mov_buffer_t *buffer, void* param, int flags)
 {
+	// todo : adaptor mov_blocks_t
+
 	struct mov_t* mov;
 	struct fmp4_writer_t* writer;
 	writer = (struct fmp4_writer_t*)calloc(1, sizeof(struct fmp4_writer_t));
@@ -395,7 +402,7 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 	// mov_buffer_error(&mov->io);
 
 	for (i = 0; i < mov->track_count; i++)
-        mov_free_track(mov->tracks + i);
+        mov_free_track(mov, mov->tracks + i);
 	if (mov->tracks)
 		free(mov->tracks);
 	free(writer);
@@ -426,16 +433,17 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 
 	if (track->sample_count + 1 >= track->sample_offset)
 	{
-		void* ptr = realloc(track->samples, sizeof(struct mov_sample_t) * (track->sample_offset + 1024));
-		if (NULL == ptr) return -ENOMEM;
-		track->samples = (struct mov_sample_t*)ptr;
+		if (mov_blocks_set_capacity(&writer->mov.blocks, idx, track->sample_offset + 1024) < 0)
+		{
+			return -ENOMEM;
+		}
 		track->sample_offset += 1024;
 	}
 
 	pts = pts * track->mdhd.timescale / 1000;
 	dts = dts * track->mdhd.timescale / 1000;
 
-	sample = &track->samples[track->sample_count];
+	sample = mov_sample_t_at(&writer->mov.blocks, idx, track->sample_count);
 	sample->sample_description_index = 1;
 	sample->bytes = (uint32_t)bytes;
 	sample->flags = flags;

@@ -62,7 +62,7 @@ size_t mov_write_stsc(const struct mov_t* mov)
 
 	for (i = 0, entry = 0; i < track->sample_count; i++)
 	{
-		sample = &track->samples[i];
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, i);;
 		if (0 == sample->first_chunk || 
 			(chunk && chunk->samples_per_chunk == sample->samples_per_chunk 
 				&& chunk->sample_description_index == sample->sample_description_index))

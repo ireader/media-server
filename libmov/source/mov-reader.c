@@ -33,8 +33,8 @@ struct mov_parse_t
 	int(*parse)(struct mov_t* mov, const struct mov_box_t* box);
 };
 
-static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp);
-static int mov_sample_seek(struct mov_track_t* track, int64_t timestamp);
+static int mov_stss_seek(struct mov_t* mov, struct mov_track_t* track, int64_t *timestamp);
+static int mov_sample_seek(struct mov_t* mov, struct mov_track_t* track, int64_t timestamp);
 
 // 8.1.1 Media Data Box (p28)
 static int mov_read_mdat(struct mov_t* mov, const struct mov_box_t* box)
@@ -58,7 +58,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 //    return NULL;
 //}
 
-static int mov_index_build(struct mov_track_t* track)
+static int mov_index_build(struct mov_t* mov, struct mov_track_t* track)
 {
 	void* p;
 	uint32_t i, j;
@@ -69,7 +69,7 @@ static int mov_index_build(struct mov_track_t* track)
 
 	for (i = 0; i < track->sample_count; i++)
 	{
-		if (track->samples[i].flags & MOV_AV_FLAG_KEYFREAME)
+		if (mov_sample_t_at(&mov->blocks, track->track_id, i)->flags & MOV_AV_FLAG_KEYFREAME)
 			++stbl->stss_count;
 	}
 
@@ -79,7 +79,7 @@ static int mov_index_build(struct mov_track_t* track)
 
 	for (j = i = 0; i < track->sample_count && j < stbl->stss_count; i++)
 	{
-		if (track->samples[i].flags & MOV_AV_FLAG_KEYFREAME)
+		if (mov_sample_t_at(&mov->blocks, track->track_id, i)->flags & MOV_AV_FLAG_KEYFREAME)
 			stbl->stss[j++] = i + 1; // uint32_t sample_number, start from 1
 	}
 	assert(j == stbl->stss_count);
@@ -102,13 +102,13 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
         mov->track->tfdt_dts = 0;
         if (mov->track->sample_count > 0)
         {
-            mov_apply_stco(mov->track);
-            mov_apply_elst(mov->track);
-            mov_apply_stts(mov->track);
-            mov_apply_ctts(mov->track);
-			mov_apply_stss(mov->track);
-
-            mov->track->tfdt_dts = mov->track->samples[mov->track->sample_count - 1].dts;
+            mov_apply_stco(mov, mov->track);
+            mov_apply_elst(mov, mov->track);
+            mov_apply_stts(mov, mov->track);
+            mov_apply_ctts(mov, mov->track);
+			mov_apply_stss(mov, mov->track);
+			
+            mov->track->tfdt_dts = mov_sample_t_at(&mov->blocks, mov->track->track_id, mov->track->sample_count - 1)->dts;
         }
 	}
 
@@ -376,12 +376,12 @@ static int mov_reader_init(struct mov_reader_t* reader)
 	for (i = 0; i < mov->track_count; i++)
 	{
 		track = mov->tracks + i;
-		mov_index_build(track);
+		mov_index_build(mov, track);
 		//track->sample_offset = 0; // reset
 		
 		// fragment mp4
 		if (0 == track->mdhd.duration && track->sample_count > 0)
-			track->mdhd.duration = track->samples[track->sample_count - 1].dts - track->samples[0].dts;
+			track->mdhd.duration = mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1)->dts - mov_sample_t_at(&mov->blocks, track->track_id, 0)->dts;
 		if (0 == track->tkhd.duration)
 			track->tkhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
 		if (track->tkhd.duration > mov->mvhd.duration)
@@ -424,7 +424,7 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 {
 	int i;
 	for (i = 0; i < reader->mov.track_count; i++)
-		mov_free_track(reader->mov.tracks + i);
+		mov_free_track(&reader->mov, reader->mov.tracks + i);
 	if (reader->mov.tracks)
 		free(reader->mov.tracks);
 	free(reader);
@@ -436,6 +436,7 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 	int64_t dts, best_dts = 0;
 	struct mov_track_t* track = NULL;
 	struct mov_track_t* track2;
+	struct mov_t*       mov = &reader->mov;
 
 	for (i = 0; i < reader->mov.track_count; i++)
 	{
@@ -444,10 +445,10 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 		if (track2->sample_offset >= track2->sample_count)
 			continue;
 
-		dts = track2->samples[track2->sample_offset].dts * 1000 / track2->mdhd.timescale;
+		dts = mov_sample_t_at(&mov->blocks, track2->track_id, track2->sample_offset)->dts * 1000 / track2->mdhd.timescale;
 		//if (NULL == track || dts < best_dts)
-		//if (NULL == track || track->samples[track->sample_offset].offset > track2->samples[track2->sample_offset].offset)
-		if (NULL == track || (dts < best_dts && best_dts - dts > AV_TRACK_TIMEBASE) || track2->samples[track2->sample_offset].offset < track->samples[track->sample_offset].offset)
+		//if (NULL == track || mov_sample_t_at(&mov->blocks, track->track_id, track->sample_offset)->offset > mov_sample_t_at(&mov->blocks, track2->track_id, track2->sample_offset)->offset)
+		if (NULL == track || (dts < best_dts && best_dts - dts > AV_TRACK_TIMEBASE) || mov_sample_t_at(&mov->blocks, track2->track_id, track2->sample_offset)->offset < mov_sample_t_at(&mov->blocks, track->track_id, track->sample_offset)->offset)
 		{
 			track = track2;
 			best_dts = dts;
@@ -462,6 +463,7 @@ int mov_reader_read2(struct mov_reader_t* reader, mov_reader_onread2 onread, voi
 	void* ptr;
 	struct mov_track_t* track;
 	struct mov_sample_t* sample;
+	struct mov_t* mov = &reader->mov;
 
 FMP4_NEXT_FRAGMENT:
 	track = mov_reader_next(reader);
@@ -476,7 +478,7 @@ FMP4_NEXT_FRAGMENT:
 	}
 
 	assert(track->sample_offset < track->sample_count);
-	sample = &track->samples[track->sample_offset];
+	sample = mov_sample_t_at(&mov->blocks, track->track_id, track->sample_offset);
 	assert(sample->sample_description_index > 0);
 	ptr = onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	if(!ptr)
@@ -539,7 +541,7 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 		track = &reader->mov.tracks[i];
 		if (MOV_VIDEO == track->handler_type && track->stbl.stss_count > 0)
 		{
-			if (0 != mov_stss_seek(track, timestamp))
+			if (0 != mov_stss_seek(&reader->mov, track, timestamp))
 				return -1;
 		}
 	}
@@ -551,7 +553,7 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 		if (MOV_VIDEO == track->handler_type && track->stbl.stss_count > 0)
 			continue; // seek done
 
-		mov_sample_seek(track, *timestamp);
+		mov_sample_seek(&reader->mov, track, *timestamp);
 	}
 
 	return 0;
@@ -601,7 +603,7 @@ uint64_t mov_reader_getduration(struct mov_reader_t* reader)
 
 #define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 
-static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
+static int mov_stss_seek(struct mov_t* mov, struct mov_track_t* track, int64_t *timestamp)
 {
 	int64_t clock;
 	size_t start, end, mid;
@@ -625,7 +627,7 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 			return -1;
 		}
 		idx -= 1;
-		sample = &track->samples[idx];
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, idx);
 		
 		if (sample->dts > clock)
 			end = mid;
@@ -637,17 +639,17 @@ static int mov_stss_seek(struct mov_track_t* track, int64_t *timestamp)
 
 	prev = track->stbl.stss[mid > 0 ? mid - 1 : mid] - 1;
 	next = track->stbl.stss[mid + 1 < track->stbl.stss_count ? mid + 1 : mid] - 1;
-	if (DIFF(track->samples[prev].dts, clock) < DIFF(track->samples[idx].dts, clock))
+	
+	if (DIFF(mov_sample_t_at(&mov->blocks, track->track_id, prev)->dts, clock) < DIFF(mov_sample_t_at(&mov->blocks, track->track_id, idx)->dts, clock))
 		idx = prev;
-	if (DIFF(track->samples[next].dts, clock) < DIFF(track->samples[idx].dts, clock))
+	if (DIFF(mov_sample_t_at(&mov->blocks, track->track_id, next)->dts, clock) < DIFF(mov_sample_t_at(&mov->blocks, track->track_id, idx)->dts, clock))
 		idx = next;
-
-	*timestamp = track->samples[idx].dts * 1000 / track->mdhd.timescale;
+	*timestamp = mov_sample_t_at(&mov->blocks, track->track_id, idx)->dts * 1000 / track->mdhd.timescale;
 	track->sample_offset = idx;
 	return 0;
 }
 
-static int mov_sample_seek(struct mov_track_t* track, int64_t timestamp)
+static int mov_sample_seek(struct mov_t* mov, struct mov_track_t* track, int64_t timestamp)
 {
 	size_t prev, next;
 	size_t start, end, mid;
@@ -664,7 +666,7 @@ static int mov_sample_seek(struct mov_track_t* track, int64_t timestamp)
 	while (start < end)
 	{
 		mid = (start + end) / 2;
-		sample = track->samples + mid;
+		sample = mov_sample_t_at(&mov->blocks, track->track_id, mid);
 		
 		if (sample->dts > timestamp)
 			end = mid;
@@ -676,9 +678,9 @@ static int mov_sample_seek(struct mov_track_t* track, int64_t timestamp)
 
 	prev = mid > 0 ? mid - 1 : mid;
 	next = mid + 1 < track->sample_count ? mid + 1 : mid;
-	if (DIFF(track->samples[prev].dts, timestamp) < DIFF(track->samples[mid].dts, timestamp))
+	if (DIFF(mov_sample_t_at(&mov->blocks, track->track_id, prev)->dts, timestamp) < DIFF(mov_sample_t_at(&mov->blocks, track->track_id, mid)->dts, timestamp))
 		mid = prev;
-	if (DIFF(track->samples[next].dts, timestamp) < DIFF(track->samples[mid].dts, timestamp))
+	if (DIFF(mov_sample_t_at(&mov->blocks, track->track_id, next)->dts, timestamp) < DIFF(mov_sample_t_at(&mov->blocks, track->track_id, mid)->dts, timestamp))
 		mid = next;
 
 	track->sample_offset = mid;

@@ -70,7 +70,7 @@ static int mov_writer_init(struct mov_t* mov)
 	return 0;
 }
 
-struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* param, int flags)
+mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, const struct mov_blocks_t* blocks, void* buffer_param, void* blocks_param, int flags)
 {
 	struct mov_t* mov;
 	struct mov_writer_t* writer;
@@ -80,8 +80,10 @@ struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* 
 
 	mov = &writer->mov;
 	mov->flags = flags;
-	mov->io.param = param;
+	mov->io.param = buffer_param;
 	memcpy(&mov->io.io, buffer, sizeof(mov->io.io));
+	mov->blocks.param = blocks_param;
+	memcpy(&mov->blocks.blocks, blocks, sizeof(mov->blocks.blocks));
 
 	mov->mvhd.next_track_ID = 1;
 	mov->mvhd.creation_time = time(NULL) + 0x7C25B080; // 1970 based -> 1904 based;
@@ -106,7 +108,7 @@ struct mov_writer_t* mov_writer_create(const struct mov_buffer_t* buffer, void* 
 static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t bytes);
 void mov_writer_destroy(struct mov_writer_t* writer)
 {
-	int i;
+	uint32_t i;
 	uint64_t offset, offset2;
 	struct mov_t* mov;
 	struct mov_track_t* track;
@@ -136,11 +138,14 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 			continue;
 
 		// pts in ms
-		track->mdhd.duration = (track->samples[track->sample_count - 1].dts - track->samples[0].dts);
+		track->mdhd.duration = (mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1)->dts - mov_sample_t_at(&mov->blocks, i, 0)->dts);
+
 		if (track->sample_count > 1)
 		{
 			// duration += 3/4 * avg-duration + 1/4 * last-frame-duration
-			track->mdhd.duration += track->mdhd.duration * 3 / (track->sample_count - 1) / 4 + (track->samples[track->sample_count - 1].dts - track->samples[track->sample_count - 2].dts) / 4;
+			track->mdhd.duration += track->mdhd.duration * 3 / (track->sample_count - 1) / 4 
+			                        + (mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1)->dts 
+									- mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 2)->dts) / 4;
 		}
 		//track->mdhd.duration = track->mdhd.duration * track->mdhd.timescale / 1000;
 		track->tkhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
@@ -159,7 +164,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 		uint64_t co64 = 0;
 		for (i = 0; i < mov->track_count; i++)
 		{
-			co64 += mov_stco_size(&mov->tracks[i], offset2 - offset);
+			co64 += mov_stco_size(mov, &mov->tracks[i], offset2 - offset);
 		}
 
 		if (co64)
@@ -171,7 +176,7 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 				co64 = 0;
 				for (i = 0; i < mov->track_count; i++)
 				{
-					co64 += mov_stco_size(&mov->tracks[i], offset2 - offset + sz);
+					co64 += mov_stco_size(mov, &mov->tracks[i], offset2 - offset + sz);
 				}
 			} while (sz != co64);
 		}
@@ -190,10 +195,12 @@ void mov_writer_destroy(struct mov_writer_t* writer)
 
 	mov_write_tail(mov);
 	for (i = 0; i < mov->track_count; i++)
-        mov_free_track(mov->tracks + i);
+        mov_free_track(mov, mov->tracks + i);
 	if (mov->tracks)
 		free(mov->tracks);
 	free(writer);
+
+	mov_blocks_destroy(&mov->blocks, i);
 }
 
 static int mov_writer_move(struct mov_t* mov, uint64_t to, uint64_t from, size_t bytes)
@@ -254,16 +261,14 @@ int mov_writer_write(struct mov_writer_t* writer, int track, const void* data, s
 
 	if (mov->track->sample_count + 1 >= mov->track->sample_offset)
 	{
-		void* ptr = realloc(mov->track->samples, sizeof(struct mov_sample_t) * (mov->track->sample_offset + 1024));
-		if (NULL == ptr) return -ENOMEM;
-		mov->track->samples = ptr;
+		if (mov_blocks_set_capacity(&mov->blocks, track, mov->track->sample_offset + 1024) < 0) return -ENOMEM;
 		mov->track->sample_offset += 1024;
 	}
 
 	pts = pts * mov->track->mdhd.timescale / 1000;
 	dts = dts * mov->track->mdhd.timescale / 1000;
 
-	sample = &mov->track->samples[mov->track->sample_count++];
+	sample = (struct mov_sample_t*) mov_blocks_at(&mov->blocks, track, mov->track->sample_count++);
 	sample->sample_description_index = 1;
 	sample->bytes = (uint32_t)bytes;
 	sample->flags = flags;

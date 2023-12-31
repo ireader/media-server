@@ -8,13 +8,14 @@ static int mov_fragment_seek_get_duration(struct mov_t* mov)
 {
 	int i;
 	struct mov_track_t* track;
-	track = mov->track_count > 0 ? &mov->tracks[0] : NULL;
+	uint32_t track_id = 0;
+	track = mov->track_count > 0 ? &mov->tracks[track_id] : NULL;
 	if (track && track->frag_capacity < track->frag_count && track->mdhd.timescale)
 	{
 		mov_buffer_seek(&mov->io, track->frags[track->frag_count - 1].offset);
 		mov_reader_root(mov); // moof
 
-		track->mdhd.duration = track->samples[track->sample_count - 1].dts - track->samples[0].dts;
+		track->mdhd.duration = mov_sample_t_at(&mov->blocks, track_id, track->sample_count - 1)->dts - mov_sample_t_at(&mov->blocks, track_id, 0)->dts;
 		mov->mvhd.duration = track->mdhd.duration * mov->mvhd.timescale / track->mdhd.timescale;
 		
 		// clear samples and seek to the first moof

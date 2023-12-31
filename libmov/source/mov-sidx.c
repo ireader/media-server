@@ -44,8 +44,8 @@ size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset)
 
     if (track->sample_count > 0)
     {
-        earliest_presentation_time = track->samples[0].pts;
-        duration = (uint32_t)(track->samples[track->sample_count - 1].dts - track->samples[0].dts) + (uint32_t)track->turn_last_duration;
+        earliest_presentation_time = mov_sample_t_at(&mov->blocks, track->track_id, 0)->pts;
+        duration = (uint32_t)(mov_sample_t_at(&mov->blocks, track->track_id, track->sample_count - 1)->dts - mov_sample_t_at(&mov->blocks, track->track_id, 0)->dts) + (uint32_t)track->turn_last_duration;
     }
     else
     {
