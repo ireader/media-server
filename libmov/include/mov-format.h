@@ -29,6 +29,7 @@
 #define MOV_OBJECT_VP9      0xB1 // VP9 Video
 #define MOV_OBJECT_FLAC     0xC1 // nonstandard from FFMPEG
 #define MOV_OBJECT_VP8      0xC2 // nonstandard
+#define MOV_OBJECT_CHAPTER	0xC3 // chapter https://developer.apple.com/documentation/quicktime-file-format/base_media_information_header_atom
 #define MOV_OBJECT_H266		0xFC // ITU-T Recommendation H.266
 #define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
 #define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw

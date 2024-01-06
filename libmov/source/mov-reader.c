@@ -208,6 +208,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_extra }, // av1-isobmff
 	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_extra }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
+	{ MOV_TAG('c', 'h', 'p', 'l'), MOV_STBL, mov_read_chpl }, // chapter title
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
     { MOV_TAG('C', 'o', 'L', 'L'), MOV_STBL, mov_read_coll },
 	{ MOV_TAG('c', 't', 't', 's'), MOV_STBL, mov_read_ctts },

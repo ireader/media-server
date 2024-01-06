@@ -26,6 +26,7 @@ static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_TEXT,		MOV_TAG('t', 'x', '3', 'g') },
 	{ MOV_OBJECT_TEXT,		MOV_TAG('t', 'e', 'x', 't') },
 	{ MOV_OBJECT_TEXT,		MOV_TAG('c', '6', '0', '8') },
+	{ MOV_OBJECT_CHAPTER,	MOV_TAG('t', 'e', 'x', 't') },
     { MOV_OBJECT_OPUS,		MOV_OPUS },
     { MOV_OBJECT_VP8,		MOV_VP8 },
     { MOV_OBJECT_VP9,		MOV_VP9 },

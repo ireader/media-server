@@ -196,6 +196,8 @@ static int mov_read_hint_sample_entry(struct mov_t* mov, struct mov_sample_entry
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
+	entry->object_type_indication = mov_tag_to_object(box.type);
+	entry->stream_type = MP4_STREAM_VISUAL;
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
@@ -205,6 +207,8 @@ static int mov_read_meta_sample_entry(struct mov_t* mov, struct mov_sample_entry
 	struct mov_box_t box;
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	mov_buffer_skip(&mov->io, box.size - 16);
+	entry->object_type_indication = mov_tag_to_object(box.type);
+	entry->stream_type = MP4_STREAM_VISUAL;
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
@@ -226,7 +230,7 @@ static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_sample_entry
 	mov_read_sample_entry(mov, &box, &entry->data_reference_index);
 	if (MOV_TEXT == box.type)
 	{
-		// https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap3/qtff3.html#//apple_ref/doc/uid/TP40000939-CH205-69835
+		// https://developer.apple.com/documentation/quicktime-file-format/text_sample_description
 		//mov_buffer_r32(&mov->io); /* display flags */
 		//mov_buffer_r32(&mov->io); /* text justification */
 		//mov_buffer_r16(&mov->io); /* background color: 48-bit RGB color */
@@ -249,6 +253,8 @@ static int mov_read_text_sample_entry(struct mov_t* mov, struct mov_sample_entry
 		mov_buffer_skip(&mov->io, box.size - 16);
 	}
 
+	entry->object_type_indication = mov_tag_to_object(box.type);
+	entry->stream_type = MP4_STREAM_VISUAL;
 	mov->track->tag = box.type;
 	return mov_buffer_error(&mov->io);
 }
@@ -381,6 +387,18 @@ int mov_read_stsd(struct mov_t* mov, const struct mov_box_t* box)
 //	return size;
 //}
 
+static size_t mov_write_btrt(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
+{
+	mov_buffer_w32(&mov->io, 20); /* size */
+	mov_buffer_write(&mov->io, "btrt", 4);
+	mov_buffer_w32(&mov->io, entry->u.bitrate.bufferSizeDB);
+	mov_buffer_w32(&mov->io, 0x00000014);
+	mov_buffer_w32(&mov->io, 0x00000014);
+	//mov_buffer_w32(&mov->io, entry->u.bitrate.maxBitrate);
+	//mov_buffer_w32(&mov->io, entry->u.bitrate.avgBitrate);
+	return 20;
+}
+
 static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_entry_t* entry)
 {
 	size_t size;
@@ -437,6 +455,7 @@ static size_t mov_write_video(const struct mov_t* mov, const struct mov_sample_e
 	else if (MOV_OBJECT_VP8 == entry->object_type_indication || MOV_OBJECT_VP9 == entry->object_type_indication)
 		size += mov_write_vpcc(mov);
 
+	//size += mov_write_btrt(mov, entry);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -479,6 +498,7 @@ static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_e
 	else if(MOV_OBJECT_OPUS == entry->object_type_indication)
 		size += mov_write_dops(mov);
 
+	//size += mov_write_btrt(mov, entry);
 	mov_write_size(mov, offset, size); /* update size */
 	return size;
 }
@@ -488,7 +508,7 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 	int size;
 	uint64_t offset;
 
-	size = 8 /* Box */ + 8 /* SampleEntry */ + entry->extra_data_size;
+	size = 8 /* Box */ + 8 /* SampleEntry */;
 
 	offset = mov_buffer_tell(&mov->io);
 	mov_buffer_w32(&mov->io, 0); /* size */
@@ -506,6 +526,8 @@ static int mov_write_subtitle(const struct mov_t* mov, const struct mov_sample_e
 	{
 		mov_buffer_write(&mov->io, entry->extra_data, entry->extra_data_size);
 		size += entry->extra_data_size;
+
+		size += mov_write_btrt(mov, entry);
 	}
 
 	mov_write_size(mov, offset, size); /* update size */

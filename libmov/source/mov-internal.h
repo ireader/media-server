@@ -177,6 +177,8 @@ struct mov_track_t
 
 	struct mov_elst_t* elst;
 	size_t elst_count;
+
+	uint32_t chpl_track; // MOV_CHAPTER track
 	
 	struct mov_sample_t* samples;
 	uint32_t sample_count;
@@ -254,6 +256,7 @@ int mov_read_text(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_coll(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_udta(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_chpl(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -263,6 +266,7 @@ size_t mov_write_hdlr(const struct mov_t* mov);
 size_t mov_write_vmhd(const struct mov_t* mov);
 size_t mov_write_smhd(const struct mov_t* mov);
 size_t mov_write_nmhd(const struct mov_t* mov);
+size_t mov_write_gmhd(const struct mov_t* mov);
 size_t mov_write_sthd(const struct mov_t* mov);
 size_t mov_write_dinf(const struct mov_t* mov);
 size_t mov_write_dref(const struct mov_t* mov);
@@ -291,6 +295,7 @@ size_t mov_write_mehd(const struct mov_t* mov);
 size_t mov_write_sidx(const struct mov_t* mov, uint64_t offset);
 size_t mov_write_mfhd(const struct mov_t* mov, uint32_t fragment);
 size_t mov_write_edts(const struct mov_t* mov);
+size_t mov_write_tref(const struct mov_t* mov);
 size_t mov_write_stbl(const struct mov_t* mov);
 size_t mov_write_minf(const struct mov_t* mov);
 size_t mov_write_mdia(const struct mov_t* mov);

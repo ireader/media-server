@@ -176,6 +176,28 @@ int mov_add_video(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint
 
 int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, uint32_t timescale, uint8_t object, const void* extra_data, size_t extra_data_size)
 {
+    static const uint8_t chapter_extra_data[] = {
+        // TextSampleEntry
+        0x00, 0x00, 0x00, 0x01, // displayFlags
+        0x00, 0x00,             // horizontal + vertical justification
+        0x00, 0x00, 0x00, 0x00, // bgColourRed/Green/Blue/Alpha
+        // BoxRecord
+        0x00, 0x00, 0x00, 0x00, // defTextBoxTop/Left
+        0x00, 0x00, 0x00, 0x00, // defTextBoxBottom/Right
+        // StyleRecord
+        0x00, 0x00, 0x00, 0x00, // startChar + endChar
+        0x00, 0x01,             // fontID
+        0x00, 0x00,             // fontStyleFlags + fontSize
+        0x00, 0x00, 0x00, 0x00, // fgColourRed/Green/Blue/Alpha
+        // FontTableBox
+        0x00, 0x00, 0x00, 0x0D, // box size
+        'f', 't', 'a', 'b',     // box atom name
+        0x00, 0x01,             // entry count
+        // FontRecord
+        0x00, 0x01,             // font ID
+        0x00,                   // font name length
+    };
+
     struct mov_sample_entry_t* subtitle;
 
     subtitle = &track->stsd.entries[0];
@@ -185,12 +207,12 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
 
     assert(0 != mov_object_to_tag(object));
     track->tag = mov_object_to_tag(object);
-    track->handler_type = MOV_SBTL;
+    track->handler_type = track->tag == MOV_TAG('t', 'e', 'x', 't') ? MOV_TEXT : MOV_SBTL;
     track->handler_descr = "SubtitleHandler";
     track->stsd.entry_count = 1;
     track->offset = 0;
 
-    track->tkhd.flags = MOV_TKHD_FLAG_TRACK_ENABLE | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
+    track->tkhd.flags = (track->tag == MOV_TAG('t', 'e', 'x', 't') ? 0 : MOV_TKHD_FLAG_TRACK_ENABLE) | MOV_TKHD_FLAG_TRACK_IN_MOVIE;
     track->tkhd.track_ID = mvhd->next_track_ID;
     track->tkhd.creation_time = mvhd->creation_time;
     track->tkhd.modification_time = mvhd->modification_time;
@@ -204,6 +226,12 @@ int mov_add_subtitle(struct mov_track_t* track, const struct mov_mvhd_t* mvhd, u
     track->mdhd.timescale = timescale;
     track->mdhd.language = 0x55c4;
     track->mdhd.duration = 0; // placeholder
+
+    if (object == MOV_OBJECT_CHAPTER && 0 == extra_data_size)
+    {
+        extra_data = chapter_extra_data;
+        extra_data_size = sizeof(chapter_extra_data);
+    }
 
 	subtitle->extra_data = malloc(extra_data_size + 1);
     if (NULL == subtitle->extra_data)
@@ -268,6 +296,10 @@ size_t mov_write_minf(const struct mov_t* mov)
     {
         size += mov_write_smhd(mov);
     }
+    else if (MOV_TEXT == track->handler_type)
+    {
+        size += mov_write_gmhd(mov);
+    }
     else if (MOV_SUBT == track->handler_type || MOV_SBTL == track->handler_type)
     {
         size += mov_write_nmhd(mov);
@@ -312,8 +344,9 @@ size_t mov_write_trak(const struct mov_t* mov)
     mov_buffer_write(&mov->io, "trak", 4);
 
     size += mov_write_tkhd(mov);
-    //size += mov_write_tref(mov);
     size += mov_write_edts(mov);
+    if(mov->track->chpl_track != 0)
+        size += mov_write_tref(mov);
     size += mov_write_mdia(mov);
 
     mov_write_size(mov, offset, size); /* update size */
@@ -337,4 +370,16 @@ size_t mov_write_edts(const struct mov_t* mov)
 
     mov_write_size(mov, offset, size); /* update size */
     return size;
+}
+
+size_t mov_write_tref(const struct mov_t* mov)
+{
+    mov_buffer_w32(&mov->io, 20); /* size */
+    mov_buffer_write(&mov->io, "tref", 4);
+
+    mov_buffer_w32(&mov->io, 12); /* size */
+    mov_buffer_write(&mov->io, "chap", 4);
+    mov_buffer_w32(&mov->io, mov->track->chpl_track);
+
+    return 20;
 }
