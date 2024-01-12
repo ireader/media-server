@@ -1411,7 +1411,7 @@ int sdp_connection_get_address(struct sdp_t* sdp, char* ip, int bytes)
 		p = sdp->c.address;
 		while(*p && '/' != *p && bytes > 1)
 		{
-			*ip++ = *p;
+			*ip++ = *p++;
 			--bytes;
 		}
 
@@ -1615,7 +1615,7 @@ int sdp_media_get_connection_address(struct sdp_t* sdp, int media, char* ip, int
 		p = conn->address;
 		while(*p && '/' != *p && bytes > 1)
 		{
-			*ip++ = *p;
+			*ip++ = *p++;
 			--bytes;
 		}
 
