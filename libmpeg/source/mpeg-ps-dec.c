@@ -10,6 +10,7 @@
 #include "mpeg-util.h"
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 #include <errno.h>
 
 #define N_BUFFER_INIT   256
@@ -47,6 +48,7 @@ struct ps_demuxer_t
 
     struct ps_demuxer_notify_t notify;
     void* notify_param;
+    bool is_notifyed;
 };
 
 static void ps_demuxer_notify(struct ps_demuxer_t* ps);
@@ -248,7 +250,7 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         case PES_SID_PSM:
             n = ps->psm.stream_count;
             r = psm_read(&ps->psm, reader);
-            if (n != ps->psm.stream_count)
+            if (n != ps->psm.stream_count || !ps->is_notifyed)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
             break;
 
@@ -468,6 +470,8 @@ struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param
 
     ps->buffer.ptr = (uint8_t*)(ps + 1);
     ps->buffer.cap = N_BUFFER_INIT;
+
+    ps->is_notifyed = false;
 	return ps;
 }
 
@@ -506,6 +510,7 @@ static void ps_demuxer_notify(struct ps_demuxer_t* ps)
     if (!ps->notify.onstream)
         return;
 
+    ps->is_notifyed = true;
     for (i = 0; i < ps->psm.stream_count; i++)
     {
         pes = &ps->psm.streams[i];
