@@ -35,7 +35,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
     
     n = 0;
     memset(u, 0, sizeof(*u));
-    u->port = (u_short)(0 == uri->port ? PORT : uri->port);
+    u->port = (unsigned short)(0 == uri->port ? PORT : uri->port);
     
     u->host = u->__ptr + n;
     r = snprintf(u->host, sizeof(u->__ptr) - n, "%s", uri->host);
@@ -54,7 +54,7 @@ static int rtmp_url_parse(const char* url, struct rtmp_url_t* u)
     if (uri->query && *uri->query)
     {
         q = NULL;
-        for(r = uri_query(uri->query, uri->query + strlen(uri->query), &q); r > 0; r--)
+        for(r = uri_query(uri->query, uri->query + strlen(uri->query), &q) - 1; r >= 0; r--)
         {
             if (5 == q[r].n_name && 0 == strncmp("vhost", q[r].name, 5))
             {
