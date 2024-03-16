@@ -650,7 +650,7 @@ size_t service_extension_descriptor_write(uint8_t* data, size_t bytes)
 	if (bytes < 2 + n)
 		return 0;
 	data[0] = SERVICE_ID;
-	data[1] = 2 + n;
+	data[1] = n;
 	memcpy(data + 2, SERVICE_NAME, n);
 	return 2 + n;
 }
