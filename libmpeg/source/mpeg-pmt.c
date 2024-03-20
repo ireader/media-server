@@ -20,8 +20,7 @@ static struct pes_t* pmt_fetch(struct pmt_t* pmt, uint16_t pid)
     
     if(pmt->stream_count >= sizeof(pmt->streams) / sizeof(pmt->streams[0]))
     {
-        assert(0);
-        return NULL;
+        return &pmt->streams[pmt->stream_count-1];
     }
     
     // new stream
