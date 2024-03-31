@@ -46,7 +46,7 @@ static const char* sc_format =
 	"CSeq: %u\r\n"
 	"Session: %s\r\n"
 	"%s" // Range
-	"%s" // Speed
+	"%s" // Scale
 	"%s" // Authorization: Digest xxx
 	"User-Agent: %s\r\n"
 	"\r\n";
@@ -73,7 +73,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 	rtsp->progress = 0;
     rtsp->speed[0] = rtsp->range[0] = '\0';
 
-	if ( (speed && snprintf(rtsp->speed, sizeof(rtsp->speed), "Speed: %.2f\r\n", *speed) >= sizeof(rtsp->speed))
+	if ( (speed && snprintf(rtsp->speed, sizeof(rtsp->speed), "Scale: %.2f\r\n", *speed) >= sizeof(rtsp->speed))
 		|| (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)) )
 		return -1;
 	
