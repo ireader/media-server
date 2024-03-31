@@ -268,12 +268,12 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						}
 						else if (!pes->have_pes_header)
 						{
-							continue; // don't have pes header yet
+							return 0; // ignore, don't have pes header yet
 						}
 
                         r = pes_packet(&pes->pkt, pes, data + i, bytes - i, &consume, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
 						pes->have_pes_header = (r || (0 == pes->pkt.size && pes->len > 0)) ? 0 : 1; // packet completed
-                        break; // find stream
+                        return r; // find stream
 					}
 				} // PMT handler
 			}

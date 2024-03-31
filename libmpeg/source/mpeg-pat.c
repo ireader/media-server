@@ -105,7 +105,7 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 	{
         pn = (data[i] << 8) | data[i+1];
         pid = ((data[i+2] & 0x1F) << 8) | data[i+3];
-//        printf("PAT: pn: %0x, pid: %0x\n", (unsigned int)pn, (unsigned int)pid);
+//        printf("PAT: pn: 0x%0x, pid: 0x%0x\n", (unsigned int)pn, (unsigned int)pid);
         
         if(0 == pn)
             continue; // ignore NIT info

@@ -71,6 +71,7 @@ struct pmt_t
     
     char provider[64];
     char name[64];
+	char proginfo[4]; // CUEI
 
 	unsigned int stream_count;
 	struct pes_t streams[4];

@@ -28,6 +28,39 @@ static struct pes_t* pmt_fetch(struct pmt_t* pmt, uint16_t pid)
     return &pmt->streams[pmt->stream_count++];
 }
 
+static int pmt_read_program_descriptor(struct pmt_t* pmt, const uint8_t* data, uint16_t bytes)
+{
+	uint8_t tag;
+	uint8_t len;
+	uint8_t channels;
+
+	// Registration descriptor
+	while (bytes > 2)
+	{
+		tag = data[0];
+		len = data[1];
+		if (len + 2 > bytes)
+			return -1; // invalid len
+
+		// ISO/IEC 13818-1:2018 (E) Table 2-45 Program and program element descriptors (p90)
+		switch (tag)
+		{
+		case 0x05: // 2.6.8 Registration descriptor(p94)
+			if (len >= 4 && 'C' == data[2] && 'U' == data[3] && 'E' == data[4] && 'I' == data[5])
+			{
+				memcpy(pmt->proginfo, data+2, 4);
+			}
+			break;
+		}
+
+		data += len + 2;
+		bytes -= len + 2;
+	}
+	assert(0 == bytes);
+
+	return 0;
+}
+
 static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16_t bytes)
 {
 	uint8_t tag;
@@ -51,7 +84,7 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
 				stream->codecid = PSI_STREAM_AUDIO_OPUS;
 			}
-			if (len >= 4 && 'A' == data[2] && 'V' == data[3] && '0' == data[4] && '1' == data[5])
+			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && '0' == data[4] && '1' == data[5])
 			{
 				// https://aomediacodec.github.io/av1-mpeg2-ts/
 				// Constraints on AV1 streams in MPEG-2 TS
@@ -154,6 +187,7 @@ size_t pmt_read(struct pmt_t *pmt, const uint8_t* data, size_t bytes)
 	if(program_info_length > 2)
 	{
 		// descriptor(data + 12, program_info_length)
+		pmt_read_program_descriptor(pmt, data + 12, program_info_length);
 	}
 
 PMT_VERSION_CHANGE:
@@ -162,7 +196,7 @@ PMT_VERSION_CHANGE:
 	{
         pid = ((data[i+1] & 0x1F) << 8) | data[i+2];
         len = ((data[i+3] & 0x0F) << 8) | data[i+4];
-//        printf("PMT: pn: %0x, pid: %0x, codec: %0x, eslen: %d\n", (unsigned int)pmt->pn, (unsigned int)pid, (unsigned int)data[i], (unsigned int)len);
+        //printf("PMT: pn: 0x%0x, pid: 0x%0x, codec: 0x%0x, eslen: %d\n", (unsigned int)pmt->pn, (unsigned int)pid, (unsigned int)data[i], (unsigned int)len);
 
 		if (i + len + 5 > section_length + 3 - 4/*CRC32*/)
 			break; // mark error ?
