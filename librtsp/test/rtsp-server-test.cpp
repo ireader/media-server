@@ -533,7 +533,7 @@ static void rtsp_onerror(void* /*param*/, rtsp_server_t* rtsp, int code)
 #if defined(RTSP_SERVER_SOCKET_TEST)
 static int rtsp_send(void* ptr, const void* data, size_t bytes)
 {
-	socket_t socket = *(socket_t*)ptr;
+	socket_t socket = (socket_t)(intptr_t)ptr;
 
 	// TODO: send multiple rtp packet once time
 	return bytes == socket_send(socket, data, bytes, 0) ? 0 : -1;
