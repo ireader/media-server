@@ -60,7 +60,7 @@ static int sip_uac_test_oninvite(void* param, const struct sip_message_t* reply,
 	if (200 <= code && code < 300)
 	{
 		*session = test;
-		sip_uac_ack(t, NULL, 0);
+		sip_uac_ack(t, NULL, 0, NULL);
 	}
 	return 0;
 }

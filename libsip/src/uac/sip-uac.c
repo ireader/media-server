@@ -7,6 +7,7 @@
 #include "sip-message.h"
 #include "sip-transport.h"
 #include <stdio.h>
+#include <errno.h>
 
 int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
@@ -248,7 +249,7 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	t->req->size = bytes;
 	t->size = sip_message_write(t->req, t->data, sizeof(t->data));
 	if (t->size < 0 || t->size >= sizeof(t->data))
-		return -1;
+		return -E2BIG; // payload too long
 
 	return sip_uac_transaction_send(t);
 }

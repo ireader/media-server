@@ -242,7 +242,7 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 		if (200 <= code && code < 300)
 		{
 			*session = NULL;
-			sip_uac_ack(t, NULL, 0);
+			sip_uac_ack(t, NULL, 0, NULL);
 		}
 		task->event.Signal();
 	}
