@@ -19,7 +19,10 @@ int mov_read_tfra(struct mov_t* mov, const struct mov_box_t* box)
 
 	track = mov_find_track(mov, track_ID);
 	if (NULL == track)
-		return -1;
+	{
+		mov_buffer_skip(&mov->io, box->size - 8);
+		return mov_buffer_error(&mov->io);
+	}
 
 	length_size_of = mov_buffer_r32(&mov->io); /* length_size_of XXX */
 	number_of_entry = mov_buffer_r32(&mov->io); /* number_of_entry */

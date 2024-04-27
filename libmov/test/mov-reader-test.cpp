@@ -114,8 +114,7 @@ static void onread(void* flv, uint32_t track, const void* buffer, size_t bytes, 
         //int n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
         //fwrite(s_packet, 1, n, s_vfp);
     }
-
-	else if (it->second == "ACC")
+	else if (it->second == "AAC")
 	{
 		printf("[AAC] pts: %s, dts: %s, diff: %03d/%03d, bytes: %u\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (unsigned int)bytes);
 		a_pts = pts;
