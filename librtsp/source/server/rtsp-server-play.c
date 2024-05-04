@@ -10,6 +10,8 @@ int rtsp_server_play(struct rtsp_server_t *rtsp, const char* uri)
 	struct rtsp_header_range_t range;
 
 	pscale = http_get_header_by_name(rtsp->parser, "scale");
+	if(!pscale)
+		pscale = http_get_header_by_name(rtsp->parser, "speed");
 	prange = http_get_header_by_name(rtsp->parser, "range");
 
 	if (0 == rtsp->session.session[0])

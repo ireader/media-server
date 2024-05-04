@@ -61,19 +61,25 @@ static int rtsp_client_media_play(struct rtsp_client_t *rtsp, int i)
 
 	assert(rtsp->media[i].uri[0] && rtsp->session[i].session[0]);
 	r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->media[i].uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
-	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
+	r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->media[i].uri, rtsp->cseq++, rtsp->session[i].session, rtsp->range, rtsp->scale, rtsp->authenrization, USER_AGENT);
 	return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->media[i].uri, rtsp->req, r)) ? 0 : -1;
 }
 
-int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const float *speed)
+int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const float * scale)
 {
 	int r;
 	assert(RTSP_SETUP == rtsp->state || RTSP_PLAY == rtsp->state || RTSP_PAUSE == rtsp->state);
 	rtsp->state = RTSP_PLAY;
 	rtsp->progress = 0;
-    rtsp->speed[0] = rtsp->range[0] = '\0';
+    rtsp->scale[0] = rtsp->range[0] = '\0';
 
-	if ( (speed && snprintf(rtsp->speed, sizeof(rtsp->speed), "Scale: %.2f\r\n", *speed) >= sizeof(rtsp->speed))
+#if RTSP_PLAY_SCALE == 2
+	if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Speed: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
+#elif defined(RTSP_PLAY_SCALE)
+	if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
+#else
+	if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Speed: %.2f\r\nScale: %.2f\r\n", *scale, *scale) >= sizeof(rtsp->scale))
+#endif
 		|| (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)) )
 		return -1;
 	
@@ -82,7 +88,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 		assert(rtsp->media_count > 0);
 		assert(rtsp->aggregate_uri[0]);
 		r = rtsp_client_authenrization(rtsp, "PLAY", rtsp->aggregate_uri, NULL, 0, rtsp->authenrization, sizeof(rtsp->authenrization));
-		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->range, rtsp->speed, rtsp->authenrization, USER_AGENT);
+		r = snprintf(rtsp->req, sizeof(rtsp->req), sc_format, rtsp->aggregate_uri, rtsp->cseq++, rtsp->session[0].session, rtsp->range, rtsp->scale, rtsp->authenrization, USER_AGENT);
 		return (r > 0 && r < sizeof(rtsp->req) && r == rtsp->handler.send(rtsp->param, rtsp->aggregate_uri, rtsp->req, r)) ? 0 : -1;
 	}
 	else
@@ -108,6 +114,8 @@ static int rtsp_client_media_play_onreply(struct rtsp_client_t* rtsp, void* pars
 
 	prange = http_get_header_by_name(parser, "Range");
 	pscale = http_get_header_by_name(parser, "Scale");
+	if(!pscale)
+		pscale = http_get_header_by_name(parser, "Speed");
 	prtpinfo = http_get_header_by_name(parser, "RTP-Info");
 
 	if (pscale)
