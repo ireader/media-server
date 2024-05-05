@@ -222,6 +222,7 @@
     <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-test.cpp" />
     <ClCompile Include="..\libmpeg\test\flv-2-mpeg-ps-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-2-flv-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-dec-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp" />

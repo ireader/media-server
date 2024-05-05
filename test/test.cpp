@@ -192,6 +192,7 @@ DEF_FUN_PCHAR(mpeg_ts_dec_test, const char* file);
 DEF_FUN_PCHAR(mpeg_ts_test, const char* input);
 DEF_FUN_PCHAR(mpeg_ps_test, const char* input);
 DEF_FUN_PCHAR(mpeg_ps_2_flv_test, const char* ps);
+DEF_FUN_PCHAR(mov_2_mpeg_ps_test, const char* mp4);
 DEF_FUN_PCHAR(flv_2_mpeg_ps_test, const char* flv);
 DEF_FUN_PCHAR(mpeg_ps_dec_test, const char* file);
 
@@ -220,6 +221,7 @@ extern "C" DEF_FUN_VOID(sip_header_test);
 extern "C" DEF_FUN_VOID(sip_agent_test);
 DEF_FUN_VOID(sip_uac_message_test);
 DEF_FUN_VOID(sip_uas_message_test);
+DEF_FUN_VOID(sip_message_test);
 DEF_FUN_VOID(sip_uac_test);
 DEF_FUN_VOID(sip_uas_test);
 DEF_FUN_VOID(sip_uac_test2);
@@ -262,6 +264,7 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("http_header_www_authenticate_test", argc, argv);
         RE_RUN_REG("rtsp_client_auth_test", argc, argv);
         RE_RUN_REG("sip_header_test", argc, argv);
+        RE_RUN_REG("sip_message_test", argc, argv);
         RE_RUN_REG("sip_uac_message_test", argc, argv);
         RE_RUN_REG("sip_uas_message_test", argc, argv);
         goto EXIT;

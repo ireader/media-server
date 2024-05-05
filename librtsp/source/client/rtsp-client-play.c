@@ -40,6 +40,7 @@ Date: 23 Jan 1997 15:35:06 GMT
 #include "rtsp-header-range.h"
 #include "rtsp-header-rtp-info.h"
 #include <assert.h>
+#include <time.h>
 
 static const char* sc_format = 
 	"PLAY %s RTSP/1.0\r\n"
@@ -50,6 +51,17 @@ static const char* sc_format =
 	"%s" // Authorization: Digest xxx
 	"User-Agent: %s\r\n"
 	"\r\n";
+
+int rtsp_header_range_write(char* s, int n, uint64_t npt)
+{
+	time_t now;
+	if (npt / 1000 < 946656000 /* 2000-01-01 00:00:00 */ ) {
+		return snprintf(s, n, "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", npt / 1000, npt % 1000);
+	} else {
+		now = npt / 1000; // ms -> s
+		return strftime(s, n, "Range: clock=%Y%m%dT%H%M%SZ-\r\n", gmtime(&now));
+	}
+}
 
 static int rtsp_client_media_play(struct rtsp_client_t *rtsp, int i)
 {
@@ -80,7 +92,7 @@ int rtsp_client_play(struct rtsp_client_t *rtsp, const uint64_t *npt, const floa
 #else
 	if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Speed: %.2f\r\nScale: %.2f\r\n", *scale, *scale) >= sizeof(rtsp->scale))
 #endif
-		|| (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)) )
+		|| (npt && rtsp_header_range_write(rtsp->range, sizeof(rtsp->range), *npt) >= sizeof(rtsp->range)))
 		return -1;
 	
 	if(rtsp->aggregate)

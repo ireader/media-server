@@ -39,21 +39,6 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
-SOURCE_FILES += $(ROOT)/source/uri-parse.c
-SOURCE_FILES += $(ROOT)/source/urlcodec.c
-SOURCE_FILES += $(ROOT)/source/ntp-time.c
-SOURCE_FILES += $(ROOT)/source/time64.c
-SOURCE_FILES += $(ROOT)/source/base64.c
-SOURCE_FILES += $(ROOT)/source/unicode.c
-SOURCE_FILES += $(ROOT)/source/thread-pool.c
-SOURCE_FILES += $(ROOT)/source/app-log.c
-SOURCE_FILES += $(ROOT)/source/port/ip-route.c
-SOURCE_FILES += $(ROOT)/source/sockpair.c
-SOURCE_FILES += $(ROOT)/source/darray.c
-SOURCE_FILES += $(ROOT)/source/channel.c
-SOURCE_FILES += $(ROOT)/source/uuid.c
-SOURCE_FILES += $(ROOT)/source/random.c
-SOURCE_FILES += $(ROOT)/source/port/sysnetconfig.c
 SOURCE_FILES += $(ROOT)/libice/test/ice-transport.c
 SOURCE_FILES += $(ROOT)/deprecated/tools.c
 
@@ -89,7 +74,8 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				$(AVCODEC)/avbsf/$(BUILD).$(PLATFORM)/libavbsf.a \
 	      		$(AVCODEC)/avcodec/$(BUILD).$(PLATFORM)/libavcodec.a \
 				$(AVCODEC)/h264/$(BUILD).$(PLATFORM)/libh264.a \
-				$(AVCODEC)/h265/$(BUILD).$(PLATFORM)/libh265.a
+				$(AVCODEC)/h265/$(BUILD).$(PLATFORM)/libh265.a \
+				$(ROOT)/libsdk/$(BUILD).$(PLATFORM)/libsdk.a
 				
 
 #-----------------------------DEFINES--------------------------------
