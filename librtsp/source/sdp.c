@@ -756,7 +756,7 @@ static int sdp_parse_repeat(struct sdp_t* sdp)
 	r->duration = sdp->raw + sdp->offset;
 	n[1] = sdp_token_word(sdp, " \t\r\n");
 
-	while(strchr(" \t", sdp->raw[sdp->offset]))
+	while(sdp->raw[sdp->offset] && strchr(" \t", sdp->raw[sdp->offset]))
 	{
 		if(n[2] > 0 && offset)
 		{
@@ -829,11 +829,11 @@ static int sdp_parse_timezone(struct sdp_t* sdp)
 				t->z.capacity += 8;
 			}
 
-			z = &t->z.ptr[t->r.count - N_TIMEZONE];
+			z = &t->z.ptr[t->z.count - N_TIMEZONE];
 		}
 		else
 		{
-			z = &t->z.timezones[t->r.count];
+			z = &t->z.timezones[t->z.count];
 		}
 
 		z->time = time;
