@@ -39,6 +39,7 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
+SOURCE_FILES += $(ROOT)/source/port/sysnetconfig.c
 SOURCE_FILES += $(ROOT)/libice/test/ice-transport.c
 SOURCE_FILES += $(ROOT)/deprecated/tools.c
 
