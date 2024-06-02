@@ -34,8 +34,10 @@ int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* di
             // notify expire
             //if (t->handler->onnotify)
             //    t->handler->onnotify(param, req, t, subscribe->evtsession, NULL);
-			sip_subscribe_remove(t->agent, subscribe);
-			assert(1 == subscribe->ref);
+
+			// It's user due to remove subscribe on expires 0 
+			//sip_subscribe_remove(t->agent, subscribe);
+			//assert(1 == subscribe->ref);
 		}
 
 		sip_subscribe_release(subscribe);
@@ -74,8 +76,8 @@ int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t
 	else
 		r = 0; // just ignore
 
-	if (subscribe && 0 == cstrcmp(&req->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
-		sip_subscribe_remove(t->agent, subscribe);
+	//if (subscribe && 0 == cstrcmp(&req->substate.state, SIP_SUBSCRIPTION_STATE_TERMINATED))
+	//	sip_subscribe_remove(t->agent, subscribe);
 
 	sip_subscribe_release(subscribe);
 	return r;
