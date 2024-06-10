@@ -581,6 +581,7 @@ static int rtcp_xr_ecn_pack(const rtcp_ecn_t* ecn, uint8_t* ptr, uint32_t bytes)
 void rtcp_xr_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const uint8_t* ptr, size_t bytes)
 {
     int r;
+    size_t len;
     struct rtcp_msg_t msg;
     struct rtp_member* sender;
 
@@ -600,8 +601,11 @@ void rtcp_xr_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const 
     bytes -= 4;
     while (bytes >= 4)
     {
-        msg.type = RTCP_XR | (ptr[0] << 8);
+        len = nbo_r16(ptr + 2);
+        if (len * 4 > bytes - 4)
+            break; // invalid
 
+        msg.type = RTCP_XR | (ptr[0] << 8);
         switch (ptr[0])
         {
         case RTCP_XR_LRLE:
@@ -633,6 +637,9 @@ void rtcp_xr_unpack(struct rtp_context* ctx, const rtcp_header_t* header, const 
             r = 0; // ignore
             break;
         }
+
+        ptr += len;
+        bytes -= len;
     }
 
     return;
