@@ -249,8 +249,23 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
 
         case PES_SID_PSM:
             n = ps->psm.stream_count;
+            uint8_t old_codecid[16];
+            if (n) {
+                for(int i = 0; i < n; ++i) {
+                    old_codecid[i] = ps->psm.streams[i].codecid;
+                }
+            }
             r = psm_read(&ps->psm, reader);
-            if (n != ps->psm.stream_count || !ps->is_notifyed)
+            bool codec_change = false;
+            for(int i = 0; i < n; ++i) {
+                if (old_codecid[i] != ps->psm.streams[i].codecid) {
+                    codec_change = true;
+                    ps->is_notifyed = false;
+                    break;
+                }
+            }
+
+            if (n != ps->psm.stream_count || !ps->is_notifyed || codec_change)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
             break;
 
