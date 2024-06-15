@@ -1,3 +1,4 @@
+
 #include "sip-message.h"
 #include "sip-header.h"
 #include "sip-dialog.h"
@@ -237,7 +238,7 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	//memmove(&msg->u.c.uri, &dialog->remote.target, sizeof(struct sip_uri_t));
 #if defined(SIP_KEEP_DIALOG_REQUET_URI)
 	// same as invite request uri
-	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.uri);
+	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.uri.uri);
 #else
 	// replace URI with dialog peer contact
 	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.target);
