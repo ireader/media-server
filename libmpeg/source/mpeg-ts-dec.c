@@ -166,7 +166,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
     uint32_t i, j, k;
 	uint32_t PID;
 	size_t consume;
-	unsigned int count;
+	unsigned int count, ver;
 	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
 
@@ -232,9 +232,10 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
+					ver = ts->pat.pmts[j].ver;
 					count = ts->pat.pmts[j].stream_count;
 					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
-					if(count != ts->pat.pmts[j].stream_count)
+					if(ver != ts->pat.pmts[j].ver || count != ts->pat.pmts[j].stream_count)
 						ts_demuxer_notify(ts, &ts->pat.pmts[j]);
 					break;
 				}
