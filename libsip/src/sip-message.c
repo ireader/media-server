@@ -235,7 +235,13 @@ int sip_message_init2(struct sip_message_t* msg, const char* method, const struc
 	// initialize remote target
 	memmove(&msg->u.c.method, &msg->cseq.method, sizeof(struct cstring_t));
 	//memmove(&msg->u.c.uri, &dialog->remote.target, sizeof(struct sip_uri_t));
+#if defined(SIP_KEEP_DIALOG_REQUET_URI)
+	// same as invite request uri
+	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.uri);
+#else
+	// replace URI with dialog peer contact
 	msg->ptr.ptr = sip_uri_clone(msg->ptr.ptr, msg->ptr.end, &msg->u.c.uri, &dialog->remote.target);
+#endif
 
 	// TODO: Via
 
@@ -713,7 +719,7 @@ static inline int sip_message_skip_header(const struct cstring_t* name)
 int sip_message_add_header(struct sip_message_t* msg, const char* name, const char* value)
 {
 	int r;
-	struct sip_uri_t uri;
+	//struct sip_uri_t uri;
 	struct sip_param_t header;
 
 	if (!name || !*name)

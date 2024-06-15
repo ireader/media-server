@@ -296,7 +296,7 @@ int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia
 	if (0 == sip_uri_username(&t->req->from.uri, &user))
 	{
 		assert(user.n > 0);
-		r = snprintf(contact, ncontact, "<%.*s:%.*s@%s>", uri->scheme.n > 0 ? (int)uri->scheme.n : 3, uri->scheme.n > 0 ? uri->scheme.p : "sip", (int)user.n, user.p, local);
+		r = snprintf(contact, ncontact, "<%.*s:%.*s@%s>", (uri && uri->scheme.n > 0) ? (int)uri->scheme.n : 3, (uri && uri->scheme.n > 0) ? uri->scheme.p : "sip", (int)user.n, user.p, local);
 		if (r < 0 || r >= ncontact)
 			return -1; // ENOMEM
 	}
