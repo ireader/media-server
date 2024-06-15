@@ -48,7 +48,7 @@ struct ps_demuxer_t
 
     struct ps_demuxer_notify_t notify;
     void* notify_param;
-    bool is_notifyed;
+    uint32_t ver; // psm notify version
 };
 
 static void ps_demuxer_notify(struct ps_demuxer_t* ps);
@@ -250,8 +250,9 @@ static int ps_demuxer_header(struct ps_demuxer_t* ps, struct mpeg_bits_t* reader
         case PES_SID_PSM:
             n = ps->psm.stream_count;
             r = psm_read(&ps->psm, reader);
-            if (n != ps->psm.stream_count || !ps->is_notifyed)
+            if (n != ps->psm.stream_count || ps->ver != ps->psm.ver)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
+            ps->ver = ps->psm.ver;
             break;
 
         case PES_SID_PSD:
@@ -471,7 +472,7 @@ struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param
     ps->buffer.ptr = (uint8_t*)(ps + 1);
     ps->buffer.cap = N_BUFFER_INIT;
 
-    ps->is_notifyed = false;
+    ps->ver = 0xFFFFFFFF; // fix: guest stream add stream internal, alway notify on firstly
 	return ps;
 }
 
@@ -510,7 +511,6 @@ static void ps_demuxer_notify(struct ps_demuxer_t* ps)
     if (!ps->notify.onstream)
         return;
 
-    ps->is_notifyed = true;
     for (i = 0; i < ps->psm.stream_count; i++)
     {
         pes = &ps->psm.streams[i];
