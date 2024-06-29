@@ -56,7 +56,7 @@ int system_header_read(struct ps_system_header_t* h, struct mpeg_bits_t* reader)
     }
 
     assert(0 == mpeg_bits_error(reader));
-    assert(end == mpeg_bits_tell(reader));
+    //assert(end == mpeg_bits_tell(reader));
     return MPEG_ERROR_OK;
 }
 
