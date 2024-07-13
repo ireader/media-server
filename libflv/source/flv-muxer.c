@@ -24,6 +24,8 @@ struct flv_muxer_t
 	flv_muxer_handler handler;
 	void* param;
 
+	int enhanced_rtmp; // support enhance rtmp extension
+
 	uint8_t audio_sequence_header;
 	uint8_t video_sequence_header;
 
@@ -59,6 +61,9 @@ struct flv_muxer_t* flv_muxer_create(flv_muxer_handler handler, void* param)
 	flv_muxer_reset(flv);
 	flv->handler = handler;
 	flv->param = param;
+#ifdef FLV_ENHANCE_RTMP
+	flv->enhanced_rtmp = 1;
+#endif
 	return flv;
 }
 
@@ -80,6 +85,11 @@ int flv_muxer_reset(struct flv_muxer_t* flv)
 	flv->audio_sequence_header = 0;
 	flv->video_sequence_header = 0;
 	return 0;
+}
+
+void flv_muxer_set_enhanced_rtmp(flv_muxer_t* muxer, int enable)
+{
+	muxer->enhanced_rtmp = enable;
 }
 
 static int flv_muxer_alloc(struct flv_muxer_t* flv, size_t bytes)
@@ -261,6 +271,7 @@ static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	struct flv_video_tag_header_t video;
 
 	video.codecid = FLV_VIDEO_H264;
+	video.enhanced_rtmp = flv->enhanced_rtmp;
 	if ( /*0 == flv->video_sequence_header &&*/ flv->update && flv->v.avc.nb_sps > 0 && flv->v.avc.nb_pps > 0)
 	{
 		video.cts = 0;
@@ -313,6 +324,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	struct flv_video_tag_header_t video;
 
 	video.codecid = FLV_VIDEO_H265;
+	video.enhanced_rtmp = flv->enhanced_rtmp;
 	if ( /*0 == flv->avc_sequence_header &&*/ flv->update && flv->v.hevc.numOfArrays >= 3) // vps + sps + pps
 	{
 		video.cts = 0;
@@ -351,9 +363,8 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 	}
 
 	flv->bytes = 5;
-#ifdef FLV_ENHANCE_RTMP
-	flv->bytes += dts == pts ? 0 : 3;
-#endif
+	if(flv->enhanced_rtmp)
+		flv->bytes += dts == pts ? 0 : 3;
 	flv->bytes += h265_annexbtomp4(&flv->v.hevc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;
@@ -368,6 +379,7 @@ static int flv_muxer_h266(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 	struct flv_video_tag_header_t video;
 
 	video.codecid = FLV_VIDEO_H266;
+	video.enhanced_rtmp = flv->enhanced_rtmp;
 	if ( /*0 == flv->avc_sequence_header &&*/ flv->update && flv->v.vvc.numOfArrays >= 3) // vps + sps + pps
 	{
 		video.cts = 0;
@@ -406,9 +418,8 @@ int flv_muxer_vvc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 	}
 
 	flv->bytes = 5;
-#ifdef FLV_ENHANCE_RTMP
-	flv->bytes += dts == pts ? 0 : 3;
-#endif
+	if(flv->enhanced_rtmp)
+		flv->bytes += dts == pts ? 0 : 3;
 	flv->bytes += h266_annexbtomp4(&flv->v.vvc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;
@@ -429,6 +440,7 @@ int flv_muxer_av1(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts
 	}
 
 	video.codecid = FLV_VIDEO_AV1;
+	video.enhanced_rtmp = flv->enhanced_rtmp;
 	if (0 == flv->video_sequence_header)
 	{
 		// load av1 information
@@ -476,6 +488,7 @@ int flv_muxer_avs3(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pt
 	}
 
 	video.codecid = FLV_VIDEO_H266; // codec 14, same as H.266
+	video.enhanced_rtmp = flv->enhanced_rtmp;
 	if (0 == flv->video_sequence_header)
 	{
 		// load avs information

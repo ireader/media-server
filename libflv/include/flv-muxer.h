@@ -23,6 +23,9 @@ void flv_muxer_destroy(flv_muxer_t* muxer);
 /// re-create AAC/AVC sequence header
 int flv_muxer_reset(flv_muxer_t* muxer);
 
+/// @param[in] enable muxer h264 with enhance rtmp
+void flv_muxer_set_enhanced_rtmp(flv_muxer_t* muxer, int enable);
+
 /// @param[in] data AAC ADTS stream, 0xFFF15C40011FFC...
 int flv_muxer_aac(flv_muxer_t* muxer, const void* data, size_t bytes, uint32_t pts, uint32_t dts);
 

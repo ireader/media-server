@@ -236,57 +236,56 @@ int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8
 
 int flv_video_tag_header_write(const struct flv_video_tag_header_t* video, uint8_t* buf, size_t len)
 {
-#ifdef FLV_ENHANCE_RTMP
 	// https://github.com/veovera/enhanced-rtmp/blob/main/enhanced-rtmp.pdf
-
-	if (len < 5)
-		return -1;
-
-	buf[0] = 0x80 | (video->keyframe << 4) /*FrameType*/;
-	buf[0] |= (0 == video->cts && FLV_AVPACKET == video->avpacket) ? FLV_PACKET_TYPE_CODED_FRAMES_X : video->avpacket;
-
-	switch (video->codecid)
+	if (video->enhanced_rtmp)
 	{
-	case FLV_VIDEO_AV1:
-		buf[1] = (FLV_VIDEO_FOURCC_AV1 >> 24) & 0xFF;
-		buf[2] = (FLV_VIDEO_FOURCC_AV1 >> 16) & 0xFF;
-		buf[3] = (FLV_VIDEO_FOURCC_AV1 >> 8) & 0xFF;
-		buf[4] = (FLV_VIDEO_FOURCC_AV1) & 0xFF;
-		return 5;
+		if (len < 5)
+			return -1;
 
-	case FLV_VIDEO_H265:
-		buf[1] = (FLV_VIDEO_FOURCC_HEVC >> 24) & 0xFF;
-		buf[2] = (FLV_VIDEO_FOURCC_HEVC >> 16) & 0xFF;
-		buf[3] = (FLV_VIDEO_FOURCC_HEVC >> 8) & 0xFF;
-		buf[4] = (FLV_VIDEO_FOURCC_HEVC) & 0xFF;
-		if (len >= 8 && FLV_AVPACKET == video->avpacket && video->cts != 0)
+		buf[0] = 0x80 | (video->keyframe << 4) /*FrameType*/;
+		buf[0] |= (0 == video->cts && FLV_AVPACKET == video->avpacket) ? FLV_PACKET_TYPE_CODED_FRAMES_X : video->avpacket;
+
+		switch (video->codecid)
 		{
-			buf[5] = (video->cts >> 16) & 0xFF;
-			buf[6] = (video->cts >> 8) & 0xFF;
-			buf[7] = video->cts & 0xFF;
-			return 8;
-		}
-		return 5;
+		case FLV_VIDEO_AV1:
+			buf[1] = (FLV_VIDEO_FOURCC_AV1 >> 24) & 0xFF;
+			buf[2] = (FLV_VIDEO_FOURCC_AV1 >> 16) & 0xFF;
+			buf[3] = (FLV_VIDEO_FOURCC_AV1 >> 8) & 0xFF;
+			buf[4] = (FLV_VIDEO_FOURCC_AV1) & 0xFF;
+			return 5;
 
-	case FLV_VIDEO_H266:
-		buf[1] = (FLV_VIDEO_FOURCC_VVC >> 24) & 0xFF;
-		buf[2] = (FLV_VIDEO_FOURCC_VVC >> 16) & 0xFF;
-		buf[3] = (FLV_VIDEO_FOURCC_VVC >> 8) & 0xFF;
-		buf[4] = (FLV_VIDEO_FOURCC_VVC) & 0xFF;
-		if (len >= 8 && FLV_AVPACKET == video->avpacket && video->cts != 0)
-		{
-			buf[5] = (video->cts >> 16) & 0xFF;
-			buf[6] = (video->cts >> 8) & 0xFF;
-			buf[7] = video->cts & 0xFF;
-			return 8;
-		}
-		return 5;
+		case FLV_VIDEO_H265:
+			buf[1] = (FLV_VIDEO_FOURCC_HEVC >> 24) & 0xFF;
+			buf[2] = (FLV_VIDEO_FOURCC_HEVC >> 16) & 0xFF;
+			buf[3] = (FLV_VIDEO_FOURCC_HEVC >> 8) & 0xFF;
+			buf[4] = (FLV_VIDEO_FOURCC_HEVC) & 0xFF;
+			if (len >= 8 && FLV_AVPACKET == video->avpacket && video->cts != 0)
+			{
+				buf[5] = (video->cts >> 16) & 0xFF;
+				buf[6] = (video->cts >> 8) & 0xFF;
+				buf[7] = video->cts & 0xFF;
+				return 8;
+			}
+			return 5;
 
-	default:
-		break; // fallthrough
+		case FLV_VIDEO_H266:
+			buf[1] = (FLV_VIDEO_FOURCC_VVC >> 24) & 0xFF;
+			buf[2] = (FLV_VIDEO_FOURCC_VVC >> 16) & 0xFF;
+			buf[3] = (FLV_VIDEO_FOURCC_VVC >> 8) & 0xFF;
+			buf[4] = (FLV_VIDEO_FOURCC_VVC) & 0xFF;
+			if (len >= 8 && FLV_AVPACKET == video->avpacket && video->cts != 0)
+			{
+				buf[5] = (video->cts >> 16) & 0xFF;
+				buf[6] = (video->cts >> 8) & 0xFF;
+				buf[7] = video->cts & 0xFF;
+				return 8;
+			}
+			return 5;
+
+		default:
+			break; // fallthrough
+		}
 	}
-
-#endif
 
 	if (len < 1)
 		return -1;
