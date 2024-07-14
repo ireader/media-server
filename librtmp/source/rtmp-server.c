@@ -17,6 +17,8 @@
 #define RTMP_CAPABILITIES		31
 #define RTMP_OUTPUT_CHUNK_SIZE	4096
 
+enum { RTMP_SERVER_ONPLAY = 1, RTMP_SERVER_ONPUBLISH = 2};
+
 struct rtmp_server_t
 {
 	struct rtmp_t rtmp;
@@ -42,7 +44,7 @@ struct rtmp_server_t
 	{
 		double transaction;
 		int reset;
-		int play; // 1-play, 2-publish, other-error
+		int play; // RTMP_SERVER_ONPLAY/RTMP_SERVER_ONPUBLISH
 	} start;
 };
 
@@ -69,7 +71,7 @@ static int rtmp_server_send_handshake(struct rtmp_server_t* ctx)
 {
 	int n, r;
 	n = rtmp_handshake_s0(ctx->handshake, RTMP_VERSION);
-	n += rtmp_handshake_s1(ctx->handshake + n, (uint32_t)time(NULL));
+	n += rtmp_handshake_s1(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	n += rtmp_handshake_s2(ctx->handshake + n, (uint32_t)time(NULL), ctx->payload, RTMP_HANDSHAKE_SIZE);
 	assert(n == 1 + RTMP_HANDSHAKE_SIZE + RTMP_HANDSHAKE_SIZE);
 	r = ctx->handler.send(ctx->param, ctx->handshake, n, NULL, 0);
@@ -274,19 +276,16 @@ static int rtmp_server_onpublish(void* param, int r, double transaction, const c
 
 	if (0 == r)
 	{
+		ctx->start.play = RTMP_SERVER_ONPUBLISH;
+		ctx->start.transaction = transaction;
 		snprintf(ctx->stream_name, sizeof(ctx->stream_name) - 1, "%s", stream_name ? stream_name : "");
 		snprintf(ctx->stream_type, sizeof(ctx->stream_type) - 1, "%s", stream_type ? stream_type : "");
 
 		r = ctx->handler.onpublish(ctx->param, ctx->info.app, stream_name, stream_type);
-		if (0 == r)
-		{
-			// User Control (StreamBegin)
-			r = rtmp_server_send_stream_begin(ctx);
-			if(0 != r)
-				return r;
-		}
+		if (RTMP_SERVER_ASYNC_START == r || 0 == ctx->start.play)
+			return RTMP_SERVER_ASYNC_START == r ? 0 : r;
 
-		r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName", "");
+		r = rtmp_server_start(ctx, r, NULL);
 	}
 
 	return r;
@@ -301,29 +300,17 @@ static int rtmp_server_onplay(void* param, int r, double transaction, const char
 
 	if (0 == r)
 	{
-		ctx->start.play = 1;
+		ctx->start.play = RTMP_SERVER_ONPLAY;
 		ctx->start.reset = reset;
 		ctx->start.transaction = transaction;
 		snprintf(ctx->stream_name, sizeof(ctx->stream_name) - 1, "%s", stream_name ? stream_name : "");
 		snprintf(ctx->stream_type, sizeof(ctx->stream_type) - 1, "%s", -1 == start ? RTMP_STREAM_LIVE : RTMP_STREAM_RECORD);
 
 		r = ctx->handler.onplay(ctx->param, ctx->info.app, stream_name, start, duration, reset);
-		//if (0 == r)
-		//{
-		//	// User Control (StreamBegin)
-		//	r = 0 == r ? rtmp_server_send_stream_begin(ctx) : r;
+		if (RTMP_SERVER_ASYNC_START == r || 0 == ctx->start.play)
+			return RTMP_SERVER_ASYNC_START == r ? 0 : r;
 
-		//	// NetStream.Play.Reset
-		//	if (reset) r = 0 == r ? rtmp_server_send_onstatus(ctx, transaction, 0, "NetStream.Play.Reset", "NetStream.Play.Failed", "") : r;
-
-		//	if(0 != r)
-		//		return r;
-		//}
-
-		//r = rtmp_server_send_onstatus(ctx, transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
-		//// User Control (StreamIsRecorded)
-		//r = 0 == r ? rtmp_server_send_stream_is_record(ctx) : r;
-		//r = 0 == r ? rtmp_server_rtmp_sample_access(ctx) : r;
+		r = rtmp_server_start(ctx, r, NULL);
 	}
 
 	return r;
@@ -541,8 +528,7 @@ int rtmp_server_input(struct rtmp_server_t* ctx, const uint8_t* data, size_t byt
 
 int rtmp_server_start(rtmp_server_t* rtmp, int r, const char* msg)
 {
-	(void)msg; // ignore
-	if (1 == rtmp->start.play)
+	if (RTMP_SERVER_ONPLAY == rtmp->start.play)
 	{
 		if (0 == r)
 		{
@@ -556,35 +542,32 @@ int rtmp_server_start(rtmp_server_t* rtmp, int r, const char* msg)
 				return r;
 		}
 
-		r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Play.Start", "NetStream.Play.Failed", "Start video on demand");
+		r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Play.Start", msg && *msg ? msg : "NetStream.Play.Failed", "Start video on demand");
 
 		// User Control (StreamIsRecorded)
 		r = 0 == r ? rtmp_server_send_stream_is_record(rtmp) : r;
 		r = 0 == r ? rtmp_server_rtmp_sample_access(rtmp) : r;
 	}
-	//else if(2 == rtmp->start.play)
-	//{
-	//	if (0 == r)
-	//	{
-	//		// User Control (StreamBegin)
-	//		r = rtmp_server_send_stream_begin(rtmp);
-	//		if (0 != r)
-	//			return r;
-	//	}
+	else if(RTMP_SERVER_ONPUBLISH == rtmp->start.play)
+	{
+		if (0 == r)
+		{
+			// User Control (StreamBegin)
+			r = rtmp_server_send_stream_begin(rtmp);
+			if (0 != r)
+				return r;
+		}
 
-	//	r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Publish.Start", "NetStream.Publish.BadName", "");
-	//}
+		r = rtmp_server_send_onstatus(rtmp, rtmp->start.transaction, r, "NetStream.Publish.Start", msg && *msg ? msg : "NetStream.Publish.BadName", "");
+	}
 
 	rtmp->start.play = 0;
 	return r;
 }
 
-#define RTMP_SERVER_CHECK_START(rtmp) do {int r; r = rtmp->start.play ? rtmp_server_start(rtmp, 0, NULL) : 0; if (0 != r) return r; } while(0)
-
 int rtmp_server_send_audio(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
-	RTMP_SERVER_CHECK_START(ctx);
 	if (0 == ctx->receiveAudio)
 		return 0; // client don't want receive audio
 
@@ -601,7 +584,6 @@ int rtmp_server_send_audio(struct rtmp_server_t* ctx, const void* data, size_t b
 int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
-	RTMP_SERVER_CHECK_START(ctx);
 	if (0 == ctx->receiveVideo)
 		return 0; // client don't want receive video
 
@@ -618,8 +600,6 @@ int rtmp_server_send_video(struct rtmp_server_t* ctx, const void* data, size_t b
 int rtmp_server_send_script(struct rtmp_server_t* ctx, const void* data, size_t bytes, uint32_t timestamp)
 {
 	struct rtmp_chunk_header_t header;
-	RTMP_SERVER_CHECK_START(ctx);
-
 	header.fmt = RTMP_CHUNK_TYPE_1; // enable compact header
 	header.cid = RTMP_CHANNEL_INVOKE;
 	header.timestamp = timestamp;

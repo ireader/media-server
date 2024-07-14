@@ -76,6 +76,25 @@ int mov_read_text(struct mov_t* mov, const struct mov_box_t* box)
 	return 0;
 }
 
+int mov_read_chpl(struct mov_t* mov, const struct mov_box_t* box)
+{
+	int i, count, len;
+	mov_buffer_r8(&mov->io); /* version */
+	mov_buffer_r24(&mov->io); /* flags */
+	mov_buffer_skip(&mov->io, 4); /* unknown*/
+	
+	count = mov_buffer_r8(&mov->io); /* count */
+	for (i = 0; i < count; i++)
+	{
+		mov_buffer_r64(&mov->io); /* timestamp */
+		len = mov_buffer_r8(&mov->io); /* title size */
+		mov_buffer_skip(&mov->io, len); /* title */
+	}
+
+	(void)box;
+	return 0;
+}
+
 size_t mov_write_vmhd(const struct mov_t* mov)
 {
 	mov_buffer_w32(&mov->io, 20); /* size (always 0x14) */
@@ -101,6 +120,36 @@ size_t mov_write_nmhd(const struct mov_t* mov)
 	mov_buffer_write(&mov->io, "nmhd", 4);
 	mov_buffer_w32(&mov->io, 0); /* version & flags */
 	return 12;
+}
+
+size_t mov_write_gmhd(const struct mov_t* mov)
+{
+	mov_buffer_w32(&mov->io, 8 + 24 + 44); /* size */
+	mov_buffer_write(&mov->io, "gmhd", 4);
+
+	mov_buffer_w32(&mov->io, 24); /* size */
+	mov_buffer_write(&mov->io, "gmin", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	mov_buffer_w16(&mov->io, 0x40); /* graphics mode */
+	mov_buffer_w16(&mov->io, 0x8000); /* opcolor red*/
+	mov_buffer_w16(&mov->io, 0x8000); /* opcolor green*/
+	mov_buffer_w16(&mov->io, 0x8000); /* opcolor blue*/
+	mov_buffer_w16(&mov->io, 0); /* balance */
+	mov_buffer_w16(&mov->io, 0); /* reserved */
+
+	mov_buffer_w32(&mov->io, 44);   /* size */
+	mov_buffer_write(&mov->io, "text", 4);
+	mov_buffer_w32(&mov->io, 0x00010000); /* u */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* v */
+	mov_buffer_w32(&mov->io, 0x00010000);
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0); /* w */
+	mov_buffer_w32(&mov->io, 0);
+	mov_buffer_w32(&mov->io, 0x40000000);
+
+	return 8 + 24 + 44;
 }
 
 /*

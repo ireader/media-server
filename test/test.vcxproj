@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;__ERROR__=(00 * 10000000 + __LINE__ * 1000);_HAVE_FFMPEG_1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../libmkv/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -105,7 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;_HAVE_FFMPEG_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;OS_WINDOWS;__ERROR__=(00 * 10000000 + __LINE__ * 1000);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../librtmp/include;../libflv/include;../libmov/include;../librtsp/include;../librtp/include;../libmpeg/include;../libhls/include;../libdash/include;../libsip/include;../libmkv/include;../librtmp/aio;../../sdk/include;../../sdk/libaio/include;../../sdk/libhttp/include;../../sdk/libice/include;../../3rd/ffmpeg/include;../../3rd/openssl/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include;../../avcodec/h264/include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -113,7 +113,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;avcodec.lib;avformat.lib;avutil.lib;avdevice.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\work\3rd\ffmpeg\libx64;D:\work\3rd\openssl\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\3rd\ffmpeg\libx64;..\..\3rd\openssl\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -222,6 +222,8 @@
     <ClCompile Include="..\libmov\test\mov-writer-subtitle.cpp" />
     <ClCompile Include="..\libmov\test\mov-writer-test.cpp" />
     <ClCompile Include="..\libmpeg\test\flv-2-mpeg-ps-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp" />
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-2-flv-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-dec-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp" />
     <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp" />
@@ -249,7 +251,6 @@
     <ClCompile Include="..\librtp\test\rtp-dump-replay.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-dump.c" />
-    <ClCompile Include="..\librtp\test\rtp-header-ext-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-payload-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-queue-test.cpp" />
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c" />
@@ -288,6 +289,7 @@
     <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-push-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-client-test.c" />
+    <ClCompile Include="..\librtsp\test\rtsp-client-test2.c" />
     <ClCompile Include="..\librtsp\test\rtsp-demuxer-test.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-push-server.cpp" />
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp" />

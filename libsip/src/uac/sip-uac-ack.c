@@ -112,13 +112,14 @@ int sip_uac_ack_3456xx(struct sip_uac_transaction_t* t, const struct sip_message
 }
 
 // 17.1.1.3 Construction of the ACK Request(Section 13.) (p129)
-int sip_uac_ack(struct sip_uac_transaction_t* invite, const void* data, int bytes)
+int sip_uac_ack(struct sip_uac_transaction_t* invite, const void* data, int bytes, const char* content_type)
 {
 	int r;
 	char ptr[1024];
 	char contact[1024];
 	struct sip_message_t* ack;
-	
+	const struct cstring_t* h;
+
 	if (!invite->dialog || !cstrvalid(&invite->dialog->remote.target.host))
 		return -1;
 
@@ -132,6 +133,8 @@ int sip_uac_ack(struct sip_uac_transaction_t* invite, const void* data, int byte
 	}
 
 	assert(ack->u.c.uri.scheme.n >= 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
+
+	sip_message_add_header(ack, "Content-Type", content_type);
 
 	// 8.1.1.7 Via (p39)
 	// The branch parameter value MUST be unique across space and time for

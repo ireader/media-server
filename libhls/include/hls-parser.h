@@ -170,8 +170,8 @@ struct hls_master_t
 	int start_precise; // EXT-X-START
 };
 
-/// Probe m3u8 content type(HLS_M3U8_MASTER/HLS_M3U8_PLAYLIST)
-/// @return 1-master playlist, 2-media playlist, other-unknown
+/// Probe m3u8 content type
+/// @return HLS_M3U8_PLAYLIST-media playlist, HLS_M3U8_MASTER-master playlist, other-unknown
 int hls_parser_probe(const char* m3u8, size_t len);
 
 /// Parse m3u8 master playlist

@@ -2,7 +2,7 @@
 // Digital Video Broadcasting (DVB); Specification for Service Information (SI) in DVB systems
 // 5.2.3 Service Description Table (SDT) (p27)
 
-#include "mpeg-ts-proto.h"
+#include "mpeg-ts-internal.h"
 #include "mpeg-element-descriptor.h"
 #include "mpeg-util.h"
 #include <string.h>

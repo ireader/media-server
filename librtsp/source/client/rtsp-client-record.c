@@ -39,6 +39,8 @@ static const char* sc_format =
     "User-Agent: %s\r\n"
     "\r\n";
 
+int rtsp_header_range_write(char* s, int n, uint64_t npt);
+
 static int rtsp_client_media_record(struct rtsp_client_t *rtsp, int i)
 {
     int r;
@@ -61,8 +63,14 @@ int rtsp_client_record(struct rtsp_client_t *rtsp, const uint64_t *npt, const fl
     rtsp->progress = 0;
     rtsp->scale[0] = rtsp->range[0] = '\0';
 
-    if ( (scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
-        || (npt && snprintf(rtsp->range, sizeof(rtsp->range), "Range: npt=%" PRIu64 ".%" PRIu64 "-\r\n", *npt / 1000, *npt % 1000) >= sizeof(rtsp->range)))
+#if RTSP_PLAY_SCALE == 2
+    if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Speed: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
+#elif defined(RTSP_PLAY_SCALE)
+    if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Scale: %.2f\r\n", *scale) >= sizeof(rtsp->scale))
+#else
+    if ((scale && snprintf(rtsp->scale, sizeof(rtsp->scale), "Speed: %.2f\r\nScale: %.2f\r\n", *scale, *scale) >= sizeof(rtsp->scale))
+#endif
+        || (npt && rtsp_header_range_write(rtsp->range, sizeof(rtsp->range), *npt) >= sizeof(rtsp->range)))
         return -1;
 
     if (rtsp->aggregate)
@@ -95,6 +103,8 @@ static int rtsp_client_media_record_onreply(struct rtsp_client_t* rtsp, void* pa
 
     prange = http_get_header_by_name(parser, "Range");
     pscale = http_get_header_by_name(parser, "Scale");
+    if(!pscale)
+        pscale = http_get_header_by_name(parser, "Speed");
     prtpinfo = http_get_header_by_name(parser, "RTP-Info");
 
     if (pscale)

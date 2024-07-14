@@ -14,6 +14,8 @@
 #define FU_START    0x80
 #define FU_END      0x40
 
+#define H265_RTP_FU	49
+
 #define N_FU_HEADER	3
 
 int rtp_h264_annexb_nalu(const void* h264, int bytes, int (*handler)(void* param, const uint8_t* nalu, int bytes, int last), void* param);
@@ -66,6 +68,9 @@ static int rtp_h265_pack_nalu(struct rtp_encode_h265_t *packer, const uint8_t* n
 	int r, n;
 	uint8_t *rtp;
 
+	if (bytes < 3)
+		return -1;
+
 	packer->pkt.payload = nalu;
 	packer->pkt.payloadlen = bytes;
 	n = RTP_FIXED_HEADER + packer->pkt.payloadlen;
@@ -91,8 +96,14 @@ static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr
 {
 	int r, n;
 	unsigned char *rtp;
+	uint8_t fu_header;
+	uint16_t nalu_header;
 
-	uint8_t fu_header = (ptr[0] >> 1) & 0x3F;
+	if (bytes < 3)
+		return -1;
+
+	nalu_header = ((uint16_t)((ptr[0] & 0x81) | (H265_RTP_FU << 1)) << 8) | ptr[1]; // replace nalu type with 49(FU)
+	fu_header = (ptr[0] >> 1) & 0x3F;
 
 	r = 0;
 	ptr += 2; // skip NAL Unit Type byte
@@ -127,8 +138,8 @@ static int rtp_h265_pack_fu(struct rtp_encode_h265_t *packer, const uint8_t* ptr
 		}
 
 		/*header + fu_header*/
-		rtp[n + 0] = 49 << 1;
-		rtp[n + 1] = 1;
+		rtp[n + 0] = (uint8_t)(nalu_header >> 8);
+		rtp[n + 1] = (uint8_t)(nalu_header & 0xFF);
 		rtp[n + 2] = fu_header;
 		memcpy(rtp + n + N_FU_HEADER, packer->pkt.payload, packer->pkt.payloadlen);
 

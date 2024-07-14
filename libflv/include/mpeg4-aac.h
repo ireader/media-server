@@ -14,8 +14,10 @@ struct mpeg4_aac_t
 	uint8_t sampling_frequency_index; // 0-96000, 1-88200, 2-64000, 3-48000, 4-44100, 5-32000, 6-24000, 7-22050, 8-16000, 9-12000, 10-11025, 11-8000, 12-7350, 13/14-reserved, 15-frequency is written explictly
 	uint8_t channel_configuration; // 0-AOT, 1-1channel,front-center, 2-2channels, front-left/right, 3-3channels: front center/left/right, 4-4channels: front-center/left/right, back-center, 5-5channels: front center/left/right, back-left/right, 6-6channels: front center/left/right, back left/right LFE-channel, 7-8channels
 
-	uint32_t extension_frequency; // play frequency(AAC-HE v1/v2 sbr/ps)
 	uint32_t sampling_frequency;  // codec frequency, valid only in decode
+	uint32_t extension_frequency; // play frequency(AAC-HE v1/v2 sbr/ps)
+	uint8_t extension_audio_object_type; // default 0, valid on sbr/ps flag
+	uint8_t extension_channel_configuration; // default: channel_configuration
 	uint8_t channels; // valid only in decode
 	int sbr; // sbr flag, valid only in decode
 	int ps; // ps flag, valid only in decode
@@ -129,6 +131,9 @@ int mpeg4_aac_audio_specific_config_save(const struct mpeg4_aac_t* aac, uint8_t*
 int mpeg4_aac_stream_mux_config_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac);
 /// @return >=0-stream mux config length, <0-error
 int mpeg4_aac_stream_mux_config_save(const struct mpeg4_aac_t* aac, uint8_t* data, size_t bytes);
+
+/// @return >=0-length, <0-error
+int mpeg4_aac_codecs(const struct mpeg4_aac_t* aac, char* codecs, size_t bytes);
 
 /// get AAC profile level indication value
 int mpeg4_aac_profile_level(const struct mpeg4_aac_t* aac);

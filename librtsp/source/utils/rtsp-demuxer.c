@@ -3,7 +3,6 @@
 #include "rtp-profile.h"
 #include "rtcp-header.h"
 #include "sdp-a-fmtp.h"
-#include "mpeg-ts-proto.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
 #include "avbsf.h"
@@ -347,11 +346,24 @@ static int rtsp_demuxer_onh2645packet(void* param, int64_t pts, int64_t dts, con
 
 static int rtsp_demuxer_payload_close(struct rtp_payload_info_t* pt)
 {
+    int i;
+
     if (pt->ptr.ptr)
     {
         assert(pt->ptr.cap > 0);
         free(pt->ptr.ptr);
         pt->ptr.ptr = NULL;
+    }
+
+    for (i = 0; i < sizeof(pt->tracks) / sizeof(pt->tracks[0]); i++)
+    {
+        if (pt->tracks[i].bs && pt->tracks[i].filter)
+        {
+            pt->tracks[i].bs->destroy(&pt->tracks[i].filter);
+            pt->tracks[i].filter = NULL;
+            pt->tracks[i].bs = NULL;
+            pt->tracks[i].pid = 0;
+        }
     }
 
     if (pt->bs && pt->filter)
@@ -432,7 +444,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         case AVCODEC_VIDEO_H264:
             if (fmtp && *fmtp && 0 == sdp_a_fmtp_h264(fmtp, &payload, &pt->fmtp.h264))
                 pt->extra_bytes = sdp_h264_load(pt->extra, len, pt->fmtp.h264.sprop_parameter_sets);
-            pt->avbsf = avbsf_h264();
+            pt->avbsf = avbsf_find(AVCODEC_VIDEO_H264);
             pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
             onpacket = rtsp_demuxer_onh2645nalu;
             break;
@@ -440,7 +452,7 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
         case AVCODEC_VIDEO_H265:
             if (fmtp && *fmtp && 0 == sdp_a_fmtp_h265(fmtp, &payload, &pt->fmtp.h265))
                 pt->extra_bytes = sdp_h265_load(pt->extra, len, pt->fmtp.h265.sprop_vps, pt->fmtp.h265.sprop_sps, pt->fmtp.h265.sprop_pps, pt->fmtp.h265.sprop_sei);
-            pt->avbsf = avbsf_h265();
+            pt->avbsf = avbsf_find(AVCODEC_VIDEO_H265);
             pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
             onpacket = rtsp_demuxer_onh2645nalu;
             break;
@@ -565,11 +577,23 @@ int rtsp_demuxer_input(struct rtsp_demuxer_t* demuxer, const void* data, int byt
 
 int rtsp_demuxer_rtcp(struct rtsp_demuxer_t* demuxer, void* buf, int len)
 {
-    if (demuxer->idx >= demuxer->count || demuxer->idx < 0)
+    if (!demuxer || demuxer->idx >= demuxer->count || demuxer->idx < 0 || !demuxer->pt[demuxer->idx].rtp)
     {
         assert(0);
         return -ENOENT;
     }
 
     return rtp_demuxer_rtcp(demuxer->pt[demuxer->idx].rtp, buf, len);
+}
+
+int rtsp_demuxer_stats(struct rtsp_demuxer_t* demuxer, int* lost, int* late, int* misorder, int* duplicate)
+{
+    if (!demuxer || demuxer->idx >= demuxer->count || demuxer->idx < 0 || !demuxer->pt[demuxer->idx].rtp)
+    {
+        assert(0);
+        return -1;
+    }
+
+    rtp_demuxer_stats(demuxer->pt[demuxer->idx].rtp, lost, late, misorder, duplicate);
+    return 0;
 }

@@ -32,16 +32,10 @@ uint64_t rtpclock()
     mach_timebase_info(&timebase);
     return tick * timebase.numer / timebase.denom / 1000;
 #else
-#if defined(CLOCK_MONOTONIC)
-    struct timespec tp;
-    clock_gettime(CLOCK_MONOTONIC, &tp);
-    return (uint64_t)tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
-#else
     // POSIX.1-2008 marks gettimeofday() as obsolete, recommending the use of clock_gettime(2) instead.
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
-#endif
 #endif
 }
 

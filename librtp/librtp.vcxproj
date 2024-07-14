@@ -27,24 +27,24 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -140,6 +140,8 @@
     <ClCompile Include="payload\rtp-h265-unpack.c" />
     <ClCompile Include="payload\rtp-h264-pack.c" />
     <ClCompile Include="payload\rtp-h264-unpack.c" />
+    <ClCompile Include="payload\rtp-h266-pack.c" />
+    <ClCompile Include="payload\rtp-h266-unpack.c" />
     <ClCompile Include="payload\rtp-mp4a-latm-pack.c" />
     <ClCompile Include="payload\rtp-mp4a-latm-unpack.c" />
     <ClCompile Include="payload\rtp-mp4v-es-pack.c" />
@@ -159,12 +161,32 @@
     <ClCompile Include="payload\rtp-vp8-unpack.c" />
     <ClCompile Include="payload\rtp-vp9-pack.c" />
     <ClCompile Include="payload\rtp-vp9-unpack.c" />
+    <ClCompile Include="rtpext\rtp-ext-abs-send-time.c" />
+    <ClCompile Include="rtpext\rtp-ext-absolute-capture-time.c" />
+    <ClCompile Include="rtpext\rtp-ext-color-space.c" />
+    <ClCompile Include="rtpext\rtp-ext-csrc-audio-level.c" />
+    <ClCompile Include="rtpext\rtp-ext-frame-marking.c" />
+    <ClCompile Include="rtpext\rtp-ext-inband-cn.c" />
+    <ClCompile Include="rtpext\rtp-ext-playout-delay.c" />
+    <ClCompile Include="rtpext\rtp-ext-sdes.c" />
+    <ClCompile Include="rtpext\rtp-ext-ssrc-audio-level.c" />
+    <ClCompile Include="rtpext\rtp-ext-toffset.c" />
+    <ClCompile Include="rtpext\rtp-ext-transport-wide-cc.c" />
+    <ClCompile Include="rtpext\rtp-ext-video-content-type.c" />
+    <ClCompile Include="rtpext\rtp-ext-video-frame-tracking-id.c" />
+    <ClCompile Include="rtpext\rtp-ext-video-layers-allocation.c" />
+    <ClCompile Include="rtpext\rtp-ext-video-orientation.c" />
+    <ClCompile Include="rtpext\rtp-ext-video-timing.c" />
+    <ClCompile Include="rtpext\rtp-ext.c" />
     <ClCompile Include="source\rtcp-app.c" />
     <ClCompile Include="source\rtcp-bye.c" />
     <ClCompile Include="source\rtcp-interval.c" />
+    <ClCompile Include="source\rtcp-psfb.c" />
     <ClCompile Include="source\rtcp-rr.c" />
+    <ClCompile Include="source\rtcp-rtpfb.c" />
     <ClCompile Include="source\rtcp-sdec.c" />
     <ClCompile Include="source\rtcp-sr.c" />
+    <ClCompile Include="source\rtcp-xr.c" />
     <ClCompile Include="source\rtcp.c" />
     <ClCompile Include="source\rtp-demuxer.c" />
     <ClCompile Include="source\rtp-member-list.c" />
@@ -179,6 +201,8 @@
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h" />
     <ClInclude Include="include\rtp-demuxer.h" />
+    <ClInclude Include="include\rtp-ext.h" />
+    <ClInclude Include="include\rtp-header-extension.h" />
     <ClInclude Include="include\rtp-header.h" />
     <ClInclude Include="include\rtp-internal.h" />
     <ClInclude Include="include\rtp-member-list.h" />

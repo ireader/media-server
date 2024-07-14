@@ -1,6 +1,5 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -31,27 +30,28 @@ inline const char* ts_type(int type)
 	case PSI_STREAM_AAC: return "AAC";
 	case PSI_STREAM_H264: return "H264";
 	case PSI_STREAM_H265: return "H265";
+	case PSI_STREAM_VIDEO_AVS3: return "AVS3";
 	default: return "*";
 	}
 }
 
-static int ts_stream(void* ts, int codecid)
+static int ts_stream(void* ts, int stream, int codecid)
 {
     static std::map<int, int> streams;
-    std::map<int, int>::const_iterator it = streams.find(codecid);
+    std::map<int, int>::const_iterator it = streams.find(stream);
     if (streams.end() != it)
         return it->second;
 
     int i = mpeg_ts_add_stream(ts, codecid, NULL, 0);
-    streams[codecid] = i;
+    streams[stream] = i;
     return i;
 }
 
 static int on_ts_packet(void* ts, int program, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-	printf("[%s] pts: %08lu, dts: %08lu%s\n", ts_type(avtype), (unsigned long)pts, (unsigned long)dts, flags ? " [I]":"");
+	printf("[%d:%d][%s] pts: %08lu, dts: %08lu%s\n", program, stream, ts_type(avtype), (unsigned long)pts, (unsigned long)dts, flags ? " [I]":"");
 
-    return mpeg_ts_write(ts, ts_stream(ts, avtype), flags, pts, dts, data, bytes);
+    return mpeg_ts_write(ts, ts_stream(ts, stream, avtype), flags, pts, dts, data, bytes);
 }
 
 static void mpeg_ts_file(const char* file, void* muxer)

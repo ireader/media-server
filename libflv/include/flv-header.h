@@ -41,6 +41,8 @@ struct flv_video_tag_header_t
 	uint8_t keyframe;	/// video frame type: 1-key frame, 2-inter frame
 	uint8_t avpacket;	/// H.264/H.265/AV1 only:FLV_SEQUENCE_HEADER/FLV_AVPACKET/FLV_END_OF_SEQUENCE
 	int32_t cts;		/// video composition time(PTS - DTS), AVC/HEVC/AV1 only
+
+	int enhanced_rtmp;	/// https://github.com/veovera/enhanced-rtmp/blob/main/enhanced-rtmp.pdf
 };
 
 /// Read FLV File Header

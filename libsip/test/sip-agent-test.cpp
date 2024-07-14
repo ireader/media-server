@@ -94,7 +94,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 
 	addrlen = sizeof(addr);
 	memset(&addr, 0, sizeof(addr));
-	strcpy(protocol, "UDP");
+	snprintf(protocol, 16, "%s", "UDP");
 
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)
@@ -242,7 +242,7 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 		if (200 <= code && code < 300)
 		{
 			*session = NULL;
-			sip_uac_ack(t, NULL, 0);
+			sip_uac_ack(t, NULL, 0, NULL);
 		}
 		task->event.Signal();
 	}

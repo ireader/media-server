@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <errno.h>
 
 #define H264_NAL_IDR		5 // Coded slice of an IDR picture
 #define H264_NAL_SPS		7 // Sequence parameter set
@@ -399,7 +400,7 @@ static void h264_handler(void* param, const uint8_t* nalu, size_t bytes)
 	}
 	else
 	{
-		mp4->errcode = -1;
+		mp4->errcode = -E2BIG;
 	}
 }
 

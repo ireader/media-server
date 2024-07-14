@@ -38,6 +38,8 @@ struct sip_dialog_t
 
 	// internal use only
 	void* session; // user-defined session
+	void (*ondestroy)(void* param);
+	void* ondestroyparam;
 	struct list_head link;
 	char* ptr;
 	int32_t ref;
@@ -60,6 +62,8 @@ int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
 
 /// call sip_dialog_release
 struct sip_dialog_t* sip_dialog_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
+
+int sip_dialog_ondestroy(struct sip_dialog_t* dialog, void (*ondestroy)(void* param), void* param);
 
 #if defined(__cplusplus)
 }

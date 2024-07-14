@@ -52,5 +52,5 @@ void fmp4_writer_test2(const char* mp4, const char* outmp4)
     fmp4_writer_destroy(fmp4);
     mov_reader_destroy(mov);
     fclose(wfile.fp);
-    fclose(wfile.fp);
+    fclose(file.fp);
 }

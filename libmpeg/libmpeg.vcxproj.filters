@@ -69,21 +69,15 @@
     <ClCompile Include="source\mpeg-sdt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\mpeg-ts-h266.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mpeg-element-descriptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\mpeg-pes-proto.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mpeg-ps-proto.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mpeg-ps.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mpeg-ts-proto.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mpeg-ts.h">
@@ -92,11 +86,32 @@
     <ClInclude Include="include\mpeg-types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\mpeg-util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="source\mpeg-ts-opus.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg-proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg-pes-proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg-ps-proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg-ts-proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mpeg-pes-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mpeg-ps-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mpeg-ts-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpeg-util.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -16,6 +16,20 @@ int rtp_queue_destroy(rtp_queue_t* queue);
 int rtp_queue_write(rtp_queue_t* queue, struct rtp_packet_t* pkt);
 struct rtp_packet_t* rtp_queue_read(rtp_queue_t* queue);
 
+
+struct rtp_queue_stats_t
+{
+	int total;
+
+	int duplicate;
+	int reorder; // misorder
+	int late; // two late
+	int bad; // bad seq
+
+	int lost; // read discard by threshold
+};
+void rtp_queue_stats(rtp_queue_t* queue, struct rtp_queue_stats_t* stats);
+
 #if defined(__cplusplus)
 }
 #endif

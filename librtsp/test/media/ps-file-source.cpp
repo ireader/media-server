@@ -22,7 +22,7 @@ PSFileSource::PSFileSource(const char *file)
 	func.free = Free;
 	func.write = Packet;
 	m_ps = ps_muxer_create(&func, this);
-    m_ps_stream = ps_muxer_add_stream(m_ps, STREAM_VIDEO_H264, NULL, 0);
+    m_ps_stream = ps_muxer_add_stream(m_ps, PSI_STREAM_H264, NULL, 0);
 
 	static struct rtp_payload_t s_psfunc = {
 		PSFileSource::RTPAlloc,

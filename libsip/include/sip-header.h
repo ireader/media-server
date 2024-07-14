@@ -189,6 +189,10 @@ int sip_header_vias(const char* s, const char* end, struct sip_vias_t* vias);
 int sip_via_write(const struct sip_via_t* via, char* data, const char* end);
 const struct cstring_t* sip_vias_top_branch(const struct sip_vias_t* vias);
 
+int sip_header_route(const char* s, const char* end, struct sip_uri_t* route);
+int sip_header_routes(const char* s, const char* end, struct sip_uris_t* route);
+int sip_route_write(const struct sip_uri_t* route, char* data, const char* end);
+
 int sip_header_contact(const char* s, const char* end, struct sip_contact_t* contact);
 int sip_header_contacts(const char* s, const char* end, struct sip_contacts_t* contacts);
 int sip_contact_write(const struct sip_contact_t* contact, char* data, const char* end);

@@ -61,8 +61,8 @@ struct rtsp_client_t
 
 	// media
 	char range[64]; // rtsp header Range
-	char speed[16]; // rtsp header speed
-    char scale[16]; // rtsp header scale
+	//char speed[16]; // rtsp header speed
+    char scale[32]; // rtsp header scale
     char req[2048];
 
 	char uri[256];

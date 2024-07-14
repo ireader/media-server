@@ -2,7 +2,10 @@
 #include "mpeg4-avc.h"
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
+#define H265_NAL_BLA_W_LP	16
+#define H265_NAL_RSV_IRAP	23
 #define H265_NAL_VPS		32
 #define H265_NAL_SPS		33
 #define H265_NAL_PPS		34
@@ -167,13 +170,15 @@ static uint8_t hevc_sps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_
 
 static uint8_t hevc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t len, uint8_t* sps)
 {
+	uint8_t pps;
 	size_t sodb;
 	size_t offset = 2 * 8;  // 2-nalu type
 	sodb = hevc_rbsp_decode(rbsp, bytes, ptr, len);
 	if (sodb < 3)
 		return 0xFF; (void)hevc;
+	pps = mpeg4_h264_read_ue(ptr, sodb, &offset);
 	*sps = mpeg4_h264_read_ue(ptr, sodb, &offset);
-	return mpeg4_h264_read_ue(ptr, sodb, &offset);
+	return pps;
 }
 
 static void mpeg4_hevc_remove(struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t bytes, const uint8_t* end)
@@ -358,6 +363,12 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	struct h265_annexbtomp4_handle_t* mp4;
 	mp4 = (struct h265_annexbtomp4_handle_t*)param;
 
+	if (bytes < 2)
+	{
+		assert(0);
+		return;
+	}
+
 	nalutype = (nalu[0] >> 1) & 0x3f;
 #if defined(H2645_FILTER_AUD)
 	if(H265_NAL_AUD == nalutype)
@@ -372,7 +383,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 
 	// IRAP-1, B/P-2, other-0
 	if (mp4->vcl && nalutype < H265_NAL_VPS)
-		*mp4->vcl = 16<=nalutype && nalutype<=23 ? 1 : 2;
+		*mp4->vcl = H265_NAL_BLA_W_LP<=nalutype && nalutype<=H265_NAL_RSV_IRAP ? 1 : 2;
 
 	if (mp4->capacity >= mp4->bytes + bytes + 4)
 	{

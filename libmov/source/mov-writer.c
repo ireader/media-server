@@ -318,6 +318,7 @@ int mov_writer_add_subtitle(struct mov_writer_t* writer, uint8_t object, const v
 {
 	struct mov_t* mov;
 	struct mov_track_t* track;
+	uint32_t i;
 
 	mov = &writer->mov;
     track = mov_add_track(mov);
@@ -326,6 +327,9 @@ int mov_writer_add_subtitle(struct mov_writer_t* writer, uint8_t object, const v
 
     if (0 != mov_add_subtitle(track, &mov->mvhd, 1000, object, extra_data, extra_data_size))
         return -ENOMEM;
+
+	for (i = 1; object == MOV_OBJECT_CHAPTER && i < mov->mvhd.next_track_ID; i++)
+		mov->tracks[i - 1].chpl_track = mov->mvhd.next_track_ID;
 
     mov->mvhd.next_track_ID++;
 	return mov->track_count++;

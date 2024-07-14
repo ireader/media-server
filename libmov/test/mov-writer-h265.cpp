@@ -100,40 +100,16 @@ static void h265_handler(void* param, const uint8_t* nalu, size_t bytes)
 	uint8_t nalutype = (nalu[0] >> 1) & 0x3f;
     if (ctx->vcl > 0 && h265_is_new_access_unit((const uint8_t*)nalu, bytes))
     {
-        //int r = h265_write(ctx, ctx->ptr, ptr - ctx->ptr);
-		int r = h265_write(ctx, ctx->buf, ctx->bytes);
+        int r = h265_write(ctx, ctx->ptr, ptr - ctx->ptr);
 		if (-1 == r)
             return; // wait for more data
-
-		if ((j++) % 25 == 0)
-			i = (i + 1) % ctx->vcl;
-		ctx->bytes = 0;
-		printf("\n");
 
         ctx->ptr = ptr;
         ctx->vcl = 0;
     }
 
 	if (nalutype <= 31)
-	{
 		++ctx->vcl;
-
-		if (1 == ctx->vcl || ctx->vcl == i)
-		{
-			printf("ctx->vcl: %d ", ctx->vcl);
-			memcpy(ctx->buf + ctx->bytes, startcode, sizeof(startcode));
-			ctx->bytes += sizeof(startcode);
-			memcpy(ctx->buf + ctx->bytes, nalu, bytes);
-			ctx->bytes += bytes;
-		}
-	}
-	else
-	{
-		memcpy(ctx->buf + ctx->bytes, startcode, sizeof(startcode));
-		ctx->bytes += sizeof(startcode);
-		memcpy(ctx->buf + ctx->bytes, nalu, bytes);
-		ctx->bytes += bytes;
-	}
 }
 
 void mov_writer_h265(const char* h265, int width, int height, const char* mp4)

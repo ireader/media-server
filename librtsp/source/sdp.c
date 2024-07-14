@@ -218,22 +218,17 @@ static inline int sdp_token_word(struct sdp_t* sdp, const char* escape)
 
 static inline int sdp_token_crlf(struct sdp_t* sdp)
 {
+	int i;
 	sdp_skip_space(sdp);
 
-	if('\r' == sdp->raw[sdp->offset])
+	for(i = 0; '\r' == sdp->raw[sdp->offset] || '\n' == sdp->raw[sdp->offset]; i++)
 		++sdp->offset;
 	
-	if('\n' == sdp->raw[sdp->offset])
-	{
-		++sdp->offset;
-		return 0;
-	}
-
 	// sdp end line
 	if('\0' == sdp->raw[sdp->offset])
 		return 0;
 
-	return -1;
+	return i > 0 ? 0 : -1;
 }
 
 static inline void trim_right(const char* s, int *len)
@@ -761,7 +756,7 @@ static int sdp_parse_repeat(struct sdp_t* sdp)
 	r->duration = sdp->raw + sdp->offset;
 	n[1] = sdp_token_word(sdp, " \t\r\n");
 
-	while(strchr(" \t", sdp->raw[sdp->offset]))
+	while(sdp->raw[sdp->offset] && strchr(" \t", sdp->raw[sdp->offset]))
 	{
 		if(n[2] > 0 && offset)
 		{
@@ -834,11 +829,11 @@ static int sdp_parse_timezone(struct sdp_t* sdp)
 				t->z.capacity += 8;
 			}
 
-			z = &t->z.ptr[t->r.count - N_TIMEZONE];
+			z = &t->z.ptr[t->z.count - N_TIMEZONE];
 		}
 		else
 		{
-			z = &t->z.timezones[t->r.count];
+			z = &t->z.timezones[t->z.count];
 		}
 
 		z->time = time;
@@ -1011,6 +1006,7 @@ static int sdp_append_media_format(struct sdp_media *m, char* fmt)
 // m=video 49170/2 RTP/AVP 31
 // c=IN IP4 224.2.1.1/127/2
 // m=video 49170/2 RTP/AVP 31
+// m=application 9 UDP/DTLS/SCTP webrtc-datachannel
 static int sdp_parse_media(struct sdp_t* sdp)
 {
 	int ret;
@@ -1415,7 +1411,7 @@ int sdp_connection_get_address(struct sdp_t* sdp, char* ip, int bytes)
 		p = sdp->c.address;
 		while(*p && '/' != *p && bytes > 1)
 		{
-			*ip++ = *p;
+			*ip++ = *p++;
 			--bytes;
 		}
 
@@ -1544,6 +1540,7 @@ static inline int sdp_media_format_value(const char* format)
 	case 'v': return SDP_M_MEDIA_VIDEO;
 	case 't': return SDP_M_MEDIA_TEXT;
 	case 'm': return SDP_M_MEDIA_MESSAGE;
+	case 'w': return 0 == strcmp("webrtc-datachannel", format) ? SDP_M_MEDIA_APPLICATION : -1;
 	default: return atoi(format);
 	}
 	//if(0 == strcasecmp("video", format))
@@ -1618,7 +1615,7 @@ int sdp_media_get_connection_address(struct sdp_t* sdp, int media, char* ip, int
 		p = conn->address;
 		while(*p && '/' != *p && bytes > 1)
 		{
-			*ip++ = *p;
+			*ip++ = *p++;
 			--bytes;
 		}
 

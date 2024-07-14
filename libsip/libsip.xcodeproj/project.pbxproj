@@ -14,7 +14,6 @@
 		461F0CD7232B40AE00A995BD /* sip-uac-bye.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CC9232B40AD00A995BD /* sip-uac-bye.c */; };
 		461F0CD8232B40AE00A995BD /* sip-uac-transaction-invite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */; };
 		461F0CD9232B40AE00A995BD /* sip-uac-info.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCB232B40AD00A995BD /* sip-uac-info.c */; };
-		461F0CDA232B40AE00A995BD /* sip-uac-refer.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCC232B40AD00A995BD /* sip-uac-refer.c */; };
 		461F0CDB232B40AE00A995BD /* sip-uac-transaction.h in Headers */ = {isa = PBXBuildFile; fileRef = 461F0CCD232B40AD00A995BD /* sip-uac-transaction.h */; };
 		461F0CDC232B40AE00A995BD /* sip-uac-transaction-noninvite.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCE232B40AD00A995BD /* sip-uac-transaction-noninvite.c */; };
 		461F0CDD232B40AE00A995BD /* sip-uac-subscribe.c in Sources */ = {isa = PBXBuildFile; fileRef = 461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */; };
@@ -57,7 +56,6 @@
 		461F0CC9232B40AD00A995BD /* sip-uac-bye.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-bye.c"; sourceTree = "<group>"; };
 		461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-invite.c"; sourceTree = "<group>"; };
 		461F0CCB232B40AD00A995BD /* sip-uac-info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-info.c"; sourceTree = "<group>"; };
-		461F0CCC232B40AD00A995BD /* sip-uac-refer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-refer.c"; sourceTree = "<group>"; };
 		461F0CCD232B40AD00A995BD /* sip-uac-transaction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "sip-uac-transaction.h"; sourceTree = "<group>"; };
 		461F0CCE232B40AD00A995BD /* sip-uac-transaction-noninvite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-transaction-noninvite.c"; sourceTree = "<group>"; };
 		461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-uac-subscribe.c"; sourceTree = "<group>"; };
@@ -167,7 +165,6 @@
 				461F0CCB232B40AD00A995BD /* sip-uac-info.c */,
 				461F0CD3232B40AE00A995BD /* sip-uac-invite.c */,
 				461F0CC8232B40AD00A995BD /* sip-uac-options.c */,
-				461F0CCC232B40AD00A995BD /* sip-uac-refer.c */,
 				461F0CD2232B40AE00A995BD /* sip-uac-register.c */,
 				461F0CCF232B40AD00A995BD /* sip-uac-subscribe.c */,
 				461F0CCA232B40AD00A995BD /* sip-uac-transaction-invite.c */,
@@ -232,7 +229,7 @@
 		46C5B29A2183ED2700419E57 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1240;
 				ORGANIZATIONNAME = ireader;
 				TargetAttributes = {
 					46C5B2A12183ED2700419E57 = {
@@ -281,7 +278,6 @@
 				46C5B4692183EE7000419E57 /* sip-header-param.c in Sources */,
 				461F0CA6232B404400A995BD /* sip-subscribe.c in Sources */,
 				461F0CF9232B40BF00A995BD /* sip-uas-subscribe.c in Sources */,
-				461F0CDA232B40AE00A995BD /* sip-uac-refer.c in Sources */,
 				461F0CF2232B40BF00A995BD /* sip-uas-transaction.c in Sources */,
 				461F0CF5232B40BF00A995BD /* sip-uas-options.c in Sources */,
 				461F0CA8232B406400A995BD /* sip-header-substate.c in Sources */,
@@ -332,6 +328,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -398,6 +395,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;

@@ -40,6 +40,13 @@ struct mov_udta_meta_t
 
 int mov_udta_meta_write(const struct mov_udta_meta_t* meta, void* data, int bytes);
 
+struct mov_udta_chapter_t
+{
+	uint64_t timestamp; // 1s = 10 * 1000 * 1000
+	const char* title; // optional
+};
+int mov_udta_chapter_write(const struct mov_udta_chapter_t* chapters, int count, void* data, int bytes);
+
 #ifdef __cplusplus
 }
 #endif

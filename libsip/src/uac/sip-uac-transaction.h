@@ -48,7 +48,7 @@ struct sip_uac_transaction_t
 
 	struct sip_agent_t* agent;
 	struct sip_dialog_t* dialog;
-//	int (*onhandle)(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
+	int (*onhandle)(struct sip_uac_transaction_t* t, int code);
 	sip_uac_onsubscribe onsubscribe;
 	sip_uac_oninvite oninvite;
 	sip_uac_onreply onreply;

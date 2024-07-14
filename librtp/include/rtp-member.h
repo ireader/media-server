@@ -13,7 +13,7 @@ struct rtp_member
 
 	uint32_t ssrc;					// ssrc == rtcp_sr.ssrc == rtcp_rb.ssrc
 	rtcp_sr_t rtcp_sr;
-	rtcp_rb_t rtcp_rb;
+	//rtcp_rb_t rtcp_rb;
 	rtcp_sdes_item_t sdes[9];		// SDES item
 
 	uint64_t rtcp_clock;			// last RTCP SR/RR packet clock(local time)

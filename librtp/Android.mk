@@ -11,6 +11,8 @@ LOCAL_SRC_FILES += $(wildcard source/*.c)
 LOCAL_SRC_FILES += $(wildcard source/*.cpp)
 LOCAL_SRC_FILES += $(wildcard payload/*.c)
 LOCAL_SRC_FILES += $(wildcard payload/*.cpp)
+LOCAL_SRC_FILES += $(wildcard rtpext/*.c)
+LOCAL_SRC_FILES += $(wildcard rtpext/*.cpp)
 
 LOCAL_MODULE := rtp
 include $(BUILD_STATIC_LIBRARY)

@@ -39,7 +39,7 @@ int mov_reader_read(mov_reader_t* mov, void* buffer, size_t bytes, mov_reader_on
 /// @param[in] flags MOV_AV_FLAG_xxx, such as: MOV_AV_FLAG_KEYFREAME
 /// @return NULL-error, other-user alloc buffer
 typedef void* (*mov_reader_onread2)(void* param, uint32_t track, size_t bytes, int64_t pts, int64_t dts, int flags);
-/// samp as mov_reader_read + user alloc buffer
+/// same as mov_reader_read + user alloc buffer
 /// NOTICE: user should free buffer on return error!!!
 /// @return 1-read one frame, 0-EOF, <0-error 
 int mov_reader_read2(mov_reader_t* mov, mov_reader_onread2 onread, void* param);

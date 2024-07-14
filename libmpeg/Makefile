@@ -37,6 +37,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = MPEG_H26X_VERIFY MPEG_ZERO_PAYLOAD_LENGTH MPEG_DAHUA_AAC_FROM_G711
+DEFINES = MPEG_H26X_VERIFY MPEG_ZERO_PAYLOAD_LENGTH MPEG_DAHUA_AAC_FROM_G711 MPEG_KEDA_H265_FROM_H264
 
 include ../gcc.mk

@@ -9,14 +9,13 @@
 #include "rtp-profile.h"
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <time.h>
 
-#define RTP_VIDEO_WITH_PS
+//#define RTP_VIDEO_WITH_PS
 
 #define RTP_LOST_PERCENT 5
 
@@ -70,14 +69,14 @@ static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_
 {
     struct mov_rtp_test_stream_t* ctx = (struct mov_rtp_test_stream_t*)param;
     
-    int r = rand();
-    if( (r % 100) < RTP_LOST_PERCENT )
-    {
-        printf("======== discard [%s] timestamp: %u ==============\n", ctx->av ? "V" : "A", (unsigned int)timestamp);
-        return 0;
-    }
+    //int x = rand();
+    //if( (x % 100) < RTP_LOST_PERCENT )
+    //{
+    //    printf("======== discard [%s] timestamp: %u ==============\n", ctx->av ? "V" : "A", (unsigned int)timestamp);
+    //    return 0;
+    //}
     
-    r = rtp_payload_decode_input(ctx->decoder, packet, bytes);
+    int r = rtp_payload_decode_input(ctx->decoder, packet, bytes);
     return r >= 0 ? 0 : r;
 }
 
@@ -127,7 +126,7 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
     static int64_t v_pts, v_dts;
     static int64_t a_pts, a_dts;
     struct mov_rtp_test_t* ctx = (struct mov_rtp_test_t*)param;
-    int n;
+    int n = bytes;
 
     if (ctx->v.track == track)
     {
@@ -143,9 +142,9 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
         {
             n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
         }
-        else if (MOV_OBJECT_VP9 == ctx->v.object)
+        else if (MOV_OBJECT_VP8 == ctx->v.object || MOV_OBJECT_VP9 == ctx->v.object)
         {
-            n = aom_av1_codec_configuration_record_save(&s_av1, s_packet, sizeof(s_packet));
+            // nothing to do
         }
         else
         {
@@ -225,6 +224,11 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     else if (MOV_OBJECT_VP9 == object)
     {
         assert(0 == rtp_payload_codec_create(&ctx->v, 96, "VP9", 0, 0));
+        assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
+    }
+    else if (MOV_OBJECT_VP8 == object)
+    {
+        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "VP8", 0, 0));
         assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
     }
     else
@@ -317,8 +321,10 @@ void mov_rtp_test(const char* mp4)
     if(ctx.v.encoder)
         rtp_payload_encode_destroy(ctx.v.encoder);
     
+#if defined(RTP_VIDEO_WITH_PS)
     ps_demuxer_destroy(ctx.psdec);
     ps_muxer_destroy(ctx.psenc);
+#endif
     mov_reader_destroy(mov);
     fclose(fp);
 }

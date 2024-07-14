@@ -1,5 +1,6 @@
 #include "sip-uas-transaction.h"
 #include "sip-transport.h"
+#include "sip-internal.h"
 
 int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
 int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t);
@@ -13,6 +14,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 	t->reply = sip_message_create(SIP_MESSAGE_REPLY);
 	if (0 != sip_message_init3(t->reply, req, dialog))
 	{
+		sip_message_destroy(t->reply);
 		free(t);
 		return NULL;
 	}
@@ -34,6 +36,7 @@ struct sip_uas_transaction_t* sip_uas_transaction_create(struct sip_agent_t* sip
 	// Life cycle: from create -> destroy
 	sip_uas_link_transaction(sip, t);
 	sip_uas_transaction_timeout(t, TIMER_H); // trying timeout
+	atomic_increment32(&s_gc.uas);
 	return t;
 }
 
@@ -75,6 +78,7 @@ int sip_uas_transaction_release(struct sip_uas_transaction_t* t)
     
 	locker_destroy(&t->locker);
 	free(t);
+	atomic_decrement32(&s_gc.uas);
 	return 0;
 }
 
@@ -203,7 +207,7 @@ void sip_uas_transaction_ontimeout(void* usrptr)
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
 		if (t->dialog)
-			t->handler->onack(t->initparam, NULL, t, t->dialog->session, t->dialog, 408/*Invite Timeout*/, NULL, 0);
+			t->handler->onack(t->initparam, NULL, t, t->dialog->session, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, 408/*Invite Timeout*/, NULL, 0);
 	}
 
 	locker_unlock(&t->locker);

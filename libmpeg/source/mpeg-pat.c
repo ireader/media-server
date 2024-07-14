@@ -2,8 +2,7 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.4.3 Program association table(p65)
 
-#include "mpeg-ts-proto.h"
-#include "mpeg-util.h"
+#include "mpeg-ts-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -34,6 +33,7 @@ struct pmt_t* pat_alloc_pmt(struct pat_t* pat)
 		if (!ptr)
 			return NULL;
 
+		assert(ptr != pat->pmt_default);
 		if (pat->pmts == pat->pmt_default)
 			memmove(ptr, pat->pmt_default, sizeof(pat->pmt_default));
 		pat->pmts = (struct pmt_t*)ptr;
@@ -93,8 +93,8 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 	}
 
 	assert(bytes >= section_length + 3); // PMT = section_length + 3
-	if(pat->ver != version_number)
-		pat->pmt_count = 0; // clear all pmts
+	//if(pat->ver != version_number)
+	//	pat_clear(pat); // fix pat.pmt[i].pes.pkt.data memory leak
 	pat->tsid = transport_stream_id;
 	pat->ver = version_number;
 
@@ -105,7 +105,7 @@ size_t pat_read(struct pat_t *pat, const uint8_t* data, size_t bytes)
 	{
         pn = (data[i] << 8) | data[i+1];
         pid = ((data[i+2] & 0x1F) << 8) | data[i+3];
-//        printf("PAT: pn: %0x, pid: %0x\n", (unsigned int)pn, (unsigned int)pid);
+//        printf("PAT: pn: 0x%0x, pid: 0x%0x\n", (unsigned int)pn, (unsigned int)pid);
         
         if(0 == pn)
             continue; // ignore NIT info
@@ -183,4 +183,22 @@ struct pmt_t* pat_find(struct pat_t* pat, uint16_t pn)
             return &pat->pmts[i];
     }
     return NULL;
+}
+
+void pat_clear(struct pat_t* pat)
+{
+	unsigned int i;
+	for (i = 0; i < pat->pmt_count; i++)
+	{
+		pmt_clear(&pat->pmts[i]);
+	}
+
+	if (pat->pmts && pat->pmts != pat->pmt_default)
+	{
+		free(pat->pmts);
+		pat->pmts = NULL;
+	}
+
+	pat->pmt_count = 0;
+	pat->pmt_capacity = 0;
 }

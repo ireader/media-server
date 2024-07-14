@@ -44,6 +44,8 @@ static inline char flv_type(int type)
 	case FLV_VIDEO_AVCC:		return 'v';
 	case FLV_VIDEO_H265:		return 'H';
 	case FLV_VIDEO_HVCC:		return 'h';
+	case FLV_VIDEO_AVS3:		return '3';
+	case FLV_VIDEO_AVSC:		return '3';
 	default: return '*';
 	}
 }
@@ -53,14 +55,18 @@ static inline int flv2ts_codec_id(int type)
 	switch (type)
 	{
 	case FLV_AUDIO_ASC:
-	case FLV_AUDIO_AAC:			return STREAM_AUDIO_AAC;
-	case FLV_AUDIO_MP3:			return STREAM_AUDIO_MP3;
+	case FLV_AUDIO_AAC:			return PSI_STREAM_AAC;
+	case FLV_AUDIO_MP3:			return PSI_STREAM_MP3;
 	case FLV_AUDIO_OPUS:		
-	case FLV_AUDIO_OPUS_HEAD:	return STREAM_AUDIO_OPUS;
+	case FLV_AUDIO_OPUS_HEAD:	return PSI_STREAM_AUDIO_OPUS;
 	case FLV_VIDEO_H264:		
-	case FLV_VIDEO_AVCC:		return STREAM_VIDEO_H264;
+	case FLV_VIDEO_AVCC:		return PSI_STREAM_H264;
 	case FLV_VIDEO_H265:		
-	case FLV_VIDEO_HVCC:		return STREAM_VIDEO_H264;
+	case FLV_VIDEO_HVCC:		return PSI_STREAM_H265;
+	case FLV_VIDEO_H266:
+	case FLV_VIDEO_VVCC:		return PSI_STREAM_H266;
+	case FLV_VIDEO_AVS3:
+	case FLV_VIDEO_AVSC:		return PSI_STREAM_VIDEO_AVS3;
 	default: return '*';
 	}
 }
@@ -96,7 +102,7 @@ static int onFLV(void* ts, int codec, const void* data, size_t bytes, unsigned i
 		a_pts = pts;
 		a_dts = dts;
 	}
-	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec)
+	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_H266 == codec || FLV_VIDEO_AVS3 == codec)
 	{
 		assert(0 == v_dts || dts >= v_dts);
 		dts = (a_dts && dts < v_dts) ? v_dts : dts;

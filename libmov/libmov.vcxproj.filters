@@ -101,9 +101,6 @@
     <ClCompile Include="source\mov-avc1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\mov-hvcc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\mov-tag.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,9 +147,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-opus.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\mov-av1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-hdr.c">

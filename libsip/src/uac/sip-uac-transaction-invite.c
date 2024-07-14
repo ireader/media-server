@@ -158,9 +158,13 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 		return 0; // ignore fork response
 
     // update dialog target
+	assert(!t->dialog);
     sip_dialog_target_refresh(dialog, reply);
-	sip_dialog_addref(dialog); // for t->dialog
-	t->dialog = dialog;
+	if (!t->dialog)
+	{
+		sip_dialog_addref(dialog); // for t->dialog
+		t->dialog = dialog;
+	}
     
 	if (dialog->state == DIALOG_ERALY)
 	{

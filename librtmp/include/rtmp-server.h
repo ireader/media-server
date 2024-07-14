@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#define RTMP_SERVER_ASYNC_START 0x12345678 // magic number, user call rtmp_server_start
+
 typedef struct rtmp_server_t rtmp_server_t;
 
 struct rtmp_server_handler_t
@@ -23,14 +25,14 @@ struct rtmp_server_handler_t
 	//int (*ondelete_stream)(void* param, uint32_t stream_id);
 
 	///pull(server -> client)
-	///@return 0-ok, other-error
+	///@return 0-ok, RTMP_SERVER_ASYNC_START-async mode(must call rtmp_server_start next), other-error
 	int (*onplay)(void* param, const char* app, const char* stream, double start, double duration, uint8_t reset);
 	int (*onpause)(void* param, int pause, uint32_t ms);
 	int (*onseek)(void* param, uint32_t ms);
 
 	///push(client -> server)
 	///@param[in] type: live/record/append
-	///@return 0-ok, other-error
+	///@return 0-ok, RTMP_SERVER_ASYNC_START-async mode(must call rtmp_server_start next), other-error
 	int (*onpublish)(void* param, const char* app, const char* stream, const char* type);
 	///@param[in] data FLV VideoTagHeader + AVCVIDEOPACKET: AVCDecoderConfigurationRecord(ISO 14496-15) / One or more NALUs(four-bytes length + NALU)
 	///@return 0-ok, other-error
@@ -66,7 +68,7 @@ int rtmp_server_send_audio(rtmp_server_t* rtmp, const void* data, size_t bytes, 
 int rtmp_server_send_video(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 int rtmp_server_send_script(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 
-/// [OPTIONAL] call on between onplay and rtmp_server_send_audio/video/script
+/// [OPTIONAL] must call on onplay/onpublish return RTMP_SERVER_ASYNC_START
 /// @param[in] code 0-ok, other-error
 /// @param[in] msg error message
 /// @return 0-ok, other-error

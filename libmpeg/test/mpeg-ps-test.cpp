@@ -1,6 +1,5 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
 #include <assert.h>
 #include <stdio.h>
 #include <map>
@@ -40,6 +39,9 @@ static inline const char* ps_type(int type)
 static int on_ts_packet(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
     printf("[%s] pts: %08lu, dts: %08lu%s\n", ps_type(codecid), (unsigned long)pts, (unsigned long)dts, flags ? " [I]" : "");
+
+    if (0 == codecid)
+        return bytes;
 
     int i;
     static std::map<int, int> streams;

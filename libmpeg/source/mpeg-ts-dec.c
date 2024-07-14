@@ -2,9 +2,8 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
-#include "mpeg-ts-proto.h"
-#include "mpeg-ps-proto.h"
-#include "mpeg-pes-proto.h"
+#include "mpeg-pes-internal.h"
+#include "mpeg-ts-internal.h"
 #include "mpeg-util.h"
 #include "mpeg-ts.h"
 #include <stdlib.h>
@@ -127,6 +126,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     uint32_t i, j;
+	size_t consume;
     for (i = 0; i < ts->pat.pmt_count; i++)
     {
         for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
@@ -138,17 +138,22 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
             if (PSI_STREAM_H264 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x09,0xf0};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
             else if (PSI_STREAM_H265 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
+			else if (PSI_STREAM_H266 == pes->codecid)
+			{
+				const uint8_t aud[] = { 0,0,0,1,0x00,0xA1,0x18 };
+				pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
+			}
             else
             {
                 //assert(0);
-                pes_packet(&pes->pkt, pes, NULL, 0, 0, ts->onpacket, ts->param);
+                pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ts->onpacket, ts->param);
             }
         }
     }
@@ -160,7 +165,9 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
     int r = 0;
     uint32_t i, j, k;
 	uint32_t PID;
-	unsigned int count;
+	size_t consume;
+	unsigned int count, ver;
+	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
@@ -195,7 +202,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 		}
 
 		assert(i <= bytes);
-		if (i >= bytes)
+		if (i + (pkhd.payload_unit_start_indicator ? 1 : 0) >= bytes)
 			return 0; // ignore
 	}
     
@@ -225,9 +232,10 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 					if(pkhd.payload_unit_start_indicator)
 						i += 1; // pointer 0x00
 
+					ver = ts->pat.pmts[j].ver;
 					count = ts->pat.pmts[j].stream_count;
 					pmt_read(&ts->pat.pmts[j], data + i, bytes - i);
-					if(count != ts->pat.pmts[j].stream_count)
+					if(ver != ts->pat.pmts[j].ver || count != ts->pat.pmts[j].stream_count)
 						ts_demuxer_notify(ts, &ts->pat.pmts[j]);
 					break;
 				}
@@ -244,23 +252,29 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 
                         if (pkhd.payload_unit_start_indicator)
                         {
-                            size_t n;
-                            n = pes_read_header(pes, data + i, bytes - i);
-                            assert(n > 0);
-                            i += (uint32_t)n;
+                            size_t s;
+							mpeg_bits_init(&reader, data + i, bytes - i);
+							s = mpeg_bits_readn(&reader, 3);
+							pes->sid = mpeg_bits_read8(&reader);
+                            if (MPEG_ERROR_OK != pes_read_header(pes, &reader) || s != 0x000001)
+							{
+								assert(0);
+								return 0; // ignore
+							}
+                            i += (uint32_t)mpeg_bits_tell(&reader);
 
 							pes->flags = (pes->flags & MPEG_FLAG_PACKET_CORRUPT) ? MPEG_FLAG_PACKET_LOST : 0;
 							pes->flags |= pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
-							pes->have_pes_header = n > 0 ? 1 : 0;
+							pes->have_pes_header = 1;
 						}
 						else if (!pes->have_pes_header)
 						{
-							continue; // don't have pes header yet
+							return 0; // ignore, don't have pes header yet
 						}
 
-                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
+                        r = pes_packet(&pes->pkt, pes, data + i, bytes - i, &consume, pkhd.payload_unit_start_indicator, ts->onpacket, ts->param);
 						pes->have_pes_header = (r || (0 == pes->pkt.size && pes->len > 0)) ? 0 : 1; // packet completed
-                        break; // find stream
+                        return r; // find stream
 					}
 				} // PMT handler
 			}
@@ -305,22 +319,7 @@ struct ts_demuxer_t* ts_demuxer_create(ts_demuxer_onpacket onpacket, void* param
 
 int ts_demuxer_destroy(struct ts_demuxer_t* ts)
 {
-    size_t i, j;
-    struct pes_t* pes;
-    for (i = 0; i < ts->pat.pmt_count; i++)
-    {
-        for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
-        {
-            pes = &ts->pat.pmts[i].streams[j];
-            if (pes->pkt.data)
-                free(pes->pkt.data);
-            pes->pkt.data = NULL;
-        }
-    }
-
-	if (ts->pat.pmts && ts->pat.pmts != ts->pat.pmt_default)
-		free(ts->pat.pmts);
-
+	pat_clear(&ts->pat);
     free(ts);
     return 0;
 }

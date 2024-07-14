@@ -503,9 +503,6 @@
     <ClCompile Include="..\librtsp\test\rtsp-client-input-test.cpp">
       <Filter>librtsp</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtp\test\rtp-header-ext-test.cpp">
-      <Filter>librtp</Filter>
-    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\h265-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
@@ -514,6 +511,15 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\test\rtsp-client-push-test.cpp">
       <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mpeg-ps-2-flv-test.cpp">
+      <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\rtsp-client-test2.c">
+      <Filter>librtsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp">
+      <Filter>libmpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 #include "mpeg-ps.h"
 #include "mpeg-ts.h"
-#include "mpeg-ts-proto.h"
+#include "mpeg-types.h"
 #include "mpeg4-aac.h"
 #include <stdio.h>
 #include <assert.h>
@@ -38,17 +38,17 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 
 		fwrite(data, 1, bytes, afp);
 
-		int count = 0;
-		int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-		while (len > 7 && (size_t)len <= bytes)
-		{
-			count++;
-			bytes -= len;
-			data = (const uint8_t*)data + len;
-			len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
-		}
+		//int count = 0;
+		//int len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		//while (len > 7 && (size_t)len <= bytes)
+		//{
+		//	count++;
+		//	bytes -= len;
+		//	data = (const uint8_t*)data + len;
+		//	len = mpeg4_aac_adts_frame_length((const uint8_t*)data, bytes);
+		//}
 	}
-	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype)
+	else if (PSI_STREAM_H264 == avtype || PSI_STREAM_H265 == avtype || PSI_STREAM_H266 == avtype || PSI_STREAM_VIDEO_AVS3 == avtype)
 	{
 		static int64_t v_pts = 0, v_dts = 0;
 		//assert(0 == v_dts || dts >= v_dts);
@@ -62,7 +62,7 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 	{
 		static int64_t x_pts = 0, x_dts = 0;
 		//assert(0 == x_dts || dts >= x_dts);
-		printf("[%d][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d%s%s%s\n", avtype, program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts) / 90, (int)(dts - x_dts) / 90, flags & MPEG_FLAG_IDR_FRAME ? " [I]" : "", flags & MPEG_FLAG_PACKET_CORRUPT ? " [X]" : "", flags & MPEG_FLAG_PACKET_LOST ? " [-]" : "");
+		printf("[%d][%d:%d] pts: %s(%lld), dts: %s(%lld), diff: %03d/%03d, bytes: %u%s%s%s\n", avtype, program, stream, ftimestamp(pts, s_pts), pts, ftimestamp(dts, s_dts), dts, (int)(pts - x_pts) / 90, (int)(dts - x_dts) / 90, (unsigned int)bytes, flags & MPEG_FLAG_IDR_FRAME ? " [I]" : "", flags & MPEG_FLAG_PACKET_CORRUPT ? " [X]" : "", flags & MPEG_FLAG_PACKET_LOST ? " [-]" : "");
 		x_pts = pts;
 		x_dts = dts;
 		//assert(0);

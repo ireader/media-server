@@ -258,9 +258,9 @@ SEND_PACKET:
 			if (-1 == m->dts_first)
 				m->dts_first = m_pkt.pts;
 			m->dts_last = m_pkt.pts;
-			uint32_t timestamp = m->timestamp + m->dts_last - m->dts_first;
-
-			rtp_payload_encode_input(m->packer, m_pkt.data, m_pkt.size, (uint32_t)(timestamp * (m->frequency / 1000) /*kHz*/));
+			uint32_t timestamp = m->timestamp + (uint32_t)((m->dts_last - m->dts_first) * (m->frequency / 1000) /*kHz*/);
+			//printf("[%s] pts: %lld, dts: %lld, timestamp: %u(%u)\n", m->name, m_pkt.pts, m_pkt.dts, (unsigned int)timestamp, (unsigned int)m->timestamp);
+			rtp_payload_encode_input(m->packer, m_pkt.data, m_pkt.size, timestamp);
 
 			av_packet_unref(&m_pkt); // send flag
 			sendframe = 1;

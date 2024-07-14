@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 
 #define TIMEOUT_RECV 20000
 #define TIMEOUT_SEND 20000
@@ -291,5 +292,5 @@ static int rtmp_handler_ongetduration(void* param, const char* app, const char* 
 	session = (struct aio_rtmp_session_t*)param;
 	if (session->server->handle.ongetduration)
 		return session->server->handle.ongetduration(session->server->param, app, stream, duration);
-	return -1;
+	return -EINVAL;
 }

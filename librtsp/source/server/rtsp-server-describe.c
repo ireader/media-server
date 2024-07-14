@@ -26,5 +26,8 @@ int rtsp_server_reply_describe(struct rtsp_server_t *rtsp, int code, const char*
 		rfc822_datetime_format(time(NULL), datetime),
 		(unsigned int)strlen(sdp), sdp);
 
+	if (len > sizeof(rtsp->reply))
+		len = sizeof(rtsp->reply); // fix length
+
 	return rtsp->handler.send(rtsp->sendparam, rtsp->reply, len);
 }

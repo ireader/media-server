@@ -111,13 +111,14 @@ static void rtsp_media_onattr(void* param, const char* name, const char* value)
 			char encoding[16 + sizeof(media->avformats[i].encoding)];
 			if (strlen(value) < sizeof(encoding)) // make sure encoding have enough memory space
 			{
+				channel[0] = '\0';
 				sdp_a_rtpmap(value, &payload, encoding, &rate, channel);
 				for (i = 0; i < media->avformat_count; i++)
 				{
 					if (media->avformats[i].fmt == payload)
 					{
 						media->avformats[i].rate = rate;
-						media->avformats[i].channel = atoi(channel);
+						media->avformats[i].channel = *channel ? atoi(channel) : 1; // default 1-channel
 						snprintf(media->avformats[i].encoding, sizeof(media->avformats[i].encoding), "%s", encoding);
 						break;
 					}
@@ -282,7 +283,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 	int formats[16];
 	const char* control;
 	const char* start, *stop;
-	const char* iceufrag, *icepwd;
+	const char* iceufrag, *icepwd, *setup;
 	const char* username, *session, *version;
 	const char* network, *addrtype, *address, *source;
 	struct rtsp_media_t* m;
@@ -318,6 +319,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 	// session ice-ufrag/ice-pwd
 	iceufrag = sdp_attribute_find(sdp, "ice-ufrag");
 	icepwd = sdp_attribute_find(sdp, "ice-pwd");
+	setup = sdp_attribute_find(sdp, "setup");
 
 	for (i = 0; i < sdp_media_count(sdp) && i < count; i++)
 	{
@@ -364,7 +366,7 @@ int rtsp_media_sdp(const char* s, int len, struct rtsp_media_t* medias, int coun
 
 		// TODO: plan-B streams
 		m->mode = sdp_media_mode(sdp, i);
-		m->setup = SDP_A_SETUP_NONE;
+		m->setup = setup ? sdp_option_setup_from(setup) : SDP_A_SETUP_NONE;
 
 		// update media encoding
 		sdp_media_attribute_list(sdp, i, NULL, rtsp_media_onattr, m);
@@ -397,13 +399,13 @@ int rtsp_media_to_sdp(const struct rtsp_media_t* m, char* line, int bytes)
 	}
 
 	n = snprintf(line, bytes, "m=%s %d %s", m->media, port, m->proto);
-	for (i = 0; i < m->avformat_count; i++)
+	for (i = 0; i < m->avformat_count && n < bytes; i++)
 	{
 		if (m->avformats[i].fmt >= 96 && !m->avformats[i].encoding[0])
 			continue; // ignore empty encoding
 		n += snprintf(line + n, bytes - n, " %d", m->avformats[i].fmt);
 	}
-	n += snprintf(line + n, bytes - n, "\n");
+	n += snprintf(line + n, bytes > n ? bytes - n : 0, "\n");
 
 	for (i = 0; i < m->avformat_count && n >= 0 && n < bytes; i++)
 	{

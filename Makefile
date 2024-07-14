@@ -1,8 +1,20 @@
+ARCHBITS ?=  # 32/64 bits
+
+ifeq ($(shell uname -m), x86_64)
+	ARCHBITS = 64
+else ifeq ($(shell getconf LONG_BIT), 64)
+	ARCHBITS = 64
+else ifeq ($(shell arch), x86_64)
+	ARCHBITS = 64
+endif
+
 ifdef PLATFORM
 	CROSS:=$(PLATFORM)-
 else
+	OSID := $(shell awk -F'=' '/^ID=/ {print $$2}' /etc/os-release | tr -d '"')
+	OSVERSIONID := $(shell awk -F'=' '/^VERSION_ID=/ {print $$2"-"}' /etc/os-release | tr -d '"')
 	CROSS:=
-	PLATFORM:=linux
+	PLATFORM:=${OSID}$(OSVERSIONID)linux$(ARCHBITS)
 endif
 
 ifeq ($(RELEASE),1)
@@ -41,4 +53,5 @@ test:
 	$(MAKE) -C ../avcodec
 	$(MAKE) -C ../sdk
 	$(MAKE) -C test
+	@rm libaio.so
 	ln -sf ../sdk/libaio/$(BUILD).$(PLATFORM)/libaio.so . &&  ./test/$(BUILD).$(PLATFORM)/test

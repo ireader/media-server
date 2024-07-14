@@ -20,11 +20,11 @@ NUH layer ID(LayerId) : 6 bits
 NUH temporal ID plus 1 (TID) : 3 bits
 */
 
-#define H265_TYPE(v) ((v >> 1) & 0x3f)
+#define H265_TYPE(v) (((v) >> 1) & 0x3f)
 
-#define FU_START(v) (v & 0x80)
-#define FU_END(v)	(v & 0x40)
-#define FU_NAL(v)	(v & 0x3F)
+#define FU_START(v) ((v) & 0x80)
+#define FU_END(v)	((v) & 0x40)
+#define FU_NAL(v)	((v) & 0x3F)
 
 struct rtp_decode_h265_t
 {
@@ -109,7 +109,7 @@ static int rtp_h265_unpack_ap(struct rtp_decode_h265_t *unpacker, const uint8_t*
 		bytes -= n - 2; // skip DON
 		ptr += n - 2; // skip DON
 		len = nbo_r16(ptr);
-		if (len + 2 > bytes)
+		if (len + 2 > bytes || len < 3)
 		{
 			assert(0);
 			unpacker->flags = RTP_PAYLOAD_FLAG_PACKET_LOST;

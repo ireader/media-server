@@ -11,7 +11,8 @@ OUTFILE = libdash.a
 INCLUDES = . \
 					./include \
 					../libmov/include \
-					../libhls/include
+					../libhls/include \
+					../libflv/include
 
 #-------------------------------Source-------------------------------
 #

@@ -23,6 +23,7 @@ struct sip_subscribe_t* sip_subscribe_create(const struct cstring_t* event)
 		LIST_INIT_HEAD(&s->link);
 		s->state = SUBSCRIBE_INIT;
 		cstrcpy(event, s->event, sizeof(s->event) - 1);
+		atomic_increment32(&s_gc.subscribe);
 	}
 	return s;
 }
@@ -39,6 +40,7 @@ int sip_subscribe_release(struct sip_subscribe_t* subscribe)
 	if (subscribe->dialog)
 		sip_dialog_release(subscribe->dialog);
 	free(subscribe);
+	atomic_decrement32(&s_gc.subscribe);
 	return 0;
 }
 

@@ -25,23 +25,30 @@
 #define MOV_OBJECT_EAC3     0xA6 // Enhanced AC-3
 #define MOV_OBJECT_G719		0xA8 // ITU G.719 Audio
 #define MOV_OBJECT_DTS      0xA9 // Core Substream
-#define MOV_OBJECT_OPUS		0xAD // Opus audio
+#define MOV_OBJECT_OPUS		0xAD // Opus audio https://opus-codec.org/docs/opus_in_isobmff.html
 #define MOV_OBJECT_VP9      0xB1 // VP9 Video
 #define MOV_OBJECT_FLAC     0xC1 // nonstandard from FFMPEG
 #define MOV_OBJECT_VP8      0xC2 // nonstandard
+#define MOV_OBJECT_CHAPTER	0xC3 // chapter https://developer.apple.com/documentation/quicktime-file-format/base_media_information_header_atom
+#define MOV_OBJECT_H266		0xFC // ITU-T Recommendation H.266
 #define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
 #define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
 #define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
 #define MOV_OBJECT_NONE		0x00 // unknown object id
-#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
 #define MOV_OBJECT_AVC		MOV_OBJECT_H264
+#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
+#define MOV_OBJECT_VVC		MOV_OBJECT_H266
+#define MOV_OBJECT_ALAW		MOV_OBJECT_G711a
+#define MOV_OBJECT_ULAW		MOV_OBJECT_G711u
 
 /// MOV flags
 #define MOV_FLAG_FASTSTART	0x00000001
 #define MOV_FLAG_SEGMENT	0x00000002 // fmp4_writer only
 
 /// MOV av stream flag
-#define MOV_AV_FLAG_KEYFREAME 0x0001
+#define MOV_AV_FLAG_KEYFREAME		0x0001
+#define MOV_AV_FLAG_SEGMENT_FORCE	0x8000 // exclude with MOV_AV_FLAG_SEGMENT_DISABLE, fmp4_writer only
+#define MOV_AV_FLAG_SEGMENT_DISABLE	0x4000 // exclude with MOV_AV_FLAG_SEGMENT_FORCE, fmp4_writer only
 
 #endif /* !_mov_format_h_ */

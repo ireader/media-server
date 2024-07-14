@@ -35,24 +35,10 @@ SOURCE_PATHS = . $(ROOT)/source/digest $(ROOT)/libhttp/test \
 				../libdash/test ../libmov/test \
 				../libflv/test ../librtmp/aio ../librtmp/test \
 				../librtp/test ../librtsp/source/server/aio ../librtsp/test ../librtsp/test/media \
-				../libsip/test
+				../libsip/test ../libmkv/test
 				
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
-SOURCE_FILES += $(ROOT)/source/uri-parse.c
-SOURCE_FILES += $(ROOT)/source/urlcodec.c
-SOURCE_FILES += $(ROOT)/source/ntp-time.c
-SOURCE_FILES += $(ROOT)/source/time64.c
-SOURCE_FILES += $(ROOT)/source/base64.c
-SOURCE_FILES += $(ROOT)/source/unicode.c
-SOURCE_FILES += $(ROOT)/source/thread-pool.c
-SOURCE_FILES += $(ROOT)/source/app-log.c
-SOURCE_FILES += $(ROOT)/source/port/ip-route.c
-SOURCE_FILES += $(ROOT)/source/sockpair.c
-SOURCE_FILES += $(ROOT)/source/darray.c
-SOURCE_FILES += $(ROOT)/source/channel.c
-SOURCE_FILES += $(ROOT)/source/uuid.c
-SOURCE_FILES += $(ROOT)/source/random.c
 SOURCE_FILES += $(ROOT)/source/port/sysnetconfig.c
 SOURCE_FILES += $(ROOT)/libice/test/ice-transport.c
 SOURCE_FILES += $(ROOT)/deprecated/tools.c
@@ -72,12 +58,13 @@ else
 LIBPATHS +=
 endif
 
-LIBS = rt pthread dl aio ssl crypt
+LIBS = rt pthread dl aio #ssl crypt
 
 STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				../libflv/$(BUILD).$(PLATFORM)/libflv.a \
 				../libhls/$(BUILD).$(PLATFORM)/libhls.a \
 				../libmov/$(BUILD).$(PLATFORM)/libmov.a \
+				../libmkv/$(BUILD).$(PLATFORM)/libmkv.a \
 				../libmpeg/$(BUILD).$(PLATFORM)/libmpeg.a \
 				../librtmp/$(BUILD).$(PLATFORM)/librtmp.a \
 				../librtsp/$(BUILD).$(PLATFORM)/librtsp.a \
@@ -88,14 +75,15 @@ STATIC_LIBS = ../libdash/$(BUILD).$(PLATFORM)/libdash.a \
 				$(AVCODEC)/avbsf/$(BUILD).$(PLATFORM)/libavbsf.a \
 	      		$(AVCODEC)/avcodec/$(BUILD).$(PLATFORM)/libavcodec.a \
 				$(AVCODEC)/h264/$(BUILD).$(PLATFORM)/libh264.a \
-				$(AVCODEC)/h265/$(BUILD).$(PLATFORM)/libh265.a
+				$(AVCODEC)/h265/$(BUILD).$(PLATFORM)/libh265.a \
+				$(ROOT)/libsdk/$(BUILD).$(PLATFORM)/libsdk.a
 				
 
 #-----------------------------DEFINES--------------------------------
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = OS_INT64_TYPE
+DEFINES = OS_INT64_TYPE __ERROR__=00*10000000+__LINE__*1000 
 
 include $(ROOT)/gcc.mk
 

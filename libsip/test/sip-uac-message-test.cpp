@@ -47,7 +47,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 	
 	len = sizeof(ss);
 	memset(&ss, 0, sizeof(ss));
-	strcpy(protocol, "UDP");
+	snprintf(protocol, 16, "%s", "UDP");
 	
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)
@@ -96,7 +96,7 @@ static int sip_uac_message_oninvite(void* param, const struct sip_message_t* rep
 	if (200 <= code && code < 300)
 	{
 		*session = NULL;
-		sip_uac_ack(t, NULL, 0);
+		sip_uac_ack(t, NULL, 0, NULL);
 	}
 	return 0;
 }

@@ -64,7 +64,7 @@ aligned(8) class HEVCDecoderConfigurationRecord {
 	}
 }
 */
-int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc)
+static int _mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc)
 {
 	uint8_t nalutype;
 	uint16_t i, j, k, n, numOfArrays;
@@ -189,7 +189,7 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 //	data[22] = hevc->numOfArrays;
 
 	p = data + 23;
-	for (k = i = 0; i < sizeof(nalu)/sizeof(nalu[0]); i++)
+	for (k = i = 0; i < sizeof(nalu)/sizeof(nalu[0]) && p + 3 <= end; i++)
 	{
 		ptr = p + 3;
 		for (n = j = 0; j < hevc->numOfArrays; j++)
@@ -222,6 +222,13 @@ int mpeg4_hevc_decoder_configuration_record_save(const struct mpeg4_hevc_t* hevc
 	data[22] = k;
 
 	return (int)(p - data);
+}
+
+int mpeg4_hevc_from_nalu(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc)
+{
+	int r;
+	r = h265_annexbtomp4(hevc, data, bytes, NULL, 0, NULL, NULL);
+	return hevc->numOfArrays > 1 ? bytes : r;
 }
 
 int mpeg4_hevc_to_nalu(const struct mpeg4_hevc_t* hevc, uint8_t* data, size_t bytes)
@@ -266,6 +273,17 @@ int mpeg4_hevc_codecs(const struct mpeg4_hevc_t* hevc, char* codecs, size_t byte
     x = ((x >> 8) & 0x00ff00ff) | ((x & 0x00ff00ff) << 8);
     x = (x >> 16) | (x << 16);
     return snprintf(codecs, bytes, "hvc1.%s%u.%x.%c%u", space[hevc->general_profile_space%4], (unsigned int)hevc->general_profile_idc, (unsigned int)x, tier[hevc->general_tier_flag%2], (unsigned int)hevc->general_level_idc);
+}
+
+int mpeg4_hevc_decoder_configuration_record_load(const uint8_t* data, size_t bytes, struct mpeg4_hevc_t* hevc)
+{
+	int r;
+	r = _mpeg4_hevc_decoder_configuration_record_load(data, bytes, hevc);
+	if (r > 0 && hevc->numOfArrays >= 2)
+		return r;
+
+	memset(hevc, 0, sizeof(*hevc));
+	return mpeg4_hevc_from_nalu(data, bytes, hevc);
 }
 
 #if defined(_DEBUG) || defined(DEBUG)

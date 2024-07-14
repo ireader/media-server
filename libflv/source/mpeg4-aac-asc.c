@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 // Table 4.85 - Syntactic elements (p533)
 enum {
@@ -361,11 +362,9 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 {
 	uint16_t syncExtensionType;
 //	uint8_t audioObjectType;
-	uint8_t extensionAudioObjectType = 0;
 //	uint8_t samplingFrequencyIndex = 0;
 	uint8_t extensionSamplingFrequencyIndex = 0;
 //	uint8_t channelConfiguration = 0;
-	uint8_t extensionChannelConfiguration = 0;
 	uint8_t epConfig;
 	size_t offset;
 
@@ -376,10 +375,11 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 	aac->channels = mpeg4_aac_channel_count(aac->channel_configuration);
 	aac->sampling_frequency = mpeg4_aac_audio_frequency_to(aac->sampling_frequency_index);
 	aac->extension_frequency = aac->sampling_frequency;
+	aac->extension_channel_configuration = aac->channel_configuration;
 
 	if (5 == aac->profile || 29 == aac->profile)
 	{
-		extensionAudioObjectType = 5;
+		aac->extension_audio_object_type = 5;
 		aac->sbr = 1;
 		if (29 == aac->profile)
 			aac->ps = 1;
@@ -387,11 +387,11 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 		aac->extension_frequency = mpeg4_aac_audio_frequency_to(extensionSamplingFrequencyIndex);
 		aac->profile = mpeg4_aac_get_audio_object_type(bits);
 		if (22 == aac->profile)
-			extensionChannelConfiguration = mpeg4_bits_read_uint8(bits, 4);
+			aac->extension_channel_configuration = mpeg4_bits_read_uint8(bits, 4);
 	}
 	else
 	{
-		extensionAudioObjectType = 0;
+		aac->extension_audio_object_type = 0;
 	}
 
 	switch (aac->profile)
@@ -439,13 +439,13 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 		break; // do nothing;
 	}
 
-	if (5 != extensionAudioObjectType && mpeg4_bits_remain(bits) >= 16)
+	if (5 != aac->extension_audio_object_type && mpeg4_bits_remain(bits) >= 16)
 	{
 		syncExtensionType = mpeg4_bits_read_uint16(bits, 11);
 		if (0x2b7 == syncExtensionType)
 		{
-			extensionAudioObjectType = mpeg4_aac_get_audio_object_type(bits);
-			if (5 == extensionAudioObjectType)
+			aac->extension_audio_object_type = mpeg4_aac_get_audio_object_type(bits);
+			if (5 == aac->extension_audio_object_type)
 			{
 				aac->sbr = mpeg4_bits_read(bits);
 				if (aac->sbr)
@@ -460,7 +460,7 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 					}
 				}
 			}
-			if (22 == extensionAudioObjectType)
+			if (22 == aac->extension_audio_object_type)
 			{
 				aac->sbr = mpeg4_bits_read(bits);
 				if (aac->sbr)
@@ -468,7 +468,7 @@ static size_t mpeg4_aac_audio_specific_config_load3(struct mpeg4_bits_t* bits, s
 					extensionSamplingFrequencyIndex = mpeg4_aac_get_sampling_frequency(bits);
 					aac->extension_frequency = mpeg4_aac_audio_frequency_to(extensionSamplingFrequencyIndex);
 				}
-				extensionChannelConfiguration = mpeg4_bits_read_uint8(bits, 4);
+				aac->extension_channel_configuration = mpeg4_bits_read_uint8(bits, 4);
 			}
 		}
 	}
@@ -500,7 +500,7 @@ int mpeg4_aac_audio_specific_config_save2(const struct mpeg4_aac_t* aac, uint8_t
 
 int mpeg4_aac_adts_pce_load(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
 {
-	uint8_t i;
+	int i;
 	size_t offset = 7;
 	struct mpeg4_bits_t bits, pce;
 	

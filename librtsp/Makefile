@@ -52,6 +52,6 @@ STATIC_LIBS =
 #
 # DEFINES := $(addprefix -D,$(DEFINES)) # add -L prefix
 #--------------------------------------------------------------------
-DEFINES = RTP_OVER_RTSP_TRY_TO_FIND_NEXT_PACKET
+DEFINES = RTP_OVER_RTSP_TRY_TO_FIND_NEXT_PACKET FIX_DAHUA_AAC_FROM_G711
 
 include ../gcc.mk

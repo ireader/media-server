@@ -31,6 +31,12 @@ int rtp_demuxer_input(struct rtp_demuxer_t* rtp, const void* data, int bytes);
 /// @return >0-rtcp report length, 0-don't need send rtcp
 int rtp_demuxer_rtcp(struct rtp_demuxer_t* rtp, void* buf, int len);
 
+/// @param[out] lost read lost packets by jitter
+/// @param[out] late received after read
+/// @param[out] misorder reorder packets
+/// @param[out] duplicate exist in unread queue
+void rtp_demuxer_stats(struct rtp_demuxer_t* rtp, int* lost, int* late, int* misorder, int* duplicate);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -3,25 +3,31 @@
 #include "rtp-internal.h"
 #include "rtp-util.h"
 
-void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8_t* ptr)
+void rtcp_bye_unpack(struct rtp_context *ctx, const rtcp_header_t *header, const uint8_t* ptr, size_t bytes)
 {
 	uint32_t i;
 	struct rtcp_msg_t msg;
 
-	assert(header->length * 4 >= header->rc * 4);
-	if(header->rc < 1 || header->rc > header->length)
+	assert(bytes >= header->rc * 4);
+	if(header->rc < 1 || header->rc * 4 > bytes)
 		return; // A count value of zero is valid, but useless (p43)
 
-	msg.type = RTCP_MSG_BYE;
-	if(header->length * 4 > header->rc * 4)
+	msg.ssrc = nbo_r32(ptr);
+	msg.type = RTCP_BYE;
+
+	rtp_member_list_delete(ctx->members, msg.ssrc);
+	rtp_member_list_delete(ctx->senders, msg.ssrc);
+
+	if(bytes > header->rc * 4 + 1)
 	{
 		msg.u.bye.bytes = ptr[header->rc * 4];
 		msg.u.bye.reason = ptr + header->rc * 4 + 1;
 
-		if (1 + msg.u.bye.bytes + header->rc * 4 > header->length * 4)
+		if (1 + msg.u.bye.bytes + header->rc * 4 > bytes)
 		{
 			assert(0);
-			return; // error
+			msg.u.bye.bytes = 0;
+			msg.u.bye.reason = NULL;
 		}
 	}
 	else
@@ -30,12 +36,14 @@ void rtcp_bye_unpack(struct rtp_context *ctx, rtcp_header_t *header, const uint8
 		msg.u.bye.reason = NULL;
 	}
 
-	for(i = 0; i < header->rc; i++)
-	{
-		msg.u.bye.ssrc = nbo_r32(ptr + i * 4);
-		rtp_member_list_delete(ctx->members, msg.u.bye.ssrc);
-		rtp_member_list_delete(ctx->senders, msg.u.bye.ssrc);
+	ctx->handler.on_rtcp(ctx->cbparam, &msg);
 
+	// other SSRC/CSRC
+	for (i = 0; i < header->rc /*source count*/; i++)
+	{
+		msg.ssrc = nbo_r32(ptr + 4 + i * 4);
+		rtp_member_list_delete(ctx->members, msg.ssrc);
+		rtp_member_list_delete(ctx->senders, msg.ssrc);
 		ctx->handler.on_rtcp(ctx->cbparam, &msg);
 	}
 }

@@ -2,6 +2,7 @@
 #include "hls-param.h"
 #include "mpeg-ts.h"
 #include "mpeg-ps.h"
+#include "mpeg-util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -91,8 +92,10 @@ struct hls_media_t* hls_media_create(int64_t duration, hls_media_handler handler
 		return NULL;
 	}
 
-    hls->audio = mpeg_ts_add_stream(hls->ts, STREAM_AUDIO_AAC, NULL, 0);
-    hls->video = mpeg_ts_add_stream(hls->ts, STREAM_VIDEO_H264, NULL, 0);
+    //hls->audio = mpeg_ts_add_stream(hls->ts, PSI_STREAM_AAC, NULL, 0);
+    //hls->video = mpeg_ts_add_stream(hls->ts, PSI_STREAM_H264, NULL, 0);
+	hls->audio = -1;
+	hls->video = -1;
 
 	hls->maxsize = N_TS_FILESIZE;
 	hls->dts = hls->pts = PTS_NO_VALUE;
@@ -117,14 +120,32 @@ void hls_media_destroy(struct hls_media_t* hls)
 	free(hls);
 }
 
+int hls_media_add_stream(hls_media_t* hls, int avtype, const void* extra, size_t bytes)
+{
+	if (mpeg_stream_type_audio(avtype))
+	{
+		if(-1 == hls->audio)
+			hls->audio = mpeg_ts_add_stream(hls->ts, avtype, extra, bytes);
+		return hls->audio;
+	}	
+	else
+	{
+		if(-1 == hls->video)
+			hls->video = mpeg_ts_add_stream(hls->ts, avtype, extra, bytes);
+		return hls->video;
+	}
+}
+
 int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
 {
 	int r;
+	int stream;
 	int segment;
 	int force_new_segment;
 	int64_t duration;
 
 	assert(dts < hls->dts_last + hls->duration || PTS_NO_VALUE == hls->dts_last);
+	stream = hls_media_add_stream(hls, avtype, NULL, 0);
 
 	// PTS/DTS rewind
 	force_new_segment = 0;
@@ -169,10 +190,9 @@ int hls_media_input(struct hls_media_t* hls, int avtype, const void* data, size_
 		hls->audio_only_flag = 1;
 	}
 
-    assert(STREAM_VIDEO_H264 == avtype || STREAM_AUDIO_AAC == avtype);
-	if (hls->audio_only_flag && STREAM_VIDEO_H264 == avtype)
+    if (hls->audio_only_flag && mpeg_stream_type_video(avtype))
 		hls->audio_only_flag = 0; // clear audio only flag
 
 	hls->dts_last = dts;
-	return mpeg_ts_write(hls->ts, STREAM_VIDEO_H264 == avtype ? hls->video : hls->audio, HLS_FLAGS_KEYFRAME & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
+	return mpeg_ts_write(hls->ts, stream, HLS_FLAGS_KEYFRAME & flags ? 1 : 0, pts * 90, dts * 90, data, bytes);
 }

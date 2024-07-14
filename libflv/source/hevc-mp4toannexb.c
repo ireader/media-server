@@ -6,10 +6,12 @@
 #include <stddef.h>
 #include <errno.h>
 
-#define H265_NAL_VPS 32
-#define H265_NAL_SPS 33
-#define H265_NAL_PPS 34
-#define H265_NAL_AUD 35 // Access unit delimiter
+#define H265_NAL_BLA_W_LP	16
+#define H265_NAL_RSV_IRAP	23
+#define H265_NAL_VPS		32
+#define H265_NAL_SPS		33
+#define H265_NAL_PPS		34
+#define H265_NAL_AUD		35 // Access unit delimiter
 
 struct h265_mp4toannexb_handle_t
 {
@@ -54,7 +56,7 @@ static void h265_mp4toannexb_handler(void* param, const uint8_t* nalu, size_t by
 	if (H265_NAL_VPS == nalu_type || H265_NAL_SPS == nalu_type || H265_NAL_PPS == nalu_type)
 		mp4->vps_sps_pps_flag = 1;
 
-	irap = 16 <= nalu_type && nalu_type <= 23;
+	irap = H265_NAL_BLA_W_LP <= nalu_type && nalu_type <= H265_NAL_RSV_IRAP;
 	if (irap && 0 == mp4->vps_sps_pps_flag)
 	{
 		// insert VPS/SPS/PPS before IDR frame

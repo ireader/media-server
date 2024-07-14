@@ -26,6 +26,12 @@ hls_media_t* hls_media_create(int64_t duration, hls_media_handler handler, void*
 
 void hls_media_destroy(hls_media_t* hls);
 
+/// Add TS PMT stream
+/// @param[in] avtype audio/video type (mpeg-ps.h STREAM_VIDEO_XXX/STREAM_AUDIO_XXX)
+/// @param[in] extra [optional] media extra info data
+/// @return >=0-ok, <0-error
+int hls_media_add_stream(hls_media_t* hls, int avtype, const void* extra, size_t bytes);
+
 /// @param[in] avtype audio/video type (mpeg-ps.h STREAM_VIDEO_XXX/STREAM_AUDIO_XXX)
 /// @param[in] data h264/h265 nalu with startcode(0x00000001), aac with adts
 /// @param[in] bytes data length in byte, NULL-force new segment

@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "mpeg-proto.h"
+
 struct mpeg_ts_func_t
 {
 	/// alloc new packet
@@ -34,7 +36,7 @@ void* mpeg_ts_create(const struct mpeg_ts_func_t *func, void* param);
 int mpeg_ts_destroy(void* ts);
 
 /// Add audio/video stream
-/// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
+/// @param[in] codecid PSI_STREAM_H264/PSI_STREAM_H265/PSI_STREAM_H266/PSI_STREAM_AAC, see more @mpeg-ts-proto.h
 /// @param[in] extradata itu h.222.0 program and program element descriptors, NULL for H.264/H.265/AAC
 /// @param[in] extradata_size extradata size in byte
 /// @return <=0-error, >0-audio/video stream id

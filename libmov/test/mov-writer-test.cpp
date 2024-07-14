@@ -27,8 +27,6 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 	switch(codec)
 	{
 	case FLV_AUDIO_AAC:
-		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1==flags ? MOV_AV_FLAG_KEYFREAME : 0);
-	
 	case FLV_AUDIO_OPUS:
 		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
 
@@ -44,6 +42,14 @@ static int onFLV(void* param, int codec, const void* data, size_t bytes, uint32_
 		if (-1 == s_audio_track)
 			return -1;
 		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 1 == flags ? MOV_AV_FLAG_KEYFREAME : 0);
+	
+	case FLV_AUDIO_G711A:
+	case FLV_AUDIO_G711U:
+		if (-1 == s_audio_track)
+			s_audio_track = mov_writer_add_audio(mov, codec==FLV_AUDIO_G711A?MOV_OBJECT_G711a:MOV_OBJECT_G711u, 1, 16, 8000, NULL, 0);
+		if (-1 == s_audio_track)
+			return -1;
+		return mov_writer_write(mov, s_audio_track, data, bytes, pts, dts, 0);
 
 	case FLV_VIDEO_H264:
 	case FLV_VIDEO_H265:
@@ -112,6 +118,21 @@ static int mov_writer_add_cover(mov_writer_t* mov, const char* cover)
 	return mov_writer_add_udta(mov, s_udta, n);
 }
 
+static int mov_writer_add_chapter(mov_writer_t* mov)
+{
+	struct mov_udta_chapter_t chapters[] = {
+		{0 * 10000000,	"chapter 01"},
+		{10 * 10000000, "chapter 02"},
+		{20 * 10000000, "chapter 03"},
+		{30 * 10000000, "chapter 04"},
+		{40 * 10000000, "chapter 05"},
+	};
+	static uint8_t s_udta[1024];
+	int n = mov_udta_chapter_write(chapters, sizeof(chapters) / sizeof(chapters[0]), s_udta, sizeof(s_udta));
+	assert(n < sizeof(s_udta)); // check buffer size
+	return mov_writer_add_udta(mov, s_udta, n);
+}
+
 void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 {
 	int r, type;
@@ -121,7 +142,6 @@ void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 	FILE* fp = fopen(outmp4, "wb+");
 	void* flv = flv_reader_create(inflv);
 	mov_writer_t* mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
-	mov_writer_add_cover(mov, "cover.jpg");
 
 	s_width = w;
 	s_height = h;
@@ -130,6 +150,9 @@ void mov_writer_test(int w, int h, const char* inflv, const char* outmp4)
 		r = flv_parser_tag(type, s_buffer, taglen, timestamp, onFLV, mov);
 		assert(r >= 0);
 	}
+
+	//mov_writer_add_cover(mov, "cover.jpg");
+	//mov_writer_add_chapter(mov);
 
 	mov_writer_destroy(mov);
 	flv_reader_destroy(flv);

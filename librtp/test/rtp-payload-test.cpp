@@ -1,9 +1,13 @@
 #include "rtp-payload.h"
 #include "rtp-profile.h"
+#include "rtcp-header.h"
+#include "mpeg-ps.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define strcasecmp _stricmp
@@ -21,6 +25,7 @@ struct rtp_payload_test_t
 
 	void* encoder;
 	void* decoder;
+	ps_demuxer_t* ps;
 
 	size_t size;
 	uint8_t packet[64 * 1024];
@@ -45,6 +50,12 @@ static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_
 	size[1] = (uint8_t)(uint32_t)bytes;
 	fwrite(size, 1, sizeof(size), ctx->frtp2);
 	fwrite(packet, 1, bytes, ctx->frtp2);
+	return 0;
+}
+
+static int mpeg_ps_demuxer_onpacket(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+	printf("[%d] codec: %d, pts: %" PRId64 ", dts: %" PRId64 ", bytes: %d, flags: 0x%x\n", stream, codecid, pts, dts, (int)bytes, flags);
 	return 0;
 }
 
@@ -78,6 +89,19 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 		buffer[6] = 0xFC | ((len / 1024) & 0x03);
 		size = 7;
 	}
+	else if (0 == strcmp("AV1", ctx->encoding) || 0 == strcmp("AV1X", ctx->encoding))
+	{
+		static const uint8_t av1_temporal_delimiter[] = { 0x12, 0x00 };
+		memcpy(buffer, av1_temporal_delimiter, sizeof(av1_temporal_delimiter));
+		size += sizeof(av1_temporal_delimiter);
+	}
+	else if (0 == strcmp("PS", ctx->encoding))
+	{
+		if(!ctx->ps)
+			ctx->ps = ps_demuxer_create(mpeg_ps_demuxer_onpacket, ctx);
+		ps_demuxer_input(ctx->ps, (const uint8_t*)packet, bytes);
+	}
+
 	memcpy(buffer + size, packet, bytes);
 	size += bytes;
 
@@ -91,6 +115,7 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile, const char* sourcefile)
 {
 	struct rtp_payload_test_t ctx;
+	memset(&ctx, 0, sizeof(ctx));
 	ctx.payload = payload;
 	ctx.encoding = encoding;
 
@@ -124,18 +149,21 @@ void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t 
 		if (ctx.size != (int)fread(ctx.packet, 1, ctx.size, ctx.frtp))
 			break;
 
-		rtp_payload_decode_input(ctx.decoder, ctx.packet, ctx.size);
+		if (ctx.packet[1] < RTCP_FIR || ctx.packet[1] > RTCP_LIMIT)
+			rtp_payload_decode_input(ctx.decoder, ctx.packet, ctx.size);
 	}
 
-	fclose(ctx.frtp);
-	fclose(ctx.fsource);
 	fclose(ctx.frtp2);
 	fclose(ctx.fsource2);
+	fclose(ctx.frtp);
+	fclose(ctx.fsource);
 	rtp_payload_decode_destroy(ctx.decoder);
 	rtp_payload_encode_destroy(ctx.encoder);
 }
 
 void binary_diff(const char* f1, const char* f2);
+
+// http://www.live555.com/liveMedia/public/
 void rtp_payload_test()
 {
 	//rtp_payload_test(33, "MP2T", 24470, 1726408532, "E:\\video\\rtp\\bipbop-gear1-all.ts.rtp", "E:\\video\\rtp\\bipbop-gear1-all.ts");
@@ -177,4 +205,8 @@ void rtp_payload_test()
 	//rtp_payload_test(96, "VP8", 2948, 1447139175, "E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8.rtp", "E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8");
 	//binary_diff("E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8.rtp", "out.rtp");
 	//binary_diff("E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8", "out.media");
+
+	//rtp_payload_test(96, "AV1", 12686, 1957754144, "C:\\Users\\Administrator\\Downloads\\1688.rtp", "1.h264");
+	//rtp_payload_test(96, "PS", 12686, 1957754144, "C:\\Users\\Administrator\\Downloads\\talk.bin", "1.ps");
+	rtp_payload_test(100, "PS", 12686, 0x615658d, "C:\\Users\\Administrator\\Downloads\\rtp.tcp", "1.ps");
 }

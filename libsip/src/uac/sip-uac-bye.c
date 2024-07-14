@@ -3,12 +3,12 @@
 #include "sip-message.h"
 #include "sip-uac-transaction.h"
 
-int sip_uac_onbye(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
+int sip_uac_onbye(struct sip_uac_transaction_t* t, int code)
 {
 	struct sip_dialog_t* dialog;
-	if ( (200 <= reply->u.s.code && reply->u.s.code < 300) || 481 == reply->u.s.code )
+	//if ( (200 <= reply->u.s.code && reply->u.s.code < 300) || 481 == reply->u.s.code )
 	{
-		dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
+		dialog = sip_dialog_fetch(t->agent, &t->req->callid, &t->req->from.tag, &t->req->to.tag);
 		if (dialog)
 		{
 			sip_dialog_remove(t->agent, dialog);
@@ -33,7 +33,7 @@ struct sip_uac_transaction_t* sip_uac_bye(struct sip_agent_t* sip, struct sip_di
 	}
 
 	t = sip_uac_transaction_create(sip, req);
-//	t->onhandle = sip_uac_onbye;
+	t->onhandle = sip_uac_onbye;
 	t->onreply = onbye;
 	t->param = param;
 	return t;

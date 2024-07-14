@@ -21,3 +21,13 @@ int mov_read_mehd(struct mov_t* mov, const struct mov_box_t* box)
     //assert(fragment_duration <= mov->mvhd.duration);
     return mov_buffer_error(&mov->io);
 }
+
+size_t mov_write_mehd(const struct mov_t* mov)
+{
+    mov_buffer_w32(&mov->io, 20); /* size */
+    mov_buffer_write(&mov->io, "mehd", 4);
+    mov_buffer_w8(&mov->io, 1); /* version */
+    mov_buffer_w24(&mov->io, 0); /* flags */
+    mov_buffer_w64(&mov->io, mov->mvhd.duration); // 0 ?
+    return 20;
+}

@@ -193,7 +193,7 @@ int hls_m3u8_playlist(struct hls_m3u8_t* m3u8, int eof, char* playlist, size_t b
 		if (bytes > n)
 		{
 			if(seg->bytes > 0)
-				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXTINF:%.3f,\n#EXT-X-BYTERANGE:%"PRIu64"@%"PRIu64"\n%s\n", seg->duration / 1000.0, seg->bytes, seg->offset, seg->name);
+				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXTINF:%.3f,\n#EXT-X-BYTERANGE:%" PRId64 "@%" PRId64 "\n%s\n", seg->duration / 1000.0, seg->bytes, seg->offset, seg->name);
 			else
 				n += snprintf(playlist + n, n < bytes ? bytes - n : 0, "#EXTINF:%.3f,\n%s\n", seg->duration / 1000.0, seg->name);
 		}

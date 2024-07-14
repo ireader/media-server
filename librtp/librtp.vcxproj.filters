@@ -16,6 +16,9 @@
     <Filter Include="payload">
       <UniqueIdentifier>{587ea5e2-9fdd-4385-a308-4574bc666911}</UniqueIdentifier>
     </Filter>
+    <Filter Include="rtpext">
+      <UniqueIdentifier>{b23300c1-ca20-4952-b465-583076d0e7f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\rtcp-app.c">
@@ -144,6 +147,72 @@
     <ClCompile Include="payload\rtp-h264-bitstream.c">
       <Filter>payload</Filter>
     </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-absolute-capture-time.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-abs-send-time.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-color-space.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-frame-marking.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-inband-cn.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-playout-delay.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-sdes.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-ssrc-audio-level.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-toffset.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-transport-wide-cc.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-video-content-type.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-video-frame-tracking-id.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-video-layers-allocation.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-video-orientation.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-video-timing.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtcp-xr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtcp-psfb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rtcp-rtpfb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rtpext\rtp-ext-csrc-audio-level.c">
+      <Filter>rtpext</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-h266-pack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
+    <ClCompile Include="payload\rtp-h266-unpack.c">
+      <Filter>payload</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtcp-header.h">
@@ -189,6 +258,12 @@
       <Filter>payload</Filter>
     </ClInclude>
     <ClInclude Include="include\rtp-demuxer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtp-ext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtp-header-extension.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

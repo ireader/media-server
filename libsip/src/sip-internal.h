@@ -11,6 +11,15 @@
 #include <string.h>
 #include <assert.h>
 
+struct sip_gc_t
+{
+	int32_t uac; // uac transaction
+	int32_t uas; // uas transaction
+	int32_t dialog; // dialog
+	int32_t message; // dialog
+	int32_t subscribe;
+};
+
 struct sip_agent_t
 {
 	int32_t ref;
@@ -41,5 +50,7 @@ static inline int sip_transport_isreliable2(const char* protocol)
 	c.n = strlen(protocol);
 	return sip_transport_isreliable(&c);
 }
+
+extern struct sip_gc_t s_gc;
 
 #endif /* !_sip_internal_h_ */

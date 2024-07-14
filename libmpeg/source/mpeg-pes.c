@@ -2,58 +2,52 @@
 // Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.6 PES packet(p51)
 
-#include "mpeg-pes-proto.h"
+#include "mpeg-pes-internal.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#define DATA(off) data_read_with_boundary_check(data, bytes, off, &overflow)
-static inline uint8_t data_read_with_boundary_check(const uint8_t* data, size_t bytes, size_t off, int *overflow)
-{
-	return (off < bytes) ? (data[off]) : (*overflow = 1, 0);
-}
-
 /// @return 0-error, other-pes header length
-size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
+int pes_read_header(struct pes_t *pes, struct mpeg_bits_t* reader)
 {
-	size_t i;
-	int overflow;
+	uint8_t v8;
+	uint16_t v16;
+	uint32_t v32;
+	size_t end;
 
-	overflow = 0;
-	if (bytes < 3 + 6)
-		return 0; // invalid data length
+	//pes->sid = mpeg_bits_read8(reader);
+    pes->len = mpeg_bits_read16(reader);
 
-	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
-    pes->sid = data[3];
-    pes->len = (data[4] << 8) | data[5];
+	v8 = mpeg_bits_read8(reader);
+    //assert(0x02 == ((v8 >> 6) & 0x3));
+    pes->PES_scrambling_control = (v8 >> 4) & 0x3;
+    pes->PES_priority = (v8 >> 3) & 0x1;
+    pes->data_alignment_indicator = (v8 >> 2) & 0x1;
+    pes->copyright = (v8 >> 1) & 0x1;
+    pes->original_or_copy = v8 & 0x1;
 
-	i = 6;
-    assert(0x02 == ((DATA(i) >> 6) & 0x3));
-    pes->PES_scrambling_control = (DATA(i) >> 4) & 0x3;
-    pes->PES_priority = (DATA(i) >> 3) & 0x1;
-    pes->data_alignment_indicator = (DATA(i) >> 2) & 0x1;
-    pes->copyright = (DATA(i) >> 1) & 0x1;
-    pes->original_or_copy = DATA(i) & 0x1;
+	v8 = mpeg_bits_read8(reader);
+    pes->PTS_DTS_flags = (v8 >> 6) & 0x3;
+    pes->ESCR_flag = (v8 >> 5) & 0x1;
+    pes->ES_rate_flag = (v8 >> 4) & 0x1;
+    pes->DSM_trick_mode_flag = (v8 >> 3) & 0x1;
+    pes->additional_copy_info_flag = (v8 >> 2) & 0x1;
+    pes->PES_CRC_flag = (v8 >> 1) & 0x1;
+    pes->PES_extension_flag = v8 & 0x1;
 
-    i++;
-    pes->PTS_DTS_flags = (DATA(i) >> 6) & 0x3;
-    pes->ESCR_flag = (DATA(i) >> 5) & 0x1;
-    pes->ES_rate_flag = (DATA(i) >> 4) & 0x1;
-    pes->DSM_trick_mode_flag = (DATA(i) >> 3) & 0x1;
-    pes->additional_copy_info_flag = (DATA(i) >> 2) & 0x1;
-    pes->PES_CRC_flag = (DATA(i) >> 1) & 0x1;
-    pes->PES_extension_flag = DATA(i) & 0x1;
+    pes->PES_header_data_length = mpeg_bits_read8(reader);
+	if (pes->len > 0 && pes->len < pes->PES_header_data_length + 3)
+		return MPEG_ERROR_INVALID_DATA; // skip invalid packet
 
-    i++;
-    pes->PES_header_data_length = DATA(i);
-
-    i++;
+	end = mpeg_bits_tell(reader) + pes->PES_header_data_length;
+	if (mpeg_bits_error(reader) || end > mpeg_bits_length(reader))
+		return MPEG_ERROR_NEED_MORE_DATA;
+	
     if (0x02 & pes->PTS_DTS_flags)
     {
-        assert(0x20 == (DATA(i) & 0x20));
-        pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
-
-        i += 5;
+		v8 = mpeg_bits_read8(reader);
+        //assert(0x20 == (v8 & 0x20));
+        pes->pts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
     }
     //else
     //{
@@ -62,9 +56,9 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
     if (0x01 & pes->PTS_DTS_flags)
     {
-        assert(0x10 == (DATA(i) & 0x10));
-        pes->dts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
-        i += 5;
+		v8 = mpeg_bits_read8(reader);
+		//assert(0x10 == (v8 & 0x10));
+		pes->dts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
     }
     else if(0x02 & pes->PTS_DTS_flags)
     {
@@ -78,31 +72,32 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 
     if (pes->ESCR_flag)
     {
-        pes->ESCR_base = ((((uint64_t)DATA(i) >> 3) & 0x07) << 30) | (((uint64_t)DATA(i) & 0x03) << 28) | ((uint64_t)DATA(i + 1) << 20) | ((((uint64_t)DATA(i + 2) >> 3) & 0x1F) << 15) | (((uint64_t)DATA(i + 2) & 0x3) << 13) | ((uint64_t)DATA(i + 3) << 5) | ((DATA(i + 4) >> 3) & 0x1F);
-        pes->ESCR_extension = ((DATA(i + 4) & 0x03) << 7) | ((DATA(i + 5) >> 1) & 0x7F);
-        i += 6;
+		v32 = mpeg_bits_read32(reader);
+		v16 = mpeg_bits_read16(reader);
+		pes->ESCR_base = (((uint64_t)((v32 >> 27) & 0x07)) << 30) | (((uint64_t)((v32 >> 11) & 0x7FFF)) << 15) | (((uint64_t)(v32 & 0x3FF)) << 5) | ((uint64_t)(v16 >> 11) & 0x1F);
+		pes->ESCR_extension = (v16 >> 1) & 0x1FF;
     }
 
     if (pes->ES_rate_flag)
     {
-        pes->ES_rate = ((DATA(i) & 0x7F) << 15) | (DATA(i + 1) << 7) | ((DATA(i + 2) >> 1) & 0x7F);
-        i += 3;
+		pes->ES_rate = (mpeg_bits_read8(reader) & 0x7F) << 15;
+		pes->ES_rate |= mpeg_bits_read15(reader);
     }
 
     if (pes->DSM_trick_mode_flag)
     {
         // TODO:
-        i += 1;
+		//mpeg_bits_skip(reader, 1);
     }
 
     if (pes->additional_copy_info_flag)
     {
-        i += 1;
+		//mpeg_bits_skip(reader, 1);
     }
 
     if (pes->PES_CRC_flag)
     {
-        i += 2;
+		//mpeg_bits_skip(reader, 2);
     }
 
     if (pes->PES_extension_flag)
@@ -112,12 +107,14 @@ size_t pes_read_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
 	if (pes->len > 0)
 	{
 		if (pes->len < pes->PES_header_data_length + 3)
-			return 0; // invalid data length
+			return MPEG_ERROR_INVALID_DATA; // skip invalid packet
 		pes->len -= pes->PES_header_data_length + 3;
 	}
     
 	assert(pes->len >= 0); // TS pes->len maybe 0(payload > 65535)
-    return overflow ? 0 : pes->PES_header_data_length + 9;
+	mpeg_bits_seek(reader, end);
+	assert(0 == mpeg_bits_error(reader));
+	return mpeg_bits_error(reader) ? MPEG_ERROR_INVALID_DATA : MPEG_ERROR_OK;
 }
 
 /// @return 0-error, pes header length
@@ -199,47 +196,128 @@ size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes)
 	return p - data;
 }
 
-size_t pes_read_mpeg1_header(struct pes_t *pes, const uint8_t* data, size_t bytes)
+// ISO/IEC 11172-1 
+// 2.4.3.3 Packet Layer (p20)
+/*
+packet() {
+	packet_start_code_prefix							24 bslbf
+	stream_id											8 uimsbf
+	packet_length										16 uimsbf
+	if (packet_start_code != private_stream_2) {
+		while (nextbits() == '1')
+			stuffing_byte								8 bslbf
+
+		if (nextbits () == '01') {
+			'01'										2 bslbf
+			STD_buffer_scale							1 bslbf
+			STD_buffer_size								13 uimsbf
+		}
+		if (nextbits() == '0010') {
+			'0010'										4 bslbf
+			presentation_time_stamp[32..30]				3 bslbf
+			marker_bit									1 bslbf
+			presentation_time_stamp[29..15]				15 bslbf
+			marker_bit									1 bslbf
+			presentation_time_stamp[14..0]				15 bslbf
+			marker_bit									1 bslbf
+		}
+			else if (nextbits() == '0011') {
+			'0011'										4 bslbf
+			presentation_time_stamp[32..30]				3 bslbf
+			marker_bit									1 bslbf
+			presentation_time_stamp[29..15]				15 bslbf
+			marker_bit									1 bslbf
+			presentation_time_stamp[14..0]				15 bslbf
+			marker_bit									1 bslbf
+			'0001'										4 bslbf
+			decoding_time_stamp[32..30]					3 bslbf
+			marker_bit									1 bslbf
+			decoding_time_stamp[29..15]					15 bslbf
+			marker_bit									1 bslbf
+			decoding_time_stamp[14..0]					15 bslbf
+			marker_bit									1 bslbf
+		}
+		else
+			'0000 1111'									8 bslbf
+	}
+
+	for (i = 0; i < N; i++) {
+		packet_data_byte								8 bslbf
+	}
+}
+*/
+int pes_read_mpeg1_header(struct pes_t *pes, struct mpeg_bits_t* reader)
 {
-	size_t i;
-	int overflow;
+	uint8_t v8;
+	size_t offset;
 
-	overflow = 0;
-	assert(0x00 == data[0] && 0x00 == data[1] && 0x01 == data[2]);
-	pes->sid = data[3];
-	pes->len = (data[4] << 8) | data[5];
+	//pes->sid = mpeg_bits_read8(reader);
+	pes->len = mpeg_bits_read16(reader);
+	offset = mpeg_bits_tell(reader);
 
-	for (i = 6; i < bytes && DATA(i) == 0xFF; )
-		i++;
-
-	if (0x40 == (0xC0 & DATA(i)))
+	do
 	{
-		i += 2; // skip STD_buffer_scale / STD_buffer_size
+		v8 = mpeg_bits_read8(reader);
+	} while (0 == mpeg_bits_error(reader) && v8 == 0xFF);
+	
+	if (0x40 == (0xC0 & v8))
+	{
+		mpeg_bits_skip(reader, 2); // skip STD_buffer_scale / STD_buffer_size
+		v8 = mpeg_bits_read8(reader);
 	}
 
-	if (0x20 == (0xF0 & DATA(i)))
+	if (0x20 == (0xF0 & v8))
 	{
-		pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
-		i += 5;
+		pes->pts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
 	}
-	else if (0x30 == (0xF0 & DATA(i)))
+	else if (0x30 == (0xF0 & v8))
 	{
-		pes->pts = ((((uint64_t)DATA(i) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 1) << 22) | ((((uint64_t)DATA(i + 2) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 3) << 7) | ((DATA(i + 4) >> 1) & 0x7F);
-		pes->dts = ((((uint64_t)DATA(i + 5) >> 1) & 0x07) << 30) | ((uint64_t)DATA(i + 6) << 22) | ((((uint64_t)DATA(i + 7) >> 1) & 0x7F) << 15) | ((uint64_t)DATA(i + 8) << 7) | ((DATA(i + 9) >> 1) & 0x7F);
-		i += 10;
+		pes->pts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
+
+		v8 = mpeg_bits_read8(reader);
+		pes->dts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
 	}
 	else
 	{
-		assert(0x0F == DATA(i));
-		i += 1;
+		assert(0x0F == v8);
 	}
 
+	if (mpeg_bits_error(reader))
+		return MPEG_ERROR_NEED_MORE_DATA;
+
+	offset = mpeg_bits_tell(reader) - offset;
 	if (pes->len > 0)
 	{
-		if (pes->len < i - 6)
-			return 0; // invalid data length
-		pes->len -= (uint32_t)i - 6;
+		if (pes->len < offset)
+			return MPEG_ERROR_INVALID_DATA; // invalid data length
+		pes->len -= (uint32_t)offset;
 	}
 
-	return overflow ? 0 : i;
+	assert(0 == mpeg_bits_error(reader));
+	return MPEG_ERROR_OK;
+}
+
+uint16_t mpeg_bits_read15(struct mpeg_bits_t* reader)
+{
+	uint16_t v;
+	v = ((uint16_t)mpeg_bits_read8(reader)) << 7;
+	v |= (mpeg_bits_read8(reader) >> 1) & 0x7F;
+	return v;
+}
+
+uint32_t mpeg_bits_read30(struct mpeg_bits_t* reader)
+{
+	uint32_t v;
+	v = ((uint32_t)mpeg_bits_read15(reader)) << 15;
+	v |= mpeg_bits_read15(reader);
+	return v;
+}
+
+uint64_t mpeg_bits_read45(struct mpeg_bits_t* reader)
+{
+	uint64_t v;
+	v = ((uint64_t)mpeg_bits_read15(reader)) << 30;
+	v |= ((uint64_t)mpeg_bits_read15(reader)) << 15;
+	v |= mpeg_bits_read15(reader);
+	return v;
 }

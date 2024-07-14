@@ -44,7 +44,7 @@ static int rtp_packet(void* param, const void *packet, int bytes, uint32_t times
 static void rtp_onrtcp(void* param, const struct rtcp_msg_t* msg)
 {
     struct rtp_sender_t* s = (struct rtp_sender_t*)param;
-    if(RTCP_MSG_BYE == msg->type && s->onbye)
+    if(RTCP_BYE == msg->type && s->onbye)
         s->onbye(param);
 }
 

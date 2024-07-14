@@ -6,12 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int sip_uac_oncancel(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
+int sip_uac_oncancel(struct sip_uac_transaction_t* t, int code)
 {
 	struct sip_dialog_t* dialog;
-	if (200 <= reply->u.s.code && reply->u.s.code < 300)
+	//if (200 <= reply->u.s.code && reply->u.s.code < 300)
 	{
-		dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
+		dialog = sip_dialog_fetch(t->agent, &t->req->callid, &t->req->from.tag, &t->req->to.tag);
 		if (dialog)
 		{
 			sip_dialog_remove(t->agent, dialog);
@@ -46,7 +46,7 @@ struct sip_uac_transaction_t* sip_uac_cancel(struct sip_agent_t* sip, struct sip
 	memcpy(&req->u.c.method, &req->cseq.method, sizeof(req->u.c.method));
 
 	t = sip_uac_transaction_create(sip, req);
-//	t->onhandle = sip_uac_oncancel;
+	t->onhandle = sip_uac_oncancel;
 	t->onreply = oncancel;
 	t->param = param;
 	return t;

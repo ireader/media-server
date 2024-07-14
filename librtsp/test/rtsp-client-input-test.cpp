@@ -40,8 +40,7 @@ static int rtpport(void* param, int media, const char* source, unsigned short rt
 {
 	struct rtsp_client_input_test_t* ctx = (struct rtsp_client_input_test_t*)param;
 	int m = rtsp_client_get_media_type(ctx->rtsp, media);
-	//if (SDP_M_MEDIA_AUDIO != m && SDP_M_MEDIA_VIDEO != m)
-	if (SDP_M_MEDIA_VIDEO != m)
+	if (SDP_M_MEDIA_AUDIO != m && SDP_M_MEDIA_VIDEO != m)
 		return 0; // ignore
 
 	switch (ctx->transport)

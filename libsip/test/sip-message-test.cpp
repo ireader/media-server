@@ -60,7 +60,7 @@ static int sip_uac_test_oninvite(void* param, const struct sip_message_t* reply,
 	if (200 <= code && code < 300)
 	{
 		*session = test;
-		sip_uac_ack(t, NULL, 0);
+		sip_uac_ack(t, NULL, 0, NULL);
 	}
 	return 0;
 }
@@ -111,7 +111,7 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 
 	len = sizeof(ss);
 	memset(&ss, 0, sizeof(ss));
-	strcpy(protocol, "UDP");
+	snprintf(protocol, 16, "%s", "UDP");
 
 	uri = uri_parse(destination, strlen(destination));
 	if (!uri)
@@ -223,6 +223,7 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
         "Max-Forwards: 70\r\n"
 		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8;received=192.0.2.1\r\n"
         "Contact: <sip:bob@192.0.2.4>\r\n"
+		"Record-Route: <sip:joy@proxy.com;lr>\r\n"
         "Content-Length: 0\r\n\r\n";
 
 	// F8 180 Ringing atlanta.com proxy -> Alice (217)
@@ -234,6 +235,7 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
         "Max-Forwards: 70\r\n"
         "Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8;received=192.0.2.1\r\n"
         "Contact: <sip:bob@192.0.2.4>\r\n"
+		"Record-Route: <sip:joy@proxy.com;lr>\r\n"
         "Content-Length: 0\r\n\r\n";
 
 	// F11 200 OK atlanta.com proxy -> Alice (p218)
@@ -245,6 +247,7 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
         "Max-Forwards: 70\r\n"
 		"Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds8;received=192.0.2.1\r\n"
         "Contact: <sip:bob@192.0.2.4>\r\n"
+		"Record-Route: <sip:joy@proxy.com;lr>\r\n"
 		//"Content-Type: application/sdp\r\n"
 		"Content-Length: 0\r\n\r\n";
 
@@ -256,6 +259,7 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
 		"CSeq: 314159 ACK\r\n"
 		"Max-Forwards: 70\r\n"
         "Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bKnashds9\r\n"
+		"Route: <sip:joy@proxy.com;lr>\r\n"
         "Content-Length: 0\r\n\r\n";
 
 	const char* f13 = "SIP/2.0 603 Decline\r\n"
@@ -284,6 +288,7 @@ static int sip_test_invite(struct sip_message_test_t* alice, struct sip_message_
 	assert(0 == sip_agent_input(bob->sip, req, bob));
     sip_message_add_header(bob->st->reply, "To", "Bob <sip:bob@biloxi.com>;tag=a6c85cf"); // modify to.tag
     sip_message_add_header(bob->st->reply, "Contact", "<sip:bob@192.0.2.4>");
+	sip_message_add_header(bob->st->reply, "Record-Route", "<sip:joy@proxy.com;lr>");
     assert(0 == sip_uas_reply(bob->st.get(), 100, NULL, 0, bob) && 0 == strcmp(bob->buf, f2));
     assert(0 == sip_agent_input(alice->sip, reply100, alice));
     assert(0 == sip_uas_reply(bob->st.get(), 180, NULL, 0, bob) && 0 == strcmp(bob->buf, f8));
@@ -679,7 +684,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 {
 	assert(expires == 7200);
 	assert(0 == strcmp(user, "bob"));
-	assert(0 == strcmp(location, "192.0.2.4"));
+	assert(0 == strcmp(location, "192.0.2.4:5060"));
 	struct sip_message_test_t* test = (struct sip_message_test_t*)param;
     sip_uas_transaction_addref(t);
     test->st.reset(t, sip_uas_transaction_release);

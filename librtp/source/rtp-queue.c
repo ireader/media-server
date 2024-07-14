@@ -13,6 +13,9 @@
 #define RTP_SEQUENTIAL 3
 #define RTP_SEQMOD	 (1 << 16)
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 struct rtp_item_t
 {
 	struct rtp_packet_t* pkt;
@@ -39,6 +42,8 @@ struct rtp_queue_t
 	int frequency;
 	void (*free)(void*, struct rtp_packet_t*);
 	void* param;
+
+	struct rtp_queue_stats_t stats;
 };
 
 static void rtp_queue_reset(struct rtp_queue_t* q);
@@ -53,6 +58,7 @@ struct rtp_queue_t* rtp_queue_create(int threshold, int frequency, void(*freepkt
 		return NULL;
 
 	rtp_queue_reset(q);
+	q->probation = 1;
 	q->threshold = threshold;
 	q->frequency = frequency;
 	q->free = freepkt;
@@ -189,13 +195,19 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 	int i, idx;
 	uint16_t delta;
 
+	q->stats.total++;
 	if (q->probation)
 	{
 		if (q->size > 0 && (uint16_t)pkt->rtp.seq == q->last_seq + 1)
 		{
-			q->probation--;
-			if (0 == q->probation)
+			if (0 == --q->probation)
 				q->first_seq = (uint16_t)q->items[q->pos].pkt->rtp.seq;
+		}
+		else if (q->size == 0 && q->probation == 1)
+		{
+			// init
+			q->first_seq = (uint16_t)pkt->rtp.seq;
+			--q->probation;
 		}
 		else
 		{
@@ -224,14 +236,19 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 			// duplicate or reordered packet
 			idx = rtp_queue_find(q, (uint16_t)pkt->rtp.seq);
 			if (-1 == idx)
+			{
+				++q->stats.duplicate;
 				return -1;
+			}
 			
+			++q->stats.reorder;
 			rtp_queue_reset_bad_items(q);
 			return rtp_queue_insert(q, idx, pkt);
 		}
 		else if ((uint16_t)(q->first_seq - pkt->rtp.seq) < RTP_MISORDER)
 		{
 			// too late: pkt->req.seq < q->first_seq
+			++q->stats.late;
 			return -1;
 		}
 		else
@@ -257,6 +274,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 			}
 			else
 			{
+				q->stats.bad++;
 				rtp_queue_reset_bad_items(q);
 			}
 
@@ -267,6 +285,7 @@ int rtp_queue_write(struct rtp_queue_t* q, struct rtp_packet_t* pkt)
 	}
 
 	// for safety
+	assert(0);
 	return -1;
 }
 
@@ -288,15 +307,23 @@ struct rtp_packet_t* rtp_queue_read(struct rtp_queue_t* q)
 	}
 	else
 	{
-		threshold = (q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp) / ((uint32_t)q->frequency / 1000);
-		if (threshold < (uint32_t)q->threshold)
+		threshold = (q->items[(q->pos + q->size - 1) % q->capacity].pkt->rtp.timestamp - pkt->rtp.timestamp);
+		threshold = (int32_t)threshold < 0 ? (uint32_t)(-(int32_t)threshold) : threshold; // fix h.264 b-frames pts order
+		threshold = (uint32_t)(((uint64_t)threshold) * 1000 / (uint64_t)q->frequency);
+		if (threshold < (uint32_t)q->threshold && q->size + 5 < MIN(RTP_DROPOUT, MAX_PACKET) )
 			return NULL;
 
+		q->stats.lost += pkt->rtp.seq - q->first_seq;
 		q->first_seq = (uint16_t)(pkt->rtp.seq + 1);
 		q->size--;
 		q->pos = (q->pos + 1) % q->capacity;
 		return pkt;
 	}
+}
+
+void rtp_queue_stats(struct rtp_queue_t* q, struct rtp_queue_stats_t* stats)
+{
+	memcpy(stats, &q->stats, sizeof(*stats));
 }
 
 #if defined(_DEBUG) || defined(DEBUG)
@@ -343,7 +370,7 @@ static void rtp_queue_test2(void)
     q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
 
     for(i = 0; i < sizeof(s_seq)/sizeof(s_seq[0]); i++)
-        s_seq[i] = 45000 + i;
+        s_seq[i] = (uint16_t)(45000 + i);
     
     // 45460, 45461, 45462, 45464, 45465, 45466, ...,
     // 45490, 45491, 45492, 45503, 45504, 45505, 45463,
@@ -381,7 +408,80 @@ static void rtp_queue_test2(void)
         }
     }
 
+	assert(q->stats.total == sizeof(s_seq) / sizeof(s_seq[0]) && q->stats.reorder == 11 && q->stats.lost == 0 && q->stats.bad == 0 && q->stats.duplicate == 0 && q->stats.late == 0);
     rtp_queue_destroy(q);
+}
+
+static void rtp_queue_test3(void)
+{
+	int i;
+	uint16_t seq;
+	rtp_queue_t* q;
+	struct rtp_packet_t* pkt;
+
+	static uint16_t s_seq[] = {
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+		11,12,13,14,15,16,17,18,19,20,
+		21,22,
+		31,32,33,34,35,36,37,38,39,40,
+		41,42,43,44,45,
+			  23,24,25,26,27,28,29,30,
+					   46,47,48,49,50
+	};
+	q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
+
+	seq = s_seq[0];
+	for (i = 0; i < sizeof(s_seq) / sizeof(s_seq[0]); i++)
+	{
+		rtp_queue_packet(q, s_seq[i]);
+		pkt = rtp_queue_read(q);
+		if (pkt)
+		{
+			//printf("%u ", pkt->rtp.seq);
+			assert(0 == pkt->rtp.seq - seq++);
+			free(pkt);
+		}
+	}
+
+	assert(q->stats.total == sizeof(s_seq) / sizeof(s_seq[0]) && q->stats.reorder == 8 && q->stats.lost == 0 && q->stats.bad == 0 && q->stats.duplicate == 0 && q->stats.late == 0);
+	rtp_queue_destroy(q);
+}
+
+static void rtp_queue_test4(void)
+{
+	int i;
+	uint16_t seq;
+	rtp_queue_t* q;
+	struct rtp_packet_t* pkt;
+
+	// first packet
+	static uint16_t s_seq[] = {
+		1, 
+						  17,18,19,20,
+		21,22,
+		   2, 3, 4, 5, 6, 7, 8, 9, 10,
+		11,12,13,14,15,16,
+			  23,24,25,26,27,28,29,30,
+		31,32,33,34,35,36,37,38,39,40,
+		41,42,43,44,45,46,47,48,49,50
+	};
+	q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
+
+	seq = s_seq[0];
+	for (i = 0; i < sizeof(s_seq) / sizeof(s_seq[0]); i++)
+	{
+		rtp_queue_packet(q, s_seq[i]);
+		pkt = rtp_queue_read(q);
+		if (pkt)
+		{
+			//printf("%u ", pkt->rtp.seq);
+			assert(0 == pkt->rtp.seq - seq++);
+			free(pkt);
+		}
+	}
+
+	assert(q->stats.total == sizeof(s_seq) / sizeof(s_seq[0]) && q->stats.reorder == 15 && q->stats.lost == 0 && q->stats.bad == 0 && q->stats.duplicate == 0 && q->stats.late == 0);
+	rtp_queue_destroy(q);
 }
 
 void rtp_queue_test(void)
@@ -398,6 +498,8 @@ void rtp_queue_test(void)
 	};
 
     rtp_queue_test2();
+	rtp_queue_test3();
+	rtp_queue_test4();
     
 	q = rtp_queue_create(100, 90000, rtp_packet_free, NULL);
 
@@ -410,6 +512,7 @@ void rtp_queue_test(void)
 		rtp_queue_dump(q);
 	}
 
+	assert(q->stats.total == sizeof(s_seq)/sizeof(s_seq[0]) && q->stats.lost == 0 && q->stats.bad == 1 && q->stats.duplicate == 1 && q->stats.late == 20 && q->stats.reorder == 6);
 	rtp_queue_destroy(q);
 }
 #endif

@@ -18,8 +18,8 @@ int sdp_av1(uint8_t *data, int bytes, const char* proto, unsigned short port, in
      */
     static const char* pattern =
         "m=video %hu %s %d\n"
-        //"a=rtpmap:%d AV1/90000\n"
-        "a=rtpmap:%d AV1X/90000\n" // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
+        "a=rtpmap:%d AV1/90000\n"
+        //"a=rtpmap:%d AV1X/90000\n" // https://bugs.chromium.org/p/webrtc/issues/detail?id=11042
         "a=fmtp:%d profile=%u;level-idx=%u;tier=%u";
 
     int r, n;
