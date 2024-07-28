@@ -121,7 +121,7 @@ static int STDCALL hls_server_worker(void* param)
 {
 	int r, type;
 	size_t taglen;
-	uint64_t clock;
+	uint32_t clock;
 	uint32_t timestamp;
 	hls_playlist_t* playlist = (hls_playlist_t*)param;
 
@@ -138,7 +138,7 @@ static int STDCALL hls_server_worker(void* param)
 		clock = 0;
 		while (1 == flv_reader_read(flv, &type, &timestamp, &taglen, playlist->packet, sizeof(playlist->packet)))
 		{
-			uint64_t now = system_clock();
+			uint32_t now = system_clock();
 			if (0 == clock)
 			{
 				clock = now;

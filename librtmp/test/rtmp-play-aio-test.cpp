@@ -64,7 +64,7 @@ void rtmp_play_aio_test(const char* host, const char* app, const char* stream, c
 	void* flv = flv_writer_create(file);
 	aio_connect(host, 1935, 3000, rtmp_onconnect, flv);
 		
-//	uint64_t clock = system_clock();
+//	uint32_t clock = system_clock();
 	while (0 == s_param.code)
 	{
 		aio_socket_process(1000);

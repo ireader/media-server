@@ -128,7 +128,7 @@ int MP4FileSource::Play()
 
 	m_status = 1;
 	int bytes = 0;
-	uint64_t clock = system_clock();
+	uint64_t clock = system_time();
 	std::shared_ptr<struct avpacket_t> pkt(avpacket_queue_front(m->pkts), avpacket_release);
 	int64_t dts = pkt->dts < pkt->pts ? pkt->dts : pkt->pts;
 

@@ -88,7 +88,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 	uint32_t timestamp;
 	uint32_t s_timestamp = 0;
 	uint32_t diff = 0;
-	uint64_t clock;
+	uint32_t clock;
 	
 	static char packet[2 * 1024 * 1024];
 	while (1)
@@ -98,7 +98,7 @@ static void rtmp_client_push(const char* flv, rtmp_client_t* rtmp)
 		clock = system_clock(); // timestamp start from 0
 		while (1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 		{
-			uint64_t t = system_clock();
+			uint32_t t = system_clock();
 			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000) // dts skip
 				system_sleep(clock + timestamp - t);
 			else if (clock + timestamp > t + 3 * 1000)

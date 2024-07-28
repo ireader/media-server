@@ -22,7 +22,7 @@ struct rtmp_raw_packet_t
     uint32_t timestamp;
 };
 
-static uint64_t s_clock;
+static uint32_t s_clock;
 static std::vector<rtmp_raw_packet_t> s_pkts;
 static rtmp_server_publish_benchmark_t s_servers[N];
 
@@ -51,7 +51,7 @@ static void init_packets(const char* filename)
     }
 }
 
-static void rtmp_server_publish_input(rtmp_server_publish_benchmark_t* rtmp, uint64_t now)
+static void rtmp_server_publish_input(rtmp_server_publish_benchmark_t* rtmp, uint32_t now)
 {
     if (rtmp->i >= s_pkts.size())
         return;
@@ -59,7 +59,7 @@ static void rtmp_server_publish_input(rtmp_server_publish_benchmark_t* rtmp, uin
     for(int i = 0; 1; i++)
     {
         rtmp_raw_packet_t& pkt = s_pkts[rtmp->i];
-        if (s_clock + pkt.timestamp > now)
+        if ((int)(s_clock + pkt.timestamp - now) > 0)
         {
             if (i > 50) printf("cycle %d\n", i);
             return;
@@ -75,7 +75,7 @@ static int STDCALL rtmp_server_onthread(void* param)
     int idx = (int)(intptr_t)param;
     while (1)
     {
-        uint64_t now = system_clock();
+        uint32_t now = system_clock();
         for (int i = idx; i < N; i += M)
         {
             rtmp_server_publish_input(s_servers + i, now);

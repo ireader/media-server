@@ -50,7 +50,7 @@ struct rtp_streaming_test_stream_t
 struct rtp_streaming_test_t
 {
     struct rtp_streaming_test_stream_t a, v;
-    uint64_t clock;
+    uint32_t clock;
 };
 
 static int rtp_encode_packet(void* param, int pid, const void* packet, int bytes, uint32_t timestamp, int /*flags*/)
@@ -82,7 +82,7 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
     static int64_t a_pts, a_dts;
     struct rtp_streaming_test_t* ctx = (struct rtp_streaming_test_t*)param;
 
-    uint64_t clock = system_clock();
+    uint32_t clock = system_clock();
     if (clock - ctx->clock + 5 < dts)
         system_sleep(dts - (clock - ctx->clock + 5));
 

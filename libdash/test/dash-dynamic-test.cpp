@@ -128,7 +128,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
     uint32_t timestamp;
     uint32_t s_timestamp = 0;
     uint32_t diff = 0;
-    uint64_t clock;
+    uint32_t clock;
 
     while (1)
     {
@@ -137,7 +137,7 @@ static int dash_live_worker(const char* file, dash_playlist_t* dash)
         clock = system_clock(); // timestamp start from 0
         while (1 == flv_reader_read(f, &type, &timestamp, &taglen, dash->packet, sizeof(dash->packet)))
         {
-			uint64_t t = system_clock();
+            uint32_t t = system_clock();
 			if (clock + timestamp > t && clock + timestamp < t + 3 * 1000)
 				system_sleep(clock + timestamp - t);
 			else if (clock + timestamp > t + 3 * 1000)

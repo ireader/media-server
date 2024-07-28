@@ -11,7 +11,7 @@ void rtp_dump_replay_test(const char* file, const char* peer, int port)
 	int r;
 	uint8_t data[1500];
 	uint32_t clock, clock0;
-	uint64_t base = 0;
+	uint32_t base = 0;
 	struct rtpdump_t* dump;
 
 	socket_init();
@@ -29,7 +29,7 @@ void rtp_dump_replay_test(const char* file, const char* peer, int port)
 			break;
 
 		assert(r >= 0);
-		uint64_t now = system_clock();
+		uint32_t now = system_clock();
 		if (0 == base)
 		{
 			base = now;
@@ -39,7 +39,7 @@ void rtp_dump_replay_test(const char* file, const char* peer, int port)
 		{
 			if (now - base < clock - clock0)
 			{
-				uint64_t v = (uint64_t)(clock - clock0) - (now - base);
+				uint32_t v = (uint64_t)(clock - clock0) - (now - base);
 				if(v < 5000)
 					system_sleep(v);
 			}	

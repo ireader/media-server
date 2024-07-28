@@ -369,7 +369,7 @@ SEND_PACKET:
 	}
 
 	m_status = 1;
-	uint64_t clock = system_clock();
+	uint64_t clock = system_time();
 	for (int i = 0; i < m_count; i++)
 	{
 		struct media_t* m = &m_media[i];
@@ -750,7 +750,7 @@ int FFLiveSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t
 	// Hack: Send an initial RTCP "SR" packet, before the initial RTP packet, 
 	// so that receivers will (likely) be able to get RTCP-synchronized presentation times immediately:
 	rtp_onsend(m->rtp, packet, bytes/*, time*/);
-	SendRTCP(m, system_clock());
+	SendRTCP(m, system_time());
 
 	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
