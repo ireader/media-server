@@ -25,6 +25,8 @@ struct rtmp_result_t
 //	"NetConnection.Connect.InvalidApp",
 //	"NetConnection.Connect.Rejected",
 //
+//	"NetConnection.Connect.ReconnectRequest" // enhanced rtmp v2
+// 
 //	"NetStream.Failed",
 //	"NetStream.Play.Failed",
 //	"NetStream.Play.StreamNotFound",
@@ -143,13 +145,15 @@ static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const u
 // s -> c
 static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
+	char tcurl[256];
 	struct rtmp_result_t result;
-	struct amf_object_item_t info[3];
+	struct amf_object_item_t info[4];
 	struct amf_object_item_t items[2];
 
 	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
 	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
 	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
+	AMF_OBJECT_ITEM_VALUE(info[3], AMF_STRING, "tcUrl", tcurl, sizeof(tcurl));
 
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0); // Command object
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "information", info, sizeof(info) / sizeof(info[0])); // Information object
@@ -213,6 +217,11 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		{
 			//rtmp->onerror(rtmp->param, -1, result.code);
 			return -1;
+		}
+		else if (0 == strcasecmp(result.code, "NetConnection.Connect.ReconnectRequest"))
+		{
+			// enhanced rtmp v2
+			rtmp->client.onreconnect ? rtmp->client.onreconnect(rtmp->param, tcurl, result.description) : 0;
 		}
 		else
 		{

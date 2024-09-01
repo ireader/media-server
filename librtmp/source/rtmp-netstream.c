@@ -1,4 +1,5 @@
 #include "rtmp-netstream.h"
+#include "rtmp-internal.h"
 #include "amf0.h"
 #include <stdlib.h>
 #include <string.h>
@@ -221,6 +222,24 @@ uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, double transactionI
 	out = AMFWriteNamedString(out, end, "level", 5, level, strlen(level));
 	out = AMFWriteNamedString(out, end, "code", 4, code, strlen(code));
 	out = AMFWriteNamedString(out, end, "description", 11, description, strlen(description));
+	out = AMFWriteObjectEnd(out, end);
+	return out;
+}
+
+uint8_t* rtmp_netstream_onreconnect(uint8_t* out, size_t bytes, double transactionId, const char* tcurl, const char* description)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "onStatus";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "level", 5, RTMP_LEVEL_STATUS, strlen(RTMP_LEVEL_STATUS));
+	out = AMFWriteNamedString(out, end, "code", 4, "NetConnection.Connect.ReconnectRequest", 39);
+	out = AMFWriteNamedString(out, end, "description", 11, description?description:"", strlen(description ? description : ""));
+	out = AMFWriteNamedString(out, end, "tcUrl", 5, tcurl?tcurl:"", strlen(tcurl ? tcurl : ""));
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
