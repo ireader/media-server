@@ -105,7 +105,7 @@ size_t mov_write_elst(const struct mov_t* mov)
 	return size;
 }
 
-void mov_apply_elst(struct mov_track_t *track)
+void mov_apply_elst(struct mov_track_t *track, uint32_t timescale)
 {
     size_t i;
 
@@ -116,13 +116,13 @@ void mov_apply_elst(struct mov_track_t *track)
     {
         if (-1 == track->elst[i].media_time)
         {
-            track->samples[0].dts = track->elst[i].segment_duration;
+            track->samples[0].dts = track->elst[i].segment_duration * track->mdhd.timescale / timescale; // movie timescale -> track timescale
             track->samples[0].pts = track->samples[0].dts;
         }
     }
 }
 
-void mov_apply_elst_tfdt(struct mov_track_t *track)
+void mov_apply_elst_tfdt(struct mov_track_t *track, uint32_t timescale)
 {
     size_t i;
 
@@ -130,7 +130,7 @@ void mov_apply_elst_tfdt(struct mov_track_t *track)
     {
         if (-1 == track->elst[i].media_time)
         {
-            track->tfdt_dts += track->elst[i].segment_duration;
+            track->tfdt_dts += track->elst[i].segment_duration * track->mdhd.timescale / timescale; // movie timescale -> track timescale
         }
     }
 }
