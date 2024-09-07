@@ -33,6 +33,11 @@ struct flv_audio_tag_header_t
 	uint8_t bits;		/// audio sample bits: 0-8 bit samples, 1-16-bit samples
 	uint8_t channels;	/// audio channel count: 0-Mono sound, 1-Stereo sound
 	uint8_t avpacket;	/// AAC only:FLV_SEQUENCE_HEADER/FLV_AVPACKET
+
+	uint8_t multitrack;	/// enhanced rtmp v2, e.g. FLV_AUDIO_MULTI_TRACK_MANY_CODECS
+	uint8_t channelorder; /// enhanced rtmp v2, valid on FLV_AUDIO_PACKET_TYPE_MULTICHANNEL_CONFIG
+	uint32_t channelflags; /// enhanced rtmp v2, valid on FLV_AUDIO_PACKET_TYPE_MULTICHANNEL_CONFIG
+	uint8_t channelmapping[8]; /// enhanced rtmp v2, valid on FLV_AUDIO_PACKET_TYPE_MULTICHANNEL_CONFIG
 };
 
 struct flv_video_tag_header_t
