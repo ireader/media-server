@@ -20,11 +20,11 @@
 #define FLV_AUDIO_AAC		(10 << 4)
 #define FLV_AUDIO_SPEEX		(11 << 4)
 #define FLV_AUDIO_AC3		(12 << 4) // enhanced rtmp v2
-#define FLV_AUDIO_OPUS		(13 << 4)
+#define FLV_AUDIO_OPUS		(13 << 4) // opus-codec.org
 #define FLV_AUDIO_MP3_8K	(14 << 4) // MP3 8 kHz
 #define FLV_AUDIO_DEVIDE	(15 << 4) // Device-specific sound
 #define FLV_AUDIO_ASC		(0x1000 | FLV_AUDIO_AAC)	// AudioSpecificConfig(ISO-14496-3)
-#define FLV_AUDIO_OPUS_HEAD	(0x1100 | FLV_AUDIO_OPUS)	// opus-codec.org
+#define FLV_AUDIO_OPUS_HEAD	(0x1100 | FLV_AUDIO_OPUS)	// https://datatracker.ietf.org/doc/html/rfc7845#section-5.1
 #define FLV_AUDIO_FLAC_HEAD (0x1200 | FLV_AUDIO_FLAC)	// xiph.org/flac
 
 // FLV Video Type

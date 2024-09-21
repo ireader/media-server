@@ -21,6 +21,7 @@ struct opus_head_t
     uint8_t channel_mapping[8];
 };
 
+/// @param[out] data https://datatracker.ietf.org/doc/html/rfc7845#section-5.1
 /// @return >0-ok, <=0-error
 int opus_head_save(const struct opus_head_t* opus, uint8_t* data, size_t bytes);
 /// @return >0-ok, <=0-error

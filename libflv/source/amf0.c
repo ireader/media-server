@@ -153,7 +153,7 @@ uint8_t* AMFWriteDate(uint8_t* ptr, const uint8_t* end, double milliseconds, int
 
     AMFWriteDouble(ptr, end, milliseconds);
     *ptr = AMF_DATE; // rewrite to date
-    return AMFWriteInt16(ptr + 8, end, timezone);
+    return AMFWriteInt16(ptr + 9, end, timezone);
 }
 
 uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value)
