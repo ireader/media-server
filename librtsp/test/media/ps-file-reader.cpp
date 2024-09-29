@@ -85,13 +85,14 @@ int PSFileReader::Seek(int64_t& dts)
 		{
 			// only audio
 			if (m_v_start_ts < 0)
-				break;
+				return 0;
 
 			if (pkt->flags & AVPACKET_FLAG_KEY)
-				break;
+				return 0;
 		}
 	}
 
+	m_pkts->Reset();
 	return 0;
 }
 
