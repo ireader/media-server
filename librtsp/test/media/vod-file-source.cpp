@@ -32,7 +32,7 @@ int VodFileSource::Worker()
 
 	do 
 	{
-		while ( (m_status == STOP || m_status == PAUSE) && m_running)
+		while ((m_status == STOP || m_status == PAUSE) && m_running)
 			m_event.Wait();
 
 		while (m_status == PLAY && 0 == r && m_running)
@@ -47,7 +47,7 @@ int VodFileSource::Worker()
 			}
 
 			uint64_t now = system_time();
-			uint64_t timestamp = 0 == pkt->dts || -1 == pkt->dts ? pkt->pts : pkt->dts;
+			uint64_t timestamp = pkt ? (0 == pkt->dts || -1 == pkt->dts ? pkt->pts : pkt->dts) : m_timestamp;
 			
 			if (0 == m_clock || now < m_clock || timestamp < m_timestamp)
 			{
@@ -58,7 +58,8 @@ int VodFileSource::Worker()
 			int64_t diff = (int64_t)((timestamp - m_timestamp) - ((now - m_clock) * m_speed / 128));
 			if (diff <= 0 || m_event.TimeWait((int)(diff * 128 / m_speed)))
 			{
-                r = m_listener->OnPacket(pkt);
+				if (m_listener)
+					r = m_listener->OnPacket(pkt);
 				avpacket_release(pkt);
 				pkt = NULL; // reset
 			}

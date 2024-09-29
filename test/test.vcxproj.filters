@@ -132,6 +132,9 @@
     <ClInclude Include="..\librtsp\test\media\h265-file-source.h">
       <Filter>librtsp\media</Filter>
     </ClInclude>
+    <ClInclude Include="..\librtsp\test\media\ps-file-reader.h">
+      <Filter>librtsp\media</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -520,6 +523,9 @@
     </ClCompile>
     <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp">
       <Filter>libmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\test\media\ps-file-reader.cpp">
+      <Filter>librtsp\media</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -117,7 +117,7 @@ int H264FileSource::GetSDPMedia(std::string& sdp) const
         if(parameters.empty())
         {
             snprintf(base64, sizeof(base64), pattern, 
-				RTP_PAYLOAD_H264, RTP_PAYLOAD_H264,RTP_PAYLOAD_H264, 
+				RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, RTP_PAYLOAD_H264, 
 				(unsigned int)(it->first[1]), (unsigned int)(it->first[2]), (unsigned int)(it->first[3]));
             sdp = base64;
         }
