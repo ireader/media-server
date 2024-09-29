@@ -1,13 +1,14 @@
 #ifndef _ps_file_source_h_
 #define _ps_file_source_h_
 
-#include "h264-file-reader.h"
+#include "ps-file-reader.h"
 #include "media-source.h"
 #include "mpeg-ps.h"
 #include "sys/process.h"
 #include "time64.h"
 #include "rtp.h"
 #include <string>
+#include <map>
 
 class PSFileSource : public IMediaSource
 {
@@ -41,7 +42,7 @@ private:
 
 private:
 	ps_muxer_t* m_ps;
-    int m_ps_stream;
+	std::map<int, int> m_streams; // <codecid, sid>
 	void* m_rtp;
 	int m_status;
 	int64_t m_pos;
@@ -51,7 +52,7 @@ private:
 	time64_t m_ps_clock;
 	time64_t m_rtp_clock;
 	time64_t m_rtcp_clock;
-	H264FileReader m_reader;
+	PSFileReader m_reader;
 	std::shared_ptr<IRTPTransport> m_transport;
 
 	void *m_pspacker;
