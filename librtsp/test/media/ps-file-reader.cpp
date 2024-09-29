@@ -67,25 +67,31 @@ int PSFileReader::Init()
 
 int PSFileReader::Seek(int64_t& dts)
 {
-	int r = 0;
+	int64_t fisrt_dts = -1;
 
-	/*vframe_t frame;
-	frame.time = dts;
-
-	vframes_t::iterator it;
-	it = std::lower_bound(m_videos.begin(), m_videos.end(), frame);
-	if (it == m_videos.end())
-		return -1;
-
-	while (it != m_videos.begin())
+	while (1)
 	{
-		if (it->idr)
+		std::shared_ptr<avpacket_t> pkt(m_pkts->Cur(), avpacket_release);
+		if (NULL == pkt)
+			return -1;
+
+		if (fisrt_dts == -1)
+			fisrt_dts = pkt->dts / 90;
+
+		if (dts < fisrt_dts)
+			break;
+
+		if (dts >= (pkt->dts / 90))
 		{
-			m_vit = it;
-			return 0;
+			// only audio
+			if (m_v_start_ts < 0)
+				break;
+
+			if (pkt->flags & AVPACKET_FLAG_KEY)
+				break;
 		}
-		--it;
-	}*/
+	}
+
 	return 0;
 }
 
