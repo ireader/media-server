@@ -29,8 +29,8 @@ SOURCE_PATHS = source source/client source/server source/utils source/sdp
 SOURCE_FILES = $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.cpp))
 SOURCE_FILES += $(foreach dir,$(SOURCE_PATHS),$(wildcard $(dir)/*.c))
 
-SOURCE_FILES += $(ROOT)/source/digest/md5.c
-SOURCE_FILES += $(ROOT)/source/base64.c
+#SOURCE_FILES += $(ROOT)/source/digest/md5.c
+#SOURCE_FILES += $(ROOT)/source/base64.c
 
 #-----------------------------Library--------------------------------
 #

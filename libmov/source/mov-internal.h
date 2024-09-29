@@ -307,11 +307,11 @@ uint32_t mov_build_stts(struct mov_track_t* track);
 uint32_t mov_build_ctts(struct mov_track_t* track);
 uint32_t mov_build_stco(struct mov_track_t* track);
 void mov_apply_stco(struct mov_track_t* track);
-void mov_apply_elst(struct mov_track_t *track);
+void mov_apply_elst(struct mov_track_t *track, uint32_t timescale);
 void mov_apply_stts(struct mov_track_t* track);
 void mov_apply_ctts(struct mov_track_t* track);
 void mov_apply_stss(struct mov_track_t* track);
-void mov_apply_elst_tfdt(struct mov_track_t *track);
+void mov_apply_elst_tfdt(struct mov_track_t *track, uint32_t timescale);
 
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size);
 

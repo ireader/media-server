@@ -143,6 +143,13 @@ struct rtmp_t
         int (*oneof)(void* param, uint32_t stream_id); // EOF event
 		int (*onping)(void* param, uint32_t stream_id); // send pong
 		int (*onbandwidth)(void* param); // send window acknowledgement size
+
+		// enhanced rtmp v2
+		// 1. rtmp://foo.mydomain.com:1935/realtimeapp
+		// 2. rtmp://127.0.0.1/realtimeapp
+		// 3. //192.0.2.0/realtimeapp
+		// 4. / realtimeapp
+		int (*onreconnect)(void* param, const char* tcurl, const char* descritpion);
 	} client;
 };
 

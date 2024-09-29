@@ -6,6 +6,7 @@
 #include "mpeg4-hevc.h"
 #include "mpeg4-vvc.h"
 #include "opus-head.h"
+#include "xiph-flac.h"
 #include "aom-av1.h"
 #include "avswg-avs3.h"
 #include "amf0.h"
@@ -20,6 +21,7 @@ struct flv_demuxer_t
 	{
 		struct mpeg4_aac_t aac;
 		struct opus_head_t opus;
+		struct flac_streaminfo_t flac;
 	} a;
 
 	union
@@ -101,7 +103,7 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int
 			mpeg4_aac_audio_specific_config_load(data + n, bytes - n, &flv->a.aac);
 			return flv->handler(flv->param, FLV_AUDIO_ASC, data + n, bytes - n, timestamp, timestamp, 0);
 		}
-		else
+		else if (FLV_AVPACKET == audio.avpacket)
 		{
 			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7 + 1 + flv->a.aac.npce))
 				return -ENOMEM;
@@ -123,20 +125,31 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int
 			opus_head_load(data + n, bytes - n, &flv->a.opus);
 			return flv->handler(flv->param, FLV_AUDIO_OPUS_HEAD, data + n, bytes - n, timestamp, timestamp, 0);
 		}
-		else
+		else if (FLV_AVPACKET == audio.avpacket)
 		{
 			return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
 		}
 	}
-	else if (FLV_AUDIO_MP3 == audio.codecid || FLV_AUDIO_MP3_8K == audio.codecid)
+	else if (FLV_AUDIO_FLAC == audio.codecid)
 	{
-		return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
+		if (FLV_SEQUENCE_HEADER == audio.avpacket)
+		{
+			flac_streaminfo_load(data + n, bytes - n, &flv->a.flac);
+			return flv->handler(flv->param, FLV_AUDIO_FLAC_HEAD, data + n, bytes - n, timestamp, timestamp, 0);
+		}
+		else if (FLV_AVPACKET == audio.avpacket)
+		{
+			return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
+		}
 	}
 	else
 	{
-		// Audio frame data
-		return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
+		// Audio frame data: mp3/ac-3/eac-3
+		if (FLV_AVPACKET == audio.avpacket)
+			return flv->handler(flv->param, audio.codecid, data + n, bytes - n, timestamp, timestamp, 0);
 	}
+
+	return 0;
 }
 
 static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int bytes, uint32_t timestamp)

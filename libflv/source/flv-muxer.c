@@ -264,6 +264,42 @@ int flv_muxer_opus(flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pt
 	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + m, dts);
 }
 
+int flv_muxer_ac3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+{
+	struct flv_audio_tag_header_t audio;
+	(void)pts;
+
+	if (flv->capacity < bytes + 1)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + 4))
+			return -ENOMEM;
+	}
+
+	audio.codecid = FLV_AUDIO_AC3;
+	audio.avpacket = FLV_AVPACKET;
+	flv_audio_tag_header_write(&audio, flv->ptr, 1);
+	memcpy(flv->ptr + 1, data, bytes);
+	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
+}
+
+int flv_muxer_eac3(struct flv_muxer_t* flv, const void* data, size_t bytes, uint32_t pts, uint32_t dts)
+{
+	struct flv_audio_tag_header_t audio;
+	(void)pts;
+
+	if (flv->capacity < bytes + 1)
+	{
+		if (0 != flv_muxer_alloc(flv, bytes + 4))
+			return -ENOMEM;
+	}
+
+	audio.codecid = FLV_AUDIO_EAC3;
+	audio.avpacket = FLV_AVPACKET;
+	flv_audio_tag_header_write(&audio, flv->ptr, 1);
+	memcpy(flv->ptr + 1, data, bytes);
+	return flv->handler(flv->param, FLV_TYPE_AUDIO, flv->ptr, bytes + 1, dts);
+}
+
 static int flv_muxer_h264(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 {
 	int r;

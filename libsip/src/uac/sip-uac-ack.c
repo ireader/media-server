@@ -22,6 +22,9 @@ int sip_uac_ack_3456xx(struct sip_uac_transaction_t* t, const struct sip_message
 		return -1;
 	}
 
+#if defined(SIP_KEEP_DIALOG_REQUET_URI)
+	ack->ptr.ptr = sip_uri_clone(ack->ptr.ptr, ack->ptr.end, &ack->u.c.uri, &t->req->u.c.uri);
+#endif
 	assert(ack->u.c.uri.scheme.n == 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
 	if (cstrcmp(&ack->u.c.method, SIP_METHOD_ACK))
 	{
@@ -132,6 +135,9 @@ int sip_uac_ack(struct sip_uac_transaction_t* invite, const void* data, int byte
 		return r;
 	}
 
+#if defined(SIP_KEEP_DIALOG_REQUET_URI)
+	ack->ptr.ptr = sip_uri_clone(ack->ptr.ptr, ack->ptr.end, &ack->u.c.uri, &invite->req->u.c.uri);
+#endif
 	assert(ack->u.c.uri.scheme.n >= 3 && 0 == strncmp("sip", ack->u.c.uri.scheme.p, 3));
 
 	sip_message_add_header(ack, "Content-Type", content_type);

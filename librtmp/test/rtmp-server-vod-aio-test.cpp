@@ -28,8 +28,8 @@ static int STDCALL aio_rtmp_server_worker(void* param)
     uint32_t timestamp;
     uint32_t s_timestamp = 0;
     uint32_t diff = 0;
-    uint64_t clock;
-	//uint64_t clock0 = system_clock() - 3000; // send more data, open fast
+    uint32_t clock;
+	//uint32_t clock0 = system_clock() - 3000; // send more data, open fast
 	rtmp_server_vod_t* vod = (rtmp_server_vod_t*)param;
 
     while (1)
@@ -40,7 +40,7 @@ static int STDCALL aio_rtmp_server_worker(void* param)
         while (1 == flv_reader_read(f, &type, &timestamp, &taglen, vod->packet, sizeof(vod->packet)))
         {
             assert(taglen < sizeof(vod->packet));
-            uint64_t t = system_clock();
+            uint32_t t = system_clock();
             if (clock + timestamp > t && clock + timestamp < t + 3 * 1000)
                 system_sleep(clock + timestamp - t);
 			else if (clock + timestamp > t + 3 * 1000)

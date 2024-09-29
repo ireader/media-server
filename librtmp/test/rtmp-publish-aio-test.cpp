@@ -26,13 +26,13 @@ static int STDCALL rtmp_client_push(void* flv)
 	int r, type;
 	size_t taglen;
 	uint32_t timestamp;
-	uint64_t clock0 = system_clock();
+	uint32_t clock0 = system_clock();
 	void* f = flv_reader_create((const char*)flv);
 
 	static char packet[2 * 1024 * 1024];
 	while (0 == s_param.code && 1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
-		uint64_t t = system_clock();
+		uint32_t t = system_clock();
 		if(clock0 + timestamp > t && clock0 + timestamp < t + 3 * 1000)
 			system_sleep(clock0 + timestamp - t);
 		else if (t + timestamp > t + 3 * 1000)

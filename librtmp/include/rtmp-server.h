@@ -10,6 +10,8 @@ extern "C" {
 
 #define RTMP_SERVER_ASYNC_START 0x12345678 // magic number, user call rtmp_server_start
 
+#define RTMP_SERVER_START_RECONNECT 1 // use with RTMP_SERVER_ASYNC_START
+
 typedef struct rtmp_server_t rtmp_server_t;
 
 struct rtmp_server_handler_t
@@ -69,8 +71,8 @@ int rtmp_server_send_video(rtmp_server_t* rtmp, const void* data, size_t bytes, 
 int rtmp_server_send_script(rtmp_server_t* rtmp, const void* data, size_t bytes, uint32_t timestamp);
 
 /// [OPTIONAL] must call on onplay/onpublish return RTMP_SERVER_ASYNC_START
-/// @param[in] code 0-ok, other-error
-/// @param[in] msg error message
+/// @param[in] code 0-ok, RTMP_SERVER_START_RECONNECT-reconnect, other-error
+/// @param[in] msg error message, or tcurl if code == RTMP_SERVER_START_RECONNECT
 /// @return 0-ok, other-error
 int rtmp_server_start(rtmp_server_t* rtmp, int code, const char* msg);
 

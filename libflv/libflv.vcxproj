@@ -39,6 +39,7 @@
     <ClInclude Include="include\opus-head.h" />
     <ClInclude Include="include\riff-acm.h" />
     <ClInclude Include="include\webm-vpx.h" />
+    <ClInclude Include="include\xiph-flac.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\amf0.c" />
@@ -67,6 +68,7 @@
     <ClCompile Include="source\vvc-annexbtomp4.c" />
     <ClCompile Include="source\vvc-mp4toannexb.c" />
     <ClCompile Include="source\webm-vpx.c" />
+    <ClCompile Include="source\xiph-flac.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D5BA0BB6-0D84-48CB-8630-F617CB6DE375}</ProjectGuid>

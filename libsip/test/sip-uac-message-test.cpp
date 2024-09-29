@@ -365,7 +365,7 @@ static void sip_uac_message_subscribe(struct sip_agent_t* sip, struct sip_transp
 //	sip_uac_add_header(t2.get(), "CSeq", "314160 SUBSCRIBE");// modify cseq.id
 	sip_uac_add_header(t2.get(), "Content-Type", "application/sdp");
 	sip_uac_add_header_int(t2.get(), "Content-Length", 0);
-	sip_uac_send(t2.get(), "", 0, udp, req);
+	sip_uac_send(t2.get(), "", 0, udp, req2);
 	sip_agent_input(sip, reply2, NULL);
 	sip_agent_input(sip, reply2, NULL);
 	sip_message_destroy(req2);

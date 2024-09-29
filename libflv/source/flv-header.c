@@ -1,5 +1,7 @@
 #include "flv-header.h"
 #include "flv-proto.h"
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -67,14 +69,49 @@ int flv_tag_header_read(struct flv_tag_header_t* tag, const uint8_t* buf, size_t
 	return FLV_TAG_HEADER_SIZE;
 }
 
+static int flv_audio_tag_header_read_fourcc(struct flv_audio_tag_header_t* audio, const uint8_t* buf, size_t len)
+{
+	if (len < 4)
+		return -1;
+
+	switch (FLV_VIDEO_FOURCC(buf[0], buf[1], buf[2], buf[3]))
+	{
+	case FLV_AUDIO_FOURCC_AC3:
+		audio->codecid = FLV_AUDIO_AC3;
+		break;
+	case FLV_AUDIO_FOURCC_EAC3:
+		audio->codecid = FLV_AUDIO_EAC3;
+		break;
+	case FLV_AUDIO_FOURCC_OPUS:
+		audio->codecid = FLV_AUDIO_OPUS;
+		break;
+	case FLV_AUDIO_FOURCC_MP3:
+		audio->codecid = FLV_AUDIO_MP3;
+		break;
+	case FLV_AUDIO_FOURCC_FLAC:
+		audio->codecid = FLV_AUDIO_FLAC;
+		break;
+	case FLV_AUDIO_FOURCC_AAC:
+		audio->codecid = FLV_AUDIO_AAC;
+		break;
+	default:
+		audio->codecid = FLV_AUDIO_AAC; // unknown
+		break;
+	}
+
+	return 0;
+}
+
 int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_t* buf, size_t len)
 {
+	size_t off;
 	assert(len > 0);
 	audio->codecid = (buf[0] & 0xF0) /*>> 4*/;
 	audio->rate = (buf[0] & 0x0C) >> 2;
 	audio->bits = (buf[0] & 0x02) >> 1;
 	audio->channels = buf[0] & 0x01;
 	audio->avpacket = FLV_AVPACKET;
+	audio->multitrack = FLV_AUDIO_MULTI_TRACK_NONE;
 
 	if (FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)
 	{
@@ -86,6 +123,72 @@ int flv_audio_tag_header_read(struct flv_audio_tag_header_t* audio, const uint8_
 		audio->avpacket = buf[1];
 		assert(FLV_SEQUENCE_HEADER == audio->avpacket || FLV_AVPACKET == audio->avpacket);
 		return 2;
+	}
+	else if (FLV_AUDIO_FOURCC == audio->codecid)
+	{
+		audio->avpacket = buf[0] & 0x0F;
+		if (audio->avpacket == FLV_AUDIO_PACKET_TYPE_MULTITRACK)
+		{
+			if (len < 2)
+			{
+				assert(0);
+				return -1;
+			}
+
+			audio->multitrack = (buf[1] & 0xF0) >> 4;
+			audio->avpacket = buf[1] & 0x0f;
+			// for ManyTracksManyCodecs, get the first codec
+			if (0 != flv_audio_tag_header_read_fourcc(audio, buf + 2, len - 2))
+			{
+				assert(0);
+				return -1;
+			}
+			off = 6;
+		}
+		else
+		{
+			if (0 != flv_audio_tag_header_read_fourcc(audio, buf + 1, len - 1))
+			{
+				assert(0);
+				return -1;
+			}
+			off = 5;
+		}
+
+		// TODO: multi-track loop
+		
+		if (audio->avpacket == FLV_AUDIO_PACKET_TYPE_MULTICHANNEL_CONFIG)
+		{
+			if(off + 2 > len)
+			{
+				assert(0);
+				return -1;
+			}
+			audio->channelorder = buf[off++];
+			audio->channels = buf[off++];
+			if (1 == audio->channelorder)
+			{
+				if (off + 4 > len)
+				{
+					assert(0);
+					return -1;
+				}
+				audio->channelflags = (((uint32_t)buf[off + 0]) << 24) | (((uint32_t)buf[off + 1]) << 16) | (((uint32_t)buf[off + 2]) << 8) | (uint32_t)buf[off + 3];
+				off += 4;
+			}
+			else if (2 == audio->channelorder)
+			{
+				if (off + audio->channels > len)
+				{
+					assert(0);
+					return -1;
+				}
+				memcpy(audio->channelmapping, buf, audio->channels <= sizeof(audio->channelmapping) / sizeof(audio->channelmapping[0]) ? audio->channels : (sizeof(audio->channelmapping) / sizeof(audio->channelmapping[0])));
+				off += audio->channels;
+			}
+		}
+
+		return (int)off;
 	}
 	else
 	{
@@ -217,15 +320,54 @@ int flv_tag_header_write(const struct flv_tag_header_t* tag, uint8_t* buf, size_
 
 int flv_audio_tag_header_write(const struct flv_audio_tag_header_t* audio, uint8_t* buf, size_t len)
 {
-	if ((int)len < 1 + ((FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)? 1 : 0))
+	if ((int)len < 1 + ((FLV_AUDIO_AAC == audio->codecid)? 1 : 0))
 		return -1;
 
-	if (FLV_AUDIO_AAC == audio->codecid || FLV_AUDIO_OPUS == audio->codecid)
+	if (FLV_AUDIO_AAC == audio->codecid)
 	{
 		assert(FLV_SEQUENCE_HEADER == audio->avpacket || FLV_AVPACKET == audio->avpacket);
 		buf[0] = (audio->codecid /* <<4 */) /* SoundFormat */ | (3 << 2) /* 44k-SoundRate */ | (1 << 1) /* 16-bit samples */ | 1 /* Stereo sound */;
 		buf[1] = audio->avpacket; // AACPacketType
 		return 2;
+	}
+	else if (FLV_AUDIO_OPUS == audio->codecid || FLV_AUDIO_FLAC == audio->codecid || FLV_AUDIO_AC3 == audio->codecid || FLV_AUDIO_EAC3 == audio->codecid)
+	{
+		if (len < 5)
+			return -1;
+
+		assert(FLV_SEQUENCE_HEADER == audio->avpacket || FLV_AVPACKET == audio->avpacket);
+		buf[0] = FLV_AUDIO_FOURCC | audio->avpacket;
+		switch (audio->codecid)
+		{
+		case FLV_AUDIO_FLAC:
+			buf[1] = (FLV_AUDIO_FOURCC_FLAC >> 24) & 0xFF;
+			buf[2] = (FLV_AUDIO_FOURCC_FLAC >> 16) & 0xFF;
+			buf[3] = (FLV_AUDIO_FOURCC_FLAC >> 8) & 0xFF;
+			buf[4] = (FLV_AUDIO_FOURCC_FLAC) & 0xFF;
+			break;
+
+		case FLV_AUDIO_AC3:
+			buf[1] = (FLV_AUDIO_FOURCC_AC3 >> 24) & 0xFF;
+			buf[2] = (FLV_AUDIO_FOURCC_AC3 >> 16) & 0xFF;
+			buf[3] = (FLV_AUDIO_FOURCC_AC3 >> 8) & 0xFF;
+			buf[4] = (FLV_AUDIO_FOURCC_AC3) & 0xFF;
+			break;
+
+		case FLV_AUDIO_EAC3:
+			buf[1] = (FLV_AUDIO_FOURCC_EAC3 >> 24) & 0xFF;
+			buf[2] = (FLV_AUDIO_FOURCC_EAC3 >> 16) & 0xFF;
+			buf[3] = (FLV_AUDIO_FOURCC_EAC3 >> 8) & 0xFF;
+			buf[4] = (FLV_AUDIO_FOURCC_EAC3) & 0xFF;
+			break;
+
+		case FLV_AUDIO_OPUS:
+			buf[1] = (FLV_AUDIO_FOURCC_OPUS >> 24) & 0xFF;
+			buf[2] = (FLV_AUDIO_FOURCC_OPUS >> 16) & 0xFF;
+			buf[3] = (FLV_AUDIO_FOURCC_OPUS >> 8) & 0xFF;
+			buf[4] = (FLV_AUDIO_FOURCC_OPUS) & 0xFF;
+			break;
+		}
+		return 5;
 	}
 	else
 	{

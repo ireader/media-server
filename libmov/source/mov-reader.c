@@ -103,7 +103,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
         if (mov->track->sample_count > 0)
         {
             mov_apply_stco(mov->track);
-            mov_apply_elst(mov->track);
+            mov_apply_elst(mov->track, mov->mvhd.timescale);
             mov_apply_stts(mov->track);
             mov_apply_ctts(mov->track);
 			mov_apply_stss(mov->track);

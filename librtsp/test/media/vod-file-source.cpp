@@ -46,7 +46,7 @@ int VodFileSource::Worker()
 				r = 0; // 1 -> 0
 			}
 
-			uint64_t now = system_clock();
+			uint64_t now = system_time();
 			uint64_t timestamp = 0 == pkt->dts || -1 == pkt->dts ? pkt->pts : pkt->dts;
 			
 			if (0 == m_clock || now < m_clock || timestamp < m_timestamp)

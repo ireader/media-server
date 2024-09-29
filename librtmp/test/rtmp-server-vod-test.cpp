@@ -16,14 +16,14 @@ static int STDCALL rtmp_server_worker(void* param)
 	int r, type;
 	size_t taglen;
 	uint32_t timestamp;
-	static uint64_t clock0 = system_clock() - 200; // send more data, open fast
+	static uint32_t clock0 = system_clock() - 200; // send more data, open fast
 	void* f = flv_reader_create(s_file);
 
 	static unsigned char packet[8 * 1024 * 1024];
 	while (1 == flv_reader_read(f, &type, &timestamp, &taglen, packet, sizeof(packet)))
 	{
 		assert(taglen < sizeof(packet));
-		uint64_t t = system_clock();
+		uint32_t t = system_clock();
 		if (clock0 + timestamp > t && clock0 + timestamp < t + 3 * 1000)
 			system_sleep(clock0 + timestamp - t);
 		else if (clock0 + timestamp > t + 3 * 1000)

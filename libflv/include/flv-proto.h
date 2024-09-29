@@ -11,15 +11,21 @@
 #define FLV_AUDIO_ADPCM		(1 << 4)
 #define FLV_AUDIO_MP3		(2 << 4)
 #define FLV_AUDIO_LLPCM		(3 << 4) // Linear PCM, little endian
+#define FLV_AUDIO_FLAC		(4 << 4) // Nellymoser16KMono -> FLAC(enhanced rtmp v2)
+#define FLV_AUDIO_EAC3		(5 << 4) // Nellymoser8KMono -> EAC3(enhanced rtmp v2)
+#define FLV_AUDIO_Nelly		(6 << 4) // Nellymoser
 #define FLV_AUDIO_G711A		(7 << 4) // G711 A-law
 #define FLV_AUDIO_G711U     (8 << 4) // G711 mu-law
+#define FLV_AUDIO_FOURCC	(9 << 4) // enhanced rtmp v2
 #define FLV_AUDIO_AAC		(10 << 4)
 #define FLV_AUDIO_SPEEX		(11 << 4)
-#define FLV_AUDIO_OPUS		(13 << 4)
+#define FLV_AUDIO_AC3		(12 << 4) // enhanced rtmp v2
+#define FLV_AUDIO_OPUS		(13 << 4) // opus-codec.org
 #define FLV_AUDIO_MP3_8K	(14 << 4) // MP3 8 kHz
 #define FLV_AUDIO_DEVIDE	(15 << 4) // Device-specific sound
 #define FLV_AUDIO_ASC		(0x1000 | FLV_AUDIO_AAC)	// AudioSpecificConfig(ISO-14496-3)
-#define FLV_AUDIO_OPUS_HEAD	(0x1100 | FLV_AUDIO_OPUS)// opus-codec.org
+#define FLV_AUDIO_OPUS_HEAD	(0x1100 | FLV_AUDIO_OPUS)	// https://datatracker.ietf.org/doc/html/rfc7845#section-5.1
+#define FLV_AUDIO_FLAC_HEAD (0x1200 | FLV_AUDIO_FLAC)	// xiph.org/flac
 
 // FLV Video Type
 #define FLV_VIDEO_H263		2 // Sorenson H.263
@@ -64,6 +70,13 @@ enum
 	// note: PacketTypeSequenceStart and PacketTypeMPEG2TSSequenceStart
 	// are mutually exclusive
 	FLV_PACKET_TYPE_MPEG2TS_SEQUENCE_START = 5,
+
+	// Turns on video multitrack mode
+	FLV_PACKET_TYPE_MULTITRACK = 6,
+
+	// audio
+	FLV_AUDIO_PACKET_TYPE_MULTICHANNEL_CONFIG = 4,
+	FLV_AUDIO_PACKET_TYPE_MULTITRACK = 5, // Turns on audio multitrack mode
 };
 
 enum
@@ -95,11 +108,29 @@ enum
 	FLV_SOUND_CHANNEL_STEREO			= 1, // 2-channels
 };
 
+// AvMultitrackType
+enum flv_audio_multi_track_e
+{
+	FLV_AUDIO_MULTI_TRACK_ONE = 0, // OneTrack
+	FLV_AUDIO_MULTI_TRACK_MANY = 1, // ManyTracks
+	FLV_AUDIO_MULTI_TRACK_MANY_CODECS = 2, // ManyTracksManyCodecs
+
+	FLV_AUDIO_MULTI_TRACK_NONE = 255,
+};
+
 #define FLV_VIDEO_FOURCC(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
-#define FLV_VIDEO_FOURCC_AV1    FLV_VIDEO_FOURCC('a', 'v', '0', '1')
 #define FLV_VIDEO_FOURCC_VP9    FLV_VIDEO_FOURCC('v', 'p', '0', '9')
-#define FLV_VIDEO_FOURCC_HEVC	FLV_VIDEO_FOURCC('h', 'v', 'c', '1')
-#define FLV_VIDEO_FOURCC_VVC	FLV_VIDEO_FOURCC('v', 'v', 'c', '1')
+#define FLV_VIDEO_FOURCC_AV1    FLV_VIDEO_FOURCC('a', 'v', '0', '1')
+#define FLV_VIDEO_FOURCC_AVC	FLV_VIDEO_FOURCC('a', 'v', 'c', '1') // H.264
+#define FLV_VIDEO_FOURCC_HEVC	FLV_VIDEO_FOURCC('h', 'v', 'c', '1') // H.265
+#define FLV_VIDEO_FOURCC_VVC	FLV_VIDEO_FOURCC('v', 'v', 'c', '1') // H.266
+
+#define FLV_AUDIO_FOURCC_AC3    FLV_VIDEO_FOURCC('a', 'c', '-', '3') // AC-3/E-AC-3 - <https://en.wikipedia.org/wiki/Dolby_Digital>
+#define FLV_AUDIO_FOURCC_EAC3   FLV_VIDEO_FOURCC('e', 'c', '-', '3')
+#define FLV_AUDIO_FOURCC_OPUS	FLV_VIDEO_FOURCC('O', 'p', 'u', 's') // Opus audio - <https://opus-codec.org/>
+#define FLV_AUDIO_FOURCC_MP3	FLV_VIDEO_FOURCC('.', 'm', 'p', '3') // Mp3 audio - <https://en.wikipedia.org/wiki/MP3>
+#define FLV_AUDIO_FOURCC_FLAC	FLV_VIDEO_FOURCC('f', 'L', 'a', 'C') // Free Lossless Audio Codec - <https://xiph.org/flac/format.html>
+#define FLV_AUDIO_FOURCC_AAC	FLV_VIDEO_FOURCC('m', 'p', '4', 'a') // Advanced Audio Coding - <https://en.wikipedia.org/wiki/Advanced_Audio_Coding>
 
 #endif /* !_flv_proto_h_ */

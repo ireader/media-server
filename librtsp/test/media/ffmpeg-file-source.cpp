@@ -211,7 +211,7 @@ SEND_PACKET:
 	}
 
 	m_status = 1;
-	uint64_t clock = system_clock();
+	uint64_t clock = system_time();
 	for (int i = 0; i < m_count; i++)
 	{
 		struct media_t* m = &m_media[i];
@@ -289,7 +289,7 @@ int FFFileSource::Seek(int64_t pos)
 		if (-1 != m_media[i].dts_first)
 			m_media[i].timestamp += m_media[i].dts_last - m_media[i].dts_first + 1;
 		m_media[i].dts_first = -1;
-		//SendRTCP(&m_media[i], system_clock());
+		//SendRTCP(&m_media[i], system_time());
 	}
 
 	m_dts = -1;
@@ -543,7 +543,7 @@ int FFFileSource::RTPPacket(void* param, const void *packet, int bytes, uint32_t
 	// Hack: Send an initial RTCP "SR" packet, before the initial RTP packet, 
 	// so that receivers will (likely) be able to get RTCP-synchronized presentation times immediately:
 	rtp_onsend(m->rtp, packet, bytes/*, time*/);
-	SendRTCP(m, system_clock());
+	SendRTCP(m, system_time());
 	
 	int r = m->transport->Send(false, packet, bytes);
 	assert(r == (int)bytes);
