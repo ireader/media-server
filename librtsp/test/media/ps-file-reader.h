@@ -30,6 +30,8 @@ private:
 public:
 	int64_t m_v_start_ts;
 	int64_t m_v_end_ts;
+	int m_v_codecid;
+	int m_a_codecid;
 
 private:
 	FILE* m_fp;

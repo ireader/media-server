@@ -8,7 +8,7 @@
 #include <map>
 
 PSFileReader::PSFileReader(const char* file)
-	:m_fp(NULL), m_pos(0), m_v_start_ts(-1), m_v_end_ts(-1), m_duration(0), m_demuxer(NULL)
+	:m_fp(NULL), m_pos(0), m_v_start_ts(-1), m_v_end_ts(-1), m_v_codecid(-1), m_a_codecid(-1), m_duration(0), m_demuxer(NULL)
 {
 	memset(&m_utils, 0, sizeof(m_utils));
 	m_fp = fopen(file, "rb");
@@ -116,7 +116,7 @@ int PSFileReader::GetNextFrame(int64_t& pts, int64_t& dts, const uint8_t*& ptr, 
 	pts = pkt->pts;
 	dts = pkt->dts;
 	flags = pkt->flags;
-	codecid = pkt->stream->stream_codecid;
+	codecid = (pkt->stream->codecid >= AVCODEC_VIDEO_MPEG1 && pkt->stream->codecid <= AVCODEC_VIDEO_SVAC) ? m_v_codecid : m_a_codecid;
 
 	return 0;
 }
@@ -133,13 +133,13 @@ void PSFileReader::PSOnStream(void* param, int stream, int codecid, const void* 
 	AVPACKET_CODEC_ID avcodecid = s_payloads[r].codecid;
 	if (avcodecid >= AVCODEC_VIDEO_MPEG1 && avcodecid <= AVCODEC_VIDEO_SVAC)
 	{
-		struct avstream_t* avstream = avpktutil_addvideo(&self->m_utils, stream, avcodecid, 0, 0, extra, bytes);
-		avstream->stream_codecid = codecid;
+		avpktutil_addvideo(&self->m_utils, stream, avcodecid, 0, 0, extra, bytes);
+		self->m_v_codecid = codecid;
 	}
 	else if (avcodecid >= AVCODEC_AUDIO_PCM && avcodecid <= AVCODEC_AUDIO_SVAC)
 	{
-		struct avstream_t* avstream = avpktutil_addaudio(&self->m_utils, stream, avcodecid, 0, 0, 0, extra, bytes);
-		avstream->stream_codecid = codecid;
+		avpktutil_addaudio(&self->m_utils, stream, avcodecid, 0, 0, 0, extra, bytes);
+		self->m_a_codecid = codecid;
 	}
 }
 
