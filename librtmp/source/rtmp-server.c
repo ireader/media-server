@@ -441,6 +441,9 @@ struct rtmp_server_t* rtmp_server_create(void* param, const struct rtmp_server_h
 	ctx->rtmp.out_packets[RTMP_CHANNEL_AUDIO].header.cid = RTMP_CHANNEL_AUDIO;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_VIDEO].header.cid = RTMP_CHANNEL_VIDEO;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_DATA].header.cid = RTMP_CHANNEL_DATA;
+
+	ctx->rtmp.chunk_write_header.ptr = ctx->rtmp.chunk_write_header.bufer;
+	ctx->rtmp.chunk_write_header.capacity = sizeof(ctx->rtmp.chunk_write_header.bufer);
 	return ctx;
 }
 
@@ -453,6 +456,12 @@ void rtmp_server_destroy(struct rtmp_server_t* ctx)
 		assert(NULL == ctx->rtmp.out_packets[i].payload);
 		if (ctx->rtmp.in_packets[i].payload)
 			free(ctx->rtmp.in_packets[i].payload);
+	}
+
+	if (ctx->rtmp.chunk_write_header.ptr && ctx->rtmp.chunk_write_header.ptr != ctx->rtmp.chunk_write_header.bufer)
+	{
+		free(ctx->rtmp.chunk_write_header.ptr);
+		ctx->rtmp.chunk_write_header.capacity = 0;
 	}
 
 	free(ctx);
