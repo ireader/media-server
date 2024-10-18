@@ -302,6 +302,87 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 	return 0;
 }
 
+// RFC9328 RTP Payload Format for Versatile Video Coding(VVC)
+// m=video 49170 RTP/AVP 98
+// a=rtpmap:98 H266/90000
+// a=fmtp:98 profile-id=1; sprop-vps=<video parameter sets data>
+int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h266)
+{
+	size_t nc;
+	const char* p1, * p2;
+	const char* p = fmtp;
+
+	// payload type
+	*format = atoi(p);
+	p1 = strchr(p, ' ');
+	if (!p1 || ' ' != *p1)
+		return -1;
+
+	h266->flags = 0;
+	assert(' ' == *p1);
+	p = p1 + 1;
+	while (*p)
+	{
+		p1 = strchr(p, '=');
+		if (!p1 || '=' != *p1)
+			return -1;
+
+		p2 = strchr(p1 + 1, ';');
+		if (!p2)
+			p2 = p1 + strlen(p1);
+
+		while (' ' == *p) p++; // skip space
+
+		nc = (size_t)(p1 - p); // ptrdiff_t to size_t
+		//vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
+		switch (*p)
+		{
+		case 'i':
+			// interop-constraints
+			break;
+		case 'l':
+			// level-id
+			break;
+		case 'p':
+			// profile-space
+			// profile-id
+			// profile-compatibility-indicator
+			break;
+
+		case 's':
+			// sprop-dci
+			// sprop-vps
+			// sprop-sps
+			// sprop-pps
+			// sprop-sei
+			if (0 == strncasecmp("sprop-vps", p, nc))
+			{
+			}
+			else if (0 == strncasecmp("sprop-sps", p, nc))
+			{
+			}
+			else if (0 == strncasecmp("sprop-pps", p, nc))
+			{
+			}
+			else if (0 == strncasecmp("sprop-sei", p, nc))
+			{
+			}
+			else if (0 == strncasecmp("sprop-dci", p, nc))
+			{
+			}
+			break;
+
+		case 't':
+			// tier-flag
+			break;
+		}
+
+		p = *p2 ? p2 + 1 : p2;
+	}
+
+	return 0;
+}
+
 // RFC3640 RTP Payload Format for Transport of MPEG-4 Elementary Streams
 // m=audio 49230 RTP/AVP 96
 // a=rtpmap:96 mpeg4-generic/16000/1
