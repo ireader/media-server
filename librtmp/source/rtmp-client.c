@@ -398,6 +398,9 @@ struct rtmp_client_t* rtmp_client_create(const char* appname, const char* playpa
 	ctx->rtmp.out_packets[RTMP_CHANNEL_AUDIO].header.cid = RTMP_CHANNEL_AUDIO;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_VIDEO].header.cid = RTMP_CHANNEL_VIDEO;
 	ctx->rtmp.out_packets[RTMP_CHANNEL_DATA].header.cid = RTMP_CHANNEL_DATA;
+
+	ctx->rtmp.chunk_write_header.ptr = ctx->rtmp.chunk_write_header.bufer;
+	ctx->rtmp.chunk_write_header.capacity = sizeof(ctx->rtmp.chunk_write_header.bufer);
 	return ctx;
 }
 
@@ -416,6 +419,12 @@ void rtmp_client_destroy(struct rtmp_client_t* ctx)
 			free(ctx->rtmp.in_packets[i].payload);
 			ctx->rtmp.in_packets[i].payload = NULL;
 		}
+	}
+
+	if (ctx->rtmp.chunk_write_header.ptr && ctx->rtmp.chunk_write_header.ptr != ctx->rtmp.chunk_write_header.bufer)
+	{
+		free(ctx->rtmp.chunk_write_header.ptr);
+		ctx->rtmp.chunk_write_header.capacity = 0;
 	}
 
 #if defined(DEBUG) || defined(_DEBUG)

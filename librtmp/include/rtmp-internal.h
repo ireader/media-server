@@ -90,6 +90,13 @@ struct rtmp_parser_t
 	struct rtmp_packet_t* pkt;
 };
 
+struct rtmp_chunk_write_header_t
+{
+	uint8_t bufer[MAX_CHUNK_HEADER + 5 * 20]; // 1-full chunk header + 20-type3 chunk header(with timestamp)
+	uint8_t* ptr;
+	uint32_t capacity;
+};
+
 struct rtmp_t
 {
 	uint32_t in_chunk_size; // read from network
@@ -107,6 +114,8 @@ struct rtmp_t
 	struct rtmp_packet_t in_packets[N_CHUNK_STREAM]; // receive from network
 	struct rtmp_packet_t out_packets[N_CHUNK_STREAM]; // send to network
 	struct rtmp_parser_t parser;
+
+	struct rtmp_chunk_write_header_t chunk_write_header; // rtmp_chunk_write only
 
 	void* param;
 
