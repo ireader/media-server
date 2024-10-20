@@ -150,6 +150,9 @@ int mpeg4_vvc_decoder_configuration_record_load(const uint8_t* data, size_t byte
 	uint16_t i, j, k, n, numOfArrays;
 	uint8_t* dst;
 
+	if (bytes < 2)
+		return -1;
+
 	vvc->off = 0; // clear
 	mpeg4_bits_init(&bits, (void*)data, bytes);
 	mpeg4_bits_read_n(&bits, 5); // reserved '11111'b
