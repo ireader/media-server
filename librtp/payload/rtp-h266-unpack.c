@@ -1,4 +1,4 @@
-// https://www.ietf.org/archive/id/draft-ietf-avtcore-rtp-vvc-18.htm
+// https://www.rfc-editor.org/rfc/rfc9328.html
 
 #include "rtp-packet.h"
 #include "rtp-payload-internal.h"
@@ -259,7 +259,7 @@ static int rtp_h266_unpack_input(void* p, const void* packet, int bytes)
 
 	assert(pkt.payloadlen > 2);
 	ptr = (const uint8_t*)pkt.payload;
-	nal = H266_TYPE(ptr[0]);
+	nal = H266_TYPE(ptr[1]);
 
 	if (nal > 31)
 		return 0; // packet discard, Unsupported (VVC) NAL type

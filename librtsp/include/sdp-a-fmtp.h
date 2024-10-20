@@ -80,6 +80,26 @@ struct sdp_a_fmtp_h265_t
 
 int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h265);
 
+// H.266
+enum {
+	SDP_A_FMTP_H266_SPROP_VPS = 0x00000100,
+	SDP_A_FMTP_H266_SPROP_SPS = 0x00000200,
+	SDP_A_FMTP_H266_SPROP_PPS = 0x00000400,
+	SDP_A_FMTP_H266_SPROP_SEI = 0x00000800,
+	SDP_A_FMTP_H266_SPROP_DCI = 0x00001000,
+};
+struct sdp_a_fmtp_h266_t
+{
+	int flags; // test with (1<<SDP_A_FMTP_H266_xxx)
+	char sprop_vps[1];
+	char sprop_sps[1];
+	char sprop_pps[1];
+	char sprop_sei[1];
+	char sprop_dci[1];
+};
+
+int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h266);
+
 // mpeg4-generic
 enum { 
 	SDP_A_FMTP_MPEG4_OBJECTTYPE				= 0x0001,

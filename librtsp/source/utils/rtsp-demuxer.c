@@ -51,6 +51,7 @@ struct rtp_payload_info_t
     {
         struct sdp_a_fmtp_h264_t h264;
         struct sdp_a_fmtp_h265_t h265;
+        struct sdp_a_fmtp_h266_t h266;
         struct sdp_a_fmtp_mpeg4_t mpeg4;
 
         struct mpeg4_aac_t aac;
@@ -98,6 +99,7 @@ int sdp_aac_latm_load(uint8_t* data, int bytes, const char* config);
 int sdp_aac_mpeg4_load(uint8_t* data, int bytes, const char* config);
 int sdp_h264_load(uint8_t* data, int bytes, const char* config);
 int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, const char* pps, const char* sei);
+int sdp_h266_load(uint8_t* data, int bytes, const char* vps, const char* sps, const char* pps, const char* sei, const char* dci);
 
 static int rtsp_demuxer_avpbs_onpacket(void* param, struct avpacket_t* pkt)
 {
@@ -453,6 +455,14 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
             if (fmtp && *fmtp && 0 == sdp_a_fmtp_h265(fmtp, &payload, &pt->fmtp.h265))
                 pt->extra_bytes = sdp_h265_load(pt->extra, len, pt->fmtp.h265.sprop_vps, pt->fmtp.h265.sprop_sps, pt->fmtp.h265.sprop_pps, pt->fmtp.h265.sprop_sei);
             pt->avbsf = avbsf_find(AVCODEC_VIDEO_H265);
+            pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
+            onpacket = rtsp_demuxer_onh2645nalu;
+            break;
+
+        case AVCODEC_VIDEO_H266:
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_h266(fmtp, &payload, &pt->fmtp.h266))
+                pt->extra_bytes = sdp_h266_load(pt->extra, len, pt->fmtp.h266.sprop_vps, pt->fmtp.h266.sprop_sps, pt->fmtp.h266.sprop_pps, pt->fmtp.h266.sprop_sei, pt->fmtp.h266.sprop_dci);
+            pt->avbsf = avbsf_find(AVCODEC_VIDEO_H266);
             pt->h2645 = pt->avbsf->create(pt->extra, pt->extra_bytes, rtsp_demuxer_onh2645packet, pt);
             onpacket = rtsp_demuxer_onh2645nalu;
             break;

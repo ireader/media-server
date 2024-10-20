@@ -7,3 +7,5 @@ Release
 *.user
 *.d
 *.o
+debug.*
+release.*

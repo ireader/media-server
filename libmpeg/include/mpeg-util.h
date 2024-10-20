@@ -1,6 +1,10 @@
 #ifndef _mpeg_util_h_
 #define _mpeg_util_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mpeg-types.h"
 #include <assert.h>
 
@@ -169,4 +173,7 @@ int mpeg_h266_start_with_access_unit_delimiter(const uint8_t* p, size_t bytes);
 
 uint32_t mpeg_crc32(uint32_t crc, const uint8_t *buffer, uint32_t size);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !_mpeg_util_h_ */
