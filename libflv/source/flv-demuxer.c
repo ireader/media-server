@@ -183,8 +183,9 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 				n = h264_mp4toannexb(&flv->v.avc, data + n, bytes - n, flv->ptr, flv->capacity);
 				if (n <= 0 || n > flv->capacity)
 				{
-					assert(0);
-					return -ENOMEM;
+					// fix: dj drones rtmp bitstream 9 bytes: 01 00 00 00 00 00 00 00 00
+					assert(n <= flv->capacity);
+					return 0 == n ? 0 : -ENOMEM;
 				}
 				return flv->handler(flv->param, FLV_VIDEO_H264, flv->ptr, n, timestamp + video.cts, timestamp, (FLV_VIDEO_KEY_FRAME == video.keyframe) ? 1 : 0);
 			}
