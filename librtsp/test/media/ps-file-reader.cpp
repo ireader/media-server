@@ -8,51 +8,49 @@
 #include <map>
 
 PSFileReader::PSFileReader(const char* file)
-	:m_fp(NULL), m_pos(0), m_v_start_ts(-1), m_v_end_ts(-1), m_v_codecid(-1), m_a_codecid(-1), m_duration(0), m_demuxer(NULL)
+	:m_pos(0), m_v_start_ts(-1), m_v_end_ts(-1), m_v_codecid(-1), m_a_codecid(-1), m_duration(0)
 {
 	memset(&m_utils, 0, sizeof(m_utils));
-	m_fp = fopen(file, "rb");
-	if (m_fp)
-	{
-		static struct ps_demuxer_notify_t notify = {
-			PSOnStream,
-		};
-		m_demuxer = ps_demuxer_create(PSOnRead, this);
-		ps_demuxer_set_notify(m_demuxer, &notify, this);
-
-		m_pkts = std::shared_ptr<AVPacketQueue>(new AVPacketQueue(-1));
-
-		Init();
-	}
+	
+	Init(file);
+	m_it = m_pkts.begin();
 }
 
 PSFileReader::~PSFileReader()
 {
 	avpktutil_destroy(&m_utils);
 
-	if (m_demuxer)
+	for (auto it = m_pkts.begin(); it != m_pkts.end(); ++it)
 	{
-		ps_demuxer_destroy(m_demuxer);
-		m_demuxer = NULL;
+		auto pkt = *it;
+		avpacket_release(pkt);
 	}
-
-	if (m_fp)
-		fclose(m_fp);
+	m_pkts.clear();
 }
 
-int PSFileReader::Init()
+int PSFileReader::Init(const char* file)
 {
+	FILE* fp = fopen(file, "rb");
+	if (!fp)
+		return -1;
+
+	static struct ps_demuxer_notify_t notify = {
+			PSOnStream,
+	};
+	ps_demuxer_t* demuxer = ps_demuxer_create(PSOnRead, this);
+	ps_demuxer_set_notify(demuxer, &notify, this);
+
 	int n, i = 0, r = 0;
-	while ((n = fread(m_packet + i, 1, sizeof(m_packet) - i, m_fp)) > 0)
+	while ((n = fread(m_packet + i, 1, sizeof(m_packet) - i, fp)) > 0)
 	{
-		r = ps_demuxer_input(m_demuxer, m_packet, n + i);
+		r = ps_demuxer_input(demuxer, m_packet, n + i);
 		assert(r == n + i);
 		memmove(m_packet, m_packet + r, n + i - r);
 		i = n + i - r;
 	}
 	while (i > 0 && r > 0)
 	{
-		r = ps_demuxer_input(m_demuxer, m_packet, i);
+		r = ps_demuxer_input(demuxer, m_packet, i);
 		memmove(m_packet, m_packet + r, i - r);
 		i -= r;
 	}
@@ -62,6 +60,8 @@ int PSFileReader::Init()
 		m_duration = (m_v_end_ts - m_v_start_ts) / 90;
 	}
 
+	ps_demuxer_destroy(demuxer);
+	fclose(fp);
 	return 0;
 }
 
@@ -69,12 +69,9 @@ int PSFileReader::Seek(int64_t& dts)
 {
 	int64_t fisrt_dts = -1;
 
-	while (1)
+	for(m_it = m_pkts.begin(); m_it != m_pkts.end(); ++m_it)
 	{
-		std::shared_ptr<avpacket_t> pkt(m_pkts->Cur(), avpacket_release);
-		if (NULL == pkt)
-			return -1;
-
+		auto pkt = *m_it;
 		if (fisrt_dts == -1)
 			fisrt_dts = pkt->dts / 90;
 
@@ -92,32 +89,28 @@ int PSFileReader::Seek(int64_t& dts)
 		}
 	}
 
-	m_pkts->Reset();
-	return 0;
+	return -1;
 }
 
 int PSFileReader::OnPacket(struct avpacket_t* pkt)
 {
-	int ret = m_pkts->Push(pkt);
-	m_pkts->Reset();
-
-	return ret;
+	m_pkts.push_back(pkt);
+	return 0;
 }
 
 int PSFileReader::GetNextFrame(int64_t& pts, int64_t& dts, const uint8_t*& ptr, size_t& bytes, int& codecid, int& flags)
 {
-	if (m_pkts->End())
+	if (m_it == m_pkts.end())
 		return -1; // file end
 
-	std::shared_ptr<avpacket_t> pkt(m_pkts->Cur(), avpacket_release);
+	ptr = (*m_it)->data;
+	bytes = (*m_it)->size;
+	pts = (*m_it)->pts;
+	dts = (*m_it)->dts;
+	flags = (*m_it)->flags;
+	codecid = ((*m_it)->stream->codecid >= AVCODEC_VIDEO_MPEG1 && (*m_it)->stream->codecid <= AVCODEC_VIDEO_SVAC) ? m_v_codecid : m_a_codecid;
 
-	ptr = pkt->data;
-	bytes = pkt->size;
-	pts = pkt->pts;
-	dts = pkt->dts;
-	flags = pkt->flags;
-	codecid = (pkt->stream->codecid >= AVCODEC_VIDEO_MPEG1 && pkt->stream->codecid <= AVCODEC_VIDEO_SVAC) ? m_v_codecid : m_a_codecid;
-
+	++m_it;
 	return 0;
 }
 

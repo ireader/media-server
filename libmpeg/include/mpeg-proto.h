@@ -93,6 +93,7 @@ enum EPSI_STREAM_TYPE
 	PSI_STREAM_AUDIO_DTS		= 0x8a, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_DIRAC		= 0xd1, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_AVS3		= 0xd4, // ffmpeg/libavformat/mpegts.h
+	PSI_STREAM_AUDIO_AVS3		= 0xd5, // avs3-p6
 	PSI_STREAM_VIDEO_VC1		= 0xea, // ffmpeg/libavformat/mpegts.h
 	PSI_STREAM_VIDEO_SVAC		= 0x80, // GBT 25724-2010 SVAC(2014)
 	PSI_STREAM_AUDIO_SVAC		= 0x9B, // GBT 25724-2010 SVAC(2014)

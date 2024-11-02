@@ -4,6 +4,7 @@
 #include "vod-file-source.h"
 #include "mpeg-ps.h"
 #include "avpktutil.h"
+#include <vector>
 #include <string>
 #include <stdio.h>
 #include <stdint.h>
@@ -22,7 +23,7 @@ public:
 	int Seek(int64_t& dts);
 
 private:
-	int Init();
+	int Init(const char* file);
 
 	static void PSOnStream(void* param, int stream, int codecid, const void* extra, int bytes, int finish);
 	static int PSOnRead(void* param, int stream, int avtype, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
@@ -34,15 +35,13 @@ public:
 	int m_a_codecid;
 
 private:
-	FILE* m_fp;
 	int64_t m_pos;
 	int64_t m_duration;
-	ps_demuxer_t* m_demuxer;
-	struct avpacket_t** m_pkt;
 	struct avpktutil_t m_utils;
 	uint8_t m_packet[2 * 1024 * 1024];
 
-	std::shared_ptr<AVPacketQueue> m_pkts;
+	std::vector<avpacket_t*> m_pkts;
+	std::vector<avpacket_t*>::iterator m_it;
 };
 
 #endif /* !_ps_file_reader_h_ */

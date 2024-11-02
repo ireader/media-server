@@ -19,10 +19,6 @@ int avpacket_queue_push(struct avpacket_queue_t* q, struct avpacket_t* pkt);
 struct avpacket_t* avpacket_queue_front_wait(struct avpacket_queue_t* q, int ms);
 int avpacket_queue_push_wait(struct avpacket_queue_t* q, struct avpacket_t* pkt, int ms);
 
-struct avpacket_t* avpacket_queue_cur(struct avpacket_queue_t* q);
-bool avpacket_queue_end(struct avpacket_queue_t* q);
-void avpacket_queue_reset(struct avpacket_queue_t* q);
-
 #if defined(__cplusplus)
 class AVPacketQueue
 {
@@ -39,10 +35,6 @@ public:
 	int PushWait(struct avpacket_t* pkt, int ms) { return avpacket_queue_push_wait(m_pkts, pkt, ms); }
 	struct avpacket_t* Front() { return avpacket_queue_front(m_pkts); }
 	struct avpacket_t* FrontWait(int ms) { return avpacket_queue_front_wait(m_pkts, ms); }
-
-	struct avpacket_t* Cur() { return avpacket_queue_cur(m_pkts); };
-	bool End() { return avpacket_queue_end(m_pkts); };
-	void Reset() { return avpacket_queue_reset(m_pkts); };
 
 private:
 	struct avpacket_queue_t* m_pkts;
