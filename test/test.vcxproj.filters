@@ -524,6 +524,9 @@
     <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp">
       <Filter>libmpeg</Filter>
     </ClCompile>
+    <ClCompile Include="..\librtsp\source\sdp\sdp-h266.c">
+      <Filter>librtsp\sdp</Filter>
+    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\ps-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>

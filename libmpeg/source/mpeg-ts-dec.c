@@ -57,7 +57,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 		if(adp->OPCR_flag && i + 6 <= adp->adaptation_field_length + 1)
 		{
 			adp->original_program_clock_reference_base = (((uint64_t)data[i]) << 25) | ((uint64_t)data[i+1] << 17) | ((uint64_t)data[i+2] << 9) | ((uint64_t)data[i+3] << 1) | ((data[i+4] >> 7) & 0x01);
-			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 1) | data[i+5];
+			adp->original_program_clock_reference_extension = ((data[i+4] & 0x01) << 8) | data[i+5];
 
 			i += 6;
 		}

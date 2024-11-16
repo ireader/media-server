@@ -388,7 +388,7 @@ static int flv_muxer_h265(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		n = flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
-		assert(n == 5 + (flv->enhanced_rtmp && dts == pts) ? 0 : 3);
+		assert(n == 5 + ((flv->enhanced_rtmp && dts != pts) ? 3 : 0));
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
@@ -402,7 +402,7 @@ int flv_muxer_hevc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint
 			return -ENOMEM;
 	}
 
-	flv->bytes = 5 + (flv->enhanced_rtmp && dts == pts) ? 0 : 3;
+	flv->bytes = 5 + ((flv->enhanced_rtmp && dts != pts) ? 3 : 0);
 	flv->bytes += h265_annexbtomp4(&flv->v.hevc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;
@@ -441,7 +441,7 @@ static int flv_muxer_h266(struct flv_muxer_t* flv, uint32_t pts, uint32_t dts)
 		video.keyframe = 1 == flv->vcl ? FLV_VIDEO_KEY_FRAME : FLV_VIDEO_INTER_FRAME;
 		video.avpacket = FLV_AVPACKET;
 		n = flv_video_tag_header_write(&video, flv->ptr, flv->capacity);
-		assert(n == 5 + (flv->enhanced_rtmp && dts == pts) ? 0 : 3);
+		assert(n == 5 + ((flv->enhanced_rtmp && dts != pts) ? 3 : 0));
 		return flv->handler(flv->param, FLV_TYPE_VIDEO, flv->ptr, flv->bytes, dts);
 	}
 	return 0;
@@ -455,7 +455,7 @@ int flv_muxer_vvc(struct flv_muxer_t* flv, const void* data, size_t bytes, uint3
 			return -ENOMEM;
 	}
 
-	flv->bytes = 5 + (flv->enhanced_rtmp && dts == pts) ? 0 : 3;
+	flv->bytes = 5 + ((flv->enhanced_rtmp && dts != pts) ? 3 : 0);
 	flv->bytes += h266_annexbtomp4(&flv->v.vvc, data, bytes, flv->ptr + flv->bytes, flv->capacity - flv->bytes, &flv->vcl, &flv->update);
 	if (flv->bytes <= 5)
 		return -ENOMEM;

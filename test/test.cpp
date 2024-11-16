@@ -51,7 +51,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char* */
 #define DEF_FUN_PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(4 != argc) return -1;\
+        if(4 > argc) return -1;\
         name(argv[3]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
@@ -59,14 +59,14 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, char* */
 #define DEF_FUN_2PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(5 != argc) return -1;\
+        if(5 > argc) return -1;\
         name(argv[3], argv[4]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
 
 #define DEF_FUN_3PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(6 != argc) return -1;\
+        if(6 > argc) return -1;\
         name(argv[3], argv[4], argv[5]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
@@ -74,7 +74,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, char*, char*, char* */
 #define DEF_FUN_4PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(7 != argc) return -1;\
+        if(7 > argc) return -1;\
         name(argv[3], argv[4], argv[5], argv[6]);return 0;\
     } \
     RE_REGISTER(name, "void " #name  "(" #__VA_ARGS__ ")", t_##name)
@@ -82,7 +82,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, int */
 #define DEF_FUN_PCHAR_INT(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(5 != argc) return -1;\
+        if(5 > argc) return -1;\
         name(argv[3], (int)atoi(argv[4]));return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
@@ -90,7 +90,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 int, int, char*, char* */
 #define DEF_FUN_INT_INT_PCHAR_PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(7 != argc) return -1;\
+        if(7 > argc) return -1;\
         name((int)atoi(argv[3]), (int)atoi(argv[4]), argv[5], argv[6]);return 0;\
     }\
      RE_REGISTER(name, "void " #name "(" #__VA_ARGS__ ")", t_##name)
@@ -98,7 +98,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, int, int, char* */
 #define DEF_FUN_PCHAR_INT_INT_PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(7 != argc) return -1;\
+        if(7 > argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), (int)atoi(argv[5]), argv[6]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" # __VA_ARGS__ ")", t_##name)
@@ -106,7 +106,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, int, char* */
 #define DEF_FUN_PCHAR_INT_PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(6 != argc) return -1;\
+        if(6 > argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" # __VA_ARGS__ ")", t_##name)
@@ -114,7 +114,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 char*, int, char*,int, int */
 #define DEF_FUN_PCHAR_INT_PCHAR_INT_INT(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(8 != argc) return -1;\
+        if(8 > argc) return -1;\
         name(argv[3], (int)atoi(argv[4]), argv[5], (int)atoi(argv[6]), (int)atoi(argv[7]));return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" # __VA_ARGS__ ")", t_##name)
@@ -122,7 +122,7 @@ void usage(int argc, char const *argv[]){
 /* 用于套壳调用函数，参数 int, const char*, uint16_t, uint32_t, const char* */
 #define DEF_FUN_INT_PCHAR_INT_INT_PCHAR(name, ...)  void name ( __VA_ARGS__ ); \
     int t_##name(int argc, char const *argv[]){\
-        if(8 != argc) return -1;\
+        if(8 > argc) return -1;\
         name((int)atoi(argv[3]), argv[4], (uint16_t)atoi(argv[5]), (uint32_t)atoi(argv[6]), argv[7]);return 0;\
     } \
     RE_REGISTER(name, "void " #name "(" # __VA_ARGS__ ")", t_##name)
