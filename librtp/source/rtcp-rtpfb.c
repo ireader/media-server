@@ -671,7 +671,7 @@ static int rtcp_rtpfb_tcc01_unpack(struct rtp_context* ctx, const rtcp_header_t*
 				r = -1;
 				break;
 			}
-			ccfb[i].ato = ((int16_t)nbo_r16(ptr)) >> 2; // 250us -> 1/1024(s)
+			ccfb[i].ato = ((int16_t)nbo_r16(ptr)) >> 2; // 250us -> 1/1024(ms)
 			bytes -= 2;
 			ptr += 2;
 		}
@@ -708,14 +708,14 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 	
 	for (i = 0; i < count && bytes >= 2; i += k)
 	{
-		ato = ccfb[i].ato << 2; // 1/1024(s) -> 250us
+		ato = ccfb[i].ato << 2; // 1/1024(ms) -> 250us
 		two = (ccfb[i].received && (uint16_t)ato > 0xFF) ? 2 : 1;
 		received = ccfb[i].received;
 		
 		// try Run Length Chunk
 		for (k = 1; i + k < count && ccfb[i + k].received == ccfb[i].received; k++)
 		{
-			ato = ccfb[i + k].ato << 2; // 1/1024(s) -> 250us
+			ato = ccfb[i + k].ato << 2; // 1/1024(ms) -> 250us
 			two = (ccfb[i + k].received && (uint16_t)ato > 0xFF) ? 2 : two;
 			received |= ccfb[i + k].received;
 		}
@@ -766,7 +766,7 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 				if (seq + k != ccfb[i].seq)
 					continue;
 
-				ato = ccfb[i].ato << 2; // 1/1024(s) -> 250us
+				ato = ccfb[i].ato << 2; // 1/1024(ms) -> 250us
 				if (chunk & 0x4000)
 				{
 					if (bytes < 2)
@@ -800,7 +800,7 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 					if (!ccfb[i].received)
 						continue;
 
-					ato = ccfb[i].ato << 2; // 1/1024(s) -> 250us
+					ato = ccfb[i].ato << 2; // 1/1024(ms) -> 250us
 					two = (chunk >> (2 * (6 - k))) & 0x03;
 					if (two == 1)
 					{
@@ -826,7 +826,7 @@ static int rtcp_rtpfb_tcc01_pack(uint16_t begin, const rtcp_ccfb_t* ccfb, int co
 					if (!ccfb[i].received)
 						continue;
 
-					ato = ccfb[i].ato << 2; // 1/1024(s) -> 250us
+					ato = ccfb[i].ato << 2; // 1/1024(ms) -> 250us
 					ptr[0] = (uint8_t)ato;
 					bytes -= 1;
 					ptr += 1;

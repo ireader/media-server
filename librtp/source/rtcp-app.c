@@ -44,8 +44,12 @@ int rtcp_app_pack(struct rtp_context *ctx, uint8_t* ptr, int bytes, const char n
 		nbo_w32(ptr+4, ctx->self->ssrc);
 		memcpy(ptr+8, name, 4);
 
-		if(len > 0)
-			memcpy(ptr+12, app, len);
+		if (len > 0)
+		{
+			memcpy(ptr + 12, app, len);
+			if(0 != len % 4)
+				memset(ptr + 12 + len, 0, 4 - (len % 4));
+		}	
 	}
 
 	return 12 + (len+3)/4*4;
