@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;include;../librtp/include;../../sdk/libhttp/include;../../sdk/include;../libmov/include;../libmpeg/include;../libflv/include;../libmkv/include;../../avcodec/avbsf/include;../../avcodec/avcodec/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;OS_WINDOWS;RTP_OVER_RTSP_TRY_TO_FIND_NEXT_PACKET</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -168,6 +168,21 @@
     <ClCompile Include="source\server\rtsp-server-setup.c" />
     <ClCompile Include="source\server\rtsp-server-teardown.c" />
     <ClCompile Include="source\server\rtsp-server.c" />
+    <ClCompile Include="source\utils\rtp-sender.c" />
+    <ClCompile Include="source\utils\rtsp-demuxer.c" />
+    <ClCompile Include="source\utils\rtsp-muxer.c" />
+    <ClCompile Include="source\sdp\sdp-aac.c" />
+    <ClCompile Include="source\sdp\sdp-av1.c" />
+    <ClCompile Include="source\sdp\sdp-fmtp-load.c" />
+    <ClCompile Include="source\sdp\sdp-g7xx.c" />
+    <ClCompile Include="source\sdp\sdp-h264.c" />
+    <ClCompile Include="source\sdp\sdp-h265.c" />
+    <ClCompile Include="source\sdp\sdp-h266.c" />
+    <ClCompile Include="source\sdp\sdp-mpeg2.c" />
+    <ClCompile Include="source\sdp\sdp-mpeg4.c" />
+    <ClCompile Include="source\sdp\sdp-opus.c" />
+    <ClCompile Include="source\sdp\sdp-payload.c" />
+    <ClCompile Include="source\sdp\sdp-vpx.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rtp-over-rtsp.h" />
