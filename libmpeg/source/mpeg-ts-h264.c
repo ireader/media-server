@@ -147,7 +147,7 @@ int mpeg_h264_find_new_access_unit(const uint8_t* data, size_t bytes, int* vcl)
         {
             // pes data loss ???
             *vcl = MPEG_VCL_CORRUPT;
-            return (int)(p - data + n - leading);
+            return (int)(p - data + n - (leading>3?3:leading));
         }
         else
         {
