@@ -15,6 +15,12 @@
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{5e4f0a51-fa58-49c9-be18-b5361fd74c1c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\sdp">
+      <UniqueIdentifier>{9df94333-5646-425d-bab9-25e35b2542d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{faca40ad-8dc4-4446-966e-d5ab2e0d6db8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\rtsp-header-range.c">
@@ -124,6 +130,51 @@
     </ClCompile>
     <ClCompile Include="source\sdp-a-webrtc.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-aac.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-av1.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-fmtp-load.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-g7xx.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-h264.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-h265.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-h266.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-mpeg2.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-mpeg4.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-opus.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-payload.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\sdp\sdp-vpx.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="source\utils\rtp-sender.c">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="source\utils\rtsp-demuxer.c">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="source\utils\rtsp-muxer.c">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
