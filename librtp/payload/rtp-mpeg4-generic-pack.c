@@ -93,6 +93,11 @@ static int rtp_mpeg4_generic_pack_input(void* pack, const void* data, int bytes,
 		// SDP fmtp: mode=AAC-hbr;sizeLength=13;indexLength=3;indexDeltaLength=3;
 		header[0] = 0;
 		header[1] = 16; // 16-bits AU headers-length
+		// When the AU-size is associated with an AU fragment, the AU size indicates
+		// the size of the entire AU and not the size of the fragment.
+		// This can be exploited to determine whether a
+		// packet contains an entire AU or a fragment, which is particularly
+		// useful after losing a packet carrying the last fragment of an AU.
 		header[2] = (uint8_t)(size >> 5);
 		header[3] = (uint8_t)(size & 0x1f) << 3;
 

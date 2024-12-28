@@ -57,11 +57,12 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 		size = size >> 3; // bit -> byte
 		if (pau + size > pend)
 		{
-			assert(0);
-			//helper->size = 0;
-			helper->lost = 1;
-            //helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
-			return -1; // invalid packet
+			// fragment ?
+			assert(1 == au_numbers);
+			pkt.payload = pau;
+			pkt.payloadlen = size;
+			rtp_payload_write(helper, &pkt);
+			return 1;
 		}
 
 		// TODO: add ADTS/ASC ???
@@ -74,6 +75,12 @@ static int rtp_decode_mpeg4_generic(void* p, const void* packet, int bytes)
 
 		if (au_numbers > 1 || pkt.rtp.m)
 		{
+			if (helper->size != size)
+			{
+				//helper->size = 0;
+				helper->lost = 1;
+				//helper->flags |= RTP_PAYLOAD_FLAG_PACKET_LOST;
+			}
 			rtp_payload_onframe(helper);
 		}
 	}
