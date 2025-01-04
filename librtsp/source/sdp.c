@@ -297,11 +297,13 @@ static int sdp_parse_origin(struct sdp_t* sdp)
 	char** vv[6];
 	int i, j, n[6];
 	struct sdp_origin *o;
-	static const char* default_username = "-";
 
 	o = &sdp->o;
 	memset(o, 0, sizeof(struct sdp_origin));
 	memset(n, 0, sizeof(n));
+	o->username = (char*)"-"; // default value
+	o->c.network = (char*)"IN";
+	o->c.addrtype = (char*)"IP4";
 
 	sdp_skip_space(sdp);
 	for (i = 0; i < 6 && sdp->raw[sdp->offset] && !strchr("\r\n", sdp->raw[sdp->offset]); i++)
@@ -312,21 +314,19 @@ static int sdp_parse_origin(struct sdp_t* sdp)
 	}
 
 	sdp_token_crlf(sdp);
-	if (i < 5)
-		return 0;
+	//if (i < 5)
+	//	return 0;
 
-	o->username = (char*)default_username; // default value
 	vv[0] = &o->username;
 	vv[1] = &o->session;
 	vv[2] = &o->session_version;
 	vv[3] = &o->c.network;
 	vv[4] = &o->c.addrtype;
 	vv[5] = &o->c.address;
-	for (j = 5; i > 0; j--)
+	for (j = 0; j < i; j++)
 	{
-		i--;
-		v[i][n[i]] = '\0';
-		*vv[j] = v[i];
+		v[j][n[j]] = '\0';
+		*vv[j] = v[j];
 	}
 
 	return 0;
@@ -544,7 +544,7 @@ static int sdp_parse_connection(struct sdp_t* sdp)
 	trim_right(c->address, &n[2]);
 
 	// check before assign '\0'
-	if(0==sdp_token_crlf(sdp) && n[0]>0 && n[1]>0 && n[2]>0)
+	if(0==sdp_token_crlf(sdp) /* && n[0]>0 && n[1]>0 && n[2]>0*/ )
 	{
 		c->network[n[0]] = '\0';
 		c->addrtype[n[1]] = '\0';
