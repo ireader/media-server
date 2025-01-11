@@ -156,6 +156,11 @@ uint8_t* AMFWriteDate(uint8_t* ptr, const uint8_t* end, double milliseconds, int
     return AMFWriteInt16(ptr + 9, end, timezone);
 }
 
+uint8_t* AMFWriteNamed(uint8_t* ptr, const uint8_t* end, const char* name, size_t length)
+{
+	return AMFWriteString16(ptr, end, name, length);
+}
+
 uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value)
 {
 	if (ptr + length + 2 + 2 > end)

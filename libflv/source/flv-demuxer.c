@@ -236,8 +236,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else
 		{
-			assert(0);
-			return -EINVAL;
+			assert(video.avpacket >= FLV_PACKET_TYPE_CODED_FRAMES_X && video.avpacket <= FLV_PACKET_TYPE_MULTITRACK);
+			return 0;
 		}
 	}
 	else if (FLV_VIDEO_H266 == video.codecid)
@@ -275,8 +275,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else
 		{
-			assert(0);
-			return -EINVAL;
+			assert(video.avpacket >= FLV_PACKET_TYPE_CODED_FRAMES_X && video.avpacket <= FLV_PACKET_TYPE_MULTITRACK);
+			return 0;
 		}
 	}
 	else if (FLV_VIDEO_AV1 == video.codecid)
@@ -298,8 +298,8 @@ static int flv_demuxer_video(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else
 		{
-			assert(0);
-			return -EINVAL;
+			assert(video.avpacket >= FLV_PACKET_TYPE_CODED_FRAMES_X && video.avpacket <= FLV_PACKET_TYPE_MULTITRACK);
+			return 0;
 		}
 	}
 	else if (FLV_VIDEO_AVS3 == video.codecid)

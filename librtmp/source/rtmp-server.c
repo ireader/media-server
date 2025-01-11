@@ -539,7 +539,10 @@ int rtmp_server_start(rtmp_server_t* rtmp, int r, const char* msg)
 {
 	if (RTMP_SERVER_START_RECONNECT == r)
 	{
-		r = (int)(rtmp_netstream_onreconnect(rtmp->payload, sizeof(rtmp->payload), 0, msg, "") - rtmp->payload);
+		if((unsigned int)rtmp->info.capsEx & RTMP_CAPSEX_RECONNECT)
+			r = (int)(rtmp_netstream_onreconnect(rtmp->payload, sizeof(rtmp->payload), 0, msg, "") - rtmp->payload);
+		else
+			r = (int)(rtmp_netstream_onconnect_rejected(rtmp->payload, sizeof(rtmp->payload), 0, msg, "") - rtmp->payload);
 		r = rtmp_server_send_control(&rtmp->rtmp, rtmp->payload, r, rtmp->stream_id);
 	}
 	else if (RTMP_SERVER_ONPLAY == rtmp->start.play)

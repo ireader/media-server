@@ -23,6 +23,7 @@ uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transacti
 	out = AMFWriteNamedDouble(out, end, "videoCodecs", 11, connect->videoCodecs);
 	out = AMFWriteNamedDouble(out, end, "videoFunction", 13, connect->videoFunction);
 	out = AMFWriteNamedDouble(out, end, "objectEncoding", 14, connect->encoding);
+	out = AMFWriteNamedDouble(out, end, "capsEx", 6, RTMP_CAPSEX_RECONNECT);
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }
@@ -45,6 +46,7 @@ uint8_t* rtmp_netconnection_connect_reply(uint8_t* out, size_t bytes, double tra
 	out = AMFWriteNamedString(out, end, "code", 4, code, strlen(code));
 	out = AMFWriteNamedString(out, end, "description", 11, description, strlen(description));
 	out = AMFWriteNamedDouble(out, end, "objectEncoding", 14, encoding);
+	out = AMFWriteNamedDouble(out, end, "capsEx", 6, RTMP_CAPSEX_RECONNECT);
 	out = AMFWriteObjectEnd(out, end);
 	return out;
 }

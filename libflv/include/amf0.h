@@ -42,6 +42,7 @@ uint8_t* AMFWriteDouble(uint8_t* ptr, const uint8_t* end, double value);
 uint8_t* AMFWriteString(uint8_t* ptr, const uint8_t* end, const char* string, size_t length);
 uint8_t* AMFWriteDate(uint8_t* ptr, const uint8_t* end, double milliseconds, int16_t timezone);
 
+uint8_t* AMFWriteNamed(uint8_t* ptr, const uint8_t* end, const char* name, size_t length);
 uint8_t* AMFWriteNamedString(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, const char* value, size_t length2);
 uint8_t* AMFWriteNamedDouble(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, double value);
 uint8_t* AMFWriteNamedBoolean(uint8_t* ptr, const uint8_t* end, const char* name, size_t length, uint8_t value);

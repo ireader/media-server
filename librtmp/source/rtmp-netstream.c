@@ -244,6 +244,30 @@ uint8_t* rtmp_netstream_onreconnect(uint8_t* out, size_t bytes, double transacti
 	return out;
 }
 
+uint8_t* rtmp_netstream_onconnect_rejected(uint8_t* out, size_t bytes, double transactionId, const char* tcurl, const char* description)
+{
+	uint8_t* end = out + bytes;
+	const char* command = "_error";
+
+	out = AMFWriteString(out, end, command, strlen(command)); // Command Name
+	out = AMFWriteDouble(out, end, transactionId); // Transaction ID
+	out = AMFWriteNull(out, end); // command object
+
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedString(out, end, "level", 5, RTMP_LEVEL_ERROR, strlen(RTMP_LEVEL_ERROR));
+	out = AMFWriteNamedString(out, end, "code", 4, "NetConnection.Connect.Rejected", 31);
+	out = AMFWriteNamedString(out, end, "description", 11, description ? description : "", strlen(description ? description : ""));
+	
+	out = AMFWriteNamed(out, end, "ex", 2);
+	out = AMFWriteObject(out, end);
+	out = AMFWriteNamedDouble(out, end, "code", 4, 302);
+	out = AMFWriteNamedString(out, end, "redirect", 8, tcurl ? tcurl : "", strlen(tcurl ? tcurl : ""));
+	out = AMFWriteObjectEnd(out, end);
+
+	out = AMFWriteObjectEnd(out, end);
+	return out;
+}
+
 uint8_t* rtmp_netstream_rtmpsampleaccess(uint8_t* out, size_t bytes)
 {
 	uint8_t* end = out + bytes;

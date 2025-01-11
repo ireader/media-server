@@ -23,6 +23,7 @@ uint8_t* rtmp_netstream_fcunsubscribe(uint8_t* out, size_t bytes, double transac
 
 uint8_t* rtmp_netstream_onstatus(uint8_t* out, size_t bytes, double transactionId, const char* level, const char* code, const char* description);
 uint8_t* rtmp_netstream_onreconnect(uint8_t* out, size_t bytes, double transactionId, const char* tcurl, const char* description);
+uint8_t* rtmp_netstream_onconnect_rejected(uint8_t* out, size_t bytes, double transactionId, const char* tcurl, const char* description);
 
 uint8_t* rtmp_netstream_rtmpsampleaccess(uint8_t* out, size_t bytes);
 

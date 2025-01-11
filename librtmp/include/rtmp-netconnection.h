@@ -45,6 +45,14 @@ enum rtmp_encoding_amf_t
 	RTMP_ENCODING_AMF_3		= 3,
 };
 
+enum rtmp_capsex_t
+{
+	RTMP_CAPSEX_RECONNECT				= 0x01, // Support for reconnection
+	RTMP_CAPSEX_MULTITRACK				= 0x02, // Support for multitrack
+	RTMP_CAPSEX_MODEX					= 0x04, // Can parse ModEx signal
+	RTMP_CAPSEX_TIMESTAMPNANOOFFSET		= 0x08, // Support for nano offset
+};
+
 struct rtmp_connect_t
 {
 	char app[128]; // Server application name, e.g.: testapp
@@ -58,6 +66,9 @@ struct rtmp_connect_t
 	double videoFunction; // double default: 1
 	double encoding;
 	char pageUrl[256]; // http://host/sample.html
+
+	// https://veovera.org/docs/enhanced/enhanced-rtmp-v2.html#enhancing-netconnection-connect-command
+	double capsEx;
 };
 
 uint8_t* rtmp_netconnection_connect(uint8_t* out, size_t bytes, double transactionId, const struct rtmp_connect_t* connect);

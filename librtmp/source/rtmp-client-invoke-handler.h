@@ -118,42 +118,48 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 }
 
 // s -> c
-static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
-{
-	struct rtmp_result_t result;
-	struct amf_object_item_t info[3];
-	struct amf_object_item_t items[2];
-
-	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
-	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
-	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
-
-	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
-	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "Information", info, sizeof(info) / sizeof(info[0]));
-
-	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
-	{
-		return -EINVAL; // format error
-	}
-
-	//rtmp->onerror(rtmp->param, -1, result.code);
-	(void)transaction;
-	(void)rtmp;
-	return -1;
-}
+//static int rtmp_command_onerror(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
+//{
+//	struct rtmp_result_t result;
+//	struct amf_object_item_t info[3];
+//	struct amf_object_item_t items[2];
+//
+//	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
+//	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
+//	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
+//
+//	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0);
+//	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "Information", info, sizeof(info) / sizeof(info[0]));
+//
+//	if (NULL == amf_read_items(data, data + bytes, items, sizeof(items) / sizeof(items[0])))
+//	{
+//		return -EINVAL; // format error
+//	}
+//
+//	//rtmp->onerror(rtmp->param, -1, result.code);
+//	(void)transaction;
+//	(void)rtmp;
+//	return -1;
+//}
 
 // s -> c
 static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const uint8_t* data, uint32_t bytes)
 {
-	char tcurl[256];
+	double code = 0.0;
+	char tcurl[256] = { 0 };
 	struct rtmp_result_t result;
-	struct amf_object_item_t info[4];
+	struct amf_object_item_t info[5];
 	struct amf_object_item_t items[2];
+	struct amf_object_item_t redirect[2];
+
+	AMF_OBJECT_ITEM_VALUE(redirect[0], AMF_NUMBER, "code", &code, sizeof(code));
+	AMF_OBJECT_ITEM_VALUE(redirect[1], AMF_STRING, "redirect", tcurl, sizeof(tcurl));
 
 	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
 	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
 	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
-	AMF_OBJECT_ITEM_VALUE(info[3], AMF_STRING, "tcUrl", tcurl, sizeof(tcurl));
+	AMF_OBJECT_ITEM_VALUE(info[3], AMF_STRING, "tcUrl", tcurl, sizeof(tcurl)); // enhanced rtmp v2
+	AMF_OBJECT_ITEM_VALUE(info[4], AMF_OBJECT, "ex", redirect, sizeof(redirect)); // AMS(adoble media server) serverside redirect
 
 	AMF_OBJECT_ITEM_VALUE(items[0], AMF_OBJECT, "command", NULL, 0); // Command object
 	AMF_OBJECT_ITEM_VALUE(items[1], AMF_OBJECT, "information", info, sizeof(info) / sizeof(info[0])); // Information object
@@ -168,71 +174,62 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 		|| 0 == strcmp(RTMP_LEVEL_WARNING, result.level)
 		|| 0 == strcmp(RTMP_LEVEL_FINISH, result.level));
 
-	if (0 == strcmp(RTMP_LEVEL_ERROR, result.level))
+	if (0 == strcasecmp(result.code, "NetStream.Play.Start") 
+		|| 0 == strcasecmp(result.code, "NetStream.Record.Start")
+		|| 0 == strcasecmp(result.code, "NetStream.Publish.Start"))
+	{
+		rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Seek.Notify"))
+	{
+		rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_SEEK) : 0;
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Pause.Notify"))
+	{
+		rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_PAUSE) : 0;
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Unpause.Notify"))
+	{
+		rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Play.Reset"))
+	{
+		//rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_RESET);
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Play.Stop") 
+			|| 0 == strcasecmp(result.code, "NetStream.Record.Stop")
+			|| 0 == strcasecmp(result.code, "NetStream.Play.Complete"))
+	{
+		rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_STOP) : 0;
+	}
+	else if (0 == strcasecmp(result.code, "NetStream.Play.PublishNotify") 
+		|| 0 == strcasecmp(result.code, "NetStream.Play.UnpublishNotify"))
+	{
+	}
+	else if (0 == strcasecmp(result.code, "NetConnection.Connect.InvalidApp")
+		|| 0 == strcasecmp(result.code, "NetStream.Connect.IllegalApplication") // ksyun cdn: level finish, auth failed
+		|| 0 == strcasecmp(result.code, "NetStream.Publish.AlreadyExistStream") // ksyun cdn: level finish, description Already exist stream!
+		|| 0 == strcasecmp(result.code, "NetStream.Failed")
+		|| 0 == strcasecmp(result.code, "NetStream.Play.Failed")
+		|| 0 == strcasecmp(result.code, "NetStream.Play.StreamNotFound"))
 	{
 		//rtmp->onerror(rtmp->param, -1, result.code);
 		return -1;
 	}
+	else if (0 == strcasecmp(result.code, "NetConnection.Connect.ReconnectRequest") // enhanced rtmp v2
+		|| (302 == (int)code && 0 == strcasecmp(result.code, "NetConnection.Connect.Rejected"))) // AMS(adoble media server) server-side redirect
+	{
+		return rtmp->client.onreconnect ? rtmp->client.onreconnect(rtmp->param, tcurl, result.description) : 0;
+	}
 	else
 	{
-		if (0 == strcasecmp(result.code, "NetStream.Play.Start") 
-			|| 0 == strcasecmp(result.code, "NetStream.Record.Start")
-			|| 0 == strcasecmp(result.code, "NetStream.Publish.Start"))
-		{
-			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Seek.Notify"))
-		{
-			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_SEEK) : 0;
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Pause.Notify"))
-		{
-			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_PAUSE) : 0;
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Unpause.Notify"))
-		{
-			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_START) : 0;
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Play.Reset"))
-		{
-			//rtmp->u.client.onnotify(rtmp->param, RTMP_NOTIFY_RESET);
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Play.Stop") 
-				|| 0 == strcasecmp(result.code, "NetStream.Record.Stop")
-				|| 0 == strcasecmp(result.code, "NetStream.Play.Complete"))
-		{
-			rtmp->client.onnotify ? rtmp->client.onnotify(rtmp->param, RTMP_NOTIFY_STOP) : 0;
-		}
-		else if (0 == strcasecmp(result.code, "NetStream.Play.PublishNotify") 
-			|| 0 == strcasecmp(result.code, "NetStream.Play.UnpublishNotify"))
-		{
-		}
-		else if (0 == strcasecmp(result.code, "NetConnection.Connect.InvalidApp")
-			|| 0 == strcasecmp(result.code, "NetConnection.Connect.Rejected")
-			|| 0 == strcasecmp(result.code, "NetStream.Connect.IllegalApplication") // ksyun cdn: level finish, auth failed
-			|| 0 == strcasecmp(result.code, "NetStream.Publish.AlreadyExistStream") // ksyun cdn: level finish, description Already exist stream!
-			|| 0 == strcasecmp(result.code, "NetStream.Failed")
-			|| 0 == strcasecmp(result.code, "NetStream.Play.Failed")
-			|| 0 == strcasecmp(result.code, "NetStream.Play.StreamNotFound"))
-		{
-			//rtmp->onerror(rtmp->param, -1, result.code);
-			return -1;
-		}
-		else if (0 == strcasecmp(result.code, "NetConnection.Connect.ReconnectRequest"))
-		{
-			// enhanced rtmp v2
-			rtmp->client.onreconnect ? rtmp->client.onreconnect(rtmp->param, tcurl, result.description) : 0;
-		}
-		else
-		{
-			assert(0);
-			printf("%s: level: %s, code: %s, description: %s\n", __FUNCTION__, result.level, result.code, result.description);
-			return 0;
-		}
+		assert(0);
+		printf("%s: level: %s, code: %s, description: %s\n", __FUNCTION__, result.level, result.code, result.description);
+		return 0;
 	}
 
 	(void)transaction;
-	return 0;
+	return strcmp(RTMP_LEVEL_ERROR, result.level) ? 0 : -1;
 }
 
 /*
