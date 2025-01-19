@@ -26,7 +26,7 @@ static int on_ts_packet(void* /*param*/, int program, int stream, int avtype, in
 {
 	static char s_pts[64], s_dts[64];
     
-	if (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_OPUS == avtype)
+	if (PSI_STREAM_AAC == avtype || PSI_STREAM_AUDIO_OPUS == avtype || PSI_STREAM_AUDIO_AVS3 == avtype)
 	{
 		static int64_t a_pts = 0, a_dts = 0;
         if (PTS_NO_VALUE == dts)

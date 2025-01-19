@@ -160,7 +160,7 @@ DEF_FUN_2PCHAR(rtsp_client_push_test, const char* host, const char* file);
 DEF_FUN_PCHAR(rtsp_client_input_test, const char* file);
 DEF_FUN_PCHAR(rtp_dump_test, const char* file);
 //DEF_FUN_PCHAR(rtp_header_ext_test, const char* rtpfile);
-DEF_FUN_VOID(rtp_payload_test);
+DEF_FUN_PCHAR_INT_PCHAR(rtp_payload_test, const char* file, int payload, const char* encoding);
 
 DEF_FUN_PCHAR(flv_parser_test, const char* flv);
 DEF_FUN_PCHAR(flv_read_write_test, const char* flv);
@@ -229,7 +229,8 @@ DEF_FUN_VOID(sip_uas_test);
 DEF_FUN_VOID(sip_uac_test2);
 DEF_FUN_VOID(sip_uas_test2);
 
-DEF_FUN_PCHAR(sdp_test, const char* file);
+DEF_FUN_VOID(sdp_test);
+DEF_FUN_PCHAR(sdp_test1, const char* file);
 
 int binnary_diff(const char* file1, const char* file2);
 
@@ -255,6 +256,7 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("opus_head_test", argc, argv);
         RE_RUN_REG("flac_streaminfo_test", argc, argv);
         RE_RUN_REG("h264_mp4toannexb_test", argc, argv);
+        RE_RUN_REG("sdp_test", argc, argv);
         RE_RUN_REG("sdp_a_fmtp_test", argc, argv);
         RE_RUN_REG("sdp_a_rtpmap_test", argc, argv);
         RE_RUN_REG("sdp_a_webrtc_test", argc, argv);

@@ -19,9 +19,8 @@ struct rtp_payload_test_t
 	const char* encoding;
 
 	FILE* frtp;
-	FILE* fsource;
 	FILE* frtp2;
-	FILE* fsource2;
+	FILE* fout2;
 
 	void* encoder;
 	void* decoder;
@@ -55,7 +54,7 @@ static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_
 
 static int mpeg_ps_demuxer_onpacket(void* param, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
-	printf("[%d] codec: %d, pts: %" PRId64 ", dts: %" PRId64 ", bytes: %d, flags: 0x%x\n", stream, codecid, pts, dts, (int)bytes, flags);
+	printf("[%d] codec: %d, pts: %" PRId64 ", dts: %" PRId64 ", bytes: %d, flags: 0x%x\n", stream, codecid, pts/90, dts/90, (int)bytes, flags);
 	return 0;
 }
 
@@ -107,12 +106,12 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 
 	// TODO:
 	// check media file
-	fwrite(buffer, 1, size, ctx->fsource2);
+	fwrite(buffer, 1, size, ctx->fout2);
 
 	return rtp_payload_encode_input(ctx->encoder, buffer, size, timestamp);
 }
 
-void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile, const char* sourcefile)
+static void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t ssrc, const char* rtpfile, const char* deprecated)
 {
 	struct rtp_payload_test_t ctx;
 	memset(&ctx, 0, sizeof(ctx));
@@ -120,9 +119,8 @@ void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t 
 	ctx.encoding = encoding;
 
 	ctx.frtp = fopen(rtpfile, "rb");
-	ctx.fsource = fopen(sourcefile, "rb");
 	ctx.frtp2 = fopen("out.rtp", "wb");
-	ctx.fsource2 = fopen("out.media", "wb");
+	ctx.fout2 = fopen("out.media", "wb");
 
 	rtp_packet_setsize(1456); // 1456(live555)
 
@@ -138,7 +136,7 @@ void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t 
 	handler1.packet = rtp_decode_packet;
 	ctx.decoder = rtp_payload_decode_create(payload, encoding, &handler1, &ctx);
 
-	while (1)
+	for(int i = 0; ;i++)
 	{
 		uint8_t s2[2];
 		if (2 != fread(s2, 1, 2, ctx.frtp))
@@ -153,20 +151,19 @@ void rtp_payload_test(int payload, const char* encoding, uint16_t seq, uint32_t 
 			rtp_payload_decode_input(ctx.decoder, ctx.packet, ctx.size);
 	}
 
-	fclose(ctx.frtp2);
-	fclose(ctx.fsource2);
 	fclose(ctx.frtp);
-	fclose(ctx.fsource);
+	fclose(ctx.frtp2);
+	fclose(ctx.fout2);
 	rtp_payload_decode_destroy(ctx.decoder);
 	rtp_payload_encode_destroy(ctx.encoder);
+
+	// todo: binary_diff(rtpfile£¬ deprecated)
 }
 
-void binary_diff(const char* f1, const char* f2);
-
 // http://www.live555.com/liveMedia/public/
-void rtp_payload_test()
+void rtp_payload_test(const char* file, int payload, const char* encoding)
 {
-	//rtp_payload_test(33, "MP2T", 24470, 1726408532, "E:\\video\\rtp\\bipbop-gear1-all.ts.rtp", "E:\\video\\rtp\\bipbop-gear1-all.ts");
+	//rtp_payload_test(33, "MP2T", 24470, 1726408532, "E:\\video\\rtp\\bipbop-gear1-all.ts.rtp");
 	//binary_diff("E:\\video\\rtp\\bipbop-gear1-all.ts.rtp", "out.rtp");
 	//binary_diff("E:\\video\\rtp\\bipbop-gear1-all.ts", "out.media");
 
@@ -207,6 +204,6 @@ void rtp_payload_test()
 	//binary_diff("E:\\work\\media-server\\rtmp2hls\\192.168.31.132.6974.96.VP8", "out.media");
 
 	//rtp_payload_test(96, "AV1", 12686, 1957754144, "C:\\Users\\Administrator\\Downloads\\1688.rtp", "1.h264");
-	//rtp_payload_test(96, "PS", 12686, 1957754144, "C:\\Users\\Administrator\\Downloads\\talk.bin", "1.ps");
-	rtp_payload_test(100, "PS", 12686, 0x615658d, "C:\\Users\\Administrator\\Downloads\\rtp.tcp", "1.ps");
+	//rtp_payload_test(96, "PS", 12686, 1957754144, "C:\\Users\\Administrator\\Downloads\\1.rtp", "1.ps");
+	rtp_payload_test(payload, encoding, 0, 0, file, "");
 }

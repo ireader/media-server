@@ -91,9 +91,13 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 				assert(PSI_STREAM_PRIVATE_DATA == stream->codecid);
 				stream->codecid = PSI_STREAM_AV1;
 			}
-			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && 'S' == data[4] && '3' == data[5])
+			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && 'S' == data[4] && ('3' == data[5] || 'V' == data[5]))
 			{
 				stream->codecid = PSI_STREAM_VIDEO_AVS3;
+			}
+			else if (len >= 4 && 'A' == data[2] && 'V' == data[3] && 'S' == data[4] && 'A' == data[5])
+			{
+				stream->codecid = PSI_STREAM_AUDIO_AVS3;
 			}
 			break;
 
