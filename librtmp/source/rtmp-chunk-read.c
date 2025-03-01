@@ -174,6 +174,8 @@ int rtmp_chunk_read(struct rtmp_t* rtmp, const uint8_t* data, size_t bytes)
 					rtmp_chunk_extended_timestamp_read(parser->buffer + s_header_size[parser->buffer[0] >> 6] + parser->basic_bytes, &extended_timestamp);
 					if (RTMP_CHUNK_TYPE_3 == parser->pkt->header.fmt && extended_timestamp != parser->pkt->delta) 
 					{
+						extended_timestamp = parser->pkt->delta; // use previous delta
+
 						// fix code offset -= 4 on offset < 4;
 						invalid_extended_timestamp = 1;
 						memcpy(extended_timestamp_buffer, parser->buffer + s_header_size[parser->buffer[0] >> 6] + parser->basic_bytes, 4);
