@@ -34,35 +34,42 @@ int sip_header_param(const char* s, const char* end, struct sip_param_t* param)
 	}
 
 	cstrtrim(&param->name, " \t");
-	return 0;
+	return param->name.n > 0 ? 0 : -1;
 }
 
 int sip_header_params(char sep, const char* s, const char* end, struct sip_params_t* params)
 {
-	int r;
+	int r, quoted;
 	const char* p;
 	struct sip_param_t param;
-	char seps[3] = { '"', 0, 0 };
 
 	r = 0;
-	seps[1] = sep;
+	quoted = 0;
 	assert('"' != sep);
 	for (p = s; 0 == r && p && p < end; p++)
 	{
-		s = p;
-		p = strpbrk(s, seps);
-		while (p && p + 1 < end && '"' == *p)
+		if (*p == '"')
 		{
-			p = strchr(p + 1, '"');
-			if (p && p < end)
-				p = strpbrk(p + 1, seps);
+			quoted = !quoted;
 		}
-		if (!p || p > end)
-			p = end;
+		else if(*p == sep && !quoted)
+		{
+			memset(&param, 0, sizeof(param));
+			r = sip_header_param(s, p, &param);
+			if(0 == r)
+				r = sip_params_push(params, &param);
 
+			s = p + 1;
+		}
+	}
+
+	// last one
+	if (s < p && p <= end)
+	{
 		memset(&param, 0, sizeof(param));
 		r = sip_header_param(s, p, &param);
-		r = sip_params_push(params, &param);
+		if (0 == r)
+			r = sip_params_push(params, &param);
 	}
 
 	return r;
@@ -133,7 +140,9 @@ int sip_params_add_or_update(struct sip_params_t* params, const char* name, int 
 	item.name.n = bytes;
 	item.value.p = value->p;
 	item.value.n = value->n;
-	return sip_params_push(params, &item);
+	if(name && *name && bytes > 0)
+		return sip_params_push(params, &item);
+	return -1;
 }
 
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end)
