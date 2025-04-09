@@ -40,7 +40,7 @@ int sdp_h264(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 
 	for (i = 0; i < avc.nb_pps; i++)
 	{
-		if (n + 1 + avc.sps[i].bytes * 2 > bytes)
+		if (n + 1 + avc.pps[i].bytes * 2 > bytes)
 			return -ENOMEM; // // don't have enough memory
 
 		if (n < bytes) data[n++] = ',';
