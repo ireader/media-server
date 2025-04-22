@@ -13,8 +13,8 @@
 int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, int payload, int frequence, const void* extra, int extra_size)
 {
 	static const char* pattern =
-		"m=video %hu %s %d\n"
-		"a=rtpmap:%d H265/90000\n"
+		"m=video %hu %s %d\r\n"
+		"a=rtpmap:%d H265/90000\r\n"
 		"a=fmtp:%d";
 
 	const uint8_t nalu[] = { 32/*vps*/, 33/*sps*/, 34/*pps*/ };
@@ -50,8 +50,11 @@ int sdp_h265(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 		}
 	}
 
-	if(n < bytes) 
-		data[n++] = '\n';
+	if (n + 2 > bytes)
+		return -ENOMEM; // don't have enough memory
+
+	data[n++] = '\r';
+	data[n++] = '\n';
 	return n;
 }
 
