@@ -16,14 +16,14 @@ int sdp_opus(uint8_t *data, int bytes, const char* proto, unsigned short port, i
 	can be declared via fmtp parameters (both default to mono), but
 	receivers MUST be able to receive and process stereo packets. */
 	static const char* pattern =
-		"m=audio %hu %s %d\n"
-		"a=rtpmap:%d opus/%d/2\n";
+		"m=audio %hu %s %d\r\n"
+		"a=rtpmap:%d opus/%d/2\r\n";
 
 	int n;
 
 	sample_rate = sample_rate ? sample_rate : 48000;
 	n = snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP", payload, payload, sample_rate);
 	if (2 == channel_count)
-		n += snprintf((char*)data + n, bytes - n, "a=fmtp:%d sprop-stereo=1\n", payload);
+		n += snprintf((char*)data + n, bytes - n, "a=fmtp:%d sprop-stereo=1\r\n", payload);
 	return n;
 }

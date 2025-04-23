@@ -9,12 +9,12 @@
 
 int sdp_g711u(uint8_t *data, int bytes, const char* proto, unsigned short port)
 {
-	static const char* pattern = "m=audio %hu %s 0\n";
+	static const char* pattern = "m=audio %hu %s 0\r\n";
 	return snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP");
 }
 
 int sdp_g711a(uint8_t *data, int bytes, const char* proto, unsigned short port)
 {
-	static const char* pattern = "m=audio %hu %s 8\n";
+	static const char* pattern = "m=audio %hu %s 8\r\n";
 	return snprintf((char*)data, bytes, pattern, port, proto && *proto ? proto : "RTP/AVP");
 }
