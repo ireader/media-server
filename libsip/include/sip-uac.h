@@ -66,6 +66,12 @@ int sip_uac_add_header_int(struct sip_uac_transaction_t* t, const char* name, in
 /// @return 0-ok, other-error
 int sip_uac_send(struct sip_uac_transaction_t* t, const void* data, int bytes, struct sip_transport_t* transport, void* param);
 
+/// @param[in] t sip uac transaction, create by sip_uac_message
+/// @param[in] onreply callback function
+/// @param[in] param callback parameter
+/// @return 0-ok, other-error
+int sip_uac_transaction_set_onreply(struct sip_uac_transaction_t* t, sip_uac_onreply onreply, void* param);
+
 /// sip_uac_ack for sip_uac_oninvite 2xx only
 /// @param[in] invite uac transaction, create by sip_uac_invite
 /// @param[in] data message payload(such as SDP), maybe NULL if don't need send anything

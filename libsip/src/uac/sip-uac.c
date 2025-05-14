@@ -254,6 +254,15 @@ int sip_uac_send(struct sip_uac_transaction_t* t, const void* sdp, int bytes, st
 	return sip_uac_transaction_send(t);
 }
 
+int sip_uac_transaction_set_onreply(struct sip_uac_transaction_t *t, sip_uac_onreply onreply, void *param) {
+    if (!t) return -1;
+    if(t->size > 0 || t->transportptr)
+        return -1; // sip_uac_send has been performed
+    t->onreply = onreply;
+    t->param = param;
+    return 0;
+}
+
 int sip_uac_transaction_via(struct sip_uac_transaction_t* t, char *via, int nvia, char *contact, int ncontact)
 {
 	int r;
