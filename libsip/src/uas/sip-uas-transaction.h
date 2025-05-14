@@ -11,7 +11,9 @@
 #include "sys/locker.h"
 #include "list.h"
 
+#ifndef UDP_PACKET_SIZE
 #define UDP_PACKET_SIZE (4*1024) //1440
+#endif
 
 enum
 {
