@@ -66,6 +66,7 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 	uint8_t tag;
 	uint8_t len;
 	uint8_t channels;
+	void* esinfo;
 
 	// Registration descriptor
 	while (bytes > 2)
@@ -106,8 +107,17 @@ static int pmt_read_descriptor(struct pes_t* stream, const uint8_t* data, uint16
 			if (len >= 2 && data[3] <= sizeof(opus_channel_map)/sizeof(opus_channel_map[0]) && PSI_STREAM_AUDIO_OPUS == stream->codecid && OPUS_EXTENSION_DESCRIPTOR_TAG == data[2]) // User defined (provisional Opus)
 			{
 				channels = data[3];
-				stream->esinfo = (uint8_t*)calloc(1, sizeof(opus_default_extradata));
-				if (stream->esinfo)
+				if (stream->esinfo_len < sizeof(opus_default_extradata))
+				{
+					esinfo = realloc(stream->esinfo, sizeof(opus_default_extradata));
+					if (esinfo)
+					{
+						stream->esinfo = (uint8_t*)esinfo;
+						stream->esinfo_len = sizeof(opus_default_extradata);
+					}
+				}
+
+				if (stream->esinfo && stream->esinfo_len >= sizeof(opus_default_extradata))
 				{
 					stream->esinfo_len = sizeof(opus_default_extradata);
 					memcpy(stream->esinfo, opus_default_extradata, stream->esinfo_len);
