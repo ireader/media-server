@@ -102,7 +102,7 @@ int rtmp_chunk_write(struct rtmp_t* rtmp, const struct rtmp_chunk_header_t* h, c
 		return -EINVAL; // invalid length
 
 	// alloc chunk header
-	N = header->cid < 64 ? 1 : (header->cid < (64 + 256) ? 2 : 3) /*type-3 header*/ + header->timestamp >= 0xFFFFFF ? 4 : 0;
+	N = (header->cid < 64 ? 1 : (header->cid < (64 + 256) ? 2 : 3) /*type-3 header*/) + (header->timestamp >= 0xFFFFFF ? 4 : 0);
 	if (MAX_CHUNK_HEADER + header->length / rtmp->out_chunk_size * N > rtmp->chunk_write_header.capacity)
 	{
 		p = realloc(rtmp->chunk_write_header.ptr == rtmp->chunk_write_header.bufer ? 0 : rtmp->chunk_write_header.ptr, MAX_CHUNK_HEADER + header->length / rtmp->out_chunk_size * MAX_CHECK_TYPE3_WITH_TIMESTAMP);
