@@ -279,6 +279,10 @@ const uint8_t* AMFReadString(const uint8_t* ptr, const uint8_t* end, int isLongS
 		memcpy(string, ptr, len);
 		string[len] = 0;
 	}
+	else if(string && length > 0)
+	{
+		string[0] = 0; // fix: string buffer access overflow
+	}
 	return ptr + len;
 }
 

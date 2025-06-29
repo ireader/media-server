@@ -92,6 +92,7 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 	double duration = 0;
 	struct rtmp_result_t result;
 
+	memset(&result, 0, sizeof(result));
 	switch ((uint32_t)transaction)
 	{
 	case RTMP_TRANSACTION_CONNECT:
@@ -124,6 +125,7 @@ static int rtmp_command_onresult(struct rtmp_t* rtmp, double transaction, const 
 //	struct amf_object_item_t info[3];
 //	struct amf_object_item_t items[2];
 //
+//	memset(&result, 0, sizeof(result));
 //	AMF_OBJECT_ITEM_VALUE(info[0], AMF_STRING, "code", result.code, sizeof(result.code));
 //	AMF_OBJECT_ITEM_VALUE(info[1], AMF_STRING, "level", result.level, sizeof(result.level));
 //	AMF_OBJECT_ITEM_VALUE(info[2], AMF_STRING, "description", result.description, sizeof(result.description));
@@ -152,6 +154,7 @@ static int rtmp_command_onstatus(struct rtmp_t* rtmp, double transaction, const 
 	struct amf_object_item_t items[2];
 	struct amf_object_item_t redirect[2];
 
+	memset(&result, 0, sizeof(result));
 	AMF_OBJECT_ITEM_VALUE(redirect[0], AMF_NUMBER, "code", &code, sizeof(code));
 	AMF_OBJECT_ITEM_VALUE(redirect[1], AMF_STRING, "redirect", tcurl, sizeof(tcurl));
 
