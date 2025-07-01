@@ -34,9 +34,6 @@
     <Filter Include="librtp">
       <UniqueIdentifier>{6ccbd831-80b9-47aa-bbb2-208bd9f20c33}</UniqueIdentifier>
     </Filter>
-    <Filter Include="librtsp\aio">
-      <UniqueIdentifier>{84a6ad98-af6f-4aa9-bbbd-31d247b1c0ec}</UniqueIdentifier>
-    </Filter>
     <Filter Include="libmpeg">
       <UniqueIdentifier>{4409985a-d2a4-4ed1-85d4-99c3d778a759}</UniqueIdentifier>
     </Filter>
@@ -52,11 +49,11 @@
     <Filter Include="libsip">
       <UniqueIdentifier>{47092231-3039-49a4-8cc2-83f4ed15d45b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="librtsp\sdp">
-      <UniqueIdentifier>{65f4c8fc-27c7-4b37-9c1b-de6acfc134bc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="libmkv">
       <UniqueIdentifier>{6ad79cfa-2fb8-4e75-b04b-48ad86d6aaa7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtsp\aio">
+      <UniqueIdentifier>{1f25809f-18a4-4acd-8485-0b5e818f4829}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -113,12 +110,6 @@
     </ClInclude>
     <ClInclude Include="..\librtp\test\rtp-dump.h">
       <Filter>librtp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\source\utils\rtp-sender.h">
-      <Filter>librtsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\librtsp\source\utils\rtsp-payloads.h">
-      <Filter>librtsp</Filter>
     </ClInclude>
     <ClInclude Include="..\libmov\test\mov-file-buffer.h">
       <Filter>libmov</Filter>
@@ -221,15 +212,6 @@
     <ClCompile Include="..\librtp\test\rtp-receiver-test.c">
       <Filter>librtp</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c">
-      <Filter>librtsp\aio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c">
-      <Filter>librtsp\aio</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c">
-      <Filter>librtsp\aio</Filter>
-    </ClCompile>
     <ClCompile Include="..\libmpeg\test\mpeg-ts-dec-test.cpp">
       <Filter>libmpeg</Filter>
     </ClCompile>
@@ -290,21 +272,6 @@
     <ClCompile Include="..\libmpeg\test\mpeg-ps-test.cpp">
       <Filter>libmpeg</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-aac.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-g7xx.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-h264.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-h265.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-opus.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
     <ClCompile Include="..\libsip\test\sip-header-test.c">
       <Filter>libsip</Filter>
     </ClCompile>
@@ -337,9 +304,6 @@
     </ClCompile>
     <ClCompile Include="..\librtsp\test\media\mp4-file-source.cpp">
       <Filter>librtsp\media</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg4.c">
-      <Filter>librtsp\sdp</Filter>
     </ClCompile>
     <ClCompile Include="..\librtsp\test\rtsp-server-test.cpp">
       <Filter>librtsp</Filter>
@@ -401,9 +365,6 @@
     <ClCompile Include="..\libsip\test\sip-message-test.cpp">
       <Filter>libsip</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-fmtp-load.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
     <ClCompile Include="..\libmpeg\test\mpeg-ts-encrypt-test.cpp">
       <Filter>libmpeg</Filter>
     </ClCompile>
@@ -418,21 +379,6 @@
     </ClCompile>
     <ClCompile Include="..\librtp\test\rtp-sender-test.cpp">
       <Filter>librtp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\utils\rtp-sender.c">
-      <Filter>librtsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\utils\rtsp-demuxer.c">
-      <Filter>librtsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\utils\rtsp-muxer.c">
-      <Filter>librtsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-mpeg2.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-vpx.c">
-      <Filter>librtsp\sdp</Filter>
     </ClCompile>
     <ClCompile Include="..\libmkv\test\mkv-2-mp4-test.cpp">
       <Filter>libmkv</Filter>
@@ -485,12 +431,6 @@
     <ClCompile Include="..\librtsp\test\sdp-receiver-test.cpp">
       <Filter>librtsp</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-av1.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-payload.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
     <ClCompile Include="..\libmkv\test\mvk-writer-audio.cpp">
       <Filter>libmkv</Filter>
     </ClCompile>
@@ -524,11 +464,17 @@
     <ClCompile Include="..\libmpeg\test\mov-2-mpeg-ps-test.cpp">
       <Filter>libmpeg</Filter>
     </ClCompile>
-    <ClCompile Include="..\librtsp\source\sdp\sdp-h266.c">
-      <Filter>librtsp\sdp</Filter>
-    </ClCompile>
     <ClCompile Include="..\librtsp\test\media\ps-file-reader.cpp">
       <Filter>librtsp\media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-listen.c">
+      <Filter>librtsp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-tcp.c">
+      <Filter>librtsp\aio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\librtsp\source\server\aio\rtsp-server-udp.c">
+      <Filter>librtsp\aio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
