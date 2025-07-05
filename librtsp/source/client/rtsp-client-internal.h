@@ -73,6 +73,7 @@ struct rtsp_client_t
 	char aggregate_uri[256]; // aggregate control uri, valid if 1==aggregate
 
 	int auth_failed;
+	int redirect_count;
 	char usr[128];
 	char pwd[256];
 	char authenrization[1024];

@@ -55,7 +55,17 @@ int rtsp_client_announce_onreply(struct rtsp_client_t* rtsp, void* parser)
 	if (200 == code)
 	{
         rtsp->auth_failed = 0;
+		rtsp->redirect_count = 0;
         r = rtsp->handler.onannounce(rtsp->param);
+	}
+	else if (300 <= code && code < 400 && rtsp->handler.onredirect)
+	{
+		const char* location;
+		location = http_get_header_by_name(parser, "Location");
+		if (location && 5 > rtsp->redirect_count++)
+		{
+			r = rtsp->handler.onredirect(rtsp->param, location, strlen(location));
+		}
 	}
     else if(401 == code)
     {

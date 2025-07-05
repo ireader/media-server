@@ -48,6 +48,11 @@ struct rtsp_client_handler_t
 	int (*onteardown)(void* param);
 
 	void (*onrtp)(void* param, uint8_t channel, const void* data, uint16_t bytes);
+
+	/// @param[in] location redirection url
+	/// @param[in] len location length in byte
+	/// @return 0-ok, other-error
+	int (*onredirect)(void* param, const char* location, int len);
 };
 
 /// @param[in] param user-defined parameter
@@ -60,6 +65,7 @@ void rtsp_client_destroy(rtsp_client_t* rtsp);
 /// input server reply
 /// @param[in] data server response message
 /// @param[in] bytes data length in byte
+/// @return 0-ok, other-error
 int rtsp_client_input(rtsp_client_t* rtsp, const void* data, size_t bytes);
 
 /// find RTSP response header

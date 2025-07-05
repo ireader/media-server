@@ -29,6 +29,7 @@ struct rtsp_client_t* rtsp_client_create(const char* uri, const char* usr, const
 	rtsp->param = param;
 	rtsp->cseq = 1;
 	rtsp->auth_failed = 0;
+	rtsp->redirect_count = 0;
 
 	return rtsp;
 }

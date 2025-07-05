@@ -72,9 +72,19 @@ int rtsp_client_describe_onreply(struct rtsp_client_t* rtsp, void* parser)
 			return -1;
 
 		rtsp->auth_failed = 0;
+		rtsp->redirect_count = 0;
 		if (!contentType || 0 == strcasecmp("application/sdp", contentType))
 		{
 			r = rtsp->handler.ondescribe(rtsp->param, (const char*)content, (int)http_get_content_length(parser));
+		}
+	}
+	else if (300 <= code && code < 400 && rtsp->handler.onredirect)
+	{
+		const char* location;
+		location = http_get_header_by_name(parser, "Location");
+		if (location && 5 > rtsp->redirect_count++)
+		{
+			r = rtsp->handler.onredirect(rtsp->param, location, strlen(location));
 		}
 	}
 	else if (401 == code)

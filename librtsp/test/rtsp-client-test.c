@@ -9,6 +9,7 @@
 #include "sys/system.h"
 #include "cpm/unuse.h"
 #include "sdp.h"
+#include "uri-parse.h"
 
 //#define UDP_MULTICAST_ADDR "239.0.0.2"
 
@@ -163,14 +164,30 @@ static int onpause(void* param)
 	return 0;
 }
 
-void rtsp_client_test(const char* host, const char* file)
+static int onredirect(void* param, const char* url, int len)
 {
-	int r;
-	struct rtsp_client_test_t ctx;
+	struct uri_t* uri;
+	char usr[128] = { 0 };
+	char pwd[128] = { 0 };
 	struct rtsp_client_handler_t handler;
-	static char packet[2 * 1024 * 1024];
+	struct rtsp_client_test_t* ctx = (struct rtsp_client_test_t*)param;
 
-	memset(&ctx, 0, sizeof(ctx));
+	uri = uri_parse(url, len);
+	if (!uri || !uri->host || !uri->scheme)
+	{
+		assert(0);
+		return -1;
+	}
+	assert(0 == uri_userinfo(uri, usr, sizeof(usr), pwd, sizeof(pwd)));
+
+	if (socket_invalid != ctx->socket)
+		socket_close(ctx->socket);
+	if (ctx->rtsp)
+		rtsp_client_destroy(ctx->rtsp);
+
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->transport = RTSP_TRANSPORT_RTP_UDP; // RTSP_TRANSPORT_RTP_TCP
+
 	handler.send = rtsp_client_send;
 	handler.rtpport = rtpport;
 	handler.ondescribe = ondescribe;
@@ -179,16 +196,31 @@ void rtsp_client_test(const char* host, const char* file)
 	handler.onpause = onpause;
 	handler.onteardown = onteardown;
 	handler.onrtp = onrtp;
+	handler.onredirect = onredirect;
 
-	ctx.transport = RTSP_TRANSPORT_RTP_UDP; // RTSP_TRANSPORT_RTP_TCP
+	ctx->socket = socket_connect_host(uri->host, uri->port ? uri->port : 554, 2000);
+	assert(socket_invalid != ctx->socket);
+
+	ctx->rtsp = rtsp_client_create(url, usr, pwd, &handler, ctx);
+	assert(ctx->rtsp);
+
+	uri_free(uri);
+	return 0;
+}
+
+void rtsp_client_test(const char* host, const char* file)
+{
+	int r;
+	struct rtsp_client_test_t ctx;
+
+	static char packet[2 * 1024 * 1024];
 	snprintf(packet, sizeof(packet), "rtsp://%s/%s", host, file); // url
 
 	socket_init();
-	ctx.socket = socket_connect_host(host, 8554, 2000);
-	assert(socket_invalid != ctx.socket);
-	//ctx.rtsp = rtsp_client_create(NULL, NULL, &handler, &ctx);
-	ctx.rtsp = rtsp_client_create(packet, "username1", "password1", &handler, &ctx);
-	assert(ctx.rtsp);
+	
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.socket = socket_invalid;
+	assert(0 == onredirect(&ctx, packet, strlen(packet)));
 	assert(0 == rtsp_client_describe(ctx.rtsp));
 
 	socket_setnonblock(ctx.socket, 0);
