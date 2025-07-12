@@ -29,6 +29,7 @@ int sdp_payload_video(uint8_t* data, int bytes, int rtp, const char* proto, unsi
     case RTP_PAYLOAD_AV1X:
         return sdp_av1(data, bytes, proto, port, payload, frequence, extra, extra_size);
 
+    case RTP_PAYLOAD_MP4V:
     case RTP_PAYLOAD_MP4ES:
         return sdp_mpeg4_es(data, bytes, proto, port, payload, frequence, extra, extra_size);
 

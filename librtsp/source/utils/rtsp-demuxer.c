@@ -483,6 +483,11 @@ int rtsp_demuxer_add_payload(struct rtsp_demuxer_t* demuxer, int frequency, int 
             }
             break;
 
+        case AVCODEC_VIDEO_MPEG4:
+            if (fmtp && *fmtp && 0 == sdp_a_fmtp_mpeg4(fmtp, &payload, &pt->fmtp.mpeg4))
+                pt->extra_bytes = sdp_aac_mpeg4_load(pt->extra, len, pt->fmtp.mpeg4.config);
+            break;
+
         // TODO:
         case AVCODEC_VIDEO_AV1:
         case AVCODEC_VIDEO_VP8:
