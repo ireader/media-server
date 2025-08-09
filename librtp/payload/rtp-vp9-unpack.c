@@ -43,7 +43,7 @@ static int rtp_decode_vp9(void* p, const void* packet, int bytes)
 	uint8_t layer_indices_preset;
 	uint8_t flex_mode;
 	uint8_t start_of_layer_frame;
-	//uint8_t end_of_layer_frame;
+	uint8_t end_of_layer_frame;
 	uint8_t scalability_struct_data_present;
 
 	const uint8_t *ptr, *pend;
@@ -70,8 +70,8 @@ static int rtp_decode_vp9(void* p, const void* packet, int bytes)
 	inter_picture_predicted_layer_frame = ptr[0] & 0x40;
 	layer_indices_preset = ptr[0] & 0x20;
 	flex_mode = ptr[0] & 0x10;
-	start_of_layer_frame = ptr[0] & 0x80;
-	//end_of_layer_frame = ptr[0] & 0x04;
+	start_of_layer_frame = ptr[0] & 0x08;
+	end_of_layer_frame = ptr[0] & 0x04;
 	scalability_struct_data_present = ptr[0] & 0x02;
 	ptr++;
 
@@ -147,7 +147,7 @@ static int rtp_decode_vp9(void* p, const void* packet, int bytes)
 		uint8_t N_S, Y, G;
 		N_S = ((ptr[0] >> 5) & 0x07) + 1;
 		Y = ptr[0] & 0x10;
-		G = ptr[0] & 0x80;
+		G = ptr[0] & 0x08;
 		ptr++;
 
 		if (Y)
