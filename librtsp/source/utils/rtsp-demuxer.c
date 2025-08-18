@@ -293,7 +293,7 @@ static inline int rtsp_demuxer_onrtppacket(void* param, const void* data, int by
     if (0 == pt->last && INT64_MIN == pt->pts)
         pt->timestamp = timestamp;
     else
-        pt->timestamp += (int32_t)(timestamp - pt->last);
+        pt->timestamp += (int64_t)(timestamp - pt->last);
     pt->last = timestamp;
     pt->pts = pt->timestamp * 1000 / pt->frequency;
 
@@ -318,7 +318,7 @@ static inline int rtsp_demuxer_onh2645nalu(void* param, const void* data, int by
     if (0 == pt->last && INT64_MIN == pt->pts)
         pt->timestamp = timestamp;
     else
-        pt->timestamp += (int32_t)(timestamp - pt->last);
+        pt->timestamp += (int64_t)(timestamp - pt->last);
     pt->last = timestamp;
     pt->pts = pt->timestamp * 1000 / pt->frequency;
 
