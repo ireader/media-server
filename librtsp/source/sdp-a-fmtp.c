@@ -231,7 +231,7 @@ int sdp_a_fmtp_h264(const char* fmtp, int *format, struct sdp_a_fmtp_h264_t *h26
 // a=fmtp:98 profile-id=1; sprop-vps=<video parameter sets data>
 int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h265)
 {
-	size_t nc;
+	size_t nc, vc;
 	const char *p1, *p2;
 	const char *p = fmtp;
 
@@ -257,7 +257,7 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 		while (' ' == *p) p++; // skip space
 
 		nc = (size_t)(p1 - p); // ptrdiff_t to size_t
-		//vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
+		vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
 		switch (*p)
 		{
 		case 'i':
@@ -279,15 +279,31 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 			// sprop-sei
 			if (0 == strncasecmp("sprop-vps", p, nc))
 			{
+				if (vc >= sizeof(h265->sprop_vps)) return -1;
+				h265->flags |= SDP_A_FMTP_H265_SPROP_VPS;
+				memcpy(h265->sprop_vps, p1 + 1, vc);
+				h265->sprop_vps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-sps", p, nc))
 			{
+				if (vc >= sizeof(h265->sprop_sps)) return -1;
+				h265->flags |= SDP_A_FMTP_H265_SPROP_SPS;
+				memcpy(h265->sprop_sps, p1 + 1, vc);
+				h265->sprop_sps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-pps", p, nc))
 			{
+				if (vc >= sizeof(h265->sprop_pps)) return -1;
+				h265->flags |= SDP_A_FMTP_H265_SPROP_PPS;
+				memcpy(h265->sprop_pps, p1 + 1, vc);
+				h265->sprop_pps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-sei", p, nc))
 			{
+				if (vc >= sizeof(h265->sprop_sei)) return -1;
+				h265->flags |= SDP_A_FMTP_H265_SPROP_SEI;
+				memcpy(h265->sprop_sei, p1 + 1, vc);
+				h265->sprop_sei[vc] = '\0';
 			}
 			break;
 
@@ -308,7 +324,7 @@ int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h26
 // a=fmtp:98 profile-id=1; sprop-vps=<video parameter sets data>
 int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h266)
 {
-	size_t nc;
+	size_t nc, vc;
 	const char* p1, * p2;
 	const char* p = fmtp;
 
@@ -334,7 +350,7 @@ int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h26
 		while (' ' == *p) p++; // skip space
 
 		nc = (size_t)(p1 - p); // ptrdiff_t to size_t
-		//vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
+		vc = (size_t)(p2 - p1 - 1); // ptrdiff_t to size_t
 		switch (*p)
 		{
 		case 'i':
@@ -357,18 +373,38 @@ int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h26
 			// sprop-sei
 			if (0 == strncasecmp("sprop-vps", p, nc))
 			{
+				if (vc >= sizeof(h266->sprop_vps)) return -1;
+				h266->flags |= SDP_A_FMTP_H266_SPROP_VPS;
+				memcpy(h266->sprop_vps, p1 + 1, vc);
+				h266->sprop_vps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-sps", p, nc))
 			{
+				if (vc >= sizeof(h266->sprop_sps)) return -1;
+				h266->flags |= SDP_A_FMTP_H266_SPROP_SPS;
+				memcpy(h266->sprop_sps, p1 + 1, vc);
+				h266->sprop_sps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-pps", p, nc))
 			{
+				if (vc >= sizeof(h266->sprop_pps)) return -1;
+				h266->flags |= SDP_A_FMTP_H266_SPROP_PPS;
+				memcpy(h266->sprop_pps, p1 + 1, vc);
+				h266->sprop_pps[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-sei", p, nc))
 			{
+				if (vc >= sizeof(h266->sprop_sei)) return -1;
+				h266->flags |= SDP_A_FMTP_H266_SPROP_SEI;
+				memcpy(h266->sprop_sei, p1 + 1, vc);
+				h266->sprop_sei[vc] = '\0';
 			}
 			else if (0 == strncasecmp("sprop-dci", p, nc))
 			{
+				if (vc >= sizeof(h266->sprop_dci)) return -1;
+				h266->flags |= SDP_A_FMTP_H266_SPROP_DCI;
+				memcpy(h266->sprop_dci, p1 + 1, vc);
+				h266->sprop_dci[vc] = '\0';
 			}
 			break;
 

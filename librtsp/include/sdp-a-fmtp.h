@@ -72,10 +72,10 @@ enum {
 struct sdp_a_fmtp_h265_t
 {
 	int flags; // test with (1<<SDP_A_FMTP_H265_xxx)
-	char sprop_vps[1];
-	char sprop_sps[1];
-	char sprop_pps[1];
-	char sprop_sei[1];
+	char sprop_vps[64];
+	char sprop_sps[128];
+	char sprop_pps[256];
+	char sprop_sei[128];
 };
 
 int sdp_a_fmtp_h265(const char* fmtp, int *format, struct sdp_a_fmtp_h265_t *h265);
@@ -91,11 +91,11 @@ enum {
 struct sdp_a_fmtp_h266_t
 {
 	int flags; // test with (1<<SDP_A_FMTP_H266_xxx)
-	char sprop_vps[1];
-	char sprop_sps[1];
-	char sprop_pps[1];
-	char sprop_sei[1];
-	char sprop_dci[1];
+	char sprop_dci[64];
+	char sprop_vps[64];
+	char sprop_sps[128];
+	char sprop_pps[256];
+	char sprop_sei[128];
 };
 
 int sdp_a_fmtp_h266(const char* fmtp, int* format, struct sdp_a_fmtp_h266_t* h266);

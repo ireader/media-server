@@ -90,5 +90,5 @@ int sdp_h265_load(uint8_t* data, int bytes, const char* vps, const char* sps, co
 		}
 	}
 
-	return 0;
+	return off;
 }
