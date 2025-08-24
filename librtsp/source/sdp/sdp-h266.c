@@ -86,7 +86,6 @@ int sdp_h266_load(uint8_t* data, int bytes, const char* vps, const char* sps, co
 			n = (int)base64_decode(data + off + sizeof(startcode), p, len);
 			assert(n <= (len + 3) / 4 * 3);
 			off += n + sizeof(startcode);
-			off += n;
 
 			p = next ? next + 1 : NULL;
 		}

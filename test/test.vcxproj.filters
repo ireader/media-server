@@ -530,6 +530,9 @@
     <ClCompile Include="..\librtsp\test\media\ps-file-reader.cpp">
       <Filter>librtsp\media</Filter>
     </ClCompile>
+    <ClCompile Include="..\libmov\test\mov-writer-vp9.cpp">
+      <Filter>libmov</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libflv\test\rtmp.onStatus.amf0">

@@ -138,6 +138,8 @@ extern "C" DEF_FUN_VOID(mp3_header_test);
 extern "C" DEF_FUN_VOID(opus_head_test);
 extern "C" DEF_FUN_VOID(flac_streaminfo_test);
 extern "C" DEF_FUN_VOID(h264_mp4toannexb_test);
+extern "C" DEF_FUN_VOID(sdp_h264_test);
+extern "C" DEF_FUN_VOID(sdp_h265_test);
 extern "C" DEF_FUN_VOID(sdp_a_fmtp_test);
 extern "C" DEF_FUN_VOID(sdp_a_rtpmap_test);
 extern "C" DEF_FUN_VOID(sdp_a_webrtc_test);
@@ -180,6 +182,7 @@ DEF_FUN_INT_INT_PCHAR_PCHAR(fmp4_writer_test, int w, int h, const char* inflv, c
 DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h264, const char* h264, int width, int height, const char* mp4);
 DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_h265, const char* h265, int width, int height, const char* mp4);
 DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_av1, const char* obu, int width, int height, const char* mp4);
+DEF_FUN_PCHAR_INT_INT_PCHAR(mov_writer_vp9, const char* vp9, int width, int height, const char* mp4);
 DEF_FUN_PCHAR_INT_PCHAR(mov_writer_audio, const char* audio, int type, const char* mp4);
 DEF_FUN_2PCHAR(fmp4_writer_test2, const char* mp4, const char* outmp4);
 DEF_FUN_PCHAR(mov_rtp_test, const char* mp4);
@@ -257,6 +260,8 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("flac_streaminfo_test", argc, argv);
         RE_RUN_REG("h264_mp4toannexb_test", argc, argv);
         RE_RUN_REG("sdp_test", argc, argv);
+        RE_RUN_REG("sdp_h264_test", argc, argv);
+        RE_RUN_REG("sdp_h265_test", argc, argv);
         RE_RUN_REG("sdp_a_fmtp_test", argc, argv);
         RE_RUN_REG("sdp_a_rtpmap_test", argc, argv);
         RE_RUN_REG("sdp_a_webrtc_test", argc, argv);

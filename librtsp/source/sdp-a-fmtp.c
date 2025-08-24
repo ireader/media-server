@@ -681,6 +681,22 @@ static void sdp_a_fmtp_h264_test(void)
 	assert(0 == strcmp("abcd", h264.sprop_parameter_sets));
 }
 
+static void sdp_a_fmtp_h265_test(void)
+{
+	int format = 0;
+	struct sdp_a_fmtp_h265_t h265;
+	memset(&h265, 0, sizeof(h265));
+	const char* fmtp1 = "96 sprop-vps=QAEMAf//AWAAAAMAsAAAAwAAAwBdFcCQ; sprop-sps=QgEBAWAAAAMAsAAAAwAAAwBdoAWiAFAWIFe5FlRA; sprop-pps=RAHALLwUyQ==";
+
+	assert(0 == sdp_a_fmtp_h265(fmtp1, &format, &h265));
+	assert(96 == format);
+	assert(h265.flags == (SDP_A_FMTP_H265_SPROP_VPS| SDP_A_FMTP_H265_SPROP_SPS| SDP_A_FMTP_H265_SPROP_PPS));
+	assert(0 == strcmp("QAEMAf//AWAAAAMAsAAAAwAAAwBdFcCQ", h265.sprop_vps));
+	assert(0 == strcmp("QgEBAWAAAAMAsAAAAwAAAwBdoAWiAFAWIFe5FlRA", h265.sprop_sps));
+	assert(0 == strcmp("RAHALLwUyQ==", h265.sprop_pps));
+	assert(0 == strcmp("", h265.sprop_sei));
+}
+
 static void sdp_a_fmtp_mpeg4_test(void)
 {
 	int format = 0;
@@ -731,6 +747,7 @@ static void sdp_a_fmtp_rtx_test(void)
 void sdp_a_fmtp_test(void)
 {
 	sdp_a_fmtp_h264_test();
+	sdp_a_fmtp_h265_test();
 	sdp_a_fmtp_mpeg4_test();
 	sdp_a_fmtp_mpeg4_aac_test();
 	sdp_a_fmtp_rtx_test();

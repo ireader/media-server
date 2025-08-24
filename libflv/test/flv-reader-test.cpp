@@ -1,8 +1,11 @@
 #include "flv-demuxer.h"
 #include "flv-reader.h"
 #include "flv-proto.h"
+#include "aom-av1.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static unsigned char packet[8 * 1024 * 1024];
 static FILE* aac;
@@ -61,6 +64,14 @@ static int onFLV(void* /*param*/, int codec, const void* data, size_t bytes, uin
 
 		assert(bytes == get_adts_length((const uint8_t*)data, bytes));
 		fwrite(data, bytes, 1, aac);
+	}
+	else if (FLV_VIDEO_AV1 == codec) 
+	{
+		struct aom_av1_t av1;
+		memset(&av1, 0, sizeof(av1));
+		aom_av1_codec_configuration_record_init(&av1, data, bytes);
+		uint8_t extra[32] = { 0 };
+		aom_av1_codec_configuration_record_save(&av1, extra, sizeof(extra));
 	}
 	else if (FLV_VIDEO_H264 == codec || FLV_VIDEO_H265 == codec || FLV_VIDEO_H266 == codec || FLV_VIDEO_AV1 == codec)
 	{
