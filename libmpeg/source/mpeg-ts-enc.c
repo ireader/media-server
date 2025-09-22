@@ -92,6 +92,32 @@ static int mpeg_ts_write_section_header(const mpeg_ts_enc_context_t *ts, int pid
 	return r;
 }
 
+
+// Generate Opus control header according to ETSI TS 103 491 section 6.2.1
+static uint8_t* mpeg_ts_write_opus_control_header(uint8_t* p, size_t payload_size)
+{
+	// opus_control_header according to ETSI TS 103 491 v0.1.3 section 6.2.1
+	// control_header_prefix: 11 bits = 0x3FF (all 1s)
+	// start_trim_flag: 1 bit = 0 (no start trimming)
+	// end_trim_flag: 1 bit = 0 (no end trimming)
+	// control_extension_flag: 1 bit = 0 (no extensions)
+	// Reserved: 2 bits = 0
+	uint16_t header_prefix = 0x7FE0; // 11111 1111 1110 0000 = 0x3FF shifted left 5 bits
+	p[0] = (header_prefix >> 8) & 0xFF; // 0x7F
+	p[1] = header_prefix & 0xFF;        // 0xE0
+
+	// Write payload size using variable-length encoding
+	// For sizes >= 255, use 0xFF bytes followed by the remainder
+	p += 2;
+	while (payload_size >= 255) {
+		*p++ = 0xFF;
+		payload_size -= 255;
+	}
+	*p++ = (uint8_t)payload_size;
+
+	return p;
+}
+
 static uint8_t* mpeg_ts_write_aud(const mpeg_ts_enc_context_t* tsctx, const struct pes_t* stream, const uint8_t* payload, size_t bytes, uint8_t* p)
 {
 	if (PSI_STREAM_H264 == stream->codecid && !tsctx->h26x_with_aud && !mpeg_h264_start_with_access_unit_delimiter(payload, bytes))
@@ -122,6 +148,13 @@ static uint8_t* mpeg_ts_write_aud(const mpeg_ts_enc_context_t* tsctx, const stru
 		p[5] = 0xA1;
 		p[6] = 0x28; // B&P&I (0x2) + rbsp stop one bit
 		p += 7;
+	}
+	else if (PSI_STREAM_AUDIO_OPUS == stream->codecid)
+	{
+		// ETSI TS 103 491 v0.1.3 section 6.2.1
+		// Each Opus access unit in MPEG-TS shall contain an opus_control_header
+		// when the next 11 bits are 0x3FF
+		p = mpeg_ts_write_opus_control_header(p, bytes);
 	}
 
 	return p;
@@ -552,3 +585,4 @@ int mpeg_ts_add_program_stream(void* ts, uint16_t pn, int codecid, const void* e
 
 	return -1; // ENOTFOUND: program not found
 }
+
