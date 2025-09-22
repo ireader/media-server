@@ -149,11 +149,12 @@ static uint8_t* mpeg_ts_write_aud(const mpeg_ts_enc_context_t* tsctx, const stru
 		p[6] = 0x28; // B&P&I (0x2) + rbsp stop one bit
 		p += 7;
 	}
-	else if (PSI_STREAM_AUDIO_OPUS == stream->codecid)
+	else if (PSI_STREAM_AUDIO_OPUS == stream->codecid
+		&& (bytes < 3 || 0x7F != payload[0] || 0xE0 != (payload[1] & 0xE0)))
 	{
 		// ETSI TS 103 491 v0.1.3 section 6.2.1
 		// Each Opus access unit in MPEG-TS shall contain an opus_control_header
-		// when the next 11 bits are 0x3FF
+		// when the next 11 bits are 0x3FF. Only add if not already present. 
 		p = mpeg_ts_write_opus_control_header(p, bytes);
 	}
 
@@ -585,4 +586,5 @@ int mpeg_ts_add_program_stream(void* ts, uint16_t pn, int codecid, const void* e
 
 	return -1; // ENOTFOUND: program not found
 }
+
 
