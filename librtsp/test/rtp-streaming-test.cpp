@@ -120,8 +120,10 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
     {
         if (MOV_OBJECT_AAC == ctx->a.object)
         {
-            bytes = mpeg4_aac_adts_save(&s_aac, bytes, s_packet, sizeof(s_packet));
+            int n = mpeg4_aac_adts_save(&s_aac, bytes, s_packet, sizeof(s_packet));
+            memcpy(s_packet + n, buffer, bytes);
             buffer = s_packet;
+            bytes += n;
         }
         else if (MOV_OBJECT_OPUS == ctx->a.object)
         {

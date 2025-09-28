@@ -100,6 +100,12 @@ static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_
 			ctx->ps = ps_demuxer_create(mpeg_ps_demuxer_onpacket, ctx);
 		ps_demuxer_input(ctx->ps, (const uint8_t*)packet, bytes);
 	}
+	else if (0 == strcmp("vp9", ctx->encoding))
+	{
+		buffer[0] = bytes >> 8;
+		buffer[1] = bytes;
+		size = 2;
+	}
 
 	memcpy(buffer + size, packet, bytes);
 	size += bytes;

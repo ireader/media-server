@@ -12,8 +12,9 @@ static int flv_onmuxer(void* flv, int type, const void* data, size_t bytes, uint
 	return flv_writer_input(flv, type, data, bytes, timestamp);
 }
 
-static int flv_ondemuxer(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int format)
+static int flv_ondemuxer(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags)
 {
+	printf("[%d] pts: %u, dts: %u, bytes: %u%s\n", codec, pts, dts, (unsigned int)bytes, flags?" [I]":"");
 	flv_muxer_t* muxer = (flv_muxer_t*)param;
 	switch (codec)
 	{

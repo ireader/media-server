@@ -135,7 +135,7 @@ static inline uint64_t mpeg4_bits_read_uvlc(struct mpeg4_bits_t* bits)
 	if (leadingZeros >= 32)
 		return (1ULL << 32) - 1;
 	
-	value = mpeg4_bits_read_n(bits, leadingZeros);
+	value = leadingZeros > 0 ? mpeg4_bits_read_n(bits, leadingZeros) : 0;
 	return (1ULL << leadingZeros) - 1 + value;
 }
 

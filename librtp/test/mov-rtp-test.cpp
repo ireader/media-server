@@ -7,15 +7,14 @@
 #include "aom-av1.h"
 #include "rtp-payload.h"
 #include "rtp-profile.h"
-#include "mpeg-ps.h"
-#include "mpeg-ts.h"
+#include "rtsp-muxer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <time.h>
 
-//#define RTP_VIDEO_WITH_PS
+#define RTP_VIDEO_WITH_PS
 
 #define RTP_LOST_PERCENT 5
 
@@ -37,35 +36,21 @@ struct mov_rtp_test_stream_t
     int av;
     int object;
     int track;
-    int psi;
+    int mid;
     int64_t dts;
-    
-    void* encoder;
-    void* decoder;
 };
 
 struct mov_rtp_test_t
 {
     struct mov_rtp_test_stream_t a, v;
     
-    struct ps_muxer_t* psenc;
-    struct ps_demuxer_t* psdec;
+    struct rtsp_muxer_t* muxer;
+    int rtp_ps_pid;
 };
 
 static unsigned char packet[8 * 1024 * 1024];
 
-static void* rtp_alloc(void* /*param*/, int bytes)
-{
-    static uint8_t buffer[2 * 1024 * 1024 + 4] = { 0, 0, 0, 1, };
-    assert(bytes <= sizeof(buffer) - 4);
-    return buffer + 4;
-}
-
-static void rtp_free(void* /*param*/, void * /*packet*/)
-{
-}
-
-static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int /*flags*/)
+static int rtp_encode_packet(void* param, int pid, const void* data, int bytes, uint32_t timestamp, int flags)
 {
     struct mov_rtp_test_stream_t* ctx = (struct mov_rtp_test_stream_t*)param;
     
@@ -76,41 +61,16 @@ static int rtp_encode_packet(void* param, const void *packet, int bytes, uint32_
     //    return 0;
     //}
     
-    int r = rtp_payload_decode_input(ctx->decoder, packet, bytes);
-    return r >= 0 ? 0 : r;
-}
+    //int r = rtp_payload_decode_input(ctx->decoder, packet, bytes);
+    //return r >= 0 ? 0 : r;
 
-static int rtp_decode_packet(void* param, const void *packet, int bytes, uint32_t timestamp, int flags)
-{
-    struct mov_rtp_test_stream_t* ctx = (struct mov_rtp_test_stream_t*)param;
-    printf("RTP Decode: [%s] timestamp: %u, bytes: %d\n", ctx->av ? "V" : "A", (unsigned int)timestamp, bytes);
-    
-#if defined(RTP_VIDEO_WITH_PS)
-    if(ctx == &ctx->ctx->v)
-    {
-        size_t r = ps_demuxer_input(ctx->ctx->psdec, (const uint8_t*)packet, bytes);
-        assert(r == bytes);
-        return r;
-    }
-#endif
-
-    return 0;
-}
-
-static int rtp_payload_codec_create(struct mov_rtp_test_stream_t* ctx, int payload, const char* encoding, uint16_t seq, uint32_t ssrc)
-{
-    struct rtp_payload_t handler1;
-    handler1.alloc = rtp_alloc;
-    handler1.free = rtp_free;
-    handler1.packet = rtp_decode_packet;
-    ctx->decoder = rtp_payload_decode_create(payload, encoding, &handler1, ctx);
-    
-    struct rtp_payload_t handler2;
-    handler2.alloc = rtp_alloc;
-    handler2.free = rtp_free;
-    handler2.packet = rtp_encode_packet;
-    ctx->encoder = rtp_payload_encode_create(payload, encoding, seq, ssrc, &handler2, ctx);
-
+    uint8_t len[2];
+    static FILE* fp = fopen("2.mp4.rtp", "wb");
+    len[0] = bytes >> 8;
+    len[1] = bytes;
+    fwrite(len, 1, 2, fp);
+    fwrite(data, 1, bytes, fp);
+    fflush(fp);
     return 0;
 }
 
@@ -154,21 +114,15 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
         printf("[V] pts: %s, dts: %s, diff: %03d/%03d, %d%s\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - v_pts), (int)(dts - v_dts), (int)n, flags ? " [I]" : "");
         v_pts = pts;
         v_dts = dts;
-#if defined(RTP_VIDEO_WITH_PS)
-        if(MOV_OBJECT_H264 == ctx->v.object || MOV_OBJECT_HEVC == ctx->v.object)
-        {
-            ctx->v.dts = dts;
-            ps_muxer_input(ctx->psenc, ctx->v.psi, (MOV_AV_FLAG_KEYFREAME&flags)?0x0001:0, pts, dts, s_packet, n);
-            return;
-        }
-#endif
-        assert(0 == rtp_payload_encode_input(ctx->v.encoder, s_packet, n, (unsigned int)dts));
+        assert(0 == rtsp_muxer_input(ctx->muxer, ctx->v.mid, pts, dts, s_packet, n, (MOV_AV_FLAG_KEYFREAME & flags) ? 0x0001 : 0));
     }
     else if (ctx->a.track == track)
     {
         if (MOV_OBJECT_AAC == ctx->a.object)
         {
             n = mpeg4_aac_adts_save(&s_aac, bytes, s_packet, sizeof(s_packet));
+            memcpy(s_packet + n, buffer, bytes);
+            n += bytes;
         }
         else if(MOV_OBJECT_OPUS == ctx->a.object)
         {
@@ -182,7 +136,7 @@ static void onread(void* param, uint32_t track, const void* buffer, size_t bytes
         printf("[A] pts: %s, dts: %s, diff: %03d/%03d, %d\n", ftimestamp(pts, s_pts), ftimestamp(dts, s_dts), (int)(pts - a_pts), (int)(dts - a_dts), (int)n);
         a_pts = pts;
         a_dts = dts;
-        assert(0 == rtp_payload_encode_input(ctx->a.encoder, s_packet, n, (unsigned int)dts));
+        assert(0 == rtsp_muxer_input(ctx->muxer, ctx->a.mid, pts, dts, s_packet, n, 0));
     }
     else
     {
@@ -200,35 +154,40 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     if (MOV_OBJECT_H264 == object)
     {
 #if defined(RTP_VIDEO_WITH_PS)
-        ctx->v.psi = ps_muxer_add_stream(ctx->psenc, PSI_STREAM_H264, NULL, 0);
-#else
-        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "H264", 0, 0));
+        int pid = ctx->rtp_ps_pid;
+#else   
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", 90000, 96, "H264", 0, 0, 0, extra, bytes);
 #endif
-        assert(bytes == mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc));
+        ctx->v.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_H264, extra, bytes);
+        assert(bytes >= mpeg4_avc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_avc));
         
     }
     else if (MOV_OBJECT_HEVC == object)
     {
 #if defined(RTP_VIDEO_WITH_PS)
-        ctx->v.psi = ps_muxer_add_stream(ctx->psenc, PSI_STREAM_H265, NULL, 0);
-#else
-        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "H265", 0, 0));
+        int pid = ctx->rtp_ps_pid;
+#else   
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", 90000, 96, "H265", 0, 0, 0, extra, bytes);
 #endif
+        ctx->v.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_H265, extra, bytes);
         assert(bytes == mpeg4_hevc_decoder_configuration_record_load((const uint8_t*)extra, bytes, &s_hevc));
     }
     else if (MOV_OBJECT_AV1 == object)
     {
-        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "AV1", 0, 0));
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", 90000, RTP_PAYLOAD_AV1X, "AV1X", 0, 0, 0, extra, bytes);
+        ctx->v.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_AV1X, extra, bytes);
         assert(bytes == aom_av1_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_av1));
     }
     else if (MOV_OBJECT_VP9 == object)
     {
-        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "VP9", 0, 0));
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", 90000, 96, "VP9", 0, 0, 0, extra, bytes);
+        ctx->v.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_VP9, extra, bytes);
         assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
     }
     else if (MOV_OBJECT_VP8 == object)
     {
-        assert(0 == rtp_payload_codec_create(&ctx->v, 96, "VP8", 0, 0));
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", 90000, 96, "VP8", 0, 0, 0, extra, bytes);
+        ctx->v.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_VP8, extra, bytes);
         assert(bytes == webm_vpx_codec_configuration_record_load((const uint8_t*)extra, bytes, &s_vpx));
     }
     else
@@ -237,7 +196,7 @@ static void mov_video_info(void* param, uint32_t track, uint8_t object, int /*wi
     }
 }
 
-static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*channel_count*/, int /*bit_per_sample*/, int /*sample_rate*/, const void* extra, size_t bytes)
+static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*channel_count*/, int /*bit_per_sample*/, int sample_rate, const void* extra, size_t bytes)
 {
     struct mov_rtp_test_t* ctx = (struct mov_rtp_test_t*)param;
     ctx->a.track = track;
@@ -246,41 +205,23 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int /*ch
     
     if (MOV_OBJECT_AAC == object)
     {
-        assert(0 == rtp_payload_codec_create(&ctx->a, 97, "MP4A-LATM", 0, 0));
+#if defined(RTP_VIDEO_WITH_PS)
+        int pid = ctx->rtp_ps_pid;
+#else   
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", sample_rate, 97, "MP4A-LATM", 0, 0, 0, extra, bytes);
+#endif
+        ctx->a.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_LATM, extra, bytes);
         assert(bytes == mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s_aac));
     }
     else if (MOV_OBJECT_OPUS == object)
     {
-        assert(0 == rtp_payload_codec_create(&ctx->a, 97, "OPUS", 0, 0));
+        int pid = rtsp_muxer_add_payload(ctx->muxer, "RTP/AVP", sample_rate, 97, "OPUS", 0, 0, 0, extra, bytes);
+        ctx->a.mid = rtsp_muxer_add_media(ctx->muxer, pid, RTP_PAYLOAD_OPUS, extra, bytes);
     }
     else
     {
         assert(0);
     }
-}
-
-static void* ps_alloc(void* /*param*/, size_t bytes)
-{
-    static char s_buffer[2 * 1024 * 1024];
-    assert(bytes <= sizeof(s_buffer));
-    return s_buffer;
-}
-
-static void ps_free(void* /*param*/, void* /*packet*/)
-{
-    return;
-}
-
-static int ps_write(void* param, int stream, void* packet, size_t bytes)
-{
-    struct mov_rtp_test_t* ctx = (struct mov_rtp_test_t*)param;
-    return rtp_payload_encode_input(ctx->v.encoder, packet, bytes, (unsigned int)ctx->v.dts);
-}
-
-static int ps_onpacket(void* ps, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
-{
-    printf("PS Decode [V] pts: %08lu, dts: %08lu, bytes: %u, %s\n", (unsigned long)pts, (unsigned long)dts, (unsigned int)bytes, flags ? " [I]" : "");
-    return 0;
 }
 
 void mov_rtp_test(const char* mp4)
@@ -289,15 +230,10 @@ void mov_rtp_test(const char* mp4)
     memset(&ctx, 0, sizeof(ctx));
     ctx.a.ctx = &ctx;
     ctx.v.ctx = &ctx;
-    
+    ctx.muxer = rtsp_muxer_create(rtp_encode_packet, &ctx);
+
 #if defined(RTP_VIDEO_WITH_PS)
-    struct ps_muxer_func_t handler;
-    handler.alloc = ps_alloc;
-    handler.write = ps_write;
-    handler.free = ps_free;
-    ctx.psenc = ps_muxer_create(&handler, &ctx);
-    ctx.psdec = ps_demuxer_create(ps_onpacket, &ctx);
-    assert(0 == rtp_payload_codec_create(&ctx.v, 96, "MP2P", 0, 0));
+    ctx.rtp_ps_pid = rtsp_muxer_add_payload(ctx.muxer, "RTP/AVP", 90000, 96, "MP2P", 0, 0, 0, NULL, 0);
 #endif
     
     FILE* fp = fopen(mp4, "rb");
@@ -312,19 +248,7 @@ void mov_rtp_test(const char* mp4)
     {
     }
 
-    if(ctx.a.decoder)
-        rtp_payload_decode_destroy(ctx.a.decoder);
-    if(ctx.a.encoder)
-        rtp_payload_encode_destroy(ctx.a.encoder);
-    if(ctx.v.decoder)
-        rtp_payload_decode_destroy(ctx.v.decoder);
-    if(ctx.v.encoder)
-        rtp_payload_encode_destroy(ctx.v.encoder);
-    
-#if defined(RTP_VIDEO_WITH_PS)
-    ps_demuxer_destroy(ctx.psdec);
-    ps_muxer_destroy(ctx.psenc);
-#endif
+    rtsp_muxer_destroy(ctx.muxer);
     mov_reader_destroy(mov);
     fclose(fp);
 }
