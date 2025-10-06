@@ -162,6 +162,15 @@ struct sip_substate_t
 	struct sip_params_t params; // include reason/expires/retry
 };
 
+struct sip_event_t
+{
+	struct cstring_t event;
+
+	// parameters
+	struct cstring_t id;
+	struct sip_params_t params; // include id
+};
+
 int sip_header_param(const char* s, const char* end, struct sip_param_t* param);
 int sip_header_params(char sep, const char* s, const char* end, struct sip_params_t* params);
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end);
@@ -207,11 +216,19 @@ void sip_uri_free(struct sip_uri_t* uri);
 void sip_via_free(struct sip_via_t* via);
 void sip_contact_free(struct sip_contact_t* contact);
 void sip_substate_free(struct sip_substate_t* substate);
+void sip_event_free(struct sip_event_t* event);
 
 /// @return 0-ok, other-error
 int sip_header_substate(const char* s, const char* end, struct sip_substate_t* substate);
 /// @return write length, >0-ok, <0-error
 int sip_substate_write(const struct sip_substate_t* substate, char* data, const char* end);
+
+/// @return 0-ok, other-error
+int sip_header_event(const char* s, const char* end, struct sip_event_t* evt);
+/// @return write length, >0-ok, <0-error
+int sip_event_write(const struct sip_event_t* evt, char* data, const char* end);
+/// @return 1-true, 0-false
+int sip_event_equal(const struct sip_event_t* l, const struct sip_event_t* r);
 
 #if defined(__cplusplus)
 }

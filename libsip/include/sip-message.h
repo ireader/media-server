@@ -94,7 +94,7 @@ struct sip_message_t
 	struct cstring_t recv_info; // Info Method (invite)
 	struct cstring_t info_package; // Info Method
 	struct sip_contact_t referto; // Refer Method
-	struct cstring_t event; // Subscribe/Notify Method
+	struct sip_event_t event; // Subscribe/Notify Method
 	struct cstring_t allow_events; // Subscribe/Notify Method
 	struct sip_substate_t substate; // Subscribe/Notify Method (invite)
 	struct sip_params_t headers;

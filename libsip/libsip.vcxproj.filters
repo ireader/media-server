@@ -176,5 +176,8 @@
     <ClCompile Include="src\header\sip-header-route.c">
       <Filter>SIP Header</Filter>
     </ClCompile>
+    <ClCompile Include="src\header\sip-header-event.c">
+      <Filter>SIP Header</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

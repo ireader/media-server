@@ -69,6 +69,7 @@ int sip_message_destroy(struct sip_message_t* msg)
 		sip_uris_free(&msg->record_routers);
 		sip_contact_free(&msg->referto);
 		sip_substate_free(&msg->substate);
+		sip_event_free(&msg->event);
 		sip_params_free(&msg->headers);
 		free(msg);
 		atomic_decrement32(&s_gc.message);
@@ -651,8 +652,11 @@ int sip_message_write(const struct sip_message_t* msg, uint8_t* data, int bytes)
 		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_INFO_PACKAGE, (int)msg->info_package.n, msg->info_package.p);
 
 	// Subscribe/Notify
-	if (cstrvalid(&msg->event) && p < end)
-		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_EVENT, (int)msg->event.n, msg->event.p);
+	if (cstrvalid(&msg->event.event))
+	{
+		if (p < end) p += snprintf(p, end - p, "\r\n%s: ", SIP_HEADER_EVENT);
+		if (p < end) p += sip_event_write(&msg->event, p, end);
+	}
 	if (cstrvalid(&msg->allow_events) && p < end)
 		p += snprintf(p, end - p, "\r\n%s: %.*s", SIP_HEADER_ALLOW_EVENTS, (int)msg->allow_events.n, msg->allow_events.p);
 	if (cstrvalid(&msg->substate.state))
@@ -783,8 +787,8 @@ int sip_message_add_header(struct sip_message_t* msg, const char* name, const ch
 	}
 	else if (0 == strcasecmp(SIP_HEADER_EVENT, name))
 	{
-		msg->event.p = header.value.p;
-		msg->event.n = header.value.n;
+		sip_event_free(&msg->event);
+		r = sip_header_event(header.value.p, header.value.p + header.value.n, &msg->event);
 	}
 	else if (0 == strcasecmp(SIP_HEADER_ALLOW_EVENTS, name))
 	{

@@ -99,16 +99,17 @@ struct sip_uac_transaction_t* sip_uac_subscribe(struct sip_agent_t* sip, const c
 
 struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, int expires, sip_uac_onsubscribe onsubscribe, void* param)
 {
+	char event[128];
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!sip || !subscribe || !subscribe->dialog)
+	if (!sip || !subscribe || !subscribe->dialog || sip_event_write(&subscribe->event, event, event+sizeof(event)) <= 0)
 		return NULL;
 
 	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if (0 != sip_message_init2(req, SIP_METHOD_SUBSCRIBE, subscribe->dialog)
-		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)
+		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, event)
 		|| 0 != sip_message_add_header_int(req, "Expires", expires))
 	{
 		sip_message_destroy(req);
@@ -123,16 +124,17 @@ struct sip_uac_transaction_t* sip_uac_resubscribe(struct sip_agent_t* sip, struc
 
 struct sip_uac_transaction_t* sip_uac_notify(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe, const char* state, sip_uac_onreply onnotify, void* param)
 {
+	char event[128];
 	struct sip_message_t* req;
 	struct sip_uac_transaction_t* t;
 
-	if (!subscribe || !subscribe->dialog)
+	if (!subscribe || !subscribe->dialog || sip_event_write(&subscribe->event, event, event + sizeof(event)) <= 0)
 		return NULL;
 
 	++subscribe->dialog->local.id;
 	req = sip_message_create(SIP_MESSAGE_REQUEST);
 	if(0 != sip_message_init2(req, SIP_METHOD_NOTIFY, subscribe->dialog)
-		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, subscribe->event)
+		|| 0 != sip_message_add_header(req, SIP_HEADER_EVENT, event)
 		|| 0 != sip_message_add_header(req, SIP_HEADER_SUBSCRIBE_STATE, state))
 	{
 		--subscribe->dialog->local.id;

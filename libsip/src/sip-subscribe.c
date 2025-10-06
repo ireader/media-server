@@ -1,3 +1,78 @@
+/*
+* 4.1.  Subscriber Behavior
+* https://www.rfc-editor.org/rfc/rfc6665#section-4.1.2
+					
+						  +-------------+
+						  |    init     |<-----------------------+
+						  +-------------+                        |
+								 |                           Retry-after
+						   Send SUBSCRIBE                    expires
+								 |                               |
+								 V          Timer N Fires;       |
+						  +-------------+   SUBSCRIBE failure    |
+			 +------------| notify_wait |-- response; --------+  |
+			 |            +-------------+   or NOTIFY,        |  |
+			 |                   |          state=terminated  |  |
+			 |                   |                            |  |
+   ++========|===================|============================|==|====++
+   ||        |                   |                            V  |    ||
+   ||  Receive NOTIFY,    Receive NOTIFY,             +-------------+ ||
+   ||  state=active       state=pending               | terminated  | ||
+   ||        |                   |                    +-------------+ ||
+   ||        |                   |          Re-subscription     A  A  ||
+   ||        |                   V          times out;          |  |  ||
+   ||        |            +-------------+   Receive NOTIFY,     |  |  ||
+   ||        |            |   pending   |-- state=terminated; --+  |  ||
+   ||        |            +-------------+   or 481 response        |  ||
+   ||        |                   |          to SUBSCRIBE           |  ||
+   ||        |            Receive NOTIFY,   refresh                |  ||
+   ||        |            state=active                             |  ||
+   ||        |                   |          Re-subscription        |  ||
+   ||        |                   V          times out;             |  ||
+   ||        |            +-------------+   Receive NOTIFY,        |  ||
+   ||        +----------->|   active    |-- state=terminated; -----+  ||
+   ||                     +-------------+   or 481 response           ||
+   ||                                       to SUBSCRIBE              ||
+   || Subscription                          refresh                   ||
+   ++=================================================================++
+
+
+* 4.2.  Notifier Behavior
+* https://www.rfc-editor.org/rfc/rfc6665#section-4.2.2
+
+						 +-------------+
+						 |    init     |
+						 +-------------+
+								|
+						  Receive SUBSCRIBE,
+						  Send NOTIFY
+								|
+								V          NOTIFY failure,
+						 +-------------+   subscription expires,
+			+------------|  resp_wait  |-- or terminated ----+
+			|            +-------------+   per local policy  |
+			|                   |                            |
+			|                   |                            |
+			|                   |                            V
+	  Policy grants       Policy needed              +-------------+
+	  permission                |                    | terminated  |
+			|                   |                    +-------------+
+			|                   |                               A A
+			|                   V          NOTIFY failure,      | |
+			|            +-------------+   subscription expires,| |
+			|            |   pending   |-- or terminated -------+ |
+			|            +-------------+   per local policy       |
+			|                   |                                 |
+			|            Policy changed to                        |
+			|            grant permission                         |
+			|                   |                                 |
+			|                   V          NOTIFY failure,        |
+			|            +-------------+   subscription expires,  |
+			+----------->|   active    |-- or terminated ---------+
+						 +-------------+   per local policy
+
+*/
+
 #include "sip-subscribe.h"
 #include "sip-internal.h"
 #include "sip-message.h"
@@ -6,6 +81,8 @@
 #include "sys/locker.h"
 #include <stdlib.h>
 
+#define N 512
+
 // 12.1.2 UAC Behavior
 // A UAC MUST be prepared to receive a response without a tag in the To
 // field, in which case the tag is considered to have a value of null.
@@ -13,16 +90,21 @@
 // did not mandate To tags.
 static const struct cstring_t sc_null = { "", 0 };
 
-struct sip_subscribe_t* sip_subscribe_create(const struct cstring_t* event)
+struct sip_subscribe_t* sip_subscribe_create(const struct sip_event_t* event)
 {
+	char* end;
 	struct sip_subscribe_t* s;
-	s = (struct sip_subscribe_t*)calloc(1, sizeof(struct sip_subscribe_t));
+	s = (struct sip_subscribe_t*)calloc(1, sizeof(*s) + N);
 	if (s)
 	{
 		s->ref = 1;
 		LIST_INIT_HEAD(&s->link);
 		s->state = SUBSCRIBE_INIT;
-		cstrcpy(event, s->event, sizeof(s->event) - 1);
+		s->ptr = (char*)(s + 1);
+
+		end = s->ptr + N;
+		s->ptr = cstring_clone(s->ptr, end, &s->event.event, event->event.p, event->event.n);
+		s->ptr = cstring_clone(s->ptr, end, &s->event.id, event->id.p, event->id.n);
 		atomic_increment32(&s_gc.subscribe);
 	}
 	return s;
@@ -39,6 +121,8 @@ int sip_subscribe_release(struct sip_subscribe_t* subscribe)
 
 	if (subscribe->dialog)
 		sip_dialog_release(subscribe->dialog);
+
+	//sip_event_free(&subscribe->event); // event->params don't init
 	free(subscribe);
 	atomic_decrement32(&s_gc.subscribe);
 	return 0;
@@ -51,15 +135,15 @@ int sip_subscribe_addref(struct sip_subscribe_t* subscribe)
 }
 
 /// @return 1-match, 0-don't match
-static int sip_subscribe_match(const struct sip_subscribe_t* subscribe, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct cstring_t *event)
+static int sip_subscribe_match(const struct sip_subscribe_t* subscribe, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct sip_event_t* event)
 {
 	assert(subscribe && local);
 	if (!remote) remote = &sc_null;
 
-	return cstreq(callid, &subscribe->dialog->callid) && cstreq(local, &subscribe->dialog->local.uri.tag) && cstreq(remote, &subscribe->dialog->remote.uri.tag) && 0==cstrcmp(event, subscribe->event) ? 1 : 0;
+	return cstreq(callid, &subscribe->dialog->callid) && cstreq(local, &subscribe->dialog->local.uri.tag) && cstreq(remote, &subscribe->dialog->remote.uri.tag) && sip_event_equal(event, &subscribe->event) ? 1 : 0;
 }
 
-static struct sip_subscribe_t* sip_subscribe_find(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct cstring_t *event)
+static struct sip_subscribe_t* sip_subscribe_find(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct sip_event_t* event)
 {
 	struct list_head *pos, *next;
 	struct sip_subscribe_t* subscribe;
@@ -76,16 +160,12 @@ static struct sip_subscribe_t* sip_subscribe_find(struct sip_agent_t* sip, const
 
 int sip_subscribe_add(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe)
 {
-	struct cstring_t event;
-	event.p = subscribe->event;
-	event.n = strlen(subscribe->event);
-
 	// TODO:
 	// the dialog of subscribe don't link to sip->dialogs, so so so...
 
 	assert(subscribe->dialog);
 	locker_lock(&sip->locker);
-	if (NULL != sip_subscribe_find(sip, &subscribe->dialog->callid, &subscribe->dialog->local.uri.tag, &subscribe->dialog->remote.uri.tag, &event))
+	if (NULL != sip_subscribe_find(sip, &subscribe->dialog->callid, &subscribe->dialog->local.uri.tag, &subscribe->dialog->remote.uri.tag, &subscribe->event))
 	{
 		locker_unlock(&sip->locker);
 		return -1; // exist
@@ -122,7 +202,7 @@ int sip_subscribe_remove(struct sip_agent_t* sip, struct sip_subscribe_t* subscr
 	return 0;
 }
 
-struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct cstring_t* event)
+struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct sip_event_t* event)
 {
 	struct sip_subscribe_t* subscribe;
 	locker_lock(&sip->locker);
@@ -135,7 +215,7 @@ struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struc
 
 struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, int uac, int* added);
 // internal use only !!!!!!!!!
-struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct cstring_t* event, int uac, int* added)
+struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_event_t* event, int uac, int* added)
 {
 	struct sip_subscribe_t* subscribe;
 

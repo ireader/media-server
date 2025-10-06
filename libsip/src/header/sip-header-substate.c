@@ -22,7 +22,9 @@ int sip_header_substate(const char* s, const char* end, struct sip_substate_t* s
 	memset(substate, 0, sizeof(*substate));
 	sip_params_init(&substate->params);
 
-	sscanf((s && s < end) ? s : "", " %n%*[^ ;\t\r\n]%n", &i, &r);
+	r = i = 0;
+	if (sscanf((s && s < end) ? s : "", " %n%*[^ ;\t\r\n]%n", &i, &r) < 0 || r < i)
+		return -1;
 	substate->state.p = s + i;
 	substate->state.n = r - i;
 

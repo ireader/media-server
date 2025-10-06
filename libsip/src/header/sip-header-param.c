@@ -201,12 +201,12 @@ void sip_header_param_test(void)
 	assert(0 == param.value.n && 0 == cstrcmp(&param.value, ""));
 
 	s = "=value";
-	assert(0 == sip_header_param(s, s + strlen(s), &param));
+	assert(-1 == sip_header_param(s, s + strlen(s), &param));
 	assert(0 == param.name.n && 0 == cstrcmp(&param.name, ""));
 	assert(5 == param.value.n && 0 == cstrcmp(&param.value, "value"));
 
 	s = "=";
-	assert(0 == sip_header_param(s, s + strlen(s), &param));
+	assert(-1 == sip_header_param(s, s + strlen(s), &param));
 	assert(0 == param.name.n && 0 == cstrcmp(&param.name, ""));
 	assert(0 == param.value.n && 0 == cstrcmp(&param.value, ""));
 

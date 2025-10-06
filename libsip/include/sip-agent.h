@@ -11,6 +11,7 @@ struct sip_agent_t;
 struct sip_dialog_t;
 struct sip_message_t;
 struct sip_subscribe_t;
+struct sip_event_t;
 struct sip_uas_transaction_t;
 
 /// sip UAC/UAS transaction destroy callback
@@ -44,8 +45,8 @@ struct sip_uas_handler_t
 	int (*oncancel)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);
 
 	int (*onsubscribe)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_subscribe_t* subscribe, void** sub);
-	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* sub, const struct cstring_t* event);
-	int (*onpublish)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* event);
+	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* sub, const struct sip_event_t* event);
+	int (*onpublish)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct sip_event_t* event);
 
 	int (*onmessage)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* data, int bytes);
 	int (*onrefer)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);

@@ -34,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\header\sip-header-contact.c" />
+    <ClCompile Include="src\header\sip-header-event.c" />
     <ClCompile Include="src\header\sip-header-param.c" />
     <ClCompile Include="src\header\sip-header-cseq.c" />
     <ClCompile Include="src\header\sip-header-route.c" />

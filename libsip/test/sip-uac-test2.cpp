@@ -1116,11 +1116,11 @@ static int sip_uas_onsubscribe(void* param, const struct sip_message_t* req, str
 {
 	return 0;
 }
-static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct cstring_t* event)
+static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct sip_event_t* event)
 {
 	return 0;
 }
-static int sip_uas_onpublish(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* event)
+static int sip_uas_onpublish(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct sip_event_t* event)
 {
 	return 0;
 }
