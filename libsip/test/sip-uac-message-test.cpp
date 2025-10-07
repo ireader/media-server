@@ -3,6 +3,7 @@
 #include "sip-uac.h"
 #include "sip-message.h"
 #include "sip-transport.h"
+#include "sip-subscribe.h"
 #include "port/ip-route.h"
 #include "http-parser.h"
 #include "uri-parse.h"
@@ -90,12 +91,13 @@ static int sip_uac_transport_send(void* transport, const void* data, size_t byte
 //	assert(sip_contact_write(&msg->from, p1, p1 + sizeof(p1)) > 0 && sip_contact_write(&req->from, p2, p2 + sizeof(p2)) > 0 && 0 == strcmp(p1, p2));
 	return 0;
 }
-static int sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
+static int sip_uac_message_oninvite(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code)
 {
-	s_dialog = dialog;
+	assert(!s_dialog);
 	if (200 <= code && code < 300)
 	{
-		*session = NULL;
+		sip_dialog_addref(dialog);
+		s_dialog = dialog;
 		sip_uac_ack(t, NULL, 0, NULL);
 	}
 	return 0;
@@ -103,15 +105,23 @@ static int sip_uac_message_oninvite(void* param, const struct sip_message_t* rep
 
 static int sip_uac_message_onbye(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, int code)
 {
+	assert(s_dialog);
+	sip_dialog_release(s_dialog);
+	s_dialog = NULL;
 	return 0;
 }
 
-static int sip_uac_message_onsubscribe(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_subscribe_t* subscribe, int code, void** session)
+static int sip_uac_message_onsubscribe(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_subscribe_t* subscribe, const struct cstring_t* id, int code)
 {
-	s_subscribe = subscribe;
+	char ptr[256];
+	struct cstring_t old;
+	sip_subscribe_id(&old, s_subscribe, ptr, sizeof(ptr));
+	assert(!s_subscribe || cstreq(&old, id));
 	if (200 <= code && code < 300)
 	{
-		*session = NULL;
+		sip_subscribe_release(s_subscribe);
+		sip_subscribe_addref(subscribe);
+		s_subscribe = subscribe;
 	}
 	return 0;
 }

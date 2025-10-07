@@ -48,11 +48,7 @@ int sip_uac_transaction_release(struct sip_uac_transaction_t* t)
 		t->ondestroy(t->ondestroyparam);
 	}   
 
-	if (t->dialog)
-	{
-		sip_dialog_release(t->dialog);
-	}
-	
+	sip_dialog_release(t->dialog);
 	assert(NULL == t->onhandle);
 	sip_message_destroy(t->req);
 	locker_destroy(&t->locker);
@@ -142,9 +138,9 @@ static void sip_uac_transaction_ontimeout(void* usrptr)
 
 		// 8.1.3.1 Transaction Layer Errors (p42)
 		if (t->oninvite)
-			t->oninvite(t->param, NULL, t, NULL, 408/*Request Timeout*/, NULL);
+			t->oninvite(t->param, NULL, t, NULL, NULL, 408/*Request Timeout*/);
 		else if (t->onsubscribe)
-			t->onsubscribe(t->param, NULL, t, NULL, 408/*Request Timeout*/, NULL);
+			t->onsubscribe(t->param, NULL, t, NULL, NULL, 408/*Request Timeout*/);
 		else
 			t->onreply(t->param, NULL, t, 408/*Request Timeout*/);
 

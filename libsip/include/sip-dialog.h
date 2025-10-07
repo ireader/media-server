@@ -37,10 +37,6 @@ struct sip_dialog_t
 	struct sip_uris_t routers;
 
 	// internal use only
-	void* session; // user-defined session
-	void (*ondestroy)(void* param);
-	void* ondestroyparam;
-	struct list_head link;
 	char* ptr;
 	int32_t ref;
 };
@@ -48,7 +44,7 @@ struct sip_dialog_t
 struct sip_dialog_t* sip_dialog_create(void);
 int sip_dialog_release(struct sip_dialog_t* dialog);
 int sip_dialog_addref(struct sip_dialog_t* dialog);
-    
+
 int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 
@@ -56,14 +52,8 @@ int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* 
 int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 int sip_dialog_set_local_target(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 
-// dialog management
-int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
-int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
-
-/// call sip_dialog_release
-struct sip_dialog_t* sip_dialog_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
-
-int sip_dialog_ondestroy(struct sip_dialog_t* dialog, void (*ondestroy)(void* param), void* param);
+int sip_dialog_id(struct cstring_t* id, const struct sip_dialog_t* dialog, char* ptr, int len);
+int sip_dialog_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len);
 
 #if defined(__cplusplus)
 }

@@ -14,8 +14,6 @@ struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler)
 	locker_create(&sip->locker);
 	LIST_INIT_HEAD(&sip->uac);
 	LIST_INIT_HEAD(&sip->uas);
-	LIST_INIT_HEAD(&sip->dialogs);
-	LIST_INIT_HEAD(&sip->subscribes);
 	memcpy(&sip->handler, handler, sizeof(sip->handler));
 	return sip;
 }
@@ -23,11 +21,6 @@ struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler)
 int sip_agent_destroy(struct sip_agent_t* sip)
 {
     int32_t ref;
-	//struct list_head *pos, *next;
-	//struct sip_dialog_t* dialog;
-	//struct sip_subscribe_t* subscribe;
-	//struct sip_uac_transaction_t* uac;
-	//struct sip_uas_transaction_t* uas;
 
 	assert(sip->ref > 0);
     ref = atomic_decrement32(&sip->ref);
@@ -36,31 +29,7 @@ int sip_agent_destroy(struct sip_agent_t* sip)
 
 	assert(list_empty(&sip->uac));
 	assert(list_empty(&sip->uas));
-	assert(list_empty(&sip->dialogs));
-	assert(list_empty(&sip->subscribes));
-	//list_for_each_safe(pos, next, &sip->uac)
-	//{
-	//	uac = list_entry(pos, struct sip_uac_transaction_t, link);
-	//	assert(uac->agent == sip);
-	//	sip_uac_transaction_release(uac);
-	//}
-	//list_for_each_safe(pos, next, &sip->uas)
-	//{
-	//	uas = list_entry(pos, struct sip_uas_transaction_t, link);
-	//	assert(uas->agent == sip);
-	//	sip_uac_transaction_release(uas);
-	//}
-	//list_for_each_safe(pos, next, &sip->dialogs)
-	//{
-	//	dialog = list_entry(pos, struct sip_dialog_t, link);
-	//	sip_dialog_release(dialog);
-	//}
-	//list_for_each_safe(pos, next, &sip->subscribes)
-	//{
-	//	subscribe = list_entry(pos, struct sip_subscribe_t, link);
-	//	sip_subscribe_release(subscribe);
-	//}
-
+	
 	locker_destroy(&sip->locker);
 	free(sip);
 	return 0;

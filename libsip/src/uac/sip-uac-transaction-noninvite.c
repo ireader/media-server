@@ -49,9 +49,6 @@
 #include <string.h>
 #include <assert.h>
 
-int sip_uac_onbye(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
-int sip_uac_oncancel(struct sip_uac_transaction_t* t, const struct sip_message_t* reply);
-
 static int sip_uac_transaction_noninvite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	assert(SIP_UAC_TRANSACTION_TRYING == t->status || SIP_UAC_TRANSACTION_PROCEEDING == t->status);

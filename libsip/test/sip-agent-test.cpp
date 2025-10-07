@@ -229,7 +229,7 @@ static void sip_uac_register_test(struct sip_task_t *task)
 	assert(0 == task->event.Wait());
 }
 
-static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
+static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code)
 {
 	assert(code >= 100 && code < 700);
 	if (code >= 200 && code < 700)
@@ -238,10 +238,11 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 		task->success += (code >= 200 && code < 300);
 		task->failed += (code >= 300 && code < 700);
 		assert(task->dialog == NULL);
-		task->dialog = dialog;
 		if (200 <= code && code < 300)
 		{
-			*session = NULL;
+			assert(dialog);
+			sip_dialog_addref(dialog);
+			task->dialog = dialog;
 			sip_uac_ack(t, NULL, 0, NULL);
 		}
 		task->event.Signal();
@@ -265,8 +266,11 @@ static int sip_uac_onbye(void* param, const struct sip_message_t* reply, struct 
 	task->success += (code >= 200 && code < 300);
 	task->failed += (code >= 300 && code < 700);
 	assert(task->dialog);
+	sip_dialog_release(task->dialog);
+	task->dialog = NULL;
 	if ((code >= 200 && code < 300) || 481 == code)
-		task->dialog = NULL;
+	{
+	}
 	else
 		printf("%s bye failed: %d\n", task->from, code);
 	task->event.Signal();
@@ -319,9 +323,8 @@ static void sip_uas_task_ondestroy(void* param)
     assert(atomic_decrement32(&tu->count) >= 0);
 }
 
-static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* redialog, const struct cstring_t* id, const void* data, int bytes)
 {
-	*session = t;
 	char contact[128];
 	struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
@@ -334,13 +337,13 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code, const void* data, int bytes)
 {
 	return 0;
 }
 
 /// on terminating a session(dialog)
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
@@ -349,7 +352,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 }
 
 /// cancel a transaction(should be an invite transaction)
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);
@@ -366,7 +369,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
-static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* payload, int bytes)
 {
     struct sip_tu_t* tu = (struct sip_tu_t*)param;
     atomic_increment32(&tu->count);

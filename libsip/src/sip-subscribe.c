@@ -98,7 +98,6 @@ struct sip_subscribe_t* sip_subscribe_create(const struct sip_event_t* event)
 	if (s)
 	{
 		s->ref = 1;
-		LIST_INIT_HEAD(&s->link);
 		s->state = SUBSCRIBE_INIT;
 		s->ptr = (char*)(s + 1);
 
@@ -143,110 +142,44 @@ static int sip_subscribe_match(const struct sip_subscribe_t* subscribe, const st
 	return cstreq(callid, &subscribe->dialog->callid) && cstreq(local, &subscribe->dialog->local.uri.tag) && cstreq(remote, &subscribe->dialog->remote.uri.tag) && sip_event_equal(event, &subscribe->event) ? 1 : 0;
 }
 
-static struct sip_subscribe_t* sip_subscribe_find(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct sip_event_t* event)
-{
-	struct list_head *pos, *next;
-	struct sip_subscribe_t* subscribe;
-
-	list_for_each_safe(pos, next, &sip->subscribes)
-	{
-		subscribe = list_entry(pos, struct sip_subscribe_t, link);
-		if (sip_subscribe_match(subscribe, callid, local, remote, event))
-			return subscribe;
-	}
-
-	return NULL;
-}
-
-int sip_subscribe_add(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe)
-{
-	// TODO:
-	// the dialog of subscribe don't link to sip->dialogs, so so so...
-
-	assert(subscribe->dialog);
-	locker_lock(&sip->locker);
-	if (NULL != sip_subscribe_find(sip, &subscribe->dialog->callid, &subscribe->dialog->local.uri.tag, &subscribe->dialog->remote.uri.tag, &subscribe->event))
-	{
-		locker_unlock(&sip->locker);
-		return -1; // exist
-	}
-
-	// link to tail
-	assert(1 == subscribe->ref);
-	list_insert_after(&subscribe->link, sip->subscribes.prev);
-	locker_unlock(&sip->locker);
-	sip_subscribe_addref(subscribe);
-	return 0;
-}
-
-int sip_subscribe_remove(struct sip_agent_t* sip, struct sip_subscribe_t* subscribe)
-{
-	// unlink dialog
-	locker_lock(&sip->locker);
-	if (subscribe->link.next == NULL)
-	{
-		// fix remove twice
-		locker_unlock(&sip->locker);
-		return 0;
-	}
-
-	//assert(1 == subscribe->ref);
-	if (subscribe->newdiaolog)
-	{
-		subscribe->newdiaolog = 0;
-		sip_dialog_remove(sip, subscribe->dialog);
-	}
-	list_remove(&subscribe->link);
-	locker_unlock(&sip->locker);
-	sip_subscribe_release(subscribe);
-	return 0;
-}
-
-struct sip_subscribe_t* sip_subscribe_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote, const struct sip_event_t* event)
+struct sip_subscribe_t* sip_subscribe_internal_create(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_event_t* event, int uac)
 {
 	struct sip_subscribe_t* subscribe;
-	locker_lock(&sip->locker);
-	subscribe = sip_subscribe_find(sip, callid, local, remote, event);
-	if (subscribe)
-		sip_subscribe_addref(subscribe);
-	locker_unlock(&sip->locker);
+	subscribe = sip_subscribe_create(event);
+	if (!subscribe)
+	{
+		locker_unlock(&sip->locker);
+		return NULL; // exist
+	}
+
+	subscribe->dialog = sip_dialog_create();
+	if (!subscribe->dialog || 0 != (uac ? sip_dialog_init_uac(subscribe->dialog, msg) : sip_dialog_init_uas(subscribe->dialog, msg)))
+	{
+		sip_subscribe_release(subscribe);
+		return NULL;
+	}
+	subscribe->dialog->state = DIALOG_CONFIRMED; // confirm dialog
 	return subscribe;
 }
 
-struct sip_dialog_t* sip_dialog_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, int uac, int* added);
-// internal use only !!!!!!!!!
-struct sip_subscribe_t* sip_subscribe_internal_fetch(struct sip_agent_t* sip, const struct sip_message_t* msg, const struct sip_event_t* event, int uac, int* added)
+int sip_subscribe_id(struct cstring_t* id, const struct sip_subscribe_t* subscribe, char* ptr, int len)
 {
-	struct sip_subscribe_t* subscribe;
+	int r;
+	r = subscribe ? snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)subscribe->dialog->callid.n, subscribe->dialog->callid.p, (int)subscribe->dialog->local.uri.tag.n, subscribe->dialog->local.uri.tag.p, (int)subscribe->dialog->remote.uri.tag.n, subscribe->dialog->remote.uri.tag.p, (int)subscribe->event.event.n, subscribe->event.event.p, (int)subscribe->event.id.n, subscribe->event.id.p) : 0;
+	id->p = ptr;
+	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	return r;
+}
 
-	*added = 0;
-	locker_lock(&sip->locker);
-    subscribe = sip_subscribe_find(sip, &msg->callid, uac ? &msg->from.tag : &msg->to.tag, uac ? &msg->to.tag : &msg->from.tag, event);
-	if (NULL == subscribe)
-	{
-		subscribe = sip_subscribe_create(event);
-		if (!subscribe)
-		{
-			locker_unlock(&sip->locker);
-			return NULL; // exist
-		}
+int sip_subscribe_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len)
+{
+	int r;
+	if (msg->mode == SIP_MESSAGE_REQUEST)
+		r = snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->event.event.n, msg->event.event.p, (int)msg->event.id.n, msg->event.id.p);
+	else
+		r = snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->event.event.n, msg->event.event.p, (int)msg->event.id.n, msg->event.id.p);
 
-		subscribe->dialog = sip_dialog_internal_fetch(sip, msg, uac, &subscribe->newdiaolog);
-		if (!subscribe->dialog)
-		{
-			locker_unlock(&sip->locker);
-			sip_subscribe_release(subscribe);
-			return NULL; // exist
-		}
-		subscribe->dialog->state = DIALOG_CONFIRMED; // confirm dialog
-
-		// link to tail (add ref later)
-		list_insert_after(&subscribe->link, sip->subscribes.prev);
-		*added = 1;
-	}
-
-	assert(subscribe->dialog);
-	locker_unlock(&sip->locker);
-	sip_subscribe_addref(subscribe); // for sip link dialog / fetch
-	return subscribe;
+	id->p = ptr;
+	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	return r;
 }

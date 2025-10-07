@@ -83,35 +83,33 @@ static int sip_uas_transaction_inivte_change_state(struct sip_uas_transaction_t*
 	return t->status;
 }
 
-int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
+int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
+	char ptr[256];
+	struct cstring_t id;
 	int r, status, oldstatus;
 
+	r = 0;
 	oldstatus = t->status;
 	status = sip_uas_transaction_inivte_change_state(t, req);
 
-	r = 0;
 	switch (status)
 	{
 	case SIP_UAS_TRANSACTION_INIT:
-        if (!dialog)
-        {
-            dialog = sip_uas_create_dialog(req);
-            if(!dialog) return 0;
-        }
-        else
-        {
-            sip_dialog_addref(dialog); // for t->dialog
-        }
+        t->dialog = sip_uas_create_dialog(req);
+        if(!t->dialog) return 0;
+		if (t->dialog->state == DIALOG_ERALY && req->to.tag.n > 0) // re-invite
+			t->dialog->state = DIALOG_CONFIRMED;
+		sip_dialog_id(&id, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, ptr, sizeof(ptr));
 
 		//assert(t->param == t->initparam);
-        t->dialog = dialog;
+        
 		// notify user
 		t->status = SIP_UAS_TRANSACTION_TRYING;
 		// re-invite: 488 (Not Acceptable Here)
-		r = t->handler->oninvite(param, req, t, (dialog && dialog->state == DIALOG_CONFIRMED) ? dialog : NULL, req->payload, req->size, &t->dialog->session);
+		r = t->handler->oninvite(param, req, t, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, &id, req->payload, req->size);
 		// TODO: add timer here, send 100 trying
-		if (!t->dialog->session && SIP_UAS_TRANSACTION_TRYING == t->status)
+		if (0 != r && SIP_UAS_TRANSACTION_TRYING == t->status)
 		{
 			sip_uas_transaction_timewait(t, TIMER_H);
 
@@ -160,7 +158,6 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 		break;
 
 	case SIP_UAS_TRANSACTION_CONFIRMED:
-        assert(!dialog || dialog == t->dialog);
 		if (oldstatus == SIP_UAS_TRANSACTION_ACCEPTED)
 		{
             // update dialog target
@@ -168,7 +165,9 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
             
 			if(t->dialog->state == DIALOG_ERALY) // re-invite
                 t->dialog->state = DIALOG_CONFIRMED;
-			r = t->handler->onack(param, req, t, t->dialog->session, t->dialog, 200, req->payload, req->size);
+
+			sip_dialog_id(&id, t->dialog, ptr, sizeof(ptr));
+			r = t->handler->onack(param, req, t, t->dialog, &id, 200, req->payload, req->size);
 
 			// start timer I, wait for all inflight ACK
 			sip_uas_transaction_timewait(t, t->reliable ? 1 : TIMER_I);
@@ -198,7 +197,6 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip
 
 int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param)
 {
-	int r;
 	// fix timeout(triggle by timer) before reply any code
 	assert(SIP_UAS_TRANSACTION_ACCEPTED != t->status && SIP_UAS_TRANSACTION_COMPLETED != t->status); // 200~700 reply once only
 	if (SIP_UAS_TRANSACTION_TRYING != t->status && SIP_UAS_TRANSACTION_PROCEEDING != t->status)
@@ -219,8 +217,6 @@ int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, 
         assert(cstrvalid(&t->reply->to.tag));
         sip_dialog_setlocaltag(t->dialog, &t->reply->to.tag);
 		sip_dialog_set_local_target(t->dialog, t->reply);
-        r = sip_dialog_add(t->agent, t->dialog);
-        assert(0 == r);
     }
 
 	if (100 <= code && code < 200)

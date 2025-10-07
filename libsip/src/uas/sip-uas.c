@@ -54,8 +54,8 @@ int sip_uas_link_transaction(struct sip_agent_t* sip, struct sip_uas_transaction
 
 int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transaction_t* t)
 {
-	struct sip_dialog_t* dialog;
-	struct list_head *pos, *next;
+	//struct sip_dialog_t* dialog;
+	//struct list_head *pos, *next;
 
 	assert(sip->ref > 0);
 	locker_lock(&sip->locker);
@@ -73,16 +73,16 @@ int sip_uas_unlink_transaction(struct sip_agent_t* sip, struct sip_uas_transacti
 	// Independent of the method, if a request outside of a dialog generates
 	// a non-2xx final response, any early dialogs created through
 	// provisional responses to that request are terminated.
-	list_for_each_safe(pos, next, &sip->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (cstreq(&t->reply->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
-		{
-			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
-			sip_dialog_remove(sip, dialog); // TODO: release in locker
-			break;
-		}
-	}
+	//list_for_each_safe(pos, next, &sip->dialogs)
+	//{
+	//	dialog = list_entry(pos, struct sip_dialog_t, link);
+	//	if (cstreq(&t->reply->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
+	//	{
+	//		//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
+	//		sip_dialog_remove(sip, dialog); // TODO: release in locker
+	//		break;
+	//	}
+	//}
 
 	locker_unlock(&sip->locker);
 	sip_uas_transaction_release(t);
@@ -220,7 +220,7 @@ static int sip_uas_check_request(struct sip_agent_t* sip, struct sip_uas_transac
 	return 0;
 }
 
-static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog, struct sip_uas_transaction_t* t, void* param)
+static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_uas_transaction_t* t, void* param)
 {
 	int r;
 	r = sip_uas_check_request(sip, t, msg, param);
@@ -231,9 +231,9 @@ static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct 
 
 	// 4. handle
 	if (sip_message_isinvite(msg) || sip_message_isack(msg))
-		r = sip_uas_transaction_invite_input(t, dialog, msg, param);
+		r = sip_uas_transaction_invite_input(t, msg, param);
 	else
-		r = sip_uas_transaction_noninvite_input(t, dialog, msg, param);
+		r = sip_uas_transaction_noninvite_input(t, msg, param);
 
 	// TODO:
 	// 1. A stateless UAS MUST NOT send provisional (1xx) responses.
@@ -245,7 +245,7 @@ static int sip_uas_input_with_transaction(struct sip_agent_t* sip, const struct 
 	return r;
 }
 
-static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_message_t* msg, struct sip_dialog_t* dialog, void* param)
+int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg, void* param)
 {
 	int r;
 	struct sip_uas_transaction_t* t;
@@ -261,7 +261,7 @@ static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_m
 			return 0; // invalid ack, discard, TODO: add log here
 		}
 
-		t = sip_uas_transaction_create(sip, msg, dialog, param);
+		t = sip_uas_transaction_create(sip, msg, NULL, param);
 		if (!t)
 		{
 			locker_unlock(&sip->locker);
@@ -271,21 +271,8 @@ static int sip_uas_input_with_dialog(struct sip_agent_t* sip, const struct sip_m
 	}
 	locker_unlock(&sip->locker);
 
-    r = sip_uas_input_with_transaction(sip, msg, dialog, t, param);
+    r = sip_uas_input_with_transaction(sip, msg, t, param);
 	sip_uas_transaction_release(t);
-	return r;
-}
-
-int sip_uas_input(struct sip_agent_t* sip, const struct sip_message_t* msg, void* param)
-{
-	int r;
-	struct sip_dialog_t *dialog;
-
-	dialog = sip_dialog_fetch(sip, &msg->callid, &msg->to.tag, &msg->from.tag);
-
-	r = sip_uas_input_with_dialog(sip, msg, dialog, param);
-
-	sip_dialog_release(dialog);
 	return r;
 }
 

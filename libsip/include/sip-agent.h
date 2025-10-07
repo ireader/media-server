@@ -29,27 +29,27 @@ struct sip_uas_handler_t
 	/// @param[in] expires in seconds. if not provided, default equal to 60
 	int (*onregister)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const char* user, const char* location, int expires);
 
-	/// @param[in] dialog nil-new invite, not nil-reinvite
-	/// @param[out] session user-defined session-id(valid only code=2xx)
+	/// @param[in] redialog nil-new invite, not nil-reinvite
     /// @return 0-ok, other-error
-    int (*oninvite)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session);
+    int (*oninvite)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* redialog, const struct cstring_t* id, const void* data, int bytes);
 	/// @param[in] code 0-ok, other-sip status code
-    int (*onack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes);
+    int (*onack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code, const void* data, int bytes);
 	/// @param[in] session oninvite return value
-	int (*onprack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes);
-	int (*onupdate)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes);
-    int (*oninfo)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const struct cstring_t* package, const void* data, int bytes);
+	int (*onprack)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const void* data, int bytes);
+	int (*onupdate)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const void* data, int bytes);
+    int (*oninfo)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const struct cstring_t* package, const void* data, int bytes);
 	/// on terminating a session(dialog)
-	int (*onbye)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);
-	/// cancel a transaction(should be an invite transaction)
-	int (*oncancel)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);
+	int (*onbye)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id);
+	/// cancel a transaction(should be an invite/subscribe transaction)
+	int (*oncancel)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id);
 
-	int (*onsubscribe)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_subscribe_t* subscribe, void** sub);
-	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* sub, const struct sip_event_t* event);
+	int (*onsubscribe)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_subscribe_t* subscribe, const struct cstring_t* id);
+	int (*onnotify)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct sip_event_t* event);
 	int (*onpublish)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct sip_event_t* event);
+	int (*onrefer)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t);
 
-	int (*onmessage)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* data, int bytes);
-	int (*onrefer)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session);
+	/// @param[in] dialog nil-normal message, not nil-dialog message
+	int (*onmessage)(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* data, int bytes);
 };
 
 struct sip_agent_t* sip_agent_create(struct sip_uas_handler_t* handler);

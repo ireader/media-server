@@ -38,7 +38,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return r == bytes ? 0 : -1;
 }
 
-static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, const void* data, int bytes)
 {
 	const char* ack = "v=0\n"
 		"o=34020000001320000001 0 0 IN IP4 192.168.128.1\n"
@@ -61,32 +61,30 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		sip_uas_add_header(t, "Contact", "sip:34020000001320000001@192.168.154.1");
 		assert(0 == sip_uas_reply(t, 200, ack, strlen(ack), param));
 		sdp_destroy(sdp);
-		*session = t;
 		return 0;
 	}
 	else
 	{
 		assert(0);
-		*session = t;
 		return 0;
 	}
 }
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code, const void* data, int bytes)
 {
 	return 0;
 }
 
 /// on terminating a session(dialog)
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	return 0;
 }
 
 /// cancel a transaction(should be an invite transaction)
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	return 0;
 }

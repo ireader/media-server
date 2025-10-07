@@ -52,53 +52,53 @@
 static int sip_uac_transaction_invite_proceeding(struct sip_uac_transaction_t* t, const struct sip_message_t* reply)
 {
 	int r;
-	struct sip_dialog_t* dialog;
-
-	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
+	char ptr[256];
+	struct cstring_t id;
 
 	// TODO: add dialog locker here
-	if (!dialog && cstrvalid(&reply->to.tag))
+	if (!t->dialog && cstrvalid(&reply->to.tag))
 	{
 		// create early dialog
-		dialog = sip_dialog_create();
-		if (!dialog) return -1;
-		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_set_local_target(dialog, t->req) || 0 != sip_dialog_add(t->agent, dialog))
+		t->dialog = sip_dialog_create();
+		if (!t->dialog) return -1;
+		if (0 != sip_dialog_init_uac(t->dialog, reply) || 0 != sip_dialog_set_local_target(t->dialog, t->req))
 		{
 			assert(0);
-			sip_dialog_release(dialog);
-			dialog = NULL;
+			sip_dialog_release(t->dialog);
+			t->dialog = NULL;
 			return 0; // ignore
 		}
 	}
 
+	sip_dialog_id(&id, t->dialog, ptr, sizeof(ptr));
 	// 17.1.1.2 Formal Description (p126)
 	// the provisional response MUST be passed to the TU. 
 	// Any further provisional responses MUST be passed up to the TU while in the "Proceeding" state.
-	r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, NULL); // ignore session
+	r = t->oninvite(t->param, reply, t, t->dialog, &id, reply->u.s.code); // ignore session
 
 	// reset timer b for proceeding too long
     sip_uac_transaction_timeout(t, TIMER_B);
-    sip_dialog_release(dialog);
     return r;
 }
 
 static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, int retransmissions)
 {
 	int r;
-	struct sip_dialog_t* dialog;
-
-	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
-	assert(!dialog || DIALOG_ERALY == dialog->state);
-
+	char ptr[256];
+	struct cstring_t id;
+	
 	r = 0;
+	assert(!t->dialog || DIALOG_ERALY == t->dialog->state);
+
 	if (!retransmissions)
 	{
+		sip_dialog_id(&id, t->dialog, ptr, sizeof(ptr));
+
 		// Any retransmissions of the final response that are received while in
 		// the "Completed" state MUST cause the ACK to be re-passed to the
 		// transport layer for retransmission, but the newly received response
 		// MUST NOT be passed up to the TU
-		assert(!dialog || NULL == dialog->session);
-		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, NULL); // ignore session
+		r = t->oninvite(t->param, reply, t, t->dialog, &id, reply->u.s.code); // ignore session
 	}
 	else
 	{
@@ -109,7 +109,7 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 	// 17.1.1.3 Construction of the ACK Request
 	// The ACK MUST be sent to the same address, port, 
 	// and transport to which the original request was sent.
-	sip_uac_ack_3456xx(t, reply, dialog); // ignore ack transport layer error, retry send on retransmissions
+	sip_uac_ack_3456xx(t, reply, t->dialog); // ignore ack transport layer error, retry send on retransmissions
 
 	if (!retransmissions)
 	{
@@ -128,60 +128,51 @@ static int sip_uac_transaction_invite_completed(struct sip_uac_transaction_t* t,
 		sip_uac_transaction_timewait(t, t->reliable ? 1 : TIMER_D);
 	}
 
-	sip_dialog_release(dialog);
 	return r;
 }
 
 static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, const struct sip_message_t* reply, int retransmissions)
 {
 	int r;
-	struct sip_dialog_t* dialog;
+	char ptr[256];
+	struct cstring_t id;
+
 	r = 0;
-
-	// TODO: add dialog locker here
-	dialog = sip_dialog_fetch(t->agent, &reply->callid, &reply->from.tag, &reply->to.tag);
-
 	// only create new dialog on first 2xx response
-	if (!dialog && cstrvalid(&reply->to.tag) && !retransmissions)
+	if (!t->dialog && cstrvalid(&reply->to.tag) && !retransmissions)
 	{
-		dialog = sip_dialog_create();
-		if (!dialog) return -1;
-		if (0 != sip_dialog_init_uac(dialog, reply) || 0 != sip_dialog_set_local_target(dialog, t->req) || 0 != sip_dialog_add(t->agent, dialog))
+		t->dialog = sip_dialog_create();
+		if (!t->dialog) return -1;
+		if (0 != sip_dialog_init_uac(t->dialog, reply) || 0 != sip_dialog_set_local_target(t->dialog, t->req))
 		{
-			sip_dialog_release(dialog);
-			dialog = NULL;
+			sip_dialog_release(t->dialog);
+			t->dialog = NULL;
 			return 0; // ignore
 		}
 	}
-
-	if (!dialog)
+	if (!t->dialog)
 		return 0; // ignore fork response
 
     // update dialog target
-	assert(!t->dialog);
-    sip_dialog_target_refresh(dialog, reply);
-	if (!t->dialog)
-	{
-		sip_dialog_addref(dialog); // for t->dialog
-		t->dialog = dialog;
-	}
-    
-	if (dialog->state == DIALOG_ERALY)
+	sip_dialog_target_refresh(t->dialog, reply);
+	
+	if (t->dialog->state == DIALOG_ERALY)
 	{
 		assert(!retransmissions);
 		t->status = SIP_UAC_TRANSACTION_ACCEPTED_UNACK;
 
 		// transfer dialog state
-		dialog->state = DIALOG_CONFIRMED;
+		t->dialog->state = DIALOG_CONFIRMED;
 		
 		// completed To tag
-        assert(cstrvalid(&dialog->remote.uri.tag));
+        assert(cstrvalid(&t->dialog->remote.uri.tag));
+		sip_dialog_id(&id, t->dialog, ptr, sizeof(ptr));
         
 		// receive and pass to the TU any retransmissions of the 2xx
 		// response or any additional 2xx responses from other branches of a
 		// downstream fork of the matching request.
 		assert(200 <= reply->u.s.code && reply->u.s.code < 300);
-		r = t->oninvite(t->param, reply, t, dialog, reply->u.s.code, &dialog->session);
+		r = t->oninvite(t->param, reply, t, t->dialog, &id, reply->u.s.code);
 	}
 
 	// 17.1.1.3 Construction of the ACK Request ==> 13.2.2.4 2xx Responses 
@@ -201,7 +192,6 @@ static int sip_uac_transaction_invite_accepted(struct sip_uac_transaction_t* t, 
 		sip_uac_transaction_timewait(t, TIMER_M);
 	}
 
-	sip_dialog_release(dialog);
 	return r;
 }
 

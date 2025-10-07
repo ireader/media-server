@@ -1,10 +1,14 @@
 #include "sip-uas-transaction.h"
 
-int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
+int sip_uas_oncancel(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r;
+	char ptr[256];
+	struct cstring_t id;
 	struct sip_uas_transaction_t* origin;
 
+	sip_dialog_id_with_message(&id, req, ptr, sizeof(ptr));
+	
 	// 487 Request Terminated
 	// CANCEL has no effect on a request to which a UAS has already given a final response
 
@@ -30,7 +34,7 @@ int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialo
 		// in the response to the original request SHOULD be the same.
 		t->reply->ptr.ptr = cstring_clone(t->reply->ptr.ptr, t->reply->ptr.end, &t->reply->to.tag, origin->reply->to.tag.p, origin->reply->to.tag.n);
 
-		r = t->handler->oncancel(param, req, t, dialog ? dialog->session : NULL);
+		r = t->handler->oncancel(param, req, t, &id);
 	}
 
 	sip_uas_transaction_release(t);

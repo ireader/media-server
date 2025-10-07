@@ -49,6 +49,8 @@ struct sip_media_t
 	unsigned short port[2];
 };
 
+static std::map<std::string, struct sip_media_t*> s_sessions;
+
 static int sip_uas_transport_send(void* param, const struct cstring_t* /*protocol*/, const struct cstring_t* /*url*/, const struct cstring_t* /*received*/, int /*rport*/, const void* data, int bytes)
 {
 	struct sip_uas_test_t *test = (struct sip_uas_test_t *)param;
@@ -60,7 +62,7 @@ static int sip_uas_transport_send(void* param, const struct cstring_t* /*protoco
 	return r == bytes ? 0 : -1;
 }
 
-static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, const void* data, int bytes)
 {
 	const char* pattern = "v=0\n"
 		"o=- 0 0 IN IP4 %s\n"
@@ -93,7 +95,7 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		sip_uas_add_header(t, "Contact", "sip:" NAME "@" HOST);
 		snprintf(reply, sizeof(reply), pattern, HOST, HOST, m->port[0]);
 		assert(0 == sip_uas_reply(t, 200, reply, strlen(reply), param));
-		*session = m;
+		s_sessions[std::string(id->p, id->n)] = m;
 		return 0;
 	}
 	else
@@ -118,10 +120,9 @@ static int STDCALL rtsp_play_thread(void* param)
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code, const void* data, int bytes)
 {
-	struct sip_media_t* m = (struct sip_media_t*)session;
-
+	struct sip_media_t* m = s_sessions[std::string(id->p, id->n)];
 	if (200 <= code && code < 300)
 	{
 		pthread_t th;
@@ -136,13 +137,13 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 }
 
 /// on terminating a session(dialog)
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
 /// cancel a transaction(should be an invite transaction)
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }

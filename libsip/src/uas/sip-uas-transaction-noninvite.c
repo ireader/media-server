@@ -46,14 +46,14 @@
 #include "sip-uas-transaction.h"
 
 // Figure 8: non-INVITE server transaction (p140)
-int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
+int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r;
 	switch (t->status)
 	{
 	case SIP_UAS_TRANSACTION_INIT:
 		t->status = SIP_UAS_TRANSACTION_TRYING;
-		r = sip_uas_transaction_handler(t, dialog, req, param);
+		r = sip_uas_transaction_handler(t, req, param);
 		if (0 != r && SIP_UAS_TRANSACTION_TRYING == t->status)
 		{
 			// user ignore/discard

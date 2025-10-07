@@ -24,8 +24,8 @@ int sip_uac_link_transaction(struct sip_agent_t* sip, struct sip_uac_transaction
 
 int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transaction_t* t)
 {
-	struct sip_dialog_t* dialog;
-	struct list_head *pos, *next;
+	//struct sip_dialog_t* dialog;
+	//struct list_head *pos, *next;
 
 	assert(sip->ref > 0);
 	locker_lock(&sip->locker);
@@ -43,16 +43,16 @@ int sip_uac_unlink_transaction(struct sip_agent_t* sip, struct sip_uac_transacti
 	// Independent of the method, if a request outside of a dialog generates
 	// a non-2xx final response, any early dialogs created through
 	// provisional responses to that request are terminated.
-	list_for_each_safe(pos, next, &sip->dialogs)
-	{
-		dialog = list_entry(pos, struct sip_dialog_t, link);
-		if (cstreq(&t->req->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
-		{
-			//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
-			sip_dialog_remove(sip, dialog); // TODO: release in locker
-			break;
-		}
-	}
+	//list_for_each_safe(pos, next, &sip->dialogs)
+	//{
+	//	dialog = list_entry(pos, struct sip_dialog_t, link);
+	//	if (cstreq(&t->req->callid, &dialog->callid) && DIALOG_ERALY == dialog->state)
+	//	{
+	//		//assert(0 == sip_contact_compare(&t->req->from, &dialog->local.uri));
+	//		sip_dialog_remove(sip, dialog); // TODO: release in locker
+	//		break;
+	//	}
+	//}
 
 	locker_unlock(&sip->locker);
 	sip_uac_transaction_release(t);

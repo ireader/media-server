@@ -1,6 +1,6 @@
 #include "sip-uas-transaction.h"
 
-int sip_uas_onrefer(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param)
+int sip_uas_onrefer(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param)
 {
 	int r;
 	// An agent responding to a REFER method MUST return a 400 (Bad Request)
@@ -9,7 +9,7 @@ int sip_uas_onrefer(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog
 		return sip_uas_reply(t, 400, NULL, 0, param);
 
 	if(t->handler->onrefer)
-		r = t->handler->onrefer(param, req, t, dialog ? dialog->session : NULL);
+		r = t->handler->onrefer(param, req, t);
 	else
 		r = 0; // just ignore
 	return r;

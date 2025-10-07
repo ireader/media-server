@@ -67,22 +67,22 @@ int sip_uas_transaction_timeout(struct sip_uas_transaction_t* t, int timeout);
 int sip_uas_transaction_timewait(struct sip_uas_transaction_t* t, int timeout);
 
 struct sip_uas_transaction_t* sip_uas_find_transaction(struct sip_agent_t* sip, const struct sip_message_t* req, int matchmethod);
-int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
+int sip_uas_transaction_handler(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_onoptions(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
-int sip_uas_oninfo(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_onrefer(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_oncancel(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_onbye(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_onprack(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_onupdate(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
-int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
+int sip_uas_oninfo(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_oncancel(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_onbye(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_onprack(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_onupdate(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_onsubscribe(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_onnotify(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_onpublish(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
+int sip_uas_onrefer(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 
-int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
+int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_transaction_invite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param);
-int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct sip_message_t* req, void* param);
+int sip_uas_transaction_noninvite_input(struct sip_uas_transaction_t* t, const struct sip_message_t* req, void* param);
 int sip_uas_transaction_noninvite_reply(struct sip_uas_transaction_t* t, int code, const void* data, int bytes, void* param);
 
 sip_timer_t sip_uas_start_timer(struct sip_agent_t* sip, struct sip_uas_transaction_t* t, int timeout, sip_timer_handle handler);

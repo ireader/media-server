@@ -543,7 +543,7 @@ static int STDCALL sip_work_thread(void* param)
 	return 0;
 }
 
-static int sip_uas_oninvite_indialog(sip_uac_test2_t* ctx, sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite_indialog(sip_uac_test2_t* ctx, sip_uac_test2_session_t* s, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, const void* data, int bytes)
 {
 	const char* pattern = "v=0\n"
 		"o=%s 0 0 IN IP4 %s\n"
@@ -572,7 +572,6 @@ static int sip_uas_oninvite_indialog(sip_uac_test2_t* ctx, sip_uac_test2_session
 		n += ice_transport_getsdp(s->avt, s->video.stream, reply + n, sizeof(reply) - n);
 	}
 
-	*session = s;
 	s->t = t;
 	sip_uas_add_header(t, "Content-Type", "application/sdp");
 	//sip_uas_add_header(s->t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
@@ -580,7 +579,7 @@ static int sip_uas_oninvite_indialog(sip_uac_test2_t* ctx, sip_uac_test2_session
 	return 0;
 }
 
-static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const void* data, int bytes, void** session)
+static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* redialog, const struct cstring_t* id, const void* data, int bytes)
 {
     sip_uac_test2_t* ctx = (sip_uac_test2_t*)param;
 
@@ -599,13 +598,13 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 		it = ctx->sessions.find(s->from);
 		if (ctx->sessions.end() != it)
 		{
-			if(!dialog)
+			if(!redialog)
 				return 0; // ignore
 
 			// in dialog
-			return sip_uas_oninvite_indialog(ctx, it->second.get(), req, t, dialog, data, bytes, session);
+			return sip_uas_oninvite_indialog(ctx, it->second.get(), req, t, redialog, id, data, bytes);
 		}
-		ctx->sessions.insert(std::make_pair(s->from, s));
+		ctx->sessions.insert(std::make_pair(std::string(id->p, id->n), s));
 	}
 
 	struct ice_transport_handler_t handler = {
@@ -689,7 +688,6 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 //      s->pkts = pkts;
 	//s->source = source;
 
-	*session = s.get();
 	//sip_uas_add_header(t, "Content-Type", "application/sdp");
 	//sip_uas_add_header(t, "Contact", "sip:" SIP_USR "@" LOCAL_HOST);
 //      snprintf(reply, sizeof(reply), pattern, SIP_USR, LOCAL_HOST, LOCAL_HOST, s->audio.decoder?(char*)s->audio.sender.buffer:"", s->video.decoder?(char*)s->video.sender.buffer:"");
@@ -701,10 +699,14 @@ static int sip_uas_oninvite(void* param, const struct sip_message_t* req, struct
 
 /// @param[in] code 0-ok, other-sip status code
 /// @return 0-ok, other-error
-static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, int code, const void* data, int bytes)
+static int sip_uas_onack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code, const void* data, int bytes)
 {
 	struct sip_uac_test2_t* ctx = (struct sip_uac_test2_t*)param; assert(ctx);
-	sip_uac_test2_session_t* s = (sip_uac_test2_session_t*)session; assert(s);
+	AutoThreadLocker locker(ctx->locker);
+	auto it = ctx->sessions.find(std::string(id->p, id->n));
+	if (ctx->sessions.end() == it)
+		return 0;
+	sip_uac_test2_session_t* s = it->second.get(); assert(s);
 	printf("sip_uas_onack[%p]: %d\n", s, code);
 
 	if (200 <= code && code < 300)
@@ -726,16 +728,15 @@ static int sip_uas_onack(void* param, const struct sip_message_t* req, struct si
 }
 
 /// on terminating a session(dialog)
-static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	struct sip_uac_test2_t* ctx = (struct sip_uac_test2_t*)param;
-	sip_uac_test2_session_t* p = (sip_uac_test2_session_t*)session;
-
+	
 	std::shared_ptr<sip_uac_test2_session_t> s;
 	sip_uac_test2_t::TSessions::iterator it;
 	{
 		AutoThreadLocker locker(ctx->locker);
-		it = ctx->sessions.find(p->from);
+		it = ctx->sessions.find(std::string(id->p, id->n));
 		if (it == ctx->sessions.end())
 			return sip_uas_reply(t, 481, NULL, 0, param);
 
@@ -751,7 +752,7 @@ static int sip_uas_onbye(void* param, const struct sip_message_t* req, struct si
 }
 
 /// cancel a transaction(should be an invite transaction)
-static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_oncancel(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id)
 {
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }
@@ -762,7 +763,7 @@ static int sip_uas_onregister(void* param, const struct sip_message_t* req, stru
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }
 
-static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const void* payload, int bytes)
+static int sip_uas_onmessage(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const void* payload, int bytes)
 {
 	return sip_uas_reply(t, 200, NULL, 0, param);
 }
@@ -818,7 +819,7 @@ static void sip_uac_ice_transport_onbind(void* param, int code)
 	}
 }
 
-static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, int code, void** session)
+static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, struct sip_uac_transaction_t* t, struct sip_dialog_t* dialog, const struct cstring_t* id, int code)
 {
 	const cstring_t* h;
 	std::shared_ptr<struct sip_uac_test2_session_t> s;
@@ -899,7 +900,6 @@ static int sip_uac_oninvited(void* param, const struct sip_message_t* reply, str
 		s->running = true;
 		thread_create(&s->th, sip_work_thread, s.get());
 
-		*session = s.get();
 		sip_uac_ack(t, NULL, 0, NULL);
 		return 0;
 	}
@@ -1112,11 +1112,11 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
     return 0;
 }
 
-static int sip_uas_onsubscribe(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, sip_subscribe_t* subscribe, void** sub)
+static int sip_uas_onsubscribe(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, sip_subscribe_t* subscribe, const struct cstring_t* id)
 {
 	return 0;
 }
-static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, const struct sip_event_t* event)
+static int sip_uas_onnotify(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct sip_event_t* event)
 {
 	return 0;
 }
@@ -1125,22 +1125,22 @@ static int sip_uas_onpublish(void* param, const struct sip_message_t* req, struc
 	return 0;
 }
 
-static int sip_uas_onrefer(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session)
+static int sip_uas_onrefer(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t)
 {
 	return 0;
 }
 
-static int sip_uas_onprack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_onprack(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const void* data, int bytes)
 {
 	return 0;
 }
 
-static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const void* data, int bytes)
+static int sip_uas_onupdate(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const void* data, int bytes)
 {
 	return 0;
 }
 
-static int sip_uas_oninfo(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, void* session, struct sip_dialog_t* dialog, const struct cstring_t* package, const void* data, int bytes)
+static int sip_uas_oninfo(void* param, const struct sip_message_t* req, struct sip_uas_transaction_t* t, const struct cstring_t* id, const struct cstring_t* package, const void* data, int bytes)
 {
     return 0;
 }
@@ -1151,6 +1151,7 @@ void sip_uac_test2(void)
 	sip_timer_init();
 
 	struct sip_uac_test2_t test;
+	memset(&test, 0, sizeof(test));
 	test.running = true;
 	test.callid[0] = 0;
     struct sip_uas_handler_t handler = {
@@ -1166,8 +1167,8 @@ void sip_uac_test2(void)
 		sip_uas_onsubscribe,
 		sip_uas_onnotify,
 		sip_uas_onpublish,
-		sip_uas_onmessage,
 		sip_uas_onrefer,
+		sip_uas_onmessage,
 	};
 
 	assert(1 == sscanf(SIP_FROM, "sip:%[^@]", test.usr));

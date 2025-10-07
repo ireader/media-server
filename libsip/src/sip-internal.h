@@ -28,9 +28,6 @@ struct sip_agent_t
 	//struct sip_timer_t timer;
 	//void* timerptr;
 
-	struct list_head dialogs;
-	struct list_head subscribes;
-	
 	struct list_head uac; // uac transactions
 	struct list_head uas; // uas transactions
 	struct sip_uas_handler_t handler;
