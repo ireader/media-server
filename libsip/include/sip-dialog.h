@@ -53,7 +53,7 @@ int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_mess
 int sip_dialog_set_local_target(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 
 int sip_dialog_id(struct cstring_t* id, const struct sip_dialog_t* dialog, char* ptr, int len);
-int sip_dialog_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len);
+int sip_dialog_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len, int uas);
 
 #if defined(__cplusplus)
 }

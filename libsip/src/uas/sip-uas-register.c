@@ -138,8 +138,21 @@ int sip_uas_onregister(struct sip_uas_transaction_t* t, const struct sip_message
 	// zero or more values containing address bindings
 	contact = sip_contacts_get(&req->contacts, 0);
 	uri = contact ? uri_parse(contact->uri.host.p, (int)contact->uri.host.n) : NULL;
-	if(contact && contact->expires > 0)
+	if (contact && contact->expires > 0)
+	{
+		// https://datatracker.ietf.org/doc/html/rfc3261#section-10.3
+		// 7. The registrar now processes each contact address in the Contact
+        // header field in turn.  For each address, it determines the
+		// expiration interval as follows:
+		// -  If the field value has an "expires" parameter, that value
+		//    MUST be taken as the requested expiration.
+		// -  If there is no such parameter, but the request has an
+		//    Expires header field, that value MUST be taken as the
+		//    requested expiration.
+		// -  If there is neither, a locally-configured default value MUST
+		//    be taken as the requested expiration.
 		expires = (int)contact->expires;
+	}
 
 	// The Record-Route header field has no meaning in REGISTER 
 	// requests or responses, and MUST be ignored if present.

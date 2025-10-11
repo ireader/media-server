@@ -6,7 +6,7 @@ int sip_uas_oninfo(struct sip_uas_transaction_t* t, const struct sip_message_t* 
 	char ptr[256];
 	struct cstring_t id;
 
-	sip_dialog_id_with_message(&id, req, ptr, sizeof(ptr));
+	sip_dialog_id_with_message(&id, req, ptr, sizeof(ptr), 1);
 
     // compatible rfc 2976 as "legacy INFO Usage"
 //	if(!cstrvalid(&req->info_package))

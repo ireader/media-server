@@ -171,10 +171,12 @@ int sip_subscribe_id(struct cstring_t* id, const struct sip_subscribe_t* subscri
 	return r;
 }
 
-int sip_subscribe_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len)
+// @param[in] uas 1-local is uas
+int sip_subscribe_id_with_message(struct cstring_t* id, const struct sip_message_t* msg, char* ptr, int len, int uas)
 {
 	int r;
-	if (msg->mode == SIP_MESSAGE_REQUEST)
+	assert(msg->mode == SIP_MESSAGE_REQUEST);
+	if (uas)
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->event.event.n, msg->event.event.p, (int)msg->event.id.n, msg->event.id.p);
 	else
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->event.event.n, msg->event.event.p, (int)msg->event.id.n, msg->event.id.p);

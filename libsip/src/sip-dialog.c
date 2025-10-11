@@ -192,10 +192,12 @@ int sip_dialog_id(struct cstring_t* id, const struct sip_dialog_t* dialog, char*
 	return r;
 }
 
-int sip_dialog_id_with_message(struct cstring_t *id, const struct sip_message_t* msg, char* ptr, int len)
+// @param[in] uas 1-local is uas
+int sip_dialog_id_with_message(struct cstring_t *id, const struct sip_message_t* msg, char* ptr, int len, int uas)
 {
 	int r;
-	if (msg->mode == SIP_MESSAGE_REQUEST)
+	assert(msg->mode == SIP_MESSAGE_REQUEST);
+	if (uas)
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->from.tag.n, msg->from.tag.p);
 	else
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->to.tag.n, msg->to.tag.p);

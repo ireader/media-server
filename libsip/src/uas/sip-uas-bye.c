@@ -5,7 +5,7 @@ int sip_uas_onbye(struct sip_uas_transaction_t* t, const struct sip_message_t* r
 	char ptr[256];
 	struct cstring_t id;
 
-	sip_dialog_id_with_message(&id, req, ptr, sizeof(ptr));
+	sip_dialog_id_with_message(&id, req, ptr, sizeof(ptr), 1);
 
 	//session = dialog ? dialog->session : NULL; // get session before dialog remove
 	//if (0 != sip_dialog_remove(t->agent, dialog))
