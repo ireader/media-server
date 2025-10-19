@@ -188,7 +188,7 @@ int sip_dialog_id(struct cstring_t* id, const struct sip_dialog_t* dialog, char*
 	int r;
 	r = dialog ? snprintf(ptr, len, "%.*s@%.*s@%.*s", (int)dialog->callid.n, dialog->callid.p, (int)dialog->local.uri.tag.n, dialog->local.uri.tag.p, (int)dialog->remote.uri.tag.n, dialog->remote.uri.tag.p) : 0;
 	id->p = ptr;
-	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	id->n = r > 0 && r < len ? r : 0;
 	return r;
 }
 
@@ -203,6 +203,6 @@ int sip_dialog_id_with_message(struct cstring_t *id, const struct sip_message_t*
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->to.tag.n, msg->to.tag.p);
 	
 	id->p = ptr;
-	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	id->n = r > 0 && r < len ? r : 0;
 	return r;
 }

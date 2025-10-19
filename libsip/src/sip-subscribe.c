@@ -167,7 +167,7 @@ int sip_subscribe_id(struct cstring_t* id, const struct sip_subscribe_t* subscri
 	int r;
 	r = subscribe ? snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)subscribe->dialog->callid.n, subscribe->dialog->callid.p, (int)subscribe->dialog->local.uri.tag.n, subscribe->dialog->local.uri.tag.p, (int)subscribe->dialog->remote.uri.tag.n, subscribe->dialog->remote.uri.tag.p, (int)subscribe->event.event.n, subscribe->event.event.p, (int)subscribe->event.id.n, subscribe->event.id.p) : 0;
 	id->p = ptr;
-	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	id->n = r > 0 && r < len ? r : 0;
 	return r;
 }
 
@@ -182,6 +182,6 @@ int sip_subscribe_id_with_message(struct cstring_t* id, const struct sip_message
 		r = snprintf(ptr, len, "%.*s@%.*s@%.*s@%.*s@%.*s", (int)msg->callid.n, msg->callid.p, (int)msg->from.tag.n, msg->from.tag.p, (int)msg->to.tag.n, msg->to.tag.p, (int)msg->event.event.n, msg->event.event.p, (int)msg->event.id.n, msg->event.id.p);
 
 	id->p = ptr;
-	id->n = r > 0 && r < sizeof(id) ? r : 0;
+	id->n = r > 0 && r < len ? r : 0;
 	return r;
 }
