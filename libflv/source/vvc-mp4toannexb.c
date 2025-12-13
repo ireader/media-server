@@ -54,7 +54,7 @@ static void h266_mp4toannexb_handler(void* param, const uint8_t* nalu, size_t by
 	nalu_type = (nalu[1] >> 3) & 0x1F;
 #if defined(H2645_FILTER_AUD)
 	if (H266_NAL_AUD == nalu_type)
-		continue; // ignore AUD
+		return; // ignore AUD
 #endif
 
 	if (H266_NAL_OPI == nalu_type || H266_NAL_DCI == nalu_type || H266_NAL_VPS == nalu_type || H266_NAL_SPS == nalu_type || H266_NAL_PPS == nalu_type)

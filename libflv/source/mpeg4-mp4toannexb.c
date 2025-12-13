@@ -84,7 +84,7 @@ static void h264_mp4toannexb_handler(void* param, const uint8_t* nalu, size_t by
 
 #if defined(H2645_FILTER_AUD)
 	case H264_NAL_AUD:
-		continue; // ignore AUD
+		return; // ignore AUD
 #endif
 	}
 

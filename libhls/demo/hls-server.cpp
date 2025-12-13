@@ -135,19 +135,14 @@ static int STDCALL hls_server_worker(void* param)
 		void* flv = flv_reader_create(fullpath.c_str());
 		flv_demuxer_t* demuxer = flv_demuxer_create(flv_handler, playlist->hls);
 
-		clock = 0;
+		clock = system_clock();
 		while (1 == flv_reader_read(flv, &type, &timestamp, &taglen, playlist->packet, sizeof(playlist->packet)))
 		{
 			uint32_t now = system_clock();
-			if (0 == clock)
-			{
-				clock = now;
-			}
-			else
-			{
-				if (timestamp > now - clock)
-					system_sleep(timestamp - (now - clock));
-			}
+			if (clock + timestamp > now && clock + timestamp < now + 3 * 1000) // dts skip
+				system_sleep(clock + timestamp - now);
+			else if (clock + timestamp > now + 3 * 1000)
+				clock = now - timestamp;
 
 			r = flv_demuxer_input(demuxer, type, playlist->packet, taglen, timestamp);
 			assert(0 == r);
