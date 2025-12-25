@@ -1,5 +1,5 @@
-ROOT:=../../sdk
-AVCODEC:=../../avcodec
+ROOT:=../sdk
+AVCODEC:=../avcodec
 NOVERSION = 1
 
 #--------------------------------Output------------------------------
