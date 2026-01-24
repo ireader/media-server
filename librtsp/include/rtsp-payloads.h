@@ -152,7 +152,7 @@ static inline int avpayload_find_by_rtp(uint8_t payload, const char* encoding)
     {
         if ( (payload < RTP_PAYLOAD_DYNAMIC || !encoding || !*encoding) && s_payloads[i].payload == payload)
             return (int)i;
-        else if (payload >= RTP_PAYLOAD_DYNAMIC && encoding && 0 == strcasecmp(encoding, s_payloads[i].encoding))
+        else if (/*payload >= RTP_PAYLOAD_DYNAMIC &&*/ encoding && 0 == strcasecmp(encoding, s_payloads[i].encoding))
             return (int)i;
     }
 
