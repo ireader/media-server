@@ -66,3 +66,11 @@
 3. make PLATFORM=arm-hisiv100nptl-linux (cross compile)
 
 #### [编译说明](compile.cn.md)
+
+# 友情链接
+
+|  |  |
+| ---: | :---- |
+| <a href="https://github.com/ZLMediaKit/ZLMediaKit">ZLMediaKit</a> | 基于C++11的高性能运营级流媒体服务框架 |
+| <a href="https://mediainsight360.com/">MediaInsight360</a> | 流媒体格式在线解析 |
+|  |  |
