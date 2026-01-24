@@ -98,9 +98,9 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, const stru
 	case SIP_UAS_TRANSACTION_INIT:
         t->dialog = sip_uas_create_dialog(req);
         if(!t->dialog) return 0;
-		if (t->dialog->state == DIALOG_ERALY && req->to.tag.n > 0) // re-invite
-			t->dialog->state = DIALOG_CONFIRMED;
-		sip_dialog_id(&id, (t->dialog && t->dialog->state == DIALOG_CONFIRMED) ? t->dialog : NULL, ptr, sizeof(ptr));
+		if (t->dialog->state == DIALOG_ERALY && req->to.tag.n > 0)
+			t->dialog->state = DIALOG_CONFIRMED; // re-invite
+		sip_dialog_id(&id, t->dialog, ptr, sizeof(ptr)); // always has dialog id
 
 		//assert(t->param == t->initparam);
         
