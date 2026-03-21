@@ -18,6 +18,12 @@ static struct mov_object_tag s_tags[] = {
 	{ MOV_OBJECT_JPEG,		MOV_MP4V },
 	{ MOV_OBJECT_PNG,		MOV_MP4V },
 	{ MOV_OBJECT_JPEG2000,	MOV_MP4V },
+	{ MOV_OBJECT_MP2V,		MOV_MP4V },
+	{ MOV_OBJECT_MP2V_MAIN,	MOV_MP4V },
+	{ MOV_OBJECT_MP2V_SNR,	MOV_MP4V },
+	{ MOV_OBJECT_MP2V_SPATIAL,	MOV_MP4V },
+	{ MOV_OBJECT_MP2V_HIGH,	MOV_MP4V },
+	{ MOV_OBJECT_MP2V_422,	MOV_MP4V },
 	{ MOV_OBJECT_AAC,		MOV_MP4A },
 	{ MOV_OBJECT_MP3,		MOV_MP4A }, // mp4_read_decoder_config_descriptor
 	{ MOV_OBJECT_MP1A,		MOV_MP4A }, // mp4_read_decoder_config_descriptor

@@ -4,47 +4,52 @@
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor (p48)
 // MPEG-4 systems ObjectTypeIndication
 // http://www.mp4ra.org/object.html
-#define MOV_OBJECT_TEXT		0x08 // Text Stream
-#define MOV_OBJECT_MP4V		0x20 // Visual ISO/IEC 14496-2 (c)
-#define MOV_OBJECT_H264		0x21 // Visual ITU-T Recommendation H.264 | ISO/IEC 14496-10
-#define MOV_OBJECT_H265		0x23 // Visual ISO/IEC 23008-2 | ITU-T Recommendation H.265
-#define MOV_OBJECT_AAC		0x40 // Audio ISO/IEC 14496-3
-#define MOV_OBJECT_MP2V		0x60 // Visual ISO/IEC 13818-2 Simple Profile
-#define MOV_OBJECT_AAC_MAIN	0x66 // MPEG-2 AAC Main
-#define MOV_OBJECT_AAC_LOW	0x67 // MPEG-2 AAC Low
-#define MOV_OBJECT_AAC_SSR	0x68 // MPEG-2 AAC SSR
-#define MOV_OBJECT_MP3		0x69 // Audio ISO/IEC 13818-3
-#define MOV_OBJECT_MP1V		0x6A // Visual ISO/IEC 11172-2
-#define MOV_OBJECT_MP1A		0x6B // Audio ISO/IEC 11172-3
-#define MOV_OBJECT_JPEG		0x6C // Visual ISO/IEC 10918-1 (JPEG)
-#define MOV_OBJECT_PNG		0x6D // Portable Network Graphics (f)
-#define MOV_OBJECT_JPEG2000	0x6E // Visual ISO/IEC 15444-1 (JPEG 2000)
-#define MOV_OBJECT_VC1      0xA3 // SMPTE VC-1 Video
-#define MOV_OBJECT_DIRAC    0xA4 // Dirac Video Coder
-#define MOV_OBJECT_AC3      0xA5 // AC-3
-#define MOV_OBJECT_EAC3     0xA6 // Enhanced AC-3
-#define MOV_OBJECT_G719		0xA8 // ITU G.719 Audio
-#define MOV_OBJECT_DTS      0xA9 // Core Substream
-#define MOV_OBJECT_OPUS		0xAD // Opus audio https://opus-codec.org/docs/opus_in_isobmff.html
-#define MOV_OBJECT_VP9      0xB1 // VP9 Video
-#define MOV_OBJECT_FLAC     0xC1 // nonstandard from FFMPEG
-#define MOV_OBJECT_VP8      0xC2 // nonstandard
-#define MOV_OBJECT_CHAPTER	0xC3 // chapter https://developer.apple.com/documentation/quicktime-file-format/base_media_information_header_atom
-#define MOV_OBJECT_H266		0xFC // ITU-T Recommendation H.266
-#define MOV_OBJECT_G711a	0xFD // ITU G.711 alaw
-#define MOV_OBJECT_G711u	0xFE // ITU G.711 ulaw
-#define MOV_OBJECT_AV1		0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
+#define MOV_OBJECT_TEXT				0x08 // Text Stream
+#define MOV_OBJECT_MP4V				0x20 // Visual ISO/IEC 14496-2 (c)
+#define MOV_OBJECT_H264				0x21 // Visual ITU-T Recommendation H.264 | ISO/IEC 14496-10
+#define MOV_OBJECT_H265				0x23 // Visual ISO/IEC 23008-2 | ITU-T Recommendation H.265
+#define MOV_OBJECT_AAC				0x40 // Audio ISO/IEC 14496-3
+#define MOV_OBJECT_MP2V				0x60 // Visual ISO/IEC 13818-2 Simple Profile
+#define MOV_OBJECT_MP2V_MAIN		0x61 // Visual ISO/IEC 13818-2 Main Profile
+#define MOV_OBJECT_MP2V_SNR			0x62 // Visual ISO/IEC 13818-2 SNR Profile
+#define MOV_OBJECT_MP2V_SPATIAL		0x63 // Visual ISO/IEC 13818-2 Spatial Profile
+#define MOV_OBJECT_MP2V_HIGH		0x64 // Visual ISO/IEC 13818-2 High Profile
+#define MOV_OBJECT_MP2V_422			0x65 // Visual ISO/IEC 13818-2 422 Profile
+#define MOV_OBJECT_AAC_MAIN			0x66 // Audio ISO/IEC 13818-7 Main Profile
+#define MOV_OBJECT_AAC_LC			0x67 // Audio ISO/IEC 13818-7 LowComplexity Profile
+#define MOV_OBJECT_AAC_SSR			0x68 // Audio ISO/IEC 13818-7 Scaleable Sampling Rate Profile
+#define MOV_OBJECT_MP3				0x69 // Audio ISO/IEC 13818-3
+#define MOV_OBJECT_MP1V				0x6A // Visual ISO/IEC 11172-2
+#define MOV_OBJECT_MP1A				0x6B // Audio ISO/IEC 11172-3
+#define MOV_OBJECT_JPEG				0x6C // Visual ISO/IEC 10918-1 (JPEG)
+#define MOV_OBJECT_PNG				0x6D // Portable Network Graphics (f)
+#define MOV_OBJECT_JPEG2000			0x6E // Visual ISO/IEC 15444-1 (JPEG 2000)
+#define MOV_OBJECT_VC1				0xA3 // SMPTE VC-1 Video
+#define MOV_OBJECT_DIRAC			0xA4 // Dirac Video Coder
+#define MOV_OBJECT_AC3				0xA5 // AC-3
+#define MOV_OBJECT_EAC3				0xA6 // Enhanced AC-3
+#define MOV_OBJECT_G719				0xA8 // ITU G.719 Audio
+#define MOV_OBJECT_DTS				0xA9 // Core Substream
+#define MOV_OBJECT_OPUS				0xAD // Opus audio https://opus-codec.org/docs/opus_in_isobmff.html
+#define MOV_OBJECT_VP9				0xB1 // VP9 Video
+#define MOV_OBJECT_FLAC				0xC1 // nonstandard from FFMPEG
+#define MOV_OBJECT_VP8				0xC2 // nonstandard
+#define MOV_OBJECT_CHAPTER			0xC3 // chapter https://developer.apple.com/documentation/quicktime-file-format/base_media_information_header_atom
+#define MOV_OBJECT_H266				0xFC // ITU-T Recommendation H.266
+#define MOV_OBJECT_G711a			0xFD // ITU G.711 alaw
+#define MOV_OBJECT_G711u			0xFE // ITU G.711 ulaw
+#define MOV_OBJECT_AV1				0xFF // AV1: https://aomediacodec.github.io/av1-isobmff
 
-#define MOV_OBJECT_NONE		0x00 // unknown object id
-#define MOV_OBJECT_AVC		MOV_OBJECT_H264
-#define MOV_OBJECT_HEVC		MOV_OBJECT_H265
-#define MOV_OBJECT_VVC		MOV_OBJECT_H266
-#define MOV_OBJECT_ALAW		MOV_OBJECT_G711a
-#define MOV_OBJECT_ULAW		MOV_OBJECT_G711u
+#define MOV_OBJECT_NONE				0x00 // unknown object id
+#define MOV_OBJECT_AVC				MOV_OBJECT_H264
+#define MOV_OBJECT_HEVC				MOV_OBJECT_H265
+#define MOV_OBJECT_VVC				MOV_OBJECT_H266
+#define MOV_OBJECT_ALAW				MOV_OBJECT_G711a
+#define MOV_OBJECT_ULAW				MOV_OBJECT_G711u
 
 /// MOV flags
-#define MOV_FLAG_FASTSTART	0x00000001
-#define MOV_FLAG_SEGMENT	0x00000002 // fmp4_writer only
+#define MOV_FLAG_FASTSTART			0x00000001
+#define MOV_FLAG_SEGMENT			0x00000002 // fmp4_writer only
 
 /// MOV av stream flag
 #define MOV_AV_FLAG_KEYFREAME		0x0001
