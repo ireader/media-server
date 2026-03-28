@@ -356,7 +356,7 @@ static void mp4_onaudio(void* param, uint32_t track, uint8_t object, int channel
 	assert(0 == ice_transport_getaddr(s->avt, s->audio.stream, 2, &addr[1]));
 	socket_addr_to((struct sockaddr*)&addr[0], socket_addr_len((struct sockaddr*)&addr[0]), ip, &port);
 
-	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LOW == object)
+	if (MOV_OBJECT_AAC == object || MOV_OBJECT_AAC_LC == object)
 	{
         s->audio.codec = AVCODEC_AUDIO_AAC;
         mpeg4_aac_audio_specific_config_load((const uint8_t*)extra, bytes, &s->audio.u.aac);

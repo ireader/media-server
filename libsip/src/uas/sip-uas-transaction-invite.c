@@ -51,7 +51,7 @@
 
 static void sip_uas_transaction_onretransmission(void* usrptr);
 
-static struct sip_dialog_t* sip_uas_create_dialog(const struct sip_message_t* req)
+static struct sip_dialog_t* sip_uas_create_dialog(const struct sip_message_t* req, const struct sip_message_t* reply)
 {
     struct sip_dialog_t* dialog;
     dialog = sip_dialog_create();
@@ -64,6 +64,10 @@ static struct sip_dialog_t* sip_uas_create_dialog(const struct sip_message_t* re
         sip_dialog_release(dialog);
         return NULL;
     }
+
+	// update dialog remote tag
+	if (!cstrvalid(&dialog->local.uri.tag) && cstrvalid(&reply->to.tag))
+		sip_dialog_setlocaltag(dialog, &reply->to.tag);
     
     return dialog;
 }
@@ -96,7 +100,7 @@ int sip_uas_transaction_invite_input(struct sip_uas_transaction_t* t, const stru
 	switch (status)
 	{
 	case SIP_UAS_TRANSACTION_INIT:
-        t->dialog = sip_uas_create_dialog(req);
+        t->dialog = sip_uas_create_dialog(req, t->reply);
         if(!t->dialog) return 0;
 		if (t->dialog->state == DIALOG_ERALY && req->to.tag.n > 0)
 			t->dialog->state = DIALOG_CONFIRMED; // re-invite
