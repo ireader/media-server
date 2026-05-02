@@ -541,6 +541,203 @@ int mpeg4_aac_adts_pce_save(uint8_t* data, size_t bytes, const struct mpeg4_aac_
 	return mpeg4_bits_error(&pce) ? 0 : (int)((adts.bits+7) / 8);
 }
 
+/*
+single_channel_element()
+{
+	element_instance_tag;				4 uimsbf
+	individual_channel_stream(0,0);
+}
+
+channel_pair_element()
+{
+	element_instance_tag;									4 uimsbf
+	common_window;											1 uimsbf
+	if (common_window) {
+		ics_info();
+		ms_mask_present;									2 uimsbf
+		if ( ms_mask_present == 1 ) {
+			for (g = 0; g < num_window_groups; g++) {
+				for (sfb = 0; sfb < max_sfb; sfb++) {
+					ms_used[g][sfb];						1 uimsbf
+				}
+			}
+		}
+	}
+	individual_channel_stream(common_window,0);
+	individual_channel_stream(common_window,0);
+}
+
+coupling_channel_element()
+{
+	element_instance_tag;										4 uimsbf
+	ind_sw_cce_flag;											1 uimsbf
+	num_coupled_elements;										3 uimsbf
+	num_gain_element_lists = 0;
+	for (c = 0; c < num_coupled_elements+1; c++) {
+		num_gain_element_lists++;
+		cc_target_is_cpe[c];									1 uimsbf
+		cc_target_tag_select[c];								4 uimsbf
+		if (cc_target_is_cpe[c]) {
+			cc_l[c];											1 uimsbf
+			cc_r[c];											1 uimsbf
+			if (cc_l[c] && cc_r[c] )
+				num_gain_element_lists++;
+		}
+	}
+	cc_domain;													1 uimsbf
+	gain_element_sign;											1 uimsbf
+	gain_element_scale;											2 uimsbf
+	individual_channel_stream(0,0);
+	for (c=1; c<num_gain_element_lists; c++) {
+		if (ind_sw_cce_flag) {
+			cge = 1;
+		} else {
+			common_gain_element_present[c];						1 uimsbf
+			cge = common_gain_element_present[c];
+		}
+		if (cge)
+			hcod_sf[common_gain_element[c]];					1..19 vlclbf
+		else {
+			for (g = 0; g < num_window_groups; g++) {
+				for (sfb=0; sfb<max_sfb; sfb++) {
+					if (sfb_cb[g][sfb] != ZERO_HCB)
+						hcod_sf[dpcm_gain_element[c][g][sfb]];	1..19 vlclbf
+				}
+			}
+		}
+	}
+}
+
+lfe_channel_element()
+{
+	element_instance_tag;								4 uimsbf
+	individual_channel_stream(0,0);
+}
+
+data_stream_element()
+{
+	element_instance_tag;								4 uimsbf
+	data_byte_align_flag;								1 uimsbf
+	cnt = count;										8 uimsbf
+	if (cnt == 255)
+		cnt += esc_count;								8 uimsbf
+	if (data_byte_align_flag)
+		byte_alignment();
+	for (i = 0; i < cnt; i++)
+		data_stream_byte[element_instance_tag][i];		8 uimsbf
+}
+
+Fill_element()
+{
+	cnt = count;										4 uimsbf
+	if (cnt == 15)
+		cnt += esc_count - 1;							8 uimsbf
+	while (cnt > 0) {
+		cnt -= extension_payload(cnt);
+	}
+}
+
+individual_channel_stream(common_window, scale_flag)
+{
+	global_gain;									8 uimsbf
+	if (! common_window && ! scale_flag) {
+		ics_info ();
+	}
+	section_data ();
+	scale_factor_data ();
+	if (! scale_flag) {
+		pulse_data_present;							1 uimsbf
+		if (pulse_data_present) {
+			pulse_data ();
+		}
+		tns_data_present;							1 uimsbf
+		if (tns_data_present) {
+			tns_data ();
+		}
+		gain_control_data_present;					1 uimsbf
+		if (gain_control_data_present) {
+			gain_control_data ();
+		}
+	}
+	if (! aacSpectralDataResilienceFlag) {
+		spectral_data ();
+	}
+	else {
+		length_of_reordered_spectral_data;			14 uimsbf
+		length_of_longest_codeword;					6 uimsbf
+		reordered_spectral_data ();
+	}
+}
+*/
+static int mpeg4_aac_individual_channel_stream_parse(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac, uint8_t common_window, uint8_t scale_flag)
+{
+	mpeg4_bits_read_uint8(&bits, 8); // global_gain
+	if (!common_window && !scale_flag)
+	{
+		// ics_info()
+	}
+
+	// section_data ();
+	// scale_factor_data ();
+	return mpeg4_bits_error(&bits);
+}
+
+static int mpeg4_aac_cpe_parse(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
+{
+	uint8_t element_instance_tag, common_window;
+	element_instance_tag = mpeg4_bits_read_uint8(&bits, 4);
+	common_window = mpeg4_bits_read_uint8(&bits, 1);
+	if (common_window)
+	{
+		// ics
+	}
+
+	mpeg4_aac_individual_channel_stream_parse(bits, aac, common_window, 0);
+	mpeg4_aac_individual_channel_stream_parse(bits, aac, common_window, 0);
+	return mpeg4_bits_error(&bits);
+}
+
+int mpeg4_aac_raw_data_block_parse(const uint8_t* data, size_t bytes, struct mpeg4_aac_t* aac)
+{
+	int i;
+	uint8_t id;
+	size_t offset = 7;
+	struct mpeg4_bits_t bits, pce;
+
+	mpeg4_bits_init(&bits, (uint8_t*)data + offset, bytes - offset);
+	id = mpeg4_bits_read_uint8(&bits, 3);
+	while (0 == mpeg4_bits_error(&bits) && id != ID_END)
+	{
+		switch (id)
+		{
+		case ID_SCE:
+			return bytes;
+		case ID_CPE:
+			return mpeg4_aac_cpe_parse(&bits, aac);
+
+		case ID_CCE:
+			return bytes;
+		case ID_LFE:
+			return bytes;
+		case ID_DSE:
+			return bytes;
+
+		case ID_PCE:
+			mpeg4_bits_init(&pce, aac->pce, sizeof(aac->pce));
+			aac->npce = mpeg4_aac_pce_load(&bits, aac, &pce);
+			return mpeg4_bits_error(&bits) ? -1 : (int)(7 + (pce.bits + 7) / 8);
+
+		case ID_FIL:
+			return bytes;
+
+		default:
+			return bytes;
+		}
+	}
+
+	return 7;
+}
+
 static size_t mpeg4_aac_stream_mux_config_load3(struct mpeg4_bits_t* bits, struct mpeg4_aac_t* aac)
 {
 	uint8_t audioMuxVersion = 0;
