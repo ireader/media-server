@@ -105,6 +105,8 @@ static int flv_demuxer_audio(struct flv_demuxer_t* flv, const uint8_t* data, int
 		}
 		else if (FLV_AVPACKET == audio.avpacket)
 		{
+			if (n >= bytes)
+				return -EINVAL;
 			if (0 != flv_demuxer_check_and_alloc(flv, bytes + 7 + 1 + flv->a.aac.npce))
 				return -ENOMEM;
 
