@@ -32,6 +32,7 @@ struct mkv_reader_t
 
 	uint64_t offset; // sample offset
 	int segments; // only 1
+	uint64_t seekhead_offset;
 
 	//struct mkv_segment_seek_t* seeks;
 	//size_t seek_count, seek_capacity;
@@ -206,6 +207,15 @@ static int ebml_header_parse(struct mkv_reader_t* reader, struct mkv_element_nod
 	return 0; // nothing to do
 }
 
+static int mkv_segment_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
+{
+	node->ptr = node->parent ? node->parent->ptr : NULL;
+	if (0 == reader->segments)
+		reader->seekhead_offset = node->off + node->head;
+	reader->segments += 1;
+	return 0;
+}
+
 static int mkv_segment_seek_id_parse(struct mkv_reader_t* reader, struct mkv_element_node_t* node)
 {
 	assert(node->size <= 4);
@@ -223,6 +233,8 @@ static int mkv_segment_seek_pos_parse(struct mkv_reader_t* reader, struct mkv_el
 	
 	assert(node->size <= 8);
 	pos = mkv_buffer_read_uint(&reader->io, (int)node->size);
+	if (reader->seekhead_offset > 0)
+		pos += reader->seekhead_offset;
 
 	for (i = 0; i < sizeof(ids) / sizeof(ids[0]); i++)
 	{
@@ -458,7 +470,7 @@ static struct mkv_element_t s_elements[] = {
 	ELEMENT(0x4284,		EBML_TYPE_UINT,		2,	"DocTypeExtensionVersion",  NULL,                   0), // DocTypeExtensionVersion
 
 	// Segment
-	ELEMENT(0x18538067,	EBML_TYPE_MASTER,   0,	"Segment",					ebml_default_master_parse,	0), // Segment
+	ELEMENT(0x18538067,	EBML_TYPE_MASTER,   0,	"Segment",					mkv_segment_parse,	0), // Segment
 
 	// Cluster
 	ELEMENT(0x1F43B675,	EBML_TYPE_MASTER,	1,	"Cluster",					mkv_segment_cluster_parse,  0), // Segment/Cluster [mult]
@@ -698,7 +710,7 @@ static struct mkv_element_t s_elements[] = {
 
 static struct mkv_element_t s_clusters[] = {
 	// Segment
-    ELEMENT(0x18538067,	EBML_TYPE_MASTER,	0,	"Segment",	ebml_default_master_parse,	0), // Segment
+    ELEMENT(0x18538067,	EBML_TYPE_MASTER,	0,	"Segment",	mkv_segment_parse,	0), // Segment
 
 	// Cluster
     ELEMENT(0x1F43B675,	EBML_TYPE_MASTER,	1,	"Cluster", mkv_segment_cluster_block_parse, 0), // Segment/Cluster [mult]
@@ -1090,7 +1102,7 @@ int mkv_reader_seek(mkv_reader_t* reader, int64_t* timestamp)
 		cue = next;
 
 	*timestamp = cue->timestamp * reader->mkv.timescale / 1000000;
-	mkv_buffer_seek(&reader->io, cue->cluster);
+	mkv_buffer_seek(&reader->io, reader->seekhead_offset + cue->cluster);
 	reader->offset = reader->mkv.count; // clear
 	return 0;
 #else

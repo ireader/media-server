@@ -339,7 +339,7 @@ int mkv_writer_write(struct mkv_writer_t* writer, int tid, const void* data, siz
 
     if (key_frame)
     {
-        r = mkv_cue_add(mkv, tid, ts, cluster->position, sample.offset-cluster->position);
+        r = mkv_cue_add(mkv, tid, ts, cluster->position - writer->seekhead_offset, sample.offset - cluster->position);
         if (0 != r)
             return r;
     }
