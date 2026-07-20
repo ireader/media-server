@@ -426,5 +426,6 @@ void mpeg4_vvc_test(void)
 	assert(2 == vvc.numOfArrays && H266_SPS == vvc.nalu[0].type && 0x2a == vvc.nalu[0].bytes && H266_PPS == vvc.nalu[1].type && 0x0c == vvc.nalu[1].bytes);
 	assert(sizeof(data) == mpeg4_vvc_decoder_configuration_record_save(&vvc, buffer, sizeof(buffer)) && 0 == memcmp(buffer, data, sizeof(data)));
 	mpeg4_vvc_codecs_test(&vvc);
+	vvc_annexbtomp4_test();
 }
 #endif

@@ -34,7 +34,7 @@ struct h266_annexbtomp4_handle_t
 	size_t capacity;
 };
 
-int mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset, uint8_t* value);
+int mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset, uint32_t* value);
 
 static size_t vvc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb, size_t len)
 {
@@ -92,11 +92,11 @@ static uint8_t vvc_sps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_vvc_t*
 	return sps;
 }
 
-static uint8_t vvc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_vvc_t* vvc, uint8_t* ptr, size_t len, uint8_t* sps)
+static uint8_t vvc_pps_id(const uint8_t* rbsp, size_t bytes, uint8_t* ptr, size_t len, uint8_t* sps, uint16_t* width, uint16_t* height)
 {
 	uint8_t pps;
-	uint8_t width;
-	uint8_t height;
+	uint32_t width32;
+	uint32_t height32;
 	size_t sodb;
 	size_t n = 2 * 8;  // 2-nalu type
 	sodb = vvc_rbsp_decode(rbsp, bytes, ptr, len);
@@ -105,12 +105,13 @@ static uint8_t vvc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_vvc_t*
 	pps = (ptr[2] >> 2) & 0x3F;  // 2-nalu type
 	*sps = ((ptr[2] & 0x03) << 2) | ((ptr[3] >> 6) & 0x03);
 
-	n = 11;
-	if (mpeg4_h264_read_ue(ptr, sodb, &n, &width) < 0 // pic_width_in_luma_samples
-		|| mpeg4_h264_read_ue(ptr, sodb, &n, &height) < 0) // pic_height_in_luma_samples
+	n = 2 * 8 + 6 + 4 + 1;
+	if (mpeg4_h264_read_ue(ptr, sodb, &n, &width32) < 0 // pic_width_in_luma_samples
+		|| mpeg4_h264_read_ue(ptr, sodb, &n, &height32) < 0 // pic_height_in_luma_samples
+		|| width32 > UINT16_MAX || height32 > UINT16_MAX)
 		return 0xFF;
-	vvc->max_picture_width = width;
-	vvc->max_picture_height = height;
+	*width = (uint16_t)width32;
+	*height = (uint16_t)height32;
 	return pps;
 }
 
@@ -239,8 +240,11 @@ static int h266_sps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t by
 static int h266_pps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t bytes)
 {
 	int i;
+	int r;
 	uint8_t ppsid;
 	uint8_t spsid, spsid2;
+	uint16_t width, width2;
+	uint16_t height, height2;
 
 	if (bytes < 1 + 2)
 	{
@@ -248,16 +252,32 @@ static int h266_pps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t by
 		return -1; // invalid length
 	}
 
-	ppsid = vvc_pps_id(nalu, bytes, vvc, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid);
+	ppsid = vvc_pps_id(nalu, bytes, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid, &width, &height);
 	if (0xFF == ppsid)
 		return -1;
 	for (i = 0; i < vvc->numOfArrays; i++)
 	{
-		if (H266_NAL_PPS == vvc->nalu[i].type && ppsid == vvc_pps_id(vvc->nalu[i].data, vvc->nalu[i].bytes, vvc, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid2) && spsid == spsid2)
-			return mpeg4_vvc_update2(vvc, i, nalu, bytes);
+		if (H266_NAL_PPS != vvc->nalu[i].type)
+			continue;
+		if (ppsid == vvc_pps_id(vvc->nalu[i].data, vvc->nalu[i].bytes, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid2, &width2, &height2) && spsid == spsid2)
+		{
+			r = mpeg4_vvc_update2(vvc, i, nalu, bytes);
+			if (r >= 0)
+			{
+				vvc->max_picture_width = width;
+				vvc->max_picture_height = height;
+			}
+			return r;
+		}
 	}
 
-	return mpeg4_vvc_add(vvc, H266_NAL_PPS, nalu, bytes);
+	r = mpeg4_vvc_add(vvc, H266_NAL_PPS, nalu, bytes);
+	if (r >= 0)
+	{
+		vvc->max_picture_width = width;
+		vvc->max_picture_height = height;
+	}
+	return r;
 }
 
 static int h266_sei_clear(struct mpeg4_vvc_t* vvc)
@@ -422,24 +442,42 @@ int h266_is_new_access_unit(const uint8_t* nalu, size_t bytes)
 #if defined(_DEBUG) || defined(DEBUG)
 void vvc_annexbtomp4_test(void)
 {
-	const uint8_t vps[] = { 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0x9d, 0xc0, 0x90 };
-	const uint8_t sps[] = { 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0xa0, 0x03, 0xc0, 0x80, 0x32, 0x16, 0x59, 0xde, 0x49, 0x1b, 0x6b, 0x80, 0x40, 0x00, 0x00, 0xfa, 0x00, 0x00, 0x17, 0x70, 0x02 };
-	const uint8_t pps[] = { 0x44, 0x01, 0xc1, 0x73, 0xd1, 0x89 };
-	const uint8_t incomplete_pps[] = { 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	const uint8_t annexb[] = { 0x00, 0x00, 0x00, 0x01, 0x4e, 0x01, 0x06, 0x01, 0xd0, 0x80, 0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0x9d, 0xc0, 0x90, 0x00, 0x00, 0x00, 0x01, 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0xa0, 0x03, 0xc0, 0x80, 0x32, 0x16, 0x59, 0xde, 0x49, 0x1b, 0x6b, 0x80, 0x40, 0x00, 0x00, 0xfa, 0x00, 0x00, 0x17, 0x70, 0x02, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc1, 0x73, 0xd1, 0x89 };
+	const uint8_t sps[] = { 0x00, 0x79, 0x00, 0x0b, 0x02, 0x69, 0x00, 0x00, 0x03, 0x00, 0x16, 0x88, 0x01, 0x40, 0x48, 0x80, 0x2b, 0x49, 0xff, 0x45, 0x19, 0x18, 0xe0, 0x0c, 0x42, 0x55, 0x5a, 0xab, 0xd5, 0xeb, 0x33, 0x25, 0x5a, 0x12, 0xe4, 0x72, 0xd4, 0x56, 0x5a, 0x32, 0x30, 0x40 };
+	const uint8_t pps[] = { 0x00, 0x81, 0x00, 0x00, 0x0b, 0x44, 0x00, 0xa0, 0x22, 0x24, 0x18, 0x20 };
+	const uint8_t alternate_pps[] = { 0x00, 0x81, 0x04, 0x00, 0x14, 0x10, 0x1e, 0x30, 0xff, 0xff, 0xff, 0xff };
+	const uint8_t incomplete_pps[] = { 0x00, 0x81, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const uint8_t oversized_pps[] = { 0x00, 0x81, 0x00, 0x00, 0x03, 0x00, 0x10, 0x00, 0x15, 0xff, 0xff, 0xff, 0xff };
+	uint8_t annexb[4 + sizeof(sps) + 4 + sizeof(pps)];
 	uint8_t output[512];
 	int vcl, update;
 
 	struct mpeg4_vvc_t vvc;
-	memset(&vvc, 0, sizeof(vvc));
-	assert(h266_annexbtomp4(&vvc, annexb, sizeof(annexb), output, sizeof(output), &vcl, &update) > 0);
-	assert(3 == vvc.numOfArrays && vcl == 0 && update == 1);
-	assert(vvc.nalu[0].bytes == sizeof(vps) && 0 == memcmp(vvc.nalu[0].data, vps, sizeof(vps)));
-	assert(vvc.nalu[1].bytes == sizeof(sps) && 0 == memcmp(vvc.nalu[1].data, sps, sizeof(sps)));
-	assert(vvc.nalu[2].bytes == sizeof(pps) && 0 == memcmp(vvc.nalu[2].data, pps, sizeof(pps)));
+	struct mpeg4_vvc_t before;
+	memset(annexb, 0, sizeof(annexb));
+	annexb[3] = 1;
+	memcpy(annexb + 4, sps, sizeof(sps));
+	annexb[4 + sizeof(sps) + 3] = 1;
+	memcpy(annexb + 4 + sizeof(sps) + 4, pps, sizeof(pps));
 
 	memset(&vvc, 0, sizeof(vvc));
+	assert(h266_annexbtomp4(&vvc, annexb, sizeof(annexb), output, sizeof(output), &vcl, &update) > 0);
+	assert(2 == vvc.numOfArrays && vcl == 0 && update == 1);
+	assert(vvc.nalu[0].bytes == sizeof(sps) && 0 == memcmp(vvc.nalu[0].data, sps, sizeof(sps)));
+	assert(vvc.nalu[1].bytes == sizeof(pps) && 0 == memcmp(vvc.nalu[1].data, pps, sizeof(pps)));
+	assert(720 == vvc.max_picture_width && 1280 == vvc.max_picture_height);
+	assert(mpeg4_vvc_update(&vvc, alternate_pps, sizeof(alternate_pps)) > 0);
+	assert(3 == vvc.numOfArrays && 320 == vvc.max_picture_width && 240 == vvc.max_picture_height);
+
+	memset(&vvc, 0, sizeof(vvc));
+	vvc.max_picture_width = 320;
+	vvc.max_picture_height = 240;
+	before = vvc;
 	assert(mpeg4_vvc_update(&vvc, incomplete_pps, sizeof(incomplete_pps)) < 0);
+	assert(0 == memcmp(&before, &vvc, offsetof(struct mpeg4_vvc_t, numOfArrays)));
+	assert(0 == vvc.numOfArrays && 0 == vvc.off);
+
+	memset(&vvc, 0, sizeof(vvc));
+	assert(mpeg4_vvc_update(&vvc, oversized_pps, sizeof(oversized_pps)) < 0);
 	assert(0 == vvc.numOfArrays && 0 == vvc.off);
 }
 #endif
