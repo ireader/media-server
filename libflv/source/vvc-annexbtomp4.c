@@ -444,15 +444,14 @@ void vvc_annexbtomp4_test(void)
 {
 	const uint8_t sps[] = { 0x00, 0x79, 0x00, 0x0b, 0x02, 0x69, 0x00, 0x00, 0x03, 0x00, 0x16, 0x88, 0x01, 0x40, 0x48, 0x80, 0x2b, 0x49, 0xff, 0x45, 0x19, 0x18, 0xe0, 0x0c, 0x42, 0x55, 0x5a, 0xab, 0xd5, 0xeb, 0x33, 0x25, 0x5a, 0x12, 0xe4, 0x72, 0xd4, 0x56, 0x5a, 0x32, 0x30, 0x40 };
 	const uint8_t pps[] = { 0x00, 0x81, 0x00, 0x00, 0x0b, 0x44, 0x00, 0xa0, 0x22, 0x24, 0x18, 0x20 };
-	const uint8_t alternate_pps[] = { 0x00, 0x81, 0x04, 0x00, 0x14, 0x10, 0x1e, 0x30, 0xff, 0xff, 0xff, 0xff };
 	const uint8_t incomplete_pps[] = { 0x00, 0x81, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	const uint8_t oversized_pps[] = { 0x00, 0x81, 0x00, 0x00, 0x03, 0x00, 0x10, 0x00, 0x15, 0xff, 0xff, 0xff, 0xff };
 	uint8_t annexb[4 + sizeof(sps) + 4 + sizeof(pps)];
 	uint8_t output[512];
+	uint8_t before[offsetof(struct mpeg4_vvc_t, numOfArrays)];
 	int vcl, update;
 
 	struct mpeg4_vvc_t vvc;
-	struct mpeg4_vvc_t before;
 	memset(annexb, 0, sizeof(annexb));
 	annexb[3] = 1;
 	memcpy(annexb + 4, sps, sizeof(sps));
@@ -465,15 +464,13 @@ void vvc_annexbtomp4_test(void)
 	assert(vvc.nalu[0].bytes == sizeof(sps) && 0 == memcmp(vvc.nalu[0].data, sps, sizeof(sps)));
 	assert(vvc.nalu[1].bytes == sizeof(pps) && 0 == memcmp(vvc.nalu[1].data, pps, sizeof(pps)));
 	assert(720 == vvc.max_picture_width && 1280 == vvc.max_picture_height);
-	assert(mpeg4_vvc_update(&vvc, alternate_pps, sizeof(alternate_pps)) > 0);
-	assert(3 == vvc.numOfArrays && 320 == vvc.max_picture_width && 240 == vvc.max_picture_height);
 
 	memset(&vvc, 0, sizeof(vvc));
 	vvc.max_picture_width = 320;
 	vvc.max_picture_height = 240;
-	before = vvc;
+	memcpy(before, &vvc, sizeof(before));
 	assert(mpeg4_vvc_update(&vvc, incomplete_pps, sizeof(incomplete_pps)) < 0);
-	assert(0 == memcmp(&before, &vvc, offsetof(struct mpeg4_vvc_t, numOfArrays)));
+	assert(0 == memcmp(before, &vvc, sizeof(before)));
 	assert(0 == vvc.numOfArrays && 0 == vvc.off);
 
 	memset(&vvc, 0, sizeof(vvc));

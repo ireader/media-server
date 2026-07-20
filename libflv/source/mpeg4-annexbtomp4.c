@@ -232,7 +232,7 @@ static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 	{
 		offset = 4 * 8; // reset offset
 		if (mpeg4_h264_read_ue(avc->sps[i].data, avc->sps[i].bytes, &offset, &spsid2) < 0)
-			return -1;
+			return -1; // invalid stored decoder configuration
 		if (spsid == spsid2)
 		{
 			if (bytes == avc->sps[i].bytes && 0 == memcmp(nalu, avc->sps[i].data, bytes))
@@ -298,7 +298,7 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 		offset = 1 * 8; // reset offset
 		if (mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset, &ppsid2) < 0
 			|| mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset, &spsid2) < 0)
-			return -1;
+			return -1; // invalid stored decoder configuration
 		if (ppsid == ppsid2 && spsid == spsid2)
 		{
 			if (bytes == avc->pps[i].bytes && 0 == memcmp(nalu, avc->pps[i].data, bytes))
