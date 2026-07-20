@@ -242,6 +242,7 @@ static int h266_pps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t by
 	int i;
 	int r;
 	uint8_t ppsid;
+	uint8_t ppsid2;
 	uint8_t spsid, spsid2;
 	uint16_t width, width2;
 	uint16_t height, height2;
@@ -259,7 +260,10 @@ static int h266_pps_copy(struct mpeg4_vvc_t* vvc, const uint8_t* nalu, size_t by
 	{
 		if (H266_NAL_PPS != vvc->nalu[i].type)
 			continue;
-		if (ppsid == vvc_pps_id(vvc->nalu[i].data, vvc->nalu[i].bytes, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid2, &width2, &height2) && spsid == spsid2)
+		ppsid2 = vvc_pps_id(vvc->nalu[i].data, vvc->nalu[i].bytes, vvc->data + vvc->off, sizeof(vvc->data) - vvc->off, &spsid2, &width2, &height2);
+		if (0xFF == ppsid2)
+			continue;
+		if (ppsid == ppsid2 && spsid == spsid2)
 		{
 			r = mpeg4_vvc_update2(vvc, i, nalu, bytes);
 			if (r >= 0)
