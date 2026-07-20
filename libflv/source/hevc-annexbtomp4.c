@@ -86,10 +86,10 @@ static int hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t ma
 	info->general_profile_idc = nalu[0] & 0x1f;
 
 	info->general_profile_compatibility_flags = 0;
-	info->general_profile_compatibility_flags |= nalu[1] << 24;
-	info->general_profile_compatibility_flags |= nalu[2] << 16;
-	info->general_profile_compatibility_flags |= nalu[3] << 8;
-	info->general_profile_compatibility_flags |= nalu[4];
+	info->general_profile_compatibility_flags |= ((uint32_t)nalu[1]) << 24;
+	info->general_profile_compatibility_flags |= ((uint32_t)nalu[2]) << 16;
+	info->general_profile_compatibility_flags |= ((uint32_t)nalu[3]) << 8;
+	info->general_profile_compatibility_flags |= (uint32_t)nalu[4];
 
 	info->general_constraint_indicator_flags = 0;
 	info->general_constraint_indicator_flags |= ((uint64_t)nalu[5]) << 40;
