@@ -129,6 +129,7 @@ static void hevc_profile_tier_level_apply(struct mpeg4_hevc_t* hevc, const struc
 
 static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, size_t len)
 {
+	int ptl_bytes;
 	size_t sodb;
 	struct hevc_sps_info_t info;
 	uint8_t vps;
@@ -143,9 +144,12 @@ static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_
 	vps = ptr[2] >> 4;  // 2-nalu type
 	vps_max_sub_layers_minus1 = (ptr[3] >> 1) & 0x07;
 	vps_temporal_id_nesting_flag = ptr[3] & 0x01;
+	ptl_bytes = hevc_profile_tier_level(ptr + 6, sodb - 6, vps_max_sub_layers_minus1, &info);
+	if (ptl_bytes < 0)
+		return 0xFF;
+
 	hevc->numTemporalLayers = MAX(hevc->numTemporalLayers, vps_max_sub_layers_minus1 + 1);
 	hevc->temporalIdNested = (hevc->temporalIdNested || vps_temporal_id_nesting_flag) ? 1 : 0;
-	hevc_profile_tier_level(ptr + 6, sodb - 6, vps_max_sub_layers_minus1, &info);
 	hevc_profile_tier_level_apply(hevc, &info);
 
 	return vps;
@@ -309,6 +313,8 @@ static int h265_vps_copy(struct mpeg4_hevc_t* hevc, const uint8_t* nalu, size_t 
 	}
 
 	vpsid = hevc_vps_id(nalu, bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data)-hevc->off);
+	if (0xFF == vpsid)
+		return -1;
 	for (i = 0; i < hevc->numOfArrays; i++)
 	{
 		if (H265_NAL_VPS == hevc->nalu[i].type && vpsid == hevc_vps_id(hevc->nalu[i].data, hevc->nalu[i].bytes, hevc, hevc->data + hevc->off, sizeof(hevc->data) - hevc->off))
@@ -539,6 +545,7 @@ void hevc_annexbtomp4_test(void)
 	const uint8_t vps[] = { 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0x9d, 0xc0, 0x90 };
 	const uint8_t sps[] = { 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78, 0xa0, 0x03, 0xc0, 0x80, 0x32, 0x16, 0x59, 0xde, 0x49, 0x1b, 0x6b, 0x80, 0x40, 0x00, 0x00, 0xfa, 0x00, 0x00, 0x17, 0x70, 0x02 };
 	const uint8_t pps[] = { 0x44, 0x01, 0xc1, 0x73, 0xd1, 0x89 };
+	const uint8_t truncated_ptl_vps[] = { 0x40, 0x01, 0x0c, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 	const uint8_t truncated_ptl_sps[] = { 0x42, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 	const uint8_t truncated_sps[] = { 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x80, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x78 };
 	const uint8_t incomplete_pps[] = { 0x44, 0x01, 0x01 };
@@ -554,6 +561,14 @@ void hevc_annexbtomp4_test(void)
 	assert(hevc.nalu[0].bytes == sizeof(vps) && 0 == memcmp(hevc.nalu[0].data, vps, sizeof(vps)));
 	assert(hevc.nalu[1].bytes == sizeof(sps) && 0 == memcmp(hevc.nalu[1].data, sps, sizeof(sps)));
 	assert(hevc.nalu[2].bytes == sizeof(pps) && 0 == memcmp(hevc.nalu[2].data, pps, sizeof(pps)));
+
+	memset(&hevc, 0x5a, offsetof(struct mpeg4_hevc_t, numOfArrays));
+	hevc.numOfArrays = 0;
+	hevc.off = 0;
+	memcpy(before, &hevc, sizeof(before));
+	assert(mpeg4_hevc_update(&hevc, truncated_ptl_vps, sizeof(truncated_ptl_vps)) < 0);
+	assert(0 == memcmp(before, &hevc, sizeof(before)));
+	assert(0 == hevc.numOfArrays && 0 == hevc.off);
 
 	memset(&hevc, 0, sizeof(hevc));
 	assert(mpeg4_hevc_update(&hevc, incomplete_pps, sizeof(incomplete_pps)) < 0);
