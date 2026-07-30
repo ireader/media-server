@@ -111,10 +111,13 @@ static int ps_sync_start_probe(struct mpeg_bits_t* reader)
 
 static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
+    int r;
     struct ps_demuxer_t* ps;
     ps = (struct ps_demuxer_t*)param;
     assert(0 == program); // unused(ts demux only)
-    return ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
+    r = ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
+    // ps_demuxer_input reserves nonnegative returns for consumed byte counts.
+    return r > 0 ? -r : r;
 }
 
 static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)
@@ -496,47 +499,6 @@ int ps_demuxer_destroy(struct ps_demuxer_t* ps)
     }
 	free(ps);
 	return 0;
-}
-
-int ps_demuxer_flush(struct ps_demuxer_t* ps)
-{
-    int r;
-    size_t i;
-    size_t consume;
-    struct pes_t* pes;
-
-    for (i = 0; i < ps->psm.stream_count; ++i)
-    {
-        pes = &ps->psm.streams[i];
-        if (pes->pkt.size < 5
-            && PSI_STREAM_MPEG1 != pes->codecid && PSI_STREAM_MPEG2 != pes->codecid)
-            continue;
-
-        if (PSI_STREAM_H264 == pes->codecid)
-        {
-            const uint8_t aud[] = { 0, 0, 0, 1, 0x09, 0xF0 };
-            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
-        }
-        else if (PSI_STREAM_H265 == pes->codecid)
-        {
-            const uint8_t aud[] = { 0, 0, 0, 1, 0x46, 0x01, 0x50 };
-            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
-        }
-        else if (PSI_STREAM_H266 == pes->codecid)
-        {
-            const uint8_t aud[] = { 0, 0, 0, 1, 0x00, 0xA1, 0x18 };
-            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
-        }
-        else
-        {
-            r = pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ps_demuxer_onpes, ps);
-        }
-
-        if (0 != r)
-            return r;
-    }
-
-    return 0;
 }
 
 void ps_demuxer_set_notify(struct ps_demuxer_t* ps, struct ps_demuxer_notify_t *notify, void* param)

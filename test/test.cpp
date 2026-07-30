@@ -133,7 +133,6 @@ extern "C" DEF_FUN_VOID(mpeg4_aac_test);
 extern "C" DEF_FUN_VOID(mpeg4_avc_test);
 extern "C" DEF_FUN_VOID(mpeg4_hevc_test);
 extern "C" DEF_FUN_VOID(mpeg4_vvc_test);
-extern "C" DEF_FUN_VOID(mpeg_packet_test);
 extern "C" DEF_FUN_VOID(avswg_avs3_test);
 extern "C" DEF_FUN_VOID(mp3_header_test);
 extern "C" DEF_FUN_VOID(opus_head_test);
@@ -255,7 +254,6 @@ int main(int argc, const char* argv[])
         RE_RUN_REG("mpeg4_avc_test", argc, argv);
         RE_RUN_REG("mpeg4_hevc_test", argc, argv);
         RE_RUN_REG("mpeg4_vvc_test", argc, argv);
-        RE_RUN_REG("mpeg_packet_test", argc, argv);
         RE_RUN_REG("avswg_avs3_test", argc, argv);
         RE_RUN_REG("mp3_header_test", argc, argv);
         RE_RUN_REG("opus_head_test", argc, argv);

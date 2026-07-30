@@ -39,16 +39,7 @@ struct packet_t
 	uint8_t mpeg12_have_picture;
 	uint8_t mpeg12_have_picture_timestamp;
 	uint8_t mpeg12_tail_count;
-	uint8_t mpeg12_retry;
-	uint8_t mpeg12_retry_flush;
 	uint32_t mpeg12_discontinuity;
-	uint16_t mpeg12_retry_pn;
-	uint16_t mpeg12_retry_pid;
-	uint8_t mpeg12_retry_sid;
-	uint8_t mpeg12_retry_codecid;
-	int mpeg12_retry_flags;
-	int64_t mpeg12_retry_pts;
-	int64_t mpeg12_retry_dts;
 };
 
 struct pes_t

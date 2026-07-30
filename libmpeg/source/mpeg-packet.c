@@ -43,7 +43,9 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
 static void mpeg_packet_mpeg12_reset(struct packet_t* pkt)
 {
     pkt->size = 0;
+    pkt->codecid = 0;
     pkt->flags = 0;
+    pkt->vcl = 0;
     pkt->mpeg12_scan = 0;
     pkt->mpeg12_prefix = 0;
     pkt->mpeg12_picture = 0;
@@ -55,21 +57,6 @@ static void mpeg_packet_mpeg12_reset(struct packet_t* pkt)
     pkt->mpeg12_have_picture = 0;
     pkt->mpeg12_have_picture_timestamp = 0;
     pkt->mpeg12_tail_count = 0;
-    pkt->mpeg12_retry = 0;
-    pkt->mpeg12_retry_flush = 0;
-}
-
-static void mpeg_packet_mpeg12_save_retry(struct packet_t* pkt, const struct pes_t* pes, int flush)
-{
-    pkt->mpeg12_retry_pn = pes->pn;
-    pkt->mpeg12_retry_pid = pes->pid;
-    pkt->mpeg12_retry_sid = pes->sid;
-    pkt->mpeg12_retry_codecid = pes->codecid;
-    pkt->mpeg12_retry_flags = pes->flags;
-    pkt->mpeg12_retry_pts = pes->pts;
-    pkt->mpeg12_retry_dts = pes->dts;
-    pkt->mpeg12_retry_flush = (uint8_t)(0 != flush);
-    pkt->mpeg12_retry = 1;
 }
 
 static void mpeg_packet_mpeg12_compact(struct packet_t* pkt, const struct pes_t* pes,
@@ -221,9 +208,7 @@ static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, siz
                 pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
             if (0 != r)
             {
-                mpeg_packet_mpeg12_compact(pkt, pes, old_size, old_tail_start,
-                    old_tail_pts, old_tail_dts, old_tail_flags, flags, keep, i);
-                mpeg_packet_mpeg12_save_retry(pkt, pes, flush);
+                mpeg_packet_mpeg12_reset(pkt);
                 return r;
             }
         }
@@ -265,9 +250,7 @@ static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, siz
                 pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
             if (0 != r)
             {
-                mpeg_packet_mpeg12_compact(pkt, pes, old_size, old_tail_start,
-                    old_tail_pts, old_tail_dts, old_tail_flags, flags, keep, scan);
-                mpeg_packet_mpeg12_save_retry(pkt, pes, flush);
+                mpeg_packet_mpeg12_reset(pkt);
                 return r;
             }
         }
@@ -426,30 +409,9 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
 {
     int r;
     size_t total;
-    struct pes_t retry_pes;
 
     total = size;
     *consume = size; // all saved
-    if (pkt->mpeg12_retry)
-    {
-        memset(&retry_pes, 0, sizeof(retry_pes));
-        retry_pes.pn = pkt->mpeg12_retry_pn;
-        retry_pes.pid = pkt->mpeg12_retry_pid;
-        retry_pes.sid = pkt->mpeg12_retry_sid;
-        retry_pes.codecid = pkt->mpeg12_retry_codecid;
-        retry_pes.flags = pkt->mpeg12_retry_flags;
-        retry_pes.pts = pkt->mpeg12_retry_pts;
-        retry_pes.dts = pkt->mpeg12_retry_dts;
-        r = mpeg_packet_mpeg12(pkt, &retry_pes, 0,
-            pkt->mpeg12_retry_flush, handler, param);
-        if (0 != r)
-        {
-            *consume = 0;
-            return r;
-        }
-        pkt->mpeg12_retry = 0;
-        pkt->mpeg12_retry_flush = 0;
-    }
 
     // TS error flags remain set for the rest of the PES. Use the generation
     // counter so every continuity gap resets the partial MPEG Picture once.
@@ -459,13 +421,20 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         mpeg_packet_mpeg12_reset(pkt);
         pkt->mpeg12_discontinuity = pes->discontinuity;
     }
+    if (pkt->size > 0 && pkt->codecid != pes->codecid
+        && (mpeg_packet_is_mpeg12_video(pkt->codecid)
+            || mpeg_packet_is_mpeg12_video(pes->codecid)))
+    {
+        // A codec change involving MPEG-1/2 is a hard discontinuity. Never mix
+        // the pending bytes and parser state of two codecs.
+        mpeg_packet_mpeg12_reset(pkt);
+    }
     // use timestamp to split packet
     assert(PTS_NO_VALUE != pes->dts);
     if (pkt->size > 0 && (pkt->dts != pes->dts || start)
         // WARNING: don't use pes->codecid
         && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid && PSI_STREAM_H266 != pkt->codecid
-        && !mpeg_packet_is_mpeg12_video(pkt->codecid)
-        && !mpeg_packet_is_mpeg12_video(pes->codecid))
+        && !(mpeg_packet_is_mpeg12_video(pkt->codecid) && pkt->codecid == pes->codecid))
     {
         if(0 == pes->codecid)
             pes_packet_codec_verify(pes, pkt); // verify on packet complete
@@ -485,6 +454,9 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
             total += pkt->size; // find nalu vcl
         }
     }
+
+    if (0 == pkt->size && mpeg_packet_is_mpeg12_video(pes->codecid))
+        pkt->codecid = pes->codecid;
 
     // merge buffer
     r = mpeg_packet_append(pkt, data, size);

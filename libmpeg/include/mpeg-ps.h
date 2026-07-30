@@ -84,10 +84,6 @@ struct ps_demuxer_t;
 struct ps_demuxer_t* ps_demuxer_create(ps_demuxer_onpacket onpacket, void* param);
 int ps_demuxer_destroy(struct ps_demuxer_t* demuxer);
 
-/// Flush pending elementary stream data.
-/// @return 0-ok, other-error
-int ps_demuxer_flush(struct ps_demuxer_t* demuxer);
-
 /// ps_demuxer_input return consumed bytes, the remain data MUST save and merge with next packet
 /// int n = ps_demuxer_input(demuxer, data, bytes);
 /// if(n >= 0 && n < bytes)
