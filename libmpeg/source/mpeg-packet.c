@@ -415,7 +415,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
 
     // TS error flags remain set for the rest of the PES. Use the generation
     // counter so every continuity gap resets the partial MPEG Picture once.
-    if (size > 0 && mpeg_packet_is_mpeg12_video(pes->codecid)
+    if (mpeg_packet_is_mpeg12_video(pes->codecid)
         && pkt->mpeg12_discontinuity != pes->discontinuity)
     {
         mpeg_packet_mpeg12_reset(pkt);

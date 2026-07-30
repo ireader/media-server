@@ -343,18 +343,12 @@ void pmt_clear(struct pmt_t* pmt)
 	{
 		pes = &pmt->streams[i];
 		if (pes->pkt.data)
-		{
 			free(pes->pkt.data);
-			pes->pkt.data = NULL;
-		}
-		pes->pkt.size = 0;
 
 		if (pes->esinfo)
-		{
 			free(pes->esinfo);
-			pes->esinfo = NULL;
-		}
-		pes->esinfo_len = 0;
+
+		memset(pes, 0, sizeof(*pes));
 	}
 	pmt->stream_count = 0;
 

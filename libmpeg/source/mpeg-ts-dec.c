@@ -123,6 +123,20 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 #define TS_PAYLOAD_UNIT_START_INDICATOR(data)	(data[1] & 0x40)
 #define TS_TRANSPORT_PRIORITY(data)				(data[1] & 0x20)
 
+static struct pes_t* ts_demuxer_find_pes(struct ts_demuxer_t* ts, uint32_t pid)
+{
+	uint32_t i, j;
+	for (i = 0; i < ts->pat.pmt_count; ++i)
+	{
+		for (j = 0; j < ts->pat.pmts[i].stream_count; ++j)
+		{
+			if (pid == ts->pat.pmts[i].streams[j].pid)
+				return &ts->pat.pmts[i].streams[j];
+		}
+	}
+	return NULL;
+}
+
 int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
     int r;
@@ -174,6 +188,7 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 	unsigned int count, ver;
 	struct mpeg_bits_t reader;
     struct ts_packet_header_t pkhd;
+	struct pes_t* error_pes;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
 	// Transport stream packets shall be 188 bytes long.
@@ -205,7 +220,29 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 			//t = pkhd.adaptation.program_clock_reference_base / 90L; // ms;
 			//printf("pcr: %02d:%02d:%02d.%03d - %" PRId64 "/%u\n", (int)(t / 3600000), (int)(t % 3600000)/60000, (int)((t/1000) % 60), (int)(t % 1000), pkhd.adaptation.program_clock_reference_base, pkhd.adaptation.program_clock_reference_extension);
 		}
+	}
 
+	error_pes = NULL;
+	if (pkhd.transport_error_indicator || pkhd.adaptation.discontinuity_indicator)
+	{
+		error_pes = ts_demuxer_find_pes(ts, PID);
+		if (error_pes)
+		{
+			if (pkhd.transport_error_indicator)
+			{
+				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
+				error_pes->have_pes_header = 0;
+			}
+			++error_pes->discontinuity;
+			error_pes->cc = (uint8_t)pkhd.continuity_counter;
+		}
+	}
+
+	if (pkhd.transport_error_indicator)
+		return 0; // discard payload with uncorrectable transport errors
+
+	if (0x02 & pkhd.adaptation_field_control)
+	{
 		assert(i <= bytes);
 		if (i + (pkhd.payload_unit_start_indicator ? 1 : 0) >= bytes)
 			return 0; // ignore
@@ -252,7 +289,8 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						if (PID != pes->pid)
                             continue;
 
-						if (((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
+						if (!pkhd.adaptation.discontinuity_indicator
+							&& ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
 						{
 							pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
 							++pes->discontinuity;
