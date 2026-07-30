@@ -8,9 +8,19 @@
 
 typedef int (*h2645_find_new_access)(const uint8_t* p, size_t bytes, int* vcl);
 
+static int mpeg_packet_is_mpeg12_video(int codecid)
+{
+    return PSI_STREAM_MPEG1 == codecid || PSI_STREAM_MPEG2 == codecid;
+}
+
 static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t size)
 {
     void* ptr;
+
+    if (0 == size)
+        return 0;
+    if (NULL == data)
+        return -EINVAL;
 
     // fix: pkt->size + size bits wrap
     if (pkt->size + size > MPEG_PACKET_PAYLOAD_MAX_SIZE || pkt->size + size < pkt->size)
@@ -27,6 +37,246 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
     // append new data
     memcpy(pkt->data + pkt->size, data, size);
     pkt->size += size;
+    return 0;
+}
+
+static void mpeg_packet_mpeg12_reset(struct packet_t* pkt)
+{
+    pkt->size = 0;
+    pkt->flags = 0;
+    pkt->mpeg12_scan = 0;
+    pkt->mpeg12_prefix = 0;
+    pkt->mpeg12_picture = 0;
+    pkt->mpeg12_prefix_flags = 0;
+    pkt->mpeg12_picture_flags = 0;
+    pkt->mpeg12_picture_pts = 0;
+    pkt->mpeg12_picture_dts = 0;
+    pkt->mpeg12_have_prefix = 0;
+    pkt->mpeg12_have_picture = 0;
+    pkt->mpeg12_have_picture_timestamp = 0;
+    pkt->mpeg12_tail_count = 0;
+    pkt->mpeg12_retry = 0;
+    pkt->mpeg12_retry_flush = 0;
+}
+
+static void mpeg_packet_mpeg12_save_retry(struct packet_t* pkt, const struct pes_t* pes, int flush)
+{
+    pkt->mpeg12_retry_pn = pes->pn;
+    pkt->mpeg12_retry_pid = pes->pid;
+    pkt->mpeg12_retry_sid = pes->sid;
+    pkt->mpeg12_retry_codecid = pes->codecid;
+    pkt->mpeg12_retry_flags = pes->flags;
+    pkt->mpeg12_retry_pts = pes->pts;
+    pkt->mpeg12_retry_dts = pes->dts;
+    pkt->mpeg12_retry_flush = (uint8_t)(0 != flush);
+    pkt->mpeg12_retry = 1;
+}
+
+static void mpeg_packet_mpeg12_compact(struct packet_t* pkt, const struct pes_t* pes,
+    size_t old_size, size_t old_tail_start, const int64_t old_tail_pts[3],
+    const int64_t old_tail_dts[3], const int old_tail_flags[3], int flags,
+    size_t keep, size_t scan)
+{
+    size_t i;
+    size_t new_tail_count;
+    size_t new_tail_start;
+    int64_t new_tail_pts[3];
+    int64_t new_tail_dts[3];
+    int new_tail_flags[3];
+
+    assert(keep <= pkt->size);
+    new_tail_count = pkt->size - keep < 3 ? pkt->size - keep : 3;
+    new_tail_start = pkt->size - new_tail_count;
+    for (i = 0; i < new_tail_count; ++i)
+    {
+        size_t offset = new_tail_start + i;
+        if (offset < old_size)
+        {
+            assert(offset >= old_tail_start);
+            new_tail_pts[i] = old_tail_pts[offset - old_tail_start];
+            new_tail_dts[i] = old_tail_dts[offset - old_tail_start];
+            new_tail_flags[i] = old_tail_flags[offset - old_tail_start];
+        }
+        else
+        {
+            new_tail_pts[i] = pes->pts;
+            new_tail_dts[i] = pes->dts;
+            new_tail_flags[i] = flags;
+        }
+    }
+
+    if (keep > 0)
+    {
+        memmove(pkt->data, pkt->data + keep, pkt->size - keep);
+        pkt->size -= keep;
+        scan = scan > keep ? scan - keep : 0;
+        if (pkt->mpeg12_have_prefix)
+        {
+            assert(pkt->mpeg12_prefix >= keep);
+            pkt->mpeg12_prefix -= keep;
+        }
+        if (pkt->mpeg12_have_picture_timestamp)
+        {
+            assert(pkt->mpeg12_picture >= keep);
+            pkt->mpeg12_picture -= keep;
+        }
+    }
+
+    pkt->mpeg12_scan = scan;
+    pkt->mpeg12_tail_count = (uint8_t)new_tail_count;
+    memcpy(pkt->mpeg12_tail_pts, new_tail_pts, new_tail_count * sizeof(new_tail_pts[0]));
+    memcpy(pkt->mpeg12_tail_dts, new_tail_dts, new_tail_count * sizeof(new_tail_dts[0]));
+    memcpy(pkt->mpeg12_tail_flags, new_tail_flags, new_tail_count * sizeof(new_tail_flags[0]));
+}
+
+static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, size_t appended, int flush, pes_packet_handler handler, void* param)
+{
+    int r;
+    int flags;
+    int start_flags;
+    size_t i;
+    size_t j;
+    size_t keep;
+    size_t scan;
+    size_t boundary;
+    size_t old_size;
+    size_t old_tail_start;
+    uint8_t code;
+    uint8_t picture_type;
+    uint8_t old_tail_count;
+    int64_t picture_pts;
+    int64_t picture_dts;
+    int64_t old_tail_pts[3];
+    int64_t old_tail_dts[3];
+    int old_tail_flags[3];
+
+    keep = 0;
+    old_size = pkt->size - appended;
+    old_tail_count = pkt->mpeg12_tail_count;
+    // A start code can begin in the last three bytes of the previous PES input.
+    // Keep their metadata so the new Picture retains its original timestamp.
+    memcpy(old_tail_pts, pkt->mpeg12_tail_pts, sizeof(old_tail_pts));
+    memcpy(old_tail_dts, pkt->mpeg12_tail_dts, sizeof(old_tail_dts));
+    memcpy(old_tail_flags, pkt->mpeg12_tail_flags, sizeof(old_tail_flags));
+    old_tail_start = old_size - old_tail_count;
+    flags = pes->flags & (MPEG_FLAG_PACKET_LOST | MPEG_FLAG_PACKET_CORRUPT);
+    if (pkt->mpeg12_have_picture)
+        pkt->flags |= flags;
+    if (pkt->mpeg12_have_prefix)
+        pkt->mpeg12_prefix_flags |= flags;
+
+    for (i = pkt->mpeg12_scan; i + 3 < pkt->size; ++i)
+    {
+        if (0x00 != pkt->data[i] || 0x00 != pkt->data[i + 1] || 0x01 != pkt->data[i + 2])
+            continue;
+
+        code = pkt->data[i + 3];
+        if (i < old_size && i >= old_tail_start)
+            start_flags = old_tail_flags[i - old_tail_start];
+        else
+            start_flags = flags;
+
+        if (0xB3 == code || 0xB8 == code)
+        {
+            if (!pkt->mpeg12_have_prefix)
+            {
+                pkt->mpeg12_have_prefix = 1;
+                pkt->mpeg12_prefix = i;
+                pkt->mpeg12_prefix_flags = start_flags | flags;
+            }
+            continue;
+        }
+
+        if (0x00 != code)
+            continue;
+
+        if (!pkt->mpeg12_have_picture_timestamp)
+        {
+            if (i < old_size && i >= old_tail_start)
+            {
+                j = i - old_tail_start;
+                picture_pts = old_tail_pts[j];
+                picture_dts = old_tail_dts[j];
+            }
+            else
+            {
+                picture_pts = pes->pts;
+                picture_dts = pes->dts;
+            }
+            pkt->mpeg12_picture_pts = picture_pts;
+            pkt->mpeg12_picture_dts = picture_dts;
+            pkt->mpeg12_picture_flags = start_flags | flags;
+            pkt->mpeg12_picture = i;
+            pkt->mpeg12_have_picture_timestamp = 1;
+        }
+
+        if (i + 5 >= pkt->size)
+            break; // wait for picture_coding_type
+
+        picture_type = (pkt->data[i + 5] >> 3) & 0x07;
+        boundary = pkt->mpeg12_have_prefix ? pkt->mpeg12_prefix : i;
+        if (pkt->mpeg12_have_picture)
+        {
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags,
+                pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
+            if (0 != r)
+            {
+                mpeg_packet_mpeg12_compact(pkt, pes, old_size, old_tail_start,
+                    old_tail_pts, old_tail_dts, old_tail_flags, flags, keep, i);
+                mpeg_packet_mpeg12_save_retry(pkt, pes, flush);
+                return r;
+            }
+        }
+        else
+        {
+            keep = boundary;
+        }
+
+        pkt->pts = pkt->mpeg12_picture_pts;
+        pkt->dts = pkt->mpeg12_picture_dts;
+        pkt->sid = pes->sid;
+        pkt->codecid = pes->codecid;
+        pkt->flags = (pkt->mpeg12_have_prefix ? pkt->mpeg12_prefix_flags : flags)
+            | pkt->mpeg12_picture_flags
+            | (1 == picture_type ? MPEG_FLAG_IDR_FRAME : 0);
+        pkt->mpeg12_have_picture = 1;
+        pkt->mpeg12_picture_flags = 0;
+        pkt->mpeg12_picture_pts = 0;
+        pkt->mpeg12_picture_dts = 0;
+        pkt->mpeg12_picture = 0;
+        pkt->mpeg12_have_picture_timestamp = 0;
+        pkt->mpeg12_have_prefix = 0;
+        pkt->mpeg12_prefix = 0;
+        pkt->mpeg12_prefix_flags = 0;
+        keep = boundary;
+    }
+
+    scan = i + 3 < pkt->size ? i : (pkt->size > 3 ? pkt->size - 3 : 0);
+    if (flush)
+    {
+        if (pkt->mpeg12_have_picture)
+        {
+            boundary = pkt->size;
+            if (pkt->mpeg12_have_prefix)
+                boundary = pkt->mpeg12_prefix;
+            if (pkt->mpeg12_have_picture_timestamp && pkt->mpeg12_picture < boundary)
+                boundary = pkt->mpeg12_picture;
+            r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags,
+                pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
+            if (0 != r)
+            {
+                mpeg_packet_mpeg12_compact(pkt, pes, old_size, old_tail_start,
+                    old_tail_pts, old_tail_dts, old_tail_flags, flags, keep, scan);
+                mpeg_packet_mpeg12_save_retry(pkt, pes, flush);
+                return r;
+            }
+        }
+        mpeg_packet_mpeg12_reset(pkt);
+        return 0;
+    }
+
+    mpeg_packet_mpeg12_compact(pkt, pes, old_size, old_tail_start,
+        old_tail_pts, old_tail_dts, old_tail_flags, flags, keep, scan);
     return 0;
 }
 
@@ -176,14 +426,46 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
 {
     int r;
     size_t total;
+    struct pes_t retry_pes;
 
     total = size;
     *consume = size; // all saved
+    if (pkt->mpeg12_retry)
+    {
+        memset(&retry_pes, 0, sizeof(retry_pes));
+        retry_pes.pn = pkt->mpeg12_retry_pn;
+        retry_pes.pid = pkt->mpeg12_retry_pid;
+        retry_pes.sid = pkt->mpeg12_retry_sid;
+        retry_pes.codecid = pkt->mpeg12_retry_codecid;
+        retry_pes.flags = pkt->mpeg12_retry_flags;
+        retry_pes.pts = pkt->mpeg12_retry_pts;
+        retry_pes.dts = pkt->mpeg12_retry_dts;
+        r = mpeg_packet_mpeg12(pkt, &retry_pes, 0,
+            pkt->mpeg12_retry_flush, handler, param);
+        if (0 != r)
+        {
+            *consume = 0;
+            return r;
+        }
+        pkt->mpeg12_retry = 0;
+        pkt->mpeg12_retry_flush = 0;
+    }
+
+    // TS error flags remain set for the rest of the PES. Use the generation
+    // counter so every continuity gap resets the partial MPEG Picture once.
+    if (size > 0 && mpeg_packet_is_mpeg12_video(pes->codecid)
+        && pkt->mpeg12_discontinuity != pes->discontinuity)
+    {
+        mpeg_packet_mpeg12_reset(pkt);
+        pkt->mpeg12_discontinuity = pes->discontinuity;
+    }
     // use timestamp to split packet
     assert(PTS_NO_VALUE != pes->dts);
-    if (pkt->size > 0 && (pkt->dts != pes->dts || start) 
+    if (pkt->size > 0 && (pkt->dts != pes->dts || start)
         // WARNING: don't use pes->codecid
-        && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid && PSI_STREAM_H266 != pkt->codecid)
+        && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid && PSI_STREAM_H266 != pkt->codecid
+        && !mpeg_packet_is_mpeg12_video(pkt->codecid)
+        && !mpeg_packet_is_mpeg12_video(pes->codecid))
     {
         if(0 == pes->codecid)
             pes_packet_codec_verify(pes, pkt); // verify on packet complete
@@ -212,6 +494,10 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid || PSI_STREAM_H266 == pes->codecid)
     {
         return mpeg_packet_h26x(pkt, pes, total, consume, handler, param);
+    }
+    else if (mpeg_packet_is_mpeg12_video(pes->codecid))
+    {
+        return mpeg_packet_mpeg12(pkt, pes, size, NULL == data && 0 == size, handler, param);
     }
     else
     {

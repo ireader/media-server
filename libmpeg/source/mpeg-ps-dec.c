@@ -498,6 +498,47 @@ int ps_demuxer_destroy(struct ps_demuxer_t* ps)
 	return 0;
 }
 
+int ps_demuxer_flush(struct ps_demuxer_t* ps)
+{
+    int r;
+    size_t i;
+    size_t consume;
+    struct pes_t* pes;
+
+    for (i = 0; i < ps->psm.stream_count; ++i)
+    {
+        pes = &ps->psm.streams[i];
+        if (pes->pkt.size < 5
+            && PSI_STREAM_MPEG1 != pes->codecid && PSI_STREAM_MPEG2 != pes->codecid)
+            continue;
+
+        if (PSI_STREAM_H264 == pes->codecid)
+        {
+            const uint8_t aud[] = { 0, 0, 0, 1, 0x09, 0xF0 };
+            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
+        }
+        else if (PSI_STREAM_H265 == pes->codecid)
+        {
+            const uint8_t aud[] = { 0, 0, 0, 1, 0x46, 0x01, 0x50 };
+            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
+        }
+        else if (PSI_STREAM_H266 == pes->codecid)
+        {
+            const uint8_t aud[] = { 0, 0, 0, 1, 0x00, 0xA1, 0x18 };
+            r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ps_demuxer_onpes, ps);
+        }
+        else
+        {
+            r = pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ps_demuxer_onpes, ps);
+        }
+
+        if (0 != r)
+            return r;
+    }
+
+    return 0;
+}
+
 void ps_demuxer_set_notify(struct ps_demuxer_t* ps, struct ps_demuxer_notify_t *notify, void* param)
 {
     ps->notify_param = param;

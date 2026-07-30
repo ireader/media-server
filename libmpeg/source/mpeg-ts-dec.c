@@ -125,6 +125,7 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 
 int ts_demuxer_flush(struct ts_demuxer_t* ts)
 {
+    int r;
     uint32_t i, j;
 	size_t consume;
     for (i = 0; i < ts->pat.pmt_count; i++)
@@ -132,29 +133,33 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
         for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
         {
             struct pes_t* pes = &ts->pat.pmts[i].streams[j];
-            if (pes->pkt.size < 5)
+            if (pes->pkt.size < 5
+                && PSI_STREAM_MPEG1 != pes->codecid && PSI_STREAM_MPEG2 != pes->codecid)
                 continue;
             
             if (PSI_STREAM_H264 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x09,0xf0};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
+                r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
             else if (PSI_STREAM_H265 == pes->codecid)
             {
                 const uint8_t aud[] = {0,0,0,1,0x46,0x01,0x50};
-                pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
+                r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
             }
 			else if (PSI_STREAM_H266 == pes->codecid)
 			{
 				const uint8_t aud[] = { 0,0,0,1,0x00,0xA1,0x18 };
-				pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
+				r = pes_packet(&pes->pkt, pes, aud, sizeof(aud), &consume, 0, ts->onpacket, ts->param);
 			}
             else
             {
                 //assert(0);
-                pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ts->onpacket, ts->param);
+                r = pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ts->onpacket, ts->param);
             }
+
+            if (0 != r)
+                return r;
         }
     }
     return 0;
@@ -247,7 +252,11 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						if (PID != pes->pid)
                             continue;
 
-						pes->flags |= ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter ? (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST) : 0;
+						if (((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
+						{
+							pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
+							++pes->discontinuity;
+						}
 						ts->pat.pmts[j].streams[k].cc = (uint8_t)pkhd.continuity_counter;
 
                         if (pkhd.payload_unit_start_indicator)

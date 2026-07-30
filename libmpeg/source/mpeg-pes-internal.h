@@ -24,6 +24,31 @@ struct packet_t
     size_t capacity;
 
 	int vcl; // h.264/h.265 only
+	// MPEG-1/2 video access unit state
+	size_t mpeg12_scan;
+	size_t mpeg12_prefix;
+	size_t mpeg12_picture;
+	int mpeg12_prefix_flags;
+	int mpeg12_picture_flags;
+	int64_t mpeg12_picture_pts;
+	int64_t mpeg12_picture_dts;
+	int64_t mpeg12_tail_pts[3];
+	int64_t mpeg12_tail_dts[3];
+	int mpeg12_tail_flags[3];
+	uint8_t mpeg12_have_prefix;
+	uint8_t mpeg12_have_picture;
+	uint8_t mpeg12_have_picture_timestamp;
+	uint8_t mpeg12_tail_count;
+	uint8_t mpeg12_retry;
+	uint8_t mpeg12_retry_flush;
+	uint32_t mpeg12_discontinuity;
+	uint16_t mpeg12_retry_pn;
+	uint16_t mpeg12_retry_pid;
+	uint8_t mpeg12_retry_sid;
+	uint8_t mpeg12_retry_codecid;
+	int mpeg12_retry_flags;
+	int64_t mpeg12_retry_pts;
+	int64_t mpeg12_retry_dts;
 };
 
 struct pes_t
@@ -82,6 +107,7 @@ struct pes_t
 
 	int have_pes_header; // TS demuxer only
 	int flags; // TS/PS demuxer only
+	uint32_t discontinuity; // TS continuity error generation
     struct packet_t pkt;
 };
 
