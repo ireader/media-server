@@ -121,9 +121,12 @@ static void mpeg_packet_discontinuity_reset_test()
     pkt.mpeg12_picture_flags = MPEG_FLAG_PACKET_CORRUPT;
     pkt.mpeg12_picture_pts = 12600;
     pkt.mpeg12_picture_dts = 12600;
-    pkt.mpeg12_tail_pts[0] = 16200;
-    pkt.mpeg12_tail_dts[0] = 16200;
-    pkt.mpeg12_tail_flags[0] = MPEG_FLAG_IDR_FRAME;
+    for (size_t i = 0; i < 3; ++i)
+    {
+        pkt.mpeg12_tail_pts[i] = 16200 + (int64_t)i;
+        pkt.mpeg12_tail_dts[i] = 16200 + (int64_t)i;
+        pkt.mpeg12_tail_flags[i] = MPEG_FLAG_IDR_FRAME;
+    }
     pkt.mpeg12_have_prefix = 1;
     pkt.mpeg12_have_picture = 1;
     pkt.mpeg12_have_picture_timestamp = 1;
@@ -149,9 +152,12 @@ static void mpeg_packet_discontinuity_reset_test()
     assert(0 == pkt.mpeg12_picture_flags);
     assert(0 == pkt.mpeg12_picture_pts);
     assert(0 == pkt.mpeg12_picture_dts);
-    assert(0 == pkt.mpeg12_tail_pts[0]);
-    assert(0 == pkt.mpeg12_tail_dts[0]);
-    assert(0 == pkt.mpeg12_tail_flags[0]);
+    for (size_t i = 0; i < 3; ++i)
+    {
+        assert(0 == pkt.mpeg12_tail_pts[i]);
+        assert(0 == pkt.mpeg12_tail_dts[i]);
+        assert(0 == pkt.mpeg12_tail_flags[i]);
+    }
     assert(0 == pkt.mpeg12_have_prefix);
     assert(0 == pkt.mpeg12_have_picture);
     assert(0 == pkt.mpeg12_have_picture_timestamp);
