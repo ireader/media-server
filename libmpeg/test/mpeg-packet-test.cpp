@@ -695,15 +695,26 @@ static void mpeg_packet_reserved_mpeg12_fragmented_test(int expected_codecid)
     std::string first = mpeg_packet_test_sequence(expected_codecid);
     first += mpeg_packet_test_picture(1);
     std::string second = mpeg_packet_test_picture(2);
-    size_t first_split = 5;
-    size_t second_split = first.size() - 4;
+    size_t sequence_end = mpeg_packet_test_sequence(PSI_STREAM_MPEG1).size();
+    size_t extension_end = mpeg_packet_test_sequence(expected_codecid).size();
+    size_t picture_split = extension_end + 4;
 
     mpeg_packet_test_init(&ctx);
     ctx.pes.codecid = PSI_STREAM_RESERVED;
     ctx.expected_codecid = expected_codecid;
-    mpeg_packet_test_input(&ctx, first.substr(0, first_split), 1, 9000);
-    mpeg_packet_test_input(&ctx, first.substr(first_split, second_split - first_split), 0, 9000);
-    mpeg_packet_test_input(&ctx, first.substr(second_split), 0, 9000);
+    mpeg_packet_test_input(&ctx, first.substr(0, sequence_end), 1, 9000);
+    if (PSI_STREAM_MPEG2 == expected_codecid)
+    {
+        mpeg_packet_test_input(&ctx, first.substr(sequence_end, 2), 0, 9000);
+        mpeg_packet_test_input(&ctx,
+            first.substr(sequence_end + 2, picture_split - sequence_end - 2), 0, 9000);
+        mpeg_packet_test_input(&ctx, first.substr(picture_split), 0, 9000);
+    }
+    else
+    {
+        mpeg_packet_test_input(&ctx, first.substr(sequence_end, 4), 0, 9000);
+        mpeg_packet_test_input(&ctx, first.substr(sequence_end + 4), 0, 9000);
+    }
     mpeg_packet_test_input(&ctx, second, 1, 12600);
     assert(expected_codecid == ctx.pes.codecid);
     assert(1 == ctx.outputs.size());
