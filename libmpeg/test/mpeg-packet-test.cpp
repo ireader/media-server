@@ -131,7 +131,6 @@ static void mpeg_packet_discontinuity_reset_test()
     pkt.mpeg12_have_picture = 1;
     pkt.mpeg12_have_picture_timestamp = 1;
     pkt.mpeg12_tail_count = 1;
-    pkt.mpeg12_discontinuity = 1;
 
     uint8_t* data = pkt.data;
     size_t capacity = pkt.capacity;
@@ -162,7 +161,6 @@ static void mpeg_packet_discontinuity_reset_test()
     assert(0 == pkt.mpeg12_have_picture);
     assert(0 == pkt.mpeg12_have_picture_timestamp);
     assert(0 == pkt.mpeg12_tail_count);
-    assert(0 == pkt.mpeg12_discontinuity);
     free(data);
 }
 
@@ -753,14 +751,9 @@ static void mpeg_pmt_clear_stream_state_test()
     pmt.stream_count = 1;
 
     struct pes_t* pes = &pmt.streams[0];
+    struct ts_pes_state_t* state = &pmt.stream_states[0];
     pes->codecid = PSI_STREAM_MPEG2;
-    pes->have_pes_header = 1;
-    pes->ts_pes_payload_remaining = 32;
-    pes->ts_pes_header_bytes = 8;
-    pes->ts_pes_payload_start = 1;
-    pes->ts_pes_header[0] = 0x7F;
     pes->flags = MPEG_FLAG_PACKET_CORRUPT;
-    pes->discontinuity = 7;
     pes->pkt.data = (uint8_t*)malloc(64);
     assert(NULL != pes->pkt.data);
     pes->pkt.size = 8;
@@ -772,10 +765,16 @@ static void mpeg_pmt_clear_stream_state_test()
     pes->pkt.mpeg12_have_prefix = 1;
     pes->pkt.mpeg12_have_picture = 1;
     pes->pkt.mpeg12_tail_count = 3;
-    pes->pkt.mpeg12_discontinuity = 6;
     pes->esinfo = (uint8_t*)malloc(4);
     assert(NULL != pes->esinfo);
     pes->esinfo_len = 4;
+    state->payload_remaining = 32;
+    state->header_bytes = 8;
+    state->have_header = 1;
+    state->payload_start = 1;
+    state->have_payload_cc = 1;
+    state->payload_cc = 7;
+    memset(state->header, 0x7F, sizeof(state->header));
 
     pmt_clear(&pmt);
     assert(0 == pmt.stream_count);
@@ -789,16 +788,12 @@ static void mpeg_pmt_clear_stream_state_test()
     assert(0 == pes->pkt.mpeg12_have_prefix);
     assert(0 == pes->pkt.mpeg12_have_picture);
     assert(0 == pes->pkt.mpeg12_tail_count);
-    assert(0 == pes->pkt.mpeg12_discontinuity);
     assert(NULL == pes->esinfo);
     assert(0 == pes->esinfo_len);
-    assert(0 == pes->have_pes_header);
-    assert(0 == pes->ts_pes_payload_remaining);
-    assert(0 == pes->ts_pes_header_bytes);
-    assert(0 == pes->ts_pes_payload_start);
-    assert(0 == pes->ts_pes_header[0]);
     assert(0 == pes->flags);
-    assert(0 == pes->discontinuity);
+    struct ts_pes_state_t empty;
+    memset(&empty, 0, sizeof(empty));
+    assert(0 == memcmp(state, &empty, sizeof(empty)));
 }
 
 struct mpeg_ps_packet_test_t
@@ -940,6 +935,90 @@ static int mpeg_ts_packet_onpacket_any(void* param, int program, int /*stream*/,
     output.data.assign((const char*)data, bytes);
     ctx->outputs.push_back(output);
     return 0;
+}
+
+static void mpeg_ts_demux_packets(const std::string& data,
+    struct mpeg_ps_packet_test_t* ctx)
+{
+    struct ts_demuxer_t* demuxer = ts_demuxer_create(mpeg_ts_packet_onpacket, ctx);
+    assert(NULL != demuxer);
+    for (size_t i = 0; i < data.size(); i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)data.data() + i, 188));
+    }
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(0 == ts_demuxer_destroy(demuxer));
+}
+
+static void mpeg_ts_packet_initial_cc_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t mux;
+
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    mux.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &mux);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+    assert(stream > 0);
+    std::string first(picture_i, sizeof(picture_i));
+    first.append(512, (char)0x11);
+    std::string second(picture_p, sizeof(picture_p));
+    second.append(512, (char)0x22);
+    assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+        9000, 9000, first.data(), first.size()));
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        12600, 12600, second.data(), second.size()));
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    struct mpeg_ps_packet_test_t baseline;
+    baseline.handler_result = 0;
+    mpeg_ts_demux_packets(mux.data, &baseline);
+    assert(2 == baseline.outputs.size());
+
+    static const int initial_cc[] = { 0, 1 };
+    for (size_t n = 0; n < sizeof(initial_cc) / sizeof(initial_cc[0]); ++n)
+    {
+        std::string rewritten = mux.data;
+        int cc = initial_cc[n];
+        bool found = false;
+        for (size_t i = 0; i < rewritten.size(); i += 188)
+        {
+            uint8_t* packet = (uint8_t*)&rewritten[i];
+            int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+            if (packet_pid != stream || 0 == (packet[3] & 0x10))
+                continue;
+            packet[3] = (uint8_t)((packet[3] & 0xF0) | cc);
+            cc = (cc + 1) & 0x0F;
+            found = true;
+        }
+        assert(found);
+
+        struct mpeg_ps_packet_test_t actual;
+        actual.handler_result = 0;
+        mpeg_ts_demux_packets(rewritten, &actual);
+        assert(baseline.outputs.size() == actual.outputs.size());
+        for (size_t i = 0; i < baseline.outputs.size(); ++i)
+        {
+            assert(baseline.outputs[i].data == actual.outputs[i].data);
+            assert(baseline.outputs[i].pts == actual.outputs[i].pts);
+            assert(baseline.outputs[i].dts == actual.outputs[i].dts);
+            assert(baseline.outputs[i].flags == actual.outputs[i].flags);
+        }
+    }
 }
 
 static size_t mpeg_ts_find_pusi_packet(const std::string& data, size_t begin,
@@ -2055,6 +2134,7 @@ extern "C" void mpeg_packet_test(void)
     mpeg_packet_codecid_transition_test();
     mpeg_packet_size_limit_test();
     mpeg_packet_growth_test();
+    mpeg_ts_packet_initial_cc_test();
     mpeg_pmt_clear_stream_state_test();
     mpeg_ps_packet_continuous_test();
 #if defined(MPEG_PACKET_INVALID_PES_TEST)

@@ -39,7 +39,6 @@ struct packet_t
 	uint8_t mpeg12_have_picture;
 	uint8_t mpeg12_have_picture_timestamp;
 	uint8_t mpeg12_tail_count;
-	uint32_t mpeg12_discontinuity;
 };
 
 struct pes_t
@@ -96,15 +95,7 @@ struct pes_t
 
 	//uint32_t pack_field_length : 8;
 
-	// TS PES headers may cross packets and must not share the ES/AU buffer.
-	// TS PES 头可能跨包，不能与 ES/AU 缓存复用同一份状态。
-	int have_pes_header; // TS demuxer only
-	uint32_t ts_pes_payload_remaining;
-	uint16_t ts_pes_header_bytes;
-	uint8_t ts_pes_payload_start;
-	uint8_t ts_pes_header[9 + 255];
 	int flags; // TS/PS demuxer only
-	uint32_t discontinuity; // TS continuity error generation
     struct packet_t pkt;
 };
 

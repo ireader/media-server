@@ -151,30 +151,36 @@ static uint32_t adaptation_filed_read(struct ts_adaptation_field_t *adp, const u
 #define PES_HEADER_MAX_SIZE (PES_HEADER_MIN_SIZE + 255)
 #define PES_PAYLOAD_UNBOUNDED UINT32_MAX
 
-static struct pes_t* ts_demuxer_find_pes(struct ts_demuxer_t* ts, uint32_t pid)
+static struct pes_t* ts_demuxer_find_pes(struct ts_demuxer_t* ts,
+	uint32_t pid, struct ts_pes_state_t** state)
 {
 	uint32_t i, j;
+	*state = NULL;
 	for (i = 0; i < ts->pat.pmt_count; ++i)
 	{
 		for (j = 0; j < ts->pat.pmts[i].stream_count; ++j)
 		{
 			if (pid == ts->pat.pmts[i].streams[j].pid)
+			{
+				*state = &ts->pat.pmts[i].stream_states[j];
 				return &ts->pat.pmts[i].streams[j];
+			}
 		}
 	}
 	return NULL;
 }
 
-static void ts_demuxer_reset_pes_header(struct pes_t* pes)
+static void ts_demuxer_reset_pes_header(struct ts_pes_state_t* state)
 {
-	pes->have_pes_header = 0;
-	pes->ts_pes_payload_remaining = 0;
-	pes->ts_pes_header_bytes = 0;
-	pes->ts_pes_payload_start = 0;
+	state->payload_remaining = 0;
+	state->header_bytes = 0;
+	state->have_header = 0;
+	state->payload_start = 0;
 }
 
-static int ts_demuxer_read_pes_header(struct pes_t* pes, const uint8_t* data,
-	size_t bytes, size_t* consume)
+static int ts_demuxer_read_pes_header(struct pes_t* pes,
+	struct ts_pes_state_t* state, const uint8_t* data, size_t bytes,
+	size_t* consume)
 {
 	int r;
 	size_t n;
@@ -186,11 +192,11 @@ static int ts_demuxer_read_pes_header(struct pes_t* pes, const uint8_t* data,
 
 	*consume = 0;
 	header = NULL;
-	if (0 == pes->ts_pes_header_bytes && bytes >= 4
+	if (0 == state->header_bytes && bytes >= 4
 		&& (0x00 != data[0] || 0x00 != data[1] || 0x01 != data[2]))
 		return MPEG_ERROR_INVALID_DATA;
 
-	if (0 == pes->ts_pes_header_bytes && bytes >= PES_HEADER_MIN_SIZE)
+	if (0 == state->header_bytes && bytes >= PES_HEADER_MIN_SIZE)
 	{
 		// Keep the normal path copy-free; only split headers use the cache.
 		// 正常路径直接解析，只有跨包的 PES 头才进入缓存。
@@ -204,28 +210,28 @@ static int ts_demuxer_read_pes_header(struct pes_t* pes, const uint8_t* data,
 
 	while (NULL == header && *consume < bytes)
 	{
-		length = pes->ts_pes_header_bytes < PES_HEADER_MIN_SIZE
+		length = state->header_bytes < PES_HEADER_MIN_SIZE
 			? PES_HEADER_MIN_SIZE
-			: PES_HEADER_MIN_SIZE + pes->ts_pes_header[8];
+			: PES_HEADER_MIN_SIZE + state->header[8];
 		assert(length <= PES_HEADER_MAX_SIZE);
-		n = length - pes->ts_pes_header_bytes;
+		n = length - state->header_bytes;
 		if (n > bytes - *consume)
 			n = bytes - *consume;
-		memcpy(pes->ts_pes_header + pes->ts_pes_header_bytes, data + *consume, n);
-		pes->ts_pes_header_bytes += (uint16_t)n;
+		memcpy(state->header + state->header_bytes, data + *consume, n);
+		state->header_bytes += (uint16_t)n;
 		*consume += n;
 
-		if (pes->ts_pes_header_bytes >= 4
-			&& (0x00 != pes->ts_pes_header[0]
-				|| 0x00 != pes->ts_pes_header[1]
-				|| 0x01 != pes->ts_pes_header[2]))
+		if (state->header_bytes >= 4
+			&& (0x00 != state->header[0]
+				|| 0x00 != state->header[1]
+				|| 0x01 != state->header[2]))
 			return MPEG_ERROR_INVALID_DATA;
 
-		if (pes->ts_pes_header_bytes >= PES_HEADER_MIN_SIZE)
+		if (state->header_bytes >= PES_HEADER_MIN_SIZE)
 		{
-			length = PES_HEADER_MIN_SIZE + pes->ts_pes_header[8];
-			if (pes->ts_pes_header_bytes >= length)
-				header = pes->ts_pes_header;
+			length = PES_HEADER_MIN_SIZE + state->header[8];
+			if (state->header_bytes >= length)
+				header = state->header;
 		}
 	}
 
@@ -240,14 +246,14 @@ static int ts_demuxer_read_pes_header(struct pes_t* pes, const uint8_t* data,
 	if (MPEG_ERROR_OK != r || 0x000001 != prefix)
 		return MPEG_ERROR_INVALID_DATA;
 
-	pes->ts_pes_header_bytes = 0;
+	state->header_bytes = 0;
 	// A zero PES_packet_length extends to the next PUSI.
 	// PES_packet_length 为零时，当前 PES 持续到下一个 PUSI。
-	pes->ts_pes_payload_remaining = 0 == packet_length
+	state->payload_remaining = 0 == packet_length
 		? PES_PAYLOAD_UNBOUNDED
 		: pes->len;
-	pes->ts_pes_payload_start = 1;
-	pes->have_pes_header = 1;
+	state->payload_start = 1;
+	state->have_header = 1;
 	return MPEG_ERROR_OK;
 }
 
@@ -261,10 +267,11 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
         for (j = 0; j < ts->pat.pmts[i].stream_count; j++)
         {
             struct pes_t* pes = &ts->pat.pmts[i].streams[j];
+			struct ts_pes_state_t* state = &ts->pat.pmts[i].stream_states[j];
             if (pes->pkt.size < 5
                 && PSI_STREAM_MPEG1 != pes->codecid && PSI_STREAM_MPEG2 != pes->codecid)
 			{
-				ts_demuxer_reset_pes_header(pes);
+				ts_demuxer_reset_pes_header(state);
                 continue;
 			}
             
@@ -289,7 +296,7 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
                 r = pes_packet(&pes->pkt, pes, NULL, 0, &consume, 0, ts->onpacket, ts->param);
             }
 
-			ts_demuxer_reset_pes_header(pes);
+			ts_demuxer_reset_pes_header(state);
             if (0 != r)
                 return r;
         }
@@ -300,12 +307,14 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
 int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
     int r = 0;
+	int duplicate;
 	uint32_t i, j, k;
 	uint32_t PID;
 	size_t consume, payload;
 	unsigned int count, ver;
     struct ts_packet_header_t pkhd;
 	struct pes_t* error_pes;
+	struct ts_pes_state_t* error_state;
 
 	// 2.4.3 Specification of the transport stream syntax and semantics
 	// Transport stream packets shall be 188 bytes long.
@@ -332,13 +341,14 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 		j = adaptation_filed_read(&pkhd.adaptation, data + 4, bytes - 4);
 		if (0 == j)
 		{
-			error_pes = ts_demuxer_find_pes(ts, PID);
+			error_pes = ts_demuxer_find_pes(ts, PID, &error_state);
 			if (error_pes)
 			{
 				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
-				ts_demuxer_reset_pes_header(error_pes);
-				++error_pes->discontinuity;
-				error_pes->cc = (uint8_t)pkhd.continuity_counter;
+				pes_packet_discontinuity(&error_pes->pkt);
+				ts_demuxer_reset_pes_header(error_state);
+				error_state->payload_cc = (uint8_t)pkhd.continuity_counter;
+				error_state->have_payload_cc = 1;
 			}
 			return 0;
 		}
@@ -355,20 +365,24 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 	error_pes = NULL;
 	if (pkhd.transport_error_indicator || pkhd.adaptation.discontinuity_indicator)
 	{
-		error_pes = ts_demuxer_find_pes(ts, PID);
+		error_pes = ts_demuxer_find_pes(ts, PID, &error_state);
 		if (error_pes)
 		{
 			if (pkhd.transport_error_indicator)
 			{
 				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
-				ts_demuxer_reset_pes_header(error_pes);
+				pes_packet_discontinuity(&error_pes->pkt);
+				ts_demuxer_reset_pes_header(error_state);
+				error_state->payload_cc = (uint8_t)pkhd.continuity_counter;
+				error_state->have_payload_cc = 1;
 			}
-			else if (error_pes->ts_pes_header_bytes > 0)
+			else
 			{
-				ts_demuxer_reset_pes_header(error_pes);
+				pes_packet_discontinuity(&error_pes->pkt);
+				if (error_state->header_bytes > 0)
+					ts_demuxer_reset_pes_header(error_state);
+				error_state->have_payload_cc = 0;
 			}
-			++error_pes->discontinuity;
-			error_pes->cc = (uint8_t)pkhd.continuity_counter;
 		}
 	}
 
@@ -420,81 +434,89 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 					for (k = 0; k < ts->pat.pmts[j].stream_count; k++)
 					{
                         struct pes_t* pes = &ts->pat.pmts[j].streams[k];
+						struct ts_pes_state_t* state = &ts->pat.pmts[j].stream_states[k];
 						if (PID != pes->pid)
                             continue;
 
-						if (!pkhd.adaptation.discontinuity_indicator
-							&& ((ts->pat.pmts[j].streams[k].cc + 1) % 16) != (uint8_t)pkhd.continuity_counter)
+						duplicate = state->have_payload_cc
+							&& state->payload_cc == (uint8_t)pkhd.continuity_counter;
+						if (state->have_payload_cc && !duplicate
+							&& ((state->payload_cc + 1) % 16)
+								!= (uint8_t)pkhd.continuity_counter)
 							{
 								pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
-								++pes->discontinuity;
+								pes_packet_discontinuity(&pes->pkt);
 								if (!pkhd.payload_unit_start_indicator
-									&& pes->ts_pes_header_bytes > 0)
-									ts_demuxer_reset_pes_header(pes);
+									&& state->header_bytes > 0)
+									ts_demuxer_reset_pes_header(state);
 								else if (!pkhd.payload_unit_start_indicator
-									&& pes->have_pes_header
-									&& PES_PAYLOAD_UNBOUNDED != pes->ts_pes_payload_remaining)
+									&& state->have_header
+									&& PES_PAYLOAD_UNBOUNDED != state->payload_remaining)
 								{
 									// Lost payload makes the finite PES boundary unknown.
 									// 载荷丢失后无法再确定有限 PES 的精确结束位置。
-									pes->ts_pes_payload_remaining = PES_PAYLOAD_UNBOUNDED;
+									state->payload_remaining = PES_PAYLOAD_UNBOUNDED;
 									pes->len = 0;
 								}
 							}
-							ts->pat.pmts[j].streams[k].cc = (uint8_t)pkhd.continuity_counter;
+							if (!duplicate)
+							{
+								state->payload_cc = (uint8_t)pkhd.continuity_counter;
+								state->have_payload_cc = 1;
+							}
 
 							if (pkhd.payload_unit_start_indicator)
-								ts_demuxer_reset_pes_header(pes);
+								ts_demuxer_reset_pes_header(state);
 
 							if (pkhd.payload_unit_start_indicator
-								|| pes->ts_pes_header_bytes > 0)
+								|| state->header_bytes > 0)
 							{
-								r = ts_demuxer_read_pes_header(pes, data + i,
-									bytes - i, &consume);
+								r = ts_demuxer_read_pes_header(pes, state,
+									data + i, bytes - i, &consume);
 								i += (uint32_t)consume;
 								if (MPEG_ERROR_NEED_MORE_DATA == r)
 									return 0;
 								if (MPEG_ERROR_OK != r)
 								{
-									ts_demuxer_reset_pes_header(pes);
+									ts_demuxer_reset_pes_header(state);
 									return 0;
 								}
 
 								pes->flags = (pes->flags & MPEG_FLAG_PACKET_CORRUPT) ? MPEG_FLAG_PACKET_LOST : 0;
 								pes->flags |= pes->data_alignment_indicator ? MPEG_FLAG_IDR_FRAME : 0;
 							}
-							else if (!pes->have_pes_header)
+							else if (!state->have_header)
 							{
 								return 0; // ignore, don't have pes header yet
 							}
 
-							if (0 == pes->ts_pes_payload_remaining)
+							if (0 == state->payload_remaining)
 							{
-								ts_demuxer_reset_pes_header(pes);
+								ts_demuxer_reset_pes_header(state);
 								return 0;
 							}
 
 							payload = bytes - i;
-							if (PES_PAYLOAD_UNBOUNDED != pes->ts_pes_payload_remaining
-								&& payload > pes->ts_pes_payload_remaining)
-								payload = pes->ts_pes_payload_remaining;
+							if (PES_PAYLOAD_UNBOUNDED != state->payload_remaining
+								&& payload > state->payload_remaining)
+								payload = state->payload_remaining;
 							if (0 == payload)
 								return 0;
 
 	                        r = pes_packet(&pes->pkt, pes, data + i, payload, &consume,
-								pes->ts_pes_payload_start, ts->onpacket, ts->param);
-							pes->ts_pes_payload_start = 0;
+								state->payload_start, ts->onpacket, ts->param);
+							state->payload_start = 0;
 							if (0 != r)
 							{
-								ts_demuxer_reset_pes_header(pes);
+								ts_demuxer_reset_pes_header(state);
 								return r;
 							}
-							if (PES_PAYLOAD_UNBOUNDED != pes->ts_pes_payload_remaining)
+							if (PES_PAYLOAD_UNBOUNDED != state->payload_remaining)
 							{
-								assert(payload <= pes->ts_pes_payload_remaining);
-								pes->ts_pes_payload_remaining -= (uint32_t)payload;
-								if (0 == pes->ts_pes_payload_remaining)
-									pes->have_pes_header = 0;
+								assert(payload <= state->payload_remaining);
+								state->payload_remaining -= (uint32_t)payload;
+								if (0 == state->payload_remaining)
+									state->have_header = 0;
 							}
 	                        return r; // find stream
 					}
