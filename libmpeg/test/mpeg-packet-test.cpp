@@ -27,10 +27,52 @@ struct mpeg_packet_test_t
 {
     struct pes_t pes;
     std::vector<mpeg_packet_output_t> outputs;
+    int expected_codecid;
     int handler_result;
     int handler_calls;
     int handler_fail_at;
 };
+
+static std::string mpeg_packet_test_sequence(int codecid)
+{
+    static const char sequence[] = {
+        0x00, 0x00, 0x01, (char)0xB3, 0x16, 0x01, 0x20, 0x13
+    };
+    static const char extension[] = {
+        0x00, 0x00, 0x01, (char)0xB5, 0x10
+    };
+    std::string data(sequence, sizeof(sequence));
+    if (PSI_STREAM_MPEG2 == codecid)
+        data.append(extension, sizeof(extension));
+    return data;
+}
+
+static std::string mpeg_packet_test_picture(int type)
+{
+    static const char pictures[][8] = {
+        { 0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF },
+        { 0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF },
+        { 0x00, 0x00, 0x01, 0x00, 0x00, 0x18, (char)0xFF, (char)0xFF },
+    };
+    assert(type >= 1 && type <= 3);
+    return std::string(pictures[type - 1], sizeof(pictures[0]));
+}
+
+static std::string mpeg_packet_test_slice(void)
+{
+    static const char slice[] = {
+        0x00, 0x00, 0x01, 0x01, 0x11, 0x22, 0x33
+    };
+    return std::string(slice, sizeof(slice));
+}
+
+static std::string mpeg_packet_test_h264_nal(uint8_t type)
+{
+    std::string data("\x00\x00\x00\x01", 4);
+    data.push_back((char)type);
+    data.push_back((char)0x80);
+    return data;
+}
 
 static int mpeg_packet_onpacket(void* param, int program, int stream, int codecid, int flags,
     int64_t pts, int64_t dts, const void* data, size_t bytes)
@@ -39,7 +81,7 @@ static int mpeg_packet_onpacket(void* param, int program, int stream, int codeci
     struct mpeg_packet_output_t output;
     assert(1 == program);
     assert(0x100 == stream);
-    assert(PSI_STREAM_MPEG1 == codecid);
+    assert(ctx->expected_codecid == codecid);
     ++ctx->handler_calls;
     if (0 != ctx->handler_result
         && (0 == ctx->handler_fail_at || ctx->handler_calls == ctx->handler_fail_at))
@@ -62,6 +104,7 @@ static void mpeg_packet_test_init(struct mpeg_packet_test_t* ctx)
     ctx->pes.pid = 0x100;
     ctx->pes.sid = PES_SID_VIDEO;
     ctx->pes.codecid = PSI_STREAM_MPEG1;
+    ctx->expected_codecid = PSI_STREAM_MPEG1;
     ctx->handler_result = 0;
     ctx->handler_calls = 0;
     ctx->handler_fail_at = 0;
@@ -569,6 +612,203 @@ static void mpeg_packet_flush_handler_error_test()
     assert(std::string(picture_p, sizeof(picture_p)) == ctx.outputs[0].data);
     assert(12600 == ctx.outputs[0].pts);
     mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_reserved_mpeg12_test(int expected_codecid, int finite_pes)
+{
+    struct mpeg_packet_test_t ctx;
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = expected_codecid;
+
+    std::string first = mpeg_packet_test_sequence(expected_codecid);
+    first += mpeg_packet_test_picture(1);
+    std::string second = mpeg_packet_test_picture(2);
+
+    if (finite_pes)
+        ctx.pes.len = (uint32_t)first.size();
+    mpeg_packet_test_input(&ctx, first, 1, 9000);
+    assert(ctx.outputs.empty());
+    assert((finite_pes ? expected_codecid : PSI_STREAM_RESERVED) == ctx.pes.codecid);
+
+    if (finite_pes)
+        ctx.pes.len = (uint32_t)second.size();
+    mpeg_packet_test_input(&ctx, second, 1, 12600);
+    assert(expected_codecid == ctx.pes.codecid);
+    assert(1 == ctx.outputs.size());
+    assert(expected_codecid == ctx.outputs[0].codecid);
+    assert(first == ctx.outputs[0].data);
+    assert(9000 == ctx.outputs[0].pts);
+    assert(9000 == ctx.outputs[0].dts);
+    assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_IDR_FRAME));
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_reserved_mpeg12_negative_test()
+{
+    std::vector<std::string> inputs;
+    std::string incomplete_sequence = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    incomplete_sequence.resize(4);
+    inputs.push_back(incomplete_sequence);
+
+    std::string incomplete_extension = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    incomplete_extension.append("\x00\x00\x01\xB5", 4);
+    inputs.push_back(incomplete_extension);
+
+    inputs.push_back(mpeg_packet_test_picture(1) + mpeg_packet_test_slice());
+
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        struct mpeg_packet_test_t ctx;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_RESERVED;
+        mpeg_packet_test_input(&ctx, inputs[i], 1, 9000);
+        mpeg_packet_test_input(&ctx, std::string("x", 1), 1, 12600);
+        assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+        assert(1 == ctx.outputs.size());
+        assert(inputs[i] == ctx.outputs[0].data);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        std::string first = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+        first.append("\x00\x00\x01\xB5\x20", 5);
+        first.append("\x00\x00\x01\xB8", 4);
+        first += mpeg_packet_test_picture(1);
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_MPEG1;
+        mpeg_packet_test_input(&ctx, first, 1, 9000);
+        mpeg_packet_test_input(&ctx, mpeg_packet_test_picture(2), 1, 12600);
+        assert(PSI_STREAM_MPEG1 == ctx.pes.codecid);
+        assert(1 == ctx.outputs.size());
+        assert(first == ctx.outputs[0].data);
+        mpeg_packet_test_destroy(&ctx);
+    }
+}
+
+static void mpeg_packet_reserved_mpeg12_fragmented_test(int expected_codecid)
+{
+    struct mpeg_packet_test_t ctx;
+    std::string first = mpeg_packet_test_sequence(expected_codecid);
+    first += mpeg_packet_test_picture(1);
+    std::string second = mpeg_packet_test_picture(2);
+    size_t first_split = 5;
+    size_t second_split = first.size() - 4;
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = expected_codecid;
+    mpeg_packet_test_input(&ctx, first.substr(0, first_split), 1, 9000);
+    mpeg_packet_test_input(&ctx, first.substr(first_split, second_split - first_split), 0, 9000);
+    mpeg_packet_test_input(&ctx, first.substr(second_split), 0, 9000);
+    mpeg_packet_test_input(&ctx, second, 1, 12600);
+    assert(expected_codecid == ctx.pes.codecid);
+    assert(1 == ctx.outputs.size());
+    assert(first == ctx.outputs[0].data);
+    assert(9000 == ctx.outputs[0].pts);
+    assert(9000 == ctx.outputs[0].dts);
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_reserved_mpeg12_metadata_test()
+{
+    struct mpeg_packet_test_t ctx;
+    std::string first = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    first += mpeg_packet_test_picture(1);
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = PSI_STREAM_MPEG1;
+    mpeg_packet_test_input(&ctx, first, 1, 9000, MPEG_FLAG_PACKET_LOST);
+    mpeg_packet_test_input(&ctx, mpeg_packet_test_picture(2), 1, 12600,
+        MPEG_FLAG_PACKET_CORRUPT);
+    assert(1 == ctx.outputs.size());
+    assert(first == ctx.outputs[0].data);
+    assert(9000 == ctx.outputs[0].pts);
+    assert(9000 == ctx.outputs[0].dts);
+    assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+    assert(0 == (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_reserved_mpeg12_handler_error_test()
+{
+    struct mpeg_packet_test_t ctx;
+    std::string first = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    std::string second = mpeg_packet_test_picture(2);
+    size_t consume = 0;
+    int r;
+    first += mpeg_packet_test_picture(1);
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = PSI_STREAM_MPEG1;
+    mpeg_packet_test_input(&ctx, first, 1, 9000);
+    ctx.handler_result = -789;
+    ctx.pes.pts = 12600;
+    ctx.pes.dts = 12600;
+    r = pes_packet(&ctx.pes.pkt, &ctx.pes, second.data(), second.size(), &consume,
+        1, mpeg_packet_onpacket, &ctx);
+    assert(-789 == r);
+    assert(second.size() == consume);
+    assert(1 == ctx.handler_calls);
+    assert(0 == ctx.pes.pkt.size);
+    assert(0 == ctx.pes.pkt.mpeg12_have_picture);
+    assert(0 == ctx.pes.pkt.mpeg12_have_prefix);
+
+    ctx.handler_result = 0;
+    mpeg_packet_test_input(&ctx, first, 1, 16200);
+    mpeg_packet_test_input(&ctx, second, 1, 19800);
+    assert(2 == ctx.handler_calls);
+    assert(1 == ctx.outputs.size());
+    assert(first == ctx.outputs[0].data);
+    assert(16200 == ctx.outputs[0].pts);
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_reserved_h264_and_mpeg4_test()
+{
+    {
+        struct mpeg_packet_test_t ctx;
+        std::string first = mpeg_packet_test_h264_nal(0x67);
+        first += mpeg_packet_test_h264_nal(0x68);
+        first += mpeg_packet_test_h264_nal(0x09);
+        first += mpeg_packet_test_h264_nal(0x65);
+        std::string second = mpeg_packet_test_h264_nal(0x09);
+        second += mpeg_packet_test_h264_nal(0x41);
+
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_H264;
+        ctx.pes.len = (uint32_t)first.size();
+        mpeg_packet_test_input(&ctx, first, 1, 9000);
+        assert(PSI_STREAM_H264 == ctx.pes.codecid);
+        mpeg_packet_test_input(&ctx, second, 1, 12600);
+        assert(PSI_STREAM_H264 == ctx.pes.codecid);
+        assert(!ctx.outputs.empty());
+        assert(PSI_STREAM_H264 == ctx.outputs[0].codecid);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        std::string mpeg4("\x00\x00\x01\xB0\x00", 5);
+
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_MPEG4;
+        ctx.pes.len = (uint32_t)mpeg4.size();
+        mpeg_packet_test_input(&ctx, mpeg4, 1, 9000);
+        assert(PSI_STREAM_MPEG4 == ctx.pes.codecid);
+        mpeg_packet_test_input(&ctx, std::string("x", 1), 1, 12600);
+        assert(1 == ctx.outputs.size());
+        assert(PSI_STREAM_MPEG4 == ctx.outputs[0].codecid);
+        assert(mpeg4 == ctx.outputs[0].data);
+        mpeg_packet_test_destroy(&ctx);
+    }
 }
 
 static int mpeg_packet_transition_onpacket(void* param, int /*program*/, int /*stream*/,
@@ -2280,6 +2520,16 @@ extern "C" void mpeg_packet_test(void)
     mpeg_packet_multiple_pictures_test();
     mpeg_packet_handler_error_test();
     mpeg_packet_flush_handler_error_test();
+    mpeg_packet_reserved_mpeg12_test(PSI_STREAM_MPEG1, 0);
+    mpeg_packet_reserved_mpeg12_test(PSI_STREAM_MPEG1, 1);
+    mpeg_packet_reserved_mpeg12_test(PSI_STREAM_MPEG2, 0);
+    mpeg_packet_reserved_mpeg12_test(PSI_STREAM_MPEG2, 1);
+    mpeg_packet_reserved_mpeg12_negative_test();
+    mpeg_packet_reserved_mpeg12_fragmented_test(PSI_STREAM_MPEG1);
+    mpeg_packet_reserved_mpeg12_fragmented_test(PSI_STREAM_MPEG2);
+    mpeg_packet_reserved_mpeg12_metadata_test();
+    mpeg_packet_reserved_mpeg12_handler_error_test();
+    mpeg_packet_reserved_h264_and_mpeg4_test();
     mpeg_packet_codecid_transition_test();
     mpeg_packet_size_limit_test();
     mpeg_packet_growth_test();
