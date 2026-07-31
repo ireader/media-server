@@ -59,23 +59,13 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
     return 0;
 }
 
-static void mpeg_packet_mpeg12_reset(struct packet_t* pkt)
+void pes_packet_discontinuity(struct packet_t* pkt)
 {
-    pkt->size = 0;
-    pkt->codecid = 0;
-    pkt->flags = 0;
-    pkt->vcl = 0;
-    pkt->mpeg12_scan = 0;
-    pkt->mpeg12_prefix = 0;
-    pkt->mpeg12_picture = 0;
-    pkt->mpeg12_prefix_flags = 0;
-    pkt->mpeg12_picture_flags = 0;
-    pkt->mpeg12_picture_pts = 0;
-    pkt->mpeg12_picture_dts = 0;
-    pkt->mpeg12_have_prefix = 0;
-    pkt->mpeg12_have_picture = 0;
-    pkt->mpeg12_have_picture_timestamp = 0;
-    pkt->mpeg12_tail_count = 0;
+    uint8_t* data = pkt->data;
+    size_t capacity = pkt->capacity;
+    memset(pkt, 0, sizeof(*pkt));
+    pkt->data = data;
+    pkt->capacity = capacity;
 }
 
 static void mpeg_packet_mpeg12_compact(struct packet_t* pkt, const struct pes_t* pes,
@@ -227,7 +217,7 @@ static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, siz
                 pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
             if (0 != r)
             {
-                mpeg_packet_mpeg12_reset(pkt);
+                pes_packet_discontinuity(pkt);
                 return r;
             }
         }
@@ -269,11 +259,11 @@ static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, siz
                 pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
             if (0 != r)
             {
-                mpeg_packet_mpeg12_reset(pkt);
+                pes_packet_discontinuity(pkt);
                 return r;
             }
         }
-        mpeg_packet_mpeg12_reset(pkt);
+        pes_packet_discontinuity(pkt);
         return 0;
     }
 
@@ -437,7 +427,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     if (mpeg_packet_is_mpeg12_video(pes->codecid)
         && pkt->mpeg12_discontinuity != pes->discontinuity)
     {
-        mpeg_packet_mpeg12_reset(pkt);
+        pes_packet_discontinuity(pkt);
         pkt->mpeg12_discontinuity = pes->discontinuity;
     }
     if (pkt->size > 0 && pkt->codecid != pes->codecid
@@ -446,7 +436,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     {
         // A codec change involving MPEG-1/2 is a hard discontinuity. Never mix
         // the pending bytes and parser state of two codecs.
-        mpeg_packet_mpeg12_reset(pkt);
+        pes_packet_discontinuity(pkt);
     }
     // use timestamp to split packet
     assert(PTS_NO_VALUE != pes->dts);

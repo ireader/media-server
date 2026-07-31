@@ -69,7 +69,7 @@ static void mpeg_packet_test_init(struct mpeg_packet_test_t* ctx)
 
 static void mpeg_packet_test_discontinuity(struct mpeg_packet_test_t* ctx)
 {
-    ++ctx->pes.discontinuity;
+    pes_packet_discontinuity(&ctx->pes.pkt);
 }
 
 static void mpeg_packet_test_input(struct mpeg_packet_test_t* ctx, const std::string& data,
@@ -98,6 +98,66 @@ static void mpeg_packet_test_destroy(struct mpeg_packet_test_t* ctx)
 {
     free(ctx->pes.pkt.data);
     ctx->pes.pkt.data = NULL;
+}
+
+static void mpeg_packet_discontinuity_reset_test()
+{
+    struct packet_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+    pkt.data = (uint8_t*)malloc(64);
+    assert(NULL != pkt.data);
+    pkt.capacity = 64;
+    pkt.sid = PES_SID_VIDEO;
+    pkt.codecid = PSI_STREAM_MPEG2;
+    pkt.flags = MPEG_FLAG_IDR_FRAME;
+    pkt.pts = 9000;
+    pkt.dts = 9000;
+    pkt.size = 8;
+    pkt.vcl = 2;
+    pkt.mpeg12_scan = 1;
+    pkt.mpeg12_prefix = 2;
+    pkt.mpeg12_picture = 3;
+    pkt.mpeg12_prefix_flags = MPEG_FLAG_PACKET_LOST;
+    pkt.mpeg12_picture_flags = MPEG_FLAG_PACKET_CORRUPT;
+    pkt.mpeg12_picture_pts = 12600;
+    pkt.mpeg12_picture_dts = 12600;
+    pkt.mpeg12_tail_pts[0] = 16200;
+    pkt.mpeg12_tail_dts[0] = 16200;
+    pkt.mpeg12_tail_flags[0] = MPEG_FLAG_IDR_FRAME;
+    pkt.mpeg12_have_prefix = 1;
+    pkt.mpeg12_have_picture = 1;
+    pkt.mpeg12_have_picture_timestamp = 1;
+    pkt.mpeg12_tail_count = 1;
+    pkt.mpeg12_discontinuity = 1;
+
+    uint8_t* data = pkt.data;
+    size_t capacity = pkt.capacity;
+    pes_packet_discontinuity(&pkt);
+    assert(data == pkt.data);
+    assert(capacity == pkt.capacity);
+    assert(0 == pkt.sid);
+    assert(0 == pkt.codecid);
+    assert(0 == pkt.flags);
+    assert(0 == pkt.pts);
+    assert(0 == pkt.dts);
+    assert(0 == pkt.size);
+    assert(0 == pkt.vcl);
+    assert(0 == pkt.mpeg12_scan);
+    assert(0 == pkt.mpeg12_prefix);
+    assert(0 == pkt.mpeg12_picture);
+    assert(0 == pkt.mpeg12_prefix_flags);
+    assert(0 == pkt.mpeg12_picture_flags);
+    assert(0 == pkt.mpeg12_picture_pts);
+    assert(0 == pkt.mpeg12_picture_dts);
+    assert(0 == pkt.mpeg12_tail_pts[0]);
+    assert(0 == pkt.mpeg12_tail_dts[0]);
+    assert(0 == pkt.mpeg12_tail_flags[0]);
+    assert(0 == pkt.mpeg12_have_prefix);
+    assert(0 == pkt.mpeg12_have_picture);
+    assert(0 == pkt.mpeg12_have_picture_timestamp);
+    assert(0 == pkt.mpeg12_tail_count);
+    assert(0 == pkt.mpeg12_discontinuity);
+    free(data);
 }
 
 static void mpeg_packet_picture_spans_pes_test()
@@ -1974,6 +2034,7 @@ static void mpeg_ts_packet_flush_test()
 
 extern "C" void mpeg_packet_test(void)
 {
+    mpeg_packet_discontinuity_reset_test();
     mpeg_packet_picture_spans_pes_test();
     mpeg_packet_continuity_gap_test();
     mpeg_packet_repeated_continuity_gap_test();
