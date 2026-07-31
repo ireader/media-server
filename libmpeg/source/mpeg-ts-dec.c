@@ -465,7 +465,17 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 							state->have_payload_cc = 1;
 
 							if (pkhd.payload_unit_start_indicator)
+							{
+								if (state->have_header
+									&& 0 != state->payload_remaining
+									&& PES_PAYLOAD_UNBOUNDED != state->payload_remaining)
+								{
+									pes->flags |= MPEG_FLAG_PACKET_CORRUPT
+										| MPEG_FLAG_PACKET_LOST;
+									pes_packet_discontinuity(&pes->pkt);
+								}
 								ts_demuxer_reset_pes_header(state);
+							}
 
 							if (pkhd.payload_unit_start_indicator
 								|| state->header_bytes > 0)
