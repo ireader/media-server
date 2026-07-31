@@ -307,7 +307,6 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
 int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 {
     int r = 0;
-	int duplicate;
 	uint32_t i, j, k;
 	uint32_t PID;
 	size_t consume, payload;
@@ -438,9 +437,12 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 						if (PID != pes->pid)
                             continue;
 
-						duplicate = state->have_payload_cc
-							&& state->payload_cc == (uint8_t)pkhd.continuity_counter;
-						if (state->have_payload_cc && !duplicate
+						if (!pkhd.adaptation.discontinuity_indicator
+							&& state->have_payload_cc
+							&& state->payload_cc == (uint8_t)pkhd.continuity_counter)
+							return 0;
+
+						if (state->have_payload_cc
 							&& ((state->payload_cc + 1) % 16)
 								!= (uint8_t)pkhd.continuity_counter)
 							{
@@ -459,11 +461,8 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 									pes->len = 0;
 								}
 							}
-							if (!duplicate)
-							{
-								state->payload_cc = (uint8_t)pkhd.continuity_counter;
-								state->have_payload_cc = 1;
-							}
+							state->payload_cc = (uint8_t)pkhd.continuity_counter;
+							state->have_payload_cc = 1;
 
 							if (pkhd.payload_unit_start_indicator)
 								ts_demuxer_reset_pes_header(state);

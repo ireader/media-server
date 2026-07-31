@@ -1077,6 +1077,78 @@ static std::string mpeg_ts_make_packet(int pid, int cc, int pusi,
     return packet;
 }
 
+static void mpeg_ts_packet_duplicate_payload_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t mux;
+
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    mux.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &mux);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+    assert(stream > 0);
+    std::string first(picture_i, sizeof(picture_i));
+    first.append(128, (char)0x11);
+    first.append(128, (char)0x22);
+    first.append(128, (char)0x33);
+    first.append(128, (char)0x44);
+    std::string next(picture_p, sizeof(picture_p));
+    next.append(512, (char)0x22);
+    size_t first_begin = mux.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+        9000, 9000, first.data(), first.size()));
+    size_t first_end = mux.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        12600, 12600, next.data(), next.size()));
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    const std::string baseline_input = mux.data;
+    std::string duplicate_input = baseline_input;
+    size_t duplicate = first_end;
+    for (size_t i = first_begin; i < first_end; i += 188)
+    {
+        const uint8_t* packet = (const uint8_t*)baseline_input.data() + i;
+        int pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+        if (stream == pid && 0 == (packet[1] & 0x40)
+            && 0 != (packet[3] & 0x10))
+        {
+            duplicate = i;
+            break;
+        }
+    }
+    assert(first_end != duplicate);
+    duplicate_input.insert(duplicate + 188, baseline_input, duplicate, 188);
+
+    struct mpeg_ps_packet_test_t baseline;
+    baseline.handler_result = 0;
+    mpeg_ts_demux_packets(baseline_input, &baseline);
+    struct mpeg_ps_packet_test_t actual;
+    actual.handler_result = 0;
+    mpeg_ts_demux_packets(duplicate_input, &actual);
+
+    assert(baseline.outputs.size() == actual.outputs.size());
+    for (size_t i = 0; i < baseline.outputs.size(); ++i)
+    {
+        assert(baseline.outputs[i].data == actual.outputs[i].data);
+        assert(baseline.outputs[i].flags == actual.outputs[i].flags);
+        assert(baseline.outputs[i].pts == actual.outputs[i].pts);
+        assert(baseline.outputs[i].dts == actual.outputs[i].dts);
+    }
+}
+
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
 static std::string mpeg_ts_collect_pid_payload(const std::string& data,
     size_t begin, size_t end, int pid)
@@ -2135,6 +2207,7 @@ extern "C" void mpeg_packet_test(void)
     mpeg_packet_size_limit_test();
     mpeg_packet_growth_test();
     mpeg_ts_packet_initial_cc_test();
+    mpeg_ts_packet_duplicate_payload_test();
     mpeg_pmt_clear_stream_state_test();
     mpeg_ps_packet_continuous_test();
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
