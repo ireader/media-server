@@ -16,22 +16,41 @@ static int mpeg_packet_is_mpeg12_video(int codecid)
 static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t size)
 {
     void* ptr;
+    size_t required;
+    size_t capacity;
+    size_t growth;
 
     if (0 == size)
         return 0;
     if (NULL == data)
         return -EINVAL;
 
-    // fix: pkt->size + size bits wrap
-    if (pkt->size + size > MPEG_PACKET_PAYLOAD_MAX_SIZE || pkt->size + size < pkt->size)
+    if (pkt->size > MPEG_PACKET_PAYLOAD_MAX_SIZE
+        || size > MPEG_PACKET_PAYLOAD_MAX_SIZE - pkt->size)
         return -EINVAL;
 
-    if (pkt->capacity < pkt->size + size)
+    required = pkt->size + size;
+    if (pkt->capacity < required)
     {
-        ptr = realloc(pkt->data, pkt->size + size + 2048);
-        if (NULL == ptr) return -ENOMEM;
+        capacity = pkt->capacity < 2048 ? 2048 : pkt->capacity;
+        while (capacity < required)
+        {
+            growth = capacity / 2;
+            if (growth > MPEG_PACKET_PAYLOAD_MAX_SIZE - capacity)
+            {
+                capacity = MPEG_PACKET_PAYLOAD_MAX_SIZE;
+                break;
+            }
+            capacity += growth;
+        }
+        if (capacity < required)
+            capacity = required;
+
+        ptr = realloc(pkt->data, capacity);
+        if (NULL == ptr)
+            return -ENOMEM;
         pkt->data = (uint8_t*)ptr;
-        pkt->capacity = pkt->size + size + 2048;
+        pkt->capacity = capacity;
     }
 
     // append new data
