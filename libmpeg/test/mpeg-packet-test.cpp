@@ -2517,6 +2517,116 @@ static void mpeg_ts_packet_flush_test()
     assert(0 == ts_demuxer_destroy(demuxer));
 }
 
+enum mpeg1_pes_timestamp_mode_t
+{
+    MPEG1_PES_NO_TIMESTAMP,
+    MPEG1_PES_PTS,
+    MPEG1_PES_PTS_DTS,
+};
+
+static void mpeg1_pes_timestamp_append(std::string* data, int prefix,
+    int64_t timestamp)
+{
+    data->push_back((char)((prefix << 4)
+        | (((timestamp >> 30) & 0x07) << 1) | 0x01));
+    data->push_back((char)(timestamp >> 22));
+    data->push_back((char)(((timestamp >> 14) & 0xFE) | 0x01));
+    data->push_back((char)(timestamp >> 7));
+    data->push_back((char)(((timestamp << 1) & 0xFE) | 0x01));
+}
+
+static std::string mpeg1_pes_header_make(int stuffing, int have_std,
+    enum mpeg1_pes_timestamp_mode_t mode, int64_t pts, int64_t dts,
+    uint16_t payload_bytes)
+{
+    std::string data(2, '\0');
+    data.append((size_t)stuffing, (char)0xFF);
+    if (have_std)
+    {
+        data.push_back((char)0x40);
+        data.push_back((char)0x00);
+    }
+
+    if (MPEG1_PES_NO_TIMESTAMP == mode)
+        data.push_back((char)0x0F);
+    else if (MPEG1_PES_PTS == mode)
+        mpeg1_pes_timestamp_append(&data, 2, pts);
+    else
+    {
+        mpeg1_pes_timestamp_append(&data, 3, pts);
+        mpeg1_pes_timestamp_append(&data, 1, dts);
+    }
+
+    size_t optional_bytes = data.size() - 2;
+    assert(optional_bytes + payload_bytes <= UINT16_MAX);
+    uint16_t packet_bytes = (uint16_t)(optional_bytes + payload_bytes);
+    data[0] = (char)(packet_bytes >> 8);
+    data[1] = (char)packet_bytes;
+    return data;
+}
+
+static void mpeg1_pes_header_fragment_case(const std::string& header,
+    int64_t expected_pts, int64_t expected_dts, uint16_t payload_bytes)
+{
+    for (size_t bytes = 0; bytes < header.size(); ++bytes)
+    {
+        struct pes_t pes;
+        struct mpeg_bits_t reader;
+        memset(&pes, 0, sizeof(pes));
+        pes.pts = pes.dts = PTS_NO_VALUE;
+        mpeg_bits_init(&reader, header.data(), bytes);
+        assert(MPEG_ERROR_NEED_MORE_DATA
+            == pes_read_mpeg1_header(&pes, &reader));
+    }
+
+    struct pes_t pes;
+    struct mpeg_bits_t reader;
+    memset(&pes, 0, sizeof(pes));
+    pes.pts = pes.dts = PTS_NO_VALUE;
+    mpeg_bits_init(&reader, header.data(), header.size());
+    assert(MPEG_ERROR_OK == pes_read_mpeg1_header(&pes, &reader));
+    assert(payload_bytes == pes.len);
+    assert(expected_pts == pes.pts);
+    assert(expected_dts == pes.dts);
+}
+
+static void mpeg1_pes_header_fragment_test()
+{
+    const int64_t pts = INT64_C(0x123456789);
+    const int64_t dts = INT64_C(0x102345678);
+    const uint16_t payload_bytes = 17;
+
+    mpeg1_pes_header_fragment_case(mpeg1_pes_header_make(0, 0,
+        MPEG1_PES_NO_TIMESTAMP, pts, dts, payload_bytes),
+        PTS_NO_VALUE, PTS_NO_VALUE, payload_bytes);
+    mpeg1_pes_header_fragment_case(mpeg1_pes_header_make(2, 0,
+        MPEG1_PES_NO_TIMESTAMP, pts, dts, payload_bytes),
+        PTS_NO_VALUE, PTS_NO_VALUE, payload_bytes);
+    mpeg1_pes_header_fragment_case(mpeg1_pes_header_make(0, 1,
+        MPEG1_PES_NO_TIMESTAMP, pts, dts, payload_bytes),
+        PTS_NO_VALUE, PTS_NO_VALUE, payload_bytes);
+    mpeg1_pes_header_fragment_case(mpeg1_pes_header_make(1, 0,
+        MPEG1_PES_PTS, pts, dts, payload_bytes),
+        pts, PTS_NO_VALUE, payload_bytes);
+    mpeg1_pes_header_fragment_case(mpeg1_pes_header_make(0, 1,
+        MPEG1_PES_PTS_DTS, pts, dts, payload_bytes),
+        pts, dts, payload_bytes);
+}
+
+static void mpeg1_pes_header_invalid_marker_test()
+{
+    struct pes_t pes;
+    struct mpeg_bits_t reader;
+    std::string header = mpeg1_pes_header_make(0, 0, MPEG1_PES_NO_TIMESTAMP,
+        0, 0, 17);
+    header[header.size() - 1] = 0;
+
+    memset(&pes, 0, sizeof(pes));
+    pes.pts = pes.dts = PTS_NO_VALUE;
+    mpeg_bits_init(&reader, header.data(), header.size());
+    assert(MPEG_ERROR_INVALID_DATA == pes_read_mpeg1_header(&pes, &reader));
+}
+
 extern "C" void mpeg_packet_test(void)
 {
     mpeg_packet_discontinuity_reset_test();
@@ -2566,6 +2676,8 @@ extern "C" void mpeg_packet_test(void)
     mpeg_ts_packet_discontinuity_indicator_test();
     mpeg_ts_packet_tei_test();
     mpeg_ts_packet_flush_test();
+    mpeg1_pes_header_fragment_test();
+    mpeg1_pes_header_invalid_marker_test();
 }
 
 #if defined(MPEG_PACKET_TEST_MAIN)
