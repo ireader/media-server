@@ -178,6 +178,20 @@ static void ts_demuxer_reset_pes_header(struct ts_pes_state_t* state)
 	state->payload_start = 0;
 }
 
+static void ts_demuxer_discard_error_packet(struct ts_demuxer_t* ts,
+	uint32_t pid)
+{
+	struct pes_t* pes;
+	struct ts_pes_state_t* state;
+	pes = ts_demuxer_find_pes(ts, pid, &state);
+	if (pes)
+	{
+		pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
+		pes_packet_discontinuity(&pes->pkt);
+		ts_demuxer_reset_pes_header(state);
+	}
+}
+
 static int ts_demuxer_read_pes_header(struct pes_t* pes,
 	struct ts_pes_state_t* state, const uint8_t* data, size_t bytes,
 	size_t* consume)
@@ -268,7 +282,17 @@ int ts_demuxer_flush(struct ts_demuxer_t* ts)
         {
             struct pes_t* pes = &ts->pat.pmts[i].streams[j];
 			struct ts_pes_state_t* state = &ts->pat.pmts[i].stream_states[j];
-            if (pes->pkt.size < 5
+			if (state->have_header
+				&& 0 != state->payload_remaining
+				&& PES_PAYLOAD_UNBOUNDED != state->payload_remaining
+				&& !state->payload_start)
+			{
+				pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
+				pes_packet_discontinuity(&pes->pkt);
+				ts_demuxer_reset_pes_header(state);
+				continue;
+			}
+			if (pes->pkt.size < 5
                 && PSI_STREAM_MPEG1 != pes->codecid && PSI_STREAM_MPEG2 != pes->codecid)
 			{
 				ts_demuxer_reset_pes_header(state);
@@ -330,6 +354,11 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 	pkhd.transport_scrambling_control = (data[3] >> 6) & 0x03;
 	pkhd.adaptation_field_control = (data[3] >> 4) & 0x03;
 	pkhd.continuity_counter = data[3] & 0x0F;
+	if (0 == pkhd.adaptation_field_control)
+	{
+		ts_demuxer_discard_error_packet(ts, PID);
+		return 0;
+	}
 
 //	printf("-----------------------------------------------\n");
 //	printf("PID[%u]: Error: %u, Start:%u, Priority:%u, Scrambler:%u, AF: %u, CC: %u\n", PID, pkhd.transport_error_indicator, pkhd.payload_unit_start_indicator, pkhd.transport_priority, pkhd.transport_scrambling_control, pkhd.adaptation_field_control, pkhd.continuity_counter);
@@ -340,18 +369,16 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 		j = adaptation_filed_read(&pkhd.adaptation, data + 4, bytes - 4);
 		if (0 == j)
 		{
-			error_pes = ts_demuxer_find_pes(ts, PID, &error_state);
-			if (error_pes)
-			{
-				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
-				pes_packet_discontinuity(&error_pes->pkt);
-				ts_demuxer_reset_pes_header(error_state);
-				error_state->payload_cc = (uint8_t)pkhd.continuity_counter;
-				error_state->have_payload_cc = 1;
-			}
+			ts_demuxer_discard_error_packet(ts, PID);
 			return 0;
 		}
 		i += j;
+		if ((0x02 == pkhd.adaptation_field_control && i != bytes)
+			|| (0x03 == pkhd.adaptation_field_control && i >= bytes))
+		{
+			ts_demuxer_discard_error_packet(ts, PID);
+			return 0;
+		}
 
 		if(pkhd.adaptation.adaptation_field_length > 0 && pkhd.adaptation.PCR_flag)
 		{
@@ -372,11 +399,11 @@ int ts_demuxer_input(struct ts_demuxer_t* ts, const uint8_t* data, size_t bytes)
 				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST;
 				pes_packet_discontinuity(&error_pes->pkt);
 				ts_demuxer_reset_pes_header(error_state);
-				error_state->payload_cc = (uint8_t)pkhd.continuity_counter;
-				error_state->have_payload_cc = 1;
 			}
 			else
 			{
+				error_pes->flags |= MPEG_FLAG_PACKET_CORRUPT
+					| MPEG_FLAG_PACKET_LOST;
 				pes_packet_discontinuity(&error_pes->pkt);
 				if (error_state->header_bytes > 0)
 					ts_demuxer_reset_pes_header(error_state);

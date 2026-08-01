@@ -8,55 +8,147 @@
 
 typedef int (*h2645_find_new_access)(const uint8_t* p, size_t bytes, int* vcl);
 
+enum mpeg_packet_probe_t
+{
+    MPEG_PACKET_PROBE_NO_MATCH = 0,
+    MPEG_PACKET_PROBE_NEED_MORE,
+    MPEG_PACKET_PROBE_MATCH,
+};
+
+enum mpeg_packet_probe_evidence_t
+{
+    MPEG_PACKET_EVIDENCE_NONE = 0,
+    MPEG_PACKET_EVIDENCE_PREFIX,
+    MPEG_PACKET_EVIDENCE_SEQUENCE,
+};
+
 static int mpeg_packet_is_mpeg12_video(int codecid)
 {
     return PSI_STREAM_MPEG1 == codecid || PSI_STREAM_MPEG2 == codecid;
 }
 
-static int mpeg_packet_mpeg12_video_verify(const uint8_t* data, size_t bytes)
+static uint8_t mpeg_packet_probe_byte(const uint8_t* first, size_t first_bytes,
+    const uint8_t* second, size_t offset)
+{
+    return offset < first_bytes ? first[offset] : second[offset - first_bytes];
+}
+
+static int mpeg_packet_mpeg12_video_probe(const uint8_t* first,
+    size_t first_bytes, const uint8_t* second, size_t second_bytes,
+    int* codecid, size_t* evidence,
+    enum mpeg_packet_probe_evidence_t* evidence_type)
 {
     size_t i;
+    size_t bytes;
+    size_t sequence;
     int have_sequence;
 
+    *codecid = PSI_STREAM_RESERVED;
+    if (evidence)
+        *evidence = (size_t)-1;
+    if (evidence_type)
+        *evidence_type = MPEG_PACKET_EVIDENCE_NONE;
+    if (second_bytes > (size_t)-1 - first_bytes)
+        return MPEG_PACKET_PROBE_NO_MATCH;
+
+    bytes = first_bytes + second_bytes;
     have_sequence = 0;
+    sequence = 0;
     for (i = 0; i + 3 < bytes; ++i)
     {
         uint8_t code;
-        if (0 != data[i] || 0 != data[i + 1] || 1 != data[i + 2])
+        if (0 != mpeg_packet_probe_byte(first, first_bytes, second, i)
+            || 0 != mpeg_packet_probe_byte(first, first_bytes, second, i + 1)
+            || 1 != mpeg_packet_probe_byte(first, first_bytes, second, i + 2))
             continue;
 
-        code = data[i + 3];
+        code = mpeg_packet_probe_byte(first, first_bytes, second, i + 3);
         if (0xB3 == code)
         {
             have_sequence = 1;
+            sequence = i;
         }
         else if (have_sequence && 0xB5 == code)
         {
             if (i + 4 >= bytes)
-                return PSI_STREAM_RESERVED;
-            if (1 == (data[i + 4] >> 4))
-                return PSI_STREAM_MPEG2;
+            {
+                if (evidence)
+                    *evidence = sequence;
+                if (evidence_type)
+                    *evidence_type = MPEG_PACKET_EVIDENCE_SEQUENCE;
+                return MPEG_PACKET_PROBE_NEED_MORE;
+            }
+            if (1 == (mpeg_packet_probe_byte(first, first_bytes, second,
+                i + 4) >> 4))
+            {
+                *codecid = PSI_STREAM_MPEG2;
+                if (evidence)
+                    *evidence = sequence;
+                if (evidence_type)
+                    *evidence_type = MPEG_PACKET_EVIDENCE_SEQUENCE;
+                return MPEG_PACKET_PROBE_MATCH;
+            }
         }
         else if (have_sequence && (0x00 == code || 0xB8 == code))
         {
-            return PSI_STREAM_MPEG1;
+            *codecid = PSI_STREAM_MPEG1;
+            if (evidence)
+                *evidence = sequence;
+            if (evidence_type)
+                *evidence_type = MPEG_PACKET_EVIDENCE_SEQUENCE;
+            return MPEG_PACKET_PROBE_MATCH;
         }
     }
 
-    return PSI_STREAM_RESERVED;
+    if (have_sequence)
+    {
+        if (evidence)
+            *evidence = sequence;
+        if (evidence_type)
+            *evidence_type = MPEG_PACKET_EVIDENCE_SEQUENCE;
+        return MPEG_PACKET_PROBE_NEED_MORE;
+    }
+
+    if (bytes >= 3
+        && 0 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 3)
+        && 0 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 2)
+        && 1 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 1))
+    {
+        if (evidence)
+            *evidence = bytes - 3;
+        if (evidence_type)
+            *evidence_type = MPEG_PACKET_EVIDENCE_PREFIX;
+        return MPEG_PACKET_PROBE_NEED_MORE;
+    }
+    if (bytes >= 2
+        && 0 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 2)
+        && 0 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 1))
+    {
+        if (evidence)
+            *evidence = bytes - 2;
+        if (evidence_type)
+            *evidence_type = MPEG_PACKET_EVIDENCE_PREFIX;
+        return MPEG_PACKET_PROBE_NEED_MORE;
+    }
+    if (bytes > 0
+        && 0 == mpeg_packet_probe_byte(first, first_bytes, second, bytes - 1))
+    {
+        if (evidence)
+            *evidence = bytes - 1;
+        if (evidence_type)
+            *evidence_type = MPEG_PACKET_EVIDENCE_PREFIX;
+        return MPEG_PACKET_PROBE_NEED_MORE;
+    }
+
+    return MPEG_PACKET_PROBE_NO_MATCH;
 }
 
-static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t size)
+static int mpeg_packet_reserve(struct packet_t* pkt, size_t size)
 {
     void* ptr;
     size_t required;
     size_t capacity;
     size_t growth;
-
-    if (0 == size)
-        return 0;
-    if (NULL == data)
-        return -EINVAL;
 
     if (pkt->size > MPEG_PACKET_PAYLOAD_MAX_SIZE
         || size > MPEG_PACKET_PAYLOAD_MAX_SIZE - pkt->size)
@@ -85,6 +177,21 @@ static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t siz
         pkt->data = (uint8_t*)ptr;
         pkt->capacity = capacity;
     }
+
+    return 0;
+}
+
+static int mpeg_packet_append(struct packet_t* pkt, const void* data, size_t size)
+{
+    int r;
+    if (0 == size)
+        return 0;
+    if (NULL == data)
+        return -EINVAL;
+
+    r = mpeg_packet_reserve(pkt, size);
+    if (0 != r)
+        return r;
 
     // append new data
     memcpy(pkt->data + pkt->size, data, size);
@@ -286,6 +393,12 @@ static int mpeg_packet_mpeg12(struct packet_t* pkt, const struct pes_t* pes, siz
                 boundary = pkt->mpeg12_prefix;
             if (pkt->mpeg12_have_picture_timestamp && pkt->mpeg12_picture < boundary)
                 boundary = pkt->mpeg12_picture;
+            if (pkt->size >= 3
+                && 0x00 == pkt->data[pkt->size - 3]
+                && 0x00 == pkt->data[pkt->size - 2]
+                && 0x01 == pkt->data[pkt->size - 1]
+                && pkt->size - 3 < boundary)
+                boundary = pkt->size - 3;
             r = handler(param, pes->pn, pes->pid, pkt->codecid, pkt->flags,
                 pkt->pts, pkt->dts, pkt->data + keep, boundary - keep);
             if (0 != r)
@@ -437,25 +550,38 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
     return 0;
 }
 
-static int pes_packet_codec_detect(const struct pes_t* pes, const struct packet_t* pkt)
+static int pes_packet_codec_detect(const struct pes_t* pes,
+    const struct packet_t* pkt, int allow_need_more_fallback)
 {
     int r;
+    int probe;
+    enum mpeg_packet_probe_evidence_t evidence_type;
     size_t i, n;
     int codecid;
 
+    (void)allow_need_more_fallback;
     codecid = pes->codecid;
 
 #if defined(MPEG_GUESS_STREAM) || defined(MPEG_H26X_VERIFY)
     if (PSI_STREAM_RESERVED == codecid)
     {
         static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266, PSI_STREAM_MPEG4, };
-        codecid = mpeg_packet_mpeg12_video_verify(pkt->data, pkt->size);
-        if (PSI_STREAM_RESERVED == codecid
+        probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
+            NULL, 0, &codecid, NULL, &evidence_type);
+        // A complete MPEG sequence stays undecided until the next PES can
+        // finish it. A trailing prefix may still yield to explicit MPEG-4.
+        if (MPEG_PACKET_PROBE_MATCH != probe
+            && (MPEG_PACKET_PROBE_NO_MATCH == probe
+                || MPEG_PACKET_EVIDENCE_PREFIX == evidence_type)
             && 0 == mpeg_h26x_verify(pkt->data, pkt->size, &r))
         {
-            codecid = sc_codecid[(r < 0
-                || r >= (int)(sizeof(sc_codecid) / sizeof(sc_codecid[0])))
-                ? PSI_STREAM_RESERVED : r];
+            if (MPEG_PACKET_PROBE_NO_MATCH == probe
+                || allow_need_more_fallback || 4 == r)
+            {
+                codecid = sc_codecid[(r < 0
+                    || r >= (int)(sizeof(sc_codecid) / sizeof(sc_codecid[0])))
+                    ? PSI_STREAM_RESERVED : r];
+            }
         }
     }
 #endif
@@ -481,10 +607,16 @@ static int pes_packet_codec_detect(const struct pes_t* pes, const struct packet_
 int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, size_t* consume, int start, pes_packet_handler handler, void* param)
 {
     int r;
+    int probe;
     int codecid;
+    int new_pes_match;
+    int pending_codecid;
     size_t total;
+    size_t evidence;
 
     r = 0;
+    new_pes_match = 0;
+    pending_codecid = PSI_STREAM_RESERVED;
     total = size;
     *consume = size; // all saved
 
@@ -503,7 +635,38 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         && PSI_STREAM_H264 != pkt->codecid && PSI_STREAM_H265 != pkt->codecid && PSI_STREAM_H266 != pkt->codecid
         && !(mpeg_packet_is_mpeg12_video(pkt->codecid) && pkt->codecid == pes->codecid))
     {
-        codecid = pes_packet_codec_detect(pes, pkt);
+        if (PSI_STREAM_RESERVED == pkt->codecid
+            && PSI_STREAM_RESERVED == pes->codecid
+            && MPEG_PACKET_PROBE_NEED_MORE == mpeg_packet_mpeg12_video_probe(
+                pkt->data, pkt->size, NULL, 0, &codecid, NULL, NULL))
+        {
+            probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
+                (const uint8_t*)data, size, &codecid, &evidence, NULL);
+            if (MPEG_PACKET_PROBE_MATCH == probe)
+            {
+                if (evidence < pkt->size)
+                {
+                    r = mpeg_packet_reserve(pkt, size);
+                    if (0 != r)
+                        return r;
+                    r = mpeg_packet_mpeg12_adopt(pkt, pes, codecid,
+                        handler, param);
+                    if (0 != r)
+                        return r;
+                    r = mpeg_packet_append(pkt, data, size);
+                    if (0 != r)
+                        return r;
+                    return mpeg_packet_mpeg12(pkt, pes, size, 0,
+                        handler, param);
+                }
+                // The MPEG evidence belongs wholly to the new PES. Finalize
+                // the ambiguous old PES without letting it claim new bytes.
+                new_pes_match = 1;
+            }
+        }
+
+        codecid = new_pes_match ? PSI_STREAM_RESERVED
+            : pes_packet_codec_detect(pes, pkt, 1);
 
         if (mpeg_packet_is_mpeg12_video(codecid))
         {
@@ -513,7 +676,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         }
         else if (PSI_STREAM_H264 == codecid || PSI_STREAM_H265 == codecid || PSI_STREAM_H266 == codecid)
         {
-            pkt->codecid = pes->codecid = (uint8_t)codecid;
+            pending_codecid = codecid;
             total += pkt->size; // find nalu vcl
         }
         else
@@ -534,6 +697,11 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
     r = mpeg_packet_append(pkt, data, size);
     if (0 != r)
         return r;
+
+    if (PSI_STREAM_H264 == pending_codecid
+        || PSI_STREAM_H265 == pending_codecid
+        || PSI_STREAM_H266 == pending_codecid)
+        pkt->codecid = pes->codecid = (uint8_t)pending_codecid;
 
     if (PSI_STREAM_H264 == pes->codecid || PSI_STREAM_H265 == pes->codecid || PSI_STREAM_H266 == pes->codecid)
     {
@@ -556,7 +724,7 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid && PSI_STREAM_H266 != pes->codecid);
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
-            codecid = pes_packet_codec_detect(pes, pkt);
+            codecid = pes_packet_codec_detect(pes, pkt, 0);
             if (mpeg_packet_is_mpeg12_video(codecid))
                 return mpeg_packet_mpeg12_adopt(pkt, pes, codecid, handler, param);
 

@@ -66,6 +66,16 @@ static std::string mpeg_packet_test_slice(void)
     return std::string(slice, sizeof(slice));
 }
 
+static std::string mpeg_packet_test_slice_prelude(void)
+{
+    static const char slices[] = {
+        0x00, 0x00, 0x01, 0x05, (char)0x80,
+        0x00, 0x00, 0x01, 0x07, (char)0x80,
+        0x00, 0x00, 0x01, 0x08, (char)0x80,
+    };
+    return std::string(slices, sizeof(slices));
+}
+
 static std::string mpeg_packet_test_h264_nal(uint8_t type)
 {
     std::string data("\x00\x00\x00\x01", 4);
@@ -81,7 +91,7 @@ static int mpeg_packet_onpacket(void* param, int program, int stream, int codeci
     struct mpeg_packet_output_t output;
     assert(1 == program);
     assert(0x100 == stream);
-    assert(ctx->expected_codecid == codecid);
+    assert(ctx->expected_codecid < 0 || ctx->expected_codecid == codecid);
     ++ctx->handler_calls;
     if (0 != ctx->handler_result
         && (0 == ctx->handler_fail_at || ctx->handler_calls == ctx->handler_fail_at))
@@ -469,7 +479,7 @@ static void mpeg_packet_incomplete_next_picture_flush_test()
         0x00, 0x00, 0x01, 0x00, 0x00, 0x10
     };
 
-    for (size_t bytes = 4; bytes <= 5; ++bytes)
+    for (size_t bytes = 3; bytes <= 5; ++bytes)
     {
         struct mpeg_packet_test_t ctx;
         mpeg_packet_test_init(&ctx);
@@ -724,6 +734,198 @@ static void mpeg_packet_reserved_mpeg12_fragmented_test(int expected_codecid)
     mpeg_packet_test_destroy(&ctx);
 }
 
+static void mpeg_packet_reserved_mpeg12_cross_pes_probe_test()
+{
+    static const int codecs[] = { PSI_STREAM_MPEG1, PSI_STREAM_MPEG2 };
+    for (size_t i = 0; i < sizeof(codecs) / sizeof(codecs[0]); ++i)
+    {
+        struct mpeg_packet_test_t ctx;
+        const int codecid = codecs[i];
+        std::string sequence = mpeg_packet_test_sequence(codecid);
+        std::string first;
+        std::string second;
+        if (PSI_STREAM_MPEG1 == codecid)
+        {
+            first = sequence.substr(0, 3);
+            second = sequence.substr(3);
+        }
+        else
+        {
+            first = sequence.substr(0, sequence.size() - 1);
+            second = sequence.substr(sequence.size() - 1);
+        }
+        second += mpeg_packet_test_picture(1);
+        second += mpeg_packet_test_slice();
+
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_RESERVED;
+        ctx.pes.len = (uint32_t)first.size();
+        mpeg_packet_test_input(&ctx, first, 1, 9000, MPEG_FLAG_PACKET_LOST);
+        assert(ctx.outputs.empty());
+        assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+
+        ctx.pes.len = (uint32_t)second.size();
+        mpeg_packet_test_input(&ctx, second, 1, 12600,
+            MPEG_FLAG_PACKET_CORRUPT);
+        assert(ctx.outputs.empty());
+        assert(codecid == ctx.pes.codecid);
+
+        ctx.expected_codecid = codecid;
+        std::string third = mpeg_packet_test_picture(2);
+        ctx.pes.len = (uint32_t)third.size();
+        mpeg_packet_test_input(&ctx, third, 1, 16200);
+        assert(1 == ctx.outputs.size());
+        assert(first + second == ctx.outputs[0].data);
+        assert(12600 == ctx.outputs[0].pts);
+        assert(12600 == ctx.outputs[0].dts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_IDR_FRAME));
+        mpeg_packet_test_destroy(&ctx);
+    }
+}
+
+static void mpeg_packet_reserved_mpeg12_independent_probe_test()
+{
+    std::vector<std::string> inputs;
+    inputs.push_back(std::string("opaque\0", 7));
+    std::string ambiguous = mpeg_packet_test_slice_prelude();
+    ambiguous.push_back(0);
+    inputs.push_back(ambiguous);
+    std::string second = mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    second += mpeg_packet_test_picture(1);
+    second += mpeg_packet_test_slice();
+
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        struct mpeg_packet_test_t ctx;
+        const std::string& first = inputs[i];
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = -1;
+        ctx.pes.len = (uint32_t)first.size();
+        mpeg_packet_test_input(&ctx, first, 1, 9000,
+            MPEG_FLAG_PACKET_LOST);
+        assert(ctx.outputs.empty());
+
+        ctx.pes.len = (uint32_t)second.size();
+        mpeg_packet_test_input(&ctx, second, 1, 12600,
+            MPEG_FLAG_PACKET_CORRUPT);
+        assert(1 == ctx.outputs.size());
+        assert(PSI_STREAM_RESERVED == ctx.outputs[0].codecid);
+        assert(first == ctx.outputs[0].data);
+        assert(9000 == ctx.outputs[0].pts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+        assert(PSI_STREAM_MPEG1 == ctx.pes.codecid);
+
+        ctx.expected_codecid = PSI_STREAM_MPEG1;
+        std::string third = mpeg_packet_test_picture(2);
+        ctx.pes.len = (uint32_t)third.size();
+        mpeg_packet_test_input(&ctx, third, 1, 16200);
+        assert(2 == ctx.outputs.size());
+        assert(second == ctx.outputs[1].data);
+        assert(12600 == ctx.outputs[1].pts);
+        assert(0 != (ctx.outputs[1].flags & MPEG_FLAG_PACKET_CORRUPT));
+        mpeg_packet_test_destroy(&ctx);
+    }
+}
+
+static void mpeg_packet_reserved_mpeg12_need_more_precedes_h26x_test()
+{
+    const std::string sequence =
+        mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    std::string picture = mpeg_packet_test_picture(1);
+    picture += mpeg_packet_test_slice();
+    static const size_t splits[] = { 1, 2, 3, 8 };
+    assert(sequence.size() == splits[3]);
+    for (size_t i = 0; i < sizeof(splits) / sizeof(splits[0]); ++i)
+    {
+        struct mpeg_packet_test_t ctx;
+        const size_t split = splits[i];
+        std::string first = mpeg_packet_test_slice_prelude();
+        first.append(sequence, 0, split);
+        std::string second = sequence.substr(split);
+        second += picture;
+
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.codecid = PSI_STREAM_RESERVED;
+        ctx.expected_codecid = PSI_STREAM_H264;
+        ctx.pes.len = (uint32_t)first.size();
+        mpeg_packet_test_input(&ctx, first, 1, 9000,
+            MPEG_FLAG_PACKET_LOST);
+        assert(ctx.outputs.empty());
+        assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+        assert(PSI_STREAM_RESERVED == ctx.pes.pkt.codecid);
+
+        ctx.expected_codecid = PSI_STREAM_MPEG1;
+        ctx.pes.len = (uint32_t)second.size();
+        mpeg_packet_test_input(&ctx, second, 1, 12600,
+            MPEG_FLAG_PACKET_CORRUPT);
+        assert(ctx.outputs.empty());
+        assert(PSI_STREAM_MPEG1 == ctx.pes.codecid);
+
+        std::string third = mpeg_packet_test_picture(2);
+        ctx.pes.len = (uint32_t)third.size();
+        mpeg_packet_test_input(&ctx, third, 1, 16200);
+        assert(1 == ctx.outputs.size());
+        assert(sequence + picture == ctx.outputs[0].data);
+        assert(12600 == ctx.outputs[0].pts);
+        assert(12600 == ctx.outputs[0].dts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+        mpeg_packet_test_destroy(&ctx);
+    }
+}
+
+static void mpeg_packet_reserved_mpeg12_need_more_bounded_test()
+{
+    struct mpeg_packet_test_t ctx;
+    const std::string sequence =
+        mpeg_packet_test_sequence(PSI_STREAM_MPEG1);
+    std::string first = mpeg_packet_test_slice_prelude();
+    first += sequence;
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = -1;
+    ctx.pes.len = (uint32_t)first.size();
+    mpeg_packet_test_input(&ctx, first, 1, 9000,
+        MPEG_FLAG_PACKET_LOST);
+    assert(ctx.outputs.empty());
+
+    const std::string second("x", 1);
+    ctx.pes.len = (uint32_t)second.size();
+    mpeg_packet_test_input(&ctx, second, 1, 12600,
+        MPEG_FLAG_PACKET_CORRUPT);
+    assert(1 == ctx.outputs.size());
+    assert(PSI_STREAM_RESERVED == ctx.outputs[0].codecid);
+    assert(first == ctx.outputs[0].data);
+    assert(9000 == ctx.outputs[0].pts);
+    assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+    assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+    assert(PSI_STREAM_RESERVED == ctx.pes.pkt.codecid);
+
+    std::string third = sequence;
+    third += mpeg_packet_test_picture(1);
+    third += mpeg_packet_test_slice();
+    ctx.pes.len = (uint32_t)third.size();
+    mpeg_packet_test_input(&ctx, third, 1, 16200);
+    assert(2 == ctx.outputs.size());
+    assert(PSI_STREAM_RESERVED == ctx.outputs[1].codecid);
+    assert(second == ctx.outputs[1].data);
+    assert(PSI_STREAM_MPEG1 == ctx.pes.codecid);
+
+    ctx.expected_codecid = PSI_STREAM_MPEG1;
+    std::string fourth = mpeg_packet_test_picture(2);
+    ctx.pes.len = (uint32_t)fourth.size();
+    mpeg_packet_test_input(&ctx, fourth, 1, 19800);
+    assert(3 == ctx.outputs.size());
+    assert(third == ctx.outputs[2].data);
+    assert(16200 == ctx.outputs[2].pts);
+    mpeg_packet_test_destroy(&ctx);
+}
+
 static void mpeg_packet_reserved_mpeg12_metadata_test()
 {
     struct mpeg_packet_test_t ctx;
@@ -820,6 +1022,63 @@ static void mpeg_packet_reserved_h264_and_mpeg4_test()
         assert(mpeg4 == ctx.outputs[0].data);
         mpeg_packet_test_destroy(&ctx);
     }
+}
+
+static void mpeg_packet_reserved_h264_append_failure_atomic_test()
+{
+    struct mpeg_packet_test_t ctx;
+    std::string old = mpeg_packet_test_h264_nal(0x67);
+    old += mpeg_packet_test_h264_nal(0x68);
+    old += mpeg_packet_test_h264_nal(0x09);
+    old += mpeg_packet_test_h264_nal(0x65);
+    old += mpeg_packet_test_h264_nal(0x09);
+    old += mpeg_packet_test_h264_nal(0x41);
+    old.resize(10 * 1024 * 1024, (char)0xFF);
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = PSI_STREAM_RESERVED;
+    mpeg_packet_test_input(&ctx, old, 1, 9000, MPEG_FLAG_PACKET_LOST);
+    assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+    assert(PSI_STREAM_RESERVED == ctx.pes.pkt.codecid);
+
+    uint8_t* data = ctx.pes.pkt.data;
+    const size_t size = ctx.pes.pkt.size;
+    const size_t capacity = ctx.pes.pkt.capacity;
+    const int64_t pts = ctx.pes.pkt.pts;
+    const int64_t dts = ctx.pes.pkt.dts;
+    const int flags = ctx.pes.pkt.flags;
+    const char extra = 0;
+    size_t consume = 0;
+    ctx.pes.pts = 12600;
+    ctx.pes.dts = 12600;
+    ctx.pes.flags = MPEG_FLAG_PACKET_CORRUPT;
+    int r = pes_packet(&ctx.pes.pkt, &ctx.pes, &extra, 1, &consume,
+        1, mpeg_packet_onpacket, &ctx);
+    assert(-EINVAL == r);
+    assert(1 == consume);
+    assert(PSI_STREAM_RESERVED == ctx.pes.codecid);
+    assert(PSI_STREAM_RESERVED == ctx.pes.pkt.codecid);
+    assert(data == ctx.pes.pkt.data);
+    assert(size == ctx.pes.pkt.size);
+    assert(capacity == ctx.pes.pkt.capacity);
+    assert(pts == ctx.pes.pkt.pts);
+    assert(dts == ctx.pes.pkt.dts);
+    assert(flags == ctx.pes.pkt.flags);
+
+    ctx.expected_codecid = PSI_STREAM_H264;
+    consume = 1;
+    r = pes_packet(&ctx.pes.pkt, &ctx.pes, NULL, 0, &consume,
+        1, mpeg_packet_onpacket, &ctx);
+    assert(0 == r);
+    assert(0 == consume);
+    assert(PSI_STREAM_H264 == ctx.pes.codecid);
+    assert(PSI_STREAM_H264 == ctx.pes.pkt.codecid);
+    assert(!ctx.outputs.empty());
+    assert(9000 == ctx.outputs[0].pts);
+    assert(9000 == ctx.outputs[0].dts);
+    assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+    mpeg_packet_test_destroy(&ctx);
 }
 
 static int mpeg_packet_transition_onpacket(void* param, int /*program*/, int /*stream*/,
@@ -1089,6 +1348,40 @@ static int mpeg_ps_packet_onpacket(void* param, int stream, int codecid, int fla
     return 0;
 }
 
+static int mpeg_ps_packet_onpacket_any(void* param, int /*stream*/, int codecid,
+    int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
+{
+    struct mpeg_ps_packet_test_t* ctx = (struct mpeg_ps_packet_test_t*)param;
+    struct mpeg_packet_output_t output;
+    if (0 != ctx->handler_result)
+        return ctx->handler_result;
+    output.flags = flags;
+    output.codecid = codecid;
+    output.pts = pts;
+    output.dts = dts;
+    output.data.assign((const char*)data, bytes);
+    ctx->outputs.push_back(output);
+    return 0;
+}
+
+static void mpeg_ps_packet_remove_psm(std::string* data)
+{
+    static const char start[] = { 0x00, 0x00, 0x01, (char)0xBC };
+    const std::string marker(start, sizeof(start));
+    size_t offset = 0;
+    size_t removed = 0;
+    while (std::string::npos != (offset = data->find(marker, offset)))
+    {
+        assert(offset + 6 <= data->size());
+        const uint8_t* p = (const uint8_t*)data->data() + offset;
+        size_t bytes = 6 + (((size_t)p[4] << 8) | p[5]);
+        assert(offset + bytes <= data->size());
+        data->erase(offset, bytes);
+        ++removed;
+    }
+    assert(removed > 0);
+}
+
 static void mpeg_ps_packet_continuous_test()
 {
     static const char picture_i[] = {
@@ -1144,6 +1437,86 @@ static void mpeg_ps_packet_continuous_test()
     assert(ctx.outputs.empty());
     r = ps_demuxer_destroy(demuxer);
     assert(0 == r);
+}
+
+static void mpeg_ps_packet_no_psm_variable_chunks_test()
+{
+    static const int codecs[] = { PSI_STREAM_MPEG1, PSI_STREAM_MPEG2 };
+    static const size_t chunks[] = { 1, 7, 2, 19, 3, 31, 5, 64, 11 };
+    static const uint8_t descriptor[] = { 0xFF, 0x00 };
+    for (size_t n = 0; n < sizeof(codecs) / sizeof(codecs[0]); ++n)
+    {
+        struct ps_muxer_func_t func;
+        struct mpeg_ps_packet_test_t ctx;
+        memset(&func, 0, sizeof(func));
+        func.alloc = mpeg_ps_packet_alloc;
+        func.free = mpeg_ps_packet_free;
+        func.write = mpeg_ps_packet_write;
+        ctx.handler_result = 0;
+
+        const int codecid = codecs[n];
+        std::string sequence = mpeg_packet_test_sequence(codecid);
+        std::string first;
+        std::string second;
+        if (PSI_STREAM_MPEG1 == codecid)
+        {
+            first = sequence.substr(0, 3);
+            second = sequence.substr(3);
+        }
+        else
+        {
+            first = sequence.substr(0, sequence.size() - 1);
+            second = sequence.substr(sequence.size() - 1);
+        }
+        second += mpeg_packet_test_picture(1);
+        second += mpeg_packet_test_slice();
+        std::string third = mpeg_packet_test_picture(2);
+        third += mpeg_packet_test_slice();
+
+        struct ps_muxer_t* muxer = ps_muxer_create(&func, &ctx);
+        assert(NULL != muxer);
+        int stream = ps_muxer_add_stream(muxer, codecid,
+            descriptor, sizeof(descriptor));
+        assert(PES_SID_VIDEO == stream);
+        assert(0 == ps_muxer_input(muxer, stream, MPEG_FLAG_IDR_FRAME,
+            9000, 8100, first.data(), first.size()));
+        assert(0 == ps_muxer_input(muxer, stream, MPEG_FLAG_IDR_FRAME,
+            12600, 11700, second.data(), second.size()));
+        assert(0 == ps_muxer_input(muxer, stream, 0,
+            16200, 15300, third.data(), third.size()));
+        assert(0 == ps_muxer_destroy(muxer));
+        mpeg_ps_packet_remove_psm(&ctx.data);
+
+        struct ps_demuxer_t* demuxer = ps_demuxer_create(
+            mpeg_ps_packet_onpacket_any, &ctx);
+        assert(NULL != demuxer);
+        std::string pending;
+        size_t offset = 0;
+        size_t chunk = 0;
+        while (offset < ctx.data.size())
+        {
+            size_t bytes = chunks[chunk % (sizeof(chunks) / sizeof(chunks[0]))];
+            if (bytes > ctx.data.size() - offset)
+                bytes = ctx.data.size() - offset;
+            pending.append(ctx.data, offset, bytes);
+            offset += bytes;
+            ++chunk;
+
+            int r = ps_demuxer_input(demuxer,
+                (const uint8_t*)pending.data(), pending.size());
+            assert(r >= 0 && (size_t)r <= pending.size());
+            assert(r > 0);
+            pending.erase(0, (size_t)r);
+        }
+        assert(pending.empty());
+        assert(1 == ctx.outputs.size());
+        assert(codecid == ctx.outputs[0].codecid);
+        assert(first + second == ctx.outputs[0].data);
+        assert(12600 == ctx.outputs[0].pts);
+        assert(11700 == ctx.outputs[0].dts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_IDR_FRAME));
+        assert(0 == ps_demuxer_destroy(demuxer));
+    }
 }
 
 static int mpeg_ts_packet_write(void* param, const void* packet, size_t bytes)
@@ -1240,7 +1613,7 @@ static void mpeg_ts_packet_initial_cc_test()
     mpeg_ts_demux_packets(mux.data, &baseline);
     assert(2 == baseline.outputs.size());
 
-    static const int initial_cc[] = { 0, 1 };
+    static const int initial_cc[] = { 0, 1, 15 };
     for (size_t n = 0; n < sizeof(initial_cc) / sizeof(initial_cc[0]); ++n)
     {
         std::string rewritten = mux.data;
@@ -1400,6 +1773,82 @@ static void mpeg_ts_packet_duplicate_payload_test()
     }
 }
 
+static void mpeg_ts_packet_adaptation_only_cc_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t mux;
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    mux.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &mux);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+    assert(stream > 0);
+    std::string first(picture_i, sizeof(picture_i));
+    first.append(512, (char)0x11);
+    std::string next(picture_p, sizeof(picture_p));
+    next.append(512, (char)0x22);
+    assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+        9000, 9000, first.data(), first.size()));
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        12600, 12600, next.data(), next.size()));
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    size_t insert = mux.data.size();
+    int previous_cc = -1;
+    for (size_t i = 0; i < mux.data.size(); i += 188)
+    {
+        const uint8_t* packet = (const uint8_t*)mux.data.data() + i;
+        int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+        if (packet_pid != stream || 0 == (packet[3] & 0x10))
+            continue;
+        if (previous_cc >= 0)
+        {
+            insert = i;
+            break;
+        }
+        previous_cc = packet[3] & 0x0F;
+    }
+    assert(insert < mux.data.size() && previous_cc >= 0);
+
+    std::string adaptation(188, (char)0xFF);
+    uint8_t* packet = (uint8_t*)&adaptation[0];
+    packet[0] = 0x47;
+    packet[1] = (uint8_t)((stream >> 8) & 0x1F);
+    packet[2] = (uint8_t)stream;
+    packet[3] = (uint8_t)(0x20 | previous_cc);
+    packet[4] = 183;
+    packet[5] = 0;
+    std::string with_adaptation = mux.data;
+    with_adaptation.insert(insert, adaptation);
+
+    struct mpeg_ps_packet_test_t baseline;
+    baseline.handler_result = 0;
+    mpeg_ts_demux_packets(mux.data, &baseline);
+    struct mpeg_ps_packet_test_t actual;
+    actual.handler_result = 0;
+    mpeg_ts_demux_packets(with_adaptation, &actual);
+    assert(baseline.outputs.size() == actual.outputs.size());
+    for (size_t i = 0; i < baseline.outputs.size(); ++i)
+    {
+        assert(baseline.outputs[i].data == actual.outputs[i].data);
+        assert(baseline.outputs[i].flags == actual.outputs[i].flags);
+        assert(baseline.outputs[i].pts == actual.outputs[i].pts);
+        assert(baseline.outputs[i].dts == actual.outputs[i].dts);
+    }
+}
+
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
 static std::string mpeg_ts_collect_pid_payload(const std::string& data,
     size_t begin, size_t end, int pid)
@@ -1417,6 +1866,71 @@ static std::string mpeg_ts_collect_pid_payload(const std::string& data,
     return payload;
 }
 #endif
+
+static void mpeg_ts_packet_error_retransmission_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    for (int invalid_adaptation = 0; invalid_adaptation < 2;
+        ++invalid_adaptation)
+    {
+        struct mpeg_ts_func_t func;
+        struct mpeg_ps_packet_test_t ctx;
+        memset(&func, 0, sizeof(func));
+        func.alloc = mpeg_ps_packet_alloc;
+        func.free = mpeg_ps_packet_free;
+        func.write = mpeg_ts_packet_write;
+        ctx.handler_result = 0;
+
+        void* muxer = mpeg_ts_create(&func, &ctx);
+        assert(NULL != muxer);
+        int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+        assert(stream > 0);
+        std::string picture(picture_i, sizeof(picture_i));
+        picture.append(512, (char)0x11);
+        size_t pes_begin = ctx.data.size();
+        assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+            9000, 8100, picture.data(), picture.size()));
+        size_t pes_end = ctx.data.size();
+        assert(0 == mpeg_ts_destroy(muxer));
+
+        size_t pusi = mpeg_ts_find_pusi_packet(ctx.data, pes_begin, pes_end,
+            stream);
+        std::string error = ctx.data.substr(pusi, 188);
+        uint8_t* packet = (uint8_t*)&error[0];
+        if (invalid_adaptation)
+        {
+            packet[3] = (uint8_t)((packet[3] & 0xCF) | 0x30);
+            packet[4] = 0xFF;
+        }
+        else
+        {
+            packet[1] |= 0x80;
+        }
+
+        std::string input = ctx.data.substr(0, pusi);
+        input += error;
+        input.append(ctx.data, pusi, pes_end - pusi);
+        struct ts_demuxer_t* demuxer = ts_demuxer_create(
+            mpeg_ts_packet_onpacket, &ctx);
+        assert(NULL != demuxer);
+        for (size_t i = 0; i < input.size(); i += 188)
+        {
+            assert(0 == ts_demuxer_input(demuxer,
+                (const uint8_t*)input.data() + i, 188));
+        }
+        assert(0 == ts_demuxer_flush(demuxer));
+        assert(1 == ctx.outputs.size());
+        assert(picture == ctx.outputs[0].data);
+        assert(9000 == ctx.outputs[0].pts);
+        assert(8100 == ctx.outputs[0].dts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+        assert(0 == (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+        assert(0 == ts_demuxer_destroy(demuxer));
+    }
+}
 
 static void mpeg_ts_packet_tei_test()
 {
@@ -1582,12 +2096,19 @@ static void mpeg_ts_packet_adaptation_only_discontinuity_test()
     size_t boundary_begin = ctx.data.size();
     assert(0 == mpeg_ts_write(muxer, stream, 0,
         12600, 12600, boundary.data(), boundary.size()));
+    size_t boundary_end = ctx.data.size();
+    size_t next_begin = ctx.data.size();
     assert(0 == mpeg_ts_write(muxer, stream, 0,
         16200, 16200, next.data(), next.size()));
     assert(0 == mpeg_ts_destroy(muxer));
 
+    size_t boundary_pusi = mpeg_ts_find_pusi_packet(ctx.data,
+        boundary_begin, boundary_end, stream);
+    size_t discontinuity_insert = boundary_pusi + 188;
+    assert(discontinuity_insert < boundary_end);
+    assert(next_begin >= boundary_end);
     int last_cc = -1;
-    for (size_t i = 0; i < boundary_begin; i += 188)
+    for (size_t i = 0; i < discontinuity_insert; i += 188)
     {
         uint8_t* packet = (uint8_t*)&ctx.data[i];
         int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
@@ -1606,36 +2127,27 @@ static void mpeg_ts_packet_adaptation_only_discontinuity_test()
     discontinuity_packet[4] = 183;
     discontinuity_packet[5] = 0x80;
 
-    int cc = reset_cc;
-    for (size_t i = boundary_begin; i < ctx.data.size(); i += 188)
-    {
-        uint8_t* packet = (uint8_t*)&ctx.data[i];
-        int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
-        if (packet_pid == stream && 0 != (packet[3] & 0x10))
-        {
-            cc = (cc + 1) & 0x0F;
-            packet[3] = (uint8_t)((packet[3] & 0xF0) | cc);
-        }
-    }
-
     struct ts_demuxer_t* demuxer = ts_demuxer_create(mpeg_ts_packet_onpacket, &ctx);
     assert(NULL != demuxer);
-    for (size_t i = 0; i < boundary_begin; i += 188)
+    for (size_t i = 0; i < discontinuity_insert; i += 188)
     {
         assert(0 == ts_demuxer_input(demuxer,
             (const uint8_t*)ctx.data.data() + i, 188));
     }
     assert(0 == ts_demuxer_input(demuxer,
         (const uint8_t*)discontinuity.data(), discontinuity.size()));
-    for (size_t i = boundary_begin; i < ctx.data.size(); i += 188)
+    for (size_t i = discontinuity_insert; i < ctx.data.size(); i += 188)
     {
         assert(0 == ts_demuxer_input(demuxer,
             (const uint8_t*)ctx.data.data() + i, 188));
     }
     assert(1 == ctx.outputs.size());
-    assert(boundary == ctx.outputs[0].data);
-    assert(0 == (ctx.outputs[0].flags
-        & (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST)));
+    assert(first == ctx.outputs[0].data);
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(2 == ctx.outputs.size());
+    assert(next == ctx.outputs[1].data);
+    assert(0 != (ctx.outputs[1].flags & MPEG_FLAG_PACKET_LOST));
+    assert(0 == (ctx.outputs[1].flags & MPEG_FLAG_PACKET_CORRUPT));
     assert(0 == ts_demuxer_destroy(demuxer));
 }
 
@@ -1773,6 +2285,224 @@ static void mpeg_ts_packet_header_only_start_test()
     assert(picture == ctx.outputs[0].data);
     assert(9000 == ctx.outputs[0].pts);
     assert(8100 == ctx.outputs[0].dts);
+    assert(0 == ts_demuxer_destroy(demuxer));
+}
+
+static void mpeg_ts_packet_header_only_flush_preserves_previous_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t ctx;
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    ctx.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &ctx);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+    assert(stream > 0);
+    std::string first(picture_i, sizeof(picture_i));
+    first.append(512, (char)0x11);
+    std::string next(picture_p, sizeof(picture_p));
+    next.append(512, (char)0x22);
+    assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+        9000, 8100, first.data(), first.size()));
+    size_t first_end = ctx.data.size();
+    size_t next_begin = ctx.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        12600, 11700, next.data(), next.size()));
+    size_t next_end = ctx.data.size();
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+        next_end, stream);
+    std::string pes = mpeg_ts_collect_pid_payload(ctx.data, next_pusi,
+        next_end, stream);
+    size_t header = 9 + (uint8_t)pes[8];
+    assert(header < pes.size() && header <= 184);
+    int cc = ((const uint8_t*)ctx.data.data())[next_pusi + 3] & 0x0F;
+    std::string header_packet = mpeg_ts_make_packet(stream, cc, 1,
+        pes.data(), header);
+
+    struct ts_demuxer_t* demuxer = ts_demuxer_create(
+        mpeg_ts_packet_onpacket, &ctx);
+    assert(NULL != demuxer);
+    for (size_t i = 0; i < first_end; i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)ctx.data.data() + i, 188));
+    }
+    assert(ctx.outputs.empty());
+    assert(0 == ts_demuxer_input(demuxer,
+        (const uint8_t*)header_packet.data(), header_packet.size()));
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(1 == ctx.outputs.size());
+    assert(first == ctx.outputs[0].data);
+    assert(9000 == ctx.outputs[0].pts);
+    assert(8100 == ctx.outputs[0].dts);
+    assert(0 == (ctx.outputs[0].flags
+        & (MPEG_FLAG_PACKET_CORRUPT | MPEG_FLAG_PACKET_LOST)));
+    assert(0 == ts_demuxer_destroy(demuxer));
+}
+
+static void mpeg_ts_packet_incomplete_finite_pes_flush_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t ctx;
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    ctx.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &ctx);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+    assert(stream > 0);
+    std::string incomplete(picture_i, sizeof(picture_i));
+    incomplete.append(1200, (char)0x11);
+    std::string next(picture_p, sizeof(picture_p));
+    next.append(512, (char)0x22);
+    size_t incomplete_begin = ctx.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+        9000, 8100, incomplete.data(), incomplete.size()));
+    size_t incomplete_end = ctx.data.size();
+    size_t next_begin = ctx.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        16200, 15300, next.data(), next.size()));
+    size_t next_end = ctx.data.size();
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    size_t incomplete_pusi = mpeg_ts_find_pusi_packet(ctx.data,
+        incomplete_begin, incomplete_end, stream);
+    size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+        next_end, stream);
+    const uint8_t* first_packet =
+        (const uint8_t*)ctx.data.data() + incomplete_pusi;
+    int cc = first_packet[3] & 0x0F;
+    std::string next_packets = ctx.data.substr(next_pusi,
+        next_end - next_pusi);
+    for (size_t i = 0; i < next_packets.size(); i += 188)
+    {
+        uint8_t* packet = (uint8_t*)&next_packets[i];
+        int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+        if (packet_pid == stream && 0 != (packet[3] & 0x10))
+        {
+            cc = (cc + 1) & 0x0F;
+            packet[3] = (uint8_t)((packet[3] & 0xF0) | cc);
+        }
+    }
+
+    struct ts_demuxer_t* demuxer = ts_demuxer_create(
+        mpeg_ts_packet_onpacket, &ctx);
+    assert(NULL != demuxer);
+    for (size_t i = 0; i < incomplete_pusi + 188; i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)ctx.data.data() + i, 188));
+    }
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(ctx.outputs.empty());
+
+    for (size_t i = 0; i < next_packets.size(); i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)next_packets.data() + i, 188));
+    }
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(1 == ctx.outputs.size());
+    assert(next == ctx.outputs[0].data);
+    assert(16200 == ctx.outputs[0].pts);
+    assert(15300 == ctx.outputs[0].dts);
+    assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+    assert(0 == (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+    assert(0 == ts_demuxer_destroy(demuxer));
+}
+
+static void mpeg_ts_packet_incomplete_audio_flush_test()
+{
+    struct mpeg_ts_func_t func;
+    struct mpeg_ps_packet_test_t ctx;
+    memset(&func, 0, sizeof(func));
+    func.alloc = mpeg_ps_packet_alloc;
+    func.free = mpeg_ps_packet_free;
+    func.write = mpeg_ts_packet_write;
+    ctx.handler_result = 0;
+
+    void* muxer = mpeg_ts_create(&func, &ctx);
+    assert(NULL != muxer);
+    int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_AAC, NULL, 0);
+    assert(stream > 0);
+    std::string incomplete(1200, (char)0x11);
+    std::string next(96, (char)0x22);
+    size_t incomplete_begin = ctx.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        9000, 9000, incomplete.data(), incomplete.size()));
+    size_t incomplete_end = ctx.data.size();
+    size_t next_begin = ctx.data.size();
+    assert(0 == mpeg_ts_write(muxer, stream, 0,
+        16200, 16200, next.data(), next.size()));
+    size_t next_end = ctx.data.size();
+    assert(0 == mpeg_ts_destroy(muxer));
+
+    size_t incomplete_pusi = mpeg_ts_find_pusi_packet(ctx.data,
+        incomplete_begin, incomplete_end, stream);
+    size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+        next_end, stream);
+    const uint8_t* first_packet =
+        (const uint8_t*)ctx.data.data() + incomplete_pusi;
+    int cc = first_packet[3] & 0x0F;
+    std::string next_packets = ctx.data.substr(next_pusi,
+        next_end - next_pusi);
+    for (size_t i = 0; i < next_packets.size(); i += 188)
+    {
+        uint8_t* packet = (uint8_t*)&next_packets[i];
+        int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+        if (packet_pid == stream && 0 != (packet[3] & 0x10))
+        {
+            cc = (cc + 1) & 0x0F;
+            packet[3] = (uint8_t)((packet[3] & 0xF0) | cc);
+        }
+    }
+
+    struct ts_demuxer_t* demuxer = ts_demuxer_create(
+        mpeg_ts_packet_onpacket_any, &ctx);
+    assert(NULL != demuxer);
+    for (size_t i = 0; i < incomplete_pusi + 188; i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)ctx.data.data() + i, 188));
+    }
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(ctx.outputs.empty());
+    for (size_t i = 0; i < next_packets.size(); i += 188)
+    {
+        assert(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)next_packets.data() + i, 188));
+    }
+    assert(0 == ts_demuxer_flush(demuxer));
+    assert(1 == ctx.outputs.size());
+    assert(PSI_STREAM_AAC == ctx.outputs[0].codecid);
+    assert(next == ctx.outputs[0].data);
+    assert(16200 == ctx.outputs[0].pts);
+    assert(16200 == ctx.outputs[0].dts);
     assert(0 == ts_demuxer_destroy(demuxer));
 }
 
@@ -2316,6 +3046,87 @@ static void mpeg_ts_packet_audio_pes_payload_cc_gap_test()
     assert(0 == ts_demuxer_destroy(demuxer));
 }
 
+static void mpeg_ts_packet_invalid_afc_test()
+{
+    static const char picture_i[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x08, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    static const char picture_p[] = {
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x10, (char)0xFF, (char)0xFF,
+        0x00, 0x00, 0x01, 0x01
+    };
+    for (int mode = 0; mode < 3; ++mode)
+    {
+        struct mpeg_ts_func_t func;
+        struct mpeg_ps_packet_test_t ctx;
+        memset(&func, 0, sizeof(func));
+        func.alloc = mpeg_ps_packet_alloc;
+        func.free = mpeg_ps_packet_free;
+        func.write = mpeg_ts_packet_write;
+        ctx.handler_result = 0;
+
+        void* muxer = mpeg_ts_create(&func, &ctx);
+        assert(NULL != muxer);
+        int stream = mpeg_ts_add_stream(muxer, PSI_STREAM_MPEG2, NULL, 0);
+        assert(stream > 0);
+        std::string first(picture_i, sizeof(picture_i));
+        first.append(512, (char)0x11);
+        std::string next(picture_p, sizeof(picture_p));
+        next.append(512, (char)0x22);
+        assert(0 == mpeg_ts_write(muxer, stream, MPEG_FLAG_IDR_FRAME,
+            9000, 8100, first.data(), first.size()));
+        size_t next_begin = ctx.data.size();
+        assert(0 == mpeg_ts_write(muxer, stream, 0,
+            12600, 11700, next.data(), next.size()));
+        size_t next_end = ctx.data.size();
+        assert(0 == mpeg_ts_destroy(muxer));
+
+        size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+            next_end, stream);
+        const uint8_t* clean =
+            (const uint8_t*)ctx.data.data() + next_pusi;
+        std::string invalid(188, (char)0xFF);
+        uint8_t* packet = (uint8_t*)&invalid[0];
+        packet[0] = 0x47;
+        packet[1] = (uint8_t)((stream >> 8) & 0x1F);
+        packet[2] = (uint8_t)stream;
+        if (0 == mode)
+        {
+            packet[3] = (uint8_t)(clean[3] & 0x0F);
+        }
+        else if (1 == mode)
+        {
+            packet[3] = (uint8_t)(0x20 | (clean[3] & 0x0F));
+            packet[4] = 0;
+        }
+        else
+        {
+            packet[3] = (uint8_t)(0x30 | (clean[3] & 0x0F));
+            packet[4] = 183;
+            packet[5] = 0;
+        }
+        ctx.data.insert(next_pusi, invalid);
+
+        struct ts_demuxer_t* demuxer = ts_demuxer_create(
+            mpeg_ts_packet_onpacket, &ctx);
+        assert(NULL != demuxer);
+        for (size_t i = 0; i < ctx.data.size(); i += 188)
+        {
+            assert(0 == ts_demuxer_input(demuxer,
+                (const uint8_t*)ctx.data.data() + i, 188));
+        }
+        assert(0 == ts_demuxer_flush(demuxer));
+        assert(1 == ctx.outputs.size());
+        assert(next == ctx.outputs[0].data);
+        assert(12600 == ctx.outputs[0].pts);
+        assert(11700 == ctx.outputs[0].dts);
+        assert(0 != (ctx.outputs[0].flags & MPEG_FLAG_PACKET_LOST));
+        assert(0 == (ctx.outputs[0].flags & MPEG_FLAG_PACKET_CORRUPT));
+        assert(0 == ts_demuxer_destroy(demuxer));
+    }
+}
+
 static void mpeg_ts_packet_invalid_adaptation_field_test()
 {
     static const char picture_i[] = {
@@ -2648,19 +3459,30 @@ extern "C" void mpeg_packet_test(void)
     mpeg_packet_reserved_mpeg12_negative_test();
     mpeg_packet_reserved_mpeg12_fragmented_test(PSI_STREAM_MPEG1);
     mpeg_packet_reserved_mpeg12_fragmented_test(PSI_STREAM_MPEG2);
+    mpeg_packet_reserved_mpeg12_cross_pes_probe_test();
+    mpeg_packet_reserved_mpeg12_independent_probe_test();
+    mpeg_packet_reserved_mpeg12_need_more_precedes_h26x_test();
+    mpeg_packet_reserved_mpeg12_need_more_bounded_test();
     mpeg_packet_reserved_mpeg12_metadata_test();
     mpeg_packet_reserved_mpeg12_handler_error_test();
     mpeg_packet_reserved_h264_and_mpeg4_test();
+    mpeg_packet_reserved_h264_append_failure_atomic_test();
     mpeg_packet_codecid_transition_test();
     mpeg_packet_size_limit_test();
     mpeg_packet_growth_test();
     mpeg_ts_packet_initial_cc_test();
     mpeg_ts_packet_duplicate_payload_test();
+    mpeg_ts_packet_adaptation_only_cc_test();
+    mpeg_ts_packet_error_retransmission_test();
     mpeg_pmt_clear_stream_state_test();
     mpeg_ps_packet_continuous_test();
+    mpeg_ps_packet_no_psm_variable_chunks_test();
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
     mpeg_ts_packet_split_pes_header_test();
     mpeg_ts_packet_header_only_start_test();
+    mpeg_ts_packet_header_only_flush_preserves_previous_test();
+    mpeg_ts_packet_incomplete_finite_pes_flush_test();
+    mpeg_ts_packet_incomplete_audio_flush_test();
     mpeg_ts_packet_unbounded_pes_test();
     mpeg_ts_packet_incomplete_finite_pes_pusi_test();
     mpeg_ts_packet_interleaved_streams_test();
@@ -2669,6 +3491,7 @@ extern "C" void mpeg_packet_test(void)
     mpeg_ts_packet_invalid_pes_flush_test();
     mpeg_ts_packet_pes_payload_cc_gap_test();
     mpeg_ts_packet_audio_pes_payload_cc_gap_test();
+    mpeg_ts_packet_invalid_afc_test();
     mpeg_ts_packet_invalid_adaptation_field_test();
 #endif
     mpeg_ts_packet_pes_payload_boundary_test();
