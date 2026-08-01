@@ -84,6 +84,78 @@ static std::string mpeg_packet_test_h264_nal(uint8_t type)
     return data;
 }
 
+static void mpeg_packet_test_require(int condition)
+{
+    if (!condition)
+        abort();
+}
+
+static std::string mpeg_packet_test_h26x_nal(int codecid,
+    unsigned int nal_type, int first_slice)
+{
+    std::string data("\x00\x00\x00\x01", 4);
+    if (PSI_STREAM_H264 == codecid)
+    {
+        mpeg_packet_test_require(nal_type < 32);
+        data.push_back((char)nal_type);
+    }
+    else if (PSI_STREAM_H265 == codecid)
+    {
+        mpeg_packet_test_require(nal_type < 64);
+        data.push_back((char)(nal_type << 1));
+        data.push_back(0x01);
+    }
+    else
+    {
+        mpeg_packet_test_require(PSI_STREAM_H266 == codecid);
+        mpeg_packet_test_require(nal_type < 32);
+        data.push_back(0x00);
+        data.push_back((char)((nal_type << 3) | 0x01));
+    }
+
+    data.push_back(first_slice ? (char)0x80 : 0);
+    return data;
+}
+
+static std::string mpeg_packet_test_h26x_access_unit(int codecid,
+    int idr, size_t padding)
+{
+    unsigned int aud_type;
+    unsigned int vcl_type;
+    if (PSI_STREAM_H264 == codecid)
+    {
+        aud_type = 9;
+        vcl_type = idr ? 5 : 1;
+    }
+    else if (PSI_STREAM_H265 == codecid)
+    {
+        aud_type = 35;
+        vcl_type = idr ? 19 : 1;
+    }
+    else
+    {
+        mpeg_packet_test_require(PSI_STREAM_H266 == codecid);
+        aud_type = 20;
+        vcl_type = idr ? 7 : 1;
+    }
+
+    std::string data = mpeg_packet_test_h26x_nal(codecid, aud_type, 0);
+    data += mpeg_packet_test_h26x_nal(codecid, vcl_type, 1);
+    data.append(padding, idr ? (char)0x55 : (char)0xAA);
+    return data;
+}
+
+static std::string mpeg_packet_test_h26x_callback_data(int codecid,
+    const std::string& access_unit)
+{
+    if (PSI_STREAM_H264 == codecid)
+        return access_unit.substr(mpeg_packet_test_h26x_nal(codecid, 9, 0).size());
+    if (PSI_STREAM_H265 == codecid)
+        return access_unit.substr(mpeg_packet_test_h26x_nal(codecid, 35, 0).size());
+    mpeg_packet_test_require(PSI_STREAM_H266 == codecid);
+    return access_unit;
+}
+
 static int mpeg_packet_onpacket(void* param, int program, int stream, int codecid, int flags,
     int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
@@ -159,12 +231,6 @@ struct mpeg_packet_state_snapshot_t
     struct pes_t pes;
     std::string data;
 };
-
-static void mpeg_packet_test_require(int condition)
-{
-    if (!condition)
-        abort();
-}
 
 static struct mpeg_packet_state_snapshot_t mpeg_packet_state_snapshot(
     const struct pes_t* pes)
@@ -3531,6 +3597,201 @@ static void mpeg_ts_packet_invalid_adaptation_field_test()
 }
 #endif
 
+static size_t mpeg_ts_h26x_payload_offset(const uint8_t packet[188])
+{
+    size_t offset = 4;
+    int adaptation_field_control = (packet[3] >> 4) & 0x03;
+    mpeg_packet_test_require(0 != (adaptation_field_control & 0x01));
+    if (0 != (adaptation_field_control & 0x02))
+        offset += 1 + packet[4];
+    mpeg_packet_test_require(offset < 188);
+    return offset;
+}
+
+static std::string mpeg_ts_h26x_collect_pid_payload(const std::string& data,
+    size_t begin, size_t end, int pid)
+{
+    std::string payload;
+    mpeg_packet_test_require(begin <= end && end <= data.size());
+    for (size_t i = begin; i + 188 <= end; i += 188)
+    {
+        const uint8_t* packet = (const uint8_t*)data.data() + i;
+        int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+        if (packet_pid != pid || 0 == (packet[3] & 0x10))
+            continue;
+        size_t offset = mpeg_ts_h26x_payload_offset(packet);
+        payload.append((const char*)packet + offset, 188 - offset);
+    }
+    return payload;
+}
+
+static void mpeg_ts_packet_incomplete_finite_h26x_flush_test()
+{
+    static const int codecs[] = {
+        PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266,
+    };
+
+    for (size_t n = 0; n < sizeof(codecs) / sizeof(codecs[0]); ++n)
+    {
+        const int codecid = codecs[n];
+        struct mpeg_ts_func_t func;
+        struct mpeg_ps_packet_test_t ctx;
+        memset(&func, 0, sizeof(func));
+        func.alloc = mpeg_ps_packet_alloc;
+        func.free = mpeg_ps_packet_free;
+        func.write = mpeg_ts_packet_write;
+        ctx.handler_result = 0;
+
+        void* muxer = mpeg_ts_create(&func, &ctx);
+        mpeg_packet_test_require(NULL != muxer);
+        int stream = mpeg_ts_add_stream(muxer, codecid, NULL, 0);
+        mpeg_packet_test_require(stream > 0);
+        std::string incomplete = mpeg_packet_test_h26x_access_unit(codecid,
+            1, 512);
+        std::string next = mpeg_packet_test_h26x_access_unit(codecid, 0, 64);
+        std::string expected_next = mpeg_packet_test_h26x_callback_data(codecid,
+            next);
+        mpeg_packet_test_require(incomplete.size() > 184);
+        size_t incomplete_begin = ctx.data.size();
+        mpeg_packet_test_require(0 == mpeg_ts_write(muxer, stream,
+            MPEG_FLAG_IDR_FRAME, 9000, 8100, incomplete.data(),
+            incomplete.size()));
+        size_t incomplete_end = ctx.data.size();
+        size_t next_begin = ctx.data.size();
+        mpeg_packet_test_require(0 == mpeg_ts_write(muxer, stream, 0,
+            16200, 15300, next.data(), next.size()));
+        size_t next_end = ctx.data.size();
+        mpeg_packet_test_require(0 == mpeg_ts_destroy(muxer));
+
+        size_t incomplete_pusi = mpeg_ts_find_pusi_packet(ctx.data,
+            incomplete_begin, incomplete_end, stream);
+        size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+            next_end, stream);
+        mpeg_packet_test_require(incomplete_pusi < incomplete_end);
+        mpeg_packet_test_require(next_pusi < next_end);
+        const uint8_t* first_packet =
+            (const uint8_t*)ctx.data.data() + incomplete_pusi;
+        int cc = first_packet[3] & 0x0F;
+        std::string next_packets = ctx.data.substr(next_pusi,
+            next_end - next_pusi);
+        mpeg_packet_test_require(0 == next_packets.size() % 188);
+        for (size_t i = 0; i < next_packets.size(); i += 188)
+        {
+            uint8_t* packet = (uint8_t*)&next_packets[i];
+            int packet_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+            if (packet_pid == stream && 0 != (packet[3] & 0x10))
+            {
+                cc = (cc + 1) & 0x0F;
+                packet[3] = (uint8_t)((packet[3] & 0xF0) | cc);
+            }
+        }
+
+        struct ts_demuxer_t* demuxer = ts_demuxer_create(
+            mpeg_ts_packet_onpacket_any, &ctx);
+        mpeg_packet_test_require(NULL != demuxer);
+        for (size_t i = 0; i < incomplete_pusi + 188; i += 188)
+        {
+            mpeg_packet_test_require(0 == ts_demuxer_input(demuxer,
+                (const uint8_t*)ctx.data.data() + i, 188));
+        }
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(ctx.outputs.empty());
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(ctx.outputs.empty());
+
+        for (size_t i = 0; i < next_packets.size(); i += 188)
+        {
+            mpeg_packet_test_require(0 == ts_demuxer_input(demuxer,
+                (const uint8_t*)next_packets.data() + i, 188));
+        }
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(1 == ctx.outputs.size());
+        mpeg_packet_test_require(codecid == ctx.outputs[0].codecid);
+        mpeg_packet_test_require(expected_next == ctx.outputs[0].data);
+        mpeg_packet_test_require(16200 == ctx.outputs[0].pts);
+        mpeg_packet_test_require(15300 == ctx.outputs[0].dts);
+        mpeg_packet_test_require(0 != (ctx.outputs[0].flags
+            & MPEG_FLAG_PACKET_LOST));
+        mpeg_packet_test_require(0 == (ctx.outputs[0].flags
+            & MPEG_FLAG_PACKET_CORRUPT));
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(1 == ctx.outputs.size());
+        mpeg_packet_test_require(0 == ts_demuxer_destroy(demuxer));
+    }
+}
+
+static void mpeg_ts_packet_h26x_header_only_flush_preserves_previous_test()
+{
+    static const int codecs[] = {
+        PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266,
+    };
+
+    for (size_t n = 0; n < sizeof(codecs) / sizeof(codecs[0]); ++n)
+    {
+        const int codecid = codecs[n];
+        struct mpeg_ts_func_t func;
+        struct mpeg_ps_packet_test_t ctx;
+        memset(&func, 0, sizeof(func));
+        func.alloc = mpeg_ps_packet_alloc;
+        func.free = mpeg_ps_packet_free;
+        func.write = mpeg_ts_packet_write;
+        ctx.handler_result = 0;
+
+        void* muxer = mpeg_ts_create(&func, &ctx);
+        mpeg_packet_test_require(NULL != muxer);
+        int stream = mpeg_ts_add_stream(muxer, codecid, NULL, 0);
+        mpeg_packet_test_require(stream > 0);
+        std::string first = mpeg_packet_test_h26x_access_unit(codecid, 1,
+            64);
+        std::string next = mpeg_packet_test_h26x_access_unit(codecid, 0,
+            64);
+        std::string expected_first = mpeg_packet_test_h26x_callback_data(codecid,
+            first);
+        mpeg_packet_test_require(0 == mpeg_ts_write(muxer, stream,
+            MPEG_FLAG_IDR_FRAME, 9000, 8100, first.data(), first.size()));
+        size_t first_end = ctx.data.size();
+        size_t next_begin = ctx.data.size();
+        mpeg_packet_test_require(0 == mpeg_ts_write(muxer, stream, 0,
+            12600, 11700, next.data(), next.size()));
+        size_t next_end = ctx.data.size();
+        mpeg_packet_test_require(0 == mpeg_ts_destroy(muxer));
+
+        size_t next_pusi = mpeg_ts_find_pusi_packet(ctx.data, next_begin,
+            next_end, stream);
+        mpeg_packet_test_require(next_pusi < next_end);
+        std::string pes = mpeg_ts_h26x_collect_pid_payload(ctx.data,
+            next_pusi, next_end, stream);
+        mpeg_packet_test_require(pes.size() > 8);
+        size_t header = 9 + (uint8_t)pes[8];
+        mpeg_packet_test_require(header < pes.size() && header <= 184);
+        int cc = ((const uint8_t*)ctx.data.data())[next_pusi + 3] & 0x0F;
+        std::string header_packet = mpeg_ts_make_packet(stream, cc, 1,
+            pes.data(), header);
+
+        struct ts_demuxer_t* demuxer = ts_demuxer_create(
+            mpeg_ts_packet_onpacket_any, &ctx);
+        mpeg_packet_test_require(NULL != demuxer);
+        for (size_t i = 0; i < first_end; i += 188)
+        {
+            mpeg_packet_test_require(0 == ts_demuxer_input(demuxer,
+                (const uint8_t*)ctx.data.data() + i, 188));
+        }
+        mpeg_packet_test_require(ctx.outputs.empty());
+        mpeg_packet_test_require(0 == ts_demuxer_input(demuxer,
+            (const uint8_t*)header_packet.data(), header_packet.size()));
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(1 == ctx.outputs.size());
+        mpeg_packet_test_require(codecid == ctx.outputs[0].codecid);
+        mpeg_packet_test_require(expected_first == ctx.outputs[0].data);
+        mpeg_packet_test_require(9000 == ctx.outputs[0].pts);
+        mpeg_packet_test_require(8100 == ctx.outputs[0].dts);
+        mpeg_packet_test_require(MPEG_FLAG_IDR_FRAME == ctx.outputs[0].flags);
+        mpeg_packet_test_require(0 == ts_demuxer_flush(demuxer));
+        mpeg_packet_test_require(1 == ctx.outputs.size());
+        mpeg_packet_test_require(0 == ts_demuxer_destroy(demuxer));
+    }
+}
+
 static void mpeg_ts_packet_pes_payload_boundary_test()
 {
     static const char picture_i[] = {
@@ -3812,6 +4073,8 @@ extern "C" void mpeg_packet_test(void)
     mpeg_pmt_clear_stream_state_test();
     mpeg_ps_packet_continuous_test();
     mpeg_ps_packet_no_psm_variable_chunks_test();
+    mpeg_ts_packet_incomplete_finite_h26x_flush_test();
+    mpeg_ts_packet_h26x_header_only_flush_preserves_previous_test();
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
     mpeg_packet_invalid_pes_test();
     mpeg_ts_packet_split_pes_header_test();
@@ -3839,11 +4102,20 @@ extern "C" void mpeg_packet_test(void)
     mpeg1_pes_header_invalid_marker_test();
 }
 
-#if defined(MPEG_PACKET_TEST_MAIN)
+#if defined(MPEG_PACKET_H26X_FLUSH_TEST_ONLY)
+int main()
+{
+    mpeg_ts_packet_incomplete_finite_h26x_flush_test();
+    mpeg_ts_packet_h26x_header_only_flush_preserves_previous_test();
+    return 0;
+}
+#elif defined(MPEG_PACKET_TEST_MAIN)
 int main()
 {
 #if defined(MPEG_PACKET_INVALID_PES_TEST) && defined(NDEBUG)
     mpeg_packet_invalid_pes_test();
+    mpeg_ts_packet_incomplete_finite_h26x_flush_test();
+    mpeg_ts_packet_h26x_header_only_flush_preserves_previous_test();
 #else
     mpeg_packet_test();
 #endif
