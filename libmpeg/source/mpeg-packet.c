@@ -10,6 +10,7 @@ typedef int (*h2645_find_new_access)(const uint8_t* p, size_t bytes, int* vcl);
 
 enum mpeg_packet_probe_t
 {
+    MPEG_PACKET_PROBE_INVALID = -1,
     MPEG_PACKET_PROBE_NO_MATCH = 0,
     MPEG_PACKET_PROBE_NEED_MORE,
     MPEG_PACKET_PROBE_MATCH,
@@ -30,6 +31,8 @@ static int mpeg_packet_is_mpeg12_video(int codecid)
 static uint8_t mpeg_packet_probe_byte(const uint8_t* first, size_t first_bytes,
     const uint8_t* second, size_t offset)
 {
+    assert((offset < first_bytes && NULL != first)
+        || (offset >= first_bytes && NULL != second));
     return offset < first_bytes ? first[offset] : second[offset - first_bytes];
 }
 
@@ -43,13 +46,17 @@ static int mpeg_packet_mpeg12_video_probe(const uint8_t* first,
     size_t sequence;
     int have_sequence;
 
+    if (NULL == codecid
+        || (first_bytes > 0 && NULL == first)
+        || (second_bytes > 0 && NULL == second)
+        || second_bytes > (size_t)-1 - first_bytes)
+        return MPEG_PACKET_PROBE_INVALID;
+
     *codecid = PSI_STREAM_RESERVED;
     if (evidence)
         *evidence = (size_t)-1;
     if (evidence_type)
         *evidence_type = MPEG_PACKET_EVIDENCE_NONE;
-    if (second_bytes > (size_t)-1 - first_bytes)
-        return MPEG_PACKET_PROBE_NO_MATCH;
 
     bytes = first_bytes + second_bytes;
     have_sequence = 0;
@@ -551,13 +558,17 @@ static int mpeg_packet_h26x(struct packet_t* pkt, const struct pes_t* pes, size_
 }
 
 static int pes_packet_codec_detect(const struct pes_t* pes,
-    const struct packet_t* pkt, int allow_need_more_fallback)
+    const struct packet_t* pkt, int allow_need_more_fallback,
+    int* detected_codecid)
 {
     int r;
     int probe;
     enum mpeg_packet_probe_evidence_t evidence_type;
     size_t i, n;
     int codecid;
+
+    if (NULL == detected_codecid)
+        return -EINVAL;
 
     (void)allow_need_more_fallback;
     codecid = pes->codecid;
@@ -568,6 +579,8 @@ static int pes_packet_codec_detect(const struct pes_t* pes,
         static const uint8_t sc_codecid[] = { PSI_STREAM_RESERVED, PSI_STREAM_H264, PSI_STREAM_H265, PSI_STREAM_H266, PSI_STREAM_MPEG4, };
         probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
             NULL, 0, &codecid, NULL, &evidence_type);
+        if (MPEG_PACKET_PROBE_INVALID == probe)
+            return -EINVAL;
         // A complete MPEG sequence stays undecided until the next PES can
         // finish it. A trailing prefix may still yield to explicit MPEG-4.
         if (MPEG_PACKET_PROBE_MATCH != probe
@@ -601,24 +614,39 @@ static int pes_packet_codec_detect(const struct pes_t* pes,
     }
 #endif
 
-    return codecid;
+    *detected_codecid = codecid;
+    return 0;
 }
 
 int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, size_t* consume, int start, pes_packet_handler handler, void* param)
 {
     int r;
     int probe;
+    int old_probe;
     int codecid;
     int new_pes_match;
     int pending_codecid;
     size_t total;
     size_t evidence;
 
+    if (NULL == consume)
+        return -EINVAL;
+    *consume = size;
+
+    if (NULL == pkt || NULL == pes || NULL == handler
+        || (size > 0 && NULL == data))
+        return -EINVAL;
+    if (size > MPEG_PACKET_PAYLOAD_MAX_SIZE
+        || pkt->size > MPEG_PACKET_PAYLOAD_MAX_SIZE
+        || pkt->capacity > MPEG_PACKET_PAYLOAD_MAX_SIZE
+        || pkt->size > pkt->capacity
+        || (pkt->capacity > 0 && NULL == pkt->data))
+        return -EINVAL;
+
     r = 0;
     new_pes_match = 0;
     pending_codecid = PSI_STREAM_RESERVED;
     total = size;
-    *consume = size; // all saved
 
     if (pkt->size > 0 && pkt->codecid != pes->codecid
         && (mpeg_packet_is_mpeg12_video(pkt->codecid)
@@ -636,37 +664,52 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         && !(mpeg_packet_is_mpeg12_video(pkt->codecid) && pkt->codecid == pes->codecid))
     {
         if (PSI_STREAM_RESERVED == pkt->codecid
-            && PSI_STREAM_RESERVED == pes->codecid
-            && MPEG_PACKET_PROBE_NEED_MORE == mpeg_packet_mpeg12_video_probe(
-                pkt->data, pkt->size, NULL, 0, &codecid, NULL, NULL))
+            && PSI_STREAM_RESERVED == pes->codecid)
         {
-            probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
-                (const uint8_t*)data, size, &codecid, &evidence, NULL);
-            if (MPEG_PACKET_PROBE_MATCH == probe)
+            old_probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
+                NULL, 0, &codecid, NULL, NULL);
+            if (MPEG_PACKET_PROBE_INVALID == old_probe)
+                return -EINVAL;
+            if (MPEG_PACKET_PROBE_NEED_MORE == old_probe)
             {
-                if (evidence < pkt->size)
+                probe = mpeg_packet_mpeg12_video_probe(pkt->data, pkt->size,
+                    (const uint8_t*)data, size, &codecid, &evidence, NULL);
+                if (MPEG_PACKET_PROBE_INVALID == probe)
+                    return -EINVAL;
+                if (MPEG_PACKET_PROBE_MATCH == probe)
                 {
-                    r = mpeg_packet_reserve(pkt, size);
-                    if (0 != r)
-                        return r;
-                    r = mpeg_packet_mpeg12_adopt(pkt, pes, codecid,
-                        handler, param);
-                    if (0 != r)
-                        return r;
-                    r = mpeg_packet_append(pkt, data, size);
-                    if (0 != r)
-                        return r;
-                    return mpeg_packet_mpeg12(pkt, pes, size, 0,
-                        handler, param);
+                    if (evidence < pkt->size)
+                    {
+                        r = mpeg_packet_reserve(pkt, size);
+                        if (0 != r)
+                            return r;
+                        r = mpeg_packet_mpeg12_adopt(pkt, pes, codecid,
+                            handler, param);
+                        if (0 != r)
+                            return r;
+                        r = mpeg_packet_append(pkt, data, size);
+                        if (0 != r)
+                            return r;
+                        return mpeg_packet_mpeg12(pkt, pes, size, 0,
+                            handler, param);
+                    }
+                    // The MPEG evidence belongs wholly to the new PES. Finalize
+                    // the ambiguous old PES without letting it claim new bytes.
+                    new_pes_match = 1;
                 }
-                // The MPEG evidence belongs wholly to the new PES. Finalize
-                // the ambiguous old PES without letting it claim new bytes.
-                new_pes_match = 1;
             }
         }
 
-        codecid = new_pes_match ? PSI_STREAM_RESERVED
-            : pes_packet_codec_detect(pes, pkt, 1);
+        if (new_pes_match)
+        {
+            codecid = PSI_STREAM_RESERVED;
+        }
+        else
+        {
+            r = pes_packet_codec_detect(pes, pkt, 1, &codecid);
+            if (0 != r)
+                return r;
+        }
 
         if (mpeg_packet_is_mpeg12_video(codecid))
         {
@@ -724,7 +767,9 @@ int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t
         assert(PSI_STREAM_H264 != pes->codecid && PSI_STREAM_H265 != pes->codecid && PSI_STREAM_H266 != pes->codecid);
         if (pes->len > 0 && pes->pkt.size >= pes->len)
         {
-            codecid = pes_packet_codec_detect(pes, pkt, 0);
+            r = pes_packet_codec_detect(pes, pkt, 0, &codecid);
+            if (0 != r)
+                return r;
             if (mpeg_packet_is_mpeg12_video(codecid))
                 return mpeg_packet_mpeg12_adopt(pkt, pes, codecid, handler, param);
 

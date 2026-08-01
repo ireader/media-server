@@ -153,6 +153,291 @@ static void mpeg_packet_test_destroy(struct mpeg_packet_test_t* ctx)
     ctx->pes.pkt.data = NULL;
 }
 
+#if defined(MPEG_PACKET_INVALID_PES_TEST)
+struct mpeg_packet_state_snapshot_t
+{
+    struct pes_t pes;
+    std::string data;
+};
+
+static struct mpeg_packet_state_snapshot_t mpeg_packet_state_snapshot(
+    const struct pes_t* pes)
+{
+    struct mpeg_packet_state_snapshot_t snapshot;
+    snapshot.pes = *pes;
+    if (pes->pkt.size > 0)
+        snapshot.data.assign((const char*)pes->pkt.data, pes->pkt.size);
+    return snapshot;
+}
+
+static void mpeg_packet_state_assert_equal(const struct pes_t* pes,
+    const struct mpeg_packet_state_snapshot_t* snapshot)
+{
+    assert(0 == memcmp(pes, &snapshot->pes, sizeof(*pes)));
+    if (pes->pkt.size > 0)
+        assert(snapshot->data == std::string((const char*)pes->pkt.data,
+            pes->pkt.size));
+}
+
+static void mpeg_packet_invalid_cross_pes_span_test()
+{
+    struct mpeg_packet_test_t ctx;
+    struct mpeg_packet_state_snapshot_t snapshot;
+    const char trailing_prefix = 0;
+    size_t consume = 0;
+    int handler_calls;
+    int r;
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_RESERVED;
+    ctx.expected_codecid = PSI_STREAM_RESERVED;
+    ctx.pes.pts = 9000;
+    ctx.pes.dts = 9000;
+    r = pes_packet(&ctx.pes.pkt, &ctx.pes, &trailing_prefix, 1, &consume,
+        1, mpeg_packet_onpacket, &ctx);
+    assert(0 == r);
+    assert(1 == consume);
+    assert(1 == ctx.pes.pkt.size);
+
+    ctx.pes.pts = 12600;
+    ctx.pes.dts = 12600;
+    ctx.pes.flags = MPEG_FLAG_PACKET_CORRUPT;
+    snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+    handler_calls = ctx.handler_calls;
+    r = pes_packet(&ctx.pes.pkt, &ctx.pes, NULL, 1, &consume,
+        1, mpeg_packet_onpacket, &ctx);
+    assert(-EINVAL == r);
+    assert(1 == consume);
+    assert(handler_calls == ctx.handler_calls);
+    mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_maximum_input_after_packet_split_test()
+{
+    struct mpeg_packet_test_t ctx;
+    const char first = 0x7F;
+    std::string largest(10 * 1024 * 1024, (char)0xFF);
+
+    mpeg_packet_test_init(&ctx);
+    ctx.pes.codecid = PSI_STREAM_MPEG4;
+    ctx.expected_codecid = PSI_STREAM_MPEG4;
+    mpeg_packet_test_input(&ctx, std::string(&first, 1), 1, 9000);
+    mpeg_packet_test_input(&ctx, largest, 1, 12600);
+    assert(1 == ctx.handler_calls);
+    assert(largest.size() == ctx.pes.pkt.size);
+    mpeg_packet_test_destroy(&ctx);
+}
+
+static void mpeg_packet_invalid_contract_test()
+{
+    const char input = 0x7F;
+    const size_t max_size = 10 * 1024 * 1024;
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, NULL,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(NULL, &ctx.pes, &input, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct packet_t pkt;
+        struct mpeg_packet_test_t ctx;
+        struct packet_t snapshot;
+        size_t consume = 0;
+        memset(&pkt, 0, sizeof(pkt));
+        mpeg_packet_test_init(&ctx);
+        snapshot = pkt;
+        assert(-EINVAL == pes_packet(&pkt, NULL, &input, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        assert(0 == memcmp(&pkt, &snapshot, sizeof(pkt)));
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, &consume,
+            1, NULL, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, NULL, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        mpeg_packet_test_input(&ctx, std::string(&input, 1), 1, 9000);
+        ctx.pes.pts = 12600;
+        ctx.pes.dts = 12600;
+        ctx.pes.flags = MPEG_FLAG_PACKET_LOST;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, NULL, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        ctx.pes.pkt.data = (uint8_t*)malloc(1);
+        assert(NULL != ctx.pes.pkt.data);
+        ctx.pes.pkt.data[0] = 0;
+        ctx.pes.pkt.size = 1;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        ctx.pes.pkt.capacity = 1;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        std::string oversized(max_size + 1, (char)0xFF);
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, oversized.data(),
+            oversized.size(), &consume, 1, mpeg_packet_onpacket, &ctx));
+        assert(oversized.size() == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        ctx.pes.pkt.data = (uint8_t*)malloc(max_size + 1);
+        assert(NULL != ctx.pes.pkt.data);
+        memset(ctx.pes.pkt.data, 0, max_size + 1);
+        ctx.pes.pkt.size = max_size + 1;
+        ctx.pes.pkt.capacity = max_size + 1;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, &consume,
+            0, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        struct mpeg_packet_state_snapshot_t snapshot;
+        size_t consume = 0;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        ctx.pes.pkt.data = (uint8_t*)malloc(max_size + 1);
+        assert(NULL != ctx.pes.pkt.data);
+        ctx.pes.pkt.capacity = max_size + 1;
+        snapshot = mpeg_packet_state_snapshot(&ctx.pes);
+        assert(-EINVAL == pes_packet(&ctx.pes.pkt, &ctx.pes, &input, 1, &consume,
+            1, mpeg_packet_onpacket, &ctx));
+        assert(1 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_state_assert_equal(&ctx.pes, &snapshot);
+        mpeg_packet_test_destroy(&ctx);
+    }
+
+    {
+        struct mpeg_packet_test_t ctx;
+        size_t consume = 1;
+        mpeg_packet_test_init(&ctx);
+        ctx.pes.pts = 9000;
+        ctx.pes.dts = 9000;
+        assert(0 == pes_packet(&ctx.pes.pkt, &ctx.pes, NULL, 0, &consume,
+            0, mpeg_packet_onpacket, &ctx));
+        assert(0 == consume);
+        assert(0 == ctx.handler_calls);
+        mpeg_packet_test_destroy(&ctx);
+    }
+}
+#endif
+
 static void mpeg_packet_discontinuity_reset_test()
 {
     struct packet_t pkt;
@@ -3478,6 +3763,9 @@ extern "C" void mpeg_packet_test(void)
     mpeg_ps_packet_continuous_test();
     mpeg_ps_packet_no_psm_variable_chunks_test();
 #if defined(MPEG_PACKET_INVALID_PES_TEST)
+    mpeg_packet_invalid_cross_pes_span_test();
+    mpeg_packet_maximum_input_after_packet_split_test();
+    mpeg_packet_invalid_contract_test();
     mpeg_ts_packet_split_pes_header_test();
     mpeg_ts_packet_header_only_start_test();
     mpeg_ts_packet_header_only_flush_preserves_previous_test();
