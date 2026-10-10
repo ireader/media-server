@@ -31,13 +31,15 @@ static void mov_audio_info(void* param, uint32_t track, uint8_t object, int chan
     s_audio_track = fmp4_writer_add_audio(fmp4, object, channel_count, bit_per_sample, sample_rate, extra, bytes);
 }
 
-void fmp4_writer_test2(const char* mp4, const char* outmp4)
+void fmp4_writer_test2(const char* mp4)
 {
+    snprintf((char*)s_buffer, sizeof(s_buffer), "%s.mp4", mp4);
+
     struct mov_file_cache_t file, wfile;
     memset(&file, 0, sizeof(file));
     memset(&wfile, 0, sizeof(wfile));
     file.fp = fopen(mp4, "rb");
-    wfile.fp = fopen(outmp4, "wb");
+    wfile.fp = fopen((const char*)s_buffer, "wb");
     mov_reader_t* mov = mov_reader_create(mov_file_cache_buffer(), &file);
     fmp4_writer_t* fmp4 = fmp4_writer_create(mov_file_cache_buffer(), &wfile, MOV_FLAG_SEGMENT);
 

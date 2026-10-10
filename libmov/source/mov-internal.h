@@ -53,6 +53,8 @@
 #define MOV_DIRAC   MOV_TAG('d', 'r', 'a', 'c')
 #define MOV_AC3     MOV_TAG('a', 'c', '-', '3')
 #define MOV_DTS     MOV_TAG('d', 't', 's', 'c') // DTS-HD
+#define MOV_IPCM	MOV_TAG('i', 'p', 'c', 'm') // integer 16/24/32 bits pcm
+#define MOV_FPCM	MOV_TAG('f', 'p', 'c', 'm') // float 32/64 bits pcm
 
 // ISO/IEC 14496-1:2010(E) 7.2.6.6 DecoderConfigDescriptor
 // Table 6 - streamType Values (p51)
@@ -238,7 +240,6 @@ int mov_read_ctts(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_cslg(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_stss(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_extra(struct mov_t* mov, const struct mov_box_t* box);
-int mov_read_vpcc(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_tx3g(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_trex(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_leva(struct mov_t* mov, const struct mov_box_t* box);
@@ -257,6 +258,8 @@ int mov_read_smdm(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_coll(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_udta(struct mov_t* mov, const struct mov_box_t* box);
 int mov_read_chpl(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_chnl(struct mov_t* mov, const struct mov_box_t* box);
+int mov_read_pcmc(struct mov_t* mov, const struct mov_box_t* box);
 
 size_t mov_write_ftyp(const struct mov_t* mov);
 size_t mov_write_mvhd(const struct mov_t* mov);
@@ -302,6 +305,8 @@ size_t mov_write_mdia(const struct mov_t* mov);
 size_t mov_write_trak(const struct mov_t* mov);
 size_t mov_write_dops(const struct mov_t* mov);
 size_t mov_write_udta(const struct mov_t* mov);
+size_t mov_write_pcmc(const struct mov_t* mov);
+size_t mov_write_chnl(const struct mov_t* mov);
 
 uint32_t mov_build_stts(struct mov_track_t* track);
 uint32_t mov_build_ctts(struct mov_track_t* track);

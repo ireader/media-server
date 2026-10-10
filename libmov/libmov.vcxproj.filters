@@ -146,19 +146,19 @@
     <ClCompile Include="source\mov-track.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\mov-opus.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\mov-hdr.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\mov-vpcc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\mov-udta.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\fmp4-reader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mov-chnl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -497,6 +497,12 @@ static size_t mov_write_audio(const struct mov_t* mov, const struct mov_sample_e
 		size += mov_write_esds(mov);
 	else if(MOV_OBJECT_OPUS == entry->object_type_indication)
 		size += mov_write_dops(mov);
+	else if (MOV_OBJECT_PCM_INT == entry->object_type_indication || MOV_OBJECT_PCM_FLOAT == entry->object_type_indication)
+	{
+		if(entry->u.audio.channelcount > 1)
+			size += mov_write_chnl(mov);
+		size += mov_write_pcmc(mov);
+	}
 
 	//size += mov_write_btrt(mov, entry);
 	mov_write_size(mov, offset, size); /* update size */

@@ -43,9 +43,26 @@ size_t mov_write_hvcc(const struct mov_t* mov)
 	return entry->extra_data_size + 8;
 }
 
+// extra_data: ISO/IEC 14496-15 AVCDecoderConfigurationRecord
+/*
+class VvcConfigurationBox extends FullBox('vvcC',version=0,flags) {
+	VvcDecoderConfigurationRecord() VvcConfig;
+}
+*/
+size_t mov_write_vvcc(const struct mov_t* mov)
+{
+	const struct mov_track_t* track = mov->track;
+	const struct mov_sample_entry_t* entry = track->stsd.current;
+	mov_buffer_w32(&mov->io, entry->extra_data_size + 12); /* size */
+	mov_buffer_write(&mov->io, "vvcC", 4);
+	mov_buffer_w32(&mov->io, 0); /* version & flags */
+	if (entry->extra_data_size > 0)
+		mov_buffer_write(&mov->io, entry->extra_data, entry->extra_data_size);
+	return entry->extra_data_size + 8;
+}
+
 // https://aomediacodec.github.io/av1-isobmff
 // extra data: AV1CodecConfigurationRecord
-
 size_t mov_write_av1c(const struct mov_t* mov)
 {
 	const struct mov_track_t* track = mov->track;
@@ -57,20 +74,17 @@ size_t mov_write_av1c(const struct mov_t* mov)
 	return entry->extra_data_size + 8;
 }
 
-
-// extra_data: ISO/IEC 14496-15 AVCDecoderConfigurationRecord
-/*
-class VvcConfigurationBox extends FullBox('vvcC',version=0,flags) {
-	VvcDecoderConfigurationRecord() VvcConfig;
-}
-*/
-size_t mov_write_vvcc(const struct mov_t* mov)
+// https://www.webmproject.org/vp9/mp4/
+// extra data: VPCodecConfigurationBox
+size_t mov_write_vpcc(const struct mov_t* mov)
 {
 	const struct mov_track_t* track = mov->track;
 	const struct mov_sample_entry_t* entry = track->stsd.current;
-	mov_buffer_w32(&mov->io, entry->extra_data_size + 8); /* size */
-	mov_buffer_write(&mov->io, "vvcC", 4);
+	mov_buffer_w32(&mov->io, entry->extra_data_size + 12); /* size */
+	mov_buffer_write(&mov->io, "vpcC", 4);
+	mov_buffer_w8(&mov->io, 1); /* version */
+	mov_buffer_w24(&mov->io, 0); /* flags */
 	if (entry->extra_data_size > 0)
 		mov_buffer_write(&mov->io, entry->extra_data, entry->extra_data_size);
-	return entry->extra_data_size + 8;
+	return entry->extra_data_size + 12;
 }

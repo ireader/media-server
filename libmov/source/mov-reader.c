@@ -11,7 +11,7 @@
 
 #define AV_TRACK_TIMEBASE 1000
 
-//#define MOV_READER_BOX_TREE 1
+#define MOV_READER_BOX_TREE 1
 //#define MOV_READER_FMP4_FAST 1
 
 #define MOV_READER_FLAG_FMP4_FAST 0x01
@@ -208,6 +208,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_extra }, // av1-isobmff
 	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_extra }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
+	{ MOV_TAG('c', 'h', 'n', 'l'), MOV_NULL, mov_read_chnl }, // ISO/IEC 15596-12:2022 12.2.4.1 chnl
 	{ MOV_TAG('c', 'h', 'p', 'l'), MOV_STBL, mov_read_chpl }, // chapter title
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
     { MOV_TAG('C', 'o', 'L', 'L'), MOV_STBL, mov_read_coll },
@@ -240,6 +241,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
 	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_nmhd }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
 	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
+	{ MOV_TAG('p', 'c', 'm', 'C'), MOV_NULL, mov_read_pcmc },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
     { MOV_TAG('S', 'm', 'D', 'm'), MOV_MINF, mov_read_smdm },
@@ -265,7 +267,8 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('u', 'd', 't', 'a'), MOV_MOOV, mov_read_udta },
 	{ MOV_TAG('u', 'u', 'i', 'd'), MOV_NULL, mov_read_uuid },
 	{ MOV_TAG('v', 'm', 'h', 'd'), MOV_MINF, mov_read_vmhd },
-    { MOV_TAG('v', 'p', 'c', 'C'), MOV_NULL, mov_read_vpcc },
+    { MOV_TAG('v', 'p', 'c', 'C'), MOV_NULL, mov_read_extra },
+	{ MOV_TAG('v', 'v', 'c', 'C'), MOV_NULL, mov_read_extra },
 	{ MOV_TAG('d', 'e', 'c', '3'), MOV_NULL, mov_read_extra }, // dolby EC-3
 
 	{ 0, 0, NULL } // last
@@ -458,11 +461,14 @@ static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 	return track;
 }
 
+#define MOV_STSD_AUDIO(sample) (track->stsd.entries[sample->sample_description_index-1].u.audio)
+
 int mov_reader_read2(struct mov_reader_t* reader, mov_reader_onread2 onread, void* param)
 {
+	size_t n;
 	void* ptr;
 	struct mov_track_t* track;
-	struct mov_sample_t* sample;
+	struct mov_sample_t* sample, pcm;
 
 FMP4_NEXT_FRAGMENT:
 	track = mov_reader_next(reader);
@@ -476,9 +482,22 @@ FMP4_NEXT_FRAGMENT:
 		return 0; // EOF
 	}
 
+	n = 0;
 	assert(track->sample_offset < track->sample_count);
 	sample = &track->samples[track->sample_offset];
 	assert(sample->sample_description_index > 0);
+	// PCM store with 1-sample
+	if (track->handler_type == MOV_AUDIO 
+		&& sample->sample_description_index-1 < track->stsd.entry_count
+		&& sample->bytes * 8 == MOV_STSD_AUDIO(sample).channelcount * MOV_STSD_AUDIO(sample).samplesize)
+	{
+		memcpy(&pcm, sample, sizeof(pcm));
+		for (n = 0; n + 1 < 1024 && track->sample_offset + n + 1 < track->sample_count 
+			&& track->samples[track->sample_offset + n + 1].offset == pcm.offset + pcm.bytes; n++)
+			pcm.bytes += track->samples[track->sample_offset + n].bytes;
+		sample = &pcm;
+	}
+
 	ptr = onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	if(!ptr)
 		return -ENOMEM;
@@ -491,7 +510,7 @@ FMP4_NEXT_FRAGMENT:
 		return mov_buffer_error(&reader->mov.io);
 	}
 
-	track->sample_offset++; //mark as read
+	track->sample_offset += n + 1; //mark as read
 	return 1;
 }
 

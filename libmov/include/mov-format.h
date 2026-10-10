@@ -35,6 +35,8 @@
 #define MOV_OBJECT_FLAC				0xC1 // nonstandard from FFMPEG
 #define MOV_OBJECT_VP8				0xC2 // nonstandard
 #define MOV_OBJECT_CHAPTER			0xC3 // chapter https://developer.apple.com/documentation/quicktime-file-format/base_media_information_header_atom
+#define MOV_OBJECT_PCM_INT			0xFA // Integer 16/24/32 bits PCM, Big-Endian
+#define MOV_OBJECT_PCM_FLOAT		0xFB // Float 32/64 bits PCM, Big-Endian
 #define MOV_OBJECT_H266				0xFC // ITU-T Recommendation H.266
 #define MOV_OBJECT_G711a			0xFD // ITU G.711 alaw
 #define MOV_OBJECT_G711u			0xFE // ITU G.711 ulaw
