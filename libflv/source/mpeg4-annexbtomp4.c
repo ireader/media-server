@@ -161,26 +161,35 @@ int mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void (*handler)(void*
 	return 0;
 }
 
-uint8_t mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset)
+int mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset, uint32_t* value)
 {
 	int bit, i;
-	int leadingZeroBits = -1;
+	int leadingZeroBits = 0;
+	uint32_t suffix = 0;
 
-	for (bit = 0; !bit && *offset / 8 < bytes; ++leadingZeroBits)
+	for (bit = 0; !bit && *offset / 8 < bytes; )
 	{
 		bit = (data[*offset / 8] >> (7 - (*offset % 8))) & 0x01;
 		++*offset;
+		if (!bit && ++leadingZeroBits >= 32)
+			return -1;
 	}
 
-	bit = 0;
-	assert(leadingZeroBits < 32);
-	for (i = 0; i < leadingZeroBits && *offset / 8 < bytes; i++)
+	// A complete ue(v) code word needs both the stop bit and its full suffix;
+	// 完整的 ue(v) 编码必须包含终止位和全部后缀位，缺失时应返回解析错误，避免非法移位。
+	if (!bit)
+		return -1;
+
+	for (i = 0; i < leadingZeroBits; i++)
 	{
-		bit = (bit << 1) | ((data[*offset / 8] >> (7 - (*offset % 8))) & 0x01);
+		if (*offset / 8 >= bytes)
+			return -1;
+		suffix = (suffix << 1) | ((data[*offset / 8] >> (7 - (*offset % 8))) & 0x01);
 		++*offset;
 	}
 
-	return (uint8_t)((1 << leadingZeroBits) - 1 + bit);
+	*value = (1U << leadingZeroBits) - 1 + suffix;
+	return 0;
 }
 
 static void mpeg4_avc_remove(struct mpeg4_avc_t* avc, uint8_t* ptr, size_t bytes, const uint8_t* end)
@@ -206,7 +215,8 @@ static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 {
 	size_t i;
 	size_t offset;
-    uint8_t spsid;
+	uint32_t spsid;
+	uint32_t spsid2;
 
 	if (bytes < 4 + 1)
 	{
@@ -215,12 +225,15 @@ static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 	}
 
 	offset = 4 * 8; // 1-NALU + 3-profile+flags+level
-	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
+	if (mpeg4_h264_read_ue(nalu, bytes, &offset, &spsid) < 0 || spsid >= 32)
+		return -1;
 
 	for (i = 0; i < avc->nb_sps; i++)
 	{
 		offset = 4 * 8; // reset offset
-		if (spsid == mpeg4_h264_read_ue(avc->sps[i].data, avc->sps[i].bytes, &offset))
+		if (mpeg4_h264_read_ue(avc->sps[i].data, avc->sps[i].bytes, &offset, &spsid2) < 0)
+			return -1; // invalid stored decoder configuration
+		if (spsid == spsid2)
 		{
 			if (bytes == avc->sps[i].bytes && 0 == memcmp(nalu, avc->sps[i].data, bytes))
 				return 0; // do nothing
@@ -262,9 +275,11 @@ static int h264_sps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 {
 	size_t i;
-    size_t offset;
-	uint8_t spsid;
-	uint8_t ppsid;
+	size_t offset;
+	uint32_t spsid;
+	uint32_t spsid2;
+	uint32_t ppsid;
+	uint32_t ppsid2;
 
 	if (bytes < 1 + 1)
 	{
@@ -273,13 +288,18 @@ static int h264_pps_copy(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t by
 	}
 
 	offset = 1 * 8; // 1-NALU
-	ppsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
-	spsid = mpeg4_h264_read_ue(nalu, bytes, &offset);
+	if (mpeg4_h264_read_ue(nalu, bytes, &offset, &ppsid) < 0
+		|| mpeg4_h264_read_ue(nalu, bytes, &offset, &spsid) < 0
+		|| ppsid >= 256 || spsid >= 32)
+		return -1;
 
 	for (i = 0; i < avc->nb_pps; i++)
 	{
 		offset = 1 * 8; // reset offset
-		if (ppsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset) && spsid == mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset))
+		if (mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset, &ppsid2) < 0
+			|| mpeg4_h264_read_ue(avc->pps[i].data, avc->pps[i].bytes, &offset, &spsid2) < 0)
+			return -1; // invalid stored decoder configuration
+		if (ppsid == ppsid2 && spsid == spsid2)
 		{
 			if (bytes == avc->pps[i].bytes && 0 == memcmp(nalu, avc->pps[i].data, bytes))
 				return 0; // do nothing
@@ -340,7 +360,7 @@ int mpeg4_avc_update(struct mpeg4_avc_t* avc, const uint8_t* nalu, size_t bytes)
 	{
 	case H264_NAL_SPS:
 		r = h264_sps_copy(avc, nalu, bytes);
-		if (1 == r || 1 == avc->nb_sps)
+		if (r >= 0 && (1 == r || 1 == avc->nb_sps))
 		{
 			// update profile/level
 			avc->profile = nalu[1];
@@ -501,8 +521,13 @@ void mpeg4_annexbtomp4_test(void)
 {
 	const uint8_t sps[] = { 0x67,0x42,0xe0,0x1e,0xab };
 	const uint8_t pps[] = { 0x28,0xce,0x3c,0x80 };
+	const uint8_t oversized_sps_id[] = { 0x67,0x64,0x00,0x28,0x00,0x80,0x80 };
+	const uint8_t truncated_sps[] = { 0x67,0x64,0x00,0x28,0x00 };
+	const uint8_t truncated_pps[] = { 0x68,0x01 };
 	const uint8_t annexb[] = { 0x00,0x00,0x00,0x01,0x67,0x42,0xe0,0x1e,0xab, 0x00,0x00,0x00,0x01,0x28,0xce,0x3c,0x80,0x00,0x00,0x00,0x01,0x65,0x11 };
 	uint8_t output[256];
+	uint8_t profile, compatibility, level;
+	size_t off;
 	int vcl, update;
 
 	struct mpeg4_avc_t avc;
@@ -511,6 +536,24 @@ void mpeg4_annexbtomp4_test(void)
 	assert(1 == avc.nb_sps && avc.sps[0].bytes == sizeof(sps) && 0 == memcmp(avc.sps[0].data, sps, sizeof(sps)));
 	assert(1 == avc.nb_pps && avc.pps[0].bytes == sizeof(pps) && 0 == memcmp(avc.pps[0].data, pps, sizeof(pps)));
 	assert(vcl == 1);
+
+	memset(&avc, 0, sizeof(avc));
+	assert(mpeg4_avc_update(&avc, truncated_pps, sizeof(truncated_pps)) < 0);
+	assert(0 == avc.nb_pps && 0 == avc.off);
+
+	memset(&avc, 0, sizeof(avc));
+	assert(mpeg4_avc_update(&avc, oversized_sps_id, sizeof(oversized_sps_id)) < 0);
+	assert(0 == avc.nb_sps && 0 == avc.off);
+
+	memset(&avc, 0, sizeof(avc));
+	assert(mpeg4_avc_update(&avc, sps, sizeof(sps)) > 0);
+	profile = avc.profile;
+	compatibility = avc.compatibility;
+	level = avc.level;
+	off = avc.off;
+	assert(mpeg4_avc_update(&avc, truncated_sps, sizeof(truncated_sps)) < 0);
+	assert(profile == avc.profile && compatibility == avc.compatibility && level == avc.level);
+	assert(1 == avc.nb_sps && off == avc.off && 0 == memcmp(avc.sps[0].data, sps, sizeof(sps)));
 
 	mpeg4_annexbtomp4_test2();
 	mpeg4_h264_bitstream_format_test();
