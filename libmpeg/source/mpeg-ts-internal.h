@@ -59,6 +59,16 @@ struct ts_packet_header_t
 	struct ts_adaptation_field_t adaptation;
 };
 
+struct ts_pes_state_t {
+    uint32_t payload_remaining;
+    uint16_t header_bytes;
+    uint8_t have_header;
+    uint8_t payload_start;
+    uint8_t have_payload_cc;
+    uint8_t payload_cc;
+    uint8_t header[9 + 255];
+};
+
 struct pmt_t
 {
 	unsigned int pid;		// PID : 13 [0x0010, 0x1FFE]
@@ -75,6 +85,7 @@ struct pmt_t
 
 	unsigned int stream_count;
 	struct pes_t streams[4];
+	struct ts_pes_state_t stream_states[4];
 };
 
 struct pat_t

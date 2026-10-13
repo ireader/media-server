@@ -111,10 +111,13 @@ static int ps_sync_start_probe(struct mpeg_bits_t* reader)
 
 static int ps_demuxer_onpes(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes)
 {
+    int r;
     struct ps_demuxer_t* ps;
     ps = (struct ps_demuxer_t*)param;
     assert(0 == program); // unused(ts demux only)
-    return ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
+    r = ps->onpacket(ps->param, stream, codecid, flags, pts, dts, data, bytes);
+    // ps_demuxer_input reserves nonnegative returns for consumed byte counts.
+    return r > 0 ? -r : r;
 }
 
 static struct pes_t* psm_fetch(struct psm_t* psm, uint8_t sid)

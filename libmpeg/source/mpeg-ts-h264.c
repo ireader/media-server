@@ -212,7 +212,7 @@ int mpeg_h26x_verify(const uint8_t* data, size_t bytes, int* codec)
         *codec = 3;
         return 0;
     }
-    else if (0xB0 == h26x[3][0] && 0 == (0x30 & h26x[4][0]))
+    else if (count > 0 && 0xB0 == h26x[3][0] && 0 == (0x30 & h26x[4][0]))
     {
         // match VOP start code
         *codec = 4;

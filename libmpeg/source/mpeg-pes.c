@@ -259,11 +259,16 @@ int pes_read_mpeg1_header(struct pes_t *pes, struct mpeg_bits_t* reader)
 	{
 		v8 = mpeg_bits_read8(reader);
 	} while (0 == mpeg_bits_error(reader) && v8 == 0xFF);
+
+	if (mpeg_bits_error(reader))
+		return MPEG_ERROR_NEED_MORE_DATA;
 	
 	if (0x40 == (0xC0 & v8))
 	{
-		mpeg_bits_skip(reader, 2); // skip STD_buffer_scale / STD_buffer_size
+		mpeg_bits_skip(reader, 1); // first STD byte is already in v8
 		v8 = mpeg_bits_read8(reader);
+		if (mpeg_bits_error(reader))
+			return MPEG_ERROR_NEED_MORE_DATA;
 	}
 
 	if (0x20 == (0xF0 & v8))
@@ -277,9 +282,9 @@ int pes_read_mpeg1_header(struct pes_t *pes, struct mpeg_bits_t* reader)
 		v8 = mpeg_bits_read8(reader);
 		pes->dts = ((((uint64_t)v8 >> 1) & 0x07) << 30) | mpeg_bits_read30(reader);
 	}
-	else
+	else if (0x0F != v8)
 	{
-		assert(0x0F == v8);
+		return MPEG_ERROR_INVALID_DATA;
 	}
 
 	if (mpeg_bits_error(reader))

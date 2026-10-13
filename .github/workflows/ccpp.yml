@@ -1,6 +1,6 @@
 name: C/C++ CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -27,6 +27,17 @@ jobs:
       - name: Make
         run: make
         working-directory: media-server
+
+      - name: libmpeg packet regressions
+        working-directory: media-server
+        run: |
+          mpeg_archive="$(find libmpeg -path '*/libmpeg.a' -print -quit)"
+          test -n "${mpeg_archive}"
+          g++ -std=c++11 -Ilibmpeg/include -Ilibmpeg/source \
+            -DMPEG_PACKET_TEST_MAIN -DMPEG_PACKET_INVALID_PES_TEST \
+            libmpeg/test/mpeg-packet-test.cpp "${mpeg_archive}" \
+            -o /tmp/mpeg-packet-test
+          /tmp/mpeg-packet-test
 
 #      - name: Make check
 #        run: make test

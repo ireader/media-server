@@ -24,6 +24,21 @@ struct packet_t
     size_t capacity;
 
 	int vcl; // h.264/h.265 only
+	// MPEG-1/2 video access unit state
+	size_t mpeg12_scan;
+	size_t mpeg12_prefix;
+	size_t mpeg12_picture;
+	int mpeg12_prefix_flags;
+	int mpeg12_picture_flags;
+	int64_t mpeg12_picture_pts;
+	int64_t mpeg12_picture_dts;
+	int64_t mpeg12_tail_pts[3];
+	int64_t mpeg12_tail_dts[3];
+	int mpeg12_tail_flags[3];
+	uint8_t mpeg12_have_prefix;
+	uint8_t mpeg12_have_picture;
+	uint8_t mpeg12_have_picture_timestamp;
+	uint8_t mpeg12_tail_count;
 };
 
 struct pes_t
@@ -80,7 +95,6 @@ struct pes_t
 
 	//uint32_t pack_field_length : 8;
 
-	int have_pes_header; // TS demuxer only
 	int flags; // TS/PS demuxer only
     struct packet_t pkt;
 };
@@ -90,6 +104,7 @@ int pes_read_mpeg1_header(struct pes_t* pes, struct mpeg_bits_t* reader);
 size_t pes_write_header(const struct pes_t *pes, uint8_t* data, size_t bytes);
 
 typedef int (*pes_packet_handler)(void* param, int program, int stream, int codecid, int flags, int64_t pts, int64_t dts, const void* data, size_t bytes);
+void pes_packet_discontinuity(struct packet_t* pkt);
 int pes_packet(struct packet_t* pkt, struct pes_t* pes, const void* data, size_t size, size_t* consume, int start, pes_packet_handler handler, void* param);
 
 uint16_t mpeg_bits_read15(struct mpeg_bits_t* reader);
